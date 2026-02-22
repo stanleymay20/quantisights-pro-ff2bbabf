@@ -1,7 +1,8 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { getTierByProductId, TierKey } from "@/lib/stripe-tiers";
+import { useOrganization } from "@/hooks/useOrganization";
+import { TierKey } from "@/lib/stripe-tiers";
 
 interface SubscriptionState {
   subscribed: boolean;
@@ -12,6 +13,7 @@ interface SubscriptionState {
 
 export const useSubscription = () => {
   const { user } = useAuth();
+  const { currentOrgId } = useOrganization();
   const [state, setState] = useState<SubscriptionState>({
     subscribed: false,
     tier: null,
@@ -20,31 +22,48 @@ export const useSubscription = () => {
   });
 
   const checkSubscription = useCallback(async () => {
-    if (!user) {
+    if (!user || !currentOrgId) {
       setState({ subscribed: false, tier: null, subscriptionEnd: null, loading: false });
       return;
     }
 
     try {
-      const { data, error } = await supabase.functions.invoke("check-subscription");
+      const { data, error } = await supabase
+        .from("subscriptions")
+        .select("tier, status, current_period_end")
+        .eq("organization_id", currentOrgId)
+        .eq("status", "active")
+        .maybeSingle();
+
       if (error) throw error;
 
       setState({
-        subscribed: data.subscribed,
-        tier: getTierByProductId(data.product_id),
-        subscriptionEnd: data.subscription_end,
+        subscribed: !!data,
+        tier: (data?.tier as TierKey) ?? null,
+        subscriptionEnd: data?.current_period_end ?? null,
         loading: false,
       });
     } catch {
       setState((s) => ({ ...s, loading: false }));
     }
-  }, [user]);
+  }, [user, currentOrgId]);
 
   useEffect(() => {
     checkSubscription();
-    const interval = setInterval(checkSubscription, 60000);
-    return () => clearInterval(interval);
-  }, [checkSubscription]);
+
+    // Listen for realtime changes
+    if (!currentOrgId) return;
+    const channel = supabase
+      .channel(`sub-${currentOrgId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "subscriptions", filter: `organization_id=eq.${currentOrgId}` },
+        () => checkSubscription()
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [checkSubscription, currentOrgId]);
 
   return { ...state, refresh: checkSubscription };
 };
