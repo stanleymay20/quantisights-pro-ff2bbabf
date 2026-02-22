@@ -170,7 +170,20 @@ const DataUpload = () => {
       }
 
       // Update dataset status
-      await supabase.from("datasets").update({ status: "completed", row_count: inserted }).eq("id", dataset.id);
+      await supabase.from("datasets").update({ status: "completed", row_count: inserted, current_version: 1 }).eq("id", dataset.id);
+
+      // Create version record
+      await supabase.from("dataset_versions").insert({
+        dataset_id: dataset.id,
+        organization_id: currentOrgId,
+        version_number: 1,
+        file_path: filePath,
+        row_count: inserted,
+        column_mapping: mapping,
+        change_summary: "Initial upload",
+        created_by: user.id,
+        is_active: true,
+      });
 
       // Trigger AI insights generation
       await supabase.functions.invoke("generate-insights", {
