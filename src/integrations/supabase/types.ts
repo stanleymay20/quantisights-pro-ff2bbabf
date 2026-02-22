@@ -584,6 +584,146 @@ export type Database = {
           },
         ]
       }
+      scenario_assumptions: {
+        Row: {
+          adjustment_type: string
+          adjustment_value: number
+          created_at: string
+          id: string
+          metric_type: string
+          scenario_id: string
+        }
+        Insert: {
+          adjustment_type?: string
+          adjustment_value: number
+          created_at?: string
+          id?: string
+          metric_type: string
+          scenario_id: string
+        }
+        Update: {
+          adjustment_type?: string
+          adjustment_value?: number
+          created_at?: string
+          id?: string
+          metric_type?: string
+          scenario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scenario_assumptions_scenario_id_fkey"
+            columns: ["scenario_id"]
+            isOneToOne: false
+            referencedRelation: "scenarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scenario_results: {
+        Row: {
+          baseline_value: number
+          created_at: string
+          date: string
+          delta_value: number
+          id: string
+          kpi_id: string
+          organization_id: string
+          scenario_id: string
+          simulated_value: number
+        }
+        Insert: {
+          baseline_value: number
+          created_at?: string
+          date: string
+          delta_value: number
+          id?: string
+          kpi_id: string
+          organization_id: string
+          scenario_id: string
+          simulated_value: number
+        }
+        Update: {
+          baseline_value?: number
+          created_at?: string
+          date?: string
+          delta_value?: number
+          id?: string
+          kpi_id?: string
+          organization_id?: string
+          scenario_id?: string
+          simulated_value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scenario_results_kpi_id_fkey"
+            columns: ["kpi_id"]
+            isOneToOne: false
+            referencedRelation: "kpis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scenario_results_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scenario_results_scenario_id_fkey"
+            columns: ["scenario_id"]
+            isOneToOne: false
+            referencedRelation: "scenarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scenarios: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          forecast_end_date: string
+          forecast_start_date: string
+          id: string
+          name: string
+          organization_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          forecast_end_date: string
+          forecast_start_date: string
+          id?: string
+          name: string
+          organization_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          forecast_end_date?: string
+          forecast_start_date?: string
+          id?: string
+          name?: string
+          organization_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scenarios_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscriptions: {
         Row: {
           cancel_at_period_end: boolean
