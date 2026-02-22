@@ -4,9 +4,13 @@ import RevenueChart from "@/components/dashboard/RevenueChart";
 import CustomerSegmentation from "@/components/dashboard/CustomerSegmentation";
 import AIInsights from "@/components/dashboard/AIInsights";
 import AnomalyDetection from "@/components/dashboard/AnomalyDetection";
+import { useAuth } from "@/contexts/AuthContext";
 import { Bell, User } from "lucide-react";
 
 const Dashboard = () => {
+  const { user } = useAuth();
+  const displayName = user?.user_metadata?.full_name || user?.email || "User";
+
   return (
     <div className="flex min-h-screen bg-background">
       <DashboardSidebar />
@@ -19,7 +23,7 @@ const Dashboard = () => {
               <Bell className="w-5 h-5 text-muted-foreground" />
             </button>
             <div className="flex items-center gap-3">
-              <span className="text-sm font-medium">Robert Smith</span>
+              <span className="text-sm font-medium">{displayName}</span>
               <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center">
                 <User className="w-5 h-5 text-primary" />
               </div>

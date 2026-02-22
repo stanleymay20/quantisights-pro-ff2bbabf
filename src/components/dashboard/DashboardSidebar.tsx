@@ -1,5 +1,6 @@
-import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Lightbulb, TrendingUp, Activity, FileText, Settings } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { LayoutDashboard, Lightbulb, TrendingUp, Activity, FileText, Settings, LogOut } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 import logo from "@/assets/quantivis-logo.png";
 
 const navItems = [
@@ -12,7 +13,13 @@ const navItems = [
 ];
 
 const DashboardSidebar = () => {
-  const location = useLocation();
+  const { signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/");
+  };
 
   return (
     <aside className="w-64 min-h-screen bg-sidebar border-r border-sidebar-border flex flex-col shrink-0">
@@ -40,6 +47,15 @@ const DashboardSidebar = () => {
           );
         })}
       </nav>
+      <div className="p-3">
+        <button
+          onClick={handleSignOut}
+          className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors w-full"
+        >
+          <LogOut className="w-5 h-5" />
+          Sign Out
+        </button>
+      </div>
     </aside>
   );
 };
