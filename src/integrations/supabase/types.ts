@@ -19,7 +19,7 @@ export type Database = {
           config: Json
           created_at: string
           created_by: string
-          credentials_key: string | null
+          credentials_key_hash: string | null
           id: string
           last_synced_at: string | null
           name: string
@@ -32,7 +32,7 @@ export type Database = {
           config?: Json
           created_at?: string
           created_by: string
-          credentials_key?: string | null
+          credentials_key_hash?: string | null
           id?: string
           last_synced_at?: string | null
           name: string
@@ -45,7 +45,7 @@ export type Database = {
           config?: Json
           created_at?: string
           created_by?: string
-          credentials_key?: string | null
+          credentials_key_hash?: string | null
           id?: string
           last_synced_at?: string | null
           name?: string
@@ -73,6 +73,7 @@ export type Database = {
           id: string
           organization_id: string
           records_synced: number | null
+          request_id: string | null
           started_at: string | null
           status: string
         }
@@ -84,6 +85,7 @@ export type Database = {
           id?: string
           organization_id: string
           records_synced?: number | null
+          request_id?: string | null
           started_at?: string | null
           status?: string
         }
@@ -95,6 +97,7 @@ export type Database = {
           id?: string
           organization_id?: string
           records_synced?: number | null
+          request_id?: string | null
           started_at?: string | null
           status?: string
         }
