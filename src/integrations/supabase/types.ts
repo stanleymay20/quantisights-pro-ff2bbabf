@@ -232,6 +232,44 @@ export type Database = {
           },
         ]
       }
+      executive_modes: {
+        Row: {
+          alert_thresholds: Json
+          created_at: string
+          id: string
+          organization_id: string
+          priority_kpis: Json
+          role_type: string
+          updated_at: string
+        }
+        Insert: {
+          alert_thresholds?: Json
+          created_at?: string
+          id?: string
+          organization_id: string
+          priority_kpis?: Json
+          role_type: string
+          updated_at?: string
+        }
+        Update: {
+          alert_thresholds?: Json
+          created_at?: string
+          id?: string
+          organization_id?: string
+          priority_kpis?: Json
+          role_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "executive_modes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       insights: {
         Row: {
           category: string | null
