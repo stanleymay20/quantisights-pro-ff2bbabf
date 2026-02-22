@@ -48,6 +48,25 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "Not a member" }), { status: 403, headers: corsHeaders });
     }
 
+    // Enforce plan: AI insights require Growth or Enterprise
+    const serviceSupabaseForTier = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+    const { data: sub } = await serviceSupabaseForTier
+      .from("subscriptions")
+      .select("tier")
+      .eq("organization_id", organization_id)
+      .eq("status", "active")
+      .maybeSingle();
+
+    if (!sub || !["growth", "enterprise"].includes(sub.tier)) {
+      return new Response(
+        JSON.stringify({ error: "AI Insights require a Growth or Enterprise plan." }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Fetch metrics for analysis
     const { data: metrics } = await supabase
       .from("metrics")

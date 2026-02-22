@@ -3,9 +3,10 @@ import { useNavigate } from "react-router-dom";
 import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOrganization } from "@/hooks/useOrganization";
+import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, FileSpreadsheet, ArrowRight, Check, X } from "lucide-react";
+import { Upload, FileSpreadsheet, ArrowRight, Check, X, Lock } from "lucide-react";
 
 type Step = "upload" | "preview" | "mapping" | "importing" | "done";
 
@@ -15,6 +16,7 @@ const COLUMN_TARGETS = ["date", "value", "region", "segment", "metric_type", "sk
 const DataUpload = () => {
   const { user } = useAuth();
   const { currentOrgId } = useOrganization();
+  const { tier, subscribed } = useSubscription();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -78,6 +80,23 @@ const DataUpload = () => {
 
   const handleImport = async () => {
     if (!currentOrgId || !user || !file) return;
+
+    // Enforce Starter plan: max 1 dataset
+    if (tier === "starter") {
+      const { count } = await supabase
+        .from("datasets")
+        .select("id", { count: "exact", head: true })
+        .eq("organization_id", currentOrgId);
+      if ((count ?? 0) >= 1) {
+        toast({ title: "Dataset limit reached", description: "Starter plan allows 1 dataset. Upgrade to Growth for unlimited.", variant: "destructive" });
+        return;
+      }
+    }
+    if (!subscribed) {
+      toast({ title: "Subscription required", description: "Please subscribe to upload datasets.", variant: "destructive" });
+      return;
+    }
+
     setStep("importing");
 
     try {
