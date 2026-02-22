@@ -35,3 +35,6 @@ verify_jwt = false
 
 [functions.ai-scenario-analysis]
 verify_jwt = false
+
+[functions.executive-brief]
+verify_jwt = false

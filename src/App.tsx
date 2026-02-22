@@ -17,6 +17,7 @@ import Scenarios from "./pages/Scenarios";
 import Reports from "./pages/Reports";
 import Pricing from "./pages/Pricing";
 import NotFound from "./pages/NotFound";
+import Executive from "./pages/Executive";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +39,7 @@ const App = () => (
               <Route path="/kpis" element={<ProtectedRoute><KPIs /></ProtectedRoute>} />
               <Route path="/scenarios" element={<ProtectedRoute><Scenarios /></ProtectedRoute>} />
               <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+              <Route path="/executive" element={<ProtectedRoute><Executive /></ProtectedRoute>} />
               <Route path="/pricing" element={<Pricing />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
