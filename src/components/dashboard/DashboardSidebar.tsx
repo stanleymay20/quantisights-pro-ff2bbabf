@@ -1,13 +1,13 @@
-import { Link, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Lightbulb, TrendingUp, Activity, FileText, Settings, LogOut } from "lucide-react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { LayoutDashboard, Lightbulb, TrendingUp, Upload, FileText, Settings, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import logo from "@/assets/quantivis-logo.png";
 
 const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
+  { icon: Upload, label: "Data Upload", path: "/data-upload" },
   { icon: Lightbulb, label: "Business Insights", path: "/dashboard" },
   { icon: TrendingUp, label: "Forecasting", path: "/dashboard" },
-  { icon: Activity, label: "Data Monitoring", path: "/dashboard" },
   { icon: FileText, label: "Reports", path: "/dashboard" },
   { icon: Settings, label: "Settings", path: "/dashboard" },
 ];
@@ -15,6 +15,7 @@ const navItems = [
 const DashboardSidebar = () => {
   const { signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleSignOut = async () => {
     await signOut();
@@ -29,8 +30,8 @@ const DashboardSidebar = () => {
         </Link>
       </div>
       <nav className="flex-1 px-3 space-y-1">
-        {navItems.map((item, i) => {
-          const isActive = i === 0;
+        {navItems.map((item) => {
+          const isActive = location.pathname === item.path;
           return (
             <Link
               key={item.label}
