@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.webhook-ingest]
 verify_jwt = false
+
+[functions.rollback-dataset-version]
+verify_jwt = false
