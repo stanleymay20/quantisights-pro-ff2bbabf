@@ -9,16 +9,36 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useOrganization } from "@/hooks/useOrganization";
 import { useMetrics } from "@/hooks/useMetrics";
 import { useInsights } from "@/hooks/useInsights";
-import { Bell, User, Upload } from "lucide-react";
+import { Bell, User, Upload, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 const Dashboard = () => {
   const { user } = useAuth();
   const { organizations, currentOrgId, currentOrg, switchOrganization } = useOrganization();
   const { totalRevenue, totalCustomers, latestCost, latestChurn, revenueByMonth, segmentData, hasData, loading: metricsLoading } = useMetrics(currentOrgId);
-  const { insights } = useInsights(currentOrgId);
+  const { insights, loading: insightsLoading } = useInsights(currentOrgId);
   const displayName = user?.user_metadata?.full_name || user?.email || "User";
+  const { toast } = useToast();
+  const [recalculating, setRecalculating] = useState(false);
 
+  const handleRecalculate = async () => {
+    if (!currentOrgId) return;
+    setRecalculating(true);
+    try {
+      await supabase.functions.invoke("generate-insights", {
+        body: { organization_id: currentOrgId },
+      });
+      toast({ title: "Insights recalculated!" });
+      window.location.reload();
+    } catch {
+      toast({ title: "Failed to recalculate", variant: "destructive" });
+    } finally {
+      setRecalculating(false);
+    }
+  };
   return (
     <div className="flex min-h-screen bg-background">
       <DashboardSidebar />
@@ -28,7 +48,17 @@ const Dashboard = () => {
             <h1 className="text-xl font-semibold font-display">Dashboard</h1>
             <OrgSwitcher organizations={organizations} currentOrg={currentOrg} onSwitch={switchOrganization} />
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            {hasData && (
+              <button
+                onClick={handleRecalculate}
+                disabled={recalculating}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border text-xs font-medium hover:bg-secondary transition-colors disabled:opacity-50"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${recalculating ? "animate-spin" : ""}`} />
+                Recalculate Insights
+              </button>
+            )}
             <button className="p-2 rounded-lg hover:bg-secondary transition-colors">
               <Bell className="w-5 h-5 text-muted-foreground" />
             </button>
