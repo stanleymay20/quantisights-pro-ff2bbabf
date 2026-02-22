@@ -12,6 +12,7 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import DataUpload from "./pages/DataUpload";
 import DataSources from "./pages/DataSources";
+import KPIs from "./pages/KPIs";
 import Reports from "./pages/Reports";
 import Pricing from "./pages/Pricing";
 import NotFound from "./pages/NotFound";
@@ -33,6 +34,7 @@ const App = () => (
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/data-upload" element={<ProtectedRoute><DataUpload /></ProtectedRoute>} />
               <Route path="/data-sources" element={<ProtectedRoute><DataSources /></ProtectedRoute>} />
+              <Route path="/kpis" element={<ProtectedRoute><KPIs /></ProtectedRoute>} />
               <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
               <Route path="/pricing" element={<Pricing />} />
               <Route path="*" element={<NotFound />} />

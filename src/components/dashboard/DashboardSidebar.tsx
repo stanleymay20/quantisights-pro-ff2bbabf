@@ -1,5 +1,5 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { LayoutDashboard, Upload, FileText, Lightbulb, TrendingUp, Settings, CreditCard, LogOut, Database } from "lucide-react";
+import { LayoutDashboard, Upload, FileText, Lightbulb, TrendingUp, Settings, CreditCard, LogOut, Database, BarChart3 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import logo from "@/assets/quantivis-logo.png";
 
@@ -7,6 +7,7 @@ const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
   { icon: Database, label: "Data Sources", path: "/data-sources" },
   { icon: Upload, label: "Data Upload", path: "/data-upload" },
+  { icon: BarChart3, label: "KPI Builder", path: "/kpis" },
   { icon: FileText, label: "Reports", path: "/reports" },
   { icon: Lightbulb, label: "Business Insights", path: "/dashboard" },
   { icon: TrendingUp, label: "Forecasting", path: "/dashboard" },

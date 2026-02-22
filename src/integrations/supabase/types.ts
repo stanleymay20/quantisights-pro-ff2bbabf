@@ -270,6 +270,143 @@ export type Database = {
           },
         ]
       }
+      kpi_targets: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          kpi_id: string
+          organization_id: string
+          target_date: string
+          target_value: number
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          kpi_id: string
+          organization_id: string
+          target_date: string
+          target_value: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          kpi_id?: string
+          organization_id?: string
+          target_date?: string
+          target_value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kpi_targets_kpi_id_fkey"
+            columns: ["kpi_id"]
+            isOneToOne: false
+            referencedRelation: "kpis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kpi_targets_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kpi_values: {
+        Row: {
+          computed_at: string
+          date: string
+          id: string
+          kpi_id: string
+          organization_id: string
+          value: number
+        }
+        Insert: {
+          computed_at?: string
+          date: string
+          id?: string
+          kpi_id: string
+          organization_id: string
+          value: number
+        }
+        Update: {
+          computed_at?: string
+          date?: string
+          id?: string
+          kpi_id?: string
+          organization_id?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kpi_values_kpi_id_fkey"
+            columns: ["kpi_id"]
+            isOneToOne: false
+            referencedRelation: "kpis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kpi_values_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kpis: {
+        Row: {
+          aggregation_type: string
+          created_at: string
+          created_by: string
+          description: string | null
+          formula: string
+          id: string
+          metric_dependencies: Json
+          name: string
+          organization_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          aggregation_type?: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          formula: string
+          id?: string
+          metric_dependencies?: Json
+          name: string
+          organization_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          aggregation_type?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          formula?: string
+          id?: string
+          metric_dependencies?: Json
+          name?: string
+          organization_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kpis_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       metrics: {
         Row: {
           created_at: string
