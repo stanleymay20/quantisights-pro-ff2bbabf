@@ -4,7 +4,7 @@ export const TIERS = {
     price: 29,
     currency: "€",
     interval: "month",
-    price_id: "price_1T3khzJYFlBeCvef3KOlui4z",
+    price_id: "price_1T3khzJYFIBeCvef3KOlui4z",
     product_id: "prod_U1oK4n5OQtsB9Z",
     features: [
       "1 organization",
@@ -18,7 +18,7 @@ export const TIERS = {
     price: 99,
     currency: "€",
     interval: "month",
-    price_id: "price_1T3kjjJYFlBeCvefUjLGgfI3",
+    price_id: "price_1T3kjjJYFIBeCvefUjLGgfI3",
     product_id: "prod_U1oMLeqLb7hF4O",
     features: [
       "Unlimited datasets",
@@ -34,7 +34,7 @@ export const TIERS = {
     price: 299,
     currency: "€",
     interval: "month",
-    price_id: "price_1T3kkcJYFlBeCvefRjlqhWSO",
+    price_id: "price_1T3kkcJYFIBeCvefRjlqhWSO",
     product_id: "prod_U1oN5CDeptb9uY",
     features: [
       "Multi-organization access",
