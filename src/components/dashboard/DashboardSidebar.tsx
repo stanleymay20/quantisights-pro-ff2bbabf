@@ -1,5 +1,5 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { LayoutDashboard, Upload, FileText, Lightbulb, TrendingUp, Settings, LogOut } from "lucide-react";
+import { LayoutDashboard, Upload, FileText, Lightbulb, TrendingUp, Settings, CreditCard, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import logo from "@/assets/quantivis-logo.png";
 
@@ -9,6 +9,7 @@ const navItems = [
   { icon: FileText, label: "Reports", path: "/reports" },
   { icon: Lightbulb, label: "Business Insights", path: "/dashboard" },
   { icon: TrendingUp, label: "Forecasting", path: "/dashboard" },
+  { icon: CreditCard, label: "Billing", path: "/pricing" },
   { icon: Settings, label: "Settings", path: "/dashboard" },
 ];
 
