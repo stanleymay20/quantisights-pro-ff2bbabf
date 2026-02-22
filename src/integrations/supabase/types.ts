@@ -14,19 +14,187 @@ export type Database = {
   }
   public: {
     Tables: {
+      datasets: {
+        Row: {
+          column_mapping: Json | null
+          created_at: string
+          file_path: string | null
+          id: string
+          name: string
+          organization_id: string
+          row_count: number | null
+          status: string
+          uploaded_by: string
+        }
+        Insert: {
+          column_mapping?: Json | null
+          created_at?: string
+          file_path?: string | null
+          id?: string
+          name: string
+          organization_id: string
+          row_count?: number | null
+          status?: string
+          uploaded_by: string
+        }
+        Update: {
+          column_mapping?: Json | null
+          created_at?: string
+          file_path?: string | null
+          id?: string
+          name?: string
+          organization_id?: string
+          row_count?: number | null
+          status?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "datasets_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      insights: {
+        Row: {
+          category: string | null
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string
+          organization_id: string
+          severity: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message: string
+          organization_id: string
+          severity?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          organization_id?: string
+          severity?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "insights_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      metrics: {
+        Row: {
+          created_at: string
+          dataset_id: string | null
+          date: string
+          id: string
+          metric_type: string
+          organization_id: string
+          region: string | null
+          segment: string | null
+          value: number
+        }
+        Insert: {
+          created_at?: string
+          dataset_id?: string | null
+          date: string
+          id?: string
+          metric_type: string
+          organization_id: string
+          region?: string | null
+          segment?: string | null
+          value: number
+        }
+        Update: {
+          created_at?: string
+          dataset_id?: string | null
+          date?: string
+          id?: string
+          metric_type?: string
+          organization_id?: string
+          region?: string | null
+          segment?: string | null
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "metrics_dataset_id_fkey"
+            columns: ["dataset_id"]
+            isOneToOne: false
+            referencedRelation: "datasets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "metrics_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organization_members: {
+        Row: {
+          created_at: string
+          id: string
+          organization_id: string
+          role: Database["public"]["Enums"]["org_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          organization_id: string
+          role?: Database["public"]["Enums"]["org_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          organization_id?: string
+          role?: Database["public"]["Enums"]["org_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_members_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
           created_at: string
+          created_by: string | null
           id: string
           name: string
         }
         Insert: {
           created_at?: string
+          created_by?: string | null
           id?: string
           name: string
         }
         Update: {
           created_at?: string
+          created_by?: string | null
           id?: string
           name?: string
         }
@@ -93,12 +261,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_user_org_role: {
+        Args: { _org_id: string; _user_id: string }
+        Returns: Database["public"]["Enums"]["org_role"]
+      }
       get_user_organization_id: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_org_member: {
+        Args: { _org_id: string; _user_id: string }
         Returns: boolean
       }
       is_organization_member: {
@@ -108,6 +284,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "analyst" | "executive" | "client_viewer"
+      org_role: "owner" | "admin" | "analyst" | "executive" | "viewer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -236,6 +413,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "analyst", "executive", "client_viewer"],
+      org_role: ["owner", "admin", "analyst", "executive", "viewer"],
     },
   },
 } as const
