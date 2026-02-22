@@ -1,0 +1,156 @@
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import Stripe from "https://esm.sh/stripe@18.5.0";
+import { createClient } from "npm:@supabase/supabase-js@2.57.2";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+};
+
+const TIERS: Record<string, string> = {
+  "prod_U1oK4n5OQtsB9Z": "starter",
+  "prod_U1oMLeqLb7hF4O": "growth",
+  "prod_U1oN5CDeptb9uY": "enterprise",
+};
+
+const logStep = (step: string, details?: unknown) => {
+  console.log(`[STRIPE-WEBHOOK] ${step}${details ? ` - ${JSON.stringify(details)}` : ""}`);
+};
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, { apiVersion: "2025-08-27.basil" });
+  const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET")!;
+
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    { auth: { persistSession: false } }
+  );
+
+  try {
+    const body = await req.text();
+    const sig = req.headers.get("stripe-signature")!;
+    const event = await stripe.webhooks.constructEventAsync(body, sig, webhookSecret);
+
+    logStep("Event received", { type: event.type, id: event.id });
+
+    switch (event.type) {
+      case "checkout.session.completed": {
+        const session = event.data.object as Stripe.Checkout.Session;
+        if (session.mode !== "subscription") break;
+
+        const customerId = session.customer as string;
+        const subscriptionId = session.subscription as string;
+        const customerEmail = session.customer_details?.email ?? session.customer_email;
+
+        if (!customerEmail) {
+          logStep("No customer email found, skipping");
+          break;
+        }
+
+        // Look up user's org
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("organization_id, user_id")
+          .ilike("full_name", `%`) // we need email lookup
+          .limit(1);
+
+        // Better: look up by auth user email
+        const { data: authData } = await supabase.auth.admin.listUsers();
+        const authUser = authData?.users?.find((u) => u.email === customerEmail);
+
+        if (!authUser) {
+          logStep("No auth user found for email", { customerEmail });
+          break;
+        }
+
+        const { data: userProfile } = await supabase
+          .from("profiles")
+          .select("organization_id")
+          .eq("user_id", authUser.id)
+          .single();
+
+        if (!userProfile?.organization_id) {
+          logStep("No org found for user", { userId: authUser.id });
+          break;
+        }
+
+        // Fetch subscription details from Stripe
+        const sub = await stripe.subscriptions.retrieve(subscriptionId);
+        const productId = sub.items.data[0].price.product as string;
+        const tier = TIERS[productId] ?? "starter";
+
+        const { error } = await supabase.from("subscriptions").upsert(
+          {
+            organization_id: userProfile.organization_id,
+            stripe_customer_id: customerId,
+            stripe_subscription_id: subscriptionId,
+            tier,
+            status: sub.status,
+            price_id: sub.items.data[0].price.id,
+            current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
+            cancel_at_period_end: sub.cancel_at_period_end,
+          },
+          { onConflict: "stripe_subscription_id" }
+        );
+
+        if (error) logStep("Upsert error", error);
+        else logStep("Subscription upserted", { tier, orgId: userProfile.organization_id });
+        break;
+      }
+
+      case "customer.subscription.updated": {
+        const sub = event.data.object as Stripe.Subscription;
+        const productId = sub.items.data[0].price.product as string;
+        const tier = TIERS[productId] ?? "starter";
+
+        const { error } = await supabase
+          .from("subscriptions")
+          .update({
+            tier,
+            status: sub.status,
+            price_id: sub.items.data[0].price.id,
+            current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
+            cancel_at_period_end: sub.cancel_at_period_end,
+          })
+          .eq("stripe_subscription_id", sub.id);
+
+        if (error) logStep("Update error", error);
+        else logStep("Subscription updated", { tier, status: sub.status });
+        break;
+      }
+
+      case "customer.subscription.deleted": {
+        const sub = event.data.object as Stripe.Subscription;
+
+        const { error } = await supabase
+          .from("subscriptions")
+          .update({ status: "canceled" })
+          .eq("stripe_subscription_id", sub.id);
+
+        if (error) logStep("Delete-update error", error);
+        else logStep("Subscription canceled", { subId: sub.id });
+        break;
+      }
+
+      default:
+        logStep("Unhandled event type", { type: event.type });
+    }
+
+    return new Response(JSON.stringify({ received: true }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 200,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    logStep("ERROR", { message });
+    return new Response(JSON.stringify({ error: message }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 400,
+    });
+  }
+});
