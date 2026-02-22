@@ -238,6 +238,41 @@ export type Database = {
           },
         ]
       }
+      reports: {
+        Row: {
+          created_at: string
+          file_path: string
+          generated_by: string
+          id: string
+          organization_id: string
+          report_type: string
+        }
+        Insert: {
+          created_at?: string
+          file_path: string
+          generated_by: string
+          id?: string
+          organization_id: string
+          report_type?: string
+        }
+        Update: {
+          created_at?: string
+          file_path?: string
+          generated_by?: string
+          id?: string
+          organization_id?: string
+          report_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reports_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string

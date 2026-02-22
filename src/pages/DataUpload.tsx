@@ -153,6 +153,11 @@ const DataUpload = () => {
       // Update dataset status
       await supabase.from("datasets").update({ status: "completed", row_count: inserted }).eq("id", dataset.id);
 
+      // Trigger AI insights generation
+      await supabase.functions.invoke("generate-insights", {
+        body: { organization_id: currentOrgId },
+      }).catch(() => {}); // non-blocking
+
       setImportCount(inserted);
       setStep("done");
       toast({ title: `Imported ${inserted} records successfully!` });
