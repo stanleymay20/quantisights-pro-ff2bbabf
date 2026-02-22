@@ -23,3 +23,9 @@ verify_jwt = false
 
 [functions.rollback-dataset-version]
 verify_jwt = false
+
+[functions.compute-kpi]
+verify_jwt = false
+
+[functions.ai-kpi-analysis]
+verify_jwt = false
