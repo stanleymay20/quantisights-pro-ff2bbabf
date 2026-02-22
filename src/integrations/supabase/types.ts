@@ -14,10 +14,170 @@ export type Database = {
   }
   public: {
     Tables: {
+      data_sources: {
+        Row: {
+          config: Json
+          created_at: string
+          created_by: string
+          credentials_key: string | null
+          id: string
+          last_synced_at: string | null
+          name: string
+          organization_id: string
+          source_type: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          config?: Json
+          created_at?: string
+          created_by: string
+          credentials_key?: string | null
+          id?: string
+          last_synced_at?: string | null
+          name: string
+          organization_id: string
+          source_type?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          created_by?: string
+          credentials_key?: string | null
+          id?: string
+          last_synced_at?: string | null
+          name?: string
+          organization_id?: string
+          source_type?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "data_sources_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      data_sync_jobs: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          data_source_id: string
+          error_message: string | null
+          id: string
+          organization_id: string
+          records_synced: number | null
+          started_at: string | null
+          status: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          data_source_id: string
+          error_message?: string | null
+          id?: string
+          organization_id: string
+          records_synced?: number | null
+          started_at?: string | null
+          status?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          data_source_id?: string
+          error_message?: string | null
+          id?: string
+          organization_id?: string
+          records_synced?: number | null
+          started_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "data_sync_jobs_data_source_id_fkey"
+            columns: ["data_source_id"]
+            isOneToOne: false
+            referencedRelation: "data_sources"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "data_sync_jobs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dataset_versions: {
+        Row: {
+          change_summary: string | null
+          column_mapping: Json | null
+          created_at: string
+          created_by: string
+          dataset_id: string
+          file_path: string | null
+          id: string
+          is_active: boolean
+          organization_id: string
+          row_count: number | null
+          version_number: number
+        }
+        Insert: {
+          change_summary?: string | null
+          column_mapping?: Json | null
+          created_at?: string
+          created_by: string
+          dataset_id: string
+          file_path?: string | null
+          id?: string
+          is_active?: boolean
+          organization_id: string
+          row_count?: number | null
+          version_number?: number
+        }
+        Update: {
+          change_summary?: string | null
+          column_mapping?: Json | null
+          created_at?: string
+          created_by?: string
+          dataset_id?: string
+          file_path?: string | null
+          id?: string
+          is_active?: boolean
+          organization_id?: string
+          row_count?: number | null
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dataset_versions_dataset_id_fkey"
+            columns: ["dataset_id"]
+            isOneToOne: false
+            referencedRelation: "datasets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dataset_versions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       datasets: {
         Row: {
           column_mapping: Json | null
           created_at: string
+          current_version: number | null
+          data_source_id: string | null
           file_path: string | null
           id: string
           name: string
@@ -29,6 +189,8 @@ export type Database = {
         Insert: {
           column_mapping?: Json | null
           created_at?: string
+          current_version?: number | null
+          data_source_id?: string | null
           file_path?: string | null
           id?: string
           name: string
@@ -40,6 +202,8 @@ export type Database = {
         Update: {
           column_mapping?: Json | null
           created_at?: string
+          current_version?: number | null
+          data_source_id?: string | null
           file_path?: string | null
           id?: string
           name?: string
@@ -49,6 +213,13 @@ export type Database = {
           uploaded_by?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "datasets_data_source_id_fkey"
+            columns: ["data_source_id"]
+            isOneToOne: false
+            referencedRelation: "data_sources"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "datasets_organization_id_fkey"
             columns: ["organization_id"]
