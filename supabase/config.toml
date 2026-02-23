@@ -38,3 +38,9 @@ verify_jwt = false
 
 [functions.executive-brief]
 verify_jwt = false
+
+[functions.compute-executive-signals]
+verify_jwt = false
+
+[functions.weekly-executive-brief]
+verify_jwt = false
