@@ -11,8 +11,11 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Crown, TrendingUp, TrendingDown, Shield, Target, AlertTriangle,
   Zap, Clock, ChevronRight, Loader2, Lock, BarChart3, DollarSign, Users, Settings2,
-  Activity, History, RefreshCw, CheckCircle2,
+  Activity, History, RefreshCw, CheckCircle2, Bell, Mail, MessageSquare, Save,
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 type RoleType = "ceo" | "cfo" | "cmo" | "coo";
 
@@ -61,6 +64,18 @@ interface RiskIndex {
   score: number;
   components: { deviation: number; trend: number; volatility: number; forecast: number };
   last_updated: string;
+  escalation_required?: boolean;
+  escalation_reason?: string;
+}
+
+interface NotifPrefs {
+  email_enabled: boolean;
+  email_recipients: string[];
+  slack_webhook_url: string;
+  slack_enabled: boolean;
+  alert_threshold: number;
+  weekly_brief_enabled: boolean;
+  escalation_threshold: number;
 }
 
 interface HistoricalBrief {
@@ -173,6 +188,18 @@ const Executive = () => {
   const [riskIndex, setRiskIndex] = useState<RiskIndex | null>(null);
   const [dbAlerts, setDbAlerts] = useState<DbAlert[]>([]);
   const [briefHistory, setBriefHistory] = useState<HistoricalBrief[]>([]);
+  const [showSettings, setShowSettings] = useState(false);
+  const [notifPrefs, setNotifPrefs] = useState<NotifPrefs>({
+    email_enabled: true,
+    email_recipients: [],
+    slack_webhook_url: "",
+    slack_enabled: false,
+    alert_threshold: 50,
+    weekly_brief_enabled: false,
+    escalation_threshold: 85,
+  });
+  const [emailInput, setEmailInput] = useState("");
+  const [savingPrefs, setSavingPrefs] = useState(false);
 
   const isGated = !tier || tier === "starter";
 
@@ -183,7 +210,7 @@ const Executive = () => {
     // Fetch risk index
     const { data: risk } = await supabase
       .from("executive_risk_index")
-      .select("score, components, last_updated")
+      .select("score, components, last_updated, escalation_required, escalation_reason")
       .eq("organization_id", currentOrgId)
       .eq("role_type", activeRole)
       .maybeSingle();
@@ -193,9 +220,31 @@ const Executive = () => {
         score: risk.score,
         components: risk.components as any,
         last_updated: risk.last_updated,
+        escalation_required: risk.escalation_required,
+        escalation_reason: risk.escalation_reason ?? undefined,
       });
     } else {
       setRiskIndex(null);
+    }
+
+    // Fetch notification preferences
+    const { data: prefs } = await supabase
+      .from("notification_preferences")
+      .select("*")
+      .eq("organization_id", currentOrgId)
+      .eq("role_type", activeRole)
+      .maybeSingle();
+
+    if (prefs) {
+      setNotifPrefs({
+        email_enabled: prefs.email_enabled,
+        email_recipients: (prefs as any).email_recipients || [],
+        slack_webhook_url: (prefs as any).slack_webhook_url || "",
+        slack_enabled: prefs.slack_enabled,
+        alert_threshold: prefs.alert_threshold,
+        weekly_brief_enabled: prefs.weekly_brief_enabled,
+        escalation_threshold: prefs.escalation_threshold,
+      });
     }
 
     // Fetch active alerts
@@ -250,6 +299,38 @@ const Executive = () => {
     }
   };
 
+  const saveNotifPrefs = async () => {
+    if (!currentOrgId) return;
+    setSavingPrefs(true);
+    try {
+      const payload = {
+        organization_id: currentOrgId,
+        role_type: activeRole,
+        ...notifPrefs,
+      };
+      const { error } = await supabase
+        .from("notification_preferences")
+        .upsert(payload, { onConflict: "organization_id,role_type" });
+      if (error) throw error;
+      toast({ title: "Saved", description: "Notification preferences updated" });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setSavingPrefs(false);
+    }
+  };
+
+  const addEmailRecipient = () => {
+    if (emailInput && emailInput.includes("@")) {
+      setNotifPrefs((p) => ({ ...p, email_recipients: [...p.email_recipients, emailInput] }));
+      setEmailInput("");
+    }
+  };
+
+  const removeEmailRecipient = (email: string) => {
+    setNotifPrefs((p) => ({ ...p, email_recipients: p.email_recipients.filter((e) => e !== email) }));
+  };
+
   const generateBrief = async () => {
     if (!currentOrgId) return;
     setLoading(true);
@@ -286,6 +367,11 @@ const Executive = () => {
               <p className="text-muted-foreground mt-1">Strategic Health Monitoring System</p>
             </div>
             <div className="flex items-center gap-3">
+              {riskIndex?.escalation_required && (
+                <Badge className="bg-destructive/10 text-destructive border-destructive/30 px-4 py-2 text-sm font-semibold animate-pulse">
+                  ⚠ Board Escalation
+                </Badge>
+              )}
               {brief && urgency && (
                 <Badge className={`${urgency.bg} ${urgency.text} border-none px-4 py-2 text-sm font-semibold`}>
                   {urgency.label}
@@ -294,6 +380,10 @@ const Executive = () => {
               {brief?.cached && (
                 <Badge variant="outline" className="text-xs">Cached</Badge>
               )}
+              <Button variant="outline" size="sm" onClick={() => setShowSettings(!showSettings)}>
+                <Bell className="w-4 h-4 mr-1" />
+                Alerts
+              </Button>
             </div>
           </div>
 
@@ -634,6 +724,132 @@ const Executive = () => {
                     </Button>
                   </div>
                 </div>
+              )}
+
+              {/* Escalation Banner */}
+              {riskIndex?.escalation_required && (
+                <Card className="border-destructive bg-destructive/5">
+                  <CardContent className="flex items-center gap-4 py-4">
+                    <AlertTriangle className="w-8 h-8 text-destructive shrink-0" />
+                    <div>
+                      <p className="font-bold text-destructive">Board Escalation Required</p>
+                      <p className="text-sm text-muted-foreground">
+                        {riskIndex.escalation_reason || "Multiple critical signals detected — executive attention needed"}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Notification Settings Panel */}
+              {showSettings && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Bell className="w-5 h-5 text-primary" />
+                      Alert Distribution Settings
+                    </CardTitle>
+                    <CardDescription>Configure how {ROLES.find((r) => r.key === activeRole)?.label} alerts are delivered</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {/* Email Settings */}
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label className="flex items-center gap-2">
+                          <Mail className="w-4 h-4" />
+                          Email Notifications
+                        </Label>
+                        <Switch
+                          checked={notifPrefs.email_enabled}
+                          onCheckedChange={(v) => setNotifPrefs((p) => ({ ...p, email_enabled: v }))}
+                        />
+                      </div>
+                      {notifPrefs.email_enabled && (
+                        <div className="pl-6 space-y-2">
+                          <div className="flex gap-2">
+                            <Input
+                              placeholder="Add recipient email"
+                              value={emailInput}
+                              onChange={(e) => setEmailInput(e.target.value)}
+                              onKeyDown={(e) => e.key === "Enter" && addEmailRecipient()}
+                              className="flex-1"
+                            />
+                            <Button size="sm" variant="outline" onClick={addEmailRecipient}>Add</Button>
+                          </div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {notifPrefs.email_recipients.map((email) => (
+                              <Badge key={email} variant="secondary" className="cursor-pointer" onClick={() => removeEmailRecipient(email)}>
+                                {email} ✕
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Slack Webhook */}
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label className="flex items-center gap-2">
+                          <MessageSquare className="w-4 h-4" />
+                          Slack Webhook
+                        </Label>
+                        <Switch
+                          checked={notifPrefs.slack_enabled}
+                          onCheckedChange={(v) => setNotifPrefs((p) => ({ ...p, slack_enabled: v }))}
+                        />
+                      </div>
+                      {notifPrefs.slack_enabled && (
+                        <div className="pl-6">
+                          <Input
+                            placeholder="https://hooks.slack.com/services/..."
+                            value={notifPrefs.slack_webhook_url}
+                            onChange={(e) => setNotifPrefs((p) => ({ ...p, slack_webhook_url: e.target.value }))}
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Thresholds */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Alert Threshold (risk score)</Label>
+                        <Input
+                          type="number"
+                          min={0}
+                          max={100}
+                          value={notifPrefs.alert_threshold}
+                          onChange={(e) => setNotifPrefs((p) => ({ ...p, alert_threshold: Number(e.target.value) }))}
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Escalation Threshold</Label>
+                        <Input
+                          type="number"
+                          min={0}
+                          max={100}
+                          value={notifPrefs.escalation_threshold}
+                          onChange={(e) => setNotifPrefs((p) => ({ ...p, escalation_threshold: Number(e.target.value) }))}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Weekly Brief */}
+                    <div className="flex items-center justify-between">
+                      <Label>Weekly Executive Brief (Enterprise)</Label>
+                      <Switch
+                        checked={notifPrefs.weekly_brief_enabled}
+                        onCheckedChange={(v) => setNotifPrefs((p) => ({ ...p, weekly_brief_enabled: v }))}
+                        disabled={tier !== "enterprise"}
+                      />
+                    </div>
+
+                    <Button onClick={saveNotifPrefs} disabled={savingPrefs} className="w-full">
+                      {savingPrefs ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                      Save Preferences
+                    </Button>
+                  </CardContent>
+                </Card>
               )}
             </>
           )}
