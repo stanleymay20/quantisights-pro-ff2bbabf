@@ -232,6 +232,104 @@ export type Database = {
           },
         ]
       }
+      executive_alerts: {
+        Row: {
+          created_at: string
+          id: string
+          kpi_id: string | null
+          metric_type: string | null
+          organization_id: string
+          resolved_at: string | null
+          role_type: string
+          severity: string
+          status: string
+          threshold_value: number | null
+          title: string
+          trigger_value: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kpi_id?: string | null
+          metric_type?: string | null
+          organization_id: string
+          resolved_at?: string | null
+          role_type: string
+          severity?: string
+          status?: string
+          threshold_value?: number | null
+          title: string
+          trigger_value?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kpi_id?: string | null
+          metric_type?: string | null
+          organization_id?: string
+          resolved_at?: string | null
+          role_type?: string
+          severity?: string
+          status?: string
+          threshold_value?: number | null
+          title?: string
+          trigger_value?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "executive_alerts_kpi_id_fkey"
+            columns: ["kpi_id"]
+            isOneToOne: false
+            referencedRelation: "kpis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "executive_alerts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      executive_briefs: {
+        Row: {
+          generated_at: string
+          generated_by: string
+          id: string
+          organization_id: string
+          risk_score: number | null
+          role_type: string
+          summary_json: Json
+        }
+        Insert: {
+          generated_at?: string
+          generated_by?: string
+          id?: string
+          organization_id: string
+          risk_score?: number | null
+          role_type: string
+          summary_json?: Json
+        }
+        Update: {
+          generated_at?: string
+          generated_by?: string
+          id?: string
+          organization_id?: string
+          risk_score?: number | null
+          role_type?: string
+          summary_json?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "executive_briefs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       executive_modes: {
         Row: {
           alert_thresholds: Json
@@ -263,6 +361,44 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "executive_modes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      executive_risk_index: {
+        Row: {
+          components: Json
+          created_at: string
+          id: string
+          last_updated: string
+          organization_id: string
+          role_type: string
+          score: number
+        }
+        Insert: {
+          components?: Json
+          created_at?: string
+          id?: string
+          last_updated?: string
+          organization_id: string
+          role_type: string
+          score?: number
+        }
+        Update: {
+          components?: Json
+          created_at?: string
+          id?: string
+          last_updated?: string
+          organization_id?: string
+          role_type?: string
+          score?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "executive_risk_index_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"

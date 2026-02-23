@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOrganization } from "@/hooks/useOrganization";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Crown, TrendingUp, TrendingDown, Shield, Target, AlertTriangle,
   Zap, Clock, ChevronRight, Loader2, Lock, BarChart3, DollarSign, Users, Settings2,
+  Activity, History, RefreshCw, CheckCircle2,
 } from "lucide-react";
 
 type RoleType = "ceo" | "cfo" | "cmo" | "coo";
@@ -40,6 +41,33 @@ interface Brief {
   recommended_actions: Action[];
   urgency_level: "stable" | "monitor" | "action_required" | "critical";
   role_type: string;
+  generated_at: string;
+  risk_score?: number;
+  risk_components?: { deviation: number; trend: number; volatility: number; forecast: number };
+  active_alerts_db?: DbAlert[];
+  cached?: boolean;
+}
+
+interface DbAlert {
+  id: string;
+  title: string;
+  severity: string;
+  trigger_value: number;
+  threshold_value: number;
+  created_at: string;
+}
+
+interface RiskIndex {
+  score: number;
+  components: { deviation: number; trend: number; volatility: number; forecast: number };
+  last_updated: string;
+}
+
+interface HistoricalBrief {
+  id: string;
+  role_type: string;
+  risk_score: number;
+  generated_by: string;
   generated_at: string;
 }
 
@@ -76,6 +104,63 @@ const SEVERITY_STYLES: Record<string, { icon: typeof AlertTriangle; color: strin
   info: { icon: Shield, color: "text-sky-400" },
 };
 
+// Risk Dial Component
+const RiskDial = ({ score, lastUpdated }: { score: number; lastUpdated?: string }) => {
+  const radius = 70;
+  const circumference = Math.PI * radius;
+  const progress = (score / 100) * circumference;
+
+  const getColor = (s: number) => {
+    if (s <= 25) return "stroke-emerald-400";
+    if (s <= 50) return "stroke-sky-400";
+    if (s <= 75) return "stroke-amber-400";
+    return "stroke-destructive";
+  };
+
+  const getLabel = (s: number) => {
+    if (s <= 25) return "Low Risk";
+    if (s <= 50) return "Moderate";
+    if (s <= 75) return "Elevated";
+    return "High Risk";
+  };
+
+  return (
+    <div className="flex flex-col items-center">
+      <div className="relative w-44 h-24 overflow-hidden">
+        <svg viewBox="0 0 160 85" className="w-full h-full">
+          {/* Background arc */}
+          <path
+            d="M 10 80 A 70 70 0 0 1 150 80"
+            fill="none"
+            className="stroke-muted/30"
+            strokeWidth="10"
+            strokeLinecap="round"
+          />
+          {/* Score arc */}
+          <path
+            d="M 10 80 A 70 70 0 0 1 150 80"
+            fill="none"
+            className={getColor(score)}
+            strokeWidth="10"
+            strokeLinecap="round"
+            strokeDasharray={`${progress} ${circumference}`}
+            style={{ transition: "stroke-dasharray 1s ease-out" }}
+          />
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-end pb-1">
+          <span className="text-3xl font-bold">{score}</span>
+        </div>
+      </div>
+      <span className="text-sm font-medium text-muted-foreground mt-1">{getLabel(score)}</span>
+      {lastUpdated && (
+        <span className="text-xs text-muted-foreground mt-0.5">
+          Updated {new Date(lastUpdated).toLocaleTimeString()}
+        </span>
+      )}
+    </div>
+  );
+};
+
 const Executive = () => {
   const { user } = useAuth();
   const { currentOrgId } = useOrganization();
@@ -84,23 +169,102 @@ const Executive = () => {
   const [activeRole, setActiveRole] = useState<RoleType>("ceo");
   const [brief, setBrief] = useState<Brief | null>(null);
   const [loading, setLoading] = useState(false);
+  const [signalsLoading, setSignalsLoading] = useState(false);
+  const [riskIndex, setRiskIndex] = useState<RiskIndex | null>(null);
+  const [dbAlerts, setDbAlerts] = useState<DbAlert[]>([]);
+  const [briefHistory, setBriefHistory] = useState<HistoricalBrief[]>([]);
 
   const isGated = !tier || tier === "starter";
+
+  // Fetch persistent data
+  const fetchSignalData = useCallback(async () => {
+    if (!currentOrgId || isGated) return;
+
+    // Fetch risk index
+    const { data: risk } = await supabase
+      .from("executive_risk_index")
+      .select("score, components, last_updated")
+      .eq("organization_id", currentOrgId)
+      .eq("role_type", activeRole)
+      .maybeSingle();
+
+    if (risk) {
+      setRiskIndex({
+        score: risk.score,
+        components: risk.components as any,
+        last_updated: risk.last_updated,
+      });
+    } else {
+      setRiskIndex(null);
+    }
+
+    // Fetch active alerts
+    const { data: alerts } = await supabase
+      .from("executive_alerts")
+      .select("id, title, severity, trigger_value, threshold_value, created_at")
+      .eq("organization_id", currentOrgId)
+      .eq("role_type", activeRole)
+      .eq("status", "active")
+      .order("created_at", { ascending: false });
+
+    setDbAlerts((alerts as any) || []);
+
+    // Fetch brief history
+    const { data: history } = await supabase
+      .from("executive_briefs")
+      .select("id, role_type, risk_score, generated_by, generated_at")
+      .eq("organization_id", currentOrgId)
+      .eq("role_type", activeRole)
+      .order("generated_at", { ascending: false })
+      .limit(10);
+
+    setBriefHistory((history as any) || []);
+  }, [currentOrgId, activeRole, isGated]);
+
+  useEffect(() => {
+    fetchSignalData();
+  }, [fetchSignalData]);
+
+  const computeSignals = async () => {
+    if (!currentOrgId) return;
+    setSignalsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("compute-executive-signals", {
+        body: { role_type: activeRole, organization_id: currentOrgId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      setRiskIndex({
+        score: data.overall_score,
+        components: data.components,
+        last_updated: data.computed_at,
+      });
+      setDbAlerts(data.triggered_alerts || []);
+      toast({ title: "Signals computed", description: `Risk score: ${data.overall_score}/100` });
+      fetchSignalData();
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setSignalsLoading(false);
+    }
+  };
 
   const generateBrief = async () => {
     if (!currentOrgId) return;
     setLoading(true);
     setBrief(null);
-
     try {
       const { data, error } = await supabase.functions.invoke("executive-brief", {
         body: { role_type: activeRole, organization_id: currentOrgId },
       });
-
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-
       setBrief(data as Brief);
+      if (data.cached) {
+        toast({ title: "Cached brief loaded", description: "Recent brief returned (< 6 hours old)" });
+      }
+      fetchSignalData();
     } catch (err: any) {
       toast({ title: "Error", description: err.message || "Failed to generate brief", variant: "destructive" });
     } finally {
@@ -119,13 +283,18 @@ const Executive = () => {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold tracking-tight">Executive Command</h1>
-              <p className="text-muted-foreground mt-1">Role-specific strategic intelligence</p>
+              <p className="text-muted-foreground mt-1">Strategic Health Monitoring System</p>
             </div>
-            {brief && urgency && (
-              <Badge className={`${urgency.bg} ${urgency.text} border-none px-4 py-2 text-sm font-semibold`}>
-                {urgency.label}
-              </Badge>
-            )}
+            <div className="flex items-center gap-3">
+              {brief && urgency && (
+                <Badge className={`${urgency.bg} ${urgency.text} border-none px-4 py-2 text-sm font-semibold`}>
+                  {urgency.label}
+                </Badge>
+              )}
+              {brief?.cached && (
+                <Badge variant="outline" className="text-xs">Cached</Badge>
+              )}
+            </div>
           </div>
 
           {/* Role Toggle */}
@@ -168,6 +337,124 @@ const Executive = () => {
             </Card>
           ) : (
             <>
+              {/* Risk Index + Signals + Actions Row */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Risk Dial */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Activity className="w-4 h-4 text-primary" />
+                      Strategic Risk Index
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="flex flex-col items-center pt-2">
+                    {riskIndex ? (
+                      <>
+                        <RiskDial score={riskIndex.score} lastUpdated={riskIndex.last_updated} />
+                        <div className="grid grid-cols-3 gap-3 w-full mt-4 text-center">
+                          <div>
+                            <p className="text-xs text-muted-foreground">Deviation</p>
+                            <p className="font-semibold text-sm">{riskIndex.components.deviation}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">Trend</p>
+                            <p className="font-semibold text-sm">{riskIndex.components.trend}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">Volatility</p>
+                            <p className="font-semibold text-sm">{riskIndex.components.volatility}</p>
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-center py-6">
+                        <p className="text-sm text-muted-foreground mb-2">No signals computed yet</p>
+                      </div>
+                    )}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={computeSignals}
+                      disabled={signalsLoading}
+                      className="mt-4 w-full"
+                    >
+                      {signalsLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <RefreshCw className="w-4 h-4 mr-2" />}
+                      Compute Signals
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                {/* Persistent Alerts */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <AlertTriangle className="w-4 h-4 text-amber-400" />
+                      Active Alerts ({dbAlerts.length})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {dbAlerts.length > 0 ? (
+                      <div className="space-y-2 max-h-64 overflow-y-auto">
+                        {dbAlerts.map((alert) => {
+                          const style = SEVERITY_STYLES[alert.severity] || SEVERITY_STYLES.info;
+                          const Icon = style.icon;
+                          return (
+                            <div key={alert.id} className="flex items-start gap-2 p-2.5 rounded-lg bg-muted/30">
+                              <Icon className={`w-4 h-4 mt-0.5 shrink-0 ${style.color}`} />
+                              <div className="min-w-0">
+                                <p className="text-xs font-semibold truncate">{alert.title}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {Number(alert.trigger_value).toFixed(1)} vs {Number(alert.threshold_value).toFixed(1)}
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center py-8 gap-2">
+                        <CheckCircle2 className="w-8 h-8 text-emerald-400" />
+                        <p className="text-sm text-muted-foreground">All systems nominal</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Brief History */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <History className="w-4 h-4 text-primary" />
+                      Brief Timeline
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {briefHistory.length > 0 ? (
+                      <div className="space-y-2 max-h-64 overflow-y-auto">
+                        {briefHistory.map((b) => (
+                          <div key={b.id} className="flex items-center justify-between p-2.5 rounded-lg bg-muted/30">
+                            <div>
+                              <p className="text-xs font-semibold capitalize">{b.generated_by}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {new Date(b.generated_at).toLocaleDateString()} {new Date(b.generated_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                              </p>
+                            </div>
+                            <Badge variant="outline" className="text-xs">
+                              Risk: {b.risk_score}
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center py-8 gap-2">
+                        <History className="w-8 h-8 text-muted-foreground/50" />
+                        <p className="text-sm text-muted-foreground">No briefs generated yet</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+
               {/* Generate Button */}
               {!brief && !loading && (
                 <Card className="border-primary/20 bg-primary/5">
@@ -177,7 +464,7 @@ const Executive = () => {
                         Generate {ROLES.find((r) => r.key === activeRole)?.label} Brief
                       </h3>
                       <p className="text-sm text-muted-foreground">
-                        AI will analyze your KPIs and metrics for role-specific insights
+                        AI interprets deterministic signals for role-specific insights
                       </p>
                     </div>
                     <Button size="lg" onClick={generateBrief}>
@@ -210,6 +497,7 @@ const Executive = () => {
                       </CardTitle>
                       <CardDescription>
                         Generated {new Date(brief.generated_at).toLocaleString()}
+                        {brief.risk_score !== undefined && ` · Risk Score: ${brief.risk_score}/100`}
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -217,7 +505,7 @@ const Executive = () => {
                     </CardContent>
                   </Card>
 
-                  {/* Critical Alerts */}
+                  {/* Critical Alerts from AI */}
                   {brief.critical_alerts.length > 0 && (
                     <Card className="border-destructive/20">
                       <CardHeader>
