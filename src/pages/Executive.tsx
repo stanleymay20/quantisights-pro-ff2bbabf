@@ -4,14 +4,16 @@ import { useOrganization } from "@/hooks/useOrganization";
 import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
+import ExecutiveCopilot from "@/components/dashboard/ExecutiveCopilot";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import {
   Crown, TrendingUp, TrendingDown, Shield, Target, AlertTriangle,
   Zap, Clock, ChevronRight, Loader2, Lock, BarChart3, DollarSign, Users, Settings2,
-  Activity, History, RefreshCw, CheckCircle2, Bell, Mail, MessageSquare, Save,
+  Activity, History, RefreshCw, CheckCircle2, Bell, Mail, MessageSquare, Save, Brain,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -364,7 +366,7 @@ const Executive = () => {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold tracking-tight">Executive Command</h1>
-              <p className="text-muted-foreground mt-1">Strategic Health Monitoring System</p>
+              <p className="text-muted-foreground mt-1">Strategic Health Monitoring & AI Intelligence</p>
             </div>
             <div className="flex items-center gap-3">
               {riskIndex?.escalation_required && (
@@ -426,7 +428,19 @@ const Executive = () => {
               </CardContent>
             </Card>
           ) : (
-            <>
+            <Tabs defaultValue="command" className="space-y-6">
+              <TabsList className="grid w-full max-w-md grid-cols-2">
+                <TabsTrigger value="command" className="gap-2">
+                  <Activity className="w-4 h-4" />
+                  Command Center
+                </TabsTrigger>
+                <TabsTrigger value="copilot" className="gap-2">
+                  <Brain className="w-4 h-4" />
+                  AI Copilot
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="command" className="space-y-6">
               {/* Risk Index + Signals + Actions Row */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Risk Dial */}
@@ -851,7 +865,17 @@ const Executive = () => {
                   </CardContent>
                 </Card>
               )}
-            </>
+              </TabsContent>
+
+              <TabsContent value="copilot">
+                <ExecutiveCopilot
+                  organizationId={currentOrgId!}
+                  roleType={activeRole}
+                  riskScore={riskIndex?.score}
+                  tier={tier}
+                />
+              </TabsContent>
+            </Tabs>
           )}
         </div>
       </main>

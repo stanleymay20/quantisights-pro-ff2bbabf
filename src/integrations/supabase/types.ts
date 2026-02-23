@@ -14,6 +14,115 @@ export type Database = {
   }
   public: {
     Tables: {
+      copilot_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          organization_id: string
+          role: string
+          session_id: string
+          structured_response: Json | null
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          organization_id: string
+          role: string
+          session_id: string
+          structured_response?: Json | null
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          organization_id?: string
+          role?: string
+          session_id?: string
+          structured_response?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "copilot_messages_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "copilot_messages_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "copilot_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      copilot_sessions: {
+        Row: {
+          created_at: string
+          id: string
+          organization_id: string
+          role_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          organization_id: string
+          role_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          organization_id?: string
+          role_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "copilot_sessions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      copilot_usage: {
+        Row: {
+          call_count: number
+          date: string
+          id: string
+          organization_id: string
+        }
+        Insert: {
+          call_count?: number
+          date?: string
+          id?: string
+          organization_id: string
+        }
+        Update: {
+          call_count?: number
+          date?: string
+          id?: string
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "copilot_usage_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       data_sources: {
         Row: {
           config: Json
@@ -1086,6 +1195,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cleanup_old_copilot_messages: { Args: never; Returns: undefined }
       get_user_org_role: {
         Args: { _org_id: string; _user_id: string }
         Returns: Database["public"]["Enums"]["org_role"]
@@ -1098,6 +1208,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_copilot_usage: { Args: { _org_id: string }; Returns: undefined }
       is_org_member: {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean
