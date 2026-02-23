@@ -47,3 +47,6 @@ verify_jwt = false
 
 [functions.send-executive-alert]
 verify_jwt = false
+
+[functions.test-executive-alert]
+verify_jwt = false
