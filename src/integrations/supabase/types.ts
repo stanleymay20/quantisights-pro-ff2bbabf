@@ -1122,6 +1122,35 @@ export type Database = {
           },
         ]
       }
+      simulation_usage: {
+        Row: {
+          call_count: number
+          date: string
+          id: string
+          organization_id: string
+        }
+        Insert: {
+          call_count?: number
+          date?: string
+          id?: string
+          organization_id: string
+        }
+        Update: {
+          call_count?: number
+          date?: string
+          id?: string
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "simulation_usage_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscriptions: {
         Row: {
           cancel_at_period_end: boolean
@@ -1209,6 +1238,10 @@ export type Database = {
         Returns: boolean
       }
       increment_copilot_usage: { Args: { _org_id: string }; Returns: undefined }
+      increment_simulation_usage: {
+        Args: { _org_id: string }
+        Returns: undefined
+      }
       is_org_member: {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean
