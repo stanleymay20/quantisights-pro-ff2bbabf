@@ -53,3 +53,6 @@ verify_jwt = false
 
 [functions.executive-copilot]
 verify_jwt = false
+
+[functions.strategic-simulation]
+verify_jwt = false

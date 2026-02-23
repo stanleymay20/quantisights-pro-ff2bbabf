@@ -5,6 +5,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
 import ExecutiveCopilot from "@/components/dashboard/ExecutiveCopilot";
+import StrategicSimulation from "@/components/dashboard/StrategicSimulation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -429,7 +430,7 @@ const Executive = () => {
             </Card>
           ) : (
             <Tabs defaultValue="command" className="space-y-6">
-              <TabsList className="grid w-full max-w-md grid-cols-2">
+              <TabsList className="grid w-full max-w-lg grid-cols-3">
                 <TabsTrigger value="command" className="gap-2">
                   <Activity className="w-4 h-4" />
                   Command Center
@@ -437,6 +438,10 @@ const Executive = () => {
                 <TabsTrigger value="copilot" className="gap-2">
                   <Brain className="w-4 h-4" />
                   AI Copilot
+                </TabsTrigger>
+                <TabsTrigger value="simulation" className="gap-2">
+                  <Target className="w-4 h-4" />
+                  Simulation
                 </TabsTrigger>
               </TabsList>
 
@@ -872,6 +877,14 @@ const Executive = () => {
                   organizationId={currentOrgId!}
                   roleType={activeRole}
                   riskScore={riskIndex?.score}
+                  tier={tier}
+                />
+              </TabsContent>
+
+              <TabsContent value="simulation">
+                <StrategicSimulation
+                  organizationId={currentOrgId!}
+                  roleType={activeRole}
                   tier={tier}
                 />
               </TabsContent>
