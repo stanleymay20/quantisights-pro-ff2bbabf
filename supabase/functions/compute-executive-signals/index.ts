@@ -232,7 +232,18 @@ serve(async (req) => {
       forecast: 0,
     };
 
-    // Upsert risk index
+    // Escalation logic
+    const criticalAlertCount = triggeredAlerts.filter((a) => a.severity === "critical").length;
+    const escalationRequired = riskScore > 85 || criticalAlertCount >= 3;
+    const escalationReason = escalationRequired
+      ? riskScore > 85 && criticalAlertCount >= 3
+        ? `Risk score ${riskScore}/100 with ${criticalAlertCount} critical alerts`
+        : riskScore > 85
+          ? `Risk score critically elevated at ${riskScore}/100`
+          : `${criticalAlertCount} critical alerts active simultaneously`
+      : null;
+
+    // Upsert risk index with escalation
     await serviceClient
       .from("executive_risk_index")
       .upsert(
@@ -242,6 +253,8 @@ serve(async (req) => {
           score: riskScore,
           components,
           last_updated: new Date().toISOString(),
+          escalation_required: escalationRequired,
+          escalation_reason: escalationReason,
         },
         { onConflict: "organization_id,role_type" }
       );
@@ -295,6 +308,37 @@ serve(async (req) => {
       .eq("status", "active")
       .order("created_at", { ascending: false });
 
+    // Trigger notification distribution
+    const hasNewCritical = triggeredAlerts.some((a) => {
+      const isNew = !(existingAlerts || []).some((ea) => ea.title === a.title && ea.kpi_id === a.kpi_id);
+      return isNew && a.severity === "critical";
+    });
+
+    const shouldNotify = hasNewCritical || escalationRequired || riskScore >= 75;
+
+    if (shouldNotify) {
+      try {
+        const notifyUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-executive-alert`;
+        await fetch(notifyUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+          },
+          body: JSON.stringify({
+            organization_id,
+            role_type,
+            risk_score: riskScore,
+            alerts: (activeAlerts || []).map((a) => ({ title: a.title, severity: a.severity })),
+            escalation_required: escalationRequired,
+            escalation_reason: escalationReason,
+          }),
+        });
+      } catch (notifErr) {
+        console.error("Failed to trigger notification:", notifErr);
+      }
+    }
+
     console.log(JSON.stringify({
       event: "executive_signals_computed",
       organization_id,
@@ -302,6 +346,8 @@ serve(async (req) => {
       risk_score: riskScore,
       alerts_created: triggeredAlerts.length,
       kpis_analyzed: kpiCount,
+      escalation_required: escalationRequired,
+      notification_triggered: shouldNotify,
     }));
 
     return new Response(JSON.stringify({
@@ -310,6 +356,8 @@ serve(async (req) => {
       components,
       kpi_signals: kpiSignals,
       triggered_alerts: activeAlerts || [],
+      escalation_required: escalationRequired,
+      escalation_reason: escalationReason,
       computed_at: new Date().toISOString(),
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

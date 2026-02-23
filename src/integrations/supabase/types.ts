@@ -238,6 +238,8 @@ export type Database = {
           id: string
           kpi_id: string | null
           metric_type: string | null
+          notification_channel: string | null
+          notified_at: string | null
           organization_id: string
           resolved_at: string | null
           role_type: string
@@ -252,6 +254,8 @@ export type Database = {
           id?: string
           kpi_id?: string | null
           metric_type?: string | null
+          notification_channel?: string | null
+          notified_at?: string | null
           organization_id: string
           resolved_at?: string | null
           role_type: string
@@ -266,6 +270,8 @@ export type Database = {
           id?: string
           kpi_id?: string | null
           metric_type?: string | null
+          notification_channel?: string | null
+          notified_at?: string | null
           organization_id?: string
           resolved_at?: string | null
           role_type?: string
@@ -372,7 +378,10 @@ export type Database = {
         Row: {
           components: Json
           created_at: string
+          escalation_reason: string | null
+          escalation_required: boolean
           id: string
+          last_notified_at: string | null
           last_updated: string
           organization_id: string
           role_type: string
@@ -381,7 +390,10 @@ export type Database = {
         Insert: {
           components?: Json
           created_at?: string
+          escalation_reason?: string | null
+          escalation_required?: boolean
           id?: string
+          last_notified_at?: string | null
           last_updated?: string
           organization_id: string
           role_type: string
@@ -390,7 +402,10 @@ export type Database = {
         Update: {
           components?: Json
           created_at?: string
+          escalation_reason?: string | null
+          escalation_required?: boolean
           id?: string
+          last_notified_at?: string | null
           last_updated?: string
           organization_id?: string
           role_type?: string
@@ -625,6 +640,106 @@ export type Database = {
           },
           {
             foreignKeyName: "metrics_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_log: {
+        Row: {
+          channel: string
+          created_at: string
+          error_message: string | null
+          id: string
+          metadata: Json
+          organization_id: string
+          recipients: string[]
+          role_type: string
+          status: string
+          subject: string
+        }
+        Insert: {
+          channel: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json
+          organization_id: string
+          recipients?: string[]
+          role_type: string
+          status?: string
+          subject: string
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json
+          organization_id?: string
+          recipients?: string[]
+          role_type?: string
+          status?: string
+          subject?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_log_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_preferences: {
+        Row: {
+          alert_threshold: number
+          created_at: string
+          email_enabled: boolean
+          email_recipients: string[]
+          escalation_threshold: number
+          id: string
+          organization_id: string
+          role_type: string
+          slack_enabled: boolean
+          slack_webhook_url: string | null
+          updated_at: string
+          weekly_brief_enabled: boolean
+        }
+        Insert: {
+          alert_threshold?: number
+          created_at?: string
+          email_enabled?: boolean
+          email_recipients?: string[]
+          escalation_threshold?: number
+          id?: string
+          organization_id: string
+          role_type: string
+          slack_enabled?: boolean
+          slack_webhook_url?: string | null
+          updated_at?: string
+          weekly_brief_enabled?: boolean
+        }
+        Update: {
+          alert_threshold?: number
+          created_at?: string
+          email_enabled?: boolean
+          email_recipients?: string[]
+          escalation_threshold?: number
+          id?: string
+          organization_id?: string
+          role_type?: string
+          slack_enabled?: boolean
+          slack_webhook_url?: string | null
+          updated_at?: string
+          weekly_brief_enabled?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_preferences_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
