@@ -50,3 +50,6 @@ verify_jwt = false
 
 [functions.test-executive-alert]
 verify_jwt = false
+
+[functions.executive-copilot]
+verify_jwt = false
