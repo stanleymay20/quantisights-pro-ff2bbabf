@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
 import ExecutiveCopilot from "@/components/dashboard/ExecutiveCopilot";
 import StrategicSimulation from "@/components/dashboard/StrategicSimulation";
+import ExecutiveConvergence from "@/components/dashboard/ExecutiveConvergence";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -430,7 +431,7 @@ const Executive = () => {
             </Card>
           ) : (
             <Tabs defaultValue="command" className="space-y-6">
-              <TabsList className="grid w-full max-w-lg grid-cols-3">
+              <TabsList className="grid w-full max-w-2xl grid-cols-4">
                 <TabsTrigger value="command" className="gap-2">
                   <Activity className="w-4 h-4" />
                   Command Center
@@ -442,6 +443,10 @@ const Executive = () => {
                 <TabsTrigger value="simulation" className="gap-2">
                   <Target className="w-4 h-4" />
                   Simulation
+                </TabsTrigger>
+                <TabsTrigger value="convergence" className="gap-2">
+                  <Users className="w-4 h-4" />
+                  Convergence
                 </TabsTrigger>
               </TabsList>
 
@@ -885,6 +890,13 @@ const Executive = () => {
                 <StrategicSimulation
                   organizationId={currentOrgId!}
                   roleType={activeRole}
+                  tier={tier}
+                />
+              </TabsContent>
+
+              <TabsContent value="convergence">
+                <ExecutiveConvergence
+                  organizationId={currentOrgId!}
                   tier={tier}
                 />
               </TabsContent>

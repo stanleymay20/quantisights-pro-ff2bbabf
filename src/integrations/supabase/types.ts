@@ -14,6 +14,35 @@ export type Database = {
   }
   public: {
     Tables: {
+      convergence_usage: {
+        Row: {
+          call_count: number
+          date: string
+          id: string
+          organization_id: string
+        }
+        Insert: {
+          call_count?: number
+          date?: string
+          id?: string
+          organization_id: string
+        }
+        Update: {
+          call_count?: number
+          date?: string
+          id?: string
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "convergence_usage_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       copilot_messages: {
         Row: {
           content: string
@@ -438,6 +467,91 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "executive_briefs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      executive_conflicts: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          organization_id: string
+          resolved_at: string | null
+          role_1: string
+          role_2: string
+          rule_triggered: string
+          severity: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          organization_id: string
+          resolved_at?: string | null
+          role_1: string
+          role_2: string
+          rule_triggered: string
+          severity?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          organization_id?: string
+          resolved_at?: string | null
+          role_1?: string
+          role_2?: string
+          rule_triggered?: string
+          severity?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "executive_conflicts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      executive_convergence_index: {
+        Row: {
+          alignment_status: string
+          conflict_penalty: number
+          created_at: string
+          dispersion: number
+          id: string
+          organization_id: string
+          score: number
+          volatility_divergence: number
+        }
+        Insert: {
+          alignment_status?: string
+          conflict_penalty?: number
+          created_at?: string
+          dispersion?: number
+          id?: string
+          organization_id: string
+          score?: number
+          volatility_divergence?: number
+        }
+        Update: {
+          alignment_status?: string
+          conflict_penalty?: number
+          created_at?: string
+          dispersion?: number
+          id?: string
+          organization_id?: string
+          score?: number
+          volatility_divergence?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "executive_convergence_index_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -1236,6 +1350,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_convergence_usage: {
+        Args: { _org_id: string }
+        Returns: undefined
       }
       increment_copilot_usage: { Args: { _org_id: string }; Returns: undefined }
       increment_simulation_usage: {
