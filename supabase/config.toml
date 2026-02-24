@@ -56,3 +56,6 @@ verify_jwt = false
 
 [functions.strategic-simulation]
 verify_jwt = false
+
+[functions.executive-convergence]
+verify_jwt = false

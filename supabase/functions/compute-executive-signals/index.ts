@@ -339,6 +339,25 @@ serve(async (req) => {
       }
     }
 
+    // Auto-trigger convergence computation
+    try {
+      const convergenceUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/executive-convergence`;
+      await fetch(convergenceUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: authHeader,
+        },
+        body: JSON.stringify({
+          organization_id,
+          trigger: "auto",
+        }),
+      });
+      console.log(JSON.stringify({ event: "convergence_auto_triggered", organization_id }));
+    } catch (convErr) {
+      console.error("Failed to trigger convergence:", convErr);
+    }
+
     console.log(JSON.stringify({
       event: "executive_signals_computed",
       organization_id,
