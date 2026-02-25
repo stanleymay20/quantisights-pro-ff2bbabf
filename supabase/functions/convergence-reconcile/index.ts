@@ -128,8 +128,8 @@ serve(async (req) => {
     let errors = 0;
 
     // Process in batches of 5
-    for (let i = 0; i < subs.length; i += 5) {
-      const batch = subs.slice(i, i + 5);
+    for (let i = 0; i < subs.length; i += 10) {
+      const batch = subs.slice(i, i + 10);
       await Promise.all(batch.map(async (sub) => {
         const orgId = sub.organization_id;
         try {
