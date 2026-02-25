@@ -28,6 +28,7 @@ const navSections = [
       { icon: TrendingUp, label: "Simulations", path: "/simulations" },
       { icon: Crown, label: "Executive Command", path: "/executive" },
       { icon: FileText, label: "Reports", path: "/reports" },
+      { icon: BarChart3, label: "Strategy Pack", path: "/strategy-pack" },
     ],
   },
   {
