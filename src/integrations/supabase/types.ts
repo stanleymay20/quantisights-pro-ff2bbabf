@@ -727,6 +727,33 @@ export type Database = {
           },
         ]
       }
+      kpi_templates: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          industry: string
+          kpis: Json
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          industry: string
+          kpis?: Json
+          name: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          industry?: string
+          kpis?: Json
+          name?: string
+        }
+        Relationships: []
+      }
       kpi_values: {
         Row: {
           computed_at: string
@@ -1007,19 +1034,31 @@ export type Database = {
           created_at: string
           created_by: string | null
           id: string
+          industry: string | null
           name: string
+          onboarding_completed: boolean
+          revenue_band: string | null
+          size_band: string | null
         }
         Insert: {
           created_at?: string
           created_by?: string | null
           id?: string
+          industry?: string | null
           name: string
+          onboarding_completed?: boolean
+          revenue_band?: string | null
+          size_band?: string | null
         }
         Update: {
           created_at?: string
           created_by?: string | null
           id?: string
+          industry?: string | null
           name?: string
+          onboarding_completed?: boolean
+          revenue_band?: string | null
+          size_band?: string | null
         }
         Relationships: []
       }
