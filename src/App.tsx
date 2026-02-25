@@ -19,6 +19,9 @@ import Pricing from "./pages/Pricing";
 import NotFound from "./pages/NotFound";
 import Executive from "./pages/Executive";
 import BoardReport from "./pages/BoardReport";
+import Team from "./pages/Team";
+import Clients from "./pages/Clients";
+import AcceptInvite from "./pages/AcceptInvite";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +37,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/accept-invite" element={<AcceptInvite />} />
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/data-upload" element={<ProtectedRoute><DataUpload /></ProtectedRoute>} />
               <Route path="/data-sources" element={<ProtectedRoute><DataSources /></ProtectedRoute>} />
@@ -42,6 +46,8 @@ const App = () => (
               <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
               <Route path="/executive" element={<ProtectedRoute><Executive /></ProtectedRoute>} />
               <Route path="/board-report" element={<ProtectedRoute><BoardReport /></ProtectedRoute>} />
+              <Route path="/team" element={<ProtectedRoute><Team /></ProtectedRoute>} />
+              <Route path="/clients" element={<ProtectedRoute><Clients /></ProtectedRoute>} />
               <Route path="/pricing" element={<Pricing />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
