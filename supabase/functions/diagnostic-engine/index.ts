@@ -36,7 +36,23 @@ function computeDiagnostics(metrics: MetricRow[]): DiagnosticResult[] {
   const results: DiagnosticResult[] = [];
 
   for (const [type, rows] of Object.entries(grouped)) {
-    if (rows.length < 2) continue;
+    // STATISTICAL DEPTH GATE: require minimum 8 data points for credible diagnostics
+    if (rows.length < 8) {
+      if (rows.length >= 2) {
+        results.push({
+          metric_type: type,
+          diagnosis: `Insufficient data (${rows.length} points). Minimum 8 required for credible analysis.`,
+          severity: "info",
+          root_cause: "Data depth insufficient for statistical validity.",
+          causal_factors: [`Only ${rows.length} data points available`],
+          trend_direction: "stable",
+          change_pct: 0,
+          recommendation: "Upload more historical data to enable diagnostics.",
+          confidence: 0,
+        });
+      }
+      continue;
+    }
 
     const sorted = rows.sort((a, b) => a.date.localeCompare(b.date));
     const values = sorted.map(r => Number(r.value));
@@ -92,7 +108,10 @@ function computeDiagnostics(metrics: MetricRow[]): DiagnosticResult[] {
     let diagnosis = "";
     let rootCause = "";
     let recommendation = "";
-    let confidence = 70;
+    // Confidence scales with sample size, variance stability, and data freshness
+    const sampleBonus = Math.min((n - 8) * 2, 20); // 0-20 bonus for more data
+    const stabilityBonus = volatility < 15 ? 10 : volatility < 30 ? 5 : 0;
+    let confidence = 50 + sampleBonus + stabilityBonus; // base 50, max ~90
 
     if (type === "revenue") {
       if (changePct < -10) {

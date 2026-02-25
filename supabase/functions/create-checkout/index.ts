@@ -7,6 +7,19 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const ALLOWED_ORIGINS = [
+  "https://quantisights-pro.lovable.app",
+  "https://id-preview--28b43e06-9231-4c54-bc18-a49be01a6516.lovable.app",
+  "http://localhost:5173",
+  "http://localhost:3000",
+];
+
+function getAllowedOrigin(req: Request): string {
+  const origin = req.headers.get("origin") || "";
+  if (ALLOWED_ORIGINS.some(o => origin.startsWith(o))) return origin;
+  return ALLOWED_ORIGINS[0]; // fallback to production
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -42,8 +55,8 @@ serve(async (req) => {
       customer_email: customerId ? undefined : user.email,
       line_items: [{ price: priceId, quantity: 1 }],
       mode: "subscription",
-      success_url: `${req.headers.get("origin")}/dashboard?checkout=success`,
-      cancel_url: `${req.headers.get("origin")}/pricing`,
+      success_url: `${getAllowedOrigin(req)}/dashboard?checkout=success`,
+      cancel_url: `${getAllowedOrigin(req)}/pricing`,
     });
 
     return new Response(JSON.stringify({ url: session.url }), {

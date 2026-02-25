@@ -32,15 +32,13 @@ serve(async (req) => {
       }
     }
 
-    // If no org specified, run for all active orgs
-    let orgIds: string[] = [];
-    if (orgId) {
-      orgIds = [orgId];
-    } else {
-      const resp = await fetch(`${supabaseUrl}/rest/v1/organizations?onboarding_completed=eq.true&select=id`, { headers });
-      const orgs = await resp.json();
-      orgIds = (orgs || []).map((o: any) => o.id);
+    // SECURITY: organization_id is always required — no all-orgs path
+    if (!orgId) {
+      return new Response(JSON.stringify({ error: "organization_id is required" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
+    const orgIds: string[] = [orgId];
 
     const results: any[] = [];
 
