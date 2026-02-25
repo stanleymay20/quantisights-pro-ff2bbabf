@@ -22,7 +22,9 @@ export type Database = {
           category: string
           confidence: number | null
           created_at: string
+          data_snapshot_date: string | null
           expected_impact: string | null
+          generation_version: number | null
           id: string
           impact_score: number | null
           kpi_affected: Json | null
@@ -32,6 +34,7 @@ export type Database = {
           rationale: string | null
           resolution_summary: string | null
           resolved_at: string | null
+          source_evidence: Json | null
           status: string
           timeframe: string | null
           title: string
@@ -44,7 +47,9 @@ export type Database = {
           category?: string
           confidence?: number | null
           created_at?: string
+          data_snapshot_date?: string | null
           expected_impact?: string | null
+          generation_version?: number | null
           id?: string
           impact_score?: number | null
           kpi_affected?: Json | null
@@ -54,6 +59,7 @@ export type Database = {
           rationale?: string | null
           resolution_summary?: string | null
           resolved_at?: string | null
+          source_evidence?: Json | null
           status?: string
           timeframe?: string | null
           title: string
@@ -66,7 +72,9 @@ export type Database = {
           category?: string
           confidence?: number | null
           created_at?: string
+          data_snapshot_date?: string | null
           expected_impact?: string | null
+          generation_version?: number | null
           id?: string
           impact_score?: number | null
           kpi_affected?: Json | null
@@ -76,6 +84,7 @@ export type Database = {
           rationale?: string | null
           resolution_summary?: string | null
           resolved_at?: string | null
+          source_evidence?: Json | null
           status?: string
           timeframe?: string | null
           title?: string
@@ -276,6 +285,60 @@ export type Database = {
           },
         ]
       }
+      data_quality_checks: {
+        Row: {
+          check_type: string
+          created_at: string
+          dataset_id: string | null
+          details: Json | null
+          id: string
+          organization_id: string
+          records_checked: number | null
+          records_failed: number | null
+          score: number | null
+          status: string
+        }
+        Insert: {
+          check_type?: string
+          created_at?: string
+          dataset_id?: string | null
+          details?: Json | null
+          id?: string
+          organization_id: string
+          records_checked?: number | null
+          records_failed?: number | null
+          score?: number | null
+          status?: string
+        }
+        Update: {
+          check_type?: string
+          created_at?: string
+          dataset_id?: string | null
+          details?: Json | null
+          id?: string
+          organization_id?: string
+          records_checked?: number | null
+          records_failed?: number | null
+          score?: number | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "data_quality_checks_dataset_id_fkey"
+            columns: ["dataset_id"]
+            isOneToOne: false
+            referencedRelation: "datasets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "data_quality_checks_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       data_sources: {
         Row: {
           config: Json
@@ -444,7 +507,10 @@ export type Database = {
           current_version: number | null
           data_source_id: string | null
           file_path: string | null
+          freshness_policy_hours: number | null
           id: string
+          is_stale: boolean | null
+          last_refreshed_at: string | null
           name: string
           organization_id: string
           row_count: number | null
@@ -457,7 +523,10 @@ export type Database = {
           current_version?: number | null
           data_source_id?: string | null
           file_path?: string | null
+          freshness_policy_hours?: number | null
           id?: string
+          is_stale?: boolean | null
+          last_refreshed_at?: string | null
           name: string
           organization_id: string
           row_count?: number | null
@@ -470,7 +539,10 @@ export type Database = {
           current_version?: number | null
           data_source_id?: string | null
           file_path?: string | null
+          freshness_policy_hours?: number | null
           id?: string
+          is_stale?: boolean | null
+          last_refreshed_at?: string | null
           name?: string
           organization_id?: string
           row_count?: number | null
@@ -771,34 +843,96 @@ export type Database = {
       insights: {
         Row: {
           category: string | null
+          confidence_score: number | null
           created_at: string
+          generation_model: string | null
           id: string
           is_read: boolean
           message: string
           organization_id: string
           severity: string
+          source_kpi_id: string | null
+          source_metric_ids: Json | null
         }
         Insert: {
           category?: string | null
+          confidence_score?: number | null
           created_at?: string
+          generation_model?: string | null
           id?: string
           is_read?: boolean
           message: string
           organization_id: string
           severity?: string
+          source_kpi_id?: string | null
+          source_metric_ids?: Json | null
         }
         Update: {
           category?: string | null
+          confidence_score?: number | null
           created_at?: string
+          generation_model?: string | null
           id?: string
           is_read?: boolean
           message?: string
           organization_id?: string
           severity?: string
+          source_kpi_id?: string | null
+          source_metric_ids?: Json | null
         }
         Relationships: [
           {
             foreignKeyName: "insights_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      intelligence_audit_trail: {
+        Row: {
+          confidence_score: number | null
+          created_at: string
+          entity_id: string
+          entity_type: string
+          event_type: string
+          id: string
+          input_data: Json | null
+          model_used: string | null
+          organization_id: string
+          output_data: Json | null
+          processing_time_ms: number | null
+        }
+        Insert: {
+          confidence_score?: number | null
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          event_type: string
+          id?: string
+          input_data?: Json | null
+          model_used?: string | null
+          organization_id: string
+          output_data?: Json | null
+          processing_time_ms?: number | null
+        }
+        Update: {
+          confidence_score?: number | null
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          event_type?: string
+          id?: string
+          input_data?: Json | null
+          model_used?: string | null
+          organization_id?: string
+          output_data?: Json | null
+          processing_time_ms?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intelligence_audit_trail_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -880,25 +1014,34 @@ export type Database = {
       }
       kpi_values: {
         Row: {
+          computation_version: number | null
           computed_at: string
           date: string
+          formula_snapshot: string | null
           id: string
+          input_metric_ids: Json | null
           kpi_id: string
           organization_id: string
           value: number
         }
         Insert: {
+          computation_version?: number | null
           computed_at?: string
           date: string
+          formula_snapshot?: string | null
           id?: string
+          input_metric_ids?: Json | null
           kpi_id: string
           organization_id: string
           value: number
         }
         Update: {
+          computation_version?: number | null
           computed_at?: string
           date?: string
+          formula_snapshot?: string | null
           id?: string
+          input_metric_ids?: Json | null
           kpi_id?: string
           organization_id?: string
           value?: number
@@ -976,10 +1119,14 @@ export type Database = {
           dataset_id: string | null
           date: string
           id: string
+          ingested_at: string
           metric_type: string
           organization_id: string
+          quality_score: number | null
           region: string | null
           segment: string | null
+          source_id: string | null
+          source_type: string
           value: number
         }
         Insert: {
@@ -987,10 +1134,14 @@ export type Database = {
           dataset_id?: string | null
           date: string
           id?: string
+          ingested_at?: string
           metric_type: string
           organization_id: string
+          quality_score?: number | null
           region?: string | null
           segment?: string | null
+          source_id?: string | null
+          source_type?: string
           value: number
         }
         Update: {
@@ -998,10 +1149,14 @@ export type Database = {
           dataset_id?: string | null
           date?: string
           id?: string
+          ingested_at?: string
           metric_type?: string
           organization_id?: string
+          quality_score?: number | null
           region?: string | null
           segment?: string | null
+          source_id?: string | null
+          source_type?: string
           value?: number
         }
         Relationships: [
@@ -1624,6 +1779,7 @@ export type Database = {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean
       }
+      update_dataset_staleness: { Args: never; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "analyst" | "executive" | "client_viewer"

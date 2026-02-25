@@ -1,18 +1,17 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { ArrowRight, Shield, BarChart3, Zap } from "lucide-react";
+import { ArrowRight, Shield, BarChart3, Zap, TrendingUp, Brain, CheckCircle2 } from "lucide-react";
 import heroVisual from "@/assets/hero-visual.png";
 
-const TRUST_BADGES = [
-  { icon: Shield, label: "Enterprise-grade security" },
-  { icon: BarChart3, label: "Real-time KPI intelligence" },
-  { icon: Zap, label: "Autonomous advisory" },
+const PROOF_POINTS = [
+  "From data ingestion to board-ready advisory in minutes",
+  "Every insight traceable to verified operational data",
+  "No dashboards to configure — intelligence is autonomous",
 ];
 
 const HeroSection = () => {
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden pt-20">
-      {/* Background glow effects */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-[120px]" />
         <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-blue-500/8 rounded-full blur-[100px]" />
@@ -32,18 +31,29 @@ const HeroSection = () => {
               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary/20 bg-primary/5 text-xs font-medium text-primary mb-6"
             >
               <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-              Executive Intelligence Platform
+              The Executive Operating System
             </motion.div>
 
-            <h1 className="text-5xl lg:text-6xl xl:text-7xl font-bold font-display leading-tight mb-6">
-              Transforming Data{" "}
+            <h1 className="text-5xl lg:text-6xl xl:text-7xl font-bold font-display leading-[1.08] mb-6">
+              Stop Reporting.{" "}
               <br className="hidden sm:block" />
-              into Strategic{" "}
-              <span className="gradient-text">Clarity</span>
+              Start{" "}
+              <span className="gradient-text">Deciding.</span>
             </h1>
             <p className="text-lg text-muted-foreground max-w-lg mb-8 leading-relaxed">
-              Autonomous diagnostics, prescriptive advisory, and executive decision support — powered by your real operational data.
+              Quantivis isn't a dashboard — it's an autonomous intelligence engine that ingests your operational data, diagnoses root causes, and prescribes strategic action with traceable confidence scores.
             </p>
+
+            {/* Proof points */}
+            <div className="space-y-2.5 mb-8">
+              {PROOF_POINTS.map((point) => (
+                <div key={point} className="flex items-start gap-2.5">
+                  <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                  <span className="text-sm text-foreground/80">{point}</span>
+                </div>
+              ))}
+            </div>
+
             <div className="flex flex-col sm:flex-row gap-4">
               <Link
                 to="/register"
@@ -52,26 +62,26 @@ const HeroSection = () => {
                 Start Free Trial <ArrowRight className="w-4 h-4" />
               </Link>
               <a
-                href="#features"
+                href="#how-it-works"
                 className="inline-flex items-center justify-center px-8 py-4 rounded-xl glass-card text-foreground font-semibold text-base hover:border-primary/30 transition-all"
               >
-                See How It Works
+                See the Difference
               </a>
             </div>
 
-            {/* Trust badges */}
+            {/* Category differentiator */}
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6 }}
-              className="flex flex-wrap gap-5 mt-10"
+              className="mt-10 pt-8 border-t border-border/20"
             >
-              {TRUST_BADGES.map((badge) => (
-                <div key={badge.label} className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <badge.icon className="w-3.5 h-3.5 text-primary/60" />
-                  {badge.label}
-                </div>
-              ))}
+              <p className="text-[11px] uppercase tracking-widest text-muted-foreground/60 mb-3">Replaces</p>
+              <div className="flex flex-wrap gap-3">
+                {["Tableau", "Power BI", "Looker", "Anaplan", "Manual Consulting"].map((tool) => (
+                  <span key={tool} className="text-xs text-muted-foreground/50 line-through decoration-muted-foreground/30">{tool}</span>
+                ))}
+              </div>
             </motion.div>
           </motion.div>
 
@@ -83,7 +93,7 @@ const HeroSection = () => {
           >
             <img
               src={heroVisual}
-              alt="Executive intelligence dashboard visualization"
+              alt="Autonomous intelligence engine — KPI diagnostics, advisory playbooks, and executive decision support"
               className="w-full animate-float"
               loading="lazy"
             />
