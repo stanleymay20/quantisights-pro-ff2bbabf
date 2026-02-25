@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Upload, FileText, TrendingUp, Settings, CreditCard, LogOut,
   Database, BarChart3, Shuffle, Crown, Users, Building2, Search, Zap, Menu, X,
+  HelpCircle,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -129,7 +130,15 @@ const DashboardSidebar = () => {
         ))}
       </nav>
 
-      <div className="p-3 border-t border-sidebar-border">
+      <div className="p-3 border-t border-sidebar-border space-y-0.5">
+        <Link
+          to="/terms"
+          onClick={handleNavClick}
+          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors w-full"
+        >
+          <HelpCircle className="w-[18px] h-[18px] text-muted-foreground" />
+          Help & Legal
+        </Link>
         <button
           onClick={handleSignOut}
           className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors w-full"
