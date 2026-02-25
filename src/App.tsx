@@ -40,6 +40,7 @@ import DataProcessing from "./pages/DataProcessing";
 import DataRetention from "./pages/DataRetention";
 import Subprocessors from "./pages/Subprocessors";
 import Simulations from "./pages/Simulations";
+import StrategyPack from "./pages/StrategyPack";
 
 const queryClient = new QueryClient();
 
@@ -78,6 +79,7 @@ const App = () => (
               <Route path="/scenarios" element={<ProtectedRoute><Scenarios /></ProtectedRoute>} />
               <Route path="/simulations" element={<ProtectedRoute><Simulations /></ProtectedRoute>} />
               <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+              <Route path="/strategy-pack" element={<ProtectedRoute><StrategyPack /></ProtectedRoute>} />
               <Route path="/executive" element={<ProtectedRoute><Executive /></ProtectedRoute>} />
               <Route path="/board-report" element={<ProtectedRoute><BoardReport /></ProtectedRoute>} />
               <Route path="/team" element={<ProtectedRoute><Team /></ProtectedRoute>} />
