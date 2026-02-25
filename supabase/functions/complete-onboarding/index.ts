@@ -71,7 +71,7 @@ serve(async (req) => {
       dispersion: Math.round(dispersion * 100) / 100,
       conflict_penalty: 0,
       volatility_divergence: 0,
-      alignment_status: eciScore >= 70 ? "aligned" : eciScore >= 40 ? "partial" : "misaligned",
+      alignment_status: eciScore >= 70 ? "aligned" : eciScore >= 40 ? "tension" : eciScore >= 20 ? "misalignment" : "structural_conflict",
     });
 
     // 3. Create KPIs from template if selected

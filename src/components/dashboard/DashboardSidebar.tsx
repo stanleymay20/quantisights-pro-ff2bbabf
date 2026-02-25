@@ -13,7 +13,7 @@ const navItems = [
   { icon: FileText, label: "Reports", path: "/reports" },
   { icon: Users, label: "Team", path: "/team" },
   { icon: Building2, label: "Client Portfolio", path: "/clients" },
-  { icon: CreditCard, label: "Billing", path: "/pricing" },
+  { icon: CreditCard, label: "Billing", path: "/billing" },
   { icon: Settings, label: "Settings", path: "/dashboard" },
 ];
 
