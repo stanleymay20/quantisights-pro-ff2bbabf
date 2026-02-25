@@ -660,6 +660,7 @@ export type Database = {
           execution_completed_at: string | null
           execution_started_at: string | null
           execution_status: string
+          expected_value_at_decision: number | null
           id: string
           kpi_id: string | null
           notes: string | null
@@ -667,8 +668,10 @@ export type Database = {
           outcome_delta: number | null
           outcome_measured_at: string | null
           prediction_accuracy_score: number | null
+          probability_of_success: number | null
           raw_confidence: number | null
           recommended_action: string
+          simulation_id: string | null
           updated_at: string
         }
         Insert: {
@@ -689,6 +692,7 @@ export type Database = {
           execution_completed_at?: string | null
           execution_started_at?: string | null
           execution_status?: string
+          expected_value_at_decision?: number | null
           id?: string
           kpi_id?: string | null
           notes?: string | null
@@ -696,8 +700,10 @@ export type Database = {
           outcome_delta?: number | null
           outcome_measured_at?: string | null
           prediction_accuracy_score?: number | null
+          probability_of_success?: number | null
           raw_confidence?: number | null
           recommended_action: string
+          simulation_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -718,6 +724,7 @@ export type Database = {
           execution_completed_at?: string | null
           execution_started_at?: string | null
           execution_status?: string
+          expected_value_at_decision?: number | null
           id?: string
           kpi_id?: string | null
           notes?: string | null
@@ -725,8 +732,10 @@ export type Database = {
           outcome_delta?: number | null
           outcome_measured_at?: string | null
           prediction_accuracy_score?: number | null
+          probability_of_success?: number | null
           raw_confidence?: number | null
           recommended_action?: string
+          simulation_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -749,6 +758,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "decision_ledger_simulation_id_fkey"
+            columns: ["simulation_id"]
+            isOneToOne: false
+            referencedRelation: "simulation_results"
             referencedColumns: ["id"]
           },
         ]
@@ -1856,6 +1872,92 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "scenarios_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      simulation_results: {
+        Row: {
+          capped_confidence: number | null
+          confidence_cap_reason: string | null
+          created_at: string
+          created_by: string | null
+          data_sufficiency: string
+          expected_value: number
+          forecast_horizon: number
+          id: string
+          mean_growth_rate: number | null
+          median_value: number
+          metric_type: string
+          organization_id: string
+          p10_value: number
+          p25_value: number
+          p75_value: number
+          p90_value: number
+          probability_negative: number
+          raw_confidence: number | null
+          sample_size: number
+          simulation_runs: number
+          value_at_risk_95: number | null
+          variance_score: number | null
+          volatility: number | null
+        }
+        Insert: {
+          capped_confidence?: number | null
+          confidence_cap_reason?: string | null
+          created_at?: string
+          created_by?: string | null
+          data_sufficiency?: string
+          expected_value: number
+          forecast_horizon?: number
+          id?: string
+          mean_growth_rate?: number | null
+          median_value: number
+          metric_type: string
+          organization_id: string
+          p10_value: number
+          p25_value: number
+          p75_value: number
+          p90_value: number
+          probability_negative?: number
+          raw_confidence?: number | null
+          sample_size?: number
+          simulation_runs?: number
+          value_at_risk_95?: number | null
+          variance_score?: number | null
+          volatility?: number | null
+        }
+        Update: {
+          capped_confidence?: number | null
+          confidence_cap_reason?: string | null
+          created_at?: string
+          created_by?: string | null
+          data_sufficiency?: string
+          expected_value?: number
+          forecast_horizon?: number
+          id?: string
+          mean_growth_rate?: number | null
+          median_value?: number
+          metric_type?: string
+          organization_id?: string
+          p10_value?: number
+          p25_value?: number
+          p75_value?: number
+          p90_value?: number
+          probability_negative?: number
+          raw_confidence?: number | null
+          sample_size?: number
+          simulation_runs?: number
+          value_at_risk_95?: number | null
+          variance_score?: number | null
+          volatility?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "simulation_results_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
