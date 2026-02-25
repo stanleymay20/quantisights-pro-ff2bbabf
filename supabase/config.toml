@@ -83,3 +83,6 @@ verify_jwt = false
 
 [functions.monte-carlo-sim]
 verify_jwt = false
+
+[functions.decision-impact-sim]
+verify_jwt = false

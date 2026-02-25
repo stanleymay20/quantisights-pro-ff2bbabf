@@ -655,6 +655,7 @@ export type Database = {
           created_at: string
           decided_at: string | null
           decided_by: string | null
+          decision_simulation_id: string | null
           decision_status: string
           decision_type: string
           execution_completed_at: string | null
@@ -663,10 +664,13 @@ export type Database = {
           expected_value_at_decision: number | null
           id: string
           kpi_id: string | null
+          model_calibration_adjustment: number | null
           notes: string | null
           organization_id: string
           outcome_delta: number | null
           outcome_measured_at: string | null
+          predicted_net_impact: number | null
+          predicted_roi_probability: number | null
           prediction_accuracy_score: number | null
           probability_of_success: number | null
           raw_confidence: number | null
@@ -687,6 +691,7 @@ export type Database = {
           created_at?: string
           decided_at?: string | null
           decided_by?: string | null
+          decision_simulation_id?: string | null
           decision_status?: string
           decision_type?: string
           execution_completed_at?: string | null
@@ -695,10 +700,13 @@ export type Database = {
           expected_value_at_decision?: number | null
           id?: string
           kpi_id?: string | null
+          model_calibration_adjustment?: number | null
           notes?: string | null
           organization_id: string
           outcome_delta?: number | null
           outcome_measured_at?: string | null
+          predicted_net_impact?: number | null
+          predicted_roi_probability?: number | null
           prediction_accuracy_score?: number | null
           probability_of_success?: number | null
           raw_confidence?: number | null
@@ -719,6 +727,7 @@ export type Database = {
           created_at?: string
           decided_at?: string | null
           decided_by?: string | null
+          decision_simulation_id?: string | null
           decision_status?: string
           decision_type?: string
           execution_completed_at?: string | null
@@ -727,10 +736,13 @@ export type Database = {
           expected_value_at_decision?: number | null
           id?: string
           kpi_id?: string | null
+          model_calibration_adjustment?: number | null
           notes?: string | null
           organization_id?: string
           outcome_delta?: number | null
           outcome_measured_at?: string | null
+          predicted_net_impact?: number | null
+          predicted_roi_probability?: number | null
           prediction_accuracy_score?: number | null
           probability_of_success?: number | null
           raw_confidence?: number | null
@@ -744,6 +756,13 @@ export type Database = {
             columns: ["advisory_instance_id"]
             isOneToOne: false
             referencedRelation: "advisory_instances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "decision_ledger_decision_simulation_id_fkey"
+            columns: ["decision_simulation_id"]
+            isOneToOne: false
+            referencedRelation: "decision_simulations"
             referencedColumns: ["id"]
           },
           {
@@ -765,6 +784,120 @@ export type Database = {
             columns: ["simulation_id"]
             isOneToOne: false
             referencedRelation: "simulation_results"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      decision_simulations: {
+        Row: {
+          actual_net_impact: number | null
+          calibration_delta: number | null
+          capped_confidence: number | null
+          churn_change_pct: number | null
+          confidence_cap_reason: string | null
+          correlation_assumptions: Json | null
+          cost_delta_pct: number | null
+          created_at: string
+          created_by: string | null
+          data_sufficiency: string | null
+          decision_id: string | null
+          expected_net_impact: number | null
+          id: string
+          implementation_cost: number | null
+          measured_at: string | null
+          median_net_impact: number | null
+          model_version: number | null
+          organization_id: string
+          p10_impact: number | null
+          p50_impact: number | null
+          p90_impact: number | null
+          probability_cashflow_stress: number | null
+          probability_positive_roi: number | null
+          raw_confidence: number | null
+          revenue_delta_pct: number | null
+          risk_adjusted_expected_value: number | null
+          sample_size: number | null
+          simulation_runs: number | null
+          time_to_impact_months: number | null
+          variance_score: number | null
+        }
+        Insert: {
+          actual_net_impact?: number | null
+          calibration_delta?: number | null
+          capped_confidence?: number | null
+          churn_change_pct?: number | null
+          confidence_cap_reason?: string | null
+          correlation_assumptions?: Json | null
+          cost_delta_pct?: number | null
+          created_at?: string
+          created_by?: string | null
+          data_sufficiency?: string | null
+          decision_id?: string | null
+          expected_net_impact?: number | null
+          id?: string
+          implementation_cost?: number | null
+          measured_at?: string | null
+          median_net_impact?: number | null
+          model_version?: number | null
+          organization_id: string
+          p10_impact?: number | null
+          p50_impact?: number | null
+          p90_impact?: number | null
+          probability_cashflow_stress?: number | null
+          probability_positive_roi?: number | null
+          raw_confidence?: number | null
+          revenue_delta_pct?: number | null
+          risk_adjusted_expected_value?: number | null
+          sample_size?: number | null
+          simulation_runs?: number | null
+          time_to_impact_months?: number | null
+          variance_score?: number | null
+        }
+        Update: {
+          actual_net_impact?: number | null
+          calibration_delta?: number | null
+          capped_confidence?: number | null
+          churn_change_pct?: number | null
+          confidence_cap_reason?: string | null
+          correlation_assumptions?: Json | null
+          cost_delta_pct?: number | null
+          created_at?: string
+          created_by?: string | null
+          data_sufficiency?: string | null
+          decision_id?: string | null
+          expected_net_impact?: number | null
+          id?: string
+          implementation_cost?: number | null
+          measured_at?: string | null
+          median_net_impact?: number | null
+          model_version?: number | null
+          organization_id?: string
+          p10_impact?: number | null
+          p50_impact?: number | null
+          p90_impact?: number | null
+          probability_cashflow_stress?: number | null
+          probability_positive_roi?: number | null
+          raw_confidence?: number | null
+          revenue_delta_pct?: number | null
+          risk_adjusted_expected_value?: number | null
+          sample_size?: number | null
+          simulation_runs?: number | null
+          time_to_impact_months?: number | null
+          variance_score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "decision_simulations_decision_id_fkey"
+            columns: ["decision_id"]
+            isOneToOne: false
+            referencedRelation: "decision_ledger"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "decision_simulations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
