@@ -24,6 +24,9 @@ import Clients from "./pages/Clients";
 import AcceptInvite from "./pages/AcceptInvite";
 import Onboarding from "./pages/Onboarding";
 import Billing from "./pages/Billing";
+import Diagnostics from "./pages/Diagnostics";
+import Advisory from "./pages/Advisory";
+import Settings from "./pages/Settings";
 
 const queryClient = new QueryClient();
 
@@ -45,6 +48,8 @@ const App = () => (
               <Route path="/data-upload" element={<ProtectedRoute><DataUpload /></ProtectedRoute>} />
               <Route path="/data-sources" element={<ProtectedRoute><DataSources /></ProtectedRoute>} />
               <Route path="/kpis" element={<ProtectedRoute><KPIs /></ProtectedRoute>} />
+              <Route path="/diagnostics" element={<ProtectedRoute><Diagnostics /></ProtectedRoute>} />
+              <Route path="/advisory" element={<ProtectedRoute><Advisory /></ProtectedRoute>} />
               <Route path="/scenarios" element={<ProtectedRoute><Scenarios /></ProtectedRoute>} />
               <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
               <Route path="/executive" element={<ProtectedRoute><Executive /></ProtectedRoute>} />
@@ -53,6 +58,7 @@ const App = () => (
               <Route path="/clients" element={<ProtectedRoute><Clients /></ProtectedRoute>} />
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/billing" element={<ProtectedRoute><Billing /></ProtectedRoute>} />
+              <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AuthProvider>
