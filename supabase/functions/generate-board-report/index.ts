@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { capConfidence } from "../_shared/confidence-cap.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -233,7 +234,9 @@ ${eciTrend ? `Direction: ${eciTrend.direction} | Change: ${eciTrend.percentChang
 `;
 
       try {
-        const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          // Count total data points for confidence cap
+          const totalDataPoints = roleRisks.length + (convergence ? 1 : 0) + conflicts.length + convergenceHistory.length;
+          const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
           method: "POST",
           headers: {
             Authorization: `Bearer ${lovableApiKey}`,
@@ -287,6 +290,15 @@ Refine the deterministic actions already provided. Be authoritative. Reference o
           const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
           if (toolCall?.function?.arguments) {
             aiNarrative = JSON.parse(toolCall.function.arguments);
+            // EPISTEMIC ENFORCEMENT: Cap AI confidence
+            if (aiNarrative?.confidence_score !== undefined) {
+              const cap = capConfidence(aiNarrative.confidence_score, totalDataPoints);
+              aiNarrative.raw_confidence = cap.raw_confidence;
+              aiNarrative.capped_confidence = cap.capped_confidence;
+              aiNarrative.confidence_cap_reason = cap.confidence_cap_reason;
+              aiNarrative.confidence_score = cap.capped_confidence;
+              aiNarrative.data_sufficiency = cap.data_sufficiency;
+            }
           }
         }
       } catch (aiErr) {

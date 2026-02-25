@@ -19,9 +19,12 @@ export type Database = {
           action: string
           advisory_type: string
           assigned_to: string | null
+          capped_confidence: number | null
           category: string
           confidence: number | null
+          confidence_cap_reason: string | null
           created_at: string
+          data_quality_index: number | null
           data_snapshot_date: string | null
           expected_impact: string | null
           generation_version: number | null
@@ -32,6 +35,7 @@ export type Database = {
           playbook_steps: Json | null
           priority: string
           rationale: string | null
+          raw_confidence: number | null
           resolution_summary: string | null
           resolved_at: string | null
           source_evidence: Json | null
@@ -39,14 +43,18 @@ export type Database = {
           timeframe: string | null
           title: string
           updated_at: string
+          variance_score: number | null
         }
         Insert: {
           action: string
           advisory_type: string
           assigned_to?: string | null
+          capped_confidence?: number | null
           category?: string
           confidence?: number | null
+          confidence_cap_reason?: string | null
           created_at?: string
+          data_quality_index?: number | null
           data_snapshot_date?: string | null
           expected_impact?: string | null
           generation_version?: number | null
@@ -57,6 +65,7 @@ export type Database = {
           playbook_steps?: Json | null
           priority?: string
           rationale?: string | null
+          raw_confidence?: number | null
           resolution_summary?: string | null
           resolved_at?: string | null
           source_evidence?: Json | null
@@ -64,14 +73,18 @@ export type Database = {
           timeframe?: string | null
           title: string
           updated_at?: string
+          variance_score?: number | null
         }
         Update: {
           action?: string
           advisory_type?: string
           assigned_to?: string | null
+          capped_confidence?: number | null
           category?: string
           confidence?: number | null
+          confidence_cap_reason?: string | null
           created_at?: string
+          data_quality_index?: number | null
           data_snapshot_date?: string | null
           expected_impact?: string | null
           generation_version?: number | null
@@ -82,6 +95,7 @@ export type Database = {
           playbook_steps?: Json | null
           priority?: string
           rationale?: string | null
+          raw_confidence?: number | null
           resolution_summary?: string | null
           resolved_at?: string | null
           source_evidence?: Json | null
@@ -89,6 +103,7 @@ export type Database = {
           timeframe?: string | null
           title?: string
           updated_at?: string
+          variance_score?: number | null
         }
         Relationships: [
           {
@@ -631,8 +646,11 @@ export type Database = {
           actual_value: number | null
           advisory_instance_id: string | null
           baseline_value: number | null
+          calibration_error: number | null
+          capped_confidence: number | null
           chosen_action: string | null
           confidence_at_decision: number | null
+          confidence_cap_reason: string | null
           confidence_updated: number | null
           created_at: string
           decided_at: string | null
@@ -648,6 +666,8 @@ export type Database = {
           organization_id: string
           outcome_delta: number | null
           outcome_measured_at: string | null
+          prediction_accuracy_score: number | null
+          raw_confidence: number | null
           recommended_action: string
           updated_at: string
         }
@@ -655,8 +675,11 @@ export type Database = {
           actual_value?: number | null
           advisory_instance_id?: string | null
           baseline_value?: number | null
+          calibration_error?: number | null
+          capped_confidence?: number | null
           chosen_action?: string | null
           confidence_at_decision?: number | null
+          confidence_cap_reason?: string | null
           confidence_updated?: number | null
           created_at?: string
           decided_at?: string | null
@@ -672,6 +695,8 @@ export type Database = {
           organization_id: string
           outcome_delta?: number | null
           outcome_measured_at?: string | null
+          prediction_accuracy_score?: number | null
+          raw_confidence?: number | null
           recommended_action: string
           updated_at?: string
         }
@@ -679,8 +704,11 @@ export type Database = {
           actual_value?: number | null
           advisory_instance_id?: string | null
           baseline_value?: number | null
+          calibration_error?: number | null
+          capped_confidence?: number | null
           chosen_action?: string | null
           confidence_at_decision?: number | null
+          confidence_cap_reason?: string | null
           confidence_updated?: number | null
           created_at?: string
           decided_at?: string | null
@@ -696,6 +724,8 @@ export type Database = {
           organization_id?: string
           outcome_delta?: number | null
           outcome_measured_at?: string | null
+          prediction_accuracy_score?: number | null
+          raw_confidence?: number | null
           recommended_action?: string
           updated_at?: string
         }
@@ -1059,43 +1089,61 @@ export type Database = {
       }
       insights: {
         Row: {
+          capped_confidence: number | null
           category: string | null
+          confidence_cap_reason: string | null
           confidence_score: number | null
           created_at: string
+          data_quality_index: number | null
           generation_model: string | null
           id: string
           is_read: boolean
           message: string
           organization_id: string
+          raw_confidence: number | null
+          sample_size: number | null
           severity: string
           source_kpi_id: string | null
           source_metric_ids: Json | null
+          variance_score: number | null
         }
         Insert: {
+          capped_confidence?: number | null
           category?: string | null
+          confidence_cap_reason?: string | null
           confidence_score?: number | null
           created_at?: string
+          data_quality_index?: number | null
           generation_model?: string | null
           id?: string
           is_read?: boolean
           message: string
           organization_id: string
+          raw_confidence?: number | null
+          sample_size?: number | null
           severity?: string
           source_kpi_id?: string | null
           source_metric_ids?: Json | null
+          variance_score?: number | null
         }
         Update: {
+          capped_confidence?: number | null
           category?: string | null
+          confidence_cap_reason?: string | null
           confidence_score?: number | null
           created_at?: string
+          data_quality_index?: number | null
           generation_model?: string | null
           id?: string
           is_read?: boolean
           message?: string
           organization_id?: string
+          raw_confidence?: number | null
+          sample_size?: number | null
           severity?: string
           source_kpi_id?: string | null
           source_metric_ids?: Json | null
+          variance_score?: number | null
         }
         Relationships: [
           {

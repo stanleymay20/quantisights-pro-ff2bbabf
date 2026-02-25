@@ -7,14 +7,14 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import { useOrganization } from "@/hooks/useOrganization";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import {
-  BookOpen, CheckCircle2, Clock, AlertTriangle, TrendingUp, TrendingDown,
-  Loader2, Plus, PlayCircle, Pause, Target, BarChart3, ArrowRight,
+  BookOpen, CheckCircle2, Clock, TrendingUp, TrendingDown,
+  Loader2, Plus, PlayCircle, Target, BarChart3, ArrowRight,
+  ShieldCheck, AlertTriangle, Activity,
 } from "lucide-react";
 
 interface Decision {
@@ -40,6 +40,11 @@ interface Decision {
   notes: string | null;
   created_at: string;
   updated_at: string;
+  prediction_accuracy_score: number | null;
+  calibration_error: number | null;
+  raw_confidence: number | null;
+  capped_confidence: number | null;
+  confidence_cap_reason: string | null;
 }
 
 const STATUS_COLORS: Record<string, { bg: string; text: string; label: string }> = {
@@ -104,6 +109,24 @@ const DecisionLedgerPage = () => {
 
   const updateDecision = async (id: string, updates: Record<string, any>) => {
     setUpdatingId(id);
+
+    // If completing, compute calibration metrics
+    if (updates.execution_status === "completed") {
+      const decision = decisions.find(d => d.id === id);
+      if (decision) {
+        const conf = decision.confidence_at_decision || decision.capped_confidence || 50;
+        const hasOutcome = decision.outcome_delta !== null;
+        const outcomePositive = (decision.outcome_delta || 0) >= 0;
+        // Calibration error: |predicted_probability - actual_outcome|
+        const calibrationError = Math.abs(conf - (outcomePositive ? 100 : 0));
+        // Prediction accuracy: how close confidence was to actual outcome direction
+        const predictionAccuracy = hasOutcome ? Math.max(0, 100 - calibrationError) : null;
+
+        updates.calibration_error = calibrationError;
+        updates.prediction_accuracy_score = predictionAccuracy;
+      }
+    }
+
     const { error } = await supabase
       .from("decision_ledger")
       .update(updates)
@@ -123,6 +146,20 @@ const DecisionLedgerPage = () => {
     ? completedDecisions.reduce((s, d) => s + (d.outcome_delta || 0), 0) / completedDecisions.length
     : null;
 
+  const avgCalibrationError = completedDecisions.filter(d => d.calibration_error !== null).length > 0
+    ? completedDecisions.filter(d => d.calibration_error !== null).reduce((s, d) => s + (d.calibration_error || 0), 0)
+      / completedDecisions.filter(d => d.calibration_error !== null).length
+    : null;
+
+  const avgPredictionAccuracy = completedDecisions.filter(d => d.prediction_accuracy_score !== null).length > 0
+    ? completedDecisions.filter(d => d.prediction_accuracy_score !== null).reduce((s, d) => s + (d.prediction_accuracy_score || 0), 0)
+      / completedDecisions.filter(d => d.prediction_accuracy_score !== null).length
+    : null;
+
+  const decisionSuccessRate = completedDecisions.length > 0
+    ? (completedDecisions.filter(d => (d.outcome_delta || 0) > 0).length / completedDecisions.length * 100)
+    : null;
+
   return (
     <div className="flex min-h-screen bg-background">
       <DashboardSidebar />
@@ -130,7 +167,7 @@ const DecisionLedgerPage = () => {
         <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
           <div>
             <h1 className="text-xl font-semibold font-display">Decision Ledger</h1>
-            <p className="text-xs text-muted-foreground">Track decisions, measure outcomes, learn from results</p>
+            <p className="text-xs text-muted-foreground">Track decisions, measure outcomes, calibrate predictions</p>
           </div>
           <Button onClick={() => setShowCreate(!showCreate)} size="sm" className="gap-2">
             <Plus className="w-4 h-4" /> Log Decision
@@ -139,7 +176,7 @@ const DecisionLedgerPage = () => {
 
         <main className="flex-1 p-8 overflow-auto space-y-6">
           {/* Summary cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
             <Card>
               <CardContent className="p-4">
                 <p className="text-xs text-muted-foreground">Total Decisions</p>
@@ -160,9 +197,25 @@ const DecisionLedgerPage = () => {
             </Card>
             <Card>
               <CardContent className="p-4">
-                <p className="text-xs text-muted-foreground">Avg Outcome Delta</p>
+                <p className="text-xs text-muted-foreground flex items-center gap-1"><TrendingUp className="w-3 h-3" /> Avg Outcome</p>
                 <p className={`text-2xl font-bold mt-1 ${avgOutcomeDelta !== null && avgOutcomeDelta > 0 ? "text-emerald-500" : avgOutcomeDelta !== null && avgOutcomeDelta < 0 ? "text-destructive" : ""}`}>
                   {avgOutcomeDelta !== null ? `${avgOutcomeDelta > 0 ? "+" : ""}${avgOutcomeDelta.toFixed(1)}%` : "—"}
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <p className="text-xs text-muted-foreground flex items-center gap-1"><Activity className="w-3 h-3" /> Calibration Error</p>
+                <p className={`text-2xl font-bold mt-1 ${avgCalibrationError !== null && avgCalibrationError < 30 ? "text-emerald-500" : avgCalibrationError !== null && avgCalibrationError > 50 ? "text-destructive" : "text-amber-500"}`}>
+                  {avgCalibrationError !== null ? `${avgCalibrationError.toFixed(0)}` : "—"}
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <p className="text-xs text-muted-foreground flex items-center gap-1"><ShieldCheck className="w-3 h-3" /> Success Rate</p>
+                <p className={`text-2xl font-bold mt-1 ${decisionSuccessRate !== null && decisionSuccessRate > 60 ? "text-emerald-500" : decisionSuccessRate !== null && decisionSuccessRate < 40 ? "text-destructive" : "text-amber-500"}`}>
+                  {decisionSuccessRate !== null ? `${decisionSuccessRate.toFixed(0)}%` : "—"}
                 </p>
               </CardContent>
             </Card>
@@ -229,7 +282,15 @@ const DecisionLedgerPage = () => {
                               <Badge variant="outline" className="text-xs capitalize">{d.decision_type.replace(/_/g, " ")}</Badge>
                               <Badge className={`${sCfg.bg} ${sCfg.text} border-none text-xs`}>{sCfg.label}</Badge>
                               <Badge className={`${eCfg.bg} ${eCfg.text} border-none text-xs`}>{eCfg.label}</Badge>
-                              {d.confidence_at_decision && (
+                              {d.capped_confidence !== null && (
+                                <span className="text-xs text-muted-foreground flex items-center gap-1" title={d.confidence_cap_reason || undefined}>
+                                  <BarChart3 className="w-3 h-3" /> {d.capped_confidence}% conf.
+                                  {d.raw_confidence !== null && d.raw_confidence !== d.capped_confidence && (
+                                    <span className="text-[10px] opacity-60">(raw: {d.raw_confidence}%)</span>
+                                  )}
+                                </span>
+                              )}
+                              {!d.capped_confidence && d.confidence_at_decision && (
                                 <span className="text-xs text-muted-foreground flex items-center gap-1">
                                   <BarChart3 className="w-3 h-3" /> {d.confidence_at_decision}% conf.
                                 </span>
@@ -239,6 +300,11 @@ const DecisionLedgerPage = () => {
                             {d.chosen_action && (
                               <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                                 <ArrowRight className="w-3 h-3" /> Chosen: {d.chosen_action}
+                              </p>
+                            )}
+                            {d.confidence_cap_reason && (
+                              <p className="text-[10px] text-muted-foreground/60 mt-1 flex items-center gap-1">
+                                <AlertTriangle className="w-3 h-3" /> {d.confidence_cap_reason}
                               </p>
                             )}
                             {d.notes && <p className="text-xs text-muted-foreground mt-1 italic">{d.notes}</p>}
@@ -288,7 +354,7 @@ const DecisionLedgerPage = () => {
                   <CardContent className="p-5">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
                           <Badge variant="outline" className="text-xs capitalize">{d.decision_type.replace(/_/g, " ")}</Badge>
                           <Badge className="bg-emerald-500/10 text-emerald-500 border-none text-xs">Completed</Badge>
                           {d.outcome_delta !== null && (
@@ -297,15 +363,30 @@ const DecisionLedgerPage = () => {
                               {d.outcome_delta > 0 ? "+" : ""}{d.outcome_delta}% delta
                             </Badge>
                           )}
+                          {d.prediction_accuracy_score !== null && (
+                            <Badge variant="outline" className="text-xs gap-1">
+                              <ShieldCheck className="w-3 h-3" /> Accuracy: {Number(d.prediction_accuracy_score).toFixed(0)}%
+                            </Badge>
+                          )}
+                          {d.calibration_error !== null && (
+                            <Badge variant="outline" className={`text-xs gap-1 ${Number(d.calibration_error) > 50 ? "border-destructive/30 text-destructive" : "border-emerald-500/30 text-emerald-500"}`}>
+                              <Activity className="w-3 h-3" /> Cal. Error: {Number(d.calibration_error).toFixed(0)}
+                            </Badge>
+                          )}
                         </div>
                         <p className="text-sm font-medium">{d.recommended_action}</p>
                         {d.chosen_action && <p className="text-xs text-muted-foreground mt-1">Chosen: {d.chosen_action}</p>}
-                        <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                          {d.confidence_at_decision && <span>Initial conf: {d.confidence_at_decision}%</span>}
+                        <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground flex-wrap">
+                          {d.raw_confidence !== null && <span>Raw conf: {Number(d.raw_confidence).toFixed(0)}%</span>}
+                          {d.capped_confidence !== null && <span>Capped conf: {Number(d.capped_confidence).toFixed(0)}%</span>}
+                          {d.confidence_at_decision && !d.capped_confidence && <span>Initial conf: {d.confidence_at_decision}%</span>}
                           {d.confidence_updated && <span>Updated conf: {d.confidence_updated}%</span>}
                           {d.baseline_value !== null && <span>Baseline: {d.baseline_value}</span>}
                           {d.actual_value !== null && <span>Actual: {d.actual_value}</span>}
                         </div>
+                        {d.confidence_cap_reason && (
+                          <p className="text-[10px] text-muted-foreground/60 mt-1">{d.confidence_cap_reason}</p>
+                        )}
                       </div>
                     </div>
                   </CardContent>

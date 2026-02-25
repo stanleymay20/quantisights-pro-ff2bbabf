@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { authenticateRequest, verifyOrgMembership } from "../_shared/auth-guard.ts";
+import { capConfidence, computeVariance } from "../_shared/confidence-cap.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -24,6 +25,12 @@ interface DiagnosticResult {
   change_pct: number;
   recommendation: string;
   confidence: number;
+  raw_confidence: number;
+  capped_confidence: number;
+  confidence_cap_reason: string;
+  sample_size: number;
+  data_sufficiency: string;
+  variance_score: number | null;
 }
 
 function computeDiagnostics(metrics: MetricRow[]): DiagnosticResult[] {
@@ -36,9 +43,9 @@ function computeDiagnostics(metrics: MetricRow[]): DiagnosticResult[] {
   const results: DiagnosticResult[] = [];
 
   for (const [type, rows] of Object.entries(grouped)) {
-    // STATISTICAL DEPTH GATE: require minimum 8 data points for credible diagnostics
     if (rows.length < 8) {
       if (rows.length >= 2) {
+        const cap = capConfidence(0, rows.length);
         results.push({
           metric_type: type,
           diagnosis: `Insufficient data (${rows.length} points). Minimum 8 required for credible analysis.`,
@@ -49,6 +56,12 @@ function computeDiagnostics(metrics: MetricRow[]): DiagnosticResult[] {
           change_pct: 0,
           recommendation: "Upload more historical data to enable diagnostics.",
           confidence: 0,
+          raw_confidence: cap.raw_confidence,
+          capped_confidence: cap.capped_confidence,
+          confidence_cap_reason: cap.confidence_cap_reason,
+          sample_size: cap.sample_size,
+          data_sufficiency: cap.data_sufficiency,
+          variance_score: null,
         });
       }
       continue;
@@ -60,15 +73,12 @@ function computeDiagnostics(metrics: MetricRow[]): DiagnosticResult[] {
     const previous = values[values.length - 2];
     const oldest = values[0];
     const changePct = previous !== 0 ? ((latest - previous) / Math.abs(previous)) * 100 : 0;
-    const totalChangePct = oldest !== 0 ? ((latest - oldest) / Math.abs(oldest)) * 100 : 0;
 
-    // Volatility: std deviation / mean
     const mean = values.reduce((s, v) => s + v, 0) / values.length;
     const variance = values.reduce((s, v) => s + (v - mean) ** 2, 0) / values.length;
     const stdDev = Math.sqrt(variance);
     const volatility = mean !== 0 ? (stdDev / Math.abs(mean)) * 100 : 0;
 
-    // Trend detection via simple linear regression
     const n = values.length;
     const xMean = (n - 1) / 2;
     let num = 0, den = 0;
@@ -79,13 +89,11 @@ function computeDiagnostics(metrics: MetricRow[]): DiagnosticResult[] {
     const slope = den !== 0 ? num / den : 0;
     const slopeNorm = mean !== 0 ? (slope / Math.abs(mean)) * 100 : 0;
 
-    // Determine trend
     let trend_direction: DiagnosticResult["trend_direction"] = "stable";
     if (volatility > 30) trend_direction = "volatile";
     else if (slopeNorm > 5) trend_direction = "improving";
     else if (slopeNorm < -5) trend_direction = "declining";
 
-    // Segment analysis for causal factors
     const segmentBreakdown: Record<string, number[]> = {};
     for (const r of sorted) {
       const seg = r.segment || r.region || "overall";
@@ -103,15 +111,13 @@ function computeDiagnostics(metrics: MetricRow[]): DiagnosticResult[] {
       }
     }
 
-    // Generate diagnosis
     let severity: DiagnosticResult["severity"] = "info";
     let diagnosis = "";
     let rootCause = "";
     let recommendation = "";
-    // Confidence scales with sample size, variance stability, and data freshness
-    const sampleBonus = Math.min((n - 8) * 2, 20); // 0-20 bonus for more data
+    const sampleBonus = Math.min((n - 8) * 2, 20);
     const stabilityBonus = volatility < 15 ? 10 : volatility < 30 ? 5 : 0;
-    let confidence = 50 + sampleBonus + stabilityBonus; // base 50, max ~90
+    let rawConfidence = 50 + sampleBonus + stabilityBonus;
 
     if (type === "revenue") {
       if (changePct < -10) {
@@ -121,19 +127,19 @@ function computeDiagnostics(metrics: MetricRow[]): DiagnosticResult[] {
           ? "High revenue volatility suggests inconsistent sales pipeline or seasonal dependency."
           : "Sustained decline indicates structural demand erosion or competitive displacement.";
         recommendation = "Conduct segment-level revenue audit. Identify churning customer cohorts and run retention campaigns.";
-        confidence = 85;
+        rawConfidence = 85;
       } else if (changePct < -5) {
         severity = "warning";
         diagnosis = `Revenue declined ${Math.abs(changePct).toFixed(1)}% — trend requires monitoring.`;
         rootCause = "Moderate decline may indicate market softening or pricing pressure.";
         recommendation = "Review pricing strategy and customer acquisition cost trends.";
-        confidence = 75;
+        rawConfidence = 75;
       } else if (changePct > 15) {
         severity = "info";
         diagnosis = `Revenue surged ${changePct.toFixed(1)}% — validate sustainability.`;
         rootCause = "Sharp growth may be driven by one-time deals or seasonal factors.";
         recommendation = "Verify growth is recurring. Stress-test capacity and unit economics.";
-        confidence = 80;
+        rawConfidence = 80;
       } else {
         diagnosis = `Revenue is ${trend_direction} with ${changePct.toFixed(1)}% recent change.`;
         rootCause = "No significant anomalies detected in revenue trajectory.";
@@ -145,13 +151,13 @@ function computeDiagnostics(metrics: MetricRow[]): DiagnosticResult[] {
         diagnosis = `Churn rate at ${latest.toFixed(1)}% — exceeds sustainable threshold.`;
         rootCause = "Elevated churn suggests product-market fit erosion, support failures, or competitive pressure.";
         recommendation = "Launch exit-survey analysis. Implement proactive retention for at-risk accounts.";
-        confidence = 85;
+        rawConfidence = 85;
       } else if (latest > 5) {
         severity = "warning";
         diagnosis = `Churn at ${latest.toFixed(1)}% — approaching risk threshold.`;
         rootCause = "Rising churn often correlates with onboarding friction or unmet feature expectations.";
         recommendation = "Review NPS scores and support ticket patterns for recurring issues.";
-        confidence = 75;
+        rawConfidence = 75;
       } else {
         diagnosis = `Churn is healthy at ${latest.toFixed(1)}%.`;
         rootCause = "Retention metrics within expected range.";
@@ -163,7 +169,7 @@ function computeDiagnostics(metrics: MetricRow[]): DiagnosticResult[] {
         diagnosis = `Costs increased ${changePct.toFixed(1)}% — margin compression risk.`;
         rootCause = "Cost escalation may stem from scaling inefficiencies, vendor price increases, or uncontrolled hiring.";
         recommendation = "Conduct cost-per-unit analysis. Identify top 3 cost drivers and negotiate or optimize.";
-        confidence = 75;
+        rawConfidence = 75;
       } else {
         diagnosis = `Costs are ${trend_direction} with ${changePct.toFixed(1)}% change.`;
         rootCause = "Cost structure appears stable.";
@@ -175,13 +181,13 @@ function computeDiagnostics(metrics: MetricRow[]): DiagnosticResult[] {
         diagnosis = `Customer base contracted ${Math.abs(changePct).toFixed(1)}%.`;
         rootCause = "Customer loss may indicate market contraction, competitor gains, or product issues.";
         recommendation = "Analyze lost customers by segment. Identify common churn triggers.";
-        confidence = 75;
+        rawConfidence = 75;
       } else if (changePct > 20) {
         severity = "info";
         diagnosis = `Customer base grew ${changePct.toFixed(1)}% — validate unit economics.`;
         rootCause = "Rapid growth needs validation that CAC and LTV remain healthy.";
         recommendation = "Monitor CAC payback period and ensure support capacity scales.";
-        confidence = 80;
+        rawConfidence = 80;
       } else {
         diagnosis = `Customer base is ${trend_direction} with ${changePct.toFixed(1)}% change.`;
         rootCause = "Customer growth within normal parameters.";
@@ -198,6 +204,9 @@ function computeDiagnostics(metrics: MetricRow[]): DiagnosticResult[] {
       if (volatility > 20) causalFactors.push(`High volatility (${volatility.toFixed(0)}% CV)`);
     }
 
+    // EPISTEMIC ENFORCEMENT: Apply confidence cap
+    const cap = capConfidence(rawConfidence, n, volatility);
+
     results.push({
       metric_type: type,
       diagnosis,
@@ -207,11 +216,16 @@ function computeDiagnostics(metrics: MetricRow[]): DiagnosticResult[] {
       trend_direction,
       change_pct: Math.round(changePct * 10) / 10,
       recommendation,
-      confidence: Math.min(confidence, 95),
+      confidence: cap.capped_confidence,
+      raw_confidence: cap.raw_confidence,
+      capped_confidence: cap.capped_confidence,
+      confidence_cap_reason: cap.confidence_cap_reason,
+      sample_size: cap.sample_size,
+      data_sufficiency: cap.data_sufficiency,
+      variance_score: cap.variance_score,
     });
   }
 
-  // Sort: critical first
   results.sort((a, b) => {
     const order = { critical: 0, warning: 1, info: 2 };
     return order[a.severity] - order[b.severity];
@@ -223,7 +237,6 @@ function computeDiagnostics(metrics: MetricRow[]): DiagnosticResult[] {
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
-  // Auth guard
   const auth = await authenticateRequest(req);
   if (auth.response) return auth.response;
 
@@ -231,7 +244,6 @@ serve(async (req) => {
     const { organization_id } = await req.json();
     if (!organization_id) throw new Error("organization_id required");
 
-    // Verify org membership
     const isMember = await verifyOrgMembership(auth.userId, organization_id);
     if (!isMember) {
       return new Response(JSON.stringify({ error: "Forbidden" }), {
@@ -242,7 +254,6 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    // Fetch metrics
     const metricsResp = await fetch(
       `${supabaseUrl}/rest/v1/metrics?organization_id=eq.${organization_id}&order=date.asc&limit=500`,
       { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` } }
