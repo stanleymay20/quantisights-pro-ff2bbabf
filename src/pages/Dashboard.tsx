@@ -10,19 +10,36 @@ import { useOrganization } from "@/hooks/useOrganization";
 import { useMetrics } from "@/hooks/useMetrics";
 import { useInsights } from "@/hooks/useInsights";
 import { Bell, User, Upload, RefreshCw } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const Dashboard = () => {
   const { user } = useAuth();
-  const { organizations, currentOrgId, currentOrg, switchOrganization } = useOrganization();
+  const { organizations, currentOrgId, currentOrg, switchOrganization, loading: orgLoading } = useOrganization();
   const { totalRevenue, totalCustomers, latestCost, latestChurn, revenueByMonth, segmentData, hasData, loading: metricsLoading } = useMetrics(currentOrgId);
   const { insights, loading: insightsLoading } = useInsights(currentOrgId);
   const displayName = user?.user_metadata?.full_name || user?.email || "User";
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [recalculating, setRecalculating] = useState(false);
+
+  // Auto-redirect to onboarding if org hasn't completed it
+  useEffect(() => {
+    if (orgLoading || !currentOrgId) return;
+    const checkOnboarding = async () => {
+      const { data } = await supabase
+        .from("organizations")
+        .select("onboarding_completed")
+        .eq("id", currentOrgId)
+        .single();
+      if (data && !data.onboarding_completed) {
+        navigate("/onboarding", { replace: true });
+      }
+    };
+    checkOnboarding();
+  }, [currentOrgId, orgLoading, navigate]);
 
   const handleRecalculate = async () => {
     if (!currentOrgId) return;

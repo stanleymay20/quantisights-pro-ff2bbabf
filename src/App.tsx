@@ -22,6 +22,7 @@ import BoardReport from "./pages/BoardReport";
 import Team from "./pages/Team";
 import Clients from "./pages/Clients";
 import AcceptInvite from "./pages/AcceptInvite";
+import Onboarding from "./pages/Onboarding";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +39,7 @@ const App = () => (
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/accept-invite" element={<AcceptInvite />} />
+              <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/data-upload" element={<ProtectedRoute><DataUpload /></ProtectedRoute>} />
               <Route path="/data-sources" element={<ProtectedRoute><DataSources /></ProtectedRoute>} />
