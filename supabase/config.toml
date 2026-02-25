@@ -65,3 +65,9 @@ verify_jwt = false
 
 [functions.generate-board-report]
 verify_jwt = false
+
+[functions.diagnostic-engine]
+verify_jwt = false
+
+[functions.prescriptive-advisory]
+verify_jwt = false
