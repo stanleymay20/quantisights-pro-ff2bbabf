@@ -58,7 +58,6 @@ const Clients = () => {
       const summaries: OrgSummary[] = [];
 
       for (const org of organizations) {
-        // Fetch in parallel per org
         const [membersRes, riskRes, convergenceRes, conflictsRes, subRes] = await Promise.all([
           supabase
             .from("organization_members")
@@ -123,167 +122,161 @@ const Clients = () => {
   return (
     <div className="flex min-h-screen bg-background">
       <DashboardSidebar />
-      <main className="flex-1 p-8 overflow-auto">
-        <div className="max-w-6xl mx-auto space-y-8">
-          {/* Header */}
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Client Portfolio</h1>
-            <p className="text-muted-foreground mt-1">
-              Cross-organization governance overview
-            </p>
-          </div>
+      <div className="flex-1 flex flex-col min-h-screen">
+        <header className="h-14 border-b border-border/30 flex items-center px-8 shrink-0 bg-background/60 backdrop-blur-sm">
+          <h1 className="text-xl font-semibold font-display">Client Portfolio</h1>
+        </header>
 
-          {loading ? (
-            <div className="flex items-center justify-center py-20">
-              <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            </div>
-          ) : (
-            <>
-              {/* Portfolio Summary */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <Card className="border-primary/20">
-                  <CardContent className="pt-6">
-                    <div className="flex items-center gap-3">
-                      <Building2 className="w-8 h-8 text-primary" />
-                      <div>
-                        <p className="text-2xl font-bold">{orgSummaries.length}</p>
-                        <p className="text-xs text-muted-foreground">Organizations</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+        <main className="flex-1 p-8 overflow-auto">
+          <div className="max-w-6xl mx-auto space-y-8">
+            <p className="text-sm text-muted-foreground">Cross-organization governance overview</p>
 
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="flex items-center gap-3">
-                      <Users className="w-8 h-8 text-primary" />
-                      <div>
-                        <p className="text-2xl font-bold">{totalMembers}</p>
-                        <p className="text-xs text-muted-foreground">Total Members</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className={portfolioRisk !== null ? getRiskBg(portfolioRisk) : ""}>
-                  <CardContent className="pt-6">
-                    <div className="flex items-center gap-3">
-                      <Activity className={`w-8 h-8 ${getRiskColor(portfolioRisk)}`} />
-                      <div>
-                        <p className={`text-2xl font-bold ${getRiskColor(portfolioRisk)}`}>
-                          {portfolioRisk !== null ? portfolioRisk : "—"}
-                        </p>
-                        <p className="text-xs text-muted-foreground">Avg. Portfolio Risk</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className={totalConflicts > 0 ? "bg-destructive/5" : ""}>
-                  <CardContent className="pt-6">
-                    <div className="flex items-center gap-3">
-                      <AlertTriangle className={`w-8 h-8 ${totalConflicts > 0 ? "text-destructive" : "text-muted-foreground"}`} />
-                      <div>
-                        <p className={`text-2xl font-bold ${totalConflicts > 0 ? "text-destructive" : ""}`}>
-                          {totalConflicts}
-                        </p>
-                        <p className="text-xs text-muted-foreground">Active Conflicts</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+            {loading ? (
+              <div className="flex items-center justify-center py-20">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
               </div>
-
-              {/* Organization Cards */}
-              <div className="space-y-4">
-                {orgSummaries.map((org) => (
-                  <Card
-                    key={org.id}
-                    className="hover:border-primary/30 transition-colors cursor-pointer"
-                    onClick={() => navigateToOrg(org.id)}
-                  >
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                            <Building2 className="w-6 h-6 text-primary" />
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-3">
-                              <h3 className="font-semibold text-lg">{org.name}</h3>
-                              {org.tier && (
-                                <Badge variant="outline" className="capitalize text-xs">
-                                  {org.tier}
-                                </Badge>
-                              )}
-                              <Badge variant="outline" className="text-xs capitalize">
-                                {org.role}
-                              </Badge>
-                            </div>
-                            <div className="flex items-center gap-4 mt-1">
-                              <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                <Users className="w-3 h-3" /> {org.memberCount} members
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-6">
-                          {/* Risk Score */}
-                          <div className="text-center">
-                            <p className={`text-xl font-bold ${getRiskColor(org.riskScore)}`}>
-                              {org.riskScore !== null ? org.riskScore : "—"}
-                            </p>
-                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Risk</p>
-                          </div>
-
-                          {/* ECI */}
-                          <div className="text-center">
-                            <p className={`text-xl font-bold ${
-                              org.convergenceScore !== null
-                                ? org.convergenceScore >= 70
-                                  ? "text-emerald-400"
-                                  : org.convergenceScore >= 40
-                                  ? "text-amber-400"
-                                  : "text-destructive"
-                                : "text-muted-foreground"
-                            }`}>
-                              {org.convergenceScore !== null ? org.convergenceScore : "—"}
-                            </p>
-                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">ECI</p>
-                          </div>
-
-                          {/* Conflicts */}
-                          <div className="text-center">
-                            <p className={`text-xl font-bold ${org.activeConflicts > 0 ? "text-destructive" : "text-muted-foreground"}`}>
-                              {org.activeConflicts}
-                            </p>
-                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Conflicts</p>
-                          </div>
-
-                          <ChevronRight className="w-5 h-5 text-muted-foreground" />
+            ) : (
+              <>
+                {/* Portfolio Summary */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <Card className="border-primary/20">
+                    <CardContent className="pt-6">
+                      <div className="flex items-center gap-3">
+                        <Building2 className="w-8 h-8 text-primary" />
+                        <div>
+                          <p className="text-2xl font-bold">{orgSummaries.length}</p>
+                          <p className="text-xs text-muted-foreground">Organizations</p>
                         </div>
                       </div>
                     </CardContent>
                   </Card>
-                ))}
-              </div>
 
-              {orgSummaries.length === 0 && (
-                <Card className="border-dashed border-2">
-                  <CardContent className="flex flex-col items-center justify-center py-16 gap-4">
-                    <Building2 className="w-12 h-12 text-muted-foreground" />
-                    <h2 className="text-xl font-semibold">No Organizations</h2>
-                    <p className="text-muted-foreground text-center max-w-md">
-                      You're not a member of any organizations yet. Create one or accept an invitation to get started.
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
-            </>
-          )}
-        </div>
-      </main>
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="flex items-center gap-3">
+                        <Users className="w-8 h-8 text-primary" />
+                        <div>
+                          <p className="text-2xl font-bold">{totalMembers}</p>
+                          <p className="text-xs text-muted-foreground">Total Members</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className={portfolioRisk !== null ? getRiskBg(portfolioRisk) : ""}>
+                    <CardContent className="pt-6">
+                      <div className="flex items-center gap-3">
+                        <Activity className={`w-8 h-8 ${getRiskColor(portfolioRisk)}`} />
+                        <div>
+                          <p className={`text-2xl font-bold ${getRiskColor(portfolioRisk)}`}>
+                            {portfolioRisk !== null ? portfolioRisk : "—"}
+                          </p>
+                          <p className="text-xs text-muted-foreground">Avg. Portfolio Risk</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className={totalConflicts > 0 ? "bg-destructive/5" : ""}>
+                    <CardContent className="pt-6">
+                      <div className="flex items-center gap-3">
+                        <AlertTriangle className={`w-8 h-8 ${totalConflicts > 0 ? "text-destructive" : "text-muted-foreground"}`} />
+                        <div>
+                          <p className={`text-2xl font-bold ${totalConflicts > 0 ? "text-destructive" : ""}`}>
+                            {totalConflicts}
+                          </p>
+                          <p className="text-xs text-muted-foreground">Active Conflicts</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Organization Cards */}
+                <div className="space-y-4">
+                  {orgSummaries.map((org) => (
+                    <Card
+                      key={org.id}
+                      className="hover:border-primary/30 transition-colors cursor-pointer"
+                      onClick={() => navigateToOrg(org.id)}
+                    >
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                              <Building2 className="w-6 h-6 text-primary" />
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-3">
+                                <h3 className="font-semibold text-lg">{org.name}</h3>
+                                {org.tier && (
+                                  <Badge variant="outline" className="capitalize text-xs">
+                                    {org.tier}
+                                  </Badge>
+                                )}
+                                <Badge variant="outline" className="text-xs capitalize">
+                                  {org.role}
+                                </Badge>
+                              </div>
+                              <div className="flex items-center gap-4 mt-1">
+                                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                  <Users className="w-3 h-3" /> {org.memberCount} members
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-6">
+                            <div className="text-center">
+                              <p className={`text-xl font-bold ${getRiskColor(org.riskScore)}`}>
+                                {org.riskScore !== null ? org.riskScore : "—"}
+                              </p>
+                              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Risk</p>
+                            </div>
+                            <div className="text-center">
+                              <p className={`text-xl font-bold ${
+                                org.convergenceScore !== null
+                                  ? org.convergenceScore >= 70
+                                    ? "text-emerald-400"
+                                    : org.convergenceScore >= 40
+                                    ? "text-amber-400"
+                                    : "text-destructive"
+                                  : "text-muted-foreground"
+                              }`}>
+                                {org.convergenceScore !== null ? org.convergenceScore : "—"}
+                              </p>
+                              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">ECI</p>
+                            </div>
+                            <div className="text-center">
+                              <p className={`text-xl font-bold ${org.activeConflicts > 0 ? "text-destructive" : "text-muted-foreground"}`}>
+                                {org.activeConflicts}
+                              </p>
+                              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Conflicts</p>
+                            </div>
+                            <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+
+                {orgSummaries.length === 0 && (
+                  <Card className="border-dashed border-2">
+                    <CardContent className="flex flex-col items-center justify-center py-16 gap-4">
+                      <Building2 className="w-12 h-12 text-muted-foreground" />
+                      <h2 className="text-xl font-semibold">No Organizations</h2>
+                      <p className="text-muted-foreground text-center max-w-md">
+                        You're not a member of any organizations yet. Create one or accept an invitation to get started.
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
+              </>
+            )}
+          </div>
+        </main>
+      </div>
     </div>
   );
 };
