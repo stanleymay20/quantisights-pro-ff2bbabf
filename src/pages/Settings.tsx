@@ -13,8 +13,12 @@ import { useOrganization } from "@/hooks/useOrganization";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import {
-  User, Building2, Bell, Save, Loader2, Mail, X, ScrollText, Clock, Shield,
+  User, Building2, Bell, Save, Loader2, Mail, X, ScrollText, Clock, Shield, Trash2, AlertTriangle,
 } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface AuditEntry {
   id: string;
@@ -27,9 +31,10 @@ interface AuditEntry {
 }
 
 const Settings = () => {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const { currentOrgId, currentOrg } = useOrganization();
   const { toast } = useToast();
+  const [deletingAccount, setDeletingAccount] = useState(false);
 
   // Profile
   const [fullName, setFullName] = useState("");
@@ -192,6 +197,56 @@ const Settings = () => {
                       <Button onClick={saveProfile} disabled={savingProfile} className="gap-2">
                         {savingProfile ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Save Profile
                       </Button>
+                    </CardContent>
+                  </Card>
+
+                  {/* Account Deletion */}
+                  <Card className="border-destructive/30 mt-6">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-destructive"><AlertTriangle className="w-5 h-5" /> Danger Zone</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Permanently delete your account and all associated data. This action cannot be undone. Your data will be purged per our <a href="/data-retention" className="text-primary hover:underline">Data Retention Policy</a>.
+                      </p>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="destructive" className="gap-2"><Trash2 className="w-4 h-4" /> Delete Account</Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete your account?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This will permanently delete your profile, uploaded datasets (within 7 days), and all associated data. Audit logs are retained for 24 months per regulatory requirements. This cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              disabled={deletingAccount}
+                              onClick={async () => {
+                                setDeletingAccount(true);
+                                try {
+                                  // Delete profile data first, then sign out
+                                  if (user) {
+                                    await supabase.from("profiles").delete().eq("user_id", user.id);
+                                  }
+                                  await signOut();
+                                  toast({ title: "Account deletion initiated", description: "Your data will be purged per our retention policy. You have been signed out." });
+                                } catch (err: any) {
+                                  toast({ title: "Error", description: err.message, variant: "destructive" });
+                                } finally {
+                                  setDeletingAccount(false);
+                                }
+                              }}
+                            >
+                              {deletingAccount ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                              Yes, delete my account
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </CardContent>
                   </Card>
                 </motion.div>
