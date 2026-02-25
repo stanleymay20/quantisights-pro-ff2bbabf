@@ -39,6 +39,7 @@ import CookiePolicy from "./pages/CookiePolicy";
 import DataProcessing from "./pages/DataProcessing";
 import DataRetention from "./pages/DataRetention";
 import Subprocessors from "./pages/Subprocessors";
+import Simulations from "./pages/Simulations";
 
 const queryClient = new QueryClient();
 
@@ -75,6 +76,7 @@ const App = () => (
               <Route path="/decisions" element={<ProtectedRoute><DecisionLedger /></ProtectedRoute>} />
               <Route path="/benchmarking" element={<ProtectedRoute><Benchmarking /></ProtectedRoute>} />
               <Route path="/scenarios" element={<ProtectedRoute><Scenarios /></ProtectedRoute>} />
+              <Route path="/simulations" element={<ProtectedRoute><Simulations /></ProtectedRoute>} />
               <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
               <Route path="/executive" element={<ProtectedRoute><Executive /></ProtectedRoute>} />
               <Route path="/board-report" element={<ProtectedRoute><BoardReport /></ProtectedRoute>} />

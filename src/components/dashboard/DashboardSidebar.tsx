@@ -25,6 +25,7 @@ const navSections = [
     label: "Strategy",
     items: [
       { icon: Shuffle, label: "Scenarios", path: "/scenarios" },
+      { icon: TrendingUp, label: "Simulations", path: "/simulations" },
       { icon: Crown, label: "Executive Command", path: "/executive" },
       { icon: FileText, label: "Reports", path: "/reports" },
     ],
