@@ -6,6 +6,43 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// Industry-weighted baseline risk scores
+const INDUSTRY_WEIGHTS: Record<string, Record<string, number>> = {
+  saas:          { ceo: 30, cfo: 35, cmo: 40, coo: 20 },
+  manufacturing: { ceo: 35, cfo: 45, cmo: 25, coo: 50 },
+  retail:        { ceo: 35, cfo: 40, cmo: 45, coo: 35 },
+  finance:       { ceo: 40, cfo: 50, cmo: 25, coo: 30 },
+  healthcare:    { ceo: 45, cfo: 50, cmo: 20, coo: 40 },
+  consulting:    { ceo: 30, cfo: 35, cmo: 35, coo: 30 },
+  other:         { ceo: 35, cfo: 40, cmo: 30, coo: 25 },
+};
+
+// Size-band adjustment (larger = more operational complexity = higher risk)
+const SIZE_ADJUSTMENTS: Record<string, number> = {
+  "1-10": -5,
+  "11-50": 0,
+  "51-200": 3,
+  "201-1000": 6,
+  "1000+": 10,
+};
+
+// Revenue-band sensitivity (higher revenue = higher financial stakes)
+const REVENUE_ADJUSTMENTS: Record<string, Record<string, number>> = {
+  "pre-revenue": { ceo: 10, cfo: -5, cmo: 5, coo: -3 },
+  "0-1m":        { ceo: 5,  cfo: 0,  cmo: 3, coo: 0 },
+  "1-10m":       { ceo: 0,  cfo: 3,  cmo: 0, coo: 2 },
+  "10-50m":      { ceo: -2, cfo: 5,  cmo: -2, coo: 5 },
+  "50-100m":     { ceo: -3, cfo: 8,  cmo: -3, coo: 8 },
+  "100m+":       { ceo: -5, cfo: 10, cmo: -5, coo: 10 },
+};
+
+function computeBaseScore(role: string, industry: string, sizeBand: string, revenueBand: string): number {
+  const industryBase = INDUSTRY_WEIGHTS[industry]?.[role] ?? INDUSTRY_WEIGHTS.other[role] ?? 30;
+  const sizeAdj = SIZE_ADJUSTMENTS[sizeBand] ?? 0;
+  const revenueAdj = REVENUE_ADJUSTMENTS[revenueBand]?.[role] ?? 0;
+  return Math.max(5, Math.min(80, industryBase + sizeAdj + revenueAdj));
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -29,20 +66,39 @@ serve(async (req) => {
     const { organization_id, roles, kpi_template_id } = await req.json();
     if (!organization_id) throw new Error("organization_id required");
 
-    // 1. Generate baseline risk indices for selected roles
-    const selectedRoles = roles || ["ceo", "cfo", "cmo", "coo"];
-    const baseScores: Record<string, number> = { ceo: 35, cfo: 40, cmo: 30, coo: 25 };
+    // Fetch org profile for industry-weighted scoring
+    const { data: org } = await supabase
+      .from("organizations")
+      .select("industry, size_band, revenue_band")
+      .eq("id", organization_id)
+      .single();
 
+    const industry = org?.industry || "other";
+    const sizeBand = org?.size_band || "11-50";
+    const revenueBand = org?.revenue_band || "1-10m";
+
+    const selectedRoles = roles || ["ceo", "cfo", "cmo", "coo"];
+    const riskScores: Record<string, number> = {};
+
+    // 1. Generate industry-weighted risk indices
     for (const role of selectedRoles) {
-      const score = baseScores[role] || 30;
+      const score = computeBaseScore(role, industry, sizeBand, revenueBand);
+      riskScores[role] = score;
+
       await supabase.from("executive_risk_index").upsert(
         {
           organization_id,
           role_type: role,
           score,
-          components: { deviation: score * 0.3, trend: score * 0.25, volatility: score * 0.2, forecast: score * 0.25 },
+          components: {
+            deviation: Math.round(score * 0.3),
+            trend: Math.round(score * 0.25),
+            volatility: Math.round(score * 0.2),
+            forecast: Math.round(score * 0.25),
+          },
           last_updated: new Date().toISOString(),
-          escalation_required: false,
+          escalation_required: score >= 75,
+          escalation_reason: score >= 75 ? `High baseline risk for ${role.toUpperCase()} in ${industry} sector` : null,
         },
         { onConflict: "organization_id,role_type", ignoreDuplicates: false }
       );
@@ -60,9 +116,9 @@ serve(async (req) => {
     }
 
     // 2. Generate initial convergence index
-    const riskScores = selectedRoles.map((r: string) => baseScores[r] || 30);
-    const mean = riskScores.reduce((a: number, b: number) => a + b, 0) / riskScores.length;
-    const dispersion = Math.sqrt(riskScores.reduce((s: number, v: number) => s + (v - mean) ** 2, 0) / riskScores.length);
+    const scores = Object.values(riskScores);
+    const mean = scores.reduce((a, b) => a + b, 0) / scores.length;
+    const dispersion = Math.sqrt(scores.reduce((s, v) => s + (v - mean) ** 2, 0) / scores.length);
     const eciScore = Math.max(0, Math.min(100, Math.round(100 - dispersion * 3)));
 
     await supabase.from("executive_convergence_index").insert({
@@ -71,10 +127,14 @@ serve(async (req) => {
       dispersion: Math.round(dispersion * 100) / 100,
       conflict_penalty: 0,
       volatility_divergence: 0,
-      alignment_status: eciScore >= 70 ? "aligned" : eciScore >= 40 ? "tension" : eciScore >= 20 ? "misalignment" : "structural_conflict",
+      alignment_status:
+        eciScore >= 70 ? "aligned" :
+        eciScore >= 40 ? "tension" :
+        eciScore >= 20 ? "misalignment" : "structural_conflict",
     });
 
     // 3. Create KPIs from template if selected
+    let kpisCreated = 0;
     if (kpi_template_id) {
       const { data: template } = await supabase
         .from("kpi_templates")
@@ -85,7 +145,7 @@ serve(async (req) => {
       if (template?.kpis) {
         const kpis = template.kpis as any[];
         for (const kpi of kpis) {
-          await supabase.from("kpis").insert({
+          const { error } = await supabase.from("kpis").insert({
             organization_id,
             name: kpi.name,
             formula: kpi.formula,
@@ -95,6 +155,7 @@ serve(async (req) => {
             metric_dependencies: [],
             status: "active",
           });
+          if (!error) kpisCreated++;
         }
       }
     }
@@ -105,12 +166,22 @@ serve(async (req) => {
       .update({ onboarding_completed: true })
       .eq("id", organization_id);
 
+    // 5. Create audit log entry (insert an insight record)
+    await supabase.from("insights").insert({
+      organization_id,
+      message: `Onboarding completed: ${selectedRoles.length} executive roles activated, ECI ${eciScore}/100, ${kpisCreated} KPIs deployed. Industry: ${industry}, Size: ${sizeBand}, Revenue: ${revenueBand}.`,
+      severity: "info",
+      category: "system",
+    });
+
     return new Response(
       JSON.stringify({
         success: true,
         risk_indices: selectedRoles.length,
+        risk_scores: riskScores,
         convergence_score: eciScore,
-        kpis_created: kpi_template_id ? "from_template" : "none",
+        kpis_created: kpisCreated,
+        industry_weights_applied: industry,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
     );

@@ -111,10 +111,12 @@ const Onboarding = () => {
 
   const saveOrgProfile = async () => {
     if (!currentOrgId) return;
+    const sanitizedName = orgName.trim().slice(0, 200);
+    if (!sanitizedName) return;
     await supabase
       .from("organizations")
       .update({
-        name: orgName || currentOrg?.name,
+        name: sanitizedName || currentOrg?.name,
         industry,
         size_band: sizeBand,
         revenue_band: revenueBand,
@@ -141,7 +143,7 @@ const Onboarding = () => {
 
       toast({
         title: "Onboarding complete!",
-        description: `Risk indices generated. ECI score: ${data.convergence_score}/100`,
+        description: `${data.risk_indices} risk indices generated (industry-weighted). ECI: ${data.convergence_score}/100. ${data.kpis_created} KPIs deployed.`,
       });
 
       if (dataOption === "csv") {
@@ -171,7 +173,6 @@ const Onboarding = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Top bar */}
       <div className="border-b border-border px-6 py-4 flex items-center justify-between">
         <img src={logo} alt="Quantivis" className="h-8" />
         <div className="flex items-center gap-2">
@@ -195,7 +196,7 @@ const Onboarding = () => {
               <div className="text-center space-y-2">
                 <Building2 className="w-12 h-12 text-primary mx-auto" />
                 <h1 className="text-3xl font-bold tracking-tight">Set Up Your Organization</h1>
-                <p className="text-muted-foreground">Tell us about your business to customize your experience</p>
+                <p className="text-muted-foreground">Tell us about your business to customize risk scoring</p>
               </div>
 
               <Card>
@@ -204,8 +205,9 @@ const Onboarding = () => {
                     <Label>Organization Name</Label>
                     <Input
                       value={orgName}
-                      onChange={(e) => setOrgName(e.target.value)}
+                      onChange={(e) => setOrgName(e.target.value.slice(0, 200))}
                       placeholder="Acme Corp"
+                      maxLength={200}
                     />
                   </div>
 
@@ -219,6 +221,7 @@ const Onboarding = () => {
                         ))}
                       </SelectContent>
                     </Select>
+                    <p className="text-xs text-muted-foreground">Industry selection influences baseline risk weighting</p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
@@ -414,6 +417,14 @@ const Onboarding = () => {
                     <span className="font-medium capitalize">{industry || "—"}</span>
                   </div>
                   <div className="flex items-center justify-between py-3 border-b border-border">
+                    <span className="text-muted-foreground">Company Size</span>
+                    <span className="font-medium">{SIZE_BANDS.find(s => s.value === sizeBand)?.label || "—"}</span>
+                  </div>
+                  <div className="flex items-center justify-between py-3 border-b border-border">
+                    <span className="text-muted-foreground">Revenue Band</span>
+                    <span className="font-medium">{REVENUE_BANDS.find(r => r.value === revenueBand)?.label || "—"}</span>
+                  </div>
+                  <div className="flex items-center justify-between py-3 border-b border-border">
                     <span className="text-muted-foreground">Executive Roles</span>
                     <div className="flex gap-1">
                       {selectedRoles.map((r) => (
@@ -436,7 +447,8 @@ const Onboarding = () => {
 
               <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-center">
                 <p className="text-sm text-muted-foreground">
-                  This will generate baseline <strong>risk indices</strong>, <strong>convergence scores</strong>, and
+                  This will generate <strong>industry-weighted risk indices</strong> for your {industry} business,
+                  compute initial <strong>convergence scores</strong>, and
                   {selectedTemplate ? " deploy your selected KPIs" : " prepare your custom KPI workspace"}.
                 </p>
               </div>
