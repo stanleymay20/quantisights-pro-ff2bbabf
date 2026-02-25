@@ -14,7 +14,7 @@ import { useOrganization } from "@/hooks/useOrganization";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import {
-  User, Building2, Bell, Save, Loader2, Mail, X, ScrollText, Clock, Shield, Trash2, AlertTriangle, ShieldCheck, Sun, Moon, Monitor,
+  User, Building2, Bell, Save, Loader2, Mail, X, ScrollText, Clock, Shield, Trash2, AlertTriangle, ShieldCheck, Sun, Moon, Monitor, Activity,
 } from "lucide-react";
 import MFAEnroll from "@/components/auth/MFAEnroll";
 import {
@@ -38,6 +38,7 @@ const Settings = () => {
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
   const [deletingAccount, setDeletingAccount] = useState(false);
+  const [seedingDemo, setSeedingDemo] = useState(false);
 
   // Profile
   const [fullName, setFullName] = useState("");
@@ -311,6 +312,42 @@ const Settings = () => {
                       {/* Org ID removed — technical details hidden from executive UI */}
                       <Button onClick={saveOrg} disabled={savingOrg} className="gap-2">
                         {savingOrg ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Save Organization
+                      </Button>
+                    </CardContent>
+                  </Card>
+
+                  {/* Demo Data */}
+                  <Card className="mt-6 border-primary/30">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2"><Activity className="w-5 h-5 text-primary" /> Demo Environment</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Populate your organization with a realistic enterprise scenario — 15 months of metrics, risk indices, simulations, decisions, and advisories. This will overwrite existing demo data.
+                      </p>
+                      <Button
+                        variant="outline"
+                        disabled={seedingDemo}
+                        className="gap-2"
+                        onClick={async () => {
+                          setSeedingDemo(true);
+                          try {
+                            const { data, error } = await supabase.functions.invoke("seed-demo-data");
+                            if (error) throw error;
+                            if (data?.error) throw new Error(data.error);
+                            toast({
+                              title: "Demo data loaded",
+                              description: `${data.summary.metrics} metrics, ${data.summary.decisions} decisions, ${data.summary.advisories} advisories seeded.`,
+                            });
+                          } catch (err: any) {
+                            toast({ title: "Error", description: err.message, variant: "destructive" });
+                          } finally {
+                            setSeedingDemo(false);
+                          }
+                        }}
+                      >
+                        {seedingDemo ? <Loader2 className="w-4 h-4 animate-spin" /> : <Activity className="w-4 h-4" />}
+                        {seedingDemo ? "Seeding data…" : "Load Demo Scenario"}
                       </Button>
                     </CardContent>
                   </Card>
