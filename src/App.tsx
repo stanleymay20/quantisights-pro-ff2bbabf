@@ -32,6 +32,10 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
+import CookiePolicy from "./pages/CookiePolicy";
+import DataProcessing from "./pages/DataProcessing";
+import DataRetention from "./pages/DataRetention";
+import Subprocessors from "./pages/Subprocessors";
 
 const queryClient = new QueryClient();
 
@@ -52,6 +56,10 @@ const App = () => (
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/terms" element={<Terms />} />
               <Route path="/privacy" element={<Privacy />} />
+              <Route path="/cookies" element={<CookiePolicy />} />
+              <Route path="/dpa" element={<DataProcessing />} />
+              <Route path="/data-retention" element={<DataRetention />} />
+              <Route path="/subprocessors" element={<Subprocessors />} />
               <Route path="/accept-invite" element={<AcceptInvite />} />
               <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />

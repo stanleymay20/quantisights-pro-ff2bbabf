@@ -8,7 +8,7 @@ const FOOTER_SECTIONS = [
       { label: "Dashboard", href: "#features" },
       { label: "KPI Intelligence", href: "#features" },
       { label: "Advisory Engine", href: "#features" },
-      { label: "Board Reports", href: "#features" },
+      { label: "Case Studies", href: "#case-studies" },
     ],
   },
   {
@@ -20,11 +20,14 @@ const FOOTER_SECTIONS = [
     ],
   },
   {
-    title: "Resources",
+    title: "Legal & Compliance",
     links: [
-      { label: "Documentation", href: "#" },
-      { label: "Security", href: "#" },
-      { label: "Status", href: "#" },
+      { label: "Privacy Policy", to: "/privacy" },
+      { label: "Terms of Service", to: "/terms" },
+      { label: "Cookie Policy", to: "/cookies" },
+      { label: "DPA", to: "/dpa" },
+      { label: "Data Retention", to: "/data-retention" },
+      { label: "Subprocessors", to: "/subprocessors" },
     ],
   },
 ];
@@ -70,8 +73,10 @@ const Footer = () => (
           © {new Date().getFullYear()} Quantivis Global. All rights reserved.
         </p>
         <div className="flex items-center gap-6">
-          <Link to="/privacy" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Privacy Policy</Link>
-          <Link to="/terms" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Terms of Service</Link>
+          <Link to="/privacy" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Privacy</Link>
+          <Link to="/terms" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Terms</Link>
+          <Link to="/cookies" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Cookies</Link>
+          <Link to="/dpa" className="text-xs text-muted-foreground hover:text-foreground transition-colors">DPA</Link>
         </div>
       </div>
     </div>
