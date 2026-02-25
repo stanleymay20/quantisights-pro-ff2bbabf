@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { useTheme } from "@/components/ThemeProvider";
 import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,7 @@ import { useOrganization } from "@/hooks/useOrganization";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import {
-  User, Building2, Bell, Save, Loader2, Mail, X, ScrollText, Clock, Shield, Trash2, AlertTriangle, ShieldCheck,
+  User, Building2, Bell, Save, Loader2, Mail, X, ScrollText, Clock, Shield, Trash2, AlertTriangle, ShieldCheck, Sun, Moon, Monitor,
 } from "lucide-react";
 import MFAEnroll from "@/components/auth/MFAEnroll";
 import {
@@ -35,6 +36,7 @@ const Settings = () => {
   const { user, signOut } = useAuth();
   const { currentOrgId, currentOrg } = useOrganization();
   const { toast } = useToast();
+  const { theme, setTheme } = useTheme();
   const [deletingAccount, setDeletingAccount] = useState(false);
 
   // Profile
@@ -173,8 +175,9 @@ const Settings = () => {
         <main className="flex-1 p-8 overflow-auto">
           <div className="max-w-3xl mx-auto">
             <Tabs defaultValue="profile" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-5">
+              <TabsList className="grid w-full grid-cols-6">
                 <TabsTrigger value="profile" className="gap-2"><User className="w-4 h-4" /> Profile</TabsTrigger>
+                <TabsTrigger value="appearance" className="gap-2"><Sun className="w-4 h-4" /> Appearance</TabsTrigger>
                 <TabsTrigger value="security" className="gap-2"><ShieldCheck className="w-4 h-4" /> Security</TabsTrigger>
                 <TabsTrigger value="organization" className="gap-2"><Building2 className="w-4 h-4" /> Organization</TabsTrigger>
                 <TabsTrigger value="notifications" className="gap-2"><Bell className="w-4 h-4" /> Notifications</TabsTrigger>
@@ -247,6 +250,38 @@ const Settings = () => {
                           </AlertDialogFooter>
                         </AlertDialogContent>
                       </AlertDialog>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              </TabsContent>
+
+              {/* Appearance */}
+              <TabsContent value="appearance">
+                <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
+                  <Card>
+                    <CardHeader><CardTitle className="flex items-center gap-2"><Sun className="w-5 h-5 text-primary" /> Appearance</CardTitle></CardHeader>
+                    <CardContent className="space-y-4">
+                      <p className="text-sm text-muted-foreground">Choose your preferred theme for the interface.</p>
+                      <div className="grid grid-cols-3 gap-3">
+                        {[
+                          { value: "light" as const, label: "Day", icon: Sun },
+                          { value: "dark" as const, label: "Night", icon: Moon },
+                          { value: "system" as const, label: "System", icon: Monitor },
+                        ].map(({ value, label, icon: Icon }) => (
+                          <button
+                            key={value}
+                            onClick={() => setTheme(value)}
+                            className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                              theme === value
+                                ? "border-primary bg-primary/5"
+                                : "border-border hover:border-primary/30"
+                            }`}
+                          >
+                            <Icon className={`w-6 h-6 ${theme === value ? "text-primary" : "text-muted-foreground"}`} />
+                            <span className={`text-sm font-medium ${theme === value ? "text-foreground" : "text-muted-foreground"}`}>{label}</span>
+                          </button>
+                        ))}
+                      </div>
                     </CardContent>
                   </Card>
                 </motion.div>
