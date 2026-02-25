@@ -71,3 +71,6 @@ verify_jwt = false
 
 [functions.prescriptive-advisory]
 verify_jwt = false
+
+[functions.executive-orchestration]
+verify_jwt = false
