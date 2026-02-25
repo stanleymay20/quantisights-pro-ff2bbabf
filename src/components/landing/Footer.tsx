@@ -5,16 +5,14 @@ const FOOTER_SECTIONS = [
   {
     title: "Platform",
     links: [
-      { label: "Dashboard", href: "#features" },
-      { label: "KPI Intelligence", href: "#features" },
-      { label: "Advisory Engine", href: "#features" },
+      { label: "How It Works", href: "#how-it-works" },
+      { label: "Capabilities", href: "#features" },
       { label: "Case Studies", href: "#case-studies" },
     ],
   },
   {
     title: "Company",
     links: [
-      { label: "About", href: "#about" },
       { label: "Pricing", to: "/pricing" },
       { label: "Contact", href: "#contact" },
     ],
@@ -33,7 +31,7 @@ const FOOTER_SECTIONS = [
 ];
 
 const Footer = () => (
-  <footer className="border-t border-border/50 pt-16 pb-8">
+  <footer className="border-t border-border pt-16 pb-8 bg-card/30">
     <div className="container mx-auto px-6">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
         {/* Brand */}
@@ -56,7 +54,7 @@ const Footer = () => (
                       {link.label}
                     </Link>
                   ) : (
-                    <a href={link.href} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                    <a href={(link as any).href} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                       {link.label}
                     </a>
                   )}
@@ -68,7 +66,7 @@ const Footer = () => (
       </div>
 
       {/* Bottom bar */}
-      <div className="border-t border-border/30 pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="border-t border-border pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
         <p className="text-xs text-muted-foreground">
           © {new Date().getFullYear()} Quantivis Global. All rights reserved.
         </p>

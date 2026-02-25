@@ -11,8 +11,8 @@ const PROOF_POINTS = [
 
 const HeroSection = () => {
   return (
-    <section className="relative min-h-screen flex items-center overflow-hidden pt-20">
-      {/* Background image with 50% opacity */}
+    <section className="relative min-h-[90vh] flex items-center overflow-hidden pt-20">
+      {/* Background image with 30% opacity */}
       <div
         className="absolute inset-0 z-0"
         style={{
@@ -23,17 +23,16 @@ const HeroSection = () => {
           opacity: 0.3,
         }}
       />
-      {/* Dark overlay for text readability */}
-      <div className="absolute inset-0 z-[1] bg-background/60" />
+      {/* Overlay for readability */}
+      <div className="absolute inset-0 z-[1] bg-background/50" />
 
-      {/* Ambient glow effects */}
+      {/* Ambient glow */}
       <div className="absolute inset-0 pointer-events-none z-[2]">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-[120px]" />
-        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-blue-500/8 rounded-full blur-[100px]" />
+        <div className="absolute top-1/3 left-1/3 w-96 h-96 bg-primary/8 rounded-full blur-[120px]" />
       </div>
 
       <div className="container mx-auto px-6 relative z-10">
-        <div className="max-w-3xl mx-auto text-center">
+        <div className="max-w-2xl mx-auto text-center">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -56,11 +55,11 @@ const HeroSection = () => {
               <span className="gradient-text">Deciding.</span>
             </h1>
             <p className="text-lg text-muted-foreground max-w-lg mx-auto mb-8 leading-relaxed">
-              Quantivis isn't a dashboard — it's an autonomous intelligence engine that ingests your operational data, diagnoses root causes, and prescribes strategic action with traceable confidence scores.
+              An autonomous intelligence engine that ingests your operational data, diagnoses root causes, and prescribes strategic action.
             </p>
 
             {/* Proof points */}
-            <div className="space-y-2.5 mb-8 inline-block text-left">
+            <div className="space-y-2 mb-8 inline-block text-left">
               {PROOF_POINTS.map((point) => (
                 <div key={point} className="flex items-start gap-2.5">
                   <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 shrink-0" />
@@ -78,7 +77,7 @@ const HeroSection = () => {
               </Link>
               <a
                 href="#how-it-works"
-                className="inline-flex items-center justify-center px-8 py-4 rounded-xl glass-card text-foreground font-semibold text-base hover:border-primary/30 transition-all"
+                className="inline-flex items-center justify-center px-8 py-4 rounded-xl border border-border bg-card/50 text-foreground font-semibold text-base hover:border-primary/30 transition-all"
               >
                 See the Difference
               </a>
@@ -89,7 +88,7 @@ const HeroSection = () => {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6 }}
-              className="mt-10 pt-8 border-t border-border/20"
+              className="mt-10 pt-6 border-t border-border/30"
             >
               <p className="text-[11px] uppercase tracking-widest text-muted-foreground/60 mb-3">Replaces</p>
               <div className="flex flex-wrap gap-3 justify-center">

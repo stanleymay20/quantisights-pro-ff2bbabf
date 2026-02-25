@@ -37,24 +37,24 @@ const SocialProofSection = () => {
   return (
     <>
       {/* ROI Section */}
-      <section className="py-32 relative">
+      <section className="py-24 relative">
         <div className="container mx-auto px-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-center mb-16"
+            className="text-center mb-14"
           >
             <p className="text-xs uppercase tracking-widest text-primary font-semibold mb-3">Measurable Impact</p>
             <h2 className="text-4xl font-bold font-display mb-4">
               The ROI of <span className="gradient-text">Autonomous Intelligence</span>
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Quantivis doesn't just visualize data — it eliminates the entire manual consulting cycle.
+              Quantivis eliminates the entire manual consulting cycle.
             </p>
           </motion.div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {ROI_METRICS.map((metric, i) => (
               <motion.div
                 key={metric.label}
@@ -62,10 +62,10 @@ const SocialProofSection = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
-                className="glass-card p-8 text-center"
+                className="glass-card p-7 text-center"
               >
-                <metric.icon className="w-8 h-8 text-primary mx-auto mb-4" />
-                <p className="text-4xl font-bold font-display gradient-text mb-1">{metric.value}</p>
+                <metric.icon className="w-7 h-7 text-primary mx-auto mb-4" />
+                <p className="text-3xl font-bold font-display gradient-text mb-1">{metric.value}</p>
                 <p className="text-sm font-semibold mb-1">{metric.label}</p>
                 <p className="text-xs text-muted-foreground">{metric.detail}</p>
               </motion.div>
@@ -75,13 +75,13 @@ const SocialProofSection = () => {
       </section>
 
       {/* Case Studies */}
-      <section id="case-studies" className="py-32 relative">
+      <section id="case-studies" className="py-24 relative">
         <div className="container mx-auto px-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-center mb-16"
+            className="text-center mb-14"
           >
             <p className="text-xs uppercase tracking-widest text-primary font-semibold mb-3">Proven Results</p>
             <h2 className="text-4xl font-bold font-display mb-4">
@@ -92,17 +92,17 @@ const SocialProofSection = () => {
             </p>
           </motion.div>
 
-          <div className="grid lg:grid-cols-3 gap-8">
+          <div className="grid lg:grid-cols-3 gap-5">
             {CASE_STUDIES.map((study, i) => (
               <motion.div
                 key={study.industry}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: i * 0.15 }}
-                className="glass-card-hover p-8 flex flex-col"
+                transition={{ delay: i * 0.12 }}
+                className="glass-card-hover p-7 flex flex-col"
               >
-                <div className="flex items-center gap-3 mb-6">
+                <div className="flex items-center gap-3 mb-5">
                   <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold">{study.industry}</span>
                   <span className="text-xs text-muted-foreground">{study.company}</span>
                 </div>
@@ -112,12 +112,12 @@ const SocialProofSection = () => {
                   <p className="text-sm text-foreground/80 leading-relaxed">{study.challenge}</p>
                 </div>
 
-                <div className="mb-6">
+                <div className="mb-5">
                   <p className="text-[11px] uppercase tracking-widest text-primary/80 font-semibold mb-1.5">Result</p>
                   <p className="text-sm text-foreground/90 leading-relaxed">{study.result}</p>
                 </div>
 
-                <div className="mt-auto pt-4 border-t border-border/20 flex flex-wrap gap-2">
+                <div className="mt-auto pt-4 border-t border-border/40 flex flex-wrap gap-2">
                   {study.metrics.map((m) => (
                     <span key={m} className="text-[11px] font-semibold px-2.5 py-1 rounded-md bg-primary/5 text-primary/90">{m}</span>
                   ))}
@@ -130,7 +130,7 @@ const SocialProofSection = () => {
             initial={{ opacity: 0, y: 12 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-center mt-12"
+            className="text-center mt-10"
           >
             <Link
               to="/register"
