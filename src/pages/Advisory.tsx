@@ -4,13 +4,16 @@ import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { useOrganization } from "@/hooks/useOrganization";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import {
   Lightbulb, AlertTriangle, TrendingUp, DollarSign, Shield, Target,
   Loader2, ChevronDown, ChevronUp, RefreshCw, Clock, CheckCircle2,
-  Zap, BarChart3,
+  Zap, BarChart3, PlayCircle, Archive, XCircle, History,
 } from "lucide-react";
 
 interface Advisory {
@@ -27,9 +30,32 @@ interface Advisory {
   playbook_steps: string[];
 }
 
-const PRIORITY_CONFIG = {
+interface AdvisoryInstance {
+  id: string;
+  organization_id: string;
+  advisory_type: string;
+  title: string;
+  category: string;
+  priority: string;
+  action: string;
+  expected_impact: string | null;
+  timeframe: string | null;
+  confidence: number;
+  rationale: string | null;
+  kpi_affected: any;
+  playbook_steps: any;
+  status: string;
+  assigned_to: string | null;
+  resolved_at: string | null;
+  resolution_summary: string | null;
+  impact_score: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+const PRIORITY_CONFIG: Record<string, { bg: string; border: string; text: string; label: string }> = {
   critical: { bg: "bg-destructive/10", border: "border-destructive/30", text: "text-destructive", label: "Critical" },
-  high: { bg: "bg-amber-500/10", border: "border-amber-500/30", text: "text-amber-400", label: "High Priority" },
+  high: { bg: "bg-amber-500/10", border: "border-amber-500/30", text: "text-amber-400", label: "High" },
   medium: { bg: "bg-sky-500/10", border: "border-sky-500/30", text: "text-sky-400", label: "Medium" },
   low: { bg: "bg-emerald-500/10", border: "border-emerald-500/30", text: "text-emerald-400", label: "Low" },
 };
@@ -42,13 +68,24 @@ const CATEGORY_ICONS: Record<string, typeof Lightbulb> = {
   strategic: Lightbulb,
 };
 
+const STATUS_CONFIG: Record<string, { icon: typeof PlayCircle; color: string; label: string }> = {
+  open: { icon: AlertTriangle, color: "text-amber-400", label: "Open" },
+  in_progress: { icon: PlayCircle, color: "text-sky-400", label: "In Progress" },
+  resolved: { icon: CheckCircle2, color: "text-emerald-400", label: "Resolved" },
+  dismissed: { icon: XCircle, color: "text-muted-foreground", label: "Dismissed" },
+};
+
 const AdvisoryPage = () => {
   const { currentOrgId } = useOrganization();
   const { toast } = useToast();
   const [advisories, setAdvisories] = useState<Advisory[]>([]);
+  const [instances, setInstances] = useState<AdvisoryInstance[]>([]);
   const [loading, setLoading] = useState(false);
   const [criticalCount, setCriticalCount] = useState(0);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [resolutionText, setResolutionText] = useState("");
+  const [impactScore, setImpactScore] = useState("");
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   const fetchAdvisories = async () => {
     if (!currentOrgId) return;
@@ -68,9 +105,113 @@ const AdvisoryPage = () => {
     }
   };
 
+  const fetchInstances = async () => {
+    if (!currentOrgId) return;
+    const { data, error } = await supabase
+      .from("advisory_instances")
+      .select("*")
+      .eq("organization_id", currentOrgId)
+      .order("created_at", { ascending: false })
+      .limit(100);
+    if (!error && data) setInstances(data as AdvisoryInstance[]);
+  };
+
   useEffect(() => {
-    if (currentOrgId) fetchAdvisories();
+    if (currentOrgId) {
+      fetchAdvisories();
+      fetchInstances();
+    }
   }, [currentOrgId]);
+
+  const updateInstanceStatus = async (id: string, status: string, extras?: Record<string, any>) => {
+    setUpdatingId(id);
+    try {
+      const update: any = { status, ...extras };
+      if (status === "resolved") update.resolved_at = new Date().toISOString();
+      const { error } = await supabase
+        .from("advisory_instances")
+        .update(update)
+        .eq("id", id);
+      if (error) throw error;
+      toast({ title: `Advisory marked as ${status}` });
+      fetchInstances();
+      setResolutionText("");
+      setImpactScore("");
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const renderAdvisoryCard = (adv: Advisory, i: number) => {
+    const config = PRIORITY_CONFIG[adv.priority] || PRIORITY_CONFIG.low;
+    const CategoryIcon = CATEGORY_ICONS[adv.category] || Lightbulb;
+    const isExpanded = expanded === adv.id;
+
+    return (
+      <motion.div key={adv.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
+        <Card className={`border ${config.border} transition-all`}>
+          <CardContent className="p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-4 flex-1">
+                <div className={`w-10 h-10 rounded-lg ${config.bg} flex items-center justify-center shrink-0`}>
+                  <CategoryIcon className={`w-5 h-5 ${config.text}`} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-3 mb-1 flex-wrap">
+                    <h3 className="font-semibold text-base">{adv.title}</h3>
+                    <Badge className={`${config.bg} ${config.text} border-none text-xs`}>{config.label}</Badge>
+                    <Badge variant="outline" className="text-xs capitalize">{adv.category.replace(/_/g, " ")}</Badge>
+                  </div>
+                  <p className="text-sm text-foreground/80 mt-1">{adv.action}</p>
+                  <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {adv.timeframe}</span>
+                    <span className="flex items-center gap-1"><BarChart3 className="w-3 h-3" /> {adv.confidence}% confidence</span>
+                    <span className="flex items-center gap-1"><Zap className="w-3 h-3" /> {adv.expected_impact}</span>
+                  </div>
+                </div>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => setExpanded(isExpanded ? null : adv.id)}>
+                {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </Button>
+            </div>
+
+            {isExpanded && (
+              <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} className="mt-6 pt-6 border-t border-border space-y-5">
+                <div>
+                  <h4 className="text-sm font-semibold mb-2">Strategic Rationale</h4>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{adv.rationale}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-semibold mb-2">KPIs Affected</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {adv.kpi_affected.map((k, j) => <Badge key={j} variant="outline" className="text-xs">{k}</Badge>)}
+                  </div>
+                </div>
+                <div>
+                  <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-primary" /> Action Playbook
+                  </h4>
+                  <ol className="space-y-2">
+                    {adv.playbook_steps.map((step, j) => (
+                      <li key={j} className="flex items-start gap-3 text-sm">
+                        <span className="w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center shrink-0">{j + 1}</span>
+                        <span className="text-muted-foreground">{step}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              </motion.div>
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
+    );
+  };
+
+  const openInstances = instances.filter(i => i.status === "open" || i.status === "in_progress");
+  const closedInstances = instances.filter(i => i.status === "resolved" || i.status === "dismissed");
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -79,141 +220,202 @@ const AdvisoryPage = () => {
         <header className="h-16 border-b border-border flex items-center justify-between px-8 shrink-0">
           <div>
             <h1 className="text-xl font-semibold font-display">Prescriptive Advisory</h1>
-            <p className="text-xs text-muted-foreground">AI-powered strategic recommendations & playbooks</p>
+            <p className="text-xs text-muted-foreground">AI-powered strategic recommendations with lifecycle tracking</p>
           </div>
-          <Button onClick={fetchAdvisories} disabled={loading} variant="outline" size="sm" className="gap-2">
+          <Button onClick={() => { fetchAdvisories(); fetchInstances(); }} disabled={loading} variant="outline" size="sm" className="gap-2">
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
             Refresh
           </Button>
         </header>
 
-        <main className="flex-1 p-8 overflow-auto space-y-6">
-          {/* Summary */}
-          {criticalCount > 0 && (
-            <Card className="border-destructive/30 bg-destructive/5">
-              <CardContent className="p-4 flex items-center gap-3">
-                <AlertTriangle className="w-5 h-5 text-destructive" />
-                <span className="text-sm font-medium">
-                  {criticalCount} critical action{criticalCount > 1 ? "s" : ""} require{criticalCount === 1 ? "s" : ""} immediate attention
-                </span>
-              </CardContent>
-            </Card>
-          )}
+        <main className="flex-1 p-8 overflow-auto">
+          <Tabs defaultValue="live" className="space-y-6">
+            <TabsList>
+              <TabsTrigger value="live" className="gap-2"><Zap className="w-4 h-4" /> Live Analysis</TabsTrigger>
+              <TabsTrigger value="tracked" className="gap-2">
+                <PlayCircle className="w-4 h-4" /> Tracked ({openInstances.length})
+              </TabsTrigger>
+              <TabsTrigger value="history" className="gap-2"><History className="w-4 h-4" /> History ({closedInstances.length})</TabsTrigger>
+            </TabsList>
 
-          {loading ? (
-            <Card>
-              <CardContent className="py-16 flex flex-col items-center gap-4">
-                <Loader2 className="w-10 h-10 animate-spin text-primary" />
-                <p className="text-muted-foreground">Generating strategic recommendations...</p>
-              </CardContent>
-            </Card>
-          ) : advisories.length === 0 ? (
-            <Card>
-              <CardContent className="py-16 flex flex-col items-center gap-4">
-                <Lightbulb className="w-12 h-12 text-muted-foreground" />
-                <h2 className="text-lg font-semibold">No Advisories Yet</h2>
-                <p className="text-muted-foreground text-sm">Upload data to generate prescriptive recommendations.</p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-4">
-              {advisories.map((adv, i) => {
-                const config = PRIORITY_CONFIG[adv.priority];
-                const CategoryIcon = CATEGORY_ICONS[adv.category] || Lightbulb;
-                const isExpanded = expanded === adv.id;
+            {/* Live Analysis Tab */}
+            <TabsContent value="live" className="space-y-6">
+              {criticalCount > 0 && (
+                <Card className="border-destructive/30 bg-destructive/5">
+                  <CardContent className="p-4 flex items-center gap-3">
+                    <AlertTriangle className="w-5 h-5 text-destructive" />
+                    <span className="text-sm font-medium">
+                      {criticalCount} critical action{criticalCount > 1 ? "s" : ""} require immediate attention
+                    </span>
+                  </CardContent>
+                </Card>
+              )}
+
+              {loading ? (
+                <Card><CardContent className="py-16 flex flex-col items-center gap-4">
+                  <Loader2 className="w-10 h-10 animate-spin text-primary" />
+                  <p className="text-muted-foreground">Generating strategic recommendations...</p>
+                </CardContent></Card>
+              ) : advisories.length === 0 ? (
+                <Card><CardContent className="py-16 flex flex-col items-center gap-4">
+                  <Lightbulb className="w-12 h-12 text-muted-foreground" />
+                  <h2 className="text-lg font-semibold">No Advisories Yet</h2>
+                  <p className="text-muted-foreground text-sm">Upload data to generate prescriptive recommendations.</p>
+                </CardContent></Card>
+              ) : (
+                <div className="space-y-4">
+                  {advisories.map((adv, i) => renderAdvisoryCard(adv, i))}
+                </div>
+              )}
+            </TabsContent>
+
+            {/* Tracked Advisories Tab */}
+            <TabsContent value="tracked" className="space-y-4">
+              {openInstances.length === 0 ? (
+                <Card><CardContent className="py-16 flex flex-col items-center gap-4">
+                  <Archive className="w-12 h-12 text-muted-foreground" />
+                  <h2 className="text-lg font-semibold">No Active Advisories</h2>
+                  <p className="text-muted-foreground text-sm">Run the orchestration engine to generate tracked advisories.</p>
+                </CardContent></Card>
+              ) : openInstances.map((inst) => {
+                const config = PRIORITY_CONFIG[inst.priority] || PRIORITY_CONFIG.low;
+                const statusCfg = STATUS_CONFIG[inst.status] || STATUS_CONFIG.open;
+                const StatusIcon = statusCfg.icon;
+                const isExpanded = expanded === inst.id;
 
                 return (
-                  <motion.div
-                    key={adv.id}
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.05 }}
-                  >
-                    <Card className={`border ${config.border} transition-all`}>
+                  <motion.div key={inst.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+                    <Card className={`border ${config.border}`}>
                       <CardContent className="p-6">
                         <div className="flex items-start justify-between gap-4">
-                          <div className="flex items-start gap-4 flex-1">
-                            <div className={`w-10 h-10 rounded-lg ${config.bg} flex items-center justify-center shrink-0`}>
-                              <CategoryIcon className={`w-5 h-5 ${config.text}`} />
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2 flex-wrap">
+                              <h3 className="font-semibold">{inst.title}</h3>
+                              <Badge className={`${config.bg} ${config.text} border-none text-xs`}>{config.label}</Badge>
+                              <Badge variant="outline" className={`text-xs gap-1 ${statusCfg.color}`}>
+                                <StatusIcon className="w-3 h-3" /> {statusCfg.label}
+                              </Badge>
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-3 mb-1 flex-wrap">
-                                <h3 className="font-semibold text-base">{adv.title}</h3>
-                                <Badge className={`${config.bg} ${config.text} border-none text-xs`}>
-                                  {config.label}
-                                </Badge>
-                                <Badge variant="outline" className="text-xs capitalize">
-                                  {adv.category.replace(/_/g, " ")}
-                                </Badge>
-                              </div>
-                              <p className="text-sm text-foreground/80 mt-1">{adv.action}</p>
-                              <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
-                                <span className="flex items-center gap-1">
-                                  <Clock className="w-3 h-3" /> {adv.timeframe}
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  <BarChart3 className="w-3 h-3" /> {adv.confidence}% confidence
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  <Zap className="w-3 h-3" /> {adv.expected_impact}
-                                </span>
-                              </div>
-                            </div>
+                            <p className="text-sm text-muted-foreground">{inst.action}</p>
+                            <p className="text-xs text-muted-foreground mt-2">Created {new Date(inst.created_at).toLocaleDateString()}</p>
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setExpanded(isExpanded ? null : adv.id)}
-                          >
-                            {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                          </Button>
+                          <div className="flex items-center gap-2">
+                            {inst.status === "open" && (
+                              <Button size="sm" variant="outline" onClick={() => updateInstanceStatus(inst.id, "in_progress")} disabled={updatingId === inst.id}>
+                                <PlayCircle className="w-4 h-4 mr-1" /> Start
+                              </Button>
+                            )}
+                            <Button variant="ghost" size="sm" onClick={() => setExpanded(isExpanded ? null : inst.id)}>
+                              {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                            </Button>
+                          </div>
                         </div>
 
                         {isExpanded && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            className="mt-6 pt-6 border-t border-border space-y-5"
-                          >
-                            <div>
-                              <h4 className="text-sm font-semibold mb-2">Strategic Rationale</h4>
-                              <p className="text-sm text-muted-foreground leading-relaxed">{adv.rationale}</p>
-                            </div>
-
-                            <div>
-                              <h4 className="text-sm font-semibold mb-2">KPIs Affected</h4>
-                              <div className="flex flex-wrap gap-2">
-                                {adv.kpi_affected.map((k, j) => (
-                                  <Badge key={j} variant="outline" className="text-xs">{k}</Badge>
-                                ))}
+                          <div className="mt-6 pt-6 border-t border-border space-y-4">
+                            {inst.rationale && (
+                              <div>
+                                <h4 className="text-sm font-semibold mb-1">Rationale</h4>
+                                <p className="text-sm text-muted-foreground">{inst.rationale}</p>
+                              </div>
+                            )}
+                            {Array.isArray(inst.playbook_steps) && inst.playbook_steps.length > 0 && (
+                              <div>
+                                <h4 className="text-sm font-semibold mb-2">Playbook</h4>
+                                <ol className="space-y-1">
+                                  {inst.playbook_steps.map((s: string, j: number) => (
+                                    <li key={j} className="text-sm text-muted-foreground flex gap-2">
+                                      <span className="text-primary font-bold">{j + 1}.</span> {s}
+                                    </li>
+                                  ))}
+                                </ol>
+                              </div>
+                            )}
+                            <div className="flex flex-col gap-3 pt-4 border-t border-border">
+                              <Textarea
+                                placeholder="Resolution summary (what was done, outcome)..."
+                                value={resolutionText}
+                                onChange={e => setResolutionText(e.target.value)}
+                                rows={2}
+                              />
+                              <div className="flex items-center gap-3">
+                                <Select value={impactScore} onValueChange={setImpactScore}>
+                                  <SelectTrigger className="w-40"><SelectValue placeholder="Impact score" /></SelectTrigger>
+                                  <SelectContent>
+                                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
+                                      <SelectItem key={n} value={String(n)}>{n}/10 Impact</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                <Button
+                                  size="sm"
+                                  onClick={() => updateInstanceStatus(inst.id, "resolved", {
+                                    resolution_summary: resolutionText || null,
+                                    impact_score: impactScore ? Number(impactScore) : null,
+                                  })}
+                                  disabled={updatingId === inst.id}
+                                  className="gap-1"
+                                >
+                                  <CheckCircle2 className="w-4 h-4" /> Resolve
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => updateInstanceStatus(inst.id, "dismissed")}
+                                  disabled={updatingId === inst.id}
+                                  className="gap-1"
+                                >
+                                  <XCircle className="w-4 h-4" /> Dismiss
+                                </Button>
                               </div>
                             </div>
-
-                            <div>
-                              <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                                <CheckCircle2 className="w-4 h-4 text-primary" />
-                                Action Playbook
-                              </h4>
-                              <ol className="space-y-2">
-                                {adv.playbook_steps.map((step, j) => (
-                                  <li key={j} className="flex items-start gap-3 text-sm">
-                                    <span className="w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center shrink-0">
-                                      {j + 1}
-                                    </span>
-                                    <span className="text-muted-foreground">{step}</span>
-                                  </li>
-                                ))}
-                              </ol>
-                            </div>
-                          </motion.div>
+                          </div>
                         )}
                       </CardContent>
                     </Card>
                   </motion.div>
                 );
               })}
-            </div>
-          )}
+            </TabsContent>
+
+            {/* History Tab */}
+            <TabsContent value="history" className="space-y-4">
+              {closedInstances.length === 0 ? (
+                <Card><CardContent className="py-16 flex flex-col items-center gap-4">
+                  <History className="w-12 h-12 text-muted-foreground" />
+                  <h2 className="text-lg font-semibold">No History Yet</h2>
+                  <p className="text-muted-foreground text-sm">Resolved and dismissed advisories will appear here.</p>
+                </CardContent></Card>
+              ) : closedInstances.map((inst) => {
+                const config = PRIORITY_CONFIG[inst.priority] || PRIORITY_CONFIG.low;
+                const statusCfg = STATUS_CONFIG[inst.status] || STATUS_CONFIG.open;
+                return (
+                  <Card key={inst.id} className="border-border/50 opacity-80">
+                    <CardContent className="p-5">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="flex items-center gap-3 mb-1">
+                            <h3 className="font-medium text-sm">{inst.title}</h3>
+                            <Badge className={`${config.bg} ${config.text} border-none text-xs`}>{config.label}</Badge>
+                            <Badge variant="outline" className={`text-xs ${statusCfg.color}`}>{statusCfg.label}</Badge>
+                            {inst.impact_score && (
+                              <Badge variant="secondary" className="text-xs">{inst.impact_score}/10 impact</Badge>
+                            )}
+                          </div>
+                          {inst.resolution_summary && (
+                            <p className="text-xs text-muted-foreground mt-1">{inst.resolution_summary}</p>
+                          )}
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {inst.resolved_at ? new Date(inst.resolved_at).toLocaleDateString() : new Date(inst.updated_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </TabsContent>
+          </Tabs>
         </main>
       </div>
     </div>

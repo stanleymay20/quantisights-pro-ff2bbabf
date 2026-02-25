@@ -14,6 +14,130 @@ export type Database = {
   }
   public: {
     Tables: {
+      advisory_instances: {
+        Row: {
+          action: string
+          advisory_type: string
+          assigned_to: string | null
+          category: string
+          confidence: number | null
+          created_at: string
+          expected_impact: string | null
+          id: string
+          impact_score: number | null
+          kpi_affected: Json | null
+          organization_id: string
+          playbook_steps: Json | null
+          priority: string
+          rationale: string | null
+          resolution_summary: string | null
+          resolved_at: string | null
+          status: string
+          timeframe: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          action: string
+          advisory_type: string
+          assigned_to?: string | null
+          category?: string
+          confidence?: number | null
+          created_at?: string
+          expected_impact?: string | null
+          id?: string
+          impact_score?: number | null
+          kpi_affected?: Json | null
+          organization_id: string
+          playbook_steps?: Json | null
+          priority?: string
+          rationale?: string | null
+          resolution_summary?: string | null
+          resolved_at?: string | null
+          status?: string
+          timeframe?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          action?: string
+          advisory_type?: string
+          assigned_to?: string | null
+          category?: string
+          confidence?: number | null
+          created_at?: string
+          expected_impact?: string | null
+          id?: string
+          impact_score?: number | null
+          kpi_affected?: Json | null
+          organization_id?: string
+          playbook_steps?: Json | null
+          priority?: string
+          rationale?: string | null
+          resolution_summary?: string | null
+          resolved_at?: string | null
+          status?: string
+          timeframe?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "advisory_instances_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      audit_log: {
+        Row: {
+          action_type: string
+          actor_id: string | null
+          actor_type: string
+          created_at: string
+          id: string
+          ip_address: string | null
+          organization_id: string
+          payload: Json | null
+          resource_id: string | null
+          resource_type: string
+        }
+        Insert: {
+          action_type: string
+          actor_id?: string | null
+          actor_type?: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          organization_id: string
+          payload?: Json | null
+          resource_id?: string | null
+          resource_type: string
+        }
+        Update: {
+          action_type?: string
+          actor_id?: string | null
+          actor_type?: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          organization_id?: string
+          payload?: Json | null
+          resource_id?: string | null
+          resource_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_log_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       convergence_usage: {
         Row: {
           call_count: number
@@ -990,6 +1114,50 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "notification_preferences_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orchestration_runs: {
+        Row: {
+          completed_at: string | null
+          duration_ms: number | null
+          error_message: string | null
+          id: string
+          organization_id: string
+          started_at: string
+          status: string
+          steps_completed: Json | null
+          trigger_type: string
+        }
+        Insert: {
+          completed_at?: string | null
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          organization_id: string
+          started_at?: string
+          status?: string
+          steps_completed?: Json | null
+          trigger_type?: string
+        }
+        Update: {
+          completed_at?: string | null
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          organization_id?: string
+          started_at?: string
+          status?: string
+          steps_completed?: Json | null
+          trigger_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orchestration_runs_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
