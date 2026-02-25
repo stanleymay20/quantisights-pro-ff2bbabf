@@ -173,7 +173,7 @@ const Onboarding = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <div className="border-b border-border px-6 py-4 flex items-center justify-between">
+      <div className="border-b border-border/30 px-6 py-4 flex items-center justify-between bg-background/60 backdrop-blur-sm">
         <img src={logo} alt="Quantivis" className="h-8" />
         <div className="flex items-center gap-2">
           {Array.from({ length: totalSteps }).map((_, i) => (

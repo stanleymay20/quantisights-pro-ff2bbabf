@@ -1,4 +1,4 @@
-import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
+import DashboardSidebar, { SidebarMobileToggle } from "@/components/dashboard/DashboardSidebar";
 import KPICards from "@/components/dashboard/KPICards";
 import RevenueChart from "@/components/dashboard/RevenueChart";
 import CustomerSegmentation from "@/components/dashboard/CustomerSegmentation";
@@ -100,7 +100,10 @@ const Dashboard = () => {
 
         {/* Header */}
         <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
-          <OrgSwitcher organizations={organizations} currentOrg={currentOrg} onSwitch={switchOrganization} />
+          <div className="flex items-center gap-2">
+            <SidebarMobileToggle />
+            <OrgSwitcher organizations={organizations} currentOrg={currentOrg} onSwitch={switchOrganization} />
+          </div>
           <div className="flex items-center gap-1.5">
             {hasData && (
               <button
