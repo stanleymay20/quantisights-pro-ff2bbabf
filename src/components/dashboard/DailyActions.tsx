@@ -75,18 +75,8 @@ const DailyActions = ({ insights, hasData, churnRate, revenue }: DailyActionsPro
     });
   }
 
-  if (actions.length < 3) {
-    actions.push({
-      id: "exec-brief",
-      icon: Shield,
-      title: "Generate executive brief",
-      description: "Prepare strategic summary for leadership review",
-      path: "/executive",
-      cta: "Open command",
-      priority: "medium",
-      color: "text-primary",
-    });
-  }
+  // No filler actions — only show real data-driven priorities
+  // If nothing needs attention, show nothing.
 
   const displayActions = actions.slice(0, 3);
 

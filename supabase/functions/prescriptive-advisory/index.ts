@@ -211,27 +211,8 @@ serve(async (req) => {
       });
     }
 
-    // Always include a strategic review if no critical items
-    if (advisories.filter(a => a.priority === "critical").length === 0) {
-      advisories.push({
-        id: `adv-${++advId}`,
-        title: "Quarterly Strategic Review",
-        category: "strategic",
-        priority: "low",
-        action: "Conduct quarterly strategic planning session to maintain competitive positioning",
-        expected_impact: "Align organizational priorities and identify growth opportunities",
-        timeframe: "Next 30 days",
-        confidence: 90,
-        rationale: "No critical issues detected. This is the optimal time for proactive strategic planning while the organization is stable.",
-        kpi_affected: ["Strategic Alignment", "Growth Rate", "Market Position"],
-        playbook_steps: [
-          "Review competitive landscape and market trends",
-          "Assess product roadmap alignment with customer needs",
-          "Evaluate team capacity and hiring plan",
-          "Set OKRs for next quarter",
-        ],
-      });
-    }
+    // No filler advisories — if nothing is wrong, return empty.
+    // Trust > synthetic intelligence.
 
     // Sort by priority
     const priorityOrder = { critical: 0, high: 1, medium: 2, low: 3 };

@@ -1,4 +1,4 @@
-import { Activity, AlertTriangle, Lightbulb, Shield } from "lucide-react";
+import { Activity, AlertTriangle, Clock, Lightbulb, Shield } from "lucide-react";
 import type { Insight } from "@/hooks/useInsights";
 
 interface IntelligenceStatusBarProps {
@@ -6,6 +6,7 @@ interface IntelligenceStatusBarProps {
   insights: Insight[];
   openAdvisories?: number;
   riskLevel?: "low" | "moderate" | "elevated" | "high";
+  lastUpdated?: string | null;
 }
 
 const RISK_STYLES = {
@@ -15,7 +16,17 @@ const RISK_STYLES = {
   high: { color: "text-destructive", dot: "bg-destructive", label: "High" },
 };
 
-const IntelligenceStatusBar = ({ hasData, insights, openAdvisories = 0, riskLevel }: IntelligenceStatusBarProps) => {
+function formatFreshness(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.floor(hours / 24)}d ago`;
+}
+
+const IntelligenceStatusBar = ({ hasData, insights, openAdvisories = 0, riskLevel, lastUpdated }: IntelligenceStatusBarProps) => {
   if (!hasData) return null;
 
   const signals = insights.filter(i => i.severity === "high" || i.severity === "medium").length;
@@ -76,6 +87,19 @@ const IntelligenceStatusBar = ({ hasData, insights, openAdvisories = 0, riskLeve
         <span className="text-[11px] text-muted-foreground">Insights:</span>
         <span className="text-[11px] font-semibold text-muted-foreground">{infoCount}</span>
       </div>
+
+      {/* Data Freshness */}
+      {lastUpdated && (
+        <>
+          <span className="w-px h-3.5 bg-border/50" />
+          <div className="flex items-center gap-1.5 ml-auto">
+            <Clock className="w-3 h-3 text-muted-foreground" />
+            <span className="text-[11px] text-muted-foreground">
+              Data updated: {formatFreshness(lastUpdated)}
+            </span>
+          </div>
+        </>
+      )}
     </div>
   );
 };
