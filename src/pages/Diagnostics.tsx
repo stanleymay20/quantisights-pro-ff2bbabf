@@ -147,11 +147,18 @@ const Diagnostics = () => {
               </CardContent>
             </Card>
           ) : diagnostics.length === 0 ? (
-            <Card>
-              <CardContent className="py-16 flex flex-col items-center gap-4">
-                <Search className="w-12 h-12 text-muted-foreground" />
-                <h2 className="text-lg font-semibold">No Data to Diagnose</h2>
-                <p className="text-muted-foreground text-sm">Upload data to enable diagnostic intelligence.</p>
+            <Card className="border-dashed border-border/50">
+              <CardContent className="py-20 flex flex-col items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
+                  <Search className="w-7 h-7 text-primary" />
+                </div>
+                <h2 className="text-lg font-semibold font-display">Diagnostic Engine Ready</h2>
+                <p className="text-muted-foreground text-sm text-center max-w-sm leading-relaxed">
+                  Upload revenue, cost, and customer data to activate root cause analysis and causal pattern detection.
+                </p>
+                <a href="/data-upload" className="mt-2 inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:brightness-110 transition-all">
+                  Upload Data
+                </a>
               </CardContent>
             </Card>
           ) : (

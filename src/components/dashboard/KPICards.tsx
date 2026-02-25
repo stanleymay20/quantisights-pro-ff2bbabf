@@ -1,4 +1,5 @@
-import { TrendingUp, TrendingDown, DollarSign, Users, CreditCard, UserMinus } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { DollarSign, Users, CreditCard, UserMinus, TrendingUp, TrendingDown } from "lucide-react";
 
 interface KPICardsProps {
   revenue: number;
@@ -13,25 +14,101 @@ const formatValue = (v: number, prefix = "", suffix = "") => {
   return `${prefix}${v.toFixed(1)}${suffix}`;
 };
 
+const AnimatedValue = ({ value, prefix = "", suffix = "" }: { value: number; prefix?: string; suffix?: string }) => {
+  const [display, setDisplay] = useState(0);
+  const ref = useRef<number>(0);
+
+  useEffect(() => {
+    const start = ref.current;
+    const end = value;
+    const duration = 800;
+    const startTime = performance.now();
+
+    const animate = (now: number) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const current = start + (end - start) * eased;
+      setDisplay(current);
+      ref.current = current;
+      if (progress < 1) requestAnimationFrame(animate);
+    };
+
+    requestAnimationFrame(animate);
+  }, [value]);
+
+  return <span>{formatValue(display, prefix, suffix)}</span>;
+};
+
 const KPICards = ({ revenue, customers, costRate, churnRate }: KPICardsProps) => {
   const kpis = [
-    { label: "Revenue", value: formatValue(revenue, "€"), icon: DollarSign, variant: "kpi-gradient-revenue" },
-    { label: "Customers", value: formatValue(customers), icon: Users, variant: "kpi-gradient-customers" },
-    { label: "Cost Rate", value: formatValue(costRate, "€"), icon: CreditCard, variant: "kpi-gradient-costs" },
-    { label: "Churn Rate", value: `${churnRate}%`, icon: UserMinus, variant: "kpi-gradient-churn" },
+    {
+      label: "Revenue",
+      value: revenue,
+      prefix: "€",
+      icon: DollarSign,
+      variant: "kpi-gradient-revenue",
+      color: "text-emerald-400",
+      trend: revenue > 0 ? "up" as const : null,
+    },
+    {
+      label: "Customers",
+      value: customers,
+      prefix: "",
+      icon: Users,
+      variant: "kpi-gradient-customers",
+      color: "text-primary",
+      trend: customers > 0 ? "up" as const : null,
+    },
+    {
+      label: "Cost Rate",
+      value: costRate,
+      prefix: "€",
+      icon: CreditCard,
+      variant: "kpi-gradient-costs",
+      color: "text-warning",
+      trend: null,
+    },
+    {
+      label: "Churn Rate",
+      value: churnRate,
+      prefix: "",
+      suffix: "%",
+      icon: UserMinus,
+      variant: "kpi-gradient-churn",
+      color: "text-destructive",
+      trend: churnRate > 5 ? "down" as const : null,
+    },
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      {kpis.map((kpi) => (
-        <div key={kpi.label} className={`${kpi.variant} glass-card p-5 rounded-xl`}>
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-muted-foreground font-medium">{kpi.label}</span>
-            <kpi.icon className="w-4 h-4 text-muted-foreground" />
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 stagger-children">
+      {kpis.map((kpi) => {
+        const TrendIcon = kpi.trend === "up" ? TrendingUp : kpi.trend === "down" ? TrendingDown : null;
+        return (
+          <div
+            key={kpi.label}
+            className={`${kpi.variant} glass-card p-5 rounded-xl group hover:shadow-lg hover:shadow-primary/5 transition-all duration-300`}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{kpi.label}</span>
+              <div className="flex items-center gap-1.5">
+                {TrendIcon && (
+                  <TrendIcon className={`w-3.5 h-3.5 ${kpi.trend === "up" ? "text-emerald-400" : "text-destructive"}`} />
+                )}
+                <kpi.icon className={`w-4 h-4 ${kpi.color} opacity-60`} />
+              </div>
+            </div>
+            <p className="text-2xl font-bold font-display tracking-tight">
+              {kpi.suffix ? (
+                <>{kpi.value}{kpi.suffix}</>
+              ) : (
+                <AnimatedValue value={kpi.value} prefix={kpi.prefix} />
+              )}
+            </p>
           </div>
-          <p className="text-2xl font-bold font-display">{kpi.value}</p>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 };
