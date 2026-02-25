@@ -1,4 +1,4 @@
-import { Lightbulb, Target, TrendingDown, ArrowRight } from "lucide-react";
+import { Lightbulb, Target, TrendingDown, ArrowRight, ShieldCheck } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { Insight } from "@/hooks/useInsights";
 
@@ -7,6 +7,16 @@ const ICONS = [Target, Lightbulb, TrendingDown];
 interface AIInsightsProps {
   insights: Insight[];
 }
+
+const ConfidenceBadge = ({ score }: { score: number }) => {
+  const color = score >= 80 ? "text-emerald-400" : score >= 50 ? "text-amber-400" : "text-destructive";
+  return (
+    <span className={`inline-flex items-center gap-0.5 text-[10px] font-semibold ${color}`}>
+      <ShieldCheck className="w-2.5 h-2.5" />
+      {score}%
+    </span>
+  );
+};
 
 const AIInsights = ({ insights }: AIInsightsProps) => {
   const infoInsights = insights.filter((i) => i.severity === "info" || i.severity === "low").slice(0, 5);
@@ -36,7 +46,15 @@ const AIInsights = ({ insights }: AIInsightsProps) => {
                 <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
                   <Icon className="w-3.5 h-3.5 text-primary" />
                 </div>
-                <p className="text-[13px] text-foreground/75 leading-relaxed">{insight.message}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[13px] text-foreground/75 leading-relaxed">{insight.message}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    {insight.confidence_score && <ConfidenceBadge score={insight.confidence_score} />}
+                    {insight.generation_model && (
+                      <span className="text-[10px] text-muted-foreground/60 uppercase tracking-wider">{insight.generation_model}</span>
+                    )}
+                  </div>
+                </div>
               </div>
             );
           })}

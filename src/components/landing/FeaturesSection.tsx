@@ -1,77 +1,141 @@
 import { motion } from "framer-motion";
-import { BarChart3, Brain, Shield, Zap, Globe, TrendingUp } from "lucide-react";
+import { BarChart3, Brain, Shield, Zap, Target, TrendingUp, ArrowRight, FileText, Users } from "lucide-react";
 
-const features = [
-  {
-    icon: BarChart3,
-    title: "Executive Dashboards",
-    description: "Real-time KPI tracking with interactive visualizations for revenue, customers, and growth metrics.",
-  },
+const HOW_IT_WORKS = [
+  { step: "01", title: "Ingest", desc: "Connect CSV, webhook, or API. Data flows in with versioning and quality scoring." },
+  { step: "02", title: "Diagnose", desc: "Autonomous root cause analysis identifies exactly why KPIs moved — no manual exploration." },
+  { step: "03", title: "Prescribe", desc: "AI generates actionable playbooks with confidence scores and traceable evidence chains." },
+  { step: "04", title: "Govern", desc: "Board-ready reports, convergence indices, and multi-role executive intelligence — automatically." },
+];
+
+const capabilities = [
   {
     icon: Brain,
-    title: "AI-Powered Insights",
-    description: "Machine learning models that detect patterns and generate strategic recommendations automatically.",
-  },
-  {
-    icon: TrendingUp,
-    title: "Predictive Forecasting",
-    description: "Advanced time-series analysis delivering 3-6 month forecasts with confidence intervals.",
-  },
-  {
-    icon: Shield,
-    title: "Anomaly Detection",
-    description: "Instant alerts for revenue drops, cost spikes, and unusual churn changes across all regions.",
+    title: "Autonomous Diagnostics",
+    description: "AI doesn't wait for queries. It continuously monitors your data, detects anomalies, traces root causes, and flags strategic risks before they surface.",
+    category: "Intelligence",
   },
   {
     icon: Zap,
-    title: "Automated Reports",
-    description: "One-click PDF generation with KPI summaries, growth charts, and strategic recommendations.",
+    title: "Prescriptive Advisory Engine",
+    description: "Every recommendation comes with a confidence score, traceable data provenance, actionable playbooks, and lifecycle tracking from open to resolved.",
+    category: "Advisory",
   },
   {
-    icon: Globe,
-    title: "Multi-Tenant SaaS",
-    description: "Enterprise-grade isolation with role-based access for organizations of any scale.",
+    icon: Shield,
+    title: "Executive Command Center",
+    description: "Role-specific intelligence for CEO, CFO, CMO, and COO. Convergence indices detect strategic conflicts. Risk scores cascade through governance layers.",
+    category: "Governance",
+  },
+  {
+    icon: TrendingUp,
+    title: "Scenario War Room",
+    description: "Model multi-variable scenarios and project impacts on your Strategic Risk Index. AI narrative layers translate projections into board-level language.",
+    category: "Strategy",
+  },
+  {
+    icon: FileText,
+    title: "Board Governance Reports",
+    description: "One-click PDF export with governance posture banners, trend intelligence, risk attribution, and deterministic action frameworks.",
+    category: "Reporting",
+  },
+  {
+    icon: Users,
+    title: "Multi-Org Consultancy Model",
+    description: "Manage multiple client organizations from one account. RBAC, team invitations, audit logs, and tiered subscription enforcement built in.",
+    category: "Scale",
   },
 ];
 
 const FeaturesSection = () => {
   return (
-    <section id="features" className="py-32 relative">
-      <div className="container mx-auto px-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="text-center mb-16"
-        >
-          <h2 className="text-4xl font-bold font-display mb-4">
-            Intelligence at <span className="gradient-text">Every Level</span>
-          </h2>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            From raw data to decisive advantage — everything your enterprise needs.
-          </p>
-        </motion.div>
+    <>
+      {/* How It Works */}
+      <section id="how-it-works" className="py-32 relative">
+        <div className="container mx-auto px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <p className="text-xs uppercase tracking-widest text-primary font-semibold mb-3">How It Works</p>
+            <h2 className="text-4xl font-bold font-display mb-4">
+              Four Steps to <span className="gradient-text">Strategic Autonomy</span>
+            </h2>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+              Quantivis replaces the manual cycle of data gathering → analysis → consulting → reporting with an autonomous intelligence loop.
+            </p>
+          </motion.div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {features.map((feature, i) => (
-            <motion.div
-              key={feature.title}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.1 }}
-              className="glass-card-hover p-8 group"
-            >
-              <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-5 group-hover:bg-primary/20 transition-colors">
-                <feature.icon className="w-6 h-6 text-primary" />
-              </div>
-              <h3 className="text-xl font-semibold font-display mb-3">{feature.title}</h3>
-              <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
-            </motion.div>
-          ))}
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {HOW_IT_WORKS.map((item, i) => (
+              <motion.div
+                key={item.step}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+                className="relative"
+              >
+                <div className="glass-card p-8 h-full">
+                  <span className="text-4xl font-bold font-display text-primary/15">{item.step}</span>
+                  <h3 className="text-xl font-semibold font-display mt-2 mb-2">{item.title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{item.desc}</p>
+                </div>
+                {i < HOW_IT_WORKS.length - 1 && (
+                  <div className="hidden lg:flex absolute top-1/2 -right-3 z-10">
+                    <ArrowRight className="w-5 h-5 text-primary/30" />
+                  </div>
+                )}
+              </motion.div>
+            ))}
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+
+      {/* Capabilities */}
+      <section id="features" className="py-32 relative">
+        <div className="container mx-auto px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <p className="text-xs uppercase tracking-widest text-primary font-semibold mb-3">Capabilities</p>
+            <h2 className="text-4xl font-bold font-display mb-4">
+              Not a Dashboard. An <span className="gradient-text">Intelligence Engine.</span>
+            </h2>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+              Every feature is designed for one outcome: converting raw data into confident, defensible strategic decisions.
+            </p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {capabilities.map((feature, i) => (
+              <motion.div
+                key={feature.title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+                className="glass-card-hover p-8 group"
+              >
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                    <feature.icon className="w-6 h-6 text-primary" />
+                  </div>
+                  <span className="text-[10px] uppercase tracking-widest text-muted-foreground/60 font-semibold">{feature.category}</span>
+                </div>
+                <h3 className="text-xl font-semibold font-display mb-3">{feature.title}</h3>
+                <p className="text-muted-foreground leading-relaxed text-sm">{feature.description}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+    </>
   );
 };
 

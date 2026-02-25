@@ -8,6 +8,8 @@ export interface Insight {
   category: string | null;
   is_read: boolean;
   created_at: string;
+  confidence_score?: number;
+  generation_model?: string;
 }
 
 export const useInsights = (orgId: string | null) => {
