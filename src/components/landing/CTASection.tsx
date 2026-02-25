@@ -4,23 +4,23 @@ import { ArrowRight } from "lucide-react";
 
 const CTASection = () => {
   return (
-    <section id="contact" className="py-32 relative">
+    <section id="contact" className="py-24 relative">
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-primary/8 rounded-full blur-[150px]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[300px] bg-primary/5 rounded-full blur-[120px]" />
       </div>
       <div className="container mx-auto px-6 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="glass-card glow-border p-12 md:p-16 text-center max-w-3xl mx-auto"
+          className="border border-border rounded-2xl bg-card/80 backdrop-blur-sm p-12 md:p-16 text-center max-w-3xl mx-auto shadow-lg"
         >
           <p className="text-xs uppercase tracking-widest text-primary font-semibold mb-4">The Category Is Decided</p>
           <h2 className="text-4xl font-bold font-display mb-4">
             Your Data Already Knows the Answer.
           </h2>
           <p className="text-muted-foreground text-lg mb-8 max-w-xl mx-auto">
-            Stop paying consultants to tell you what your data already shows. Quantivis extracts strategic intelligence autonomously — with full traceability, institutional confidence scoring, and board-ready governance.
+            Stop paying consultants to tell you what your data already shows. Quantivis extracts strategic intelligence autonomously — with full traceability and board-ready governance.
           </p>
           <Link
             to="/register"
