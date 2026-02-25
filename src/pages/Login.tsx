@@ -2,12 +2,15 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import MFAChallenge from "@/components/auth/MFAChallenge";
 import logo from "@/assets/quantivis-logo.png";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showMFA, setShowMFA] = useState(false);
   const { signIn } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -17,12 +20,31 @@ const Login = () => {
     setIsLoading(true);
     try {
       await signIn(email, password);
+
+      // Check if user has MFA enrolled
+      const { data: factorsData } = await supabase.auth.mfa.listFactors();
+      const verifiedFactors = factorsData?.totp?.filter((f) => f.status === "verified") || [];
+
+      if (verifiedFactors.length > 0) {
+        // Check current assurance level
+        const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+        if (aal?.currentLevel !== aal?.nextLevel) {
+          setShowMFA(true);
+          setIsLoading(false);
+          return;
+        }
+      }
+
       navigate("/dashboard");
     } catch (err: any) {
       toast({ title: "Login failed", description: err.message, variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleMFAVerified = () => {
+    navigate("/dashboard");
   };
 
   return (
@@ -34,52 +56,59 @@ const Login = () => {
         <div className="flex justify-center mb-8">
           <Link to="/"><img src={logo} alt="Quantivis Global" className="h-10" /></Link>
         </div>
-        <h1 className="text-2xl font-bold font-display text-center mb-2">Welcome Back</h1>
-        <p className="text-muted-foreground text-center mb-8 text-sm">Sign in to your account</p>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1.5">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full px-4 py-3 rounded-lg bg-secondary border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
-              placeholder="you@company.com"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1.5">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full px-4 py-3 rounded-lg bg-secondary border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
-              placeholder="••••••••"
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full py-3 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:brightness-110 transition-all disabled:opacity-50"
-          >
-            {isLoading ? "Signing in..." : "Sign In"}
-          </button>
-        </form>
+        {showMFA ? (
+          <MFAChallenge onVerified={handleMFAVerified} />
+        ) : (
+          <>
+            <h1 className="text-2xl font-bold font-display text-center mb-2">Welcome Back</h1>
+            <p className="text-muted-foreground text-center mb-8 text-sm">Sign in to your account</p>
 
-        <div className="text-center mt-6 space-y-2">
-          <p className="text-sm text-muted-foreground">
-            Don't have an account?{" "}
-            <Link to="/register" className="text-primary hover:underline">Sign up</Link>
-          </p>
-          <p className="text-xs text-muted-foreground">
-            <Link to="/forgot-password" className="text-primary/70 hover:text-primary hover:underline transition-colors">
-              Forgot your password?
-            </Link>
-          </p>
-        </div>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Email</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="w-full px-4 py-3 rounded-lg bg-secondary border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                  placeholder="you@company.com"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Password</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="w-full px-4 py-3 rounded-lg bg-secondary border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                  placeholder="••••••••"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full py-3 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:brightness-110 transition-all disabled:opacity-50"
+              >
+                {isLoading ? "Signing in..." : "Sign In"}
+              </button>
+            </form>
+
+            <div className="text-center mt-6 space-y-2">
+              <p className="text-sm text-muted-foreground">
+                Don't have an account?{" "}
+                <Link to="/register" className="text-primary hover:underline">Sign up</Link>
+              </p>
+              <p className="text-xs text-muted-foreground">
+                <Link to="/forgot-password" className="text-primary/70 hover:text-primary hover:underline transition-colors">
+                  Forgot your password?
+                </Link>
+              </p>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

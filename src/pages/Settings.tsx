@@ -13,8 +13,9 @@ import { useOrganization } from "@/hooks/useOrganization";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import {
-  User, Building2, Bell, Save, Loader2, Mail, X, ScrollText, Clock, Shield, Trash2, AlertTriangle,
+  User, Building2, Bell, Save, Loader2, Mail, X, ScrollText, Clock, Shield, Trash2, AlertTriangle, ShieldCheck,
 } from "lucide-react";
+import MFAEnroll from "@/components/auth/MFAEnroll";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -172,8 +173,9 @@ const Settings = () => {
         <main className="flex-1 p-8 overflow-auto">
           <div className="max-w-3xl mx-auto">
             <Tabs defaultValue="profile" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="profile" className="gap-2"><User className="w-4 h-4" /> Profile</TabsTrigger>
+                <TabsTrigger value="security" className="gap-2"><ShieldCheck className="w-4 h-4" /> Security</TabsTrigger>
                 <TabsTrigger value="organization" className="gap-2"><Building2 className="w-4 h-4" /> Organization</TabsTrigger>
                 <TabsTrigger value="notifications" className="gap-2"><Bell className="w-4 h-4" /> Notifications</TabsTrigger>
                 <TabsTrigger value="audit" className="gap-2" onClick={fetchAuditLog}><ScrollText className="w-4 h-4" /> Audit Log</TabsTrigger>
@@ -249,6 +251,13 @@ const Settings = () => {
                       </AlertDialog>
                     </CardContent>
                   </Card>
+                </motion.div>
+              </TabsContent>
+
+              {/* Security */}
+              <TabsContent value="security">
+                <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
+                  <MFAEnroll />
                 </motion.div>
               </TabsContent>
 
