@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOrganization } from "@/hooks/useOrganization";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -15,7 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Crown, TrendingUp, TrendingDown, Shield, Target, AlertTriangle,
   Zap, Clock, ChevronRight, Loader2, Lock, BarChart3, DollarSign, Users, Settings2,
-  Activity, History, RefreshCw, CheckCircle2, Bell, Mail, MessageSquare, Save, Brain,
+  Activity, History, RefreshCw, CheckCircle2, Bell, Mail, MessageSquare, Save, Brain, FileText,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -185,6 +186,7 @@ const Executive = () => {
   const { currentOrgId } = useOrganization();
   const { tier } = useSubscription();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [activeRole, setActiveRole] = useState<RoleType>("ceo");
   const [brief, setBrief] = useState<Brief | null>(null);
   const [loading, setLoading] = useState(false);
@@ -384,6 +386,10 @@ const Executive = () => {
               {brief?.cached && (
                 <Badge variant="outline" className="text-xs">Cached</Badge>
               )}
+              <Button variant="outline" size="sm" onClick={() => navigate("/board-report")}>
+                <FileText className="w-4 h-4 mr-1" />
+                Board Report
+              </Button>
               <Button variant="outline" size="sm" onClick={() => setShowSettings(!showSettings)}>
                 <Bell className="w-4 h-4 mr-1" />
                 Alerts

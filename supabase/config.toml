@@ -62,3 +62,6 @@ verify_jwt = false
 
 [functions.convergence-reconcile]
 verify_jwt = false
+
+[functions.generate-board-report]
+verify_jwt = false
