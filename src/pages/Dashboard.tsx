@@ -22,7 +22,7 @@ import { motion } from "framer-motion";
 const Dashboard = () => {
   const { user } = useAuth();
   const { organizations, currentOrgId, currentOrg, switchOrganization, loading: orgLoading } = useOrganization();
-  const { totalRevenue, totalCustomers, latestCost, latestChurn, revenueByMonth, segmentData, hasData, loading: metricsLoading } = useMetrics(currentOrgId);
+  const { totalRevenue, totalCustomers, latestCost, latestChurn, revenueByMonth, segmentData, hasData, lastUpdated, loading: metricsLoading } = useMetrics(currentOrgId);
   const { insights, loading: insightsLoading } = useInsights(currentOrgId);
   const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "User";
   const { toast } = useToast();
@@ -95,6 +95,7 @@ const Dashboard = () => {
           hasData={hasData}
           insights={insights}
           openAdvisories={openAdvisoryCount}
+          lastUpdated={lastUpdated}
         />
 
         {/* Header */}
@@ -143,13 +144,13 @@ const Dashboard = () => {
                   {greeting()}, {displayName}
                 </h1>
                 <p className="text-muted-foreground text-base max-w-md mx-auto leading-relaxed">
-                  Connect your data to activate strategic intelligence.
+                  Upload verified operational data to enable intelligence. No synthetic metrics — every insight is derived from your data.
                 </p>
               </div>
 
               <div className="space-y-3">
                 {[
-                  { icon: Upload, title: "Connect your data", desc: "Revenue, cost, customer, and churn metrics via CSV", path: "/data-upload", action: "Activate Intelligence" },
+                  { icon: Upload, title: "Upload verified data", desc: "Revenue, cost, customer, and churn metrics via CSV or API", path: "/data-upload", action: "Upload Data" },
                   { icon: Zap, title: "Autonomous diagnostics engage", desc: "Root cause analysis, anomaly detection, and risk scoring", path: null, action: null },
                   { icon: TrendingUp, title: "Strategic advisory activates", desc: "Prescriptive playbooks, scenario modeling, and board reports", path: null, action: null },
                 ].map((step, i) => (
