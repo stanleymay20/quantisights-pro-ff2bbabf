@@ -1351,6 +1351,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      immutable_date_trunc_hour: { Args: { ts: string }; Returns: string }
       increment_convergence_usage: {
         Args: { _org_id: string }
         Returns: undefined
