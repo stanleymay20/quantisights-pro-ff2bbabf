@@ -5,7 +5,78 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
 @layer base {
-  :root {
+  :root,
+  .light {
+    --background: 210 40% 98%;
+    --foreground: 216 50% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 216 50% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 216 50% 12%;
+
+    --primary: 199 89% 48%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 30% 93%;
+    --secondary-foreground: 216 50% 12%;
+
+    --muted: 210 25% 93%;
+    --muted-foreground: 215 15% 45%;
+
+    --accent: 199 89% 48%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 216 50% 8%;
+
+    --border: 214 20% 85%;
+    --input: 214 20% 85%;
+    --ring: 199 89% 48%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 210 30% 96%;
+    --sidebar-foreground: 215 15% 40%;
+    --sidebar-primary: 199 89% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 25% 90%;
+    --sidebar-accent-foreground: 216 50% 12%;
+    --sidebar-border: 214 20% 88%;
+    --sidebar-ring: 199 89% 48%;
+
+    /* Custom tokens */
+    --glass: 0 0% 100% / 0.7;
+    --glass-border: 199 89% 48% / 0.12;
+    --glow-primary: 199 89% 48%;
+    --glow-secondary: 217 91% 60%;
+    --gradient-start: 199 89% 48%;
+    --gradient-end: 217 91% 60%;
+    --kpi-revenue: 142 71% 45%;
+    --kpi-customers: 199 89% 48%;
+    --kpi-costs: 38 92% 50%;
+    --kpi-churn: 0 72% 51%;
+
+    /* Severity scale */
+    --severity-critical: 0 72% 51%;
+    --severity-warning: 38 92% 50%;
+    --severity-info: 199 89% 48%;
+    --severity-success: 142 71% 45%;
+
+    /* Elevation */
+    --shadow-card: 0 1px 3px 0 hsl(0 0% 0% / 0.06);
+    --shadow-elevated: 0 4px 24px -4px hsl(0 0% 0% / 0.1);
+    --shadow-glow: 0 0 32px -8px hsl(199 89% 48% / 0.1);
+  }
+
+  .dark {
     --background: 216 50% 8%;
     --foreground: 210 40% 95%;
 
