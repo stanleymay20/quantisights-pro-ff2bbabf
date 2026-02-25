@@ -174,7 +174,7 @@ const DataSources = () => {
     <div className="flex min-h-screen bg-background">
       <DashboardSidebar />
       <div className="flex-1 flex flex-col min-h-screen">
-        <header className="h-16 border-b border-border flex items-center justify-between px-8 shrink-0">
+        <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
           <h1 className="text-xl font-semibold font-display">Data Sources</h1>
           <button onClick={() => setShowCreate(true)} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:brightness-110 transition-all">
             <Plus className="w-4 h-4" /> Add Source

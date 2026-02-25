@@ -6,7 +6,7 @@ interface RevenueChartProps {
 
 const RevenueChart = ({ data }: RevenueChartProps) => (
   <div className="glass-card p-6 rounded-xl">
-    <h3 className="text-lg font-semibold font-display mb-4">Revenue Growth</h3>
+    <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">Revenue Growth</h3>
     {data.length === 0 ? (
       <div className="h-72 flex items-center justify-center text-muted-foreground text-sm">No revenue data yet</div>
     ) : (

@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
+import { ArrowRight } from "lucide-react";
 
 const CTASection = () => {
   return (
@@ -18,14 +19,15 @@ const CTASection = () => {
             Ready to Transform Your Data?
           </h2>
           <p className="text-muted-foreground text-lg mb-8 max-w-xl mx-auto">
-            Join enterprises worldwide turning data into decisive advantage with Quantivis Global.
+            Join enterprises worldwide turning operational data into decisive strategic advantage with Quantivis.
           </p>
           <Link
-            to="/dashboard"
-            className="inline-flex items-center px-10 py-4 rounded-xl bg-primary text-primary-foreground font-semibold text-lg hover:brightness-110 transition-all shadow-lg shadow-primary/25"
+            to="/register"
+            className="inline-flex items-center gap-2 px-10 py-4 rounded-xl bg-primary text-primary-foreground font-semibold text-lg hover:brightness-110 transition-all shadow-lg shadow-primary/25"
           >
-            Start Free Trial
+            Start Free Trial <ArrowRight className="w-5 h-5" />
           </Link>
+          <p className="text-xs text-muted-foreground mt-4">No credit card required · Free tier available</p>
         </motion.div>
       </div>
     </section>
