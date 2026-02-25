@@ -74,3 +74,9 @@ verify_jwt = false
 
 [functions.executive-orchestration]
 verify_jwt = false
+
+[functions.delete-account]
+verify_jwt = false
+
+[functions.data-export]
+verify_jwt = false

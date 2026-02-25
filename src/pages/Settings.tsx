@@ -230,12 +230,10 @@ const Settings = () => {
                               onClick={async () => {
                                 setDeletingAccount(true);
                                 try {
-                                  // Delete profile data first, then sign out
-                                  if (user) {
-                                    await supabase.from("profiles").delete().eq("user_id", user.id);
-                                  }
+                                  const { error } = await supabase.functions.invoke("delete-account");
+                                  if (error) throw error;
                                   await signOut();
-                                  toast({ title: "Account deletion initiated", description: "Your data will be purged per our retention policy. You have been signed out." });
+                                  toast({ title: "Account deleted", description: "Your data has been permanently removed." });
                                 } catch (err: any) {
                                   toast({ title: "Error", description: err.message, variant: "destructive" });
                                 } finally {

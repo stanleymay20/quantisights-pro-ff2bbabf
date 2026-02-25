@@ -67,7 +67,8 @@ const Dashboard = () => {
         body: { organization_id: currentOrgId },
       });
       toast({ title: "Intelligence refreshed" });
-      window.location.reload();
+      // Controlled refresh via navigation instead of full page reload
+      navigate(0);
     } catch {
       toast({ title: "Refresh failed", variant: "destructive" });
     } finally {
@@ -268,10 +269,10 @@ const Dashboard = () => {
                 <AnomalyDetection insights={insights} />
                 <div className="glass-card p-6 rounded-xl">
                   <div className="flex items-center justify-between mb-1">
-                    <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Forecast</h3>
+                    <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Historical Growth</h3>
                     <TrendingUp className="w-3.5 h-3.5 text-muted-foreground" />
                   </div>
-                  <p className="text-[11px] text-muted-foreground mb-6">Revenue trajectory</p>
+                  <p className="text-[11px] text-muted-foreground mb-6">Period-over-period change</p>
                   <div className="text-center py-4">
                     <p className="text-4xl font-bold font-display gradient-text">
                       {revenueByMonth.length >= 2

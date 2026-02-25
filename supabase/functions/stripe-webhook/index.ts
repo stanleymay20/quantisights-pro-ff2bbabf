@@ -52,16 +52,14 @@ serve(async (req) => {
           break;
         }
 
-        // Look up user's org
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("organization_id, user_id")
-          .ilike("full_name", `%`) // we need email lookup
-          .limit(1);
-
-        // Better: look up by auth user email
-        const { data: authData } = await supabase.auth.admin.listUsers();
-        const authUser = authData?.users?.find((u) => u.email === customerEmail);
+        // Look up user by email using getUserByEmail (O(1) instead of listing all users)
+        let authUser: any = null;
+        try {
+          const { data: userByEmail } = await supabase.auth.admin.getUserByEmail(customerEmail);
+          authUser = userByEmail?.user;
+        } catch {
+          logStep("getUserByEmail lookup failed for", { customerEmail });
+        }
 
         if (!authUser) {
           logStep("No auth user found for email", { customerEmail });

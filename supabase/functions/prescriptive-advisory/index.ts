@@ -59,16 +59,30 @@ serve(async (req) => {
     const advisories: Advisory[] = [];
     let advId = 0;
 
+    // Data quality gate: check quality scores
+    const qualityMetrics = (metrics || []).filter((m: any) => (m.quality_score ?? 100) >= 60);
+    if (qualityMetrics.length < 8) {
+      return new Response(JSON.stringify({
+        advisories: [],
+        total_advisories: 0,
+        critical_count: 0,
+        message: `Insufficient quality data (${qualityMetrics.length} records with quality ≥60). Minimum 8 required.`,
+        generated_at: new Date().toISOString(),
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Analyze metrics for patterns
     const metricsByType: Record<string, number[]> = {};
-    for (const m of (metrics || [])) {
+    for (const m of qualityMetrics) {
       if (!metricsByType[m.metric_type]) metricsByType[m.metric_type] = [];
       metricsByType[m.metric_type].push(Number(m.value));
     }
 
     // Revenue analysis
     const revValues = metricsByType["revenue"] || [];
-    if (revValues.length >= 2) {
+    if (revValues.length >= 8) {
       const latest = revValues[revValues.length - 1];
       const prev = revValues[revValues.length - 2];
       const changePct = prev !== 0 ? ((latest - prev) / Math.abs(prev)) * 100 : 0;
@@ -119,7 +133,7 @@ serve(async (req) => {
 
     // Cost analysis
     const costValues = metricsByType["cost"] || [];
-    if (costValues.length >= 2) {
+    if (costValues.length >= 8) {
       const latest = costValues[costValues.length - 1];
       const prev = costValues[costValues.length - 2];
       const costChange = prev !== 0 ? ((latest - prev) / Math.abs(prev)) * 100 : 0;
@@ -149,7 +163,7 @@ serve(async (req) => {
 
     // Churn analysis
     const churnValues = metricsByType["churn"] || [];
-    if (churnValues.length >= 1) {
+    if (churnValues.length >= 8) {
       const latestChurn = churnValues[churnValues.length - 1];
       if (latestChurn > 5) {
         advisories.push({
