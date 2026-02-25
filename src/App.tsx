@@ -28,6 +28,8 @@ import Onboarding from "./pages/Onboarding";
 import Billing from "./pages/Billing";
 import Diagnostics from "./pages/Diagnostics";
 import Advisory from "./pages/Advisory";
+import DecisionLedger from "./pages/DecisionLedger";
+import Benchmarking from "./pages/Benchmarking";
 import Settings from "./pages/Settings";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
@@ -70,6 +72,8 @@ const App = () => (
               <Route path="/kpis" element={<ProtectedRoute><KPIs /></ProtectedRoute>} />
               <Route path="/diagnostics" element={<ProtectedRoute><Diagnostics /></ProtectedRoute>} />
               <Route path="/advisory" element={<ProtectedRoute><Advisory /></ProtectedRoute>} />
+              <Route path="/decisions" element={<ProtectedRoute><DecisionLedger /></ProtectedRoute>} />
+              <Route path="/benchmarking" element={<ProtectedRoute><Benchmarking /></ProtectedRoute>} />
               <Route path="/scenarios" element={<ProtectedRoute><Scenarios /></ProtectedRoute>} />
               <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
               <Route path="/executive" element={<ProtectedRoute><Executive /></ProtectedRoute>} />
