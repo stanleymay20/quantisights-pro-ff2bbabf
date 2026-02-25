@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { authenticateRequest, verifyOrgMembership } from "../_shared/auth-guard.ts";
+import { capConfidence, dataSufficiencyRating } from "../_shared/confidence-cap.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -58,6 +59,7 @@ serve(async (req) => {
 
     const advisories: Advisory[] = [];
     let advId = 0;
+    const totalSampleSize = (metrics || []).length;
 
     // Data quality gate: check quality scores
     const qualityMetrics = (metrics || []).filter((m: any) => (m.quality_score ?? 100) >= 60);
@@ -96,7 +98,7 @@ serve(async (req) => {
           action: "Implement emergency revenue recovery program targeting top 20% accounts",
           expected_impact: `Recover ${Math.abs(changePct * 0.5).toFixed(0)}% of lost revenue within 60 days`,
           timeframe: "Immediate — 60 days",
-          confidence: 82,
+          confidence: capConfidence(82, revValues.length),
           rationale: `Revenue declined ${Math.abs(changePct).toFixed(1)}% period-over-period. Without intervention, compounding losses project ${(changePct * 3).toFixed(0)}% annual impact.`,
           kpi_affected: ["Revenue", "MRR", "Net Revenue Retention"],
           playbook_steps: [
@@ -118,7 +120,7 @@ serve(async (req) => {
           action: "Implement expansion revenue program to accelerate from steady to high growth",
           expected_impact: "Increase growth rate by 2-3x within 90 days",
           timeframe: "30-90 days",
-          confidence: 70,
+          confidence: capConfidence(70, revValues.length),
           rationale: `Current growth at ${changePct.toFixed(1)}% is stable but below potential. Market conditions support aggressive expansion.`,
           kpi_affected: ["Revenue Growth Rate", "ARPU", "Expansion Revenue"],
           playbook_steps: [
@@ -147,7 +149,7 @@ serve(async (req) => {
           action: "Launch structured cost reduction targeting top 3 expense categories",
           expected_impact: `Reduce operating costs by ${Math.min(costChange * 0.4, 15).toFixed(0)}% within 90 days`,
           timeframe: "30-90 days",
-          confidence: 78,
+          confidence: capConfidence(78, costValues.length),
           rationale: `Costs increased ${costChange.toFixed(1)}% while revenue growth hasn't matched. Gross margin is compressing.`,
           kpi_affected: ["Operating Costs", "Gross Margin", "Burn Rate"],
           playbook_steps: [
@@ -174,7 +176,7 @@ serve(async (req) => {
           action: "Deploy multi-channel retention program targeting at-risk customer segments",
           expected_impact: `Reduce churn by ${Math.min(latestChurn * 0.3, 5).toFixed(1)} percentage points within 90 days`,
           timeframe: "Immediate — 90 days",
-          confidence: 80,
+          confidence: capConfidence(80, churnValues.length),
           rationale: `Churn rate at ${latestChurn.toFixed(1)}% exceeds the 5% healthy threshold. Each point of churn represents significant lifetime value loss.`,
           kpi_affected: ["Churn Rate", "Net Revenue Retention", "Customer LTV"],
           playbook_steps: [
@@ -200,7 +202,7 @@ serve(async (req) => {
           action: `Initiate board-level review of ${role} risk factors and implement mitigation plan`,
           expected_impact: `Reduce ${role} risk score from ${risk.score} to below 50 within 60 days`,
           timeframe: risk.score >= 85 ? "Immediate" : "30 days",
-          confidence: 85,
+          confidence: capConfidence(85, totalSampleSize),
           rationale: `${role.toUpperCase()} strategic risk index at ${risk.score}/100 — ${risk.score >= 85 ? "critical" : "elevated"} territory. Components: deviation=${risk.components?.deviation || 0}, trend=${risk.components?.trend || 0}, volatility=${risk.components?.volatility || 0}.`,
           kpi_affected: ["Strategic Risk Index", "Board Confidence", "Operational Stability"],
           playbook_steps: [
@@ -225,7 +227,7 @@ serve(async (req) => {
         action: "Conduct cross-functional root cause analysis for clustered anomalies",
         expected_impact: "Identify and resolve systemic operational issues within 30 days",
         timeframe: "Immediate — 30 days",
-        confidence: 72,
+        confidence: capConfidence(72, highInsights.length),
         rationale: `${highInsights.length} high-severity insights detected simultaneously, suggesting interconnected operational failures rather than isolated incidents.`,
         kpi_affected: ["Operational Health", "System Reliability", "Executive Confidence"],
         playbook_steps: [
@@ -249,6 +251,9 @@ serve(async (req) => {
       advisories,
       total_advisories: advisories.length,
       critical_count: advisories.filter(a => a.priority === "critical").length,
+      data_sufficiency: dataSufficiencyRating(totalSampleSize),
+      sample_size: totalSampleSize,
+      confidence_ceiling: totalSampleSize < 12 ? 60 : totalSampleSize < 30 ? 75 : 90,
       generated_at: new Date().toISOString(),
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

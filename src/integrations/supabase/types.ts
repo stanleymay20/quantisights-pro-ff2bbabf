@@ -147,6 +147,66 @@ export type Database = {
           },
         ]
       }
+      benchmark_scores: {
+        Row: {
+          benchmark_id: string
+          computed_at: string
+          created_at: string
+          current_value: number
+          gap_to_p75: number | null
+          gap_to_p90: number | null
+          id: string
+          metric_type: string
+          organization_id: string
+          percentile_rank: number
+          quartile: number
+          trend: string | null
+        }
+        Insert: {
+          benchmark_id: string
+          computed_at?: string
+          created_at?: string
+          current_value: number
+          gap_to_p75?: number | null
+          gap_to_p90?: number | null
+          id?: string
+          metric_type: string
+          organization_id: string
+          percentile_rank?: number
+          quartile?: number
+          trend?: string | null
+        }
+        Update: {
+          benchmark_id?: string
+          computed_at?: string
+          created_at?: string
+          current_value?: number
+          gap_to_p75?: number | null
+          gap_to_p90?: number | null
+          id?: string
+          metric_type?: string
+          organization_id?: string
+          percentile_rank?: number
+          quartile?: number
+          trend?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "benchmark_scores_benchmark_id_fkey"
+            columns: ["benchmark_id"]
+            isOneToOne: false
+            referencedRelation: "industry_benchmarks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "benchmark_scores_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       convergence_usage: {
         Row: {
           call_count: number
@@ -566,6 +626,103 @@ export type Database = {
           },
         ]
       }
+      decision_ledger: {
+        Row: {
+          actual_value: number | null
+          advisory_instance_id: string | null
+          baseline_value: number | null
+          chosen_action: string | null
+          confidence_at_decision: number | null
+          confidence_updated: number | null
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          decision_status: string
+          decision_type: string
+          execution_completed_at: string | null
+          execution_started_at: string | null
+          execution_status: string
+          id: string
+          kpi_id: string | null
+          notes: string | null
+          organization_id: string
+          outcome_delta: number | null
+          outcome_measured_at: string | null
+          recommended_action: string
+          updated_at: string
+        }
+        Insert: {
+          actual_value?: number | null
+          advisory_instance_id?: string | null
+          baseline_value?: number | null
+          chosen_action?: string | null
+          confidence_at_decision?: number | null
+          confidence_updated?: number | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_status?: string
+          decision_type?: string
+          execution_completed_at?: string | null
+          execution_started_at?: string | null
+          execution_status?: string
+          id?: string
+          kpi_id?: string | null
+          notes?: string | null
+          organization_id: string
+          outcome_delta?: number | null
+          outcome_measured_at?: string | null
+          recommended_action: string
+          updated_at?: string
+        }
+        Update: {
+          actual_value?: number | null
+          advisory_instance_id?: string | null
+          baseline_value?: number | null
+          chosen_action?: string | null
+          confidence_at_decision?: number | null
+          confidence_updated?: number | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_status?: string
+          decision_type?: string
+          execution_completed_at?: string | null
+          execution_started_at?: string | null
+          execution_status?: string
+          id?: string
+          kpi_id?: string | null
+          notes?: string | null
+          organization_id?: string
+          outcome_delta?: number | null
+          outcome_measured_at?: string | null
+          recommended_action?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "decision_ledger_advisory_instance_id_fkey"
+            columns: ["advisory_instance_id"]
+            isOneToOne: false
+            referencedRelation: "advisory_instances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "decision_ledger_kpi_id_fkey"
+            columns: ["kpi_id"]
+            isOneToOne: false
+            referencedRelation: "kpis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "decision_ledger_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       executive_alerts: {
         Row: {
           created_at: string
@@ -839,6 +996,66 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      industry_benchmarks: {
+        Row: {
+          created_at: string
+          id: string
+          industry: string
+          metric_type: string
+          p10: number
+          p25: number
+          p50: number
+          p75: number
+          p90: number
+          region: string | null
+          revenue_band: string | null
+          sample_size: number
+          size_band: string | null
+          source: string
+          updated_at: string
+          valid_from: string
+          valid_until: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          industry: string
+          metric_type: string
+          p10?: number
+          p25?: number
+          p50?: number
+          p75?: number
+          p90?: number
+          region?: string | null
+          revenue_band?: string | null
+          sample_size?: number
+          size_band?: string | null
+          source?: string
+          updated_at?: string
+          valid_from?: string
+          valid_until?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          industry?: string
+          metric_type?: string
+          p10?: number
+          p25?: number
+          p50?: number
+          p75?: number
+          p90?: number
+          region?: string | null
+          revenue_band?: string | null
+          sample_size?: number
+          size_band?: string | null
+          source?: string
+          updated_at?: string
+          valid_from?: string
+          valid_until?: string | null
+        }
+        Relationships: []
       }
       insights: {
         Row: {

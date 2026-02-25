@@ -1,0 +1,214 @@
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { useOrganization } from "@/hooks/useOrganization";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import {
+  BarChart3, TrendingUp, TrendingDown, Minus, Loader2, Building2, Target, Award,
+} from "lucide-react";
+
+interface BenchmarkScore {
+  id: string;
+  metric_type: string;
+  current_value: number;
+  percentile_rank: number;
+  quartile: number;
+  gap_to_p75: number | null;
+  gap_to_p90: number | null;
+  trend: string;
+  computed_at: string;
+}
+
+const QUARTILE_CONFIG: Record<number, { label: string; color: string; bg: string }> = {
+  1: { label: "Bottom Quartile", color: "text-destructive", bg: "bg-destructive/10" },
+  2: { label: "Below Median", color: "text-amber-500", bg: "bg-amber-500/10" },
+  3: { label: "Above Median", color: "text-sky-500", bg: "bg-sky-500/10" },
+  4: { label: "Top Quartile", color: "text-emerald-500", bg: "bg-emerald-500/10" },
+};
+
+const TREND_ICONS: Record<string, typeof TrendingUp> = {
+  improving: TrendingUp,
+  declining: TrendingDown,
+  stable: Minus,
+};
+
+const BenchmarkingPage = () => {
+  const { currentOrgId } = useOrganization();
+  const { toast } = useToast();
+  const [scores, setScores] = useState<BenchmarkScore[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [orgIndustry, setOrgIndustry] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!currentOrgId) return;
+    const fetchData = async () => {
+      setLoading(true);
+
+      // Fetch org details
+      const { data: org } = await supabase
+        .from("organizations")
+        .select("industry, revenue_band, size_band")
+        .eq("id", currentOrgId)
+        .single();
+      if (org) setOrgIndustry(org.industry);
+
+      // Fetch benchmark scores
+      const { data, error } = await supabase
+        .from("benchmark_scores")
+        .select("*")
+        .eq("organization_id", currentOrgId)
+        .order("computed_at", { ascending: false })
+        .limit(50);
+
+      if (!error && data) setScores(data as unknown as BenchmarkScore[]);
+      setLoading(false);
+    };
+    fetchData();
+  }, [currentOrgId]);
+
+  const avgPercentile = scores.length > 0
+    ? Math.round(scores.reduce((s, sc) => s + sc.percentile_rank, 0) / scores.length)
+    : null;
+
+  const topQuartileCount = scores.filter(s => s.quartile === 4).length;
+
+  return (
+    <div className="flex min-h-screen bg-background">
+      <DashboardSidebar />
+      <div className="flex-1 flex flex-col min-h-screen">
+        <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
+          <div>
+            <h1 className="text-xl font-semibold font-display">Industry Benchmarking</h1>
+            <p className="text-xs text-muted-foreground">
+              Peer comparison & percentile ranking
+              {orgIndustry && <span> — {orgIndustry}</span>}
+            </p>
+          </div>
+        </header>
+
+        <main className="flex-1 p-8 overflow-auto space-y-6">
+          {/* Summary */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card>
+              <CardContent className="p-4 flex items-center gap-4">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <BarChart3 className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Avg Percentile</p>
+                  <p className="text-2xl font-bold">{avgPercentile !== null ? `P${avgPercentile}` : "—"}</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 flex items-center gap-4">
+                <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                  <Award className="w-5 h-5 text-emerald-500" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Top Quartile KPIs</p>
+                  <p className="text-2xl font-bold">{topQuartileCount} / {scores.length}</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 flex items-center gap-4">
+                <div className="w-10 h-10 rounded-lg bg-sky-500/10 flex items-center justify-center">
+                  <Building2 className="w-5 h-5 text-sky-500" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Industry</p>
+                  <p className="text-lg font-semibold">{orgIndustry || "Not set"}</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Benchmark cards */}
+          {loading ? (
+            <Card><CardContent className="py-16 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></CardContent></Card>
+          ) : scores.length === 0 ? (
+            <Card className="border-dashed">
+              <CardContent className="py-20 flex flex-col items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
+                  <Target className="w-7 h-7 text-primary" />
+                </div>
+                <h2 className="text-lg font-semibold font-display">No Benchmark Data Yet</h2>
+                <p className="text-muted-foreground text-sm text-center max-w-md leading-relaxed">
+                  Industry benchmarks will be computed as your data volume grows and industry classification is configured. 
+                  Ensure your organization's industry is set in Settings.
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {scores.map((sc, i) => {
+                const qCfg = QUARTILE_CONFIG[sc.quartile] || QUARTILE_CONFIG[2];
+                const TrendIcon = TREND_ICONS[sc.trend] || Minus;
+                return (
+                  <motion.div key={sc.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
+                    <Card>
+                      <CardContent className="p-5 space-y-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h3 className="font-semibold text-sm capitalize">{sc.metric_type.replace(/_/g, " ")}</h3>
+                            <div className="flex items-center gap-2 mt-1">
+                              <Badge className={`${qCfg.bg} ${qCfg.color} border-none text-xs`}>{qCfg.label}</Badge>
+                              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                <TrendIcon className="w-3 h-3" /> {sc.trend}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-2xl font-bold">P{Math.round(sc.percentile_rank)}</p>
+                            <p className="text-xs text-muted-foreground">percentile</p>
+                          </div>
+                        </div>
+
+                        <div className="space-y-1">
+                          <div className="flex justify-between text-xs text-muted-foreground">
+                            <span>P0</span>
+                            <span>P50</span>
+                            <span>P100</span>
+                          </div>
+                          <div className="relative">
+                            <Progress value={sc.percentile_rank} className="h-2" />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-3 text-center">
+                          <div>
+                            <p className="text-xs text-muted-foreground">Current</p>
+                            <p className="text-sm font-semibold">{Number(sc.current_value).toLocaleString()}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">Gap to P75</p>
+                            <p className={`text-sm font-semibold ${sc.gap_to_p75 && sc.gap_to_p75 > 0 ? "text-amber-500" : "text-emerald-500"}`}>
+                              {sc.gap_to_p75 !== null ? `${sc.gap_to_p75 > 0 ? "+" : ""}${Number(sc.gap_to_p75).toLocaleString()}` : "—"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">Gap to P90</p>
+                            <p className={`text-sm font-semibold ${sc.gap_to_p90 && sc.gap_to_p90 > 0 ? "text-amber-500" : "text-emerald-500"}`}>
+                              {sc.gap_to_p90 !== null ? `${sc.gap_to_p90 > 0 ? "+" : ""}${Number(sc.gap_to_p90).toLocaleString()}` : "—"}
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                );
+              })}
+            </div>
+          )}
+        </main>
+      </div>
+    </div>
+  );
+};
+
+export default BenchmarkingPage;

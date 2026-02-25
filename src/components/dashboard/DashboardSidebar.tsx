@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Upload, FileText, TrendingUp, Settings, CreditCard, LogOut,
   Database, BarChart3, Shuffle, Crown, Users, Building2, Search, Zap, Menu, X,
-  HelpCircle,
+  HelpCircle, BookOpen, Target,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -17,6 +17,8 @@ const navSections = [
       { icon: BarChart3, label: "KPI Builder", path: "/kpis" },
       { icon: Search, label: "Diagnostics", path: "/diagnostics" },
       { icon: Zap, label: "Advisory", path: "/advisory" },
+      { icon: BookOpen, label: "Decision Ledger", path: "/decisions" },
+      { icon: Target, label: "Benchmarking", path: "/benchmarking" },
     ],
   },
   {
