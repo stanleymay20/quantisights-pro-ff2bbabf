@@ -74,7 +74,7 @@ const Reports = () => {
     <div className="flex min-h-screen bg-background">
       <DashboardSidebar />
       <div className="flex-1 flex flex-col min-h-screen">
-        <header className="h-16 border-b border-border flex items-center justify-between px-8 shrink-0">
+        <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
           <h1 className="text-xl font-semibold font-display">Reports</h1>
           <button
             onClick={handleGenerate}

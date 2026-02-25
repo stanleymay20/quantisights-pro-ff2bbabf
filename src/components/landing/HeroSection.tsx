@@ -1,6 +1,13 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
+import { ArrowRight, Shield, BarChart3, Zap } from "lucide-react";
 import heroVisual from "@/assets/hero-visual.png";
+
+const TRUST_BADGES = [
+  { icon: Shield, label: "Enterprise-grade security" },
+  { icon: BarChart3, label: "Real-time KPI intelligence" },
+  { icon: Zap, label: "Autonomous advisory" },
+];
 
 const HeroSection = () => {
   return (
@@ -18,29 +25,54 @@ const HeroSection = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary/20 bg-primary/5 text-xs font-medium text-primary mb-6"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+              Executive Intelligence Platform
+            </motion.div>
+
             <h1 className="text-5xl lg:text-6xl xl:text-7xl font-bold font-display leading-tight mb-6">
               Transforming Data{" "}
-              <br />
+              <br className="hidden sm:block" />
               into Strategic{" "}
               <span className="gradient-text">Clarity</span>
             </h1>
             <p className="text-lg text-muted-foreground max-w-lg mb-8 leading-relaxed">
-              Expert data consulting and intelligent analytics to empower your global business decisions.
+              Autonomous diagnostics, prescriptive advisory, and executive decision support — powered by your real operational data.
             </p>
-            <div className="flex gap-4">
+            <div className="flex flex-col sm:flex-row gap-4">
               <Link
-                to="/dashboard"
-                className="inline-flex items-center px-8 py-4 rounded-xl bg-primary text-primary-foreground font-semibold text-base hover:brightness-110 transition-all shadow-lg shadow-primary/25"
+                to="/register"
+                className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl bg-primary text-primary-foreground font-semibold text-base hover:brightness-110 transition-all shadow-lg shadow-primary/25"
               >
-                Get Started
+                Start Free Trial <ArrowRight className="w-4 h-4" />
               </Link>
               <a
                 href="#features"
-                className="inline-flex items-center px-8 py-4 rounded-xl glass-card text-foreground font-semibold text-base hover:border-primary/30 transition-all"
+                className="inline-flex items-center justify-center px-8 py-4 rounded-xl glass-card text-foreground font-semibold text-base hover:border-primary/30 transition-all"
               >
-                Learn More
+                See How It Works
               </a>
             </div>
+
+            {/* Trust badges */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+              className="flex flex-wrap gap-5 mt-10"
+            >
+              {TRUST_BADGES.map((badge) => (
+                <div key={badge.label} className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <badge.icon className="w-3.5 h-3.5 text-primary/60" />
+                  {badge.label}
+                </div>
+              ))}
+            </motion.div>
           </motion.div>
 
           <motion.div
@@ -51,8 +83,9 @@ const HeroSection = () => {
           >
             <img
               src={heroVisual}
-              alt="Data analytics visualization"
+              alt="Executive intelligence dashboard visualization"
               className="w-full animate-float"
+              loading="lazy"
             />
           </motion.div>
         </div>
