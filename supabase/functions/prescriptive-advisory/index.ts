@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { authenticateRequest, verifyOrgMembership } from "../_shared/auth-guard.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -22,9 +23,21 @@ interface Advisory {
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
+  // Auth guard
+  const auth = await authenticateRequest(req);
+  if (auth.response) return auth.response;
+
   try {
     const { organization_id, role_type } = await req.json();
     if (!organization_id) throw new Error("organization_id required");
+
+    // Verify org membership
+    const isMember = await verifyOrgMembership(auth.userId, organization_id);
+    if (!isMember) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;

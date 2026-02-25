@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { authenticateRequest, verifyOrgMembership } from "../_shared/auth-guard.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -8,6 +9,10 @@ const corsHeaders = {
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
+  // Auth guard: verify caller identity
+  const auth = await authenticateRequest(req);
+  if (auth.response) return auth.response;
+
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const headers = { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, "Content-Type": "application/json" };
@@ -16,6 +21,16 @@ serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const orgId = body.organization_id;
     const triggerType = body.trigger_type || "manual";
+
+    // Verify org membership if specific org requested
+    if (orgId) {
+      const isMember = await verifyOrgMembership(auth.userId, orgId);
+      if (!isMember) {
+        return new Response(JSON.stringify({ error: "Forbidden: not a member of this organization" }), {
+          status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
 
     // If no org specified, run for all active orgs
     let orgIds: string[] = [];
