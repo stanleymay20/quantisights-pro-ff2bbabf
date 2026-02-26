@@ -168,7 +168,7 @@ const DataSources = () => {
     }
   };
 
-  const webhookUrl = `https://itpwpnwzzitkelffttyx.supabase.co/functions/v1/webhook-ingest`;
+  const webhookUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/webhook-ingest`;
 
   return (
     <div className="flex min-h-screen bg-background">

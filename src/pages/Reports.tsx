@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useOrganization } from "@/hooks/useOrganization";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { FileText, Download, Loader2, Plus } from "lucide-react";
+import { FileText, Download, Loader2, Plus, BarChart3, Shield, TrendingUp, Crown } from "lucide-react";
 
 interface Report {
   id: string;
@@ -13,6 +13,33 @@ interface Report {
   created_at: string;
 }
 
+const REPORT_TYPES = [
+  {
+    value: "executive",
+    label: "Executive Summary",
+    description: "High-level KPIs, risk posture, and strategic signals for C-suite review",
+    icon: Crown,
+  },
+  {
+    value: "diagnostic",
+    label: "Diagnostic Report",
+    description: "Root cause analysis, anomaly breakdown, and remediation recommendations",
+    icon: BarChart3,
+  },
+  {
+    value: "risk",
+    label: "Risk & Compliance",
+    description: "Risk heatmap, governance actions, and compliance posture summary",
+    icon: Shield,
+  },
+  {
+    value: "growth",
+    label: "Growth Analysis",
+    description: "Revenue trends, segment performance, and Monte Carlo outlook",
+    icon: TrendingUp,
+  },
+];
+
 const Reports = () => {
   const { user } = useAuth();
   const { currentOrgId } = useOrganization();
@@ -20,6 +47,7 @@ const Reports = () => {
   const [reports, setReports] = useState<Report[]>([]);
   const [generating, setGenerating] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [selectedType, setSelectedType] = useState("executive");
 
   const fetchReports = async () => {
     if (!currentOrgId) return;
@@ -40,14 +68,12 @@ const Reports = () => {
     if (!currentOrgId) return;
     setGenerating(true);
     try {
-      // First generate insights
       await supabase.functions.invoke("generate-insights", {
         body: { organization_id: currentOrgId },
       });
 
-      // Then generate report
       const { data, error } = await supabase.functions.invoke("generate-report", {
-        body: { organization_id: currentOrgId },
+        body: { organization_id: currentOrgId, report_type: selectedType },
       });
 
       if (error) throw error;
@@ -70,6 +96,8 @@ const Reports = () => {
     if (data?.signedUrl) window.open(data.signedUrl, "_blank");
   };
 
+  const getTypeConfig = (type: string) => REPORT_TYPES.find(t => t.value === type) || REPORT_TYPES[0];
+
   return (
     <div className="flex min-h-screen bg-background">
       <DashboardSidebar />
@@ -82,19 +110,50 @@ const Reports = () => {
             className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:brightness-110 transition-all disabled:opacity-50"
           >
             {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-            {generating ? "Generating..." : "Generate Executive Report"}
+            {generating ? "Generating..." : "Generate Report"}
           </button>
         </header>
-        <main className="flex-1 p-8 overflow-auto">
+        <main className="flex-1 p-8 overflow-auto space-y-6">
+          {/* Report Type Selector */}
+          <div>
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Report Type</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+              {REPORT_TYPES.map((rt) => {
+                const Icon = rt.icon;
+                const isSelected = selectedType === rt.value;
+                return (
+                  <button
+                    key={rt.value}
+                    onClick={() => setSelectedType(rt.value)}
+                    className={`p-4 rounded-xl border text-left transition-all duration-200 ${
+                      isSelected
+                        ? "border-primary bg-primary/[0.06] ring-1 ring-primary/30"
+                        : "border-border/30 bg-card/40 hover:border-primary/30"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isSelected ? "bg-primary/15" : "bg-muted/50"}`}>
+                        <Icon className={`w-4 h-4 ${isSelected ? "text-primary" : "text-muted-foreground"}`} />
+                      </div>
+                      <span className="text-sm font-semibold">{rt.label}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground leading-relaxed">{rt.description}</p>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Reports List */}
           {loading ? (
             <div className="flex justify-center py-12">
               <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
             </div>
           ) : reports.length === 0 ? (
-            <div className="glass-card p-12 rounded-xl flex flex-col items-center justify-center min-h-[400px]">
+            <div className="glass-card p-12 rounded-xl flex flex-col items-center justify-center min-h-[300px]">
               <FileText className="w-16 h-16 text-muted-foreground mb-4" />
               <h2 className="text-xl font-semibold font-display mb-2">No Reports Yet</h2>
-              <p className="text-muted-foreground text-sm mb-6">Generate your first executive report</p>
+              <p className="text-muted-foreground text-sm mb-6">Select a report type and generate your first executive report</p>
               <button
                 onClick={handleGenerate}
                 disabled={generating}
@@ -104,35 +163,42 @@ const Reports = () => {
               </button>
             </div>
           ) : (
-            <div className="space-y-3">
-              {reports.map((report) => (
-                <div key={report.id} className="glass-card p-5 rounded-xl flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <FileText className="w-5 h-5 text-primary" />
+            <div>
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Generated Reports</h2>
+              <div className="space-y-3">
+                {reports.map((report) => {
+                  const config = getTypeConfig(report.report_type);
+                  const TypeIcon = config.icon;
+                  return (
+                    <div key={report.id} className="glass-card p-5 rounded-xl flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                          <TypeIcon className="w-5 h-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">{config.label}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(report.created_at).toLocaleDateString("en", {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleDownload(report.file_path)}
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg border border-border text-sm font-medium hover:bg-secondary transition-colors"
+                      >
+                        <Download className="w-4 h-4" />
+                        Download
+                      </button>
                     </div>
-                    <div>
-                      <p className="text-sm font-medium capitalize">{report.report_type} Report</p>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(report.created_at).toLocaleDateString("en", {
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => handleDownload(report.file_path)}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg border border-border text-sm font-medium hover:bg-secondary transition-colors"
-                  >
-                    <Download className="w-4 h-4" />
-                    Download
-                  </button>
-                </div>
-              ))}
+                  );
+                })}
+              </div>
             </div>
           )}
         </main>
