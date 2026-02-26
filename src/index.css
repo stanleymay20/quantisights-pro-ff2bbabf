@@ -7,123 +7,53 @@
 @layer base {
   :root,
   .light {
-    --background: 210 40% 98%;
-    --foreground: 216 50% 12%;
+    --background: 220 40% 13%;
+    --foreground: 210 30% 88%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 216 50% 12%;
+    --card: 220 38% 16%;
+    --card-foreground: 210 30% 88%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 216 50% 12%;
-
-    --primary: 199 89% 48%;
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 210 30% 93%;
-    --secondary-foreground: 216 50% 12%;
-
-    --muted: 210 25% 93%;
-    --muted-foreground: 215 15% 45%;
-
-    --accent: 199 89% 48%;
-    --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 100%;
-
-    --success: 142 71% 45%;
-    --success-foreground: 0 0% 100%;
-
-    --warning: 38 92% 50%;
-    --warning-foreground: 216 50% 8%;
-
-    --border: 214 20% 85%;
-    --input: 214 20% 85%;
-    --ring: 199 89% 48%;
-
-    --radius: 0.75rem;
-
-    --sidebar-background: 210 30% 96%;
-    --sidebar-foreground: 215 15% 40%;
-    --sidebar-primary: 199 89% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 25% 90%;
-    --sidebar-accent-foreground: 216 50% 12%;
-    --sidebar-border: 214 20% 88%;
-    --sidebar-ring: 199 89% 48%;
-
-    /* Custom tokens */
-    --glass: 0 0% 100% / 0.7;
-    --glass-border: 199 89% 48% / 0.12;
-    --glow-primary: 199 89% 48%;
-    --glow-secondary: 217 91% 60%;
-    --gradient-start: 199 89% 48%;
-    --gradient-end: 217 91% 60%;
-    --kpi-revenue: 142 71% 45%;
-    --kpi-customers: 199 89% 48%;
-    --kpi-costs: 38 92% 50%;
-    --kpi-churn: 0 72% 51%;
-
-    /* Severity scale */
-    --severity-critical: 0 72% 51%;
-    --severity-warning: 38 92% 50%;
-    --severity-info: 199 89% 48%;
-    --severity-success: 142 71% 45%;
-
-    /* Elevation */
-    --shadow-card: 0 1px 3px 0 hsl(0 0% 0% / 0.06);
-    --shadow-elevated: 0 4px 24px -4px hsl(0 0% 0% / 0.1);
-    --shadow-glow: 0 0 32px -8px hsl(199 89% 48% / 0.1);
-  }
-
-  .dark {
-    --background: 216 50% 8%;
-    --foreground: 210 40% 95%;
-
-    --card: 216 45% 12%;
-    --card-foreground: 210 40% 95%;
-
-    --popover: 216 45% 12%;
-    --popover-foreground: 210 40% 95%;
+    --popover: 220 38% 16%;
+    --popover-foreground: 210 30% 88%;
 
     --primary: 199 89% 48%;
-    --primary-foreground: 216 50% 8%;
+    --primary-foreground: 220 40% 8%;
 
-    --secondary: 216 40% 18%;
-    --secondary-foreground: 210 40% 95%;
+    --secondary: 220 35% 20%;
+    --secondary-foreground: 210 30% 88%;
 
-    --muted: 216 35% 16%;
+    --muted: 220 30% 18%;
     --muted-foreground: 215 20% 55%;
 
     --accent: 199 89% 48%;
-    --accent-foreground: 216 50% 8%;
+    --accent-foreground: 220 40% 8%;
 
     --destructive: 0 72% 51%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 210 30% 95%;
 
     --success: 142 71% 45%;
-    --success-foreground: 216 50% 8%;
+    --success-foreground: 220 40% 8%;
 
     --warning: 38 92% 50%;
-    --warning-foreground: 216 50% 8%;
+    --warning-foreground: 220 40% 8%;
 
-    --border: 216 30% 20%;
-    --input: 216 30% 20%;
+    --border: 220 25% 22%;
+    --input: 220 25% 22%;
     --ring: 199 89% 48%;
 
     --radius: 0.75rem;
 
-    --sidebar-background: 216 50% 6%;
+    --sidebar-background: 220 42% 10%;
     --sidebar-foreground: 210 20% 70%;
     --sidebar-primary: 199 89% 48%;
-    --sidebar-primary-foreground: 216 50% 8%;
-    --sidebar-accent: 216 40% 14%;
-    --sidebar-accent-foreground: 210 40% 95%;
-    --sidebar-border: 216 30% 16%;
+    --sidebar-primary-foreground: 220 40% 8%;
+    --sidebar-accent: 220 35% 16%;
+    --sidebar-accent-foreground: 210 30% 88%;
+    --sidebar-border: 220 25% 18%;
     --sidebar-ring: 199 89% 48%;
 
     /* Custom tokens */
-    --glass: 216 45% 12% / 0.6;
+    --glass: 220 38% 16% / 0.6;
     --glass-border: 199 89% 48% / 0.15;
     --glow-primary: 199 89% 48%;
     --glow-secondary: 217 91% 60%;
@@ -141,8 +71,78 @@
     --severity-success: 142 71% 45%;
 
     /* Elevation */
-    --shadow-card: 0 1px 3px 0 hsl(0 0% 0% / 0.1);
-    --shadow-elevated: 0 4px 24px -4px hsl(0 0% 0% / 0.25);
+    --shadow-card: 0 1px 3px 0 hsl(0 0% 0% / 0.15);
+    --shadow-elevated: 0 4px 24px -4px hsl(0 0% 0% / 0.3);
+    --shadow-glow: 0 0 32px -8px hsl(199 89% 48% / 0.15);
+  }
+
+  .dark {
+    --background: 220 45% 7%;
+    --foreground: 210 30% 90%;
+
+    --card: 220 42% 11%;
+    --card-foreground: 210 30% 90%;
+
+    --popover: 220 42% 11%;
+    --popover-foreground: 210 30% 90%;
+
+    --primary: 199 89% 48%;
+    --primary-foreground: 220 45% 7%;
+
+    --secondary: 220 38% 15%;
+    --secondary-foreground: 210 30% 90%;
+
+    --muted: 220 32% 14%;
+    --muted-foreground: 215 20% 55%;
+
+    --accent: 199 89% 48%;
+    --accent-foreground: 220 45% 7%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 210 30% 95%;
+
+    --success: 142 71% 45%;
+    --success-foreground: 220 45% 7%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 220 45% 7%;
+
+    --border: 220 28% 18%;
+    --input: 220 28% 18%;
+    --ring: 199 89% 48%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 220 48% 5%;
+    --sidebar-foreground: 210 20% 70%;
+    --sidebar-primary: 199 89% 48%;
+    --sidebar-primary-foreground: 220 45% 7%;
+    --sidebar-accent: 220 38% 12%;
+    --sidebar-accent-foreground: 210 30% 90%;
+    --sidebar-border: 220 28% 14%;
+    --sidebar-ring: 199 89% 48%;
+
+    /* Custom tokens */
+    --glass: 220 42% 11% / 0.6;
+    --glass-border: 199 89% 48% / 0.15;
+    --glow-primary: 199 89% 48%;
+    --glow-secondary: 217 91% 60%;
+    --gradient-start: 199 89% 48%;
+    --gradient-end: 217 91% 60%;
+    --kpi-revenue: 142 71% 45%;
+    --kpi-customers: 199 89% 48%;
+    --kpi-costs: 38 92% 50%;
+    --kpi-churn: 0 72% 51%;
+
+    /* Severity scale */
+    --severity-critical: 0 72% 51%;
+    --severity-warning: 38 92% 50%;
+    --severity-info: 199 89% 48%;
+    --severity-success: 142 71% 45%;
+
+    /* Elevation */
+    --shadow-card: 0 1px 3px 0 hsl(0 0% 0% / 0.15);
+    --shadow-elevated: 0 4px 24px -4px hsl(0 0% 0% / 0.35);
     --shadow-glow: 0 0 32px -8px hsl(199 89% 48% / 0.15);
   }
 }
