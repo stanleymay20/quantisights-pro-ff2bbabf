@@ -8,7 +8,7 @@ import { useOrganization } from "@/hooks/useOrganization";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import {
-  BarChart3, TrendingUp, TrendingDown, Minus, Loader2, Building2, Target, Award,
+  BarChart3, TrendingUp, TrendingDown, Minus, Loader2, Building2, Target, Award, RefreshCw,
 } from "lucide-react";
 
 interface BenchmarkScore {
@@ -41,6 +41,7 @@ const BenchmarkingPage = () => {
   const { toast } = useToast();
   const [scores, setScores] = useState<BenchmarkScore[]>([]);
   const [loading, setLoading] = useState(true);
+  const [computing, setComputing] = useState(false);
   const [orgIndustry, setOrgIndustry] = useState<string | null>(null);
 
   useEffect(() => {
@@ -70,6 +71,30 @@ const BenchmarkingPage = () => {
     fetchData();
   }, [currentOrgId]);
 
+  const handleCompute = async () => {
+    if (!currentOrgId) return;
+    setComputing(true);
+    try {
+      const { error } = await supabase.functions.invoke("compute-kpi", {
+        body: { organization_id: currentOrgId },
+      });
+      if (error) throw error;
+      toast({ title: "Benchmarks computed", description: "Scores have been recalculated against industry peers." });
+      // Refresh scores
+      const { data } = await supabase
+        .from("benchmark_scores")
+        .select("*")
+        .eq("organization_id", currentOrgId)
+        .order("computed_at", { ascending: false })
+        .limit(50);
+      if (data) setScores(data as unknown as BenchmarkScore[]);
+    } catch (err: any) {
+      toast({ title: "Computation failed", description: err.message, variant: "destructive" });
+    } finally {
+      setComputing(false);
+    }
+  };
+
   const avgPercentile = scores.length > 0
     ? Math.round(scores.reduce((s, sc) => s + sc.percentile_rank, 0) / scores.length)
     : null;
@@ -88,6 +113,14 @@ const BenchmarkingPage = () => {
               {orgIndustry && <span> — {orgIndustry}</span>}
             </p>
           </div>
+          <button
+            onClick={handleCompute}
+            disabled={computing || !currentOrgId}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:brightness-110 transition-all disabled:opacity-50"
+          >
+            {computing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+            {computing ? "Computing..." : "Compute Benchmarks"}
+          </button>
         </header>
 
         <main className="flex-1 p-8 overflow-auto space-y-6">
