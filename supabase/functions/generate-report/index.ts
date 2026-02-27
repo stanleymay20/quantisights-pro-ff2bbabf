@@ -3,7 +3,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 serve(async (req) => {
@@ -14,7 +15,10 @@ serve(async (req) => {
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const supabase = createClient(
@@ -23,17 +27,22 @@ serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    const userId = claimsData.claims.sub;
-    const { organization_id } = await req.json();
+    const userId = user.id;
+    const { organization_id, report_type = "executive" } = await req.json();
 
     if (!organization_id) {
-      return new Response(JSON.stringify({ error: "organization_id required" }), { status: 400, headers: corsHeaders });
+      return new Response(JSON.stringify({ error: "organization_id required" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     // Verify membership
@@ -45,15 +54,18 @@ serve(async (req) => {
       .single();
 
     if (!membership) {
-      return new Response(JSON.stringify({ error: "Not a member" }), { status: 403, headers: corsHeaders });
+      return new Response(JSON.stringify({ error: "Not a member" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    // Enforce plan: Reports require Growth or Enterprise
-    const serviceSupabaseForTier = createClient(
+    // Enforce plan
+    const serviceClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
-    const { data: sub } = await serviceSupabaseForTier
+    const { data: sub } = await serviceClient
       .from("subscriptions")
       .select("tier")
       .eq("organization_id", organization_id)
@@ -67,162 +79,117 @@ serve(async (req) => {
       );
     }
 
-    // Fetch org info
+    // Fetch org
     const { data: org } = await supabase
       .from("organizations")
-      .select("name")
+      .select("name, industry")
       .eq("id", organization_id)
       .single();
 
-    // Fetch metrics
-    const { data: metrics } = await supabase
-      .from("metrics")
-      .select("metric_type, value, date, region, segment")
-      .eq("organization_id", organization_id)
-      .order("date", { ascending: true });
-
-    // Fetch insights
-    const { data: insights } = await supabase
-      .from("insights")
-      .select("message, severity, category")
-      .eq("organization_id", organization_id)
-      .order("created_at", { ascending: false })
-      .limit(10);
-
     const orgName = org?.name || "Organization";
-    const revenueMetrics = (metrics || []).filter((m) => m.metric_type === "revenue");
-    const totalRevenue = revenueMetrics.reduce((s, m) => s + Number(m.value), 0);
-    const customerMetrics = (metrics || []).filter((m) => m.metric_type === "customers");
-    const totalCustomers = customerMetrics.reduce((s, m) => s + Number(m.value), 0);
-    const churnMetrics = (metrics || []).filter((m) => m.metric_type === "churn");
+    const industry = org?.industry || "";
+    const now = new Date().toISOString();
+
+    // Fetch data based on report type
+    const [metricsRes, insightsRes, kpisRes, risksRes, advisoriesRes, simulationsRes] = await Promise.all([
+      supabase
+        .from("metrics")
+        .select("metric_type, value, date, region, segment")
+        .eq("organization_id", organization_id)
+        .order("date", { ascending: true }),
+      supabase
+        .from("insights")
+        .select("message, severity, category, confidence_score, capped_confidence")
+        .eq("organization_id", organization_id)
+        .order("created_at", { ascending: false })
+        .limit(15),
+      supabase
+        .from("kpi_values")
+        .select("value, date, kpi_id")
+        .eq("organization_id", organization_id)
+        .order("date", { ascending: false })
+        .limit(50),
+      serviceClient
+        .from("executive_risk_index")
+        .select("role_type, score, components, escalation_required, escalation_reason")
+        .eq("organization_id", organization_id),
+      supabase
+        .from("advisory_instances")
+        .select("title, action, priority, category, capped_confidence, status")
+        .eq("organization_id", organization_id)
+        .order("created_at", { ascending: false })
+        .limit(10),
+      supabase
+        .from("simulation_results")
+        .select("metric_type, expected_value, p10_value, p90_value, probability_negative, capped_confidence, data_sufficiency")
+        .eq("organization_id", organization_id)
+        .order("created_at", { ascending: false })
+        .limit(10),
+    ]);
+
+    const metrics = metricsRes.data || [];
+    const insights = insightsRes.data || [];
+    const kpis = kpisRes.data || [];
+    const risks = risksRes.data || [];
+    const advisories = advisoriesRes.data || [];
+    const simulations = simulationsRes.data || [];
+
+    // Compute aggregates
+    const revenueMetrics = metrics.filter((m: any) => m.metric_type === "revenue");
+    const totalRevenue = revenueMetrics.reduce((s: number, m: any) => s + Number(m.value), 0);
+    const customerMetrics = metrics.filter((m: any) => m.metric_type === "customers");
+    const totalCustomers = customerMetrics.reduce((s: number, m: any) => s + Number(m.value), 0);
+    const churnMetrics = metrics.filter((m: any) => m.metric_type === "churn");
     const latestChurn = churnMetrics.length > 0 ? Number(churnMetrics[churnMetrics.length - 1].value) : 0;
-    const costMetrics = (metrics || []).filter((m) => m.metric_type === "cost");
+    const costMetrics = metrics.filter((m: any) => m.metric_type === "cost");
     const latestCost = costMetrics.length > 0 ? Number(costMetrics[costMetrics.length - 1].value) : 0;
 
     // Segment breakdown
     const segments: Record<string, number> = {};
-    revenueMetrics.forEach((m) => {
+    revenueMetrics.forEach((m: any) => {
       if (m.segment) segments[m.segment] = (segments[m.segment] || 0) + Number(m.value);
     });
 
-    // Revenue by month
+    // Monthly revenue
     const monthlyRevenue: Record<string, number> = {};
-    revenueMetrics.forEach((m) => {
+    revenueMetrics.forEach((m: any) => {
       const key = m.date.substring(0, 7);
       monthlyRevenue[key] = (monthlyRevenue[key] || 0) + Number(m.value);
     });
 
-    const now = new Date().toISOString();
+    // Risk summary
+    const maxRisk = risks.length > 0 ? Math.max(...risks.map((r: any) => r.score)) : 0;
+    const escalations = risks.filter((r: any) => r.escalation_required);
 
-    // Build HTML report
-    const segmentRows = Object.entries(segments)
-      .map(([name, value]) => `<tr><td style="padding:8px;border-bottom:1px solid #1e293b">${name}</td><td style="padding:8px;border-bottom:1px solid #1e293b;text-align:right">€${value.toLocaleString()}</td></tr>`)
-      .join("");
+    // Build the report HTML based on type
+    const html = buildReportHtml(report_type, {
+      orgName, industry, now,
+      totalRevenue, totalCustomers, latestChurn, latestCost,
+      segments, monthlyRevenue,
+      insights, risks, advisories, simulations,
+      maxRisk, escalations, kpis,
+    });
 
-    const monthlyRows = Object.entries(monthlyRevenue)
-      .map(([month, value]) => `<tr><td style="padding:8px;border-bottom:1px solid #1e293b">${month}</td><td style="padding:8px;border-bottom:1px solid #1e293b;text-align:right">€${value.toLocaleString()}</td></tr>`)
-      .join("");
-
-    const insightsList = (insights || [])
-      .map((i) => {
-        const color = i.severity === "high" ? "#ef4444" : i.severity === "medium" ? "#f59e0b" : "#0ea5e9";
-        return `<li style="margin-bottom:8px"><span style="color:${color};font-weight:600">[${i.severity.toUpperCase()}]</span> ${i.message}</li>`;
-      })
-      .join("");
-
-    const html = `
-<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><title>Executive Report - ${orgName}</title></head>
-<body style="font-family:Arial,sans-serif;background:#0f172a;color:#e2e8f0;padding:40px;max-width:800px;margin:0 auto">
-  <div style="text-align:center;margin-bottom:40px">
-    <h1 style="color:#0ea5e9;margin:0">QUANTIVIS GLOBAL</h1>
-    <p style="color:#94a3b8;margin-top:4px">Executive Intelligence Report</p>
-  </div>
-  
-  <div style="background:#1e293b;padding:24px;border-radius:12px;margin-bottom:24px">
-    <h2 style="color:#0ea5e9;margin-top:0">${orgName}</h2>
-    <p style="color:#94a3b8;margin:0">Generated: ${new Date(now).toLocaleDateString("en", { year: "numeric", month: "long", day: "numeric" })}</p>
-  </div>
-
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">
-    <div style="background:#1e293b;padding:20px;border-radius:12px;border-left:3px solid #22c55e">
-      <p style="color:#94a3b8;margin:0 0 4px">Total Revenue</p>
-      <p style="font-size:24px;font-weight:700;margin:0;color:#22c55e">€${totalRevenue.toLocaleString()}</p>
-    </div>
-    <div style="background:#1e293b;padding:20px;border-radius:12px;border-left:3px solid #0ea5e9">
-      <p style="color:#94a3b8;margin:0 0 4px">Total Customers</p>
-      <p style="font-size:24px;font-weight:700;margin:0;color:#0ea5e9">${totalCustomers.toLocaleString()}</p>
-    </div>
-    <div style="background:#1e293b;padding:20px;border-radius:12px;border-left:3px solid #f59e0b">
-      <p style="color:#94a3b8;margin:0 0 4px">Cost Rate</p>
-      <p style="font-size:24px;font-weight:700;margin:0;color:#f59e0b">€${latestCost.toLocaleString()}</p>
-    </div>
-    <div style="background:#1e293b;padding:20px;border-radius:12px;border-left:3px solid #ef4444">
-      <p style="color:#94a3b8;margin:0 0 4px">Churn Rate</p>
-      <p style="font-size:24px;font-weight:700;margin:0;color:#ef4444">${latestChurn}%</p>
-    </div>
-  </div>
-
-  ${monthlyRows ? `
-  <div style="background:#1e293b;padding:24px;border-radius:12px;margin-bottom:24px">
-    <h3 style="color:#0ea5e9;margin-top:0">Revenue by Period</h3>
-    <table style="width:100%;border-collapse:collapse;color:#e2e8f0">
-      <thead><tr><th style="text-align:left;padding:8px;border-bottom:2px solid #334155">Period</th><th style="text-align:right;padding:8px;border-bottom:2px solid #334155">Revenue</th></tr></thead>
-      <tbody>${monthlyRows}</tbody>
-    </table>
-  </div>` : ""}
-
-  ${segmentRows ? `
-  <div style="background:#1e293b;padding:24px;border-radius:12px;margin-bottom:24px">
-    <h3 style="color:#0ea5e9;margin-top:0">Revenue by Segment</h3>
-    <table style="width:100%;border-collapse:collapse;color:#e2e8f0">
-      <thead><tr><th style="text-align:left;padding:8px;border-bottom:2px solid #334155">Segment</th><th style="text-align:right;padding:8px;border-bottom:2px solid #334155">Revenue</th></tr></thead>
-      <tbody>${segmentRows}</tbody>
-    </table>
-  </div>` : ""}
-
-  ${insightsList ? `
-  <div style="background:#1e293b;padding:24px;border-radius:12px;margin-bottom:24px">
-    <h3 style="color:#0ea5e9;margin-top:0">AI Insights & Recommendations</h3>
-    <ul style="padding-left:20px;margin:0">${insightsList}</ul>
-  </div>` : ""}
-
-  <div style="text-align:center;color:#64748b;font-size:12px;margin-top:40px">
-    <p>Quantivis Global Intelligence Platform — Confidential</p>
-  </div>
-</body>
-</html>`;
-
-    // Store HTML report in storage
-    const serviceSupabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
-
-    const filePath = `${organization_id}/${Date.now()}_report.html`;
-    const { error: uploadError } = await serviceSupabase.storage
+    // Store report
+    const filePath = `${organization_id}/${Date.now()}_${report_type}_report.html`;
+    const { error: uploadError } = await serviceClient.storage
       .from("reports")
       .upload(filePath, new Blob([html], { type: "text/html" }), { contentType: "text/html" });
-
     if (uploadError) throw uploadError;
 
-    // Create report record
-    const { data: report, error: reportError } = await serviceSupabase
+    const { data: report, error: reportError } = await serviceClient
       .from("reports")
       .insert({
         organization_id,
         file_path: filePath,
         generated_by: userId,
-        report_type: "executive",
+        report_type,
       })
       .select()
       .single();
-
     if (reportError) throw reportError;
 
-    // Get download URL
-    const { data: urlData } = await serviceSupabase.storage
+    const { data: urlData } = await serviceClient.storage
       .from("reports")
       .createSignedUrl(filePath, 3600);
 
@@ -230,10 +197,271 @@ serve(async (req) => {
       JSON.stringify({ report_id: report.id, download_url: urlData?.signedUrl }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
-  } catch (err) {
+  } catch (err: any) {
     return new Response(JSON.stringify({ error: err.message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
+
+// ─── Report HTML Builders ───
+
+function buildReportHtml(type: string, d: any): string {
+  const header = reportHeader(d.orgName, d.now, type);
+  const footer = reportFooter();
+
+  switch (type) {
+    case "diagnostic":
+      return wrapHtml(`Diagnostic Report — ${d.orgName}`, header + diagnosticBody(d) + footer);
+    case "risk":
+      return wrapHtml(`Risk & Compliance — ${d.orgName}`, header + riskBody(d) + footer);
+    case "growth":
+      return wrapHtml(`Growth Analysis — ${d.orgName}`, header + growthBody(d) + footer);
+    case "executive":
+    default:
+      return wrapHtml(`Executive Summary — ${d.orgName}`, header + executiveBody(d) + footer);
+  }
+}
+
+function wrapHtml(title: string, body: string): string {
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${title}</title></head>
+<body style="font-family:'Segoe UI',Arial,sans-serif;background:#0f172a;color:#e2e8f0;padding:40px;max-width:900px;margin:0 auto">${body}</body></html>`;
+}
+
+function reportHeader(orgName: string, now: string, type: string): string {
+  const typeLabels: Record<string, string> = {
+    executive: "Executive Summary",
+    diagnostic: "Diagnostic Report",
+    risk: "Risk & Compliance",
+    growth: "Growth Analysis",
+  };
+  return `
+  <div style="text-align:center;margin-bottom:40px">
+    <h1 style="color:#0ea5e9;margin:0;letter-spacing:2px">QUANTIVIS</h1>
+    <p style="color:#94a3b8;margin:4px 0 0;font-size:14px">${typeLabels[type] || "Intelligence Report"}</p>
+  </div>
+  <div style="background:#1e293b;padding:24px;border-radius:12px;margin-bottom:24px">
+    <h2 style="color:#0ea5e9;margin:0">${orgName}</h2>
+    <p style="color:#94a3b8;margin:8px 0 0;font-size:13px">Generated: ${new Date(now).toLocaleDateString("en", { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
+  </div>`;
+}
+
+function reportFooter(): string {
+  return `<div style="text-align:center;color:#64748b;font-size:12px;margin-top:40px;padding-top:20px;border-top:1px solid #1e293b">
+    <p>Confidential — Quantivis Intelligence Platform</p>
+  </div>`;
+}
+
+function kpiGrid(d: any): string {
+  return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">
+    <div style="background:#1e293b;padding:20px;border-radius:12px;border-left:3px solid #22c55e">
+      <p style="color:#94a3b8;margin:0 0 4px;font-size:13px">Total Revenue</p>
+      <p style="font-size:24px;font-weight:700;margin:0;color:#22c55e">€${d.totalRevenue.toLocaleString()}</p>
+    </div>
+    <div style="background:#1e293b;padding:20px;border-radius:12px;border-left:3px solid #0ea5e9">
+      <p style="color:#94a3b8;margin:0 0 4px;font-size:13px">Total Customers</p>
+      <p style="font-size:24px;font-weight:700;margin:0;color:#0ea5e9">${d.totalCustomers.toLocaleString()}</p>
+    </div>
+    <div style="background:#1e293b;padding:20px;border-radius:12px;border-left:3px solid #f59e0b">
+      <p style="color:#94a3b8;margin:0 0 4px;font-size:13px">Cost Rate</p>
+      <p style="font-size:24px;font-weight:700;margin:0;color:#f59e0b">€${d.latestCost.toLocaleString()}</p>
+    </div>
+    <div style="background:#1e293b;padding:20px;border-radius:12px;border-left:3px solid #ef4444">
+      <p style="color:#94a3b8;margin:0 0 4px;font-size:13px">Churn Rate</p>
+      <p style="font-size:24px;font-weight:700;margin:0;color:#ef4444">${d.latestChurn}%</p>
+    </div>
+  </div>`;
+}
+
+function insightsSection(insights: any[]): string {
+  if (!insights.length) return "";
+  const items = insights
+    .map((i: any) => {
+      const color = i.severity === "high" ? "#ef4444" : i.severity === "medium" ? "#f59e0b" : "#0ea5e9";
+      const conf = i.capped_confidence ?? i.confidence_score;
+      return `<li style="margin-bottom:10px;line-height:1.5"><span style="color:${color};font-weight:600">[${(i.severity || "info").toUpperCase()}]</span> ${i.message}${conf ? ` <span style="color:#64748b;font-size:12px">(${conf}% confidence)</span>` : ""}</li>`;
+    }).join("");
+  return `<div style="background:#1e293b;padding:24px;border-radius:12px;margin-bottom:24px">
+    <h3 style="color:#0ea5e9;margin:0 0 16px">AI Insights & Recommendations</h3>
+    <ul style="padding-left:20px;margin:0">${items}</ul>
+  </div>`;
+}
+
+function monthlyTable(monthlyRevenue: Record<string, number>): string {
+  const rows = Object.entries(monthlyRevenue);
+  if (!rows.length) return "";
+  return `<div style="background:#1e293b;padding:24px;border-radius:12px;margin-bottom:24px">
+    <h3 style="color:#0ea5e9;margin:0 0 16px">Revenue by Period</h3>
+    <table style="width:100%;border-collapse:collapse;color:#e2e8f0">
+      <thead><tr><th style="text-align:left;padding:8px;border-bottom:2px solid #334155;font-size:13px">Period</th><th style="text-align:right;padding:8px;border-bottom:2px solid #334155;font-size:13px">Revenue</th></tr></thead>
+      <tbody>${rows.map(([m, v]) => `<tr><td style="padding:8px;border-bottom:1px solid #1e293b">${m}</td><td style="padding:8px;border-bottom:1px solid #1e293b;text-align:right">€${v.toLocaleString()}</td></tr>`).join("")}</tbody>
+    </table>
+  </div>`;
+}
+
+function segmentTable(segments: Record<string, number>): string {
+  const rows = Object.entries(segments);
+  if (!rows.length) return "";
+  return `<div style="background:#1e293b;padding:24px;border-radius:12px;margin-bottom:24px">
+    <h3 style="color:#0ea5e9;margin:0 0 16px">Revenue by Segment</h3>
+    <table style="width:100%;border-collapse:collapse;color:#e2e8f0">
+      <thead><tr><th style="text-align:left;padding:8px;border-bottom:2px solid #334155;font-size:13px">Segment</th><th style="text-align:right;padding:8px;border-bottom:2px solid #334155;font-size:13px">Revenue</th></tr></thead>
+      <tbody>${rows.map(([n, v]) => `<tr><td style="padding:8px;border-bottom:1px solid #1e293b">${n}</td><td style="padding:8px;border-bottom:1px solid #1e293b;text-align:right">€${v.toLocaleString()}</td></tr>`).join("")}</tbody>
+    </table>
+  </div>`;
+}
+
+// ─── Executive Summary ───
+function executiveBody(d: any): string {
+  return kpiGrid(d) + monthlyTable(d.monthlyRevenue) + segmentTable(d.segments) + insightsSection(d.insights);
+}
+
+// ─── Diagnostic Report ───
+function diagnosticBody(d: any): string {
+  let html = kpiGrid(d);
+
+  // Insights grouped by category
+  const byCategory: Record<string, any[]> = {};
+  d.insights.forEach((i: any) => {
+    const cat = i.category || "general";
+    if (!byCategory[cat]) byCategory[cat] = [];
+    byCategory[cat].push(i);
+  });
+
+  for (const [cat, items] of Object.entries(byCategory)) {
+    html += `<div style="background:#1e293b;padding:24px;border-radius:12px;margin-bottom:24px">
+      <h3 style="color:#0ea5e9;margin:0 0 16px;text-transform:capitalize">${cat} Analysis</h3>
+      <ul style="padding-left:20px;margin:0">`;
+    for (const i of items) {
+      const color = i.severity === "high" ? "#ef4444" : i.severity === "medium" ? "#f59e0b" : "#0ea5e9";
+      html += `<li style="margin-bottom:10px;line-height:1.5"><span style="color:${color};font-weight:600">[${(i.severity || "info").toUpperCase()}]</span> ${i.message}</li>`;
+    }
+    html += `</ul></div>`;
+  }
+
+  // Advisories as remediation recommendations
+  if (d.advisories.length > 0) {
+    html += `<div style="background:#1e293b;padding:24px;border-radius:12px;margin-bottom:24px">
+      <h3 style="color:#0ea5e9;margin:0 0 16px">Remediation Recommendations</h3>
+      <table style="width:100%;border-collapse:collapse;color:#e2e8f0">
+        <thead><tr>
+          <th style="text-align:left;padding:8px;border-bottom:2px solid #334155;font-size:13px">Advisory</th>
+          <th style="text-align:center;padding:8px;border-bottom:2px solid #334155;font-size:13px">Priority</th>
+          <th style="text-align:center;padding:8px;border-bottom:2px solid #334155;font-size:13px">Confidence</th>
+        </tr></thead><tbody>`;
+    for (const a of d.advisories) {
+      const pColor = a.priority === "high" ? "#ef4444" : a.priority === "medium" ? "#f59e0b" : "#22c55e";
+      html += `<tr>
+        <td style="padding:8px;border-bottom:1px solid #1e293b"><strong>${a.title}</strong><br><span style="color:#94a3b8;font-size:12px">${a.action}</span></td>
+        <td style="padding:8px;border-bottom:1px solid #1e293b;text-align:center"><span style="color:${pColor};font-weight:600;text-transform:uppercase">${a.priority}</span></td>
+        <td style="padding:8px;border-bottom:1px solid #1e293b;text-align:center">${a.capped_confidence ?? "—"}%</td>
+      </tr>`;
+    }
+    html += `</tbody></table></div>`;
+  }
+
+  return html;
+}
+
+// ─── Risk & Compliance ───
+function riskBody(d: any): string {
+  let html = "";
+
+  // Governance posture banner
+  const postureColor = d.maxRisk > 75 ? "#ef4444" : d.maxRisk > 50 ? "#f59e0b" : "#22c55e";
+  const postureLabel = d.maxRisk > 75 ? "HIGH RISK" : d.maxRisk > 50 ? "ELEVATED" : "STABLE";
+  html += `<div style="background:${postureColor}15;border:1px solid ${postureColor}40;padding:24px;border-radius:12px;margin-bottom:24px;text-align:center">
+    <p style="color:${postureColor};font-size:28px;font-weight:700;margin:0">${postureLabel}</p>
+    <p style="color:#94a3b8;margin:8px 0 0;font-size:14px">Peak Risk Score: ${d.maxRisk}/100</p>
+  </div>`;
+
+  // Risk index table
+  if (d.risks.length > 0) {
+    html += `<div style="background:#1e293b;padding:24px;border-radius:12px;margin-bottom:24px">
+      <h3 style="color:#0ea5e9;margin:0 0 16px">Risk Index by Role</h3>
+      <table style="width:100%;border-collapse:collapse;color:#e2e8f0">
+        <thead><tr>
+          <th style="text-align:left;padding:8px;border-bottom:2px solid #334155;font-size:13px">Role</th>
+          <th style="text-align:center;padding:8px;border-bottom:2px solid #334155;font-size:13px">Score</th>
+          <th style="text-align:center;padding:8px;border-bottom:2px solid #334155;font-size:13px">Escalation</th>
+        </tr></thead><tbody>`;
+    for (const r of d.risks) {
+      const sc = r.score > 75 ? "#ef4444" : r.score > 50 ? "#f59e0b" : r.score > 25 ? "#0ea5e9" : "#22c55e";
+      html += `<tr>
+        <td style="padding:8px;border-bottom:1px solid #1e293b;text-transform:uppercase;font-weight:600">${r.role_type}</td>
+        <td style="padding:8px;border-bottom:1px solid #1e293b;text-align:center"><span style="color:${sc};font-weight:700">${r.score}/100</span></td>
+        <td style="padding:8px;border-bottom:1px solid #1e293b;text-align:center">${r.escalation_required ? '<span style="color:#ef4444;font-weight:600">⚠ YES</span>' : '<span style="color:#64748b">No</span>'}</td>
+      </tr>`;
+    }
+    html += `</tbody></table></div>`;
+  }
+
+  // Escalation details
+  if (d.escalations.length > 0) {
+    html += `<div style="background:#1e293b;padding:24px;border-radius:12px;margin-bottom:24px;border-left:3px solid #ef4444">
+      <h3 style="color:#ef4444;margin:0 0 16px">⚠ Active Escalations</h3>
+      <ul style="padding-left:20px;margin:0">`;
+    for (const e of d.escalations) {
+      html += `<li style="margin-bottom:8px;line-height:1.5"><strong style="text-transform:uppercase">${e.role_type}</strong>: ${e.escalation_reason || "Risk threshold exceeded"} (Score: ${e.score})</li>`;
+    }
+    html += `</ul></div>`;
+  }
+
+  // Compliance posture (insights)
+  const complianceInsights = d.insights.filter((i: any) => i.category === "compliance" || i.severity === "high");
+  if (complianceInsights.length > 0) {
+    html += insightsSection(complianceInsights);
+  }
+
+  html += kpiGrid(d);
+  return html;
+}
+
+// ─── Growth Analysis ───
+function growthBody(d: any): string {
+  let html = kpiGrid(d);
+
+  // Monthly revenue trend
+  html += monthlyTable(d.monthlyRevenue);
+
+  // Segment performance
+  html += segmentTable(d.segments);
+
+  // Monte Carlo outlook
+  if (d.simulations.length > 0) {
+    html += `<div style="background:#1e293b;padding:24px;border-radius:12px;margin-bottom:24px">
+      <h3 style="color:#0ea5e9;margin:0 0 16px">Monte Carlo Probabilistic Outlook</h3>
+      <table style="width:100%;border-collapse:collapse;color:#e2e8f0">
+        <thead><tr>
+          <th style="text-align:left;padding:8px;border-bottom:2px solid #334155;font-size:13px">Metric</th>
+          <th style="text-align:right;padding:8px;border-bottom:2px solid #334155;font-size:13px">Expected</th>
+          <th style="text-align:right;padding:8px;border-bottom:2px solid #334155;font-size:13px">P10 ↓</th>
+          <th style="text-align:right;padding:8px;border-bottom:2px solid #334155;font-size:13px">P90 ↑</th>
+          <th style="text-align:center;padding:8px;border-bottom:2px solid #334155;font-size:13px">Decline Risk</th>
+          <th style="text-align:center;padding:8px;border-bottom:2px solid #334155;font-size:13px">Data Quality</th>
+        </tr></thead><tbody>`;
+    for (const s of d.simulations) {
+      const fmt = (v: number) => v != null ? Number(v).toLocaleString(undefined, { maximumFractionDigits: 0 }) : "—";
+      html += `<tr>
+        <td style="padding:8px;border-bottom:1px solid #1e293b;text-transform:capitalize">${(s.metric_type || "").replace(/_/g, " ")}</td>
+        <td style="padding:8px;border-bottom:1px solid #1e293b;text-align:right;font-weight:600">${fmt(s.expected_value)}</td>
+        <td style="padding:8px;border-bottom:1px solid #1e293b;text-align:right;color:#ef4444">${fmt(s.p10_value)}</td>
+        <td style="padding:8px;border-bottom:1px solid #1e293b;text-align:right;color:#22c55e">${fmt(s.p90_value)}</td>
+        <td style="padding:8px;border-bottom:1px solid #1e293b;text-align:center">${s.probability_negative ?? "—"}%</td>
+        <td style="padding:8px;border-bottom:1px solid #1e293b;text-align:center;text-transform:capitalize">${s.data_sufficiency || "—"}</td>
+      </tr>`;
+    }
+    html += `</tbody></table></div>`;
+  }
+
+  // Growth insights
+  const growthInsights = d.insights.filter((i: any) => i.category === "growth" || i.category === "revenue" || i.category === "customers");
+  if (growthInsights.length > 0) {
+    html += insightsSection(growthInsights);
+  } else {
+    html += insightsSection(d.insights);
+  }
+
+  return html;
+}
