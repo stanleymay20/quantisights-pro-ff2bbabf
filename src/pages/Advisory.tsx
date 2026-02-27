@@ -15,6 +15,7 @@ import {
   Loader2, ChevronDown, ChevronUp, RefreshCw, Clock, CheckCircle2,
   Zap, BarChart3, PlayCircle, Archive, XCircle, History,
 } from "lucide-react";
+import IntelligenceDisclaimer from "@/components/IntelligenceDisclaimer";
 
 interface Advisory {
   id: string;
@@ -228,6 +229,7 @@ const AdvisoryPage = () => {
           </Button>
         </header>
 
+        <IntelligenceDisclaimer variant="banner" context="advisory" />
         <main className="flex-1 p-8 overflow-auto">
           <Tabs defaultValue="live" className="space-y-6">
             <TabsList>

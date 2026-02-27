@@ -5,6 +5,7 @@ import { useOrganization } from "@/hooks/useOrganization";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { FileText, Download, Loader2, Plus, BarChart3, Shield, TrendingUp, Crown } from "lucide-react";
+import IntelligenceDisclaimer from "@/components/IntelligenceDisclaimer";
 
 interface Report {
   id: string;
@@ -113,6 +114,7 @@ const Reports = () => {
             {generating ? "Generating..." : "Generate Report"}
           </button>
         </header>
+        <IntelligenceDisclaimer variant="banner" context="report" />
         <main className="flex-1 p-8 overflow-auto space-y-6">
           {/* Report Type Selector */}
           <div>

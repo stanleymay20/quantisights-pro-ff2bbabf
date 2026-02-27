@@ -12,6 +12,7 @@ import {
   AlertTriangle, CheckCircle2, Activity, Info, Loader2,
   BarChart3, Briefcase, Target, Eye,
 } from "lucide-react";
+import IntelligenceDisclaimer from "@/components/IntelligenceDisclaimer";
 
 // ─── Types ───
 interface RoleRisk {
@@ -193,6 +194,7 @@ const StrategyPack = () => {
           </div>
         </header>
 
+        <IntelligenceDisclaimer variant="banner" context="report" />
         <div className="p-6 max-w-6xl mx-auto space-y-8 print:p-0 print:max-w-none">
 
           {/* ═══════ SLIDE 1: Executive Posture ═══════ */}

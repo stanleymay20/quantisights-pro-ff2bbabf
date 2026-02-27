@@ -19,6 +19,8 @@ import {
   Loader2, Plus, PlayCircle, Target, BarChart3, ArrowRight,
   ShieldCheck, AlertTriangle, Activity, Zap, DollarSign,
 } from "lucide-react";
+import IntelligenceDisclaimer from "@/components/IntelligenceDisclaimer";
+import DecisionResponsibilityDialog from "@/components/DecisionResponsibilityDialog";
 
 interface Decision {
   id: string;
@@ -100,6 +102,7 @@ const DecisionLedgerPage = () => {
   const [simTarget, setSimTarget] = useState<string | null>(null);
   const [simRunning, setSimRunning] = useState(false);
   const [simResult, setSimResult] = useState<ImpactSim | null>(null);
+  const [approvalTarget, setApprovalTarget] = useState<{ id: string; action: string } | null>(null);
   const [impactForm, setImpactForm] = useState({
     revenue_delta_pct: 5,
     cost_delta_pct: -2,
@@ -258,6 +261,7 @@ const DecisionLedgerPage = () => {
           </Button>
         </header>
 
+        <IntelligenceDisclaimer variant="banner" context="advisory" />
         <main className="flex-1 p-8 overflow-auto space-y-6">
           {/* Summary cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4">
@@ -541,7 +545,7 @@ const DecisionLedgerPage = () => {
                           <div className="flex flex-col gap-1">
                             {d.decision_status === "pending" && (
                               <>
-                                <Button size="sm" variant="outline" onClick={() => updateDecision(d.id, { decision_status: "approved", decided_at: new Date().toISOString() })} disabled={updatingId === d.id}>
+                                <Button size="sm" variant="outline" onClick={() => setApprovalTarget({ id: d.id, action: d.recommended_action })} disabled={updatingId === d.id}>
                                   Approve
                                 </Button>
                                 <Button size="sm" variant="ghost" onClick={() => updateDecision(d.id, { decision_status: "rejected" })} disabled={updatingId === d.id}>
@@ -637,6 +641,19 @@ const DecisionLedgerPage = () => {
           </Tabs>
         </main>
       </div>
+
+      {/* Decision Responsibility Confirmation Dialog */}
+      <DecisionResponsibilityDialog
+        open={!!approvalTarget}
+        onOpenChange={(open) => { if (!open) setApprovalTarget(null); }}
+        actionLabel={approvalTarget?.action || ""}
+        onConfirm={() => {
+          if (approvalTarget) {
+            updateDecision(approvalTarget.id, { decision_status: "approved", decided_at: new Date().toISOString() });
+            setApprovalTarget(null);
+          }
+        }}
+      />
     </div>
   );
 };
