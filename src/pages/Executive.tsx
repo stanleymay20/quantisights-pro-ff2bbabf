@@ -21,6 +21,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import IntelligenceDisclaimer from "@/components/IntelligenceDisclaimer";
 
 type RoleType = "ceo" | "cfo" | "cmo" | "coo";
 
@@ -365,6 +366,7 @@ const Executive = () => {
     <div className="flex min-h-screen bg-background">
       <DashboardSidebar />
       <main className="flex-1 p-8 overflow-auto">
+        <IntelligenceDisclaimer variant="banner" context="executive" />
         <div className="max-w-6xl mx-auto space-y-8">
           {/* Header */}
           <div className="flex items-center justify-between">

@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "@/hooks/use-toast";
 import { Activity, TrendingUp, TrendingDown, Shield, Info, Loader2, BarChart3 } from "lucide-react";
+import IntelligenceDisclaimer from "@/components/IntelligenceDisclaimer";
 
 const Simulations = () => {
   const { currentOrgId: organizationId } = useOrganization();
@@ -87,6 +88,7 @@ const Simulations = () => {
           </div>
         </header>
 
+        <IntelligenceDisclaimer variant="banner" context="simulation" />
         <div className="p-6 max-w-6xl mx-auto space-y-6">
           {/* Run simulation controls */}
           <Card>
