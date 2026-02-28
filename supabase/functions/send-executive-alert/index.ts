@@ -115,14 +115,18 @@ async function sendEmail(
   }
 }
 
-/* ──────────────────── SLACK WEBHOOK ──────────────────── */
+/* ──────────────────── SLACK (Connector Gateway or Webhook) ──────────────────── */
 
-async function sendSlackWebhook(
-  webhookUrl: string,
+async function sendSlackMessage(
   payload: AlertPayload,
   serviceClient: any,
   metadata: Record<string, unknown>,
+  prefs: any,
 ): Promise<boolean> {
+  // Try Lovable Slack Connector first (gateway-based)
+  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+  const SLACK_API_KEY = Deno.env.get("SLACK_API_KEY");
+
   const emoji =
     payload.escalation_required
       ? "🔴"
@@ -170,39 +174,88 @@ async function sendSlackWebhook(
     });
   }
 
-  try {
-    const res = await fetch(webhookUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ blocks }),
-    });
+  const GATEWAY_URL = "https://connector-gateway.lovable.dev/slack/api";
 
-    const sent = res.ok;
-    await serviceClient.from("notification_log").insert({
-      organization_id: payload.organization_id,
-      role_type: payload.role_type,
-      channel: "slack",
-      subject: `${ROLE_LABELS[payload.role_type]} Alert`,
-      recipients: [webhookUrl.substring(0, 40) + "..."],
-      status: sent ? "sent" : "failed",
-      error_message: sent ? null : `HTTP ${res.status}`,
-      metadata,
-    });
-    return sent;
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : String(err);
-    await serviceClient.from("notification_log").insert({
-      organization_id: payload.organization_id,
-      role_type: payload.role_type,
-      channel: "slack",
-      subject: `${ROLE_LABELS[payload.role_type]} Alert`,
-      recipients: [],
-      status: "failed",
-      error_message: message,
-      metadata,
-    });
-    return false;
+  // Prefer connector gateway if available
+  if (LOVABLE_API_KEY && SLACK_API_KEY) {
+    try {
+      // Determine channel: use prefs slack_webhook_url as channel ID, or default to #general
+      const channel = prefs?.slack_webhook_url?.startsWith("C") ? prefs.slack_webhook_url : "general";
+
+      const res = await fetch(`${GATEWAY_URL}/chat.postMessage`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${LOVABLE_API_KEY}`,
+          "X-Connection-Api-Key": SLACK_API_KEY,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          channel,
+          text: `${emoji} ${ROLE_LABELS[payload.role_type]} Alert — Risk: ${payload.risk_score}/100`,
+          blocks,
+          username: "Quantivis Intelligence",
+          icon_emoji: ":chart_with_upwards_trend:",
+        }),
+      });
+
+      const data = await res.json();
+      const sent = res.ok && data.ok;
+      await serviceClient.from("notification_log").insert({
+        organization_id: payload.organization_id,
+        role_type: payload.role_type,
+        channel: "slack",
+        subject: `${ROLE_LABELS[payload.role_type]} Alert`,
+        recipients: [channel],
+        status: sent ? "sent" : "failed",
+        error_message: sent ? null : `Gateway ${res.status}: ${JSON.stringify(data)}`,
+        metadata,
+      });
+      return sent;
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error("Slack connector gateway error:", message);
+      // Fall through to webhook
+    }
   }
+
+  // Fallback: raw webhook URL
+  if (prefs?.slack_webhook_url?.startsWith("https://")) {
+    try {
+      const res = await fetch(prefs.slack_webhook_url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ blocks }),
+      });
+
+      const sent = res.ok;
+      await serviceClient.from("notification_log").insert({
+        organization_id: payload.organization_id,
+        role_type: payload.role_type,
+        channel: "slack",
+        subject: `${ROLE_LABELS[payload.role_type]} Alert`,
+        recipients: [prefs.slack_webhook_url.substring(0, 40) + "..."],
+        status: sent ? "sent" : "failed",
+        error_message: sent ? null : `HTTP ${res.status}`,
+        metadata,
+      });
+      return sent;
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      await serviceClient.from("notification_log").insert({
+        organization_id: payload.organization_id,
+        role_type: payload.role_type,
+        channel: "slack",
+        subject: `${ROLE_LABELS[payload.role_type]} Alert`,
+        recipients: [],
+        status: "failed",
+        error_message: message,
+        metadata,
+      });
+      return false;
+    }
+  }
+
+  return false;
 }
 
 /* ──────────────────── HTML EMAIL TEMPLATE ──────────────────── */
@@ -441,13 +494,13 @@ serve(async (req) => {
       );
     }
 
-    // Slack notification
-    if (prefs?.slack_enabled && prefs.slack_webhook_url) {
-      results.slack = await sendSlackWebhook(
-        prefs.slack_webhook_url,
+    // Slack notification (connector gateway or webhook fallback)
+    if (prefs?.slack_enabled || Deno.env.get("SLACK_API_KEY")) {
+      results.slack = await sendSlackMessage(
         payload,
         serviceClient,
         logMetadata,
+        prefs,
       );
     }
 

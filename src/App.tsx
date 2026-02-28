@@ -41,6 +41,7 @@ import DataRetention from "./pages/DataRetention";
 import Subprocessors from "./pages/Subprocessors";
 import Simulations from "./pages/Simulations";
 import StrategyPack from "./pages/StrategyPack";
+import DecisionIntelligence from "./pages/DecisionIntelligence";
 
 const queryClient = new QueryClient();
 
@@ -75,6 +76,7 @@ const App = () => (
               <Route path="/diagnostics" element={<ProtectedRoute><Diagnostics /></ProtectedRoute>} />
               <Route path="/advisory" element={<ProtectedRoute><Advisory /></ProtectedRoute>} />
               <Route path="/decisions" element={<ProtectedRoute><DecisionLedger /></ProtectedRoute>} />
+              <Route path="/decision-intelligence" element={<ProtectedRoute><DecisionIntelligence /></ProtectedRoute>} />
               <Route path="/benchmarking" element={<ProtectedRoute><Benchmarking /></ProtectedRoute>} />
               <Route path="/scenarios" element={<ProtectedRoute><Scenarios /></ProtectedRoute>} />
               <Route path="/simulations" element={<ProtectedRoute><Simulations /></ProtectedRoute>} />
