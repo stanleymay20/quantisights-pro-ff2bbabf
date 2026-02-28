@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import {
   Database, Globe, Webhook, FileSpreadsheet, Plus, Copy, Check,
-  RefreshCw, Trash2, Clock, AlertCircle, CheckCircle2, XCircle, Lock, Eye, EyeOff
+  RefreshCw, Trash2, Clock, AlertCircle, CheckCircle2, XCircle, Lock, Eye, EyeOff, Play
 } from "lucide-react";
 
 type SourceType = "csv" | "webhook" | "api" | "database";
@@ -294,6 +294,35 @@ const DataSources = () => {
                             <p className="text-xs text-muted-foreground mb-1">API Key</p>
                             <p className="text-xs text-muted-foreground italic">Key was shown once at creation. If lost, delete and recreate the source.</p>
                           </div>
+                        </div>
+                      )}
+
+                      {src.source_type === "api" && (
+                        <div className="mt-3 pt-3 border-t border-border">
+                          <button
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              toast({ title: "Pulling data..." });
+                              try {
+                                const { data, error } = await supabase.functions.invoke("connector-pull", {
+                                  body: {
+                                    connector_type: (src.config as any)?.connector_type || "stripe",
+                                    data_source_id: src.id,
+                                    organization_id: currentOrgId,
+                                  },
+                                });
+                                if (error) throw error;
+                                toast({ title: `Synced ${data?.records || 0} records` });
+                                fetchSources();
+                                if (selectedSource === src.id) fetchJobs(src.id);
+                              } catch (err: any) {
+                                toast({ title: "Sync failed", description: err.message, variant: "destructive" });
+                              }
+                            }}
+                            className="flex items-center gap-1.5 text-xs text-primary font-semibold hover:underline"
+                          >
+                            <Play className="w-3 h-3" /> Pull Data Now
+                          </button>
                         </div>
                       )}
 
