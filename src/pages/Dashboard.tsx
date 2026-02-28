@@ -4,6 +4,10 @@ import RevenueChart from "@/components/dashboard/RevenueChart";
 import CustomerSegmentation from "@/components/dashboard/CustomerSegmentation";
 import AIInsights from "@/components/dashboard/AIInsights";
 import AnomalyDetection from "@/components/dashboard/AnomalyDetection";
+import WaterfallChart from "@/components/dashboard/WaterfallChart";
+import CohortAnalysis from "@/components/dashboard/CohortAnalysis";
+import FunnelChart from "@/components/dashboard/FunnelChart";
+import PeriodComparison from "@/components/dashboard/PeriodComparison";
 import OrgSwitcher from "@/components/dashboard/OrgSwitcher";
 import IntelligenceStatusBar from "@/components/dashboard/IntelligenceStatusBar";
 import DailyActions from "@/components/dashboard/DailyActions";
@@ -22,7 +26,7 @@ import { motion } from "framer-motion";
 const Dashboard = () => {
   const { user } = useAuth();
   const { organizations, currentOrgId, currentOrg, switchOrganization, loading: orgLoading } = useOrganization();
-  const { totalRevenue, totalCustomers, latestCost, latestChurn, revenueByMonth, segmentData, hasData, lastUpdated, loading: metricsLoading } = useMetrics(currentOrgId);
+  const { metrics, totalRevenue, totalCustomers, latestCost, latestChurn, revenueByMonth, segmentData, hasData, lastUpdated, loading: metricsLoading } = useMetrics(currentOrgId);
   const { insights, loading: insightsLoading } = useInsights(currentOrgId);
   const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "User";
   const { toast } = useToast();
@@ -255,13 +259,23 @@ const Dashboard = () => {
                 churnRate={latestChurn}
               />
 
-              {/* Charts */}
+              {/* Charts Row 1 */}
               <div className="grid lg:grid-cols-3 gap-5">
                 <div className="lg:col-span-2">
                   <RevenueChart data={revenueByMonth} />
                 </div>
                 <CustomerSegmentation data={segmentData} />
               </div>
+
+              {/* Charts Row 2: New Visualizations */}
+              <div className="grid lg:grid-cols-3 gap-5">
+                <WaterfallChart data={metrics} />
+                <FunnelChart metrics={metrics} />
+                <PeriodComparison data={revenueByMonth} />
+              </div>
+
+              {/* Cohort Analysis */}
+              <CohortAnalysis metrics={metrics} />
 
               {/* Intelligence Row */}
               <div className="grid lg:grid-cols-3 gap-5">
