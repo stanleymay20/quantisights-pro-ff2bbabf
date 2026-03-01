@@ -105,7 +105,7 @@ const HeroSection = () => {
             >
               <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground/50 mb-3">Replaces</p>
               <div className="flex flex-wrap gap-4 justify-center">
-                {["Tableau", "Power BI", "Looker", "Anaplan", "Manual Consulting"].map((tool) => (
+                {["McKinsey Engagements", "Manual Board Prep", "Spreadsheet Strategy", "Siloed BI Dashboards", "Advisory Retainers"].map((tool) => (
                   <span key={tool} className="text-sm text-muted-foreground/40 line-through decoration-muted-foreground/20">{tool}</span>
                 ))}
               </div>

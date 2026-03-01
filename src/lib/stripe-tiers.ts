@@ -1,12 +1,12 @@
 export const TIERS = {
   starter: {
     name: "Starter",
-    price: 49,
+    price: 99,
     currency: "€",
     interval: "month",
-    price_id: "price_1T6JbhJYFIBeCvefqfTEMfKa",
-    product_id: "prod_U4SWpFWp6EdU9b",
-    tagline: "For teams getting started with data-driven decisions",
+    price_id: "price_1T6Ji8JYFIBeCvef4RkHSCfw",
+    product_id: "prod_U4SdCda1dcZAtu",
+    tagline: "Decision intelligence for teams replacing spreadsheet-driven strategy",
     features: [
       "1 organization · 1 dataset",
       "Core KPI dashboard & analytics",
@@ -18,12 +18,12 @@ export const TIERS = {
   },
   growth: {
     name: "Growth",
-    price: 149,
+    price: 249,
     currency: "€",
     interval: "month",
-    price_id: "price_1T6JbjJYFIBeCvefunFbkY3z",
-    product_id: "prod_U4SWPjmvqS5Con",
-    tagline: "Full AI intelligence for scaling organizations",
+    price_id: "price_1T6Ji9JYFIBeCvef3KiArWFx",
+    product_id: "prod_U4SdjQfflN6R1d",
+    tagline: "Full AI decision engine — replaces management consulting cycles",
     features: [
       "Unlimited datasets & integrations",
       "AI Prescriptive Advisory Engine",

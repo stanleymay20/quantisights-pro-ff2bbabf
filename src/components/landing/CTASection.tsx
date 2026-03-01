@@ -15,12 +15,12 @@ const CTASection = () => {
           viewport={{ once: true }}
           className="border border-border rounded-2xl bg-card/80 backdrop-blur-sm p-12 md:p-16 text-center max-w-3xl mx-auto shadow-lg"
         >
-          <p className="text-xs uppercase tracking-widest text-primary font-semibold mb-4">The Category Is Decided</p>
+          <p className="text-xs uppercase tracking-widest text-primary font-semibold mb-4">Beyond Business Intelligence</p>
           <h2 className="text-4xl font-bold font-display mb-4">
             Your Data Already Knows the Answer.
           </h2>
           <p className="text-muted-foreground text-lg mb-8 max-w-xl mx-auto">
-            Stop paying consultants to tell you what your data already shows. Quantivis extracts strategic intelligence autonomously — with full traceability and board-ready governance.
+            Stop paying consultants to tell you what your data already shows. Quantivis applies decision science — causal inference, bias detection, and counterfactual reasoning — to make every strategic choice defensible.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link

@@ -3,10 +3,10 @@ import { TrendingUp, Clock, DollarSign, ShieldCheck, ArrowRight } from "lucide-r
 import { Link } from "react-router-dom";
 
 const ROI_METRICS = [
-  { icon: Clock, value: "92%", label: "Reduction in reporting time", detail: "From 40hrs/month to 3hrs" },
-  { icon: TrendingUp, value: "3.2×", label: "Faster strategic decisions", detail: "Board-ready intelligence in minutes" },
-  { icon: DollarSign, value: "€180K", label: "Avg. annual consulting savings", detail: "Replacing manual advisory cycles" },
-  { icon: ShieldCheck, value: "100%", label: "Decision traceability", detail: "Every insight linked to verified data" },
+  { icon: Clock, value: "92%", label: "Less time on board prep", detail: "From 5 days to 2 hours" },
+  { icon: TrendingUp, value: "3.2×", label: "Faster strategic decisions", detail: "Causal inference, not gut feel" },
+  { icon: DollarSign, value: "€180K", label: "Avg. consulting replaced", detail: "Advisory retainers eliminated" },
+  { icon: ShieldCheck, value: "100%", label: "Decision traceability", detail: "Every recommendation auditable" },
 ];
 
 const CASE_STUDIES = [
@@ -47,10 +47,10 @@ const SocialProofSection = () => {
           >
             <p className="text-xs uppercase tracking-widest text-primary font-semibold mb-3">Measurable Impact</p>
             <h2 className="text-4xl font-bold font-display mb-4">
-              The ROI of <span className="gradient-text">Autonomous Intelligence</span>
+              The ROI of <span className="gradient-text">Decision Intelligence</span>
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Quantivis eliminates the entire manual consulting cycle.
+              Quantivis replaces the entire manual consulting cycle — from data gathering to board-ready strategic recommendations.
             </p>
           </motion.div>
 
