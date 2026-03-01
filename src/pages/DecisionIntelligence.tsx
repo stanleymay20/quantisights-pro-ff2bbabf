@@ -42,7 +42,9 @@ const CounterfactualPanel = ({ decisions }: { decisions: any[] }) => {
           const predicted = Number(d.predicted_net_impact) || 0;
           const counterfactual = baseline; // without action
           const actionImpact = actual - counterfactual;
-          const accuracyPct = predicted !== 0 ? ((actionImpact / predicted) * 100).toFixed(0) : "—";
+          const accuracyRaw = predicted !== 0 ? (actionImpact / predicted) * 100 : NaN;
+          const accuracyPct = Number.isFinite(accuracyRaw) ? accuracyRaw.toFixed(0) : "—";
+          const accuracyIsGood = Number.isFinite(accuracyRaw) && accuracyRaw >= 80;
 
           return (
             <div key={d.id} className="border border-border/30 rounded-lg p-3">
@@ -58,8 +60,8 @@ const CounterfactualPanel = ({ decisions }: { decisions: any[] }) => {
                 </div>
                 <div>
                   <p className="text-[10px] text-muted-foreground">Prediction Accuracy</p>
-                  <p className={`text-sm font-bold font-mono ${Number(accuracyPct) >= 80 ? "text-emerald-400" : "text-warning"}`}>
-                    {accuracyPct}%
+                  <p className={`text-sm font-bold font-mono ${accuracyIsGood ? "text-emerald-400" : "text-warning"}`}>
+                    {accuracyPct === "—" ? accuracyPct : `${accuracyPct}%`}
                   </p>
                 </div>
               </div>
@@ -130,7 +132,9 @@ const PortfolioSimulation = ({ simulations }: { simulations: any[] }) => {
     const totalExpected = simulations.reduce((s, sim) => s + (Number(sim.expected_net_impact) || 0), 0);
     const totalP10 = simulations.reduce((s, sim) => s + (Number(sim.p10_impact) || 0), 0);
     const totalP90 = simulations.reduce((s, sim) => s + (Number(sim.p90_impact) || 0), 0);
-    const avgProbPositive = simulations.reduce((s, sim) => s + (Number(sim.probability_positive_roi) || 0), 0) / simulations.length;
+    const avgProbPositive = simulations.length > 0
+      ? simulations.reduce((s, sim) => s + (Number(sim.probability_positive_roi) || 0), 0) / simulations.length
+      : 0;
     const totalCost = simulations.reduce((s, sim) => s + (Number(sim.implementation_cost) || 0), 0);
     const portfolioROI = totalCost > 0 ? ((totalExpected / totalCost) * 100).toFixed(0) : "—";
 
@@ -208,8 +212,12 @@ const CalibrationPanel = ({ decisions }: { decisions: any[] }) => {
     );
   }
 
-  const avgAccuracy = calibrated.reduce((s, d) => s + Number(d.prediction_accuracy_score), 0) / calibrated.length;
-  const avgCalibrationError = calibrated.reduce((s, d) => s + Math.abs(Number(d.calibration_error) || 0), 0) / calibrated.length;
+  const avgAccuracy = calibrated.length > 0
+    ? calibrated.reduce((s, d) => s + (Number(d.prediction_accuracy_score) || 0), 0) / calibrated.length
+    : 0;
+  const avgCalibrationError = calibrated.length > 0
+    ? calibrated.reduce((s, d) => s + Math.abs(Number(d.calibration_error) || 0), 0) / calibrated.length
+    : 0;
 
   return (
     <div className="glass-card p-6 rounded-xl">

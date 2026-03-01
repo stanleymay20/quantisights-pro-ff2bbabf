@@ -4,7 +4,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 const ROLE_LABELS: Record<string, string> = {
@@ -198,8 +198,13 @@ async function sendSlackMessage(
         }),
       });
 
-      const data = await res.json();
-      const sent = res.ok && data.ok;
+      let data: any;
+      try {
+        data = await res.json();
+      } catch {
+        data = { ok: false, error: `Non-JSON response (HTTP ${res.status})` };
+      }
+      const sent = res.ok && data.ok === true;
       await serviceClient.from("notification_log").insert({
         organization_id: payload.organization_id,
         role_type: payload.role_type,
@@ -207,10 +212,12 @@ async function sendSlackMessage(
         subject: `${ROLE_LABELS[payload.role_type]} Alert`,
         recipients: [channel],
         status: sent ? "sent" : "failed",
-        error_message: sent ? null : `Gateway ${res.status}: ${JSON.stringify(data)}`,
+        error_message: sent ? null : `Gateway ${res.status}: ${JSON.stringify(data).substring(0, 500)}`,
         metadata,
       });
-      return sent;
+      if (sent) return true;
+      // Gateway failed — fall through to webhook
+      console.error("Slack gateway failed, falling back to webhook:", JSON.stringify(data).substring(0, 300));
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
       console.error("Slack connector gateway error:", message);
