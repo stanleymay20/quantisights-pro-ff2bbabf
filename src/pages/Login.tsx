@@ -1,5 +1,5 @@
 import { useState, forwardRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,6 +13,8 @@ const Login = forwardRef<HTMLDivElement>((_, ref) => {
   const [showMFA, setShowMFA] = useState(false);
   const { signIn } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectTo = searchParams.get("redirect") || "/dashboard";
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -33,7 +35,7 @@ const Login = forwardRef<HTMLDivElement>((_, ref) => {
         }
       }
 
-      navigate("/dashboard");
+      navigate(redirectTo);
     } catch (err: any) {
       toast({ title: "Login failed", description: err.message, variant: "destructive" });
     } finally {
@@ -42,7 +44,7 @@ const Login = forwardRef<HTMLDivElement>((_, ref) => {
   };
 
   const handleMFAVerified = () => {
-    navigate("/dashboard");
+    navigate(redirectTo);
   };
 
   return (
