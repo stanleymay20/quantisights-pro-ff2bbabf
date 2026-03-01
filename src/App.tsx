@@ -42,6 +42,7 @@ import Subprocessors from "./pages/Subprocessors";
 import Simulations from "./pages/Simulations";
 import StrategyPack from "./pages/StrategyPack";
 import DecisionIntelligence from "./pages/DecisionIntelligence";
+import Documentation from "./pages/Documentation";
 
 const queryClient = new QueryClient();
 
@@ -89,6 +90,7 @@ const App = () => (
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/billing" element={<ProtectedRoute><Billing /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+              <Route path="/docs" element={<ProtectedRoute><Documentation /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
             </SidebarProvider>
