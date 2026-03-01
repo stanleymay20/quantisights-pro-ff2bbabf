@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import { Link } from "react-router-dom";
 import logo from "@/assets/quantivis-logo.png";
 
@@ -30,8 +31,8 @@ const FOOTER_SECTIONS = [
   },
 ];
 
-const Footer = () => (
-  <footer className="border-t border-border pt-16 pb-8 bg-card/30">
+const Footer = forwardRef<HTMLElement>((_, ref) => (
+  <footer ref={ref} className="border-t border-border pt-16 pb-8 bg-card/30">
     <div className="container mx-auto px-6">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
         {/* Brand */}
@@ -79,6 +80,8 @@ const Footer = () => (
       </div>
     </div>
   </footer>
-);
+));
+
+Footer.displayName = "Footer";
 
 export default Footer;

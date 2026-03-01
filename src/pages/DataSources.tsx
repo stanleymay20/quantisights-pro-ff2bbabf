@@ -38,8 +38,8 @@ interface SyncJob {
 const SOURCE_TYPES: { value: SourceType; label: string; icon: typeof Database; description: string; tierRequired?: string }[] = [
   { value: "csv", label: "CSV Upload", icon: FileSpreadsheet, description: "Upload CSV files manually" },
   { value: "webhook", label: "Webhook", icon: Webhook, description: "Receive data via HTTP endpoint" },
-  { value: "api", label: "REST API", icon: Globe, description: "Connect to Stripe, Shopify, HubSpot, GA4", tierRequired: "growth" },
-  { value: "database", label: "Database", icon: Database, description: "Connect to Postgres, MySQL", tierRequired: "enterprise" },
+  { value: "api", label: "Native Connector", icon: Globe, description: "Stripe, GA4, HubSpot, Salesforce, QuickBooks", tierRequired: "growth" },
+  { value: "database", label: "Database", icon: Database, description: "Postgres, MySQL, BigQuery", tierRequired: "enterprise" },
 ];
 
 const DataSources = () => {

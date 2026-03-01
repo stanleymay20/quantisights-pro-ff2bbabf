@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, forwardRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import MFAChallenge from "@/components/auth/MFAChallenge";
 import logo from "@/assets/quantivis-logo.png";
 
-const Login = () => {
+const Login = forwardRef<HTMLDivElement>((_, ref) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -21,12 +21,10 @@ const Login = () => {
     try {
       await signIn(email, password);
 
-      // Check if user has MFA enrolled
       const { data: factorsData } = await supabase.auth.mfa.listFactors();
       const verifiedFactors = factorsData?.totp?.filter((f) => f.status === "verified") || [];
 
       if (verifiedFactors.length > 0) {
-        // Check current assurance level
         const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
         if (aal?.currentLevel !== aal?.nextLevel) {
           setShowMFA(true);
@@ -48,7 +46,7 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
+    <div ref={ref} className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/3 left-1/3 w-96 h-96 bg-primary/5 rounded-full blur-[120px]" />
       </div>
@@ -112,6 +110,8 @@ const Login = () => {
       </div>
     </div>
   );
-};
+});
+
+Login.displayName = "Login";
 
 export default Login;

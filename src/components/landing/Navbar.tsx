@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, forwardRef } from "react";
 import { Link } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import logo from "@/assets/quantivis-logo.png";
@@ -18,11 +18,11 @@ const NavItem = ({ link, onClick }: { link: typeof NAV_LINKS[number]; onClick?: 
   return <a href={link.href} className={className} onClick={onClick}>{link.label}</a>;
 };
 
-const Navbar = () => {
+const Navbar = forwardRef<HTMLElement>((_, ref) => {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-2xl">
+    <nav ref={ref} className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-2xl">
       <div className="container mx-auto flex items-center justify-between py-4 px-6">
         <Link to="/" className="flex items-center gap-3">
           <img src={logo} alt="Quantivis Global" className="h-10 w-auto" />
@@ -72,6 +72,8 @@ const Navbar = () => {
       )}
     </nav>
   );
-};
+});
+
+Navbar.displayName = "Navbar";
 
 export default Navbar;
