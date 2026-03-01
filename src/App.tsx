@@ -46,7 +46,10 @@ import Documentation from "./pages/Documentation";
 import NaturalLanguageQuery from "./pages/NaturalLanguageQuery";
 import ScenarioBranching from "./pages/ScenarioBranching";
 import MarketIntelligence from "./pages/MarketIntelligence";
-
+import Forecasting from "./pages/Forecasting";
+import DataLineage from "./pages/DataLineage";
+import OKRs from "./pages/OKRs";
+import AlertPlaybooks from "./pages/AlertPlaybooks";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -97,6 +100,10 @@ const App = () => (
               <Route path="/ask" element={<ProtectedRoute><NaturalLanguageQuery /></ProtectedRoute>} />
               <Route path="/branching" element={<ProtectedRoute><ScenarioBranching /></ProtectedRoute>} />
               <Route path="/market-intelligence" element={<ProtectedRoute><MarketIntelligence /></ProtectedRoute>} />
+              <Route path="/forecasting" element={<ProtectedRoute><Forecasting /></ProtectedRoute>} />
+              <Route path="/lineage" element={<ProtectedRoute><DataLineage /></ProtectedRoute>} />
+              <Route path="/okrs" element={<ProtectedRoute><OKRs /></ProtectedRoute>} />
+              <Route path="/alert-playbooks" element={<ProtectedRoute><AlertPlaybooks /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
             </SidebarProvider>
