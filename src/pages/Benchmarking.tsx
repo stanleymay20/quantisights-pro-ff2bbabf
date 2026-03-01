@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
+import DashboardSidebar, { SidebarMobileToggle } from "@/components/dashboard/DashboardSidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -106,7 +106,8 @@ const BenchmarkingPage = () => {
       <DashboardSidebar />
       <div className="flex-1 flex flex-col min-h-screen">
         <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
-          <div>
+          <div className="flex items-center gap-3">
+            <SidebarMobileToggle />
             <h1 className="text-xl font-semibold font-display">Industry Benchmarking</h1>
             <p className="text-xs text-muted-foreground">
               Peer comparison & percentile ranking

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
+import DashboardSidebar, { SidebarMobileToggle } from "@/components/dashboard/DashboardSidebar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOrganization } from "@/hooks/useOrganization";
 import { useMetrics } from "@/hooks/useMetrics";
@@ -286,6 +286,7 @@ const DecisionIntelligence = () => {
       <div className="flex-1 flex flex-col min-h-screen">
         <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
           <div className="flex items-center gap-2">
+            <SidebarMobileToggle />
             <Brain className="w-5 h-5 text-primary" />
             <h1 className="text-xl font-semibold font-display">Decision Intelligence</h1>
           </div>

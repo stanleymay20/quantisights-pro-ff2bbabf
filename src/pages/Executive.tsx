@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useOrganization } from "@/hooks/useOrganization";
 import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
-import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
+import DashboardSidebar, { SidebarMobileToggle } from "@/components/dashboard/DashboardSidebar";
 import ExecutiveCopilot from "@/components/dashboard/ExecutiveCopilot";
 import StrategicSimulation from "@/components/dashboard/StrategicSimulation";
 import ExecutiveConvergence from "@/components/dashboard/ExecutiveConvergence";
@@ -370,7 +370,8 @@ const Executive = () => {
         <div className="max-w-6xl mx-auto space-y-8">
           {/* Header */}
           <div className="flex items-center justify-between">
-            <div>
+            <div className="flex items-center gap-3">
+              <SidebarMobileToggle />
               <h1 className="text-3xl font-bold tracking-tight">Executive Command</h1>
               <p className="text-muted-foreground mt-1">Strategic Health Monitoring & AI Intelligence</p>
             </div>
