@@ -3,18 +3,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
-
-/**
- * Native connector pull — fetches data from external APIs (Stripe, GA4, HubSpot)
- * and normalizes into the metrics table.
- * 
- * Required secrets per connector:
- * - Stripe: STRIPE_SECRET_KEY (already configured)
- * - GA4: GA4_PROPERTY_ID, GA4_CREDENTIALS_JSON
- * - HubSpot: HUBSPOT_API_KEY
- */
 
 interface ConnectorConfig {
   connector_type: string;
@@ -22,6 +12,50 @@ interface ConnectorConfig {
   organization_id: string;
   date_from?: string;
   date_to?: string;
+}
+
+/* ──────────────────── STRIPE HELPERS ──────────────────── */
+
+async function stripeFetchAll(
+  endpoint: string,
+  params: Record<string, string>,
+  apiKey: string,
+): Promise<{ data: any[]; errors: string[] }> {
+  const allData: any[] = [];
+  const errors: string[] = [];
+  let startingAfter: string | null = null;
+  let hasMore = true;
+
+  while (hasMore) {
+    const qs = new URLSearchParams({ ...params, limit: "100" });
+    if (startingAfter) qs.set("starting_after", startingAfter);
+
+    const res = await fetch(`https://api.stripe.com/v1/${endpoint}?${qs}`, {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    });
+
+    if (!res.ok) {
+      const body = await res.text();
+      errors.push(`Stripe ${endpoint} HTTP ${res.status}: ${body.substring(0, 200)}`);
+      break;
+    }
+
+    const json = await res.json();
+    if (!json.data || !Array.isArray(json.data)) {
+      errors.push(`Stripe ${endpoint}: unexpected response shape`);
+      break;
+    }
+
+    allData.push(...json.data);
+    hasMore = json.has_more === true;
+    if (hasMore && json.data.length > 0) {
+      startingAfter = json.data[json.data.length - 1].id;
+    } else {
+      hasMore = false;
+    }
+  }
+
+  return { data: allData, errors };
 }
 
 /* ──────────────────── STRIPE PULL ──────────────────── */
@@ -39,24 +73,25 @@ async function pullStripe(
   const from = config.date_from ? new Date(config.date_from) : new Date(now.getFullYear(), now.getMonth() - 3, 1);
   const to = config.date_to ? new Date(config.date_to) : now;
 
-  try {
-    // Fetch charges
-    const chargesRes = await fetch(
-      `https://api.stripe.com/v1/charges?created[gte]=${Math.floor(from.getTime() / 1000)}&created[lte]=${Math.floor(to.getTime() / 1000)}&limit=100`,
-      { headers: { Authorization: `Bearer ${STRIPE_KEY}` } },
-    );
-    const charges = await chargesRes.json();
+  const fromTs = Math.floor(from.getTime() / 1000).toString();
+  const toTs = Math.floor(to.getTime() / 1000).toString();
 
-    if (charges.data) {
-      // Group by month
+  try {
+    // Fetch ALL charges with pagination
+    const chargesResult = await stripeFetchAll("charges", {
+      "created[gte]": fromTs,
+      "created[lte]": toTs,
+    }, STRIPE_KEY);
+    errors.push(...chargesResult.errors);
+
+    if (chargesResult.data.length > 0) {
       const byMonth: Record<string, number> = {};
-      for (const c of charges.data) {
+      for (const c of chargesResult.data) {
         if (c.status !== "succeeded") continue;
         const d = new Date(c.created * 1000);
         const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
         byMonth[key] = (byMonth[key] || 0) + c.amount / 100;
       }
-
       for (const [date, value] of Object.entries(byMonth)) {
         metrics.push({
           organization_id: config.organization_id,
@@ -70,15 +105,15 @@ async function pullStripe(
       }
     }
 
-    // Fetch customers count
-    const custRes = await fetch(
-      `https://api.stripe.com/v1/customers?created[gte]=${Math.floor(from.getTime() / 1000)}&limit=100`,
-      { headers: { Authorization: `Bearer ${STRIPE_KEY}` } },
-    );
-    const custs = await custRes.json();
-    if (custs.data) {
+    // Fetch ALL customers with pagination
+    const custResult = await stripeFetchAll("customers", {
+      "created[gte]": fromTs,
+    }, STRIPE_KEY);
+    errors.push(...custResult.errors);
+
+    if (custResult.data.length > 0) {
       const byMonth: Record<string, number> = {};
-      for (const c of custs.data) {
+      for (const c of custResult.data) {
         const d = new Date(c.created * 1000);
         const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
         byMonth[key] = (byMonth[key] || 0) + 1;
@@ -99,13 +134,16 @@ async function pullStripe(
     errors.push(`Stripe fetch error: ${err instanceof Error ? err.message : String(err)}`);
   }
 
-  // Upsert metrics
+  // UPSERT metrics (safe for re-runs — no duplicates)
   if (metrics.length > 0) {
-    const { error } = await serviceClient.from("metrics").insert(metrics);
-    if (error) errors.push(`DB insert: ${error.message}`);
+    const { error } = await serviceClient.from("metrics").upsert(metrics, {
+      onConflict: "organization_id,metric_type,date,source_id",
+      ignoreDuplicates: false,
+    });
+    if (error) errors.push(`DB upsert: ${error.message}`);
   }
 
-  // Update sync job
+  // Update data source sync timestamp
   await serviceClient.from("data_sources").update({
     last_synced_at: new Date().toISOString(),
   }).eq("id", config.data_source_id);
@@ -133,7 +171,6 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    // Verify caller
     const userClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!,
