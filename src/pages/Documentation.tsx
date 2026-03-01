@@ -7,6 +7,7 @@ import {
   BarChart3, Target, Layers, GitBranch, Activity, Scale, Timer,
   Network, ShieldAlert, GitCompare, Gauge, FileText, Users, Crown,
   Shuffle, Search, Upload, CreditCard, Settings, Building2, TrendingUp,
+  Radio, Webhook, Globe, Key,
 } from "lucide-react";
 
 /* ─── Section data ─── */
@@ -447,13 +448,14 @@ Every table enforces organization-level data isolation:
 ## Stripe-Powered Subscription System
 
 ### Tier Structure
-| Feature | Starter | Growth | Enterprise |
+| Feature | Starter (€29) | Growth (€99) | Enterprise (€299) |
 |---------|---------|--------|------------|
 | Data Sources | 2 | 10 | Unlimited |
 | KPIs | 5 | 25 | Unlimited |
 | Simulations/day | 5 | 50 | Unlimited |
 | Copilot messages/day | 20 | 100 | Unlimited |
 | Convergence/day | — | 10 | Unlimited |
+| Realtime Streaming | — | ✓ | ✓ |
 | Executive Modes | 1 role | 4 roles | 4 roles + AI |
 | Team Members | 1 | 5 | Unlimited |
 | Reports | Basic | Full suite | Full + Board |
@@ -613,6 +615,164 @@ All functions require a valid JWT in the Authorization header (except \`stripe-w
 | \`audit_log\` | Admin action log | Admin read only |
 | \`intelligence_audit_trail\` | AI decision log | Admin read only |
 | \`orchestration_runs\` | Pipeline runs | Org member read |
+    `,
+  },
+  {
+    id: "realtime-streaming",
+    title: "Realtime Data Streaming",
+    icon: Radio,
+    content: `
+## Realtime Metric Streaming (Growth+ Tier)
+
+### Overview
+The platform supports both **batch data ingestion** and **live realtime streaming**. When enabled, dashboards auto-update within milliseconds of new data arriving — no manual refresh required.
+
+### Data Modes
+| Mode | Mechanism | Tier | Latency |
+|------|-----------|------|---------|
+| Batch | CSV upload, connector sync, webhook POST | All tiers | On-demand |
+| Realtime | PostgreSQL LISTEN/NOTIFY via WebSocket | Growth & Enterprise | < 500ms |
+
+### How It Works
+1. Data arrives via any ingestion channel (webhook, connector, CSV)
+2. PostgreSQL fires a change event on the \`metrics\` table
+3. The \`supabase_realtime\` publication broadcasts the event
+4. Connected Growth/Enterprise clients receive the payload via WebSocket
+5. Dashboard state updates in-place (sorted insert, no full refetch)
+
+### Subscription Gating
+Realtime streaming is gated by the \`useSubscriptionGate\` hook:
+- **Starter**: Batch-only — data loads on page navigation
+- **Growth**: Full realtime — INSERT, UPDATE, DELETE events streamed live
+- **Enterprise**: Full realtime + priority channel allocation
+
+### Events Handled
+| Event | Behavior |
+|-------|----------|
+| INSERT | New metric sorted into timeline, derived KPIs recomputed |
+| UPDATE | Existing metric replaced in-place |
+| DELETE | Metric removed, derived values recalculated |
+
+### UI Indicators
+The \`useMetrics\` hook exposes:
+- \`isStreaming\` — boolean, true when WebSocket is active and subscribed
+- \`canStream\` — boolean, true when user's tier permits realtime access
+
+These flags can be used to render a live pulse indicator or "LIVE" badge on dashboards.
+
+### Technical Details
+- Channel name: \`metrics-live-{organization_id}\`
+- Filter: \`organization_id=eq.{orgId}\` (scoped to active tenant)
+- Protocol: WebSocket via Supabase Realtime (Phoenix Channels)
+- Reconnection: Automatic with exponential backoff
+    `,
+  },
+  {
+    id: "webhook-api",
+    title: "Webhook Ingestion API",
+    icon: Webhook,
+    content: `
+## Webhook Ingestion API
+
+### Overview
+The \`webhook-ingest\` Edge Function provides a production-grade HTTP endpoint for pushing metric data into the platform from external systems — CRMs, ERPs, payment processors, custom applications.
+
+### Authentication
+Webhook sources authenticate via a hashed API key:
+1. When creating a data source of type \`webhook\`, a unique API key is generated
+2. The key is SHA-256 hashed and stored in \`data_sources.credentials_key_hash\`
+3. Callers include the raw key in the \`x-api-key\` header
+4. The function hashes the incoming key and matches against stored hashes
+
+### Required Headers
+| Header | Description |
+|--------|-------------|
+| \`x-api-key\` | Data source API key (SHA-256 verified) |
+| \`x-request-id\` | Unique request ID for idempotency |
+| \`Content-Type\` | \`application/json\` |
+
+### Request Body
+\`\`\`json
+{
+  "records": [
+    { "date": "2025-01-15", "value": 42500, "metric_type": "revenue" },
+    { "date": "2025-01-15", "value": 120, "metric_type": "customers", "region": "US" }
+  ]
+}
+\`\`\`
+Also accepts: bare array, or object with \`data\` key.
+
+### Field Mapping
+Custom field names can be configured in the data source's \`config.field_mapping\`:
+\`\`\`json
+{ "date": "transaction_date", "value": "amount", "metric_type": "type" }
+\`\`\`
+
+### Validation Rules
+- Dates must be valid ISO format and within 5 years
+- Values must be finite numbers, |value| ≤ 1 trillion
+- Maximum 10,000 records per request
+- Maximum 100KB body size
+
+### Rate Limits
+- **Per request**: 10,000 records
+- **Per hour per source**: 50,000 records
+- Returns HTTP 429 when exceeded
+
+### Idempotency
+Duplicate \`x-request-id\` values return HTTP 409 (Conflict) — safe to retry on network errors.
+
+### Response
+\`\`\`json
+{
+  "success": true,
+  "records_synced": 45,
+  "records_skipped": 2,
+  "validation_errors": ["Record 3: invalid date \\"abc\\""],
+  "job_id": "uuid"
+}
+\`\`\`
+    `,
+  },
+  {
+    id: "legal-compliance",
+    title: "Legal & Compliance",
+    icon: Globe,
+    content: `
+## Legal Framework & GDPR Compliance
+
+### Documentation Pages
+| Document | Route | Purpose |
+|----------|-------|---------|
+| Terms of Service | \`/terms\` | Platform usage terms |
+| Privacy Policy | \`/privacy\` | Data collection & processing |
+| Cookie Policy | \`/cookie-policy\` | Cookie consent & management |
+| Data Processing Agreement | \`/data-processing\` | GDPR DPA for enterprise |
+| Data Retention Policy | \`/data-retention\` | Retention schedules by data type |
+| Subprocessor Disclosure | \`/subprocessors\` | Third-party data processors |
+
+### GDPR Rights Implemented
+- **Right to Access** — users can view all personal data via the application
+- **Right to Portability** — \`/data-export\` endpoint exports all organization data as JSON
+- **Right to Erasure** — \`delete-account\` Edge Function removes all user data
+- **Right to Rectification** — profile and organization data editable in settings
+
+### Data Export
+The \`data-export\` Edge Function provides a comprehensive export including:
+- Organization profile and settings
+- All metrics and KPI values
+- Decision ledger entries
+- Advisory instances
+- Audit log entries
+
+### Audit Trail
+All administrative actions are logged in the \`audit_log\` table:
+- Actor ID and type (user/system)
+- Action type (create/update/delete)
+- Resource type and ID
+- IP address
+- Full payload snapshot
+- Timestamp
     `,
   },
 ];
