@@ -27,7 +27,7 @@ const CTASection = () => {
               to="/register"
               className="inline-flex items-center gap-2 px-10 py-4 rounded-xl bg-primary text-primary-foreground font-semibold text-lg hover:brightness-110 transition-all shadow-lg shadow-primary/25"
             >
-              Start Free Trial <ArrowRight className="w-5 h-5" />
+              Start 14-Day Free Trial <ArrowRight className="w-5 h-5" />
             </Link>
             <a
               href="mailto:hello@quantivis.io"
@@ -36,7 +36,7 @@ const CTASection = () => {
               <Mail className="w-5 h-5" /> Contact Sales
             </a>
           </div>
-          <p className="text-xs text-muted-foreground mt-4">No credit card required · GDPR compliant · SOC 2 infrastructure</p>
+          <p className="text-xs text-muted-foreground mt-4">14-day free trial · GDPR compliant · SOC 2 infrastructure</p>
         </motion.div>
       </div>
     </section>

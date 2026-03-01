@@ -2886,12 +2886,14 @@ export type Database = {
           created_at: string
           current_period_end: string | null
           id: string
+          is_trial: boolean
           organization_id: string
           price_id: string | null
           status: string
           stripe_customer_id: string
           stripe_subscription_id: string
           tier: string
+          trial_end: string | null
           updated_at: string
         }
         Insert: {
@@ -2899,12 +2901,14 @@ export type Database = {
           created_at?: string
           current_period_end?: string | null
           id?: string
+          is_trial?: boolean
           organization_id: string
           price_id?: string | null
           status?: string
           stripe_customer_id: string
           stripe_subscription_id: string
           tier?: string
+          trial_end?: string | null
           updated_at?: string
         }
         Update: {
@@ -2912,12 +2916,14 @@ export type Database = {
           created_at?: string
           current_period_end?: string | null
           id?: string
+          is_trial?: boolean
           organization_id?: string
           price_id?: string | null
           status?: string
           stripe_customer_id?: string
           stripe_subscription_id?: string
           tier?: string
+          trial_end?: string | null
           updated_at?: string
         }
         Relationships: [

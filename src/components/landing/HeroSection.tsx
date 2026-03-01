@@ -86,7 +86,7 @@ const HeroSection = () => {
                 to="/register"
                 className="inline-flex items-center justify-center gap-2 px-10 py-4 rounded-xl bg-primary text-primary-foreground font-semibold text-base hover:brightness-110 transition-all shadow-lg shadow-primary/25"
               >
-                Start Free Trial <ArrowRight className="w-4 h-4" />
+                Start 14-Day Free Trial <ArrowRight className="w-4 h-4" />
               </Link>
               <Link
                 to="/pricing"

@@ -81,6 +81,7 @@ serve(async (req) => {
         const sub = await stripe.subscriptions.retrieve(subscriptionId);
         const productId = sub.items.data[0].price.product as string;
         const tier = TIERS[productId] ?? "starter";
+        const isTrial = sub.status === "trialing";
 
         const { error } = await supabase.from("subscriptions").upsert(
           {
@@ -88,10 +89,12 @@ serve(async (req) => {
             stripe_customer_id: customerId,
             stripe_subscription_id: subscriptionId,
             tier,
-            status: sub.status,
+            status: sub.status, // "active" or "trialing"
             price_id: sub.items.data[0].price.id,
             current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
             cancel_at_period_end: sub.cancel_at_period_end,
+            is_trial: isTrial,
+            trial_end: sub.trial_end ? new Date(sub.trial_end * 1000).toISOString() : null,
           },
           { onConflict: "stripe_subscription_id" }
         );
@@ -105,6 +108,7 @@ serve(async (req) => {
         const sub = event.data.object as Stripe.Subscription;
         const productId = sub.items.data[0].price.product as string;
         const tier = TIERS[productId] ?? "starter";
+        const isTrial = sub.status === "trialing";
 
         const { error } = await supabase
           .from("subscriptions")
@@ -114,6 +118,8 @@ serve(async (req) => {
             price_id: sub.items.data[0].price.id,
             current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
             cancel_at_period_end: sub.cancel_at_period_end,
+            is_trial: isTrial,
+            trial_end: sub.trial_end ? new Date(sub.trial_end * 1000).toISOString() : null,
           })
           .eq("stripe_subscription_id", sub.id);
 
