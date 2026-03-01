@@ -14,22 +14,19 @@ const HeroSection = () => {
   return (
     <header className="relative min-h-[92vh] flex items-center overflow-hidden pt-20" role="banner">
       {/* Background image */}
-      <div
-        className="absolute inset-0 z-0"
-        style={{
-          backgroundImage: `url(${heroVisual})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-          opacity: 0.25,
-        }}
+      <img
+        src={heroVisual}
+        alt=""
+        role="presentation"
+        fetchPriority="high"
+        className="absolute inset-0 w-full h-full object-cover z-0 opacity-25"
       />
       <div className="absolute inset-0 z-[1] bg-gradient-to-b from-background/60 via-background/40 to-background" />
 
       {/* Ambient glow */}
       <div className="absolute inset-0 pointer-events-none z-[2]">
         <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/6 rounded-full blur-[150px]" />
-        <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-blue-500/4 rounded-full blur-[120px]" />
+        <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-primary/[0.04] rounded-full blur-[120px]" />
       </div>
 
       <div className="container mx-auto px-6 relative z-10">
