@@ -12,6 +12,13 @@ import OrgSwitcher from "@/components/dashboard/OrgSwitcher";
 import IntelligenceStatusBar from "@/components/dashboard/IntelligenceStatusBar";
 import DailyActions from "@/components/dashboard/DailyActions";
 import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
+import HeatmapChart from "@/components/dashboard/HeatmapChart";
+import TreemapChart from "@/components/dashboard/TreemapChart";
+import ScatterBubbleChart from "@/components/dashboard/ScatterBubbleChart";
+import RadarChartComponent from "@/components/dashboard/RadarChart";
+import GaugeChart from "@/components/dashboard/GaugeChart";
+import SankeyChart from "@/components/dashboard/SankeyChart";
+import BoxPlotChart from "@/components/dashboard/BoxPlotChart";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOrganization } from "@/hooks/useOrganization";
 import { useMetrics } from "@/hooks/useMetrics";
@@ -276,6 +283,38 @@ const Dashboard = () => {
 
               {/* Cohort Analysis */}
               <CohortAnalysis metrics={metrics} />
+
+              {/* Enterprise Visualizations Row 3 */}
+              <div className="grid lg:grid-cols-3 gap-5">
+                <HeatmapChart metrics={metrics} />
+                <TreemapChart metrics={metrics} />
+                <RadarChartComponent metrics={metrics} />
+              </div>
+
+              {/* Enterprise Visualizations Row 4 */}
+              <div className="grid lg:grid-cols-3 gap-5">
+                <ScatterBubbleChart metrics={metrics} />
+                <SankeyChart metrics={metrics} />
+                <BoxPlotChart metrics={metrics} />
+              </div>
+
+              {/* Gauge Row */}
+              <div className="grid lg:grid-cols-3 gap-5">
+                <GaugeChart
+                  value={latestChurn > 0 ? Math.max(0, 100 - latestChurn * 100) : 85}
+                  label="Retention Health"
+                />
+                <GaugeChart
+                  value={latestCost > 0 ? Math.max(0, 100 - latestCost * 100) : 70}
+                  label="Cost Efficiency"
+                />
+                <GaugeChart
+                  value={revenueByMonth.length >= 2
+                    ? Math.min(100, Math.max(0, ((revenueByMonth[revenueByMonth.length - 1]?.revenue ?? 0) / (revenueByMonth[0]?.revenue || 1) - 1) * 100 + 50))
+                    : 50}
+                  label="Growth Momentum"
+                />
+              </div>
 
               {/* Intelligence Row */}
               <div className="grid lg:grid-cols-3 gap-5">
