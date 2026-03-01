@@ -4,6 +4,7 @@ import {
   LayoutDashboard, Upload, FileText, TrendingUp, Settings, CreditCard, LogOut,
   Database, BarChart3, Shuffle, Crown, Users, Building2, Search, Zap, Menu, X,
   HelpCircle, BookOpen, Target, Brain, MessageSquare, GitBranch, Globe,
+  Sparkles, GitCommitVertical, Crosshair, Bell,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -20,6 +21,7 @@ const navSections = [
       { icon: BookOpen, label: "Decision Ledger", path: "/decisions" },
       { icon: Brain, label: "Decision Intelligence", path: "/decision-intelligence" },
       { icon: MessageSquare, label: "Ask Quantivis", path: "/ask" },
+      { icon: Sparkles, label: "Forecasting", path: "/forecasting" },
       { icon: Target, label: "Benchmarking", path: "/benchmarking" },
     ],
   },
@@ -30,9 +32,11 @@ const navSections = [
       { icon: GitBranch, label: "What-If Branching", path: "/branching" },
       { icon: TrendingUp, label: "Simulations", path: "/simulations" },
       { icon: Globe, label: "Market Intelligence", path: "/market-intelligence" },
+      { icon: Bell, label: "Alert Playbooks", path: "/alert-playbooks" },
       { icon: Crown, label: "Executive Command", path: "/executive" },
       { icon: FileText, label: "Reports", path: "/reports" },
       { icon: BarChart3, label: "Strategy Pack", path: "/strategy-pack" },
+      { icon: Crosshair, label: "OKR Alignment", path: "/okrs" },
     ],
   },
   {
@@ -40,6 +44,7 @@ const navSections = [
     items: [
       { icon: Database, label: "Data Sources", path: "/data-sources" },
       { icon: Upload, label: "Data Upload", path: "/data-upload" },
+      { icon: GitCommitVertical, label: "Data Lineage", path: "/lineage" },
     ],
   },
   {

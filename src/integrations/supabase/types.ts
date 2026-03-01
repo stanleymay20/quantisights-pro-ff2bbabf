@@ -159,6 +159,68 @@ export type Database = {
           },
         ]
       }
+      alert_playbooks: {
+        Row: {
+          cooldown_minutes: number
+          created_at: string
+          created_by: string
+          description: string | null
+          escalation_steps: Json
+          id: string
+          is_active: boolean
+          last_triggered_at: string | null
+          name: string
+          organization_id: string
+          severity: string
+          trigger_condition: string
+          trigger_metric: string
+          trigger_threshold: number
+          updated_at: string
+        }
+        Insert: {
+          cooldown_minutes?: number
+          created_at?: string
+          created_by: string
+          description?: string | null
+          escalation_steps?: Json
+          id?: string
+          is_active?: boolean
+          last_triggered_at?: string | null
+          name: string
+          organization_id: string
+          severity?: string
+          trigger_condition?: string
+          trigger_metric: string
+          trigger_threshold: number
+          updated_at?: string
+        }
+        Update: {
+          cooldown_minutes?: number
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          escalation_steps?: Json
+          id?: string
+          is_active?: boolean
+          last_triggered_at?: string | null
+          name?: string
+          organization_id?: string
+          severity?: string
+          trigger_condition?: string
+          trigger_metric?: string
+          trigger_threshold?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alert_playbooks_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_log: {
         Row: {
           action_type: string
@@ -1373,6 +1435,59 @@ export type Database = {
           },
         ]
       }
+      forecast_results: {
+        Row: {
+          confidence_interval: number | null
+          created_by: string
+          forecast_horizon_months: number
+          generated_at: string
+          id: string
+          mape: number | null
+          metric_type: string
+          model_used: string
+          organization_id: string
+          predictions: Json
+          seasonality_detected: boolean | null
+          trend_direction: string | null
+        }
+        Insert: {
+          confidence_interval?: number | null
+          created_by: string
+          forecast_horizon_months?: number
+          generated_at?: string
+          id?: string
+          mape?: number | null
+          metric_type: string
+          model_used?: string
+          organization_id: string
+          predictions?: Json
+          seasonality_detected?: boolean | null
+          trend_direction?: string | null
+        }
+        Update: {
+          confidence_interval?: number | null
+          created_by?: string
+          forecast_horizon_months?: number
+          generated_at?: string
+          id?: string
+          mape?: number | null
+          metric_type?: string
+          model_used?: string
+          organization_id?: string
+          predictions?: Json
+          seasonality_detected?: boolean | null
+          trend_direction?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "forecast_results_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       industry_benchmarks: {
         Row: {
           created_at: string
@@ -1544,6 +1659,76 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "intelligence_audit_trail_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      key_results: {
+        Row: {
+          created_at: string
+          current_value: number
+          id: string
+          kpi_id: string | null
+          metric_type: string | null
+          objective_id: string
+          organization_id: string
+          status: string
+          target_value: number
+          title: string
+          unit: string | null
+          updated_at: string
+          weight: number
+        }
+        Insert: {
+          created_at?: string
+          current_value?: number
+          id?: string
+          kpi_id?: string | null
+          metric_type?: string | null
+          objective_id: string
+          organization_id: string
+          status?: string
+          target_value?: number
+          title: string
+          unit?: string | null
+          updated_at?: string
+          weight?: number
+        }
+        Update: {
+          created_at?: string
+          current_value?: number
+          id?: string
+          kpi_id?: string | null
+          metric_type?: string | null
+          objective_id?: string
+          organization_id?: string
+          status?: string
+          target_value?: number
+          title?: string
+          unit?: string | null
+          updated_at?: string
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "key_results_kpi_id_fkey"
+            columns: ["kpi_id"]
+            isOneToOne: false
+            referencedRelation: "kpis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "key_results_objective_id_fkey"
+            columns: ["objective_id"]
+            isOneToOne: false
+            referencedRelation: "objectives"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "key_results_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -1928,6 +2113,63 @@ export type Database = {
           },
         ]
       }
+      objectives: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          organization_id: string
+          owner_id: string
+          parent_id: string | null
+          progress: number
+          status: string
+          time_period: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          organization_id: string
+          owner_id: string
+          parent_id?: string | null
+          progress?: number
+          status?: string
+          time_period?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          organization_id?: string
+          owner_id?: string
+          parent_id?: string | null
+          progress?: number
+          status?: string
+          time_period?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "objectives_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "objectives_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "objectives"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orchestration_runs: {
         Row: {
           completed_at: string | null
@@ -2036,6 +2278,60 @@ export type Database = {
           size_band?: string | null
         }
         Relationships: []
+      }
+      playbook_executions: {
+        Row: {
+          completed_at: string | null
+          execution_log: Json
+          id: string
+          organization_id: string
+          playbook_id: string
+          started_at: string
+          status: string
+          steps_completed: number
+          total_steps: number
+          trigger_value: number | null
+        }
+        Insert: {
+          completed_at?: string | null
+          execution_log?: Json
+          id?: string
+          organization_id: string
+          playbook_id: string
+          started_at?: string
+          status?: string
+          steps_completed?: number
+          total_steps?: number
+          trigger_value?: number | null
+        }
+        Update: {
+          completed_at?: string | null
+          execution_log?: Json
+          id?: string
+          organization_id?: string
+          playbook_id?: string
+          started_at?: string
+          status?: string
+          steps_completed?: number
+          total_steps?: number
+          trigger_value?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "playbook_executions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "playbook_executions_playbook_id_fkey"
+            columns: ["playbook_id"]
+            isOneToOne: false
+            referencedRelation: "alert_playbooks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
