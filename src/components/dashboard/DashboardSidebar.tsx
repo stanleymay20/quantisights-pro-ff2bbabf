@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Upload, FileText, TrendingUp, Settings, CreditCard, LogOut,
   Database, BarChart3, Shuffle, Crown, Users, Building2, Search, Zap, Menu, X,
-  HelpCircle, BookOpen, Target, Brain,
+  HelpCircle, BookOpen, Target, Brain, MessageSquare, GitBranch, Globe,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -19,6 +19,7 @@ const navSections = [
       { icon: Zap, label: "Advisory", path: "/advisory" },
       { icon: BookOpen, label: "Decision Ledger", path: "/decisions" },
       { icon: Brain, label: "Decision Intelligence", path: "/decision-intelligence" },
+      { icon: MessageSquare, label: "Ask Quantivis", path: "/ask" },
       { icon: Target, label: "Benchmarking", path: "/benchmarking" },
     ],
   },
@@ -26,7 +27,9 @@ const navSections = [
     label: "Strategy",
     items: [
       { icon: Shuffle, label: "Scenarios", path: "/scenarios" },
+      { icon: GitBranch, label: "What-If Branching", path: "/branching" },
       { icon: TrendingUp, label: "Simulations", path: "/simulations" },
+      { icon: Globe, label: "Market Intelligence", path: "/market-intelligence" },
       { icon: Crown, label: "Executive Command", path: "/executive" },
       { icon: FileText, label: "Reports", path: "/reports" },
       { icon: BarChart3, label: "Strategy Pack", path: "/strategy-pack" },
