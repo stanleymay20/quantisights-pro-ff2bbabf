@@ -32,7 +32,7 @@ const FOOTER_SECTIONS = [
 ];
 
 const Footer = forwardRef<HTMLElement>((_, ref) => (
-  <footer ref={ref} className="border-t border-border pt-16 pb-8 bg-card/30">
+  <footer ref={ref} role="contentinfo" className="border-t border-border pt-16 pb-8 bg-card/30">
     <div className="container mx-auto px-6">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
         {/* Brand */}
