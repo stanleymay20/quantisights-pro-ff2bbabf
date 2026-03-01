@@ -1,18 +1,19 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { ArrowRight, CheckCircle2 } from "lucide-react";
+import { ArrowRight, Brain, Shield, TrendingUp, Zap } from "lucide-react";
 import heroVisual from "@/assets/hero-visual.png";
 
-const PROOF_POINTS = [
-  "From data ingestion to board-ready advisory in minutes",
-  "Every insight traceable to verified operational data",
-  "No dashboards to configure — intelligence is autonomous",
+const CAPABILITY_PILLS = [
+  { icon: Brain, label: "Causal Inference" },
+  { icon: Shield, label: "Bias Detection" },
+  { icon: TrendingUp, label: "Predictive Forecasting" },
+  { icon: Zap, label: "Prescriptive Advisory" },
 ];
 
 const HeroSection = () => {
   return (
-    <section className="relative min-h-[90vh] flex items-center overflow-hidden pt-20">
-      {/* Background image with 30% opacity */}
+    <section className="relative min-h-[92vh] flex items-center overflow-hidden pt-20">
+      {/* Background image */}
       <div
         className="absolute inset-0 z-0"
         style={{
@@ -20,80 +21,92 @@ const HeroSection = () => {
           backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
-          opacity: 0.3,
+          opacity: 0.25,
         }}
       />
-      {/* Overlay for readability */}
-      <div className="absolute inset-0 z-[1] bg-background/50" />
+      <div className="absolute inset-0 z-[1] bg-gradient-to-b from-background/60 via-background/40 to-background" />
 
       {/* Ambient glow */}
       <div className="absolute inset-0 pointer-events-none z-[2]">
-        <div className="absolute top-1/3 left-1/3 w-96 h-96 bg-primary/8 rounded-full blur-[120px]" />
+        <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/6 rounded-full blur-[150px]" />
+        <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-blue-500/4 rounded-full blur-[120px]" />
       </div>
 
       <div className="container mx-auto px-6 relative z-10">
-        <div className="max-w-2xl mx-auto text-center">
+        <div className="max-w-3xl mx-auto text-center">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.3 }}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary/20 bg-primary/5 text-xs font-medium text-primary mb-6"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.2 }}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary/20 bg-primary/5 text-xs font-semibold text-primary mb-8"
             >
               <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-              The Executive Operating System
+              The #1 Artificial Decision Intelligence Platform
             </motion.div>
 
-            <h1 className="text-5xl lg:text-6xl xl:text-7xl font-bold font-display leading-[1.08] mb-6">
+            <h1 className="text-5xl lg:text-6xl xl:text-7xl font-bold font-display leading-[1.05] mb-6">
               Stop Reporting.{" "}
               <br className="hidden sm:block" />
               Start{" "}
               <span className="gradient-text">Deciding.</span>
             </h1>
-            <p className="text-lg text-muted-foreground max-w-lg mx-auto mb-8 leading-relaxed">
-              An autonomous intelligence engine that ingests your operational data, diagnoses root causes, and prescribes strategic action.
+            <p className="text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
+              The only platform that combines causal inference, cognitive bias detection, and counterfactual analysis to transform your operational data into{" "}
+              <span className="text-foreground font-medium">defensible strategic decisions</span>.
             </p>
 
-            {/* Proof points */}
-            <div className="space-y-2 mb-8 inline-block text-left">
-              {PROOF_POINTS.map((point) => (
-                <div key={point} className="flex items-start gap-2.5">
-                  <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-                  <span className="text-sm text-foreground/80">{point}</span>
-                </div>
+            {/* Capability pills */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="flex flex-wrap gap-2.5 justify-center mb-10"
+            >
+              {CAPABILITY_PILLS.map((pill, i) => (
+                <motion.div
+                  key={pill.label}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.5 + i * 0.08 }}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg border border-border bg-card/60 backdrop-blur-sm text-sm font-medium text-foreground/80"
+                >
+                  <pill.icon className="w-3.5 h-3.5 text-primary" />
+                  {pill.label}
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 to="/register"
-                className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl bg-primary text-primary-foreground font-semibold text-base hover:brightness-110 transition-all shadow-lg shadow-primary/25"
+                className="inline-flex items-center justify-center gap-2 px-10 py-4 rounded-xl bg-primary text-primary-foreground font-semibold text-base hover:brightness-110 transition-all shadow-lg shadow-primary/25"
               >
                 Start Free Trial <ArrowRight className="w-4 h-4" />
               </Link>
-              <a
-                href="#how-it-works"
-                className="inline-flex items-center justify-center px-8 py-4 rounded-xl border border-border bg-card/50 text-foreground font-semibold text-base hover:border-primary/30 transition-all"
+              <Link
+                to="/pricing"
+                className="inline-flex items-center justify-center px-10 py-4 rounded-xl border border-border bg-card/50 text-foreground font-semibold text-base hover:border-primary/30 transition-all"
               >
-                See the Difference
-              </a>
+                View Pricing
+              </Link>
             </div>
 
-            {/* Category differentiator */}
+            {/* Replaces strip */}
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6 }}
-              className="mt-10 pt-6 border-t border-border/30"
+              transition={{ delay: 0.7 }}
+              className="mt-12 pt-6 border-t border-border/30"
             >
-              <p className="text-[11px] uppercase tracking-widest text-muted-foreground/60 mb-3">Replaces</p>
-              <div className="flex flex-wrap gap-3 justify-center">
+              <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground/50 mb-3">Replaces</p>
+              <div className="flex flex-wrap gap-4 justify-center">
                 {["Tableau", "Power BI", "Looker", "Anaplan", "Manual Consulting"].map((tool) => (
-                  <span key={tool} className="text-xs text-muted-foreground/50 line-through decoration-muted-foreground/30">{tool}</span>
+                  <span key={tool} className="text-sm text-muted-foreground/40 line-through decoration-muted-foreground/20">{tool}</span>
                 ))}
               </div>
             </motion.div>

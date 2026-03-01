@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
-import { Check, Loader2, Crown } from "lucide-react";
-import { TIERS, TierKey } from "@/lib/stripe-tiers";
+import { Check, Loader2, Crown, X, Minus } from "lucide-react";
+import { TIERS, TierKey, FEATURE_MATRIX } from "@/lib/stripe-tiers";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,6 +10,12 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
 
+const CellValue = ({ value }: { value: boolean | string }) => {
+  if (value === true) return <Check className="w-4 h-4 text-primary mx-auto" />;
+  if (value === false) return <Minus className="w-4 h-4 text-muted-foreground/30 mx-auto" />;
+  return <span className="text-sm font-medium text-foreground">{value}</span>;
+};
+
 const Pricing = () => {
   const { user } = useAuth();
   const { tier: currentTier, subscribed } = useSubscription();
@@ -18,11 +24,7 @@ const Pricing = () => {
   const [loadingTier, setLoadingTier] = useState<TierKey | null>(null);
 
   const handleCheckout = async (tierKey: TierKey) => {
-    if (!user) {
-      navigate("/login");
-      return;
-    }
-
+    if (!user) { navigate("/login"); return; }
     setLoadingTier(tierKey);
     try {
       const { data, error } = await supabase.functions.invoke("create-checkout", {
@@ -50,22 +52,24 @@ const Pricing = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <section className="pt-32 pb-24">
+      <section className="pt-32 pb-16">
         <div className="container mx-auto px-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="text-center mb-16"
           >
+            <p className="text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-3">Pricing</p>
             <h1 className="text-5xl font-bold font-display mb-4">
-              Simple, Transparent <span className="gradient-text">Pricing</span>
+              Intelligence That <span className="gradient-text">Scales</span> With You
             </h1>
             <p className="text-muted-foreground text-lg max-w-xl mx-auto">
-              Choose the plan that scales with your business intelligence needs.
+              From first dataset to enterprise-wide decision intelligence. Every plan includes full data traceability and GDPR compliance.
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          {/* Tier Cards */}
+          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto mb-24">
             {(Object.entries(TIERS) as [TierKey, (typeof TIERS)[TierKey]][]).map(
               ([key, tier], i) => {
                 const isActive = subscribed && currentTier === key;
@@ -92,13 +96,16 @@ const Pricing = () => {
                       </div>
                     )}
 
-                    <h3 className="text-xl font-semibold font-display mb-2">{tier.name}</h3>
+                    <h3 className="text-xl font-semibold font-display mb-1">{tier.name}</h3>
+                    {"tagline" in tier && (
+                      <p className="text-xs text-muted-foreground mb-4">{tier.tagline}</p>
+                    )}
                     <div className="mb-6">
                       <span className="text-4xl font-bold font-display">{tier.currency}{tier.price}</span>
                       <span className="text-muted-foreground text-sm">/{tier.interval}</span>
                     </div>
 
-                    <ul className="space-y-3 mb-8 flex-1">
+                    <ul className="space-y-2.5 mb-8 flex-1">
                       {tier.features.map((f) => (
                         <li key={f} className="flex items-start gap-2 text-sm">
                           <Check className="w-4 h-4 text-primary mt-0.5 shrink-0" />
@@ -138,8 +145,70 @@ const Pricing = () => {
               }
             )}
           </div>
+
+          {/* Full Feature Comparison Matrix */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="max-w-5xl mx-auto"
+          >
+            <div className="text-center mb-10">
+              <h2 className="text-3xl font-bold font-display mb-3">
+                Complete <span className="gradient-text">Feature Comparison</span>
+              </h2>
+              <p className="text-muted-foreground">Every capability across every tier — no hidden features.</p>
+            </div>
+
+            <div className="glass-card overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="text-left py-4 px-6 text-muted-foreground font-medium w-[40%]">Feature</th>
+                      {(Object.entries(TIERS) as [TierKey, (typeof TIERS)[TierKey]][]).map(([key, t]) => (
+                        <th key={key} className={`text-center py-4 px-4 font-semibold ${key === currentTier && subscribed ? "text-primary" : ""}`}>
+                          <div>{t.name}</div>
+                          <div className="text-xs font-normal text-muted-foreground mt-0.5">{t.currency}{t.price}/{t.interval}</div>
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {FEATURE_MATRIX.map((group) => (
+                      <>
+                        <tr key={group.category}>
+                          <td colSpan={4} className="py-3 px-6 text-xs uppercase tracking-widest text-primary font-semibold bg-primary/[0.03] border-b border-border/50">
+                            {group.category}
+                          </td>
+                        </tr>
+                        {group.features.map((row) => (
+                          <tr key={row.label} className="border-b border-border/30 hover:bg-card/50 transition-colors">
+                            <td className="py-3 px-6 font-medium">{row.label}</td>
+                            <td className="text-center py-3 px-4"><CellValue value={row.starter} /></td>
+                            <td className="text-center py-3 px-4"><CellValue value={row.growth} /></td>
+                            <td className="text-center py-3 px-4"><CellValue value={row.enterprise} /></td>
+                          </tr>
+                        ))}
+                      </>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </motion.div>
         </div>
       </section>
+
+      {/* CTA */}
+      <section className="py-16">
+        <div className="container mx-auto px-6 text-center">
+          <p className="text-xs text-muted-foreground">
+            All plans include GDPR compliance · SOC 2 infrastructure · Data encryption at rest & in transit · No credit card required for trial
+          </p>
+        </div>
+      </section>
+
       <Footer />
     </div>
   );

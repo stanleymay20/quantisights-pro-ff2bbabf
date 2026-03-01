@@ -10,7 +10,7 @@ import { useOrganization } from "@/hooks/useOrganization";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { TIERS, TierKey } from "@/lib/stripe-tiers";
+import { TIERS, TierKey, FEATURE_MATRIX } from "@/lib/stripe-tiers";
 import {
   CreditCard, Crown, Users, BarChart3, ArrowUpRight,
   Loader2, Check, Zap, Lock, ExternalLink, Calendar,
@@ -238,12 +238,12 @@ const Billing = () => {
                 <CardContent className="p-8 flex items-center justify-between flex-wrap gap-6">
                   <div className="space-y-2">
                     <h3 className="text-lg font-bold font-display">
-                      {activeTier === "starter" ? "Unlock AI-Powered Insights" : "Go Enterprise"}
+                      {activeTier === "starter" ? "Unlock AI Decision Intelligence" : "Go Enterprise"}
                     </h3>
                     <p className="text-sm text-muted-foreground max-w-md">
                       {activeTier === "starter"
-                        ? "Upgrade to Growth for unlimited datasets, AI insights, anomaly detection, and executive PDF reports."
-                        : "Upgrade to Enterprise for unlimited everything, SSO, priority processing, and dedicated support."}
+                        ? "Upgrade to Growth for AI Prescriptive Advisory, Causal Inference, Predictive Forecasting, Monte Carlo Simulations, and Board Governance Reports."
+                        : "Upgrade to Enterprise for Cognitive Bias Detection, Counterfactual Explanations, Executive Convergence Index, unlimited simulations, and dedicated support."}
                     </p>
                     <div className="flex flex-wrap gap-2 pt-1">
                       {(activeTier === "starter" ? TIERS.growth : TIERS.enterprise).features.slice(0, 3).map((f) => (
@@ -282,21 +282,28 @@ const Billing = () => {
                         ))}
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-border">
-                      {[
-                        { label: "Daily Simulations", starter: "5", growth: "50", enterprise: "Unlimited" },
-                        { label: "Daily Convergence", starter: "3", growth: "30", enterprise: "Unlimited" },
-                        { label: "Team Seats", starter: "2", growth: "5", enterprise: "Unlimited" },
-                        { label: "AI Copilot", starter: "10/day", growth: "100/day", enterprise: "Unlimited" },
-                        { label: "Board Reports", starter: "—", growth: "✓", enterprise: "✓ + AI" },
-                        { label: "SSO & RBAC", starter: "—", growth: "—", enterprise: "✓" },
-                      ].map((row) => (
-                        <tr key={row.label}>
-                          <td className="py-3 pr-4 font-medium">{row.label}</td>
-                          <td className={`text-center py-3 px-4 ${activeTier === "starter" ? "text-foreground" : "text-muted-foreground"}`}>{row.starter}</td>
-                          <td className={`text-center py-3 px-4 ${activeTier === "growth" ? "text-foreground" : "text-muted-foreground"}`}>{row.growth}</td>
-                          <td className={`text-center py-3 px-4 ${activeTier === "enterprise" ? "text-foreground" : "text-muted-foreground"}`}>{row.enterprise}</td>
-                        </tr>
+                    <tbody>
+                      {FEATURE_MATRIX.map((group) => (
+                        <>
+                          <tr key={group.category}>
+                            <td colSpan={4} className="py-2.5 pr-4 text-xs uppercase tracking-widest text-primary font-semibold bg-primary/[0.03] border-b border-border/50">
+                              {group.category}
+                            </td>
+                          </tr>
+                          {group.features.map((row) => (
+                            <tr key={row.label} className="border-b border-border/30">
+                              <td className="py-2.5 pr-4 font-medium">{row.label}</td>
+                              {(["starter", "growth", "enterprise"] as const).map((tier) => {
+                                const val = row[tier];
+                                return (
+                                  <td key={tier} className={`text-center py-2.5 px-4 ${tier === activeTier ? "text-foreground" : "text-muted-foreground"}`}>
+                                    {val === true ? "✓" : val === false ? "—" : val}
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          ))}
+                        </>
                       ))}
                     </tbody>
                   </table>
