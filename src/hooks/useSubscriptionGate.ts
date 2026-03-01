@@ -7,6 +7,7 @@ const FEATURE_TIERS: Record<string, TierKey[]> = {
   boardExport: ["growth", "enterprise"],
   advisory: ["growth", "enterprise"],
   copilot: ["growth", "enterprise"],
+  livestream: ["growth", "enterprise"],
   sso: ["enterprise"],
 };
 

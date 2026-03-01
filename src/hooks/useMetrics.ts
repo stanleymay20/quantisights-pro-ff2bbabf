@@ -1,5 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useSubscription } from "@/hooks/useSubscription";
+import { TierKey } from "@/lib/stripe-tiers";
 
 export interface MetricRow {
   id: string;
@@ -10,11 +12,26 @@ export interface MetricRow {
   segment: string | null;
 }
 
+const REALTIME_TIERS: TierKey[] = ["growth", "enterprise"];
+
 export const useMetrics = (orgId: string | null) => {
   const [metrics, setMetrics] = useState<MetricRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const [isStreaming, setIsStreaming] = useState(false);
+  const { subscribed, tier } = useSubscription();
 
+  const canStream = subscribed && tier ? REALTIME_TIERS.includes(tier) : false;
+
+  const updateLastUpdated = useCallback((data: any[]) => {
+    const latest = data.reduce((max, m) => {
+      const t = (m as any).created_at;
+      return t && t > max ? t : max;
+    }, "");
+    setLastUpdated(latest || null);
+  }, []);
+
+  // Initial fetch
   useEffect(() => {
     if (!orgId) {
       setMetrics([]);
@@ -23,7 +40,7 @@ export const useMetrics = (orgId: string | null) => {
       return;
     }
 
-    const fetch = async () => {
+    const fetchMetrics = async () => {
       setLoading(true);
       const { data, error } = await supabase
         .from("metrics")
@@ -33,18 +50,79 @@ export const useMetrics = (orgId: string | null) => {
 
       if (!error && data) {
         setMetrics(data);
-        // Track most recent metric ingestion timestamp
-        const latest = data.reduce((max, m) => {
-          const t = (m as any).created_at;
-          return t && t > max ? t : max;
-        }, "");
-        setLastUpdated(latest || null);
+        updateLastUpdated(data);
       }
       setLoading(false);
     };
 
-    fetch();
-  }, [orgId]);
+    fetchMetrics();
+  }, [orgId, updateLastUpdated]);
+
+  // Realtime subscription (Growth+ only)
+  useEffect(() => {
+    if (!orgId || !canStream) {
+      setIsStreaming(false);
+      return;
+    }
+
+    const channel = supabase
+      .channel(`metrics-live-${orgId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "metrics",
+          filter: `organization_id=eq.${orgId}`,
+        },
+        (payload) => {
+          const newRow = payload.new as MetricRow & { created_at?: string };
+          setMetrics((prev) => {
+            const updated = [...prev, newRow].sort(
+              (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+            );
+            return updated;
+          });
+          setLastUpdated(newRow.created_at || new Date().toISOString());
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "metrics",
+          filter: `organization_id=eq.${orgId}`,
+        },
+        (payload) => {
+          const updated = payload.new as MetricRow;
+          setMetrics((prev) =>
+            prev.map((m) => (m.id === updated.id ? updated : m))
+          );
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "DELETE",
+          schema: "public",
+          table: "metrics",
+          filter: `organization_id=eq.${orgId}`,
+        },
+        (payload) => {
+          const deleted = payload.old as { id: string };
+          setMetrics((prev) => prev.filter((m) => m.id !== deleted.id));
+        }
+      )
+      .subscribe((status) => {
+        setIsStreaming(status === "SUBSCRIBED");
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+      setIsStreaming(false);
+    };
+  }, [orgId, canStream]);
 
   // Derived KPIs
   const totalRevenue = metrics
@@ -76,6 +154,8 @@ export const useMetrics = (orgId: string | null) => {
     metrics,
     loading,
     lastUpdated,
+    isStreaming,
+    canStream,
     totalRevenue,
     totalCustomers,
     latestCost,
