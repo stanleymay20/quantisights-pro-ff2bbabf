@@ -3,11 +3,20 @@ import { Link } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import logo from "@/assets/quantivis-logo.png";
 
-const NAV_LINKS = [
+const NAV_LINKS: { label: string; href?: string; to?: string }[] = [
   { href: "#how-it-works", label: "Platform" },
   { href: "#case-studies", label: "Case Studies" },
+  { to: "/pricing", label: "Pricing" },
   { href: "#contact", label: "Contact" },
 ];
+
+const NavItem = ({ link, onClick }: { link: typeof NAV_LINKS[number]; onClick?: () => void }) => {
+  const className = "text-sm text-muted-foreground hover:text-foreground transition-colors";
+  if (link.to) {
+    return <Link to={link.to} className={className} onClick={onClick}>{link.label}</Link>;
+  }
+  return <a href={link.href} className={className} onClick={onClick}>{link.label}</a>;
+};
 
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -22,9 +31,7 @@ const Navbar = () => {
         {/* Desktop */}
         <div className="hidden md:flex items-center gap-8">
           {NAV_LINKS.map((link) => (
-            <a key={link.label} href={link.href} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              {link.label}
-            </a>
+            <NavItem key={link.label} link={link} />
           ))}
           <Link to="/login" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
             Sign In
@@ -47,9 +54,9 @@ const Navbar = () => {
       {mobileOpen && (
         <div className="md:hidden border-t border-border/30 bg-background/95 backdrop-blur-xl px-6 py-4 space-y-3">
           {NAV_LINKS.map((link) => (
-            <a key={link.label} href={link.href} className="block text-sm text-muted-foreground hover:text-foreground py-2" onClick={() => setMobileOpen(false)}>
-              {link.label}
-            </a>
+            <div key={link.label} className="py-2">
+              <NavItem link={link} onClick={() => setMobileOpen(false)} />
+            </div>
           ))}
           <Link to="/login" className="block text-sm text-muted-foreground hover:text-foreground py-2" onClick={() => setMobileOpen(false)}>
             Sign In

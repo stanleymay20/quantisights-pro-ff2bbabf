@@ -83,12 +83,12 @@ const SocialProofSection = () => {
             viewport={{ once: true }}
             className="text-center mb-14"
           >
-            <p className="text-xs uppercase tracking-widest text-primary font-semibold mb-3">Proven Results</p>
+            <p className="text-xs uppercase tracking-widest text-primary font-semibold mb-3">Representative Scenarios</p>
             <h2 className="text-4xl font-bold font-display mb-4">
               How Leaders Use <span className="gradient-text">Quantivis</span>
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              From SaaS to manufacturing to financial services — autonomous intelligence transforms strategic operations.
+              Composite scenarios based on common enterprise challenges — illustrating how autonomous intelligence transforms strategic operations.
             </p>
           </motion.div>
 
