@@ -11,6 +11,9 @@ import SensitivityAnalysis from "@/components/decision-intelligence/SensitivityA
 import BayesianPriorVisualization from "@/components/decision-intelligence/BayesianPriorVisualization";
 import ValueOfInformation from "@/components/decision-intelligence/ValueOfInformation";
 import DecisionTreePanel from "@/components/decision-intelligence/DecisionTreePanel";
+import RegretMinimization from "@/components/decision-intelligence/RegretMinimization";
+import DecisionVelocity from "@/components/decision-intelligence/DecisionVelocity";
+import CorrelatedPortfolioRisk from "@/components/decision-intelligence/CorrelatedPortfolioRisk";
 import {
   Brain, TrendingUp, AlertTriangle, GitCompare, BarChart3,
   Layers, RefreshCw, Target, Gauge, CheckCircle2
@@ -301,11 +304,17 @@ const DecisionIntelligence = () => {
             </div>
           ) : (
             <div className="space-y-6 max-w-[1400px]">
-              {/* Top row: Fatigue + Calibration + Portfolio */}
+              {/* Top row: Fatigue + Velocity + Calibration */}
               <div className="grid lg:grid-cols-3 gap-5">
                 <DecisionFatiguePanel decisions={decisions} />
+                <DecisionVelocity decisions={decisions} />
                 <CalibrationPanel decisions={decisions} />
+              </div>
+
+              {/* Portfolio row: Naive + Correlated */}
+              <div className="grid lg:grid-cols-2 gap-5">
                 <PortfolioSimulation simulations={simulations} />
+                <CorrelatedPortfolioRisk simulations={simulations} />
               </div>
 
               {/* Probabilistic Intelligence Row */}
@@ -320,8 +329,11 @@ const DecisionIntelligence = () => {
                 <DecisionTreePanel decisions={decisions} simulations={simulations} />
               </div>
 
-              {/* Counterfactual */}
-              <CounterfactualPanel decisions={decisions} />
+              {/* Regret + Counterfactual */}
+              <div className="grid lg:grid-cols-2 gap-5">
+                <RegretMinimization decisions={decisions} simulations={simulations} />
+                <CounterfactualPanel decisions={decisions} />
+              </div>
             </div>
           )}
         </main>
