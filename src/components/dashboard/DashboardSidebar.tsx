@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Upload, FileText, TrendingUp, Settings, CreditCard, LogOut,
   Database, BarChart3, Shuffle, Crown, Users, Building2, Search, Zap, Menu, X,
   HelpCircle, BookOpen, Target, Brain, MessageSquare, GitBranch, Globe,
-  Sparkles, GitCommitVertical, Crosshair, Bell,
+  Sparkles, GitCommitVertical, Crosshair, Bell, Network, BrainCircuit, FlipVertical,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -20,6 +20,9 @@ const navSections = [
       { icon: Zap, label: "Advisory", path: "/advisory" },
       { icon: BookOpen, label: "Decision Ledger", path: "/decisions" },
       { icon: Brain, label: "Decision Intelligence", path: "/decision-intelligence" },
+      { icon: Network, label: "Causal Inference", path: "/causal-inference" },
+      { icon: BrainCircuit, label: "Bias Detection", path: "/cognitive-bias" },
+      { icon: FlipVertical, label: "Counterfactuals", path: "/counterfactual" },
       { icon: MessageSquare, label: "Ask Quantivis", path: "/ask" },
       { icon: Sparkles, label: "Forecasting", path: "/forecasting" },
       { icon: Target, label: "Benchmarking", path: "/benchmarking" },

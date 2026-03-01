@@ -328,6 +328,122 @@ export type Database = {
           },
         ]
       }
+      causal_models: {
+        Row: {
+          confidence_score: number | null
+          created_at: string
+          created_by: string | null
+          dag_structure: Json
+          description: string | null
+          id: string
+          inference_results: Json | null
+          model_status: string
+          name: string
+          organization_id: string
+          sample_size: number | null
+          updated_at: string
+        }
+        Insert: {
+          confidence_score?: number | null
+          created_at?: string
+          created_by?: string | null
+          dag_structure?: Json
+          description?: string | null
+          id?: string
+          inference_results?: Json | null
+          model_status?: string
+          name: string
+          organization_id: string
+          sample_size?: number | null
+          updated_at?: string
+        }
+        Update: {
+          confidence_score?: number | null
+          created_at?: string
+          created_by?: string | null
+          dag_structure?: Json
+          description?: string | null
+          id?: string
+          inference_results?: Json | null
+          model_status?: string
+          name?: string
+          organization_id?: string
+          sample_size?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "causal_models_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cognitive_bias_detections: {
+        Row: {
+          bias_name: string
+          bias_type: string
+          confidence: number | null
+          decision_id: string | null
+          description: string
+          detected_at: string
+          dismissed_at: string | null
+          dismissed_by: string | null
+          evidence: Json | null
+          id: string
+          mitigation_suggestion: string | null
+          organization_id: string
+          severity: string
+        }
+        Insert: {
+          bias_name: string
+          bias_type: string
+          confidence?: number | null
+          decision_id?: string | null
+          description: string
+          detected_at?: string
+          dismissed_at?: string | null
+          dismissed_by?: string | null
+          evidence?: Json | null
+          id?: string
+          mitigation_suggestion?: string | null
+          organization_id: string
+          severity?: string
+        }
+        Update: {
+          bias_name?: string
+          bias_type?: string
+          confidence?: number | null
+          decision_id?: string | null
+          description?: string
+          detected_at?: string
+          dismissed_at?: string | null
+          dismissed_by?: string | null
+          evidence?: Json | null
+          id?: string
+          mitigation_suggestion?: string | null
+          organization_id?: string
+          severity?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cognitive_bias_detections_decision_id_fkey"
+            columns: ["decision_id"]
+            isOneToOne: false
+            referencedRelation: "decision_ledger"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cognitive_bias_detections_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       convergence_usage: {
         Row: {
           call_count: number
@@ -459,6 +575,59 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "copilot_usage_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      counterfactual_analyses: {
+        Row: {
+          confidence: number | null
+          counterfactual_scenario: string
+          created_at: string
+          entity_id: string
+          entity_type: string
+          factors_to_change: Json
+          id: string
+          minimum_changes_required: number | null
+          narrative: string | null
+          organization_id: string
+          original_recommendation: string
+          sensitivity_ranking: Json | null
+        }
+        Insert: {
+          confidence?: number | null
+          counterfactual_scenario: string
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          factors_to_change?: Json
+          id?: string
+          minimum_changes_required?: number | null
+          narrative?: string | null
+          organization_id: string
+          original_recommendation: string
+          sensitivity_ranking?: Json | null
+        }
+        Update: {
+          confidence?: number | null
+          counterfactual_scenario?: string
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          factors_to_change?: Json
+          id?: string
+          minimum_changes_required?: number | null
+          narrative?: string | null
+          organization_id?: string
+          original_recommendation?: string
+          sensitivity_ranking?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "counterfactual_analyses_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
