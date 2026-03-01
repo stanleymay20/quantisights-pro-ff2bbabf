@@ -14,6 +14,9 @@ import DecisionTreePanel from "@/components/decision-intelligence/DecisionTreePa
 import RegretMinimization from "@/components/decision-intelligence/RegretMinimization";
 import DecisionVelocity from "@/components/decision-intelligence/DecisionVelocity";
 import CorrelatedPortfolioRisk from "@/components/decision-intelligence/CorrelatedPortfolioRisk";
+import CalibrationCurve from "@/components/decision-intelligence/CalibrationCurve";
+import ScenarioComparison from "@/components/decision-intelligence/ScenarioComparison";
+import DecisionImpactAttribution from "@/components/decision-intelligence/DecisionImpactAttribution";
 import {
   Brain, TrendingUp, AlertTriangle, GitCompare, BarChart3,
   Layers, RefreshCw, Target, Gauge, CheckCircle2
@@ -334,6 +337,14 @@ const DecisionIntelligence = () => {
                 <RegretMinimization decisions={decisions} simulations={simulations} />
                 <CounterfactualPanel decisions={decisions} />
               </div>
+
+              {/* Calibration + Scenario Comparison + Impact Attribution */}
+              <div className="grid lg:grid-cols-2 gap-5">
+                <CalibrationCurve decisions={decisions} />
+                <ScenarioComparison simulations={simulations} />
+              </div>
+
+              <DecisionImpactAttribution decisions={decisions} />
             </div>
           )}
         </main>
