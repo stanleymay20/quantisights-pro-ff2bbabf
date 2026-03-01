@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Mail } from "lucide-react";
 
 const CTASection = () => {
   return (
@@ -22,12 +22,20 @@ const CTASection = () => {
           <p className="text-muted-foreground text-lg mb-8 max-w-xl mx-auto">
             Stop paying consultants to tell you what your data already shows. Quantivis extracts strategic intelligence autonomously — with full traceability and board-ready governance.
           </p>
-          <Link
-            to="/register"
-            className="inline-flex items-center gap-2 px-10 py-4 rounded-xl bg-primary text-primary-foreground font-semibold text-lg hover:brightness-110 transition-all shadow-lg shadow-primary/25"
-          >
-            Start Free Trial <ArrowRight className="w-5 h-5" />
-          </Link>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link
+              to="/register"
+              className="inline-flex items-center gap-2 px-10 py-4 rounded-xl bg-primary text-primary-foreground font-semibold text-lg hover:brightness-110 transition-all shadow-lg shadow-primary/25"
+            >
+              Start Free Trial <ArrowRight className="w-5 h-5" />
+            </Link>
+            <a
+              href="mailto:hello@quantivis.io"
+              className="inline-flex items-center gap-2 px-10 py-4 rounded-xl border border-border bg-card/50 text-foreground font-semibold text-lg hover:border-primary/30 transition-all"
+            >
+              <Mail className="w-5 h-5" /> Contact Sales
+            </a>
+          </div>
           <p className="text-xs text-muted-foreground mt-4">No credit card required · GDPR compliant · SOC 2 infrastructure</p>
         </motion.div>
       </div>
