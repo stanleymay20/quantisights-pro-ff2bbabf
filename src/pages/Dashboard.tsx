@@ -127,8 +127,8 @@ const Dashboard = () => {
                 Refresh
               </button>
             )}
-            <button className="p-2 rounded-lg hover:bg-secondary/60 transition-colors relative">
-              <Bell className="w-4 h-4 text-muted-foreground" />
+            <button className="p-2 rounded-lg hover:bg-secondary/60 transition-colors relative" aria-label="Notifications">
+              <Bell className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
               {hasAnomalies && (
                 <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-destructive" />
               )}
@@ -142,7 +142,7 @@ const Dashboard = () => {
           </div>
         </header>
 
-        <main className="flex-1 p-8 overflow-auto">
+        <main id="main-content" className="flex-1 p-8 overflow-auto">
           {!hasData && !isLoading ? (
             /* ── Smart Empty State ── */
             <motion.div

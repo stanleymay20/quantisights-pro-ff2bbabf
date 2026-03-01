@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -8,52 +9,63 @@ import { SidebarProvider } from "@/components/dashboard/DashboardSidebar";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { ThemeProvider } from "@/components/ThemeProvider";
+
+// Eager: landing page (critical path)
 import Index from "./pages/Index";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import Dashboard from "./pages/Dashboard";
-import DataUpload from "./pages/DataUpload";
-import DataSources from "./pages/DataSources";
-import KPIs from "./pages/KPIs";
-import Scenarios from "./pages/Scenarios";
-import Reports from "./pages/Reports";
-import Pricing from "./pages/Pricing";
-import NotFound from "./pages/NotFound";
-import Executive from "./pages/Executive";
-import BoardReport from "./pages/BoardReport";
-import Team from "./pages/Team";
-import Clients from "./pages/Clients";
-import AcceptInvite from "./pages/AcceptInvite";
-import Onboarding from "./pages/Onboarding";
-import Billing from "./pages/Billing";
-import Diagnostics from "./pages/Diagnostics";
-import Advisory from "./pages/Advisory";
-import DecisionLedger from "./pages/DecisionLedger";
-import Benchmarking from "./pages/Benchmarking";
-import Settings from "./pages/Settings";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
-import Terms from "./pages/Terms";
-import Privacy from "./pages/Privacy";
-import CookiePolicy from "./pages/CookiePolicy";
-import DataProcessing from "./pages/DataProcessing";
-import DataRetention from "./pages/DataRetention";
-import Subprocessors from "./pages/Subprocessors";
-import Simulations from "./pages/Simulations";
-import StrategyPack from "./pages/StrategyPack";
-import DecisionIntelligence from "./pages/DecisionIntelligence";
-import Documentation from "./pages/Documentation";
-import NaturalLanguageQuery from "./pages/NaturalLanguageQuery";
-import ScenarioBranching from "./pages/ScenarioBranching";
-import MarketIntelligence from "./pages/MarketIntelligence";
-import Forecasting from "./pages/Forecasting";
-import DataLineage from "./pages/DataLineage";
-import OKRs from "./pages/OKRs";
-import AlertPlaybooks from "./pages/AlertPlaybooks";
-import CausalInference from "./pages/CausalInference";
-import CognitiveBiasDetection from "./pages/CognitiveBiasDetection";
-import CounterfactualExplanation from "./pages/CounterfactualExplanation";
+
+// Lazy: everything else
+const Login = lazy(() => import("./pages/Login"));
+const Register = lazy(() => import("./pages/Register"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const DataUpload = lazy(() => import("./pages/DataUpload"));
+const DataSources = lazy(() => import("./pages/DataSources"));
+const KPIs = lazy(() => import("./pages/KPIs"));
+const Scenarios = lazy(() => import("./pages/Scenarios"));
+const Reports = lazy(() => import("./pages/Reports"));
+const Pricing = lazy(() => import("./pages/Pricing"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const Executive = lazy(() => import("./pages/Executive"));
+const BoardReport = lazy(() => import("./pages/BoardReport"));
+const Team = lazy(() => import("./pages/Team"));
+const Clients = lazy(() => import("./pages/Clients"));
+const AcceptInvite = lazy(() => import("./pages/AcceptInvite"));
+const Onboarding = lazy(() => import("./pages/Onboarding"));
+const Billing = lazy(() => import("./pages/Billing"));
+const Diagnostics = lazy(() => import("./pages/Diagnostics"));
+const Advisory = lazy(() => import("./pages/Advisory"));
+const DecisionLedger = lazy(() => import("./pages/DecisionLedger"));
+const Benchmarking = lazy(() => import("./pages/Benchmarking"));
+const Settings = lazy(() => import("./pages/Settings"));
+const Terms = lazy(() => import("./pages/Terms"));
+const Privacy = lazy(() => import("./pages/Privacy"));
+const CookiePolicy = lazy(() => import("./pages/CookiePolicy"));
+const DataProcessing = lazy(() => import("./pages/DataProcessing"));
+const DataRetention = lazy(() => import("./pages/DataRetention"));
+const Subprocessors = lazy(() => import("./pages/Subprocessors"));
+const Simulations = lazy(() => import("./pages/Simulations"));
+const StrategyPack = lazy(() => import("./pages/StrategyPack"));
+const DecisionIntelligence = lazy(() => import("./pages/DecisionIntelligence"));
+const Documentation = lazy(() => import("./pages/Documentation"));
+const NaturalLanguageQuery = lazy(() => import("./pages/NaturalLanguageQuery"));
+const ScenarioBranching = lazy(() => import("./pages/ScenarioBranching"));
+const MarketIntelligence = lazy(() => import("./pages/MarketIntelligence"));
+const Forecasting = lazy(() => import("./pages/Forecasting"));
+const DataLineage = lazy(() => import("./pages/DataLineage"));
+const OKRs = lazy(() => import("./pages/OKRs"));
+const AlertPlaybooks = lazy(() => import("./pages/AlertPlaybooks"));
+const CausalInference = lazy(() => import("./pages/CausalInference"));
+const CognitiveBiasDetection = lazy(() => import("./pages/CognitiveBiasDetection"));
+const CounterfactualExplanation = lazy(() => import("./pages/CounterfactualExplanation"));
+
 const queryClient = new QueryClient();
+
+const PageLoader = () => (
+  <div className="flex min-h-screen items-center justify-center bg-background">
+    <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+  </div>
+);
 
 const App = () => (
   <ErrorBoundary>
@@ -65,6 +77,7 @@ const App = () => (
         <BrowserRouter>
           <AuthProvider>
             <SidebarProvider>
+            <Suspense fallback={<PageLoader />}>
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<Login />} />
@@ -112,6 +125,7 @@ const App = () => (
               <Route path="/counterfactual" element={<ProtectedRoute><CounterfactualExplanation /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
+            </Suspense>
             </SidebarProvider>
           </AuthProvider>
         </BrowserRouter>
