@@ -43,6 +43,9 @@ import Simulations from "./pages/Simulations";
 import StrategyPack from "./pages/StrategyPack";
 import DecisionIntelligence from "./pages/DecisionIntelligence";
 import Documentation from "./pages/Documentation";
+import NaturalLanguageQuery from "./pages/NaturalLanguageQuery";
+import ScenarioBranching from "./pages/ScenarioBranching";
+import MarketIntelligence from "./pages/MarketIntelligence";
 
 const queryClient = new QueryClient();
 
@@ -91,6 +94,9 @@ const App = () => (
               <Route path="/billing" element={<ProtectedRoute><Billing /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               <Route path="/docs" element={<ProtectedRoute><Documentation /></ProtectedRoute>} />
+              <Route path="/ask" element={<ProtectedRoute><NaturalLanguageQuery /></ProtectedRoute>} />
+              <Route path="/branching" element={<ProtectedRoute><ScenarioBranching /></ProtectedRoute>} />
+              <Route path="/market-intelligence" element={<ProtectedRoute><MarketIntelligence /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
             </SidebarProvider>

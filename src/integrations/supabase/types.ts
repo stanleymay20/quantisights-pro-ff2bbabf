@@ -115,6 +115,50 @@ export type Database = {
           },
         ]
       }
+      ai_explanations: {
+        Row: {
+          confidence_breakdown: Json | null
+          created_at: string
+          entity_id: string
+          entity_type: string
+          explanation_narrative: string | null
+          feature_attributions: Json
+          id: string
+          model_used: string | null
+          organization_id: string
+        }
+        Insert: {
+          confidence_breakdown?: Json | null
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          explanation_narrative?: string | null
+          feature_attributions?: Json
+          id?: string
+          model_used?: string | null
+          organization_id: string
+        }
+        Update: {
+          confidence_breakdown?: Json | null
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          explanation_narrative?: string | null
+          feature_attributions?: Json
+          id?: string
+          model_used?: string | null
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_explanations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_log: {
         Row: {
           action_type: string
@@ -637,6 +681,118 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      decision_approvals: {
+        Row: {
+          approver_id: string
+          comments: string | null
+          decision_id: string
+          id: string
+          organization_id: string
+          requested_at: string
+          requested_by: string
+          responded_at: string | null
+          status: string
+          verdict: string | null
+        }
+        Insert: {
+          approver_id: string
+          comments?: string | null
+          decision_id: string
+          id?: string
+          organization_id: string
+          requested_at?: string
+          requested_by: string
+          responded_at?: string | null
+          status?: string
+          verdict?: string | null
+        }
+        Update: {
+          approver_id?: string
+          comments?: string | null
+          decision_id?: string
+          id?: string
+          organization_id?: string
+          requested_at?: string
+          requested_by?: string
+          responded_at?: string | null
+          status?: string
+          verdict?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "decision_approvals_decision_id_fkey"
+            columns: ["decision_id"]
+            isOneToOne: false
+            referencedRelation: "decision_ledger"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "decision_approvals_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      decision_comments: {
+        Row: {
+          content: string
+          created_at: string
+          decision_id: string
+          id: string
+          mentions: string[] | null
+          organization_id: string
+          parent_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          decision_id: string
+          id?: string
+          mentions?: string[] | null
+          organization_id: string
+          parent_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          decision_id?: string
+          id?: string
+          mentions?: string[] | null
+          organization_id?: string
+          parent_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "decision_comments_decision_id_fkey"
+            columns: ["decision_id"]
+            isOneToOne: false
+            referencedRelation: "decision_ledger"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "decision_comments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "decision_comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "decision_comments"
             referencedColumns: ["id"]
           },
         ]
@@ -1176,6 +1332,47 @@ export type Database = {
           },
         ]
       }
+      external_signals: {
+        Row: {
+          data: Json
+          expires_at: string | null
+          fetched_at: string
+          id: string
+          organization_id: string
+          relevance_score: number | null
+          signal_type: string
+          source: string
+        }
+        Insert: {
+          data?: Json
+          expires_at?: string | null
+          fetched_at?: string
+          id?: string
+          organization_id: string
+          relevance_score?: number | null
+          signal_type: string
+          source: string
+        }
+        Update: {
+          data?: Json
+          expires_at?: string | null
+          fetched_at?: string
+          id?: string
+          organization_id?: string
+          relevance_score?: number | null
+          signal_type?: string
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "external_signals_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       industry_benchmarks: {
         Row: {
           created_at: string
@@ -1590,6 +1787,47 @@ export type Database = {
           },
         ]
       }
+      nlq_queries: {
+        Row: {
+          created_at: string
+          feedback: string | null
+          id: string
+          interpreted_intent: Json | null
+          organization_id: string
+          query_text: string
+          results: Json | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          feedback?: string | null
+          id?: string
+          interpreted_intent?: Json | null
+          organization_id: string
+          query_text: string
+          results?: Json | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          feedback?: string | null
+          id?: string
+          interpreted_intent?: Json | null
+          organization_id?: string
+          query_text?: string
+          results?: Json | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nlq_queries_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_log: {
         Row: {
           channel: string
@@ -1903,6 +2141,56 @@ export type Database = {
             columns: ["scenario_id"]
             isOneToOne: false
             referencedRelation: "scenarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scenario_branches: {
+        Row: {
+          comparison_group_id: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          name: string
+          organization_id: string
+          parameters: Json
+          results: Json | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          comparison_group_id?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          name: string
+          organization_id: string
+          parameters?: Json
+          results?: Json | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          comparison_group_id?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          name?: string
+          organization_id?: string
+          parameters?: Json
+          results?: Json | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scenario_branches_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
