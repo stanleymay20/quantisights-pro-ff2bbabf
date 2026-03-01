@@ -7,6 +7,10 @@ import { useMetrics } from "@/hooks/useMetrics";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import IntelligenceDisclaimer from "@/components/IntelligenceDisclaimer";
+import SensitivityAnalysis from "@/components/decision-intelligence/SensitivityAnalysis";
+import BayesianPriorVisualization from "@/components/decision-intelligence/BayesianPriorVisualization";
+import ValueOfInformation from "@/components/decision-intelligence/ValueOfInformation";
+import DecisionTreePanel from "@/components/decision-intelligence/DecisionTreePanel";
 import {
   Brain, TrendingUp, AlertTriangle, GitCompare, BarChart3,
   Layers, RefreshCw, Target, Gauge, CheckCircle2
@@ -301,6 +305,18 @@ const DecisionIntelligence = () => {
                 <DecisionFatiguePanel decisions={decisions} />
                 <CalibrationPanel decisions={decisions} />
                 <PortfolioSimulation simulations={simulations} />
+              </div>
+
+              {/* Probabilistic Intelligence Row */}
+              <div className="grid lg:grid-cols-2 gap-5">
+                <SensitivityAnalysis simulations={simulations} />
+                <BayesianPriorVisualization decisions={decisions} />
+              </div>
+
+              {/* Decision Framework Row */}
+              <div className="grid lg:grid-cols-2 gap-5">
+                <ValueOfInformation decisions={decisions} />
+                <DecisionTreePanel decisions={decisions} simulations={simulations} />
               </div>
 
               {/* Counterfactual */}
