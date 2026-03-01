@@ -12,7 +12,7 @@ const CAPABILITY_PILLS = [
 
 const HeroSection = () => {
   return (
-    <section className="relative min-h-[92vh] flex items-center overflow-hidden pt-20">
+    <header className="relative min-h-[92vh] flex items-center overflow-hidden pt-20" role="banner">
       {/* Background image */}
       <div
         className="absolute inset-0 z-0"
@@ -75,7 +75,7 @@ const HeroSection = () => {
                   transition={{ delay: 0.5 + i * 0.08 }}
                   className="flex items-center gap-2 px-4 py-2 rounded-lg border border-border bg-card/60 backdrop-blur-sm text-sm font-medium text-foreground/80"
                 >
-                  <pill.icon className="w-3.5 h-3.5 text-primary" />
+                  <pill.icon className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
                   {pill.label}
                 </motion.div>
               ))}
@@ -113,7 +113,7 @@ const HeroSection = () => {
           </motion.div>
         </div>
       </div>
-    </section>
+    </header>
   );
 };
 

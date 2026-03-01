@@ -10,6 +10,12 @@
     <meta name="robots" content="index, follow" />
     <link rel="canonical" href="https://quantisights-pro.lovable.app" />
 
+    <!-- Preload fonts for performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" />
+
     <meta property="og:type" content="website" />
     <meta property="og:title" content="Quantivis — Executive Intelligence Platform" />
     <meta property="og:description" content="Transform operational data into strategic intelligence. Autonomous diagnostics, prescriptive advisory, and executive decision support for global enterprises." />
@@ -29,10 +35,67 @@
       "description": "Executive intelligence platform for autonomous diagnostics, prescriptive advisory, and strategic decision support.",
       "operatingSystem": "Web",
       "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "EUR"
+        "@type": "AggregateOffer",
+        "lowPrice": "29",
+        "highPrice": "299",
+        "priceCurrency": "EUR",
+        "offerCount": "3"
       }
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Quantivis Global",
+      "url": "https://quantisights-pro.lovable.app",
+      "logo": "https://quantisights-pro.lovable.app/favicon.png",
+      "description": "Enterprise intelligence platform transforming operational data into strategic clarity.",
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "email": "hello@quantivis.io",
+        "contactType": "sales"
+      }
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is Quantivis?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Quantivis is an executive intelligence platform that transforms operational data into strategic intelligence using causal inference, cognitive bias detection, predictive forecasting, and prescriptive advisory — with full traceability and board-ready governance."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How is Quantivis different from Tableau or Power BI?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Unlike traditional BI tools that only visualize data, Quantivis applies decision science — causal reasoning (DAGs), cognitive bias detection, counterfactual explanations, and Monte Carlo simulations — to make strategic decisions defensible and auditable."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What pricing plans does Quantivis offer?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Quantivis offers three plans: Starter at €29/month for teams getting started, Growth at €99/month with full AI intelligence including causal inference and predictive forecasting, and Enterprise at €299/month with unlimited capabilities, cognitive bias detection, and dedicated support."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is Quantivis GDPR compliant?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. All plans include GDPR compliance, SOC 2 infrastructure, data encryption at rest and in transit, full audit trails, and data provenance tracking."
+          }
+        }
+      ]
     }
     </script>
   </head>
