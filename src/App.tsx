@@ -50,6 +50,9 @@ import Forecasting from "./pages/Forecasting";
 import DataLineage from "./pages/DataLineage";
 import OKRs from "./pages/OKRs";
 import AlertPlaybooks from "./pages/AlertPlaybooks";
+import CausalInference from "./pages/CausalInference";
+import CognitiveBiasDetection from "./pages/CognitiveBiasDetection";
+import CounterfactualExplanation from "./pages/CounterfactualExplanation";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -104,6 +107,9 @@ const App = () => (
               <Route path="/lineage" element={<ProtectedRoute><DataLineage /></ProtectedRoute>} />
               <Route path="/okrs" element={<ProtectedRoute><OKRs /></ProtectedRoute>} />
               <Route path="/alert-playbooks" element={<ProtectedRoute><AlertPlaybooks /></ProtectedRoute>} />
+              <Route path="/causal-inference" element={<ProtectedRoute><CausalInference /></ProtectedRoute>} />
+              <Route path="/cognitive-bias" element={<ProtectedRoute><CognitiveBiasDetection /></ProtectedRoute>} />
+              <Route path="/counterfactual" element={<ProtectedRoute><CounterfactualExplanation /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
             </SidebarProvider>
