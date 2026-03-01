@@ -60,8 +60,10 @@ const EXEC_ROLES = [
 ];
 
 const DATA_OPTIONS = [
-  { key: "manual", icon: BarChart3, label: "Manual Entry", description: "Enter KPI values manually to get started quickly" },
+  { key: "stripe", icon: Zap, label: "Stripe", description: "Automatically sync revenue, customers, and MRR from Stripe" },
   { key: "csv", icon: Upload, label: "CSV Upload", description: "Upload a CSV file with your historical data" },
+  { key: "webhook", icon: ArrowRight, label: "Webhook / API", description: "Push data via REST webhook from any system" },
+  { key: "manual", icon: BarChart3, label: "Manual Entry", description: "Enter KPI values manually to get started quickly" },
   { key: "later", icon: FileText, label: "Connect Later", description: "Skip for now and add data sources later" },
 ];
 
@@ -148,6 +150,8 @@ const Onboarding = () => {
 
       if (dataOption === "csv") {
         navigate("/data-upload");
+      } else if (dataOption === "stripe" || dataOption === "webhook") {
+        navigate("/data-sources");
       } else {
         navigate("/executive");
       }
@@ -363,7 +367,7 @@ const Onboarding = () => {
               <div className="text-center space-y-2">
                 <Upload className="w-12 h-12 text-primary mx-auto" />
                 <h1 className="text-3xl font-bold tracking-tight">Connect Your Data</h1>
-                <p className="text-muted-foreground">Choose how you'd like to start adding data</p>
+                <p className="text-muted-foreground">Choose your primary data source — you can add more later</p>
               </div>
 
               <div className="space-y-4">

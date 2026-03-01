@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, forwardRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -13,7 +13,7 @@ const PASSWORD_RULES = [
   { label: "Special character", test: (p: string) => /[^A-Za-z0-9]/.test(p) },
 ];
 
-const Register = () => {
+const Register = forwardRef<HTMLDivElement>((_, ref) => {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -47,7 +47,7 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
+    <div ref={ref} className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/3 right-1/3 w-96 h-96 bg-primary/5 rounded-full blur-[120px]" />
       </div>
@@ -132,6 +132,8 @@ const Register = () => {
       </div>
     </div>
   );
-};
+});
+
+Register.displayName = "Register";
 
 export default Register;
