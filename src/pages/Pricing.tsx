@@ -101,8 +101,14 @@ const Pricing = () => {
                       <p className="text-xs text-muted-foreground mb-4">{tier.tagline}</p>
                     )}
                     <div className="mb-6">
-                      <span className="text-4xl font-bold font-display">{tier.currency}{tier.price}</span>
-                      <span className="text-muted-foreground text-sm">/{tier.interval}</span>
+                      {tier.price !== null ? (
+                        <>
+                          <span className="text-4xl font-bold font-display">{tier.currency}{tier.price}</span>
+                          <span className="text-muted-foreground text-sm">/{tier.interval}</span>
+                        </>
+                      ) : (
+                        <span className="text-3xl font-bold font-display">Custom</span>
+                      )}
                     </div>
 
                     <ul className="space-y-2.5 mb-8 flex-1">
@@ -114,7 +120,14 @@ const Pricing = () => {
                       ))}
                     </ul>
 
-                    {isActive ? (
+                    {"contactSales" in tier && tier.contactSales ? (
+                      <a
+                        href="mailto:hello@quantivis.io"
+                        className="w-full py-3 rounded-lg border border-border text-sm font-semibold hover:bg-secondary transition-colors text-center block"
+                      >
+                        Contact Sales
+                      </a>
+                    ) : isActive ? (
                       <button
                         onClick={handleManage}
                         className="w-full py-3 rounded-lg border border-border text-sm font-semibold hover:bg-secondary transition-colors"
@@ -169,7 +182,9 @@ const Pricing = () => {
                       {(Object.entries(TIERS) as [TierKey, (typeof TIERS)[TierKey]][]).map(([key, t]) => (
                         <th key={key} className={`text-center py-4 px-4 font-semibold ${key === currentTier && subscribed ? "text-primary" : ""}`}>
                           <div>{t.name}</div>
-                          <div className="text-xs font-normal text-muted-foreground mt-0.5">{t.currency}{t.price}/{t.interval}</div>
+                          <div className="text-xs font-normal text-muted-foreground mt-0.5">
+                            {t.price !== null ? `${t.currency}${t.price}/${t.interval}` : "Custom"}
+                          </div>
                         </th>
                       ))}
                     </tr>

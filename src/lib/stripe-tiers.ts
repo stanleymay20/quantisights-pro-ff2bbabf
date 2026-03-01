@@ -1,11 +1,11 @@
 export const TIERS = {
   starter: {
     name: "Starter",
-    price: 29,
+    price: 49,
     currency: "€",
     interval: "month",
-    price_id: "price_1T3khzJYFIBeCvef3KOlui4z",
-    product_id: "prod_U1oK4n5OQtsB9Z",
+    price_id: "price_1T6JbhJYFIBeCvefqfTEMfKa",
+    product_id: "prod_U4SWpFWp6EdU9b",
     tagline: "For teams getting started with data-driven decisions",
     features: [
       "1 organization · 1 dataset",
@@ -18,11 +18,11 @@ export const TIERS = {
   },
   growth: {
     name: "Growth",
-    price: 99,
+    price: 149,
     currency: "€",
     interval: "month",
-    price_id: "price_1T3kjjJYFIBeCvefUjLGgfI3",
-    product_id: "prod_U1oMLeqLb7hF4O",
+    price_id: "price_1T6JbjJYFIBeCvefunFbkY3z",
+    product_id: "prod_U4SWPjmvqS5Con",
     tagline: "Full AI intelligence for scaling organizations",
     features: [
       "Unlimited datasets & integrations",
@@ -42,12 +42,13 @@ export const TIERS = {
   },
   enterprise: {
     name: "Enterprise",
-    price: 299,
+    price: null,
     currency: "€",
     interval: "month",
-    price_id: "price_1T3kkcJYFIBeCvefRjlqhWSO",
+    price_id: null,
     product_id: "prod_U1oN5CDeptb9uY",
     tagline: "Unlimited intelligence for institutional decision-making",
+    contactSales: true,
     features: [
       "Everything in Growth, plus:",
       "Unlimited simulations & copilot queries",
