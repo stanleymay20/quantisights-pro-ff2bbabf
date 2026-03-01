@@ -50,11 +50,24 @@ serve(async (req) => {
       customerId = customers.data[0].id;
     }
 
+    // Check if customer already had a trial (only offer trial to new subscribers)
+    let hadTrial = false;
+    if (customerId) {
+      const existingSubs = await stripe.subscriptions.list({
+        customer: customerId,
+        limit: 10,
+      });
+      hadTrial = existingSubs.data.some(
+        (s) => s.trial_start !== null || s.status === "trialing"
+      );
+    }
+
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
       line_items: [{ price: priceId, quantity: 1 }],
       mode: "subscription",
+      subscription_data: hadTrial ? undefined : { trial_period_days: 14 },
       success_url: `${getAllowedOrigin(req)}/dashboard?checkout=success`,
       cancel_url: `${getAllowedOrigin(req)}/pricing`,
     });

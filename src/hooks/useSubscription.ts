@@ -8,6 +8,8 @@ interface SubscriptionState {
   subscribed: boolean;
   tier: TierKey | null;
   subscriptionEnd: string | null;
+  isTrial: boolean;
+  trialEnd: string | null;
   loading: boolean;
 }
 
@@ -18,21 +20,23 @@ export const useSubscription = () => {
     subscribed: false,
     tier: null,
     subscriptionEnd: null,
+    isTrial: false,
+    trialEnd: null,
     loading: true,
   });
 
   const checkSubscription = useCallback(async () => {
     if (!user || !currentOrgId) {
-      setState({ subscribed: false, tier: null, subscriptionEnd: null, loading: false });
+      setState({ subscribed: false, tier: null, subscriptionEnd: null, isTrial: false, trialEnd: null, loading: false });
       return;
     }
 
     try {
       const { data, error } = await supabase
         .from("subscriptions")
-        .select("tier, status, current_period_end")
+        .select("tier, status, current_period_end, is_trial, trial_end")
         .eq("organization_id", currentOrgId)
-        .eq("status", "active")
+        .in("status", ["active", "trialing"])
         .maybeSingle();
 
       if (error) throw error;
@@ -41,6 +45,8 @@ export const useSubscription = () => {
         subscribed: !!data,
         tier: (data?.tier as TierKey) ?? null,
         subscriptionEnd: data?.current_period_end ?? null,
+        isTrial: data?.is_trial ?? false,
+        trialEnd: data?.trial_end ?? null,
         loading: false,
       });
     } catch {

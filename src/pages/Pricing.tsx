@@ -136,7 +136,7 @@ const Pricing = () => {
                         ) : subscribed ? (
                           "Switch Plan"
                         ) : (
-                          "Get Started"
+                          "Start 14-Day Free Trial"
                         )}
                       </button>
                     )}
@@ -204,7 +204,7 @@ const Pricing = () => {
       <section className="py-16">
         <div className="container mx-auto px-6 text-center">
           <p className="text-xs text-muted-foreground">
-            All plans include GDPR compliance · SOC 2 infrastructure · Data encryption at rest & in transit · No credit card required for trial
+            All plans include a 14-day free trial · GDPR compliance · SOC 2 infrastructure · Data encryption at rest & in transit
           </p>
         </div>
       </section>

@@ -42,26 +42,32 @@ serve(async (req) => {
     }
 
     const customerId = customers.data[0].id;
+    // Check for active OR trialing subscriptions
     const subscriptions = await stripe.subscriptions.list({
       customer: customerId,
-      status: "active",
-      limit: 1,
+      limit: 5,
     });
+    const activeSubs = subscriptions.data.filter(
+      (s) => s.status === "active" || s.status === "trialing"
+    );
 
-    const hasActiveSub = subscriptions.data.length > 0;
+    const hasActiveSub = activeSubs.length > 0;
     let productId: string | null = null;
     let subscriptionEnd: string | null = null;
+    let isTrial = false;
 
     if (hasActiveSub) {
-      const subscription = subscriptions.data[0];
+      const subscription = activeSubs[0];
       subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
       productId = subscription.items.data[0].price.product as string;
+      isTrial = subscription.status === "trialing";
     }
 
     return new Response(JSON.stringify({
       subscribed: hasActiveSub,
       product_id: productId,
       subscription_end: subscriptionEnd,
+      is_trial: isTrial,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
