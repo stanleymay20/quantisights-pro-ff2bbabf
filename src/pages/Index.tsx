@@ -6,6 +6,7 @@ import IntegrationsSection from "@/components/landing/IntegrationsSection";
 import TestimonialSection from "@/components/landing/TestimonialSection";
 import SocialProofSection from "@/components/landing/SocialProofSection";
 import CTASection from "@/components/landing/CTASection";
+import ComparisonSection from "@/components/landing/ComparisonSection";
 import Footer from "@/components/landing/Footer";
 
 const Index = () => {
@@ -19,6 +20,7 @@ const Index = () => {
         </div>
         <FeaturesSection />
         <IntegrationsSection />
+        <ComparisonSection />
         <TestimonialSection />
         <SocialProofSection />
         <CTASection />
