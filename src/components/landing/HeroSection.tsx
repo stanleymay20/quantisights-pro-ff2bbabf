@@ -18,7 +18,7 @@ const HeroSection = () => {
         src={heroVisual}
         alt=""
         role="presentation"
-        fetchPriority="high"
+        loading="eager"
         width={1920}
         height={1080}
         className="absolute inset-0 w-full h-full object-cover z-0 opacity-25"
