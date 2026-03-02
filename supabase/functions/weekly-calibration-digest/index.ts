@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
       const orgId = pref.organization_id;
 
       // Attempt to acquire lock via unique constraint (organization_id, subject, week_start)
-      const { error: lockError } = await supabase
+      const { data: lockRow, error: lockError } = await supabase
         .from("notification_log")
         .insert({
           organization_id: orgId,
@@ -58,13 +58,22 @@ Deno.serve(async (req) => {
           metadata: { weekKey },
           status: "running",
           week_start: weekKey,
-        });
+        })
+        .select("id")
+        .single();
 
       if (lockError) {
-        // Unique constraint violation = already processed this week
-        results.push({ orgId, status: "skipped_duplicate", weekKey });
+        // Only treat unique-constraint violation (code 23505) as duplicate
+        if (lockError.code === "23505") {
+          results.push({ orgId, status: "skipped_duplicate", weekKey });
+        } else {
+          console.error("Lock insert error:", lockError);
+          results.push({ orgId, status: "failed", error: lockError.message, weekKey });
+        }
         continue;
       }
+
+      const lockId = lockRow.id;
 
       // 1. Calibration trend: latest 2 assessments
       const { data: assessments } = await supabase
@@ -125,9 +134,7 @@ Deno.serve(async (req) => {
             metadata: { digest, weekKey, reason: "no_recipients" },
             status: "skipped",
           })
-          .eq("organization_id", orgId)
-          .eq("subject", "Weekly Calibration Digest")
-          .eq("week_start", weekKey);
+          .eq("id", lockId);
 
         results.push({ orgId, status: "skipped", reason: "no_recipients" });
         continue;
@@ -181,7 +188,7 @@ Deno.serve(async (req) => {
         errorMessage = "RESEND_API_KEY not configured";
       }
 
-      // Update lock row with final status
+      // Update lock row by id (safer than triple match)
       await supabase
         .from("notification_log")
         .update({
@@ -197,9 +204,7 @@ Deno.serve(async (req) => {
           status: emailStatus,
           ...(errorMessage ? { error_message: errorMessage } : {}),
         })
-        .eq("organization_id", orgId)
-        .eq("subject", "Weekly Calibration Digest")
-        .eq("week_start", weekKey);
+        .eq("id", lockId);
 
       results.push({ orgId, status: emailStatus, digest });
     }

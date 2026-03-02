@@ -232,7 +232,7 @@ const MissesPage = () => {
                     True Misses — Prediction Was Wrong
                   </CardTitle>
                   <p className="text-xs text-muted-foreground">
-                    High confidence with wrong outcome, or predicted positive impact that didn't materialize.
+                    The model was confident about the wrong direction — predicted gains that didn't materialize, or high confidence with opposite results.
                   </p>
                 </CardHeader>
                 <CardContent>
@@ -259,7 +259,7 @@ const MissesPage = () => {
                     Bad Outcomes — But Prediction May Have Been Correct
                   </CardTitle>
                   <p className="text-xs text-muted-foreground">
-                    Negative business impact, but the model may have correctly predicted low confidence or negative outcome.
+                    Negative business result, but the system correctly flagged risk or assigned low confidence — this is calibration working as intended.
                   </p>
                 </CardHeader>
                 <CardContent>
