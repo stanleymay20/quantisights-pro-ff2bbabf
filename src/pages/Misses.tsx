@@ -31,22 +31,25 @@ interface Decision {
  * A "True Miss" is a prediction error — the system was confident about the wrong outcome.
  * This is distinct from a "Bad Outcome" (negative business result regardless of prediction).
  *
- * True Miss criteria (any of):
- * 1. High confidence (≥60%) but negative outcome (outcome_delta < 0)
- * 2. predicted_net_impact > 0 but actual outcome_delta ≤ 0
- * 3. calibration_error > 40 (large gap between predicted and actual)
+ * Priority order (strongest signal first):
+ * 1. predicted_net_impact > 0 but actual outcome_delta ≤ 0 (predicted gains that didn't materialize)
+ * 2. prediction_accuracy_score < 50 (explicit accuracy metric below threshold)
+ * 3. abs(calibration_error) > 40 (large gap between predicted and actual)
+ * 4. High confidence (≥60%) + negative outcome (weakest — can punish correct pessimism)
  */
 function isTrueMiss(d: Decision): boolean {
-  const conf = d.confidence_at_decision ?? d.capped_confidence ?? 0;
-
-  // Criterion 1: High confidence + bad outcome
-  if (conf >= 60 && (d.outcome_delta ?? 0) < 0) return true;
-
-  // Criterion 2: Predicted positive impact but outcome negative/zero
+  // Priority 1: Predicted positive impact but outcome negative/zero (strongest signal)
   if (d.predicted_net_impact !== null && d.predicted_net_impact > 0 && (d.outcome_delta ?? 0) <= 0) return true;
 
-  // Criterion 3: Large calibration error
+  // Priority 2: Explicit prediction accuracy score below threshold
+  if (d.prediction_accuracy_score !== null && d.prediction_accuracy_score < 50) return true;
+
+  // Priority 3: Large calibration error
   if (d.calibration_error !== null && Math.abs(d.calibration_error) > 40) return true;
+
+  // Priority 4 (fallback): High confidence + bad outcome
+  const conf = d.confidence_at_decision ?? d.capped_confidence ?? 0;
+  if (conf >= 60 && (d.outcome_delta ?? 0) < 0) return true;
 
   return false;
 }
