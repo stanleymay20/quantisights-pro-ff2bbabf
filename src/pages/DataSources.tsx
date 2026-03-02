@@ -35,10 +35,19 @@ interface SyncJob {
   request_id: string | null;
 }
 
+const CONNECTOR_TYPES = [
+  { value: "stripe", label: "Stripe", desc: "Revenue, MRR, churn, subscriptions", secrets: ["STRIPE_SECRET_KEY"] },
+  { value: "ga4", label: "Google Analytics 4", desc: "Sessions, users, conversions, channels", secrets: ["GA4_SERVICE_ACCOUNT_JSON", "GA4_PROPERTY_ID"] },
+  { value: "hubspot", label: "HubSpot", desc: "Pipeline, deals, contacts", secrets: ["HUBSPOT_API_KEY"] },
+  { value: "quickbooks", label: "QuickBooks", desc: "P&L, cash flow, net income", secrets: ["QUICKBOOKS_ACCESS_TOKEN", "QUICKBOOKS_REALM_ID"] },
+  { value: "xero", label: "Xero", desc: "Revenue, expenses, bank balances", secrets: ["XERO_ACCESS_TOKEN", "XERO_TENANT_ID"] },
+  { value: "salesforce", label: "Salesforce", desc: "Closed-won revenue, pipeline, leads", secrets: ["SALESFORCE_ACCESS_TOKEN", "SALESFORCE_INSTANCE_URL"] },
+] as const;
+
 const SOURCE_TYPES: { value: SourceType; label: string; icon: typeof Database; description: string; tierRequired?: string }[] = [
   { value: "csv", label: "CSV Upload", icon: FileSpreadsheet, description: "Upload CSV files manually" },
   { value: "webhook", label: "Webhook", icon: Webhook, description: "Receive data via HTTP endpoint" },
-  { value: "api", label: "Native Connector", icon: Globe, description: "Stripe, GA4, HubSpot, Salesforce, QuickBooks", tierRequired: "growth" },
+  { value: "api", label: "Native Connector", icon: Globe, description: "Stripe, GA4, HubSpot, QuickBooks, Xero, Salesforce", tierRequired: "growth" },
   { value: "database", label: "Database", icon: Database, description: "Postgres, MySQL, BigQuery", tierRequired: "enterprise" },
 ];
 
@@ -55,6 +64,7 @@ const DataSources = () => {
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState("");
   const [newType, setNewType] = useState<SourceType>("webhook");
+  const [selectedConnector, setSelectedConnector] = useState("stripe");
   const [creating, setCreating] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [selectedSource, setSelectedSource] = useState<string | null>(null);
@@ -115,6 +125,8 @@ const DataSources = () => {
       keyHash = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, "0")).join("");
     }
 
+    const connectorConfig = newType === "api" ? { connector_type: selectedConnector } : {};
+
     const { data: inserted, error } = await supabase.from("data_sources").insert({
       organization_id: currentOrgId,
       name: newName.trim(),
@@ -122,6 +134,7 @@ const DataSources = () => {
       credentials_key_hash: keyHash,
       created_by: user.id,
       config: {
+        ...connectorConfig,
         field_mapping: { date: "date", value: "value", region: "region", segment: "segment", metric_type: "metric_type" },
         default_metric_type: "revenue",
       },
@@ -226,6 +239,40 @@ const DataSources = () => {
                   );
                 })}
               </div>
+
+              {/* Connector type selector for API sources */}
+              {newType === "api" && (
+                <div className="mb-4">
+                  <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">Select Connector</p>
+                  <div className="grid sm:grid-cols-3 gap-2">
+                    {CONNECTOR_TYPES.map((ct) => (
+                      <button
+                        key={ct.value}
+                        onClick={() => {
+                          setSelectedConnector(ct.value);
+                          if (!newName.trim()) setNewName(ct.label);
+                        }}
+                        className={`p-3 rounded-lg border text-left transition-all ${
+                          selectedConnector === ct.value ? "border-primary bg-primary/10" : "border-border hover:border-primary/30"
+                        }`}
+                      >
+                        <span className="text-sm font-semibold block">{ct.label}</span>
+                        <span className="text-xs text-muted-foreground">{ct.desc}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="mt-3 p-3 rounded-lg bg-secondary/50 border border-border/50">
+                    <p className="text-xs text-muted-foreground">
+                      <span className="font-semibold text-foreground">Required secrets:</span>{" "}
+                      {CONNECTOR_TYPES.find(c => c.value === selectedConnector)?.secrets.join(", ")}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Configure these in <span className="font-semibold text-foreground">Settings → Secrets</span> before pulling data.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Source name (e.g., Stripe Revenue)"
                 className="w-full max-w-md px-4 py-2 rounded-lg bg-secondary border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 mb-4" />
               <div className="flex gap-3">
