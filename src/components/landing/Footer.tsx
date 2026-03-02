@@ -42,13 +42,13 @@ const Footer = forwardRef<HTMLElement>((_, ref) => (
               <Mail className="w-3.5 h-3.5 text-primary" />
               hello@quantivis.io
             </a>
-            <a href="tel:+31207082560" className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
+            <a href="tel:+491791455906" className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
               <Phone className="w-3.5 h-3.5 text-primary" />
-              +31 20 708 2560
+              +49 179 145 5906
             </a>
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
-              Amsterdam, Netherlands
+              Germany
             </div>
             <a
               href="https://linkedin.com/company/quantivis"

@@ -49,11 +49,11 @@ const CTASection = () => {
               hello@quantivis.io
             </a>
             <a
-              href="tel:+31207082560"
+              href="tel:+491791455906"
               className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               <Phone className="w-4 h-4 text-primary" />
-              +31 20 708 2560
+              +49 179 145 5906
             </a>
             <a
               href="https://linkedin.com/company/quantivis"
