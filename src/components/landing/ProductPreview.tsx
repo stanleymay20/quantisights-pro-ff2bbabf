@@ -168,13 +168,21 @@ const ProductPreview = () => {
                   <span className="font-semibold text-foreground">3 advisory signals</span> require executive review
                 </span>
               </div>
-              <Link
-                to="/register"
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:brightness-110 transition-all"
-              >
-                <Play className="w-3 h-3" />
-                Try It Live
-              </Link>
+              <div className="flex items-center gap-3">
+                <a
+                  href="mailto:hello@quantivis.io?subject=Demo%20Request"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border text-xs font-semibold text-muted-foreground hover:text-foreground hover:border-primary/30 transition-all"
+                >
+                  Request Demo
+                </a>
+                <Link
+                  to="/register"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:brightness-110 transition-all"
+                >
+                  <Play className="w-3 h-3" />
+                  Try It Free
+                </Link>
+              </div>
             </div>
           </div>
         </motion.div>
