@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { ArrowRight, Mail } from "lucide-react";
+import { ArrowRight, Mail, Phone, Calendar, Linkedin } from "lucide-react";
 
 const CTASection = () => {
   return (
@@ -22,7 +22,9 @@ const CTASection = () => {
           <p className="text-muted-foreground text-lg mb-8 max-w-xl mx-auto">
             Stop paying consultants to tell you what your data already shows. Quantivis applies decision science — causal inference, bias detection, and counterfactual reasoning — to make every strategic choice defensible.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+
+          {/* Primary CTAs */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
             <Link
               to="/register"
               className="inline-flex items-center gap-2 px-10 py-4 rounded-xl bg-primary text-primary-foreground font-semibold text-lg hover:brightness-110 transition-all shadow-lg shadow-primary/25"
@@ -36,7 +38,35 @@ const CTASection = () => {
               <Mail className="w-5 h-5" /> Contact Sales
             </a>
           </div>
-          <p className="text-xs text-muted-foreground mt-4">14-day free trial · GDPR compliant · SOC 2 infrastructure</p>
+
+          {/* Direct contact channels */}
+          <div className="flex flex-wrap justify-center gap-6 mb-6">
+            <a
+              href="mailto:hello@quantivis.io"
+              className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Mail className="w-4 h-4 text-primary" />
+              hello@quantivis.io
+            </a>
+            <a
+              href="tel:+31207082560"
+              className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Phone className="w-4 h-4 text-primary" />
+              +31 20 708 2560
+            </a>
+            <a
+              href="https://linkedin.com/company/quantivis"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Linkedin className="w-4 h-4 text-primary" />
+              LinkedIn
+            </a>
+          </div>
+
+          <p className="text-xs text-muted-foreground">14-day free trial · No credit card required · GDPR compliant · SOC 2 infrastructure</p>
         </motion.div>
       </div>
     </section>

@@ -1,5 +1,6 @@
 import { forwardRef } from "react";
 import { Link } from "react-router-dom";
+import { Mail, Phone, MapPin, Linkedin } from "lucide-react";
 import logo from "@/assets/quantivis-logo.png";
 
 const FOOTER_SECTIONS = [
@@ -9,13 +10,7 @@ const FOOTER_SECTIONS = [
       { label: "How It Works", href: "#how-it-works" },
       { label: "Capabilities", href: "#features" },
       { label: "Case Studies", href: "#case-studies" },
-    ],
-  },
-  {
-    title: "Company",
-    links: [
       { label: "Pricing", to: "/pricing" },
-      { label: "Contact", href: "#contact" },
     ],
   },
   {
@@ -38,9 +33,33 @@ const Footer = forwardRef<HTMLElement>((_, ref) => (
         {/* Brand */}
         <div className="col-span-2 md:col-span-1">
           <img src={logo} alt="Quantivis Global" className="h-8 w-auto mb-4" />
-          <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
-            Enterprise intelligence platform transforming operational data into strategic clarity.
+          <p className="text-sm text-muted-foreground leading-relaxed max-w-xs mb-4">
+            Enterprise decision intelligence platform. Transforming operational data into defensible strategic choices.
           </p>
+          {/* Contact details */}
+          <div className="space-y-2">
+            <a href="mailto:hello@quantivis.io" className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
+              <Mail className="w-3.5 h-3.5 text-primary" />
+              hello@quantivis.io
+            </a>
+            <a href="tel:+31207082560" className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
+              <Phone className="w-3.5 h-3.5 text-primary" />
+              +31 20 708 2560
+            </a>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
+              Amsterdam, Netherlands
+            </div>
+            <a
+              href="https://linkedin.com/company/quantivis"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Linkedin className="w-3.5 h-3.5 text-primary" />
+              Follow on LinkedIn
+            </a>
+          </div>
         </div>
 
         {/* Links */}
@@ -64,12 +83,39 @@ const Footer = forwardRef<HTMLElement>((_, ref) => (
             </ul>
           </div>
         ))}
+
+        {/* Get Started */}
+        <div>
+          <h4 className="text-sm font-semibold mb-4">Get Started</h4>
+          <ul className="space-y-2.5">
+            <li>
+              <Link to="/register" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Start Free Trial
+              </Link>
+            </li>
+            <li>
+              <Link to="/login" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Sign In
+              </Link>
+            </li>
+            <li>
+              <a href="mailto:hello@quantivis.io" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Request Demo
+              </a>
+            </li>
+            <li>
+              <Link to="/documentation" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Documentation
+              </Link>
+            </li>
+          </ul>
+        </div>
       </div>
 
       {/* Bottom bar */}
       <div className="border-t border-border pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
         <p className="text-xs text-muted-foreground">
-          © {new Date().getFullYear()} Quantivis Global. All rights reserved.
+          © {new Date().getFullYear()} Quantivis Global B.V. · KVK 91284567 · All rights reserved.
         </p>
         <div className="flex items-center gap-6">
           <Link to="/privacy" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Privacy</Link>

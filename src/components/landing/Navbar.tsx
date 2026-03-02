@@ -6,7 +6,7 @@ import logo from "@/assets/quantivis-logo.png";
 const NAV_LINKS: { label: string; href?: string; to?: string }[] = [
   { href: "#product-preview", label: "Live Preview" },
   { href: "#how-it-works", label: "Platform" },
-  { href: "#case-studies", label: "Case Studies" },
+  { href: "#case-studies", label: "Customers" },
   { to: "/pricing", label: "Pricing" },
   { href: "#contact", label: "Contact" },
 ];
