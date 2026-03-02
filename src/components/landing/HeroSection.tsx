@@ -80,20 +80,17 @@ const HeroSection = () => {
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
-                to="/register"
+                to="/demo"
                 className="inline-flex items-center justify-center gap-2 px-10 py-4 rounded-xl bg-primary text-primary-foreground font-semibold text-base hover:brightness-110 transition-all shadow-lg shadow-primary/25"
               >
-                Start 14-Day Free Trial <ArrowRight className="w-4 h-4" />
+                Try Live Demo <ArrowRight className="w-4 h-4" />
               </Link>
-              <a
-                href="#product-preview"
-                className="inline-flex items-center justify-center gap-2 px-10 py-4 rounded-xl border border-border bg-card/50 text-foreground font-semibold text-base hover:border-primary/30 transition-all group"
+              <Link
+                to="/register"
+                className="inline-flex items-center justify-center gap-2 px-10 py-4 rounded-xl border border-border bg-card/50 text-foreground font-semibold text-base hover:border-primary/30 transition-all"
               >
-                <span className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                  <svg className="w-3 h-3 text-primary ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                </span>
-                See It In Action
-              </a>
+                Start 14-Day Free Trial
+              </Link>
             </div>
 
             {/* Replaces strip */}

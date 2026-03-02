@@ -58,6 +58,7 @@ const AlertPlaybooks = lazy(() => import("./pages/AlertPlaybooks"));
 const CausalInference = lazy(() => import("./pages/CausalInference"));
 const CognitiveBiasDetection = lazy(() => import("./pages/CognitiveBiasDetection"));
 const CounterfactualExplanation = lazy(() => import("./pages/CounterfactualExplanation"));
+const Demo = lazy(() => import("./pages/Demo"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -100,6 +101,7 @@ const App = () => (
               <Route path="/data-retention" element={<DataRetention />} />
               <Route path="/subprocessors" element={<Subprocessors />} />
               <Route path="/accept-invite" element={<AcceptInvite />} />
+              <Route path="/demo" element={<Demo />} />
               <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/data-upload" element={<ProtectedRoute><DataUpload /></ProtectedRoute>} />
