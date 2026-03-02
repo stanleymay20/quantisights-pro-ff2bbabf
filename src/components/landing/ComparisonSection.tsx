@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Check, X, Minus } from "lucide-react";
+import { Check, X } from "lucide-react";
 
 const comparisons = [
   {
@@ -39,25 +39,25 @@ const CellIcon = ({ value }: { value: boolean | string }) => {
   return <span className="text-xs font-medium text-foreground">{value}</span>;
 };
 
-const ComparisonSection = () => (
-  <section className="py-20">
-    <div className="container mx-auto px-6">
+const ComparisonSection = ({ inline = false }: { inline?: boolean }) => (
+  <section className={inline ? "max-w-5xl mx-auto" : "py-20"}>
+    <div className={inline ? "" : "container mx-auto px-6"}>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        className="text-center mb-12"
+        className="text-center mb-10"
       >
         <p className="text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-3">Why Quantivis</p>
-        <h2 className="text-3xl md:text-4xl font-bold font-display mb-4">
+        <h2 className="text-2xl md:text-3xl font-bold font-display mb-3">
           McKinsey-Grade Intelligence, <span className="gradient-text">SaaS Pricing</span>
         </h2>
-        <p className="text-muted-foreground max-w-xl mx-auto">
+        <p className="text-muted-foreground text-sm max-w-xl mx-auto">
           The strategic depth of a top-tier consultancy with the speed and cost of modern software.
         </p>
       </motion.div>
 
-      <div className="max-w-5xl mx-auto glass-card overflow-hidden">
+      <div className="glass-card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>

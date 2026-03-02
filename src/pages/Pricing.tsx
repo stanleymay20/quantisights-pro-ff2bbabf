@@ -70,7 +70,7 @@ const Pricing = () => {
           </motion.div>
 
           {/* Tier Cards */}
-          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto mb-24">
+          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto mb-10">
             {(Object.entries(TIERS) as [TierKey, (typeof TIERS)[TierKey]][]).map(
               ([key, tier], i) => {
                 const isActive = subscribed && currentTier === key;
@@ -160,12 +160,31 @@ const Pricing = () => {
             )}
           </div>
 
+          {/* Price Anchoring Banner */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
+            className="max-w-5xl mx-auto mb-16 text-center"
+          >
+            <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full border border-border/50 bg-card/30">
+              <span className="text-sm text-muted-foreground">Typical consulting engagement:</span>
+              <span className="text-sm font-bold line-through text-muted-foreground/60">€50,000+</span>
+              <span className="text-xs text-muted-foreground">→</span>
+              <span className="text-sm font-bold text-primary">From €99/mo</span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold">500x less</span>
+            </div>
+          </motion.div>
+
+          {/* Competitive Comparison — directly below pricing */}
+          <ComparisonSection inline />
+
           {/* Full Feature Comparison Matrix */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="max-w-5xl mx-auto"
+            className="max-w-5xl mx-auto mt-16"
           >
             <div className="text-center mb-10">
               <h2 className="text-3xl font-bold font-display mb-3">
@@ -216,14 +235,11 @@ const Pricing = () => {
         </div>
       </section>
 
-      {/* Competitive Comparison */}
-      <ComparisonSection />
-
       {/* CTA */}
       <section className="py-16">
         <div className="container mx-auto px-6 text-center">
           <p className="text-xs text-muted-foreground">
-            All plans include a 14-day free trial · GDPR compliance · SOC 2 infrastructure · Data encryption at rest & in transit
+            All plans include a 14-day free trial · GDPR compliance · SOC 2 Type II in progress · Data encryption at rest & in transit
           </p>
         </div>
       </section>
