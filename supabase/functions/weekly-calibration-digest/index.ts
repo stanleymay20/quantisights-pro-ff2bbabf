@@ -45,6 +45,17 @@ Deno.serve(async (req) => {
 
     for (const pref of prefs) {
       const orgId = pref.organization_id;
+      const runStart = Date.now();
+
+      // Recover stale locks (running > 15 min = presumed dead)
+      await supabase
+        .from("notification_log")
+        .update({ status: "failed", error_message: "stale_lock_timeout" })
+        .eq("organization_id", orgId)
+        .eq("subject", "Weekly Calibration Digest")
+        .eq("week_start", weekKey)
+        .eq("status", "running")
+        .lt("created_at", new Date(Date.now() - 15 * 60 * 1000).toISOString());
 
       // Attempt to acquire lock via unique constraint (organization_id, subject, week_start)
       const { data: lockRow, error: lockError } = await supabase
@@ -63,7 +74,6 @@ Deno.serve(async (req) => {
         .single();
 
       if (lockError) {
-        // Only treat unique-constraint violation (code 23505) as duplicate
         if (lockError.code === "23505") {
           results.push({ orgId, status: "skipped_duplicate", weekKey });
         } else {
@@ -131,7 +141,7 @@ Deno.serve(async (req) => {
           .from("notification_log")
           .update({
             recipients: [],
-            metadata: { digest, weekKey, reason: "no_recipients" },
+            metadata: { digest, weekKey, reason: "no_recipients", duration_ms: Date.now() - runStart },
             status: "skipped",
           })
           .eq("id", lockId);
@@ -199,6 +209,7 @@ Deno.serve(async (req) => {
             pendingLine,
             biasLine,
             weekKey,
+            duration_ms: Date.now() - runStart,
             ...(errorMessage ? { error: errorMessage } : {}),
           },
           status: emailStatus,
