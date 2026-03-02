@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import IntelligenceDisclaimer from "@/components/IntelligenceDisclaimer";
 import DecisionResponsibilityDialog from "@/components/DecisionResponsibilityDialog";
+import DecisionComments from "@/components/decisions/DecisionComments";
 
 interface Decision {
   id: string;
@@ -576,6 +577,7 @@ const DecisionLedgerPage = () => {
                             )}
                           </div>
                         </div>
+                        <DecisionComments decisionId={d.id} />
                       </CardContent>
                     </Card>
                   </motion.div>
@@ -635,6 +637,7 @@ const DecisionLedgerPage = () => {
                         )}
                       </div>
                     </div>
+                    <DecisionComments decisionId={d.id} />
                   </CardContent>
                 </Card>
               ))}
