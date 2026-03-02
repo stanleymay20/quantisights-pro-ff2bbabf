@@ -328,6 +328,48 @@ export type Database = {
           },
         ]
       }
+      calibration_assessments: {
+        Row: {
+          bias_markers: Json | null
+          brier_score: number | null
+          calibration_profile: string | null
+          completed_at: string | null
+          created_at: string
+          id: string
+          organization_id: string
+          overconfidence_score: number | null
+          responses: Json
+          underconfidence_score: number | null
+          user_id: string
+        }
+        Insert: {
+          bias_markers?: Json | null
+          brier_score?: number | null
+          calibration_profile?: string | null
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          organization_id: string
+          overconfidence_score?: number | null
+          responses?: Json
+          underconfidence_score?: number | null
+          user_id: string
+        }
+        Update: {
+          bias_markers?: Json | null
+          brier_score?: number | null
+          calibration_profile?: string | null
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          organization_id?: string
+          overconfidence_score?: number | null
+          responses?: Json
+          underconfidence_score?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       causal_models: {
         Row: {
           confidence_score: number | null
