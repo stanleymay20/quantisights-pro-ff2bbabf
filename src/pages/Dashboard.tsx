@@ -114,20 +114,30 @@ const Dashboard = () => {
         />
 
         {/* Header */}
-        <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
-          <div className="flex items-center gap-2">
+        <header className="h-14 border-b border-border/30 flex items-center justify-between px-4 md:px-8 shrink-0 bg-background/60 backdrop-blur-sm">
+          <div className="flex items-center gap-2 min-w-0">
             <SidebarMobileToggle />
             <OrgSwitcher organizations={organizations} currentOrg={currentOrg} onSwitch={switchOrganization} />
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1 md:gap-1.5">
             {hasData && (
               <button
                 onClick={handleRecalculate}
                 disabled={recalculating}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-all disabled:opacity-50"
+                className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-all disabled:opacity-50"
               >
                 <RefreshCw className={`w-3 h-3 ${recalculating ? "animate-spin" : ""}`} />
                 Refresh
+              </button>
+            )}
+            {hasData && (
+              <button
+                onClick={handleRecalculate}
+                disabled={recalculating}
+                className="sm:hidden p-2 rounded-lg hover:bg-secondary/60 transition-colors disabled:opacity-50"
+                aria-label="Refresh intelligence"
+              >
+                <RefreshCw className={`w-4 h-4 text-muted-foreground ${recalculating ? "animate-spin" : ""}`} />
               </button>
             )}
             <button className="p-2 rounded-lg hover:bg-secondary/60 transition-colors relative" aria-label="Notifications">
@@ -136,7 +146,7 @@ const Dashboard = () => {
                 <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-destructive" />
               )}
             </button>
-            <div className="flex items-center gap-2 ml-1 pl-2.5 border-l border-border/30">
+            <div className="hidden sm:flex items-center gap-2 ml-1 pl-2.5 border-l border-border/30">
               <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
                 <User className="w-3.5 h-3.5 text-primary" />
               </div>
@@ -145,7 +155,7 @@ const Dashboard = () => {
           </div>
         </header>
 
-        <main id="main-content" className="flex-1 p-8 overflow-auto">
+        <main id="main-content" className="flex-1 p-4 md:p-8 overflow-auto">
           {!hasData && !isLoading ? (
             /* ── Smart Empty State ── */
             <motion.div

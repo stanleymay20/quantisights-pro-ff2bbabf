@@ -85,12 +85,15 @@ const HeroSection = () => {
               >
                 Start 14-Day Free Trial <ArrowRight className="w-4 h-4" />
               </Link>
-              <Link
-                to="/pricing"
-                className="inline-flex items-center justify-center px-10 py-4 rounded-xl border border-border bg-card/50 text-foreground font-semibold text-base hover:border-primary/30 transition-all"
+              <a
+                href="#product-preview"
+                className="inline-flex items-center justify-center gap-2 px-10 py-4 rounded-xl border border-border bg-card/50 text-foreground font-semibold text-base hover:border-primary/30 transition-all group"
               >
-                View Pricing
-              </Link>
+                <span className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                  <svg className="w-3 h-3 text-primary ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                </span>
+                See It In Action
+              </a>
             </div>
 
             {/* Replaces strip */}

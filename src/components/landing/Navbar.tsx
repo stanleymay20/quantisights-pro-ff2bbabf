@@ -4,6 +4,7 @@ import { Menu, X } from "lucide-react";
 import logo from "@/assets/quantivis-logo.png";
 
 const NAV_LINKS: { label: string; href?: string; to?: string }[] = [
+  { href: "#product-preview", label: "Live Preview" },
   { href: "#how-it-works", label: "Platform" },
   { href: "#case-studies", label: "Case Studies" },
   { to: "/pricing", label: "Pricing" },
