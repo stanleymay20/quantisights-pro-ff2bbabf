@@ -281,72 +281,101 @@ const Dashboard = () => {
 
               {/* Charts — lazy loaded for faster initial paint */}
               <Suspense fallback={<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">{Array.from({length: 3}).map((_, i) => <div key={i} className="h-64 rounded-xl bg-muted/30 animate-pulse" />)}</div>}>
-                {/* Charts Row 1 */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-5">
-                  <div className="lg:col-span-2">
-                    <RevenueChart data={revenueByMonth} />
-                  </div>
-                  <CustomerSegmentation data={segmentData} />
-                </div>
 
-                {/* Charts Row 2 */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
-                  <WaterfallChart data={metrics} />
-                  <FunnelChart metrics={metrics} />
-                  <PeriodComparison data={revenueByMonth} />
-                </div>
-
-                <CohortAnalysis metrics={metrics} />
-
-                {/* Enterprise Visualizations Row 3 */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
-                  <HeatmapChart metrics={metrics} />
-                  <TreemapChart metrics={metrics} />
-                  <RadarChartComponent metrics={metrics} />
-                </div>
-
-                {/* Enterprise Visualizations Row 4 */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
-                  <ScatterBubbleChart metrics={metrics} />
-                  <SankeyChart metrics={metrics} />
-                  <BoxPlotChart metrics={metrics} />
-                </div>
-
-                {/* Gauge Row */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
-                  <GaugeChart
-                    value={latestChurn > 0 ? Math.max(0, 100 - latestChurn * 100) : 85}
-                    label="Retention Health"
-                  />
-                  <GaugeChart
-                    value={latestCost > 0 ? Math.max(0, 100 - latestCost * 100) : 70}
-                    label="Cost Efficiency"
-                  />
-                  <GaugeChart
-                    value={revenueByMonth.length >= 2
-                      ? Math.min(100, Math.max(0, ((revenueByMonth[revenueByMonth.length - 1]?.revenue ?? 0) / (revenueByMonth[0]?.revenue || 1) - 1) * 100 + 50))
-                      : 50}
-                    label="Growth Momentum"
-                  />
-                </div>
-
-                {/* Intelligence Row */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
+                {/* Mobile: show only key charts + action-oriented content */}
+                <div className="block md:hidden space-y-4">
                   <AIInsights insights={insights} />
                   <AnomalyDetection insights={insights} />
-                  <div className="glass-card p-6 rounded-xl">
-                    <div className="flex items-center justify-between mb-1">
-                      <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Historical Growth</h3>
-                      <TrendingUp className="w-3.5 h-3.5 text-muted-foreground" />
+                  <div className="glass-card p-5 rounded-xl">
+                    <RevenueChart data={revenueByMonth} />
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <GaugeChart
+                      value={latestChurn > 0 ? Math.max(0, 100 - latestChurn * 100) : 85}
+                      label="Retention"
+                    />
+                    <GaugeChart
+                      value={latestCost > 0 ? Math.max(0, 100 - latestCost * 100) : 70}
+                      label="Cost Eff."
+                    />
+                    <GaugeChart
+                      value={revenueByMonth.length >= 2
+                        ? Math.min(100, Math.max(0, ((revenueByMonth[revenueByMonth.length - 1]?.revenue ?? 0) / (revenueByMonth[0]?.revenue || 1) - 1) * 100 + 50))
+                        : 50}
+                      label="Growth"
+                    />
+                  </div>
+                </div>
+
+                {/* Desktop: full chart grid */}
+                <div className="hidden md:block space-y-5">
+                  {/* Charts Row 1 */}
+                  <div className="grid lg:grid-cols-3 gap-5">
+                    <div className="lg:col-span-2">
+                      <RevenueChart data={revenueByMonth} />
                     </div>
-                    <p className="text-[11px] text-muted-foreground mb-6">Period-over-period change</p>
-                    <div className="text-center py-4">
-                      <p className="text-4xl font-bold font-display gradient-text">
-                        {revenueByMonth.length >= 2
-                          ? `${(((revenueByMonth[revenueByMonth.length - 1]?.revenue ?? 0) / (revenueByMonth[0]?.revenue || 1) - 1) * 100).toFixed(1)}%`
-                          : "—"}
-                      </p>
-                      <p className="text-[11px] text-muted-foreground mt-3">Growth over data period</p>
+                    <CustomerSegmentation data={segmentData} />
+                  </div>
+
+                  {/* Charts Row 2 */}
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    <WaterfallChart data={metrics} />
+                    <FunnelChart metrics={metrics} />
+                    <PeriodComparison data={revenueByMonth} />
+                  </div>
+
+                  <CohortAnalysis metrics={metrics} />
+
+                  {/* Enterprise Visualizations Row 3 */}
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    <HeatmapChart metrics={metrics} />
+                    <TreemapChart metrics={metrics} />
+                    <RadarChartComponent metrics={metrics} />
+                  </div>
+
+                  {/* Enterprise Visualizations Row 4 */}
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    <ScatterBubbleChart metrics={metrics} />
+                    <SankeyChart metrics={metrics} />
+                    <BoxPlotChart metrics={metrics} />
+                  </div>
+
+                  {/* Gauge Row */}
+                  <div className="grid md:grid-cols-3 gap-5">
+                    <GaugeChart
+                      value={latestChurn > 0 ? Math.max(0, 100 - latestChurn * 100) : 85}
+                      label="Retention Health"
+                    />
+                    <GaugeChart
+                      value={latestCost > 0 ? Math.max(0, 100 - latestCost * 100) : 70}
+                      label="Cost Efficiency"
+                    />
+                    <GaugeChart
+                      value={revenueByMonth.length >= 2
+                        ? Math.min(100, Math.max(0, ((revenueByMonth[revenueByMonth.length - 1]?.revenue ?? 0) / (revenueByMonth[0]?.revenue || 1) - 1) * 100 + 50))
+                        : 50}
+                      label="Growth Momentum"
+                    />
+                  </div>
+
+                  {/* Intelligence Row */}
+                  <div className="grid lg:grid-cols-3 gap-5">
+                    <AIInsights insights={insights} />
+                    <AnomalyDetection insights={insights} />
+                    <div className="glass-card p-6 rounded-xl">
+                      <div className="flex items-center justify-between mb-1">
+                        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Historical Growth</h3>
+                        <TrendingUp className="w-3.5 h-3.5 text-muted-foreground" />
+                      </div>
+                      <p className="text-[11px] text-muted-foreground mb-6">Period-over-period change</p>
+                      <div className="text-center py-4">
+                        <p className="text-4xl font-bold font-display gradient-text">
+                          {revenueByMonth.length >= 2
+                            ? `${(((revenueByMonth[revenueByMonth.length - 1]?.revenue ?? 0) / (revenueByMonth[0]?.revenue || 1) - 1) * 100).toFixed(1)}%`
+                            : "—"}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground mt-3">Growth over data period</p>
+                      </div>
                     </div>
                   </div>
                 </div>
