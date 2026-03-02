@@ -5,6 +5,15 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+function getWeekStart(date: Date): Date {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Monday
+  d.setDate(diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -16,11 +25,8 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Idempotency: compute current ISO week key
-    const now = new Date();
-    const startOfYear = new Date(now.getFullYear(), 0, 1);
-    const weekNumber = Math.ceil(((now.getTime() - startOfYear.getTime()) / 86400000 + startOfYear.getDay() + 1) / 7);
-    const weekKey = `${now.getFullYear()}-W${String(weekNumber).padStart(2, "0")}`;
+    const weekStart = getWeekStart(new Date());
+    const weekKey = weekStart.toISOString().split("T")[0]; // e.g. "2026-03-02"
 
     // Get all organizations with weekly digest enabled
     const { data: prefs } = await supabase
@@ -40,17 +46,22 @@ Deno.serve(async (req) => {
     for (const pref of prefs) {
       const orgId = pref.organization_id;
 
-      // Idempotency check: skip if already sent this week
-      const { data: existing } = await supabase
+      // Attempt to acquire lock via unique constraint (organization_id, subject, week_start)
+      const { error: lockError } = await supabase
         .from("notification_log")
-        .select("id")
-        .eq("organization_id", orgId)
-        .eq("subject", "Weekly Calibration Digest")
-        .gte("created_at", getWeekStart(now).toISOString())
-        .in("status", ["sent", "skipped"])
-        .limit(1);
+        .insert({
+          organization_id: orgId,
+          channel: "email",
+          role_type: "all",
+          subject: "Weekly Calibration Digest",
+          recipients: [],
+          metadata: { weekKey },
+          status: "running",
+          week_start: weekKey,
+        });
 
-      if (existing && existing.length > 0) {
+      if (lockError) {
+        // Unique constraint violation = already processed this week
         results.push({ orgId, status: "skipped_duplicate", weekKey });
         continue;
       }
@@ -107,16 +118,17 @@ Deno.serve(async (req) => {
       // Determine recipients
       const recipients = pref.email_recipients;
       if (!recipients || !Array.isArray(recipients) || recipients.length === 0) {
-        // Log as skipped — no recipients
-        await supabase.from("notification_log").insert({
-          organization_id: orgId,
-          channel: "email",
-          role_type: "all",
-          subject: "Weekly Calibration Digest",
-          recipients: [],
-          metadata: { digest, weekKey, reason: "no_recipients" },
-          status: "skipped",
-        });
+        await supabase
+          .from("notification_log")
+          .update({
+            recipients: [],
+            metadata: { digest, weekKey, reason: "no_recipients" },
+            status: "skipped",
+          })
+          .eq("organization_id", orgId)
+          .eq("subject", "Weekly Calibration Digest")
+          .eq("week_start", weekKey);
+
         results.push({ orgId, status: "skipped", reason: "no_recipients" });
         continue;
       }
@@ -169,23 +181,25 @@ Deno.serve(async (req) => {
         errorMessage = "RESEND_API_KEY not configured";
       }
 
-      // Log truthful status
-      await supabase.from("notification_log").insert({
-        organization_id: orgId,
-        channel: "email",
-        role_type: "all",
-        subject: "Weekly Calibration Digest",
-        recipients: recipients,
-        metadata: {
-          digest,
-          calibrationLine,
-          pendingLine,
-          biasLine,
-          weekKey,
-          ...(errorMessage ? { error: errorMessage } : {}),
-        },
-        status: emailStatus,
-      });
+      // Update lock row with final status
+      await supabase
+        .from("notification_log")
+        .update({
+          recipients,
+          metadata: {
+            digest,
+            calibrationLine,
+            pendingLine,
+            biasLine,
+            weekKey,
+            ...(errorMessage ? { error: errorMessage } : {}),
+          },
+          status: emailStatus,
+          ...(errorMessage ? { error_message: errorMessage } : {}),
+        })
+        .eq("organization_id", orgId)
+        .eq("subject", "Weekly Calibration Digest")
+        .eq("week_start", weekKey);
 
       results.push({ orgId, status: emailStatus, digest });
     }
@@ -201,12 +215,3 @@ Deno.serve(async (req) => {
     });
   }
 });
-
-function getWeekStart(date: Date): Date {
-  const d = new Date(date);
-  const day = d.getDay();
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Monday
-  d.setDate(diff);
-  d.setHours(0, 0, 0, 0);
-  return d;
-}

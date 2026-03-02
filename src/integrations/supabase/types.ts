@@ -2236,6 +2236,7 @@ export type Database = {
           role_type: string
           status: string
           subject: string
+          week_start: string | null
         }
         Insert: {
           channel: string
@@ -2248,6 +2249,7 @@ export type Database = {
           role_type: string
           status?: string
           subject: string
+          week_start?: string | null
         }
         Update: {
           channel?: string
@@ -2260,6 +2262,7 @@ export type Database = {
           role_type?: string
           status?: string
           subject?: string
+          week_start?: string | null
         }
         Relationships: [
           {
