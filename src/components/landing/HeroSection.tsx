@@ -12,13 +12,15 @@ const CAPABILITY_PILLS = [
 
 const HeroSection = () => {
   return (
-    <header className="relative min-h-[92vh] flex items-center overflow-hidden pt-20" role="banner">
+    <header className="relative min-h-[85vh] flex items-center overflow-hidden pt-20" role="banner">
       {/* Background image */}
       <img
         src={heroVisual}
         alt=""
         role="presentation"
         fetchPriority="high"
+        width={1920}
+        height={1080}
         className="absolute inset-0 w-full h-full object-cover z-0 opacity-25"
       />
       <div className="absolute inset-0 z-[1] bg-gradient-to-b from-background/60 via-background/40 to-background" />
@@ -40,19 +42,19 @@ const HeroSection = () => {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2 }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary/20 bg-primary/5 text-xs font-semibold text-primary mb-8"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary/20 bg-primary/5 text-xs font-semibold text-primary mb-6 sm:mb-8"
             >
               <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
               The #1 Artificial Decision Intelligence Platform
             </motion.div>
 
-            <h1 className="text-5xl lg:text-6xl xl:text-7xl font-bold font-display leading-[1.05] mb-6">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold font-display leading-[1.05] mb-4 sm:mb-6">
               Stop Reporting.{" "}
               <br className="hidden sm:block" />
               Start{" "}
               <span className="gradient-text">Deciding.</span>
             </h1>
-            <p className="text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
+            <p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto mb-6 sm:mb-10 leading-relaxed">
               The only platform that combines causal inference, cognitive bias detection, and counterfactual analysis to transform your operational data into{" "}
               <span className="text-foreground font-medium">defensible strategic decisions</span>.
             </p>
@@ -62,7 +64,7 @@ const HeroSection = () => {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
-              className="flex flex-wrap gap-2.5 justify-center mb-10"
+              className="flex flex-wrap gap-2.5 justify-center mb-6 sm:mb-10"
             >
               {CAPABILITY_PILLS.map((pill, i) => (
                 <motion.div
