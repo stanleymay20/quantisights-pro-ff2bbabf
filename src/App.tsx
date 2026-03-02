@@ -59,7 +59,16 @@ const CausalInference = lazy(() => import("./pages/CausalInference"));
 const CognitiveBiasDetection = lazy(() => import("./pages/CognitiveBiasDetection"));
 const CounterfactualExplanation = lazy(() => import("./pages/CounterfactualExplanation"));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000,      // 5 min — avoid refetch storms
+      gcTime: 15 * 60 * 1000,         // 15 min garbage collection
+      retry: 1,                        // single retry, fail fast
+      refetchOnWindowFocus: false,     // prevent tab-switch refetches
+    },
+  },
+});
 
 const PageLoader = () => (
   <div className="flex min-h-screen items-center justify-center bg-background">
