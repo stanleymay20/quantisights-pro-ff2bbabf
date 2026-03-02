@@ -5,7 +5,7 @@ import {
   Database, BarChart3, Shuffle, Crown, Users, Building2, Search, Zap, Menu, X,
   HelpCircle, BookOpen, Target, Brain, MessageSquare, GitBranch, Globe,
   Sparkles, GitCommitVertical, Crosshair, Bell, Network, BrainCircuit, FlipVertical,
-  Gauge,
+  Gauge, XCircle,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -25,6 +25,7 @@ const navSections = [
       { icon: BrainCircuit, label: "Bias Detection", path: "/cognitive-bias" },
       { icon: FlipVertical, label: "Counterfactuals", path: "/counterfactual" },
       { icon: Gauge, label: "Calibration", path: "/calibration" },
+      { icon: XCircle, label: "Prediction Misses", path: "/misses" },
       { icon: MessageSquare, label: "Ask Quantivis", path: "/ask" },
       { icon: Sparkles, label: "Forecasting", path: "/forecasting" },
       { icon: Target, label: "Benchmarking", path: "/benchmarking" },

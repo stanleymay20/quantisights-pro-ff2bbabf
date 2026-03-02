@@ -22,6 +22,7 @@ import {
 import IntelligenceDisclaimer from "@/components/IntelligenceDisclaimer";
 import DecisionResponsibilityDialog from "@/components/DecisionResponsibilityDialog";
 import DecisionComments from "@/components/decisions/DecisionComments";
+import LazyInputWarning from "@/components/dashboard/LazyInputWarning";
 
 interface Decision {
   id: string;
@@ -263,7 +264,8 @@ const DecisionLedgerPage = () => {
           </Button>
         </header>
 
-        <IntelligenceDisclaimer variant="banner" context="advisory" />
+          <IntelligenceDisclaimer variant="banner" context="advisory" />
+          <LazyInputWarning decisions={decisions} />
         <main className="flex-1 p-8 overflow-auto space-y-6">
           {/* Summary cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4">
