@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Brain, ArrowRight, ArrowLeft, Target, TrendingDown, TrendingUp, AlertTriangle, Zap, Share2, BookOpen } from "lucide-react";
+import { Brain, ArrowRight, ArrowLeft, Target, TrendingDown, TrendingUp, AlertTriangle, Zap, Share2, BookOpen, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
@@ -11,7 +11,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useOrganization } from "@/hooks/useOrganization";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import DashboardSidebar, { SidebarMobileToggle } from "@/components/dashboard/DashboardSidebar";
 
 // ── Scenario bank ──────────────────────────────────────────────
 interface Scenario {
@@ -21,13 +20,12 @@ interface Scenario {
   question: string;
   context: string;
   actualOutcome: boolean;
-  actualProbability: number; // ground-truth base-rate / actual %
+  actualProbability: number;
   revealText: string;
   source: string;
 }
 
 const SCENARIOS: Scenario[] = [
-  // Phase A — Historical calibration
   {
     id: "s1",
     category: "Tech Adoption",
@@ -69,7 +67,7 @@ const SCENARIOS: Scenario[] = [
     context: "GDPR was passed but not yet enforced. Previous EU data protection fines rarely exceeded €500K. Many companies viewed compliance as optional.",
     actualOutcome: true,
     actualProbability: 40,
-    revealText: "Google was fined €50M by France's CNIL in Jan 2019, and British Airways faced a £183M fine in July 2019. Total fines exceeded €400M in the first 18 months. The enforcement appetite was far stronger than corporate risk models assumed.",
+    revealText: "Google was fined €50M by France's CNIL in Jan 2019, and British Airways faced a £183M fine in July 2019. Total fines exceeded €400M in the first 18 months.",
     source: "GDPR Enforcement Tracker, CMS Law",
   },
   {
@@ -80,10 +78,9 @@ const SCENARIOS: Scenario[] = [
     context: "Netflix had ~75M subscribers. Disney, Warner, and NBC had not yet launched competing streaming platforms. Content costs were accelerating.",
     actualOutcome: true,
     actualProbability: 30,
-    revealText: "Netflix hit 203.7M subscribers in Q4 2020, aided by the COVID-19 pandemic. Pre-pandemic growth trajectory suggested hitting 200M by late 2022. Most analysts in 2015 projected a ceiling of 120–150M.",
+    revealText: "Netflix hit 203.7M subscribers in Q4 2020, aided by the COVID-19 pandemic. Most analysts in 2015 projected a ceiling of 120–150M.",
     source: "Netflix Earnings Reports, 2021",
   },
-  // Phase B — Executive judgment
   {
     id: "s6",
     category: "Pricing Strategy",
@@ -92,7 +89,7 @@ const SCENARIOS: Scenario[] = [
     context: "The company has 85% gross retention, NPS of 42, and no direct competitor within 18 months of feature parity. Contracts are annual.",
     actualOutcome: false,
     actualProbability: 35,
-    revealText: "Industry data shows that B2B SaaS companies with NPS >40 and no close competitor typically retain 92–97% NRR after 20–30% price increases. The risk is real but systematically overestimated by executives who anchor on customer complaint volume rather than switching cost analysis.",
+    revealText: "Industry data shows that B2B SaaS companies with NPS >40 and no close competitor typically retain 92–97% NRR after 20–30% price increases.",
     source: "OpenView SaaS Benchmarks, 2023",
   },
   {
@@ -103,8 +100,8 @@ const SCENARIOS: Scenario[] = [
     context: "They have an existing 50K-user payment processing base, $15M in funding, and 3 competitors already at scale. CAC in the segment is $2,400.",
     actualOutcome: false,
     actualProbability: 18,
-    revealText: "Historical data from 200+ fintech market entries shows that only 12–22% achieve $10M ARR within 24 months, even with existing user bases. The primary failure mode is underestimating regulatory compliance timelines and overestimating cross-sell conversion rates.",
-    source: "CB Insights Fintech Report, a]6a Capital analysis",
+    revealText: "Historical data from 200+ fintech market entries shows that only 12–22% achieve $10M ARR within 24 months, even with existing user bases.",
+    source: "CB Insights Fintech Report, a16z Capital analysis",
   },
 ];
 
@@ -126,7 +123,6 @@ const TIERS: CalibrationTier[] = [
 ];
 
 function getTier(calibrationScore: number): CalibrationTier {
-  // calibrationScore: 0 = worst, 1 = perfect
   return TIERS.find((t) => calibrationScore >= t.range[0] && calibrationScore < t.range[1]) || TIERS[0];
 }
 
@@ -143,36 +139,28 @@ function computeResults(responses: Response[]) {
   const n = responses.length;
   if (n === 0) return null;
 
-  // Brier score (lower = better, range 0–1)
   const brierScore = responses.reduce((sum, r) => sum + r.brierComponent, 0) / n;
-
-  // Calibration score (inverted Brier, 0–1 where 1 = perfect)
   const calibrationScore = Math.max(0, 1 - brierScore);
 
-  // Overconfidence: average delta when user was MORE confident than actual
   const overconfidentResponses = responses.filter((r) => r.userProbability > r.actualProbability);
   const overconfidenceScore = overconfidentResponses.length > 0
     ? overconfidentResponses.reduce((sum, r) => sum + (r.userProbability - r.actualProbability), 0) / overconfidentResponses.length
     : 0;
 
-  // Underconfidence
   const underconfidentResponses = responses.filter((r) => r.userProbability < r.actualProbability);
   const underconfidenceScore = underconfidentResponses.length > 0
     ? underconfidentResponses.reduce((sum, r) => sum + (r.actualProbability - r.userProbability), 0) / underconfidentResponses.length
     : 0;
 
-  // Range compression: std-dev of user probabilities vs actuals
   const userStd = stdDev(responses.map((r) => r.userProbability));
   const actualStd = stdDev(responses.map((r) => r.actualProbability));
   const rangeCompression = actualStd > 0 ? Math.max(0, 1 - userStd / actualStd) : 0;
 
-  // Tail neglect: how much user underestimates <25% or >75% events
   const tailEvents = responses.filter((r) => r.actualProbability < 25 || r.actualProbability > 75);
   const tailNeglect = tailEvents.length > 0
     ? tailEvents.reduce((sum, r) => sum + Math.abs(r.delta), 0) / tailEvents.length
     : 0;
 
-  // Bias markers
   const biasMarkers: string[] = [];
   if (overconfidenceScore > 15) biasMarkers.push("Overconfidence Bias");
   if (underconfidenceScore > 15) biasMarkers.push("Underconfidence Bias");
@@ -180,7 +168,6 @@ function computeResults(responses: Response[]) {
   if (tailNeglect > 20) biasMarkers.push("Tail Risk Neglect");
   if (overconfidentResponses.length >= n * 0.7) biasMarkers.push("Systematic Optimism");
 
-  // Simulated downside reduction
   const avgAbsDelta = responses.reduce((s, r) => s + Math.abs(r.delta), 0) / n;
   const downsideReduction = Math.round(Math.min(avgAbsDelta * 1.2, 45));
 
@@ -220,6 +207,7 @@ const CalibrationAssessment = () => {
 
   const scenario = SCENARIOS[currentIndex];
   const progress = ((currentIndex) / SCENARIOS.length) * 100;
+  const isAuthenticated = !!user;
 
   const handleSubmitProbability = () => {
     setStep("reveal");
@@ -251,7 +239,10 @@ const CalibrationAssessment = () => {
       const computed = computeResults(updatedResponses);
       setResults(computed);
       setStep("results");
-      saveResults(updatedResponses, computed);
+      // Only save if authenticated
+      if (isAuthenticated) {
+        saveResults(updatedResponses, computed);
+      }
     }
   };
 
@@ -293,16 +284,19 @@ const CalibrationAssessment = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <DashboardSidebar />
+    <div className="min-h-screen bg-background">
       <main className="flex-1 overflow-y-auto">
         <div className="p-4 lg:p-8 max-w-4xl mx-auto">
-          <div className="flex items-center gap-3 mb-6 lg:mb-8">
-            <SidebarMobileToggle />
+          <div className="flex items-center justify-between mb-6 lg:mb-8">
             <div>
               <h1 className="text-2xl lg:text-3xl font-bold text-foreground tracking-tight">Calibration Assessment</h1>
               <p className="text-sm text-muted-foreground mt-1">Discover your probabilistic reasoning profile</p>
             </div>
+            {!isAuthenticated && step === "intro" && (
+              <Button variant="outline" size="sm" className="gap-2" onClick={() => navigate("/login")}>
+                <LogIn className="w-4 h-4" /> Sign In
+              </Button>
+            )}
           </div>
 
           <AnimatePresence mode="wait">
@@ -328,6 +322,9 @@ const CalibrationAssessment = () => {
                         This 5-minute assessment measures your probabilistic calibration — how closely your
                         confidence levels match reality. You'll evaluate 7 real-world scenarios, assign
                         probabilities, and receive an instant diagnostic of your reasoning patterns.
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        No account required. Sign in to save your results and track improvement over time.
                       </p>
                     </div>
 
@@ -438,7 +435,6 @@ const CalibrationAssessment = () => {
                       <span className="text-sm text-muted-foreground">{currentIndex + 1} / {SCENARIOS.length}</span>
                     </div>
 
-                    {/* Comparison */}
                     <div className="grid grid-cols-2 gap-4">
                       <div className="p-5 rounded-xl bg-muted/50 border text-center">
                         <p className="text-xs text-muted-foreground mb-1 font-medium uppercase tracking-wider">Your Estimate</p>
@@ -454,7 +450,6 @@ const CalibrationAssessment = () => {
                       </div>
                     </div>
 
-                    {/* Delta */}
                     {(() => {
                       const delta = userProbability - scenario.actualProbability;
                       const info = getDeltaLabel(delta);
@@ -475,7 +470,6 @@ const CalibrationAssessment = () => {
                       );
                     })()}
 
-                    {/* Reveal text */}
                     <div className="bg-card border rounded-lg p-5 space-y-2">
                       <p className="text-sm text-foreground leading-relaxed">{scenario.revealText}</p>
                       <p className="text-xs text-muted-foreground italic">Source: {scenario.source}</p>
@@ -502,6 +496,21 @@ const CalibrationAssessment = () => {
                 transition={{ duration: 0.5 }}
                 className="space-y-6"
               >
+                {/* Sign-in prompt for anonymous users */}
+                {!isAuthenticated && (
+                  <Card className="border-warning/30 bg-warning/5">
+                    <CardContent className="p-5 flex items-center justify-between gap-4">
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">Track your improvement over time</p>
+                        <p className="text-xs text-muted-foreground">Create a free account to save results, compare with your team, and improve your calibration.</p>
+                      </div>
+                      <Button size="sm" className="gap-2 shrink-0" onClick={() => navigate("/register")}>
+                        <LogIn className="w-4 h-4" /> Create Account
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
+
                 {/* Tier card */}
                 <Card className="border-primary/20 bg-gradient-to-br from-primary/5 via-transparent to-primary/3 overflow-hidden">
                   <CardContent className="p-8 lg:p-12 text-center space-y-4 relative">
@@ -581,7 +590,7 @@ const CalibrationAssessment = () => {
                   <CardContent className="p-5 space-y-3">
                     <h3 className="text-sm font-semibold text-foreground">Scenario Breakdown</h3>
                     <div className="space-y-2">
-                      {results.responses.map((r, i) => {
+                      {results.responses.map((r) => {
                         const sc = SCENARIOS.find((s) => s.id === r.scenarioId)!;
                         const info = getDeltaLabel(r.delta);
                         return (
@@ -602,12 +611,18 @@ const CalibrationAssessment = () => {
 
                 {/* CTAs */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <Button variant="outline" className="gap-2" onClick={() => navigate("/decisions")}>
-                    <BookOpen className="w-4 h-4" /> Log Your Next Decision
-                  </Button>
+                  {isAuthenticated ? (
+                    <Button variant="outline" className="gap-2" onClick={() => navigate("/decisions")}>
+                      <BookOpen className="w-4 h-4" /> Log Your Next Decision
+                    </Button>
+                  ) : (
+                    <Button variant="outline" className="gap-2" onClick={() => navigate("/register")}>
+                      <LogIn className="w-4 h-4" /> Save & Track Improvement
+                    </Button>
+                  )}
                   <Button className="gap-2" onClick={() => {
                     navigator.clipboard.writeText(
-                      `My Quantivis Calibration Tier: ${results.tier.label} (${results.calibrationScore}% calibration score). Overconfidence: +${results.overconfidenceScore}pp. Tail Neglect: ${results.tailNeglect}pp.`
+                      `My Quantivis Calibration Tier: ${results.tier.label} (${results.calibrationScore}% calibration score). Overconfidence: +${results.overconfidenceScore}pp. Tail Neglect: ${results.tailNeglect}pp. Take yours: ${window.location.origin}/calibration`
                     );
                     toast.success("Copied to clipboard");
                   }}>

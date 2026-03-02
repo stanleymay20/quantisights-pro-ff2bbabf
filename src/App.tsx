@@ -60,6 +60,7 @@ const CognitiveBiasDetection = lazy(() => import("./pages/CognitiveBiasDetection
 const CounterfactualExplanation = lazy(() => import("./pages/CounterfactualExplanation"));
 const Demo = lazy(() => import("./pages/Demo"));
 const CalibrationAssessment = lazy(() => import("./pages/CalibrationAssessment"));
+const Misses = lazy(() => import("./pages/Misses"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -104,6 +105,7 @@ const App = () => (
               <Route path="/accept-invite" element={<AcceptInvite />} />
               <Route path="/demo" element={<Demo />} />
               <Route path="/pricing" element={<Pricing />} />
+              <Route path="/calibration" element={<CalibrationAssessment />} />
               <Route path="*" element={<NotFound />} />
 
               {/* Protected routes — wrapped in SidebarProvider */}
@@ -138,7 +140,7 @@ const App = () => (
               <Route path="/causal-inference" element={<ProtectedRoute><SidebarProvider><CausalInference /></SidebarProvider></ProtectedRoute>} />
               <Route path="/cognitive-bias" element={<ProtectedRoute><SidebarProvider><CognitiveBiasDetection /></SidebarProvider></ProtectedRoute>} />
               <Route path="/counterfactual" element={<ProtectedRoute><SidebarProvider><CounterfactualExplanation /></SidebarProvider></ProtectedRoute>} />
-              <Route path="/calibration" element={<ProtectedRoute><SidebarProvider><CalibrationAssessment /></SidebarProvider></ProtectedRoute>} />
+              <Route path="/misses" element={<ProtectedRoute><SidebarProvider><Misses /></SidebarProvider></ProtectedRoute>} />
             </Routes>
             </Suspense>
           </AuthProvider>
