@@ -16,7 +16,13 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Get all organizations with notification preferences that have weekly brief enabled
+    // Idempotency: compute current ISO week key
+    const now = new Date();
+    const startOfYear = new Date(now.getFullYear(), 0, 1);
+    const weekNumber = Math.ceil(((now.getTime() - startOfYear.getTime()) / 86400000 + startOfYear.getDay() + 1) / 7);
+    const weekKey = `${now.getFullYear()}-W${String(weekNumber).padStart(2, "0")}`;
+
+    // Get all organizations with weekly digest enabled
     const { data: prefs } = await supabase
       .from("notification_preferences")
       .select("organization_id, email_recipients, email_enabled")
@@ -33,6 +39,21 @@ Deno.serve(async (req) => {
 
     for (const pref of prefs) {
       const orgId = pref.organization_id;
+
+      // Idempotency check: skip if already sent this week
+      const { data: existing } = await supabase
+        .from("notification_log")
+        .select("id")
+        .eq("organization_id", orgId)
+        .eq("subject", "Weekly Calibration Digest")
+        .gte("created_at", getWeekStart(now).toISOString())
+        .in("status", ["sent", "skipped"])
+        .limit(1);
+
+      if (existing && existing.length > 0) {
+        results.push({ orgId, status: "skipped_duplicate", weekKey });
+        continue;
+      }
 
       // 1. Calibration trend: latest 2 assessments
       const { data: assessments } = await supabase
@@ -83,23 +104,32 @@ Deno.serve(async (req) => {
 
       const digest = `${calibrationLine}\n${pendingLine}\n${biasLine}`;
 
-      // Log to notification_log
-      await supabase.from("notification_log").insert({
-        organization_id: orgId,
-        channel: "email",
-        role_type: "all",
-        subject: "Weekly Calibration Digest",
-        recipients: pref.email_recipients || [],
-        metadata: { digest, calibrationLine, pendingLine, biasLine },
-        status: "sent",
-      });
+      // Determine recipients
+      const recipients = pref.email_recipients;
+      if (!recipients || !Array.isArray(recipients) || recipients.length === 0) {
+        // Log as skipped — no recipients
+        await supabase.from("notification_log").insert({
+          organization_id: orgId,
+          channel: "email",
+          role_type: "all",
+          subject: "Weekly Calibration Digest",
+          recipients: [],
+          metadata: { digest, weekKey, reason: "no_recipients" },
+          status: "skipped",
+        });
+        results.push({ orgId, status: "skipped", reason: "no_recipients" });
+        continue;
+      }
 
       // Send via Resend if configured
       const resendKey = Deno.env.get("RESEND_API_KEY");
       const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "Quantivis <alerts@quantivis.io>";
-      if (resendKey && pref.email_recipients?.length > 0) {
+      let emailStatus = "skipped";
+      let errorMessage: string | null = null;
+
+      if (resendKey) {
         try {
-          await fetch("https://api.resend.com/emails", {
+          const emailRes = await fetch("https://api.resend.com/emails", {
             method: "POST",
             headers: {
               "Authorization": `Bearer ${resendKey}`,
@@ -107,7 +137,7 @@ Deno.serve(async (req) => {
             },
             body: JSON.stringify({
               from: fromEmail,
-              to: pref.email_recipients,
+              to: recipients,
               subject: "Quantivis Weekly Digest",
               html: `<div style="font-family:system-ui,sans-serif;max-width:500px;margin:0 auto;padding:24px">
                 <h2 style="font-size:16px;color:#333;margin-bottom:16px">Weekly Calibration Digest</h2>
@@ -120,12 +150,44 @@ Deno.serve(async (req) => {
               </div>`,
             }),
           });
+
+          if (emailRes.ok) {
+            emailStatus = "sent";
+          } else {
+            const errBody = await emailRes.text();
+            emailStatus = "failed";
+            errorMessage = `HTTP ${emailRes.status}: ${errBody.substring(0, 200)}`;
+            console.error("Email send failed:", errorMessage);
+          }
         } catch (emailErr) {
-          console.error("Email send failed:", emailErr);
+          emailStatus = "failed";
+          errorMessage = emailErr instanceof Error ? emailErr.message : String(emailErr);
+          console.error("Email send error:", emailErr);
         }
+      } else {
+        emailStatus = "skipped";
+        errorMessage = "RESEND_API_KEY not configured";
       }
 
-      results.push({ orgId, digest });
+      // Log truthful status
+      await supabase.from("notification_log").insert({
+        organization_id: orgId,
+        channel: "email",
+        role_type: "all",
+        subject: "Weekly Calibration Digest",
+        recipients: recipients,
+        metadata: {
+          digest,
+          calibrationLine,
+          pendingLine,
+          biasLine,
+          weekKey,
+          ...(errorMessage ? { error: errorMessage } : {}),
+        },
+        status: emailStatus,
+      });
+
+      results.push({ orgId, status: emailStatus, digest });
     }
 
     return new Response(JSON.stringify({ success: true, count: results.length, results }), {
@@ -139,3 +201,12 @@ Deno.serve(async (req) => {
     });
   }
 });
+
+function getWeekStart(date: Date): Date {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Monday
+  d.setDate(diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}

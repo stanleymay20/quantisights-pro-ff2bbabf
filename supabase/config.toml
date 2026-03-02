@@ -86,3 +86,6 @@ verify_jwt = false
 
 [functions.decision-impact-sim]
 verify_jwt = false
+
+[functions.weekly-calibration-digest]
+verify_jwt = false
