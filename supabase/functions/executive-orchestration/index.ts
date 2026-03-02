@@ -59,72 +59,62 @@ serve(async (req) => {
       const runId = run?.id;
 
       try {
-        // Step 1: Compute KPIs
-        const kpiResp = await fetch(`${supabaseUrl}/functions/v1/compute-kpi`, {
-          method: "POST",
-          headers,
-          body: JSON.stringify({ organization_id: oid }),
-        });
+        // Phase 1: Independent computations in parallel
+        const [kpiResp, sigResp, diagResp] = await Promise.all([
+          fetch(`${supabaseUrl}/functions/v1/compute-kpi`, {
+            method: "POST", headers,
+            body: JSON.stringify({ organization_id: oid }),
+          }),
+          fetch(`${supabaseUrl}/functions/v1/compute-executive-signals`, {
+            method: "POST", headers,
+            body: JSON.stringify({ organization_id: oid }),
+          }),
+          fetch(`${supabaseUrl}/functions/v1/diagnostic-engine`, {
+            method: "POST", headers,
+            body: JSON.stringify({ organization_id: oid }),
+          }),
+        ]);
         steps.push(`compute-kpi: ${kpiResp.status}`);
-
-        // Step 2: Compute executive signals (risk index)
-        const sigResp = await fetch(`${supabaseUrl}/functions/v1/compute-executive-signals`, {
-          method: "POST",
-          headers,
-          body: JSON.stringify({ organization_id: oid }),
-        });
         steps.push(`compute-signals: ${sigResp.status}`);
-
-        // Step 3: Run diagnostics
-        const diagResp = await fetch(`${supabaseUrl}/functions/v1/diagnostic-engine`, {
-          method: "POST",
-          headers,
-          body: JSON.stringify({ organization_id: oid }),
-        });
         steps.push(`diagnostics: ${diagResp.status}`);
 
-        // Step 4: Generate advisories & persist them
+        // Phase 2: Advisory (depends on diagnostics)
         const advResp = await fetch(`${supabaseUrl}/functions/v1/prescriptive-advisory`, {
-          method: "POST",
-          headers,
+          method: "POST", headers,
           body: JSON.stringify({ organization_id: oid }),
         });
         const advData = await advResp.json();
         steps.push(`advisory: ${advResp.status} (${advData?.total_advisories || 0} advisories)`);
 
-        // Persist new advisories as instances
+        // Persist advisories + convergence in parallel
+        const phase3: Promise<any>[] = [];
+
         if (advData?.advisories?.length > 0) {
           const instances = advData.advisories.map((a: any) => ({
-            organization_id: oid,
-            advisory_type: a.category,
-            title: a.title,
-            category: a.category,
-            priority: a.priority,
-            action: a.action,
-            expected_impact: a.expected_impact,
-            timeframe: a.timeframe,
-            confidence: a.confidence,
-            rationale: a.rationale,
-            kpi_affected: a.kpi_affected,
-            playbook_steps: a.playbook_steps,
+            organization_id: oid, advisory_type: a.category, title: a.title,
+            category: a.category, priority: a.priority, action: a.action,
+            expected_impact: a.expected_impact, timeframe: a.timeframe,
+            confidence: a.confidence, rationale: a.rationale,
+            kpi_affected: a.kpi_affected, playbook_steps: a.playbook_steps,
             status: "open",
           }));
-
-          await fetch(`${supabaseUrl}/rest/v1/advisory_instances`, {
-            method: "POST",
-            headers: { ...headers, Prefer: "return=minimal" },
-            body: JSON.stringify(instances),
-          });
-          steps.push(`persisted ${instances.length} advisory instances`);
+          phase3.push(
+            fetch(`${supabaseUrl}/rest/v1/advisory_instances`, {
+              method: "POST",
+              headers: { ...headers, Prefer: "return=minimal" },
+              body: JSON.stringify(instances),
+            }).then(() => steps.push(`persisted ${instances.length} advisory instances`))
+          );
         }
 
-        // Step 5: Run convergence
-        const convResp = await fetch(`${supabaseUrl}/functions/v1/executive-convergence`, {
-          method: "POST",
-          headers,
-          body: JSON.stringify({ organization_id: oid }),
-        });
-        steps.push(`convergence: ${convResp.status}`);
+        phase3.push(
+          fetch(`${supabaseUrl}/functions/v1/executive-convergence`, {
+            method: "POST", headers,
+            body: JSON.stringify({ organization_id: oid }),
+          }).then(r => steps.push(`convergence: ${r.status}`))
+        );
+
+        await Promise.all(phase3);
 
         // Step 6: Check if alerts need to be sent
         const riskResp = await fetch(`${supabaseUrl}/rest/v1/executive_risk_index?organization_id=eq.${oid}&select=score,role_type,escalation_required`, { headers });

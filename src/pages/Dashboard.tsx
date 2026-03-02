@@ -1,24 +1,27 @@
+import { lazy, Suspense } from "react";
 import DashboardSidebar, { SidebarMobileToggle } from "@/components/dashboard/DashboardSidebar";
 import KPICards from "@/components/dashboard/KPICards";
-import RevenueChart from "@/components/dashboard/RevenueChart";
-import CustomerSegmentation from "@/components/dashboard/CustomerSegmentation";
-import AIInsights from "@/components/dashboard/AIInsights";
-import AnomalyDetection from "@/components/dashboard/AnomalyDetection";
-import WaterfallChart from "@/components/dashboard/WaterfallChart";
-import CohortAnalysis from "@/components/dashboard/CohortAnalysis";
-import FunnelChart from "@/components/dashboard/FunnelChart";
-import PeriodComparison from "@/components/dashboard/PeriodComparison";
 import OrgSwitcher from "@/components/dashboard/OrgSwitcher";
 import IntelligenceStatusBar from "@/components/dashboard/IntelligenceStatusBar";
 import DailyActions from "@/components/dashboard/DailyActions";
 import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
-import HeatmapChart from "@/components/dashboard/HeatmapChart";
-import TreemapChart from "@/components/dashboard/TreemapChart";
-import ScatterBubbleChart from "@/components/dashboard/ScatterBubbleChart";
-import RadarChartComponent from "@/components/dashboard/RadarChart";
-import GaugeChart from "@/components/dashboard/GaugeChart";
-import SankeyChart from "@/components/dashboard/SankeyChart";
-import BoxPlotChart from "@/components/dashboard/BoxPlotChart";
+
+// Lazy-load heavy chart components (recharts is ~200KB)
+const RevenueChart = lazy(() => import("@/components/dashboard/RevenueChart"));
+const CustomerSegmentation = lazy(() => import("@/components/dashboard/CustomerSegmentation"));
+const AIInsights = lazy(() => import("@/components/dashboard/AIInsights"));
+const AnomalyDetection = lazy(() => import("@/components/dashboard/AnomalyDetection"));
+const WaterfallChart = lazy(() => import("@/components/dashboard/WaterfallChart"));
+const CohortAnalysis = lazy(() => import("@/components/dashboard/CohortAnalysis"));
+const FunnelChart = lazy(() => import("@/components/dashboard/FunnelChart"));
+const PeriodComparison = lazy(() => import("@/components/dashboard/PeriodComparison"));
+const HeatmapChart = lazy(() => import("@/components/dashboard/HeatmapChart"));
+const TreemapChart = lazy(() => import("@/components/dashboard/TreemapChart"));
+const ScatterBubbleChart = lazy(() => import("@/components/dashboard/ScatterBubbleChart"));
+const RadarChartComponent = lazy(() => import("@/components/dashboard/RadarChart"));
+const GaugeChart = lazy(() => import("@/components/dashboard/GaugeChart"));
+const SankeyChart = lazy(() => import("@/components/dashboard/SankeyChart"));
+const BoxPlotChart = lazy(() => import("@/components/dashboard/BoxPlotChart"));
 import { useAuth } from "@/contexts/AuthContext";
 import { useOrganization } from "@/hooks/useOrganization";
 import { useMetrics } from "@/hooks/useMetrics";
@@ -266,76 +269,78 @@ const Dashboard = () => {
                 churnRate={latestChurn}
               />
 
-              {/* Charts Row 1 */}
-              <div className="grid lg:grid-cols-3 gap-5">
-                <div className="lg:col-span-2">
-                  <RevenueChart data={revenueByMonth} />
-                </div>
-                <CustomerSegmentation data={segmentData} />
-              </div>
-
-              {/* Charts Row 2: New Visualizations */}
-              <div className="grid lg:grid-cols-3 gap-5">
-                <WaterfallChart data={metrics} />
-                <FunnelChart metrics={metrics} />
-                <PeriodComparison data={revenueByMonth} />
-              </div>
-
-              {/* Cohort Analysis */}
-              <CohortAnalysis metrics={metrics} />
-
-              {/* Enterprise Visualizations Row 3 */}
-              <div className="grid lg:grid-cols-3 gap-5">
-                <HeatmapChart metrics={metrics} />
-                <TreemapChart metrics={metrics} />
-                <RadarChartComponent metrics={metrics} />
-              </div>
-
-              {/* Enterprise Visualizations Row 4 */}
-              <div className="grid lg:grid-cols-3 gap-5">
-                <ScatterBubbleChart metrics={metrics} />
-                <SankeyChart metrics={metrics} />
-                <BoxPlotChart metrics={metrics} />
-              </div>
-
-              {/* Gauge Row */}
-              <div className="grid lg:grid-cols-3 gap-5">
-                <GaugeChart
-                  value={latestChurn > 0 ? Math.max(0, 100 - latestChurn * 100) : 85}
-                  label="Retention Health"
-                />
-                <GaugeChart
-                  value={latestCost > 0 ? Math.max(0, 100 - latestCost * 100) : 70}
-                  label="Cost Efficiency"
-                />
-                <GaugeChart
-                  value={revenueByMonth.length >= 2
-                    ? Math.min(100, Math.max(0, ((revenueByMonth[revenueByMonth.length - 1]?.revenue ?? 0) / (revenueByMonth[0]?.revenue || 1) - 1) * 100 + 50))
-                    : 50}
-                  label="Growth Momentum"
-                />
-              </div>
-
-              {/* Intelligence Row */}
-              <div className="grid lg:grid-cols-3 gap-5">
-                <AIInsights insights={insights} />
-                <AnomalyDetection insights={insights} />
-                <div className="glass-card p-6 rounded-xl">
-                  <div className="flex items-center justify-between mb-1">
-                    <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Historical Growth</h3>
-                    <TrendingUp className="w-3.5 h-3.5 text-muted-foreground" />
+              {/* Charts — lazy loaded for faster initial paint */}
+              <Suspense fallback={<div className="grid lg:grid-cols-3 gap-5">{Array.from({length: 3}).map((_, i) => <div key={i} className="h-64 rounded-xl bg-muted/30 animate-pulse" />)}</div>}>
+                {/* Charts Row 1 */}
+                <div className="grid lg:grid-cols-3 gap-5">
+                  <div className="lg:col-span-2">
+                    <RevenueChart data={revenueByMonth} />
                   </div>
-                  <p className="text-[11px] text-muted-foreground mb-6">Period-over-period change</p>
-                  <div className="text-center py-4">
-                    <p className="text-4xl font-bold font-display gradient-text">
-                      {revenueByMonth.length >= 2
-                        ? `${(((revenueByMonth[revenueByMonth.length - 1]?.revenue ?? 0) / (revenueByMonth[0]?.revenue || 1) - 1) * 100).toFixed(1)}%`
-                        : "—"}
-                    </p>
-                    <p className="text-[11px] text-muted-foreground mt-3">Growth over data period</p>
+                  <CustomerSegmentation data={segmentData} />
+                </div>
+
+                {/* Charts Row 2 */}
+                <div className="grid lg:grid-cols-3 gap-5">
+                  <WaterfallChart data={metrics} />
+                  <FunnelChart metrics={metrics} />
+                  <PeriodComparison data={revenueByMonth} />
+                </div>
+
+                <CohortAnalysis metrics={metrics} />
+
+                {/* Enterprise Visualizations Row 3 */}
+                <div className="grid lg:grid-cols-3 gap-5">
+                  <HeatmapChart metrics={metrics} />
+                  <TreemapChart metrics={metrics} />
+                  <RadarChartComponent metrics={metrics} />
+                </div>
+
+                {/* Enterprise Visualizations Row 4 */}
+                <div className="grid lg:grid-cols-3 gap-5">
+                  <ScatterBubbleChart metrics={metrics} />
+                  <SankeyChart metrics={metrics} />
+                  <BoxPlotChart metrics={metrics} />
+                </div>
+
+                {/* Gauge Row */}
+                <div className="grid lg:grid-cols-3 gap-5">
+                  <GaugeChart
+                    value={latestChurn > 0 ? Math.max(0, 100 - latestChurn * 100) : 85}
+                    label="Retention Health"
+                  />
+                  <GaugeChart
+                    value={latestCost > 0 ? Math.max(0, 100 - latestCost * 100) : 70}
+                    label="Cost Efficiency"
+                  />
+                  <GaugeChart
+                    value={revenueByMonth.length >= 2
+                      ? Math.min(100, Math.max(0, ((revenueByMonth[revenueByMonth.length - 1]?.revenue ?? 0) / (revenueByMonth[0]?.revenue || 1) - 1) * 100 + 50))
+                      : 50}
+                    label="Growth Momentum"
+                  />
+                </div>
+
+                {/* Intelligence Row */}
+                <div className="grid lg:grid-cols-3 gap-5">
+                  <AIInsights insights={insights} />
+                  <AnomalyDetection insights={insights} />
+                  <div className="glass-card p-6 rounded-xl">
+                    <div className="flex items-center justify-between mb-1">
+                      <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Historical Growth</h3>
+                      <TrendingUp className="w-3.5 h-3.5 text-muted-foreground" />
+                    </div>
+                    <p className="text-[11px] text-muted-foreground mb-6">Period-over-period change</p>
+                    <div className="text-center py-4">
+                      <p className="text-4xl font-bold font-display gradient-text">
+                        {revenueByMonth.length >= 2
+                          ? `${(((revenueByMonth[revenueByMonth.length - 1]?.revenue ?? 0) / (revenueByMonth[0]?.revenue || 1) - 1) * 100).toFixed(1)}%`
+                          : "—"}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground mt-3">Growth over data period</p>
+                    </div>
                   </div>
                 </div>
-              </div>
+              </Suspense>
             </div>
           )}
         </main>
