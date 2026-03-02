@@ -32,6 +32,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import GuidedTour from "@/components/dashboard/GuidedTour";
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -103,6 +104,7 @@ const Dashboard = () => {
 
   return (
     <div className="flex min-h-screen bg-background">
+      {hasData && <GuidedTour />}
       <DashboardSidebar />
       <div className="flex-1 flex flex-col min-h-screen">
         {/* Global Intelligence Status Bar */}
