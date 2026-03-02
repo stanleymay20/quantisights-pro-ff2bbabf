@@ -3,13 +3,13 @@ import { CheckCircle2, Clock, Upload, Webhook } from "lucide-react";
 
 const INTEGRATIONS = [
   { name: "Stripe", desc: "Revenue, MRR, churn, subscription metrics", status: "live" as const },
-  { name: "Google Analytics", desc: "Traffic, conversions, acquisition data", status: "live" as const },
+  { name: "Google Analytics 4", desc: "Traffic, conversions, acquisition channels", status: "live" as const },
+  { name: "HubSpot", desc: "Pipeline, deal velocity, lead scoring", status: "live" as const },
+  { name: "QuickBooks", desc: "P&L, cash flow, balance sheet automation", status: "live" as const },
+  { name: "Xero", desc: "Accounting data with multi-currency support", status: "live" as const },
+  { name: "Salesforce", desc: "CRM pipeline, closed-won, lead metrics", status: "live" as const },
   { name: "CSV Upload", desc: "Drag-and-drop with column mapping & validation", status: "live" as const, icon: Upload },
   { name: "Webhook API", desc: "Push data from any system in real-time", status: "live" as const, icon: Webhook },
-  { name: "QuickBooks", desc: "P&L, balance sheet, cash flow automation", status: "coming" as const },
-  { name: "Xero", desc: "Accounting data with multi-currency support", status: "coming" as const },
-  { name: "HubSpot", desc: "Pipeline, deal velocity, lead scoring", status: "coming" as const },
-  { name: "Salesforce", desc: "CRM data, forecasts, activity metrics", status: "coming" as const },
 ];
 
 const IntegrationsSection = () => (
@@ -42,15 +42,9 @@ const IntegrationsSection = () => (
           >
             <div className="flex items-start justify-between mb-3">
               <h3 className="font-semibold text-sm">{integration.name}</h3>
-              {integration.status === "live" ? (
-                <span className="flex items-center gap-1 text-[10px] font-semibold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full">
-                  <CheckCircle2 className="w-3 h-3" /> Live
-                </span>
-              ) : (
-                <span className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-                  <Clock className="w-3 h-3" /> Q3 2026
-                </span>
-              )}
+              <span className="flex items-center gap-1 text-[10px] font-semibold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                <CheckCircle2 className="w-3 h-3" /> Live
+              </span>
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed">{integration.desc}</p>
           </motion.div>
