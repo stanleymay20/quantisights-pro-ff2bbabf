@@ -280,9 +280,9 @@ const Dashboard = () => {
               />
 
               {/* Charts — lazy loaded for faster initial paint */}
-              <Suspense fallback={<div className="grid lg:grid-cols-3 gap-5">{Array.from({length: 3}).map((_, i) => <div key={i} className="h-64 rounded-xl bg-muted/30 animate-pulse" />)}</div>}>
+              <Suspense fallback={<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">{Array.from({length: 3}).map((_, i) => <div key={i} className="h-64 rounded-xl bg-muted/30 animate-pulse" />)}</div>}>
                 {/* Charts Row 1 */}
-                <div className="grid lg:grid-cols-3 gap-5">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-5">
                   <div className="lg:col-span-2">
                     <RevenueChart data={revenueByMonth} />
                   </div>
@@ -290,7 +290,7 @@ const Dashboard = () => {
                 </div>
 
                 {/* Charts Row 2 */}
-                <div className="grid lg:grid-cols-3 gap-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
                   <WaterfallChart data={metrics} />
                   <FunnelChart metrics={metrics} />
                   <PeriodComparison data={revenueByMonth} />
@@ -299,21 +299,21 @@ const Dashboard = () => {
                 <CohortAnalysis metrics={metrics} />
 
                 {/* Enterprise Visualizations Row 3 */}
-                <div className="grid lg:grid-cols-3 gap-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
                   <HeatmapChart metrics={metrics} />
                   <TreemapChart metrics={metrics} />
                   <RadarChartComponent metrics={metrics} />
                 </div>
 
                 {/* Enterprise Visualizations Row 4 */}
-                <div className="grid lg:grid-cols-3 gap-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
                   <ScatterBubbleChart metrics={metrics} />
                   <SankeyChart metrics={metrics} />
                   <BoxPlotChart metrics={metrics} />
                 </div>
 
                 {/* Gauge Row */}
-                <div className="grid lg:grid-cols-3 gap-5">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
                   <GaugeChart
                     value={latestChurn > 0 ? Math.max(0, 100 - latestChurn * 100) : 85}
                     label="Retention Health"
@@ -331,7 +331,7 @@ const Dashboard = () => {
                 </div>
 
                 {/* Intelligence Row */}
-                <div className="grid lg:grid-cols-3 gap-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
                   <AIInsights insights={insights} />
                   <AnomalyDetection insights={insights} />
                   <div className="glass-card p-6 rounded-xl">
