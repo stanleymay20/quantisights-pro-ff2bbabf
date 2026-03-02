@@ -59,6 +59,7 @@ const CausalInference = lazy(() => import("./pages/CausalInference"));
 const CognitiveBiasDetection = lazy(() => import("./pages/CognitiveBiasDetection"));
 const CounterfactualExplanation = lazy(() => import("./pages/CounterfactualExplanation"));
 const Demo = lazy(() => import("./pages/Demo"));
+const CalibrationAssessment = lazy(() => import("./pages/CalibrationAssessment"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -137,6 +138,7 @@ const App = () => (
               <Route path="/causal-inference" element={<ProtectedRoute><SidebarProvider><CausalInference /></SidebarProvider></ProtectedRoute>} />
               <Route path="/cognitive-bias" element={<ProtectedRoute><SidebarProvider><CognitiveBiasDetection /></SidebarProvider></ProtectedRoute>} />
               <Route path="/counterfactual" element={<ProtectedRoute><SidebarProvider><CounterfactualExplanation /></SidebarProvider></ProtectedRoute>} />
+              <Route path="/calibration" element={<ProtectedRoute><SidebarProvider><CalibrationAssessment /></SidebarProvider></ProtectedRoute>} />
             </Routes>
             </Suspense>
           </AuthProvider>
