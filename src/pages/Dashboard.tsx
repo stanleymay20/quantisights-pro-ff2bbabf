@@ -152,7 +152,7 @@ const Dashboard = () => {
           </div>
         </header>
 
-        <main id="main-content" className="flex-1 p-4 md:p-8 overflow-auto">
+        <main id="main-content" className="flex-1 p-3 sm:p-4 md:p-8 overflow-auto">
           {!hasData && !isLoading ? (
             /* ── Smart Empty State ── */
             <motion.div

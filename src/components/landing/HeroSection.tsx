@@ -80,16 +80,16 @@ const HeroSection = () => {
               ))}
             </motion.div>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
               <Link
                 to="/demo"
-                className="inline-flex items-center justify-center gap-2 px-10 py-4 rounded-xl bg-primary text-primary-foreground font-semibold text-base hover:brightness-110 transition-all shadow-lg shadow-primary/25"
+                className="inline-flex items-center justify-center gap-2 px-6 sm:px-10 py-3.5 sm:py-4 rounded-xl bg-primary text-primary-foreground font-semibold text-sm sm:text-base hover:brightness-110 transition-all shadow-lg shadow-primary/25"
               >
                 See How It Protects You <ArrowRight className="w-4 h-4" />
               </Link>
               <Link
                 to="/register"
-                className="inline-flex items-center justify-center gap-2 px-10 py-4 rounded-xl border border-border bg-card/50 text-foreground font-semibold text-base hover:border-primary/30 transition-all"
+                className="inline-flex items-center justify-center gap-2 px-6 sm:px-10 py-3.5 sm:py-4 rounded-xl border border-border bg-card/50 text-foreground font-semibold text-sm sm:text-base hover:border-primary/30 transition-all"
               >
                 Start 14-Day Free Trial
               </Link>
@@ -103,7 +103,7 @@ const HeroSection = () => {
               className="mt-12 pt-6 border-t border-border/30"
             >
               <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground/50 mb-3">What you're leaving unprotected</p>
-              <div className="flex flex-wrap gap-6 justify-center">
+              <div className="flex flex-wrap gap-x-4 gap-y-1.5 sm:gap-6 justify-center">
                 {[
                   "Unaudited Board Decisions",
                   "Unchecked Confidence Bias",
@@ -111,7 +111,7 @@ const HeroSection = () => {
                   "Manual Risk Assessment",
                   "Gut-Feel Capital Allocation",
                 ].map((risk) => (
-                  <span key={risk} className="text-sm text-muted-foreground/40 line-through decoration-muted-foreground/20">{risk}</span>
+                  <span key={risk} className="text-xs sm:text-sm text-muted-foreground/40 line-through decoration-muted-foreground/20">{risk}</span>
                 ))}
               </div>
             </motion.div>

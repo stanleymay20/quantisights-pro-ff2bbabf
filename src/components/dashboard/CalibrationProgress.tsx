@@ -103,7 +103,7 @@ const CalibrationProgress = ({ organizationId }: CalibrationProgressProps) => {
         </Link>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
         {/* Calibration Score */}
         <div className="text-center">
           <p className={`text-2xl font-bold ${scoreColor}`}>
@@ -142,18 +142,18 @@ const CalibrationProgress = ({ organizationId }: CalibrationProgressProps) => {
       </div>
 
       {/* Learning status */}
-      <div className="mt-4 pt-3 border-t border-border/30 flex items-center justify-between">
+      <div className="mt-4 pt-3 border-t border-border/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <Target className="w-3 h-3 text-muted-foreground" />
+          <Target className="w-3 h-3 text-muted-foreground shrink-0" />
           <span className="text-[11px] text-muted-foreground">
             {data.totalDecisions} decisions analyzed · Model v{data.modelVersion || 1}
           </span>
         </div>
         {data.totalDecisions < 12 && (
           <div className="flex items-center gap-1.5">
-            <AlertTriangle className="w-3 h-3 text-amber-500" />
+            <AlertTriangle className="w-3 h-3 text-amber-500 shrink-0" />
             <span className="text-[11px] text-amber-500 font-medium">
-              {12 - data.totalDecisions} more decisions to strengthen model
+              {12 - data.totalDecisions} more to strengthen model
             </span>
           </div>
         )}
