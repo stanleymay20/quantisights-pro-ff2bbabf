@@ -134,7 +134,7 @@ const Billing = () => {
                           </Badge>
                         </div>
                         <p className="text-muted-foreground text-sm">
-                          {tierConfig.currency}{tierConfig.price}/{tierConfig.interval}
+                          {tierConfig.price !== null ? `${tierConfig.currency}${tierConfig.price}/${tierConfig.interval}` : "Custom pricing"}
                         </p>
                       </div>
                     </div>
@@ -255,7 +255,7 @@ const Billing = () => {
                   </div>
                   <Button onClick={() => navigate("/pricing")} size="lg" className="gap-2 shadow-lg shadow-primary/20">
                     <Zap className="w-4 h-4" />
-                    {activeTier === "starter" ? "Upgrade to Growth — €99/mo" : "Upgrade to Enterprise — €299/mo"}
+                    {activeTier === "starter" ? "Upgrade to Growth — €249/mo" : "Contact Sales for Enterprise"}
                   </Button>
                 </CardContent>
               </Card>
