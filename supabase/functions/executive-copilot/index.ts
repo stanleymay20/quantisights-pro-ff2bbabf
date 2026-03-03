@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { checkRateLimit, rateLimitResponse } from "../_shared/rate-limiter.ts";
+import { applyAIBoundary } from "../_shared/ai-redaction.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -264,21 +265,33 @@ When stating confidence levels, apply these learned corrections. Every confidenc
     contextParts.push(`DATE: ${new Date().toISOString().split("T")[0]}`);
     contextParts.push(`TIER: ${tier}`);
 
-    const contextBlock = contextParts.join("\n\n");
+    // Fetch org AI boundary setting
+    const { data: orgSettings } = await serviceClient
+      .from("organizations")
+      .select("ai_raw_text_enabled")
+      .eq("id", organization_id)
+      .maybeSingle();
+
+    const aiRawTextEnabled = orgSettings?.ai_raw_text_enabled ?? false;
+
+    // Apply redaction to context block
+    const { text: safeContext } = applyAIBoundary(contextParts.join("\n\n"), aiRawTextEnabled);
+    const { text: safeMessage } = applyAIBoundary(message, aiRawTextEnabled);
 
     // Build messages array from history
     const aiMessages: { role: string; content: string }[] = [
-      { role: "system", content: SYSTEM_PROMPT + "\n\n--- LIVE DATA CONTEXT ---\n" + contextBlock },
+      { role: "system", content: SYSTEM_PROMPT + "\n\n--- LIVE DATA CONTEXT ---\n" + safeContext },
     ];
 
     if (historyResult.data) {
       // Skip the last user message since we'll add it fresh
       const history = historyResult.data.slice(0, -1);
       for (const msg of history as any[]) {
-        aiMessages.push({ role: msg.role, content: msg.content });
+        const { text: safeContent } = applyAIBoundary(msg.content, aiRawTextEnabled);
+        aiMessages.push({ role: msg.role, content: safeContent });
       }
     }
-    aiMessages.push({ role: "user", content: message });
+    aiMessages.push({ role: "user", content: safeMessage });
 
     // Call Lovable AI with streaming
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
