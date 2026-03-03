@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import { motion } from "framer-motion";
 import { Check, Loader2, Crown, X, Minus } from "lucide-react";
 import { TIERS, TierKey, FEATURE_MATRIX } from "@/lib/stripe-tiers";
@@ -61,7 +62,7 @@ const Pricing = () => {
             className="text-center mb-16"
           >
             <p className="text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-3">Pricing</p>
-            <h1 className="text-5xl font-bold font-display mb-4">
+            <h1 className="text-3xl sm:text-5xl font-bold font-display mb-4">
               Intelligence That <span className="gradient-text">Scales</span> With You
             </h1>
             <p className="text-muted-foreground text-lg max-w-xl mx-auto">
@@ -167,11 +168,11 @@ const Pricing = () => {
             transition={{ delay: 0.4 }}
             className="max-w-5xl mx-auto mb-16 text-center"
           >
-            <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full border border-border/50 bg-card/30">
-              <span className="text-sm text-muted-foreground">Typical consulting engagement:</span>
-              <span className="text-sm font-bold line-through text-muted-foreground/60">€50,000+</span>
+            <div className="inline-flex flex-wrap items-center justify-center gap-2 sm:gap-3 px-4 sm:px-6 py-3 rounded-2xl sm:rounded-full border border-border/50 bg-card/30">
+              <span className="text-xs sm:text-sm text-muted-foreground">Typical consulting engagement:</span>
+              <span className="text-xs sm:text-sm font-bold line-through text-muted-foreground/60">€50,000+</span>
               <span className="text-xs text-muted-foreground">→</span>
-              <span className="text-sm font-bold text-primary">From €99/mo</span>
+              <span className="text-xs sm:text-sm font-bold text-primary">From €99/mo</span>
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold">500x less</span>
             </div>
           </motion.div>
@@ -187,7 +188,7 @@ const Pricing = () => {
             className="max-w-5xl mx-auto mt-16"
           >
             <div className="text-center mb-10">
-              <h2 className="text-3xl font-bold font-display mb-3">
+              <h2 className="text-2xl sm:text-3xl font-bold font-display mb-3">
                 Complete <span className="gradient-text">Feature Comparison</span>
               </h2>
               <p className="text-muted-foreground">Every capability across every tier — no hidden features.</p>
@@ -211,8 +212,8 @@ const Pricing = () => {
                   </thead>
                   <tbody>
                     {FEATURE_MATRIX.map((group) => (
-                      <>
-                        <tr key={group.category}>
+                      <Fragment key={group.category}>
+                        <tr>
                           <td colSpan={4} className="py-3 px-6 text-xs uppercase tracking-widest text-primary font-semibold bg-primary/[0.03] border-b border-border/50">
                             {group.category}
                           </td>
@@ -225,7 +226,7 @@ const Pricing = () => {
                             <td className="text-center py-3 px-4"><CellValue value={row.enterprise} /></td>
                           </tr>
                         ))}
-                      </>
+                      </Fragment>
                     ))}
                   </tbody>
                 </table>
