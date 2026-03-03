@@ -1,13 +1,13 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { ArrowRight, Brain, Shield, TrendingUp, Zap } from "lucide-react";
+import { ArrowRight, ShieldCheck, Target, TrendingDown, BarChart3 } from "lucide-react";
 import heroVisual from "@/assets/hero-visual.png";
 
 const CAPABILITY_PILLS = [
-  { icon: Brain, label: "Causal Inference" },
-  { icon: Shield, label: "Bias Detection" },
-  { icon: TrendingUp, label: "Predictive Forecasting" },
-  { icon: Zap, label: "Prescriptive Advisory" },
+  { icon: ShieldCheck, label: "Overconfidence Protection" },
+  { icon: Target, label: "Board-Ready Defensibility" },
+  { icon: TrendingDown, label: "Downside Risk Reduction" },
+  { icon: BarChart3, label: "Decision Accuracy Tracking" },
 ];
 
 const HeroSection = () => {
@@ -45,18 +45,18 @@ const HeroSection = () => {
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary/20 bg-primary/5 text-xs font-semibold text-primary mb-6 sm:mb-8"
             >
               <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-              The #1 Artificial Decision Intelligence Platform
+              Executive Decision Governance Platform
             </motion.div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold font-display leading-[1.05] mb-4 sm:mb-6">
-              Stop Reporting.{" "}
+              Reduce Overconfidence.{" "}
               <br className="hidden sm:block" />
-              Start{" "}
-              <span className="gradient-text">Deciding.</span>
+              Defend Every{" "}
+              <span className="gradient-text">Strategic Call.</span>
             </h1>
             <p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto mb-6 sm:mb-10 leading-relaxed">
-              The only platform that combines causal inference, cognitive bias detection, and counterfactual analysis to transform your operational data into{" "}
-              <span className="text-foreground font-medium">defensible strategic decisions</span>.
+              Leadership teams systematically overestimate strategic bets by 7–12 percentage points. Quantivis measures, corrects, and{" "}
+              <span className="text-foreground font-medium">continuously improves your decision accuracy</span> — so every call is board-defensible.
             </p>
 
             {/* Capability pills */}
@@ -85,7 +85,7 @@ const HeroSection = () => {
                 to="/demo"
                 className="inline-flex items-center justify-center gap-2 px-10 py-4 rounded-xl bg-primary text-primary-foreground font-semibold text-base hover:brightness-110 transition-all shadow-lg shadow-primary/25"
               >
-                Try Live Demo <ArrowRight className="w-4 h-4" />
+                See How It Protects You <ArrowRight className="w-4 h-4" />
               </Link>
               <Link
                 to="/register"
@@ -95,17 +95,23 @@ const HeroSection = () => {
               </Link>
             </div>
 
-            {/* Replaces strip */}
+            {/* Risk stats strip */}
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.7 }}
               className="mt-12 pt-6 border-t border-border/30"
             >
-              <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground/50 mb-3">Replaces</p>
-              <div className="flex flex-wrap gap-4 justify-center">
-                {["McKinsey Engagements", "Manual Board Prep", "Spreadsheet Strategy", "Siloed BI Dashboards", "Advisory Retainers"].map((tool) => (
-                  <span key={tool} className="text-sm text-muted-foreground/40 line-through decoration-muted-foreground/20">{tool}</span>
+              <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground/50 mb-3">What you're leaving unprotected</p>
+              <div className="flex flex-wrap gap-6 justify-center">
+                {[
+                  "Unaudited Board Decisions",
+                  "Unchecked Confidence Bias",
+                  "Invisible Strategic Drift",
+                  "Manual Risk Assessment",
+                  "Gut-Feel Capital Allocation",
+                ].map((risk) => (
+                  <span key={risk} className="text-sm text-muted-foreground/40 line-through decoration-muted-foreground/20">{risk}</span>
                 ))}
               </div>
             </motion.div>
