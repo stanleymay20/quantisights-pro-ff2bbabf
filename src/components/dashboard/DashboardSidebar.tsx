@@ -106,7 +106,7 @@ const DashboardSidebar = () => {
   };
 
   const sidebarContent = (
-    <aside className="w-64 min-h-screen bg-sidebar border-r border-sidebar-border flex flex-col shrink-0">
+    <aside className="w-64 h-screen bg-sidebar border-r border-sidebar-border flex flex-col shrink-0">
       <div className="p-6 pb-4 flex items-center justify-between">
         <Link to="/" onClick={handleNavClick}>
           <img src={logo} alt="Quantivis Global" className="h-9 w-auto" />
