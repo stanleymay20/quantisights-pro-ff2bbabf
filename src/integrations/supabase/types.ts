@@ -379,12 +379,19 @@ export type Database = {
           confidence_bands_count: number
           created_at: string
           id: string
+          low_sample_bands: Json
           mean_absolute_error: number | null
           model_version: number
           organization_id: string
           overall_bias_direction: string | null
           overall_calibration_score: number | null
+          smoothing_alpha: number
+          smoothing_beta: number
+          success_metric: string
           total_decisions_analyzed: number
+          window_decisions_count: number
+          window_end: string | null
+          window_start: string | null
         }
         Insert: {
           ai_narrative?: string | null
@@ -394,12 +401,19 @@ export type Database = {
           confidence_bands_count?: number
           created_at?: string
           id?: string
+          low_sample_bands?: Json
           mean_absolute_error?: number | null
           model_version?: number
           organization_id: string
           overall_bias_direction?: string | null
           overall_calibration_score?: number | null
+          smoothing_alpha?: number
+          smoothing_beta?: number
+          success_metric?: string
           total_decisions_analyzed?: number
+          window_decisions_count?: number
+          window_end?: string | null
+          window_start?: string | null
         }
         Update: {
           ai_narrative?: string | null
@@ -409,12 +423,19 @@ export type Database = {
           confidence_bands_count?: number
           created_at?: string
           id?: string
+          low_sample_bands?: Json
           mean_absolute_error?: number | null
           model_version?: number
           organization_id?: string
           overall_bias_direction?: string | null
           overall_calibration_score?: number | null
+          smoothing_alpha?: number
+          smoothing_beta?: number
+          success_metric?: string
           total_decisions_analyzed?: number
+          window_decisions_count?: number
+          window_end?: string | null
+          window_start?: string | null
         }
         Relationships: [
           {

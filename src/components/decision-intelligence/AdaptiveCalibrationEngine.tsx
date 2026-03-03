@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Brain, Zap, TrendingDown, TrendingUp, Minus, RefreshCw, Sparkles } from "lucide-react";
+import { Brain, Zap, TrendingDown, TrendingUp, Minus, RefreshCw, Sparkles, AlertTriangle } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Cell } from "recharts";
 
 interface Props {
@@ -19,6 +19,11 @@ interface CalibrationModel {
   mean_absolute_error: number;
   ai_narrative: string | null;
   computed_at?: string;
+  success_metric?: string;
+  window_start?: string;
+  window_end?: string;
+  window_decisions_count?: number;
+  low_sample_bands?: string[];
 }
 
 const AdaptiveCalibrationEngine = ({ orgId, decisions }: Props) => {
@@ -27,7 +32,6 @@ const AdaptiveCalibrationEngine = ({ orgId, decisions }: Props) => {
   const [computing, setComputing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Load existing model
   useEffect(() => {
     if (!orgId) return;
     const fetchModel = async () => {
@@ -67,7 +71,6 @@ const AdaptiveCalibrationEngine = ({ orgId, decisions }: Props) => {
     setComputing(false);
   };
 
-  // Chart data from band corrections
   const chartData = model
     ? Object.entries(model.band_corrections)
         .map(([band, correction]) => ({
@@ -75,12 +78,13 @@ const AdaptiveCalibrationEngine = ({ orgId, decisions }: Props) => {
           correction: Number(correction),
           samples: Number(model.band_sample_sizes[band] || 0),
           label: band.replace("-", "–") + "%",
+          isLowSample: (model.low_sample_bands || []).includes(band),
         }))
         .sort((a, b) => parseInt(a.band) - parseInt(b.band))
     : [];
 
   const completedCount = decisions.filter(
-    (d) => d.execution_status === "completed" && d.outcome_delta != null
+    (d) => d.execution_status === "completed" && (d.prediction_accuracy_score != null || d.outcome_delta != null)
   ).length;
 
   const BiasIcon =
@@ -115,14 +119,14 @@ const AdaptiveCalibrationEngine = ({ orgId, decisions }: Props) => {
               </span>
             </h3>
             <p className="text-[10px] text-muted-foreground">
-              Self-improving confidence correction from decision outcomes
+              Self-improving confidence correction — applied to all future predictions
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           {model && (
             <span className="text-[10px] text-muted-foreground font-mono">
-              v{model.model_version}
+              v{model.model_version} · {model.success_metric === "prediction_accuracy_score" ? "accuracy" : "delta"}-based
             </span>
           )}
           <button
@@ -146,7 +150,7 @@ const AdaptiveCalibrationEngine = ({ orgId, decisions }: Props) => {
               : "Ready to learn — click Recalibrate to build your first model"}
           </p>
           <p className="text-[10px] text-muted-foreground/60">
-            The engine analyzes your prediction accuracy across confidence bands and computes personalized correction factors.
+            The engine analyzes prediction accuracy across confidence bands and computes personalized correction factors that are applied to all future intelligence outputs.
           </p>
           {error && <p className="text-xs text-destructive mt-2">{error}</p>}
         </div>
@@ -162,7 +166,7 @@ const AdaptiveCalibrationEngine = ({ orgId, decisions }: Props) => {
       {model && !loading && (
         <div className="space-y-4 mt-4">
           {/* Score + Stats row */}
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div className="bg-muted/20 rounded-lg p-3 text-center">
               <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
                 Calibration Score
@@ -208,12 +212,24 @@ const AdaptiveCalibrationEngine = ({ orgId, decisions }: Props) => {
             </div>
           </div>
 
+          {/* Active correction notice */}
+          <div className="p-2.5 rounded-lg bg-emerald-500/5 border border-emerald-500/15 flex items-center gap-2">
+            <Zap className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+            <p className="text-[11px] text-emerald-400/90">
+              <span className="font-semibold">Active:</span> These corrections are being applied to all advisory, simulation, and diagnostic confidence outputs via the epistemic pipeline.
+            </p>
+          </div>
+
           {/* Correction chart */}
           {chartData.length > 0 && (
             <div>
               <p className="text-[11px] text-muted-foreground mb-2">
-                <Zap className="w-3 h-3 inline text-primary mr-1" />
-                Band corrections — negative = overconfident, positive = underconfident
+                Band corrections — negative = overconfident, positive = underconfident.
+                {chartData.some((d) => d.isLowSample) && (
+                  <span className="text-warning ml-1">
+                    <AlertTriangle className="w-3 h-3 inline" /> Striped bars = low-sample bands (dampened 50%)
+                  </span>
+                )}
               </p>
               <div className="h-48">
                 <ResponsiveContainer width="100%" height="100%">
@@ -254,14 +270,17 @@ const AdaptiveCalibrationEngine = ({ orgId, decisions }: Props) => {
                                 {d.correction > 0 ? "+" : ""}
                                 {d.correction}pp
                               </span>
+                              {d.isLowSample && (
+                                <span className="text-warning ml-1">(dampened 50%)</span>
+                              )}
                             </p>
                             <p className="text-muted-foreground">{d.samples} decisions</p>
                             <p className="text-muted-foreground mt-1">
                               {d.correction < -3
-                                ? "⚠ Overconfident — reduce predictions in this band"
+                                ? "⚠ Overconfident — engine reduces future predictions"
                                 : d.correction > 3
-                                ? "↑ Underconfident — you can trust this band more"
-                                : "✓ Well-calibrated"}
+                                ? "↑ Underconfident — engine boosts future predictions"
+                                : "✓ Well-calibrated — no correction needed"}
                             </p>
                           </div>
                         );
@@ -280,7 +299,10 @@ const AdaptiveCalibrationEngine = ({ orgId, decisions }: Props) => {
                               ? "hsl(160 60% 45%)"
                               : "hsl(var(--primary))"
                           }
-                          fillOpacity={0.8}
+                          fillOpacity={entry.isLowSample ? 0.4 : 0.8}
+                          strokeDasharray={entry.isLowSample ? "4 2" : undefined}
+                          stroke={entry.isLowSample ? "hsl(var(--warning, 38 92% 50%))" : undefined}
+                          strokeWidth={entry.isLowSample ? 1 : 0}
                         />
                       ))}
                     </Bar>
@@ -302,11 +324,28 @@ const AdaptiveCalibrationEngine = ({ orgId, decisions }: Props) => {
             </div>
           )}
 
+          {/* Model metadata */}
+          <div className="border-t border-border/20 pt-3 flex flex-wrap gap-x-4 gap-y-1">
+            <p className="text-[10px] text-muted-foreground/50">
+              Success metric: <span className="font-mono text-muted-foreground/70">{model.success_metric || "prediction_accuracy_score"}</span>
+            </p>
+            {model.window_start && model.window_end && (
+              <p className="text-[10px] text-muted-foreground/50">
+                Window: <span className="font-mono text-muted-foreground/70">
+                  {new Date(model.window_start).toLocaleDateString()} – {new Date(model.window_end).toLocaleDateString()}
+                </span>
+              </p>
+            )}
+            <p className="text-[10px] text-muted-foreground/50">
+              Smoothing: <span className="font-mono text-muted-foreground/70">Beta(1,1)</span>
+            </p>
+          </div>
+
           {/* How it works */}
           <div className="border-t border-border/20 pt-3">
             <p className="text-[10px] text-muted-foreground/60 leading-relaxed">
               <span className="font-semibold text-muted-foreground">How it learns:</span>{" "}
-              Each completed decision with a measured outcome trains the calibration model. The engine compares your predicted confidence against actual success rates per 10pp band, computing personalized correction factors. These corrections are applied to future confidence outputs — the system literally gets smarter as you decide.
+              Each completed decision trains the model. The engine compares predicted confidence against actual success rates per band, computes Beta-smoothed correction factors, and feeds them into the epistemic pipeline. Future advisory, simulation, and diagnostic outputs are automatically adjusted — the system literally improves its reliability as you decide.
             </p>
           </div>
         </div>
