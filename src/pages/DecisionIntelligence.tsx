@@ -15,6 +15,7 @@ import RegretMinimization from "@/components/decision-intelligence/RegretMinimiz
 import DecisionVelocity from "@/components/decision-intelligence/DecisionVelocity";
 import CorrelatedPortfolioRisk from "@/components/decision-intelligence/CorrelatedPortfolioRisk";
 import CalibrationCurve from "@/components/decision-intelligence/CalibrationCurve";
+import AdaptiveCalibrationEngine from "@/components/decision-intelligence/AdaptiveCalibrationEngine";
 import ScenarioComparison from "@/components/decision-intelligence/ScenarioComparison";
 import DecisionImpactAttribution from "@/components/decision-intelligence/DecisionImpactAttribution";
 import {
@@ -307,6 +308,9 @@ const DecisionIntelligence = () => {
             </div>
           ) : (
             <div className="space-y-6 max-w-[1400px]">
+              {/* Adaptive Calibration Engine — the ADI layer */}
+              <AdaptiveCalibrationEngine orgId={currentOrgId} decisions={decisions} />
+
               {/* Top row: Fatigue + Velocity + Calibration */}
               <div className="grid lg:grid-cols-3 gap-5">
                 <DecisionFatiguePanel decisions={decisions} />

@@ -89,3 +89,9 @@ verify_jwt = false
 
 [functions.weekly-calibration-digest]
 verify_jwt = false
+
+[functions.adaptive-calibration]
+verify_jwt = false
+
+[functions.cognitive-bias-detect]
+verify_jwt = false
