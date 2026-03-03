@@ -61,6 +61,7 @@ const CounterfactualExplanation = lazy(() => import("./pages/CounterfactualExpla
 const Demo = lazy(() => import("./pages/Demo"));
 const CalibrationAssessment = lazy(() => import("./pages/CalibrationAssessment"));
 const Misses = lazy(() => import("./pages/Misses"));
+const Security = lazy(() => import("./pages/Security"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -105,6 +106,7 @@ const App = () => (
               <Route path="/accept-invite" element={<AcceptInvite />} />
               <Route path="/demo" element={<Demo />} />
               <Route path="/pricing" element={<Pricing />} />
+              <Route path="/security" element={<Security />} />
               <Route path="/calibration" element={<CalibrationAssessment />} />
               <Route path="*" element={<NotFound />} />
 
