@@ -196,8 +196,8 @@ const ProductPreview = () => {
           className="flex flex-wrap justify-center gap-6 mt-10"
         >
           {[
-            "GDPR Compliant",
-            "SOC 2 Infrastructure",
+            "GDPR Ready",
+            "SOC 2–Aligned Controls",
             "256-bit Encryption",
             "Full Audit Trail",
             "99.9% Uptime SLA",

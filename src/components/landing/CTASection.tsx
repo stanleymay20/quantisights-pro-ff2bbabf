@@ -66,7 +66,7 @@ const CTASection = () => {
             </a>
           </div>
 
-          <p className="text-xs text-muted-foreground">14-day free trial · No credit card required · GDPR compliant · SOC 2 infrastructure</p>
+          <p className="text-xs text-muted-foreground"><p className="text-xs text-muted-foreground">14-day free trial · No credit card required · GDPR ready · SOC 2–aligned controls</p></p>
         </motion.div>
       </div>
     </section>
