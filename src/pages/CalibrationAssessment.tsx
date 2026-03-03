@@ -1,7 +1,8 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Brain, ArrowRight, ArrowLeft, Target, TrendingDown, TrendingUp, AlertTriangle, Zap, Share2, BookOpen, LogIn } from "lucide-react";
+import ShareModal from "@/components/calibration/ShareModal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
@@ -197,6 +198,7 @@ const CalibrationAssessment = () => {
   const { user } = useAuth();
   const { currentOrgId: organizationId } = useOrganization();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [step, setStep] = useState<"intro" | "scenario" | "reveal" | "results">("intro");
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -204,6 +206,33 @@ const CalibrationAssessment = () => {
   const [responses, setResponses] = useState<Response[]>([]);
   const [results, setResults] = useState<ReturnType<typeof computeResults>>(null);
   const [saving, setSaving] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+
+  // Decode shared results from URL
+  useEffect(() => {
+    const encoded = searchParams.get("r");
+    if (encoded) {
+      try {
+        const compact = JSON.parse(atob(encoded));
+        const tier = TIERS.find((t) => t.label === compact.t) || TIERS[0];
+        setResults({
+          brierScore: compact.b,
+          calibrationScore: compact.c,
+          overconfidenceScore: compact.o,
+          underconfidenceScore: compact.u,
+          rangeCompression: compact.r,
+          tailNeglect: compact.n,
+          biasMarkers: compact.m || [],
+          tier,
+          downsideReduction: compact.d,
+          responses: [],
+        });
+        setStep("results");
+      } catch {
+        // Invalid encoded data — ignore
+      }
+    }
+  }, [searchParams]);
 
   const scenario = SCENARIOS[currentIndex];
   const progress = ((currentIndex) / SCENARIOS.length) * 100;
@@ -620,15 +649,28 @@ const CalibrationAssessment = () => {
                       <LogIn className="w-4 h-4" /> Save & Track Improvement
                     </Button>
                   )}
-                  <Button className="gap-2" onClick={() => {
-                    navigator.clipboard.writeText(
-                      `My Quantivis Calibration Tier: ${results.tier.label} (${results.calibrationScore}% calibration score). Overconfidence: +${results.overconfidenceScore}pp. Tail Neglect: ${results.tailNeglect}pp. Take yours: ${window.location.origin}/calibration`
-                    );
-                    toast.success("Copied to clipboard");
-                  }}>
-                    <Share2 className="w-4 h-4" /> Share Profile
+                  <Button className="gap-2" onClick={() => setShareOpen(true)}>
+                    <Share2 className="w-4 h-4" /> Share Scorecard
                   </Button>
                 </div>
+
+                {/* Share modal */}
+                <ShareModal
+                  open={shareOpen}
+                  onOpenChange={setShareOpen}
+                  results={{
+                    tierLabel: results.tier.label,
+                    tierColor: results.tier.color,
+                    calibrationScore: results.calibrationScore,
+                    brierScore: results.brierScore,
+                    overconfidenceScore: results.overconfidenceScore,
+                    underconfidenceScore: results.underconfidenceScore,
+                    rangeCompression: results.rangeCompression,
+                    tailNeglect: results.tailNeglect,
+                    biasMarkers: results.biasMarkers,
+                    downsideReduction: results.downsideReduction,
+                  }}
+                />
               </motion.div>
             )}
           </AnimatePresence>
