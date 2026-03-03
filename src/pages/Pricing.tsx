@@ -1,4 +1,4 @@
-import { Fragment } from "react";
+import { Fragment, forwardRef } from "react";
 import { motion } from "framer-motion";
 import { Check, Loader2, Crown, X, Minus } from "lucide-react";
 import { TIERS, TierKey, FEATURE_MATRIX } from "@/lib/stripe-tiers";
@@ -12,11 +12,11 @@ import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
 import ComparisonSection from "@/components/landing/ComparisonSection";
 
-const CellValue = ({ value }: { value: boolean | string }) => {
-  if (value === true) return <Check className="w-4 h-4 text-primary mx-auto" />;
-  if (value === false) return <Minus className="w-4 h-4 text-muted-foreground/30 mx-auto" />;
-  return <span className="text-sm font-medium text-foreground">{value}</span>;
-};
+const CellValue = forwardRef<HTMLSpanElement, { value: boolean | string }>(({ value }, ref) => {
+  if (value === true) return <span ref={ref}><Check className="w-4 h-4 text-primary mx-auto" /></span>;
+  if (value === false) return <span ref={ref}><Minus className="w-4 h-4 text-muted-foreground/30 mx-auto" /></span>;
+  return <span ref={ref} className="text-sm font-medium text-foreground">{value}</span>;
+});
 
 const Pricing = () => {
   const { user } = useAuth();
