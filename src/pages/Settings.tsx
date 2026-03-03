@@ -17,6 +17,7 @@ import {
   User, Building2, Bell, Save, Loader2, Mail, X, ScrollText, Clock, Shield, Trash2, AlertTriangle, ShieldCheck, Sun, Moon, Monitor, Activity,
 } from "lucide-react";
 import MFAEnroll from "@/components/auth/MFAEnroll";
+import SecurityPosture from "@/components/security/SecurityPosture";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -293,7 +294,8 @@ const Settings = () => {
 
               {/* Security */}
               <TabsContent value="security">
-                <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
+                <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+                  <SecurityPosture />
                   <MFAEnroll />
                 </motion.div>
               </TabsContent>
