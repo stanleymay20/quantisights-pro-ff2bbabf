@@ -1,6 +1,6 @@
-import { useState, lazy, Suspense } from "react";
+import { useState, lazy, Suspense, memo, useMemo } from "react";
 import { motion } from "framer-motion";
-import { BarChart3, Sparkles, Plus, ArrowRight } from "lucide-react";
+import { BarChart3, ArrowRight } from "lucide-react";
 import ProtectionStatus from "./ProtectionStatus";
 import DecisionQueue from "./DecisionQueue";
 import QuickDecisionLog from "./QuickDecisionLog";
@@ -8,7 +8,6 @@ import CalibrationProgress from "./CalibrationProgress";
 import KPICards from "./KPICards";
 import type { Insight } from "@/hooks/useInsights";
 
-// Lazy-load analytics panel
 const AnalyticsPanel = lazy(() => import("./AnalyticsPanel"));
 
 interface CommandCenterProps {
@@ -27,7 +26,7 @@ interface CommandCenterProps {
   onDecisionLogged: () => void;
 }
 
-const CommandCenter = ({
+const CommandCenter = memo(({
   organizationId,
   insights,
   hasData,
@@ -44,12 +43,13 @@ const CommandCenter = ({
 }: CommandCenterProps) => {
   const [showAnalytics, setShowAnalytics] = useState(false);
 
-  const criticalInsights = insights.filter(i => i.severity === "high" || i.severity === "medium");
-  const hasAnomalies = criticalInsights.length > 0;
+  const criticalInsights = useMemo(
+    () => insights.filter(i => i.severity === "high" || i.severity === "medium"),
+    [insights]
+  );
 
   return (
     <div className="space-y-6 max-w-[1400px]">
-      {/* Protection Status — THE trust widget */}
       <ProtectionStatus
         organizationId={organizationId}
         calibrationScore={calibrationScore}
@@ -57,7 +57,6 @@ const CommandCenter = ({
         criticalSignals={criticalInsights.length}
       />
 
-      {/* Decision Queue — THE primary interface */}
       <DecisionQueue
         organizationId={organizationId}
         insights={insights}
@@ -67,7 +66,6 @@ const CommandCenter = ({
         calibrationScore={calibrationScore}
       />
 
-      {/* Quick action strip */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <QuickDecisionLog
           organizationId={organizationId}
@@ -76,7 +74,6 @@ const CommandCenter = ({
         <CalibrationProgress organizationId={organizationId} />
       </div>
 
-      {/* KPI Summary — compact */}
       <KPICards
         revenue={revenue}
         customers={totalCustomers}
@@ -84,7 +81,6 @@ const CommandCenter = ({
         churnRate={churnRate}
       />
 
-      {/* Analytics Toggle */}
       <div className="flex items-center justify-center">
         <button
           onClick={() => setShowAnalytics(!showAnalytics)}
@@ -96,7 +92,6 @@ const CommandCenter = ({
         </button>
       </div>
 
-      {/* Charts — hidden by default, shown on demand */}
       {showAnalytics && (
         <Suspense fallback={
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -117,6 +112,8 @@ const CommandCenter = ({
       )}
     </div>
   );
-};
+});
+
+CommandCenter.displayName = "CommandCenter";
 
 export default CommandCenter;

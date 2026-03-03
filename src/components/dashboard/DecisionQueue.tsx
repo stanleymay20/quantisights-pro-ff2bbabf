@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Brain, AlertTriangle, TrendingDown, Clock, Sparkles, CheckCircle2, XCircle, Pencil, Loader2, ShieldCheck, FileCheck, Bell, Crosshair } from "lucide-react";
+import { Brain, AlertTriangle, TrendingDown, Clock, Sparkles, CheckCircle2, XCircle, Pencil, Loader2, ShieldCheck, FileCheck, Bell, Crosshair, Flame, Zap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import type { Insight } from "@/hooks/useInsights";
 
 export interface QueuedDecision {
@@ -19,6 +20,7 @@ export interface QueuedDecision {
   timeframe?: string;
   costOfDelay: string;
   riskIfIgnored: "high" | "medium" | "low";
+  createdAt?: string; // ISO timestamp for time-decay
 }
 
 interface DecisionQueueProps {
@@ -57,45 +59,160 @@ const RISK_STYLES = {
   low: "bg-muted/50 text-muted-foreground",
 };
 
-// Board-defensible confirmation shown after action
+// Time-decay escalation tiers
+type EscalationTier = "fresh" | "aging" | "escalating" | "at_risk";
+
+const ESCALATION_CONFIG: Record<EscalationTier, {
+  label: string;
+  badgeClass: string;
+  icon: typeof Flame;
+}> = {
+  fresh: { label: "", badgeClass: "", icon: Clock },
+  aging: { label: "Aging", badgeClass: "bg-warning/10 text-warning", icon: Clock },
+  escalating: { label: "Escalating", badgeClass: "bg-orange-500/10 text-orange-500", icon: Flame },
+  at_risk: { label: "At Risk", badgeClass: "bg-destructive/10 text-destructive animate-pulse", icon: Flame },
+};
+
+function getEscalationTier(createdAt: string | undefined, urgency: string): EscalationTier {
+  if (!createdAt) return "fresh";
+  const ageHours = (Date.now() - new Date(createdAt).getTime()) / 3_600_000;
+
+  if (urgency === "critical") {
+    if (ageHours > 120) return "at_risk";   // 5 days
+    if (ageHours > 72) return "escalating"; // 3 days
+    if (ageHours > 24) return "aging";      // 1 day
+  } else if (urgency === "high") {
+    if (ageHours > 168) return "at_risk";   // 7 days
+    if (ageHours > 96) return "escalating"; // 4 days
+    if (ageHours > 48) return "aging";      // 2 days
+  } else {
+    if (ageHours > 336) return "at_risk";   // 14 days
+    if (ageHours > 168) return "escalating";// 7 days
+    if (ageHours > 72) return "aging";      // 3 days
+  }
+  return "fresh";
+}
+
+function formatAge(createdAt: string | undefined): string {
+  if (!createdAt) return "";
+  const hours = (Date.now() - new Date(createdAt).getTime()) / 3_600_000;
+  if (hours < 1) return "< 1h ago";
+  if (hours < 24) return `${Math.floor(hours)}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
+
 interface Confirmation {
   decisionTitle: string;
   action: "approved" | "dismissed" | "modified";
 }
 
-const DecisionQueue = ({ organizationId, insights, churnRate, revenue, pendingDecisions, calibrationScore }: DecisionQueueProps) => {
+const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pendingDecisions, calibrationScore }: DecisionQueueProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [decisions, setDecisions] = useState<QueuedDecision[]>([]);
   const [actingOn, setActingOn] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
+  const [focusIndex, setFocusIndex] = useState(0);
+
+  // Keyboard shortcuts
+  const focusedDecision = decisions[focusIndex] ?? null;
+
+  const handleApprove = useCallback(async (decision: QueuedDecision) => {
+    setActingOn(decision.id);
+    try {
+      if (decision.type === "advisory" && decision.sourceId) {
+        await supabase
+          .from("advisory_instances")
+          .update({ status: "in_progress", assigned_to: user?.id })
+          .eq("id", decision.sourceId);
+      }
+      if (decision.type === "signal" && decision.sourceId) {
+        await supabase
+          .from("insights")
+          .update({ is_read: true })
+          .eq("id", decision.sourceId);
+      }
+      await supabase.from("decision_ledger").insert({
+        organization_id: organizationId,
+        recommended_action: decision.recommendedAction,
+        chosen_action: decision.recommendedAction,
+        decided_by: user?.id,
+        decided_at: new Date().toISOString(),
+        decision_status: "approved",
+        confidence_at_decision: decision.confidence ?? 65,
+        decision_type: "strategic",
+      } as any);
+
+      setDecisions(prev => prev.filter(d => d.id !== decision.id));
+      setConfirmation({ decisionTitle: decision.title, action: "approved" });
+    } catch {
+      toast({ title: "Action failed", variant: "destructive" });
+    } finally {
+      setActingOn(null);
+    }
+  }, [organizationId, user?.id, toast]);
+
+  const handleDismiss = useCallback(async (decision: QueuedDecision) => {
+    setActingOn(decision.id);
+    try {
+      if (decision.type === "advisory" && decision.sourceId) {
+        await supabase
+          .from("advisory_instances")
+          .update({ status: "dismissed" })
+          .eq("id", decision.sourceId);
+      }
+      if (decision.type === "signal" && decision.sourceId) {
+        await supabase
+          .from("insights")
+          .update({ is_read: true })
+          .eq("id", decision.sourceId);
+      }
+      setDecisions(prev => prev.filter(d => d.id !== decision.id));
+      setConfirmation({ decisionTitle: decision.title, action: "dismissed" });
+    } catch {
+      toast({ title: "Action failed", variant: "destructive" });
+    } finally {
+      setActingOn(null);
+    }
+  }, [toast]);
+
+  useKeyboardShortcuts({
+    onNext: () => setFocusIndex(i => Math.min(i + 1, decisions.length - 1)),
+    onPrev: () => setFocusIndex(i => Math.max(i - 1, 0)),
+    onApprove: () => { if (focusedDecision && !actingOn) handleApprove(focusedDecision); },
+    onDismiss: () => { if (focusedDecision && !actingOn) handleDismiss(focusedDecision); },
+  }, decisions.length > 0);
 
   useEffect(() => {
     if (!organizationId) return;
     buildQueue();
   }, [organizationId, insights, churnRate, pendingDecisions]);
 
-  // Auto-dismiss confirmation after 4s
   useEffect(() => {
     if (!confirmation) return;
     const timer = setTimeout(() => setConfirmation(null), 4000);
     return () => clearTimeout(timer);
   }, [confirmation]);
 
-  const formatRevenueBand = (pct: number): string => {
+  const formatRevenueBand = useCallback((pct: number): string => {
     const exposure = revenue * (pct / 100);
     if (exposure >= 1_000_000) return `€${(exposure / 1_000_000).toFixed(1)}M`;
     if (exposure >= 1_000) return `€${(exposure / 1_000).toFixed(0)}K`;
     return `€${exposure.toFixed(0)}`;
-  };
+  }, [revenue]);
+
+  const criticalInsights = useMemo(
+    () => insights.filter(i => i.severity === "high"),
+    [insights]
+  );
 
   const buildQueue = async () => {
     setLoading(true);
     const queue: QueuedDecision[] = [];
 
     // 1. Critical signals
-    const criticalInsights = insights.filter(i => i.severity === "high");
     criticalInsights.slice(0, 2).forEach(insight => {
       queue.push({
         id: `signal-${insight.id}`,
@@ -109,13 +226,14 @@ const DecisionQueue = ({ organizationId, insights, churnRate, revenue, pendingDe
         sourceId: insight.id,
         costOfDelay: `Potential ${formatRevenueBand(5)}–${formatRevenueBand(12)} downside exposure if unaddressed within 14 days`,
         riskIfIgnored: "high",
+        createdAt: insight.created_at,
       });
     });
 
     // 2. Open advisories
     const { data: advisories } = await supabase
       .from("advisory_instances")
-      .select("id, title, action, priority, confidence, capped_confidence, category, timeframe, expected_impact")
+      .select("id, title, action, priority, confidence, capped_confidence, category, timeframe, expected_impact, created_at")
       .eq("organization_id", organizationId)
       .in("status", ["open", "in_progress"])
       .order("created_at", { ascending: false })
@@ -140,6 +258,7 @@ const DecisionQueue = ({ organizationId, insights, churnRate, revenue, pendingDe
             ? "Board risk: decision made without audit trail"
             : "Delayed action reduces strategic optionality",
         riskIfIgnored: isHigh ? "high" : "medium",
+        createdAt: adv.created_at,
       });
     });
 
@@ -166,6 +285,7 @@ const DecisionQueue = ({ organizationId, insights, churnRate, revenue, pendingDe
           sourceId: dec.id,
           costOfDelay: `Accuracy impact: closing this outcome improves calibration by ~0.8pp`,
           riskIfIgnored: daysSince > 30 ? "medium" : "low",
+          createdAt: dec.created_at,
         });
       });
     }
@@ -200,71 +320,20 @@ const DecisionQueue = ({ organizationId, insights, churnRate, revenue, pendingDe
       });
     }
 
+    // Sort by escalation tier (most urgent first)
+    const tierOrder: Record<EscalationTier, number> = { at_risk: 0, escalating: 1, aging: 2, fresh: 3 };
+    queue.sort((a, b) => {
+      const tierA = tierOrder[getEscalationTier(a.createdAt, a.urgency)];
+      const tierB = tierOrder[getEscalationTier(b.createdAt, b.urgency)];
+      if (tierA !== tierB) return tierA - tierB;
+      // Then by urgency
+      const urgencyOrder = { critical: 0, high: 1, medium: 2 };
+      return urgencyOrder[a.urgency] - urgencyOrder[b.urgency];
+    });
+
     setDecisions(queue.slice(0, 5));
+    setFocusIndex(0);
     setLoading(false);
-  };
-
-  const showBoardConfirmation = (title: string, action: Confirmation["action"]) => {
-    setConfirmation({ decisionTitle: title, action });
-  };
-
-  const handleApprove = async (decision: QueuedDecision) => {
-    setActingOn(decision.id);
-    try {
-      if (decision.type === "advisory" && decision.sourceId) {
-        await supabase
-          .from("advisory_instances")
-          .update({ status: "in_progress", assigned_to: user?.id })
-          .eq("id", decision.sourceId);
-      }
-      if (decision.type === "signal" && decision.sourceId) {
-        await supabase
-          .from("insights")
-          .update({ is_read: true })
-          .eq("id", decision.sourceId);
-      }
-      await supabase.from("decision_ledger").insert({
-        organization_id: organizationId,
-        recommended_action: decision.recommendedAction,
-        chosen_action: decision.recommendedAction,
-        decided_by: user?.id,
-        decided_at: new Date().toISOString(),
-        decision_status: "approved",
-        confidence_at_decision: decision.confidence ?? 65,
-        decision_type: "strategic",
-      } as any);
-
-      setDecisions(prev => prev.filter(d => d.id !== decision.id));
-      showBoardConfirmation(decision.title, "approved");
-    } catch {
-      toast({ title: "Action failed", variant: "destructive" });
-    } finally {
-      setActingOn(null);
-    }
-  };
-
-  const handleDismiss = async (decision: QueuedDecision) => {
-    setActingOn(decision.id);
-    try {
-      if (decision.type === "advisory" && decision.sourceId) {
-        await supabase
-          .from("advisory_instances")
-          .update({ status: "dismissed" })
-          .eq("id", decision.sourceId);
-      }
-      if (decision.type === "signal" && decision.sourceId) {
-        await supabase
-          .from("insights")
-          .update({ is_read: true })
-          .eq("id", decision.sourceId);
-      }
-      setDecisions(prev => prev.filter(d => d.id !== decision.id));
-      showBoardConfirmation(decision.title, "dismissed");
-    } catch {
-      toast({ title: "Action failed", variant: "destructive" });
-    } finally {
-      setActingOn(null);
-    }
   };
 
   if (loading) {
@@ -344,8 +413,14 @@ const DecisionQueue = ({ organizationId, insights, churnRate, revenue, pendingDe
                 {decisions.length}
               </span>
             </div>
-            <span className="text-[11px] text-muted-foreground">
-              AI-prioritized • Most urgent first
+            <span className="text-[11px] text-muted-foreground hidden sm:inline">
+              <kbd className="px-1.5 py-0.5 rounded border border-border/50 text-[9px] font-mono mr-1">J</kbd>
+              <kbd className="px-1.5 py-0.5 rounded border border-border/50 text-[9px] font-mono mr-1">K</kbd>
+              navigate · 
+              <kbd className="px-1.5 py-0.5 rounded border border-border/50 text-[9px] font-mono mx-1">A</kbd>
+              approve · 
+              <kbd className="px-1.5 py-0.5 rounded border border-border/50 text-[9px] font-mono mx-1">D</kbd>
+              dismiss
             </span>
           </div>
 
@@ -354,6 +429,10 @@ const DecisionQueue = ({ organizationId, insights, churnRate, revenue, pendingDe
               const style = URGENCY_STYLES[decision.urgency];
               const Icon = style.icon;
               const isActing = actingOn === decision.id;
+              const isFocused = focusIndex === index;
+              const escalation = getEscalationTier(decision.createdAt, decision.urgency);
+              const escConfig = ESCALATION_CONFIG[escalation];
+              const age = formatAge(decision.createdAt);
 
               return (
                 <motion.div
@@ -363,7 +442,10 @@ const DecisionQueue = ({ organizationId, insights, churnRate, revenue, pendingDe
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, x: -100, height: 0 }}
                   transition={{ delay: index * 0.05 }}
-                  className={`rounded-xl border ${style.border} ${style.bg} p-4 transition-all hover:shadow-lg hover:shadow-primary/5`}
+                  className={`rounded-xl border ${style.border} ${style.bg} p-4 transition-all hover:shadow-lg hover:shadow-primary/5 ${
+                    isFocused ? "ring-2 ring-primary/40 ring-offset-1 ring-offset-background" : ""
+                  }`}
+                  onClick={() => setFocusIndex(index)}
                 >
                   <div className="flex items-start gap-3">
                     {/* Left: Icon + Urgency */}
@@ -378,10 +460,19 @@ const DecisionQueue = ({ organizationId, insights, churnRate, revenue, pendingDe
 
                     {/* Middle: Content */}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold leading-tight mb-1">{decision.title}</p>
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <p className="text-sm font-semibold leading-tight">{decision.title}</p>
+                        {/* Escalation badge */}
+                        {escalation !== "fresh" && (
+                          <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded flex items-center gap-1 ${escConfig.badgeClass}`}>
+                            <escConfig.icon className="w-2.5 h-2.5" />
+                            {escConfig.label}
+                          </span>
+                        )}
+                      </div>
                       <p className="text-xs text-muted-foreground leading-relaxed mb-2">{decision.context}</p>
 
-                      {/* Cost of Delay — THE emotional trigger */}
+                      {/* Cost of Delay */}
                       <div className="flex items-start gap-2 mb-2.5 p-2 rounded-lg bg-background/80 border border-border/20">
                         <AlertTriangle className={`w-3 h-3 mt-0.5 shrink-0 ${
                           decision.riskIfIgnored === "high" ? "text-destructive" :
@@ -412,6 +503,11 @@ const DecisionQueue = ({ organizationId, insights, churnRate, revenue, pendingDe
                         {decision.timeframe && (
                           <span className="text-[10px] bg-muted/50 text-muted-foreground px-2 py-0.5 rounded flex items-center gap-1">
                             <Clock className="w-2.5 h-2.5" /> {decision.timeframe}
+                          </span>
+                        )}
+                        {age && (
+                          <span className="text-[10px] bg-muted/50 text-muted-foreground px-2 py-0.5 rounded flex items-center gap-1">
+                            <Clock className="w-2.5 h-2.5" /> {age}
                           </span>
                         )}
                       </div>
@@ -460,6 +556,8 @@ const DecisionQueue = ({ organizationId, insights, churnRate, revenue, pendingDe
       )}
     </div>
   );
-};
+});
+
+DecisionQueue.displayName = "DecisionQueue";
 
 export default DecisionQueue;
