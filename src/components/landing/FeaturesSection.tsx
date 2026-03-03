@@ -106,7 +106,7 @@ const FeaturesSection = () => {
             className="text-center mb-14"
           >
             <p className="text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-3">How It Works</p>
-            <h2 className="text-4xl font-bold font-display mb-4">
+            <h2 className="text-3xl sm:text-4xl font-bold font-display mb-4">
               Log. Calibrate. <span className="gradient-text">Improve.</span>
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
@@ -147,13 +147,13 @@ const FeaturesSection = () => {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="glass-card-elevated p-10 md:p-14 text-center"
+            className="glass-card-elevated p-5 sm:p-10 md:p-14 text-center"
           >
             <p className="text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-3">Why This Is Different</p>
-            <h2 className="text-3xl md:text-4xl font-bold font-display mb-4">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold font-display mb-4">
               Three Capabilities <span className="gradient-text">No One Else Has</span>
             </h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto mb-10">
+            <p className="text-muted-foreground text-sm sm:text-base max-w-2xl mx-auto mb-8 sm:mb-10">
               Most platforms show you what happened. Quantivis measures how wrong you were — and makes you less wrong next time.
             </p>
             <div className="grid md:grid-cols-3 gap-6">
@@ -195,7 +195,7 @@ const FeaturesSection = () => {
             className="text-center mb-14"
           >
             <p className="text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-3">Full Platform</p>
-            <h2 className="text-4xl font-bold font-display mb-4">
+            <h2 className="text-3xl sm:text-4xl font-bold font-display mb-4">
               Everything You Need to <span className="gradient-text">Decide with Confidence</span>
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">

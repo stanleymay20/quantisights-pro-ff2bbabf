@@ -49,7 +49,7 @@ const TestimonialSection = () => {
           className="text-center mb-14"
         >
           <p className="text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-3">From Our Customers</p>
-          <h2 className="text-4xl font-bold font-display mb-4">
+          <h2 className="text-3xl sm:text-4xl font-bold font-display mb-4">
             Leaders Who Stopped <span className="gradient-text">Guessing</span>
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">

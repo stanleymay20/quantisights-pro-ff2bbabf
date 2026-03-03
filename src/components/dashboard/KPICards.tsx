@@ -82,13 +82,13 @@ const KPICards = ({ revenue, customers, costRate, churnRate }: KPICardsProps) =>
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 stagger-children">
+    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 stagger-children">
       {kpis.map((kpi) => {
         const TrendIcon = kpi.trend === "up" ? TrendingUp : kpi.trend === "down" ? TrendingDown : null;
         return (
           <div
             key={kpi.label}
-            className={`${kpi.variant} glass-card p-5 rounded-xl group hover:shadow-lg hover:shadow-primary/5 transition-all duration-300`}
+            className={`${kpi.variant} glass-card p-3.5 sm:p-5 rounded-xl group hover:shadow-lg hover:shadow-primary/5 transition-all duration-300`}
           >
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{kpi.label}</span>
@@ -99,7 +99,7 @@ const KPICards = ({ revenue, customers, costRate, churnRate }: KPICardsProps) =>
                 <kpi.icon className={`w-4 h-4 ${kpi.color} opacity-60`} />
               </div>
             </div>
-            <p className="text-2xl font-bold font-display tracking-tight">
+            <p className="text-xl sm:text-2xl font-bold font-display tracking-tight">
               {kpi.suffix ? (
                 <>{kpi.value}{kpi.suffix}</>
               ) : (
