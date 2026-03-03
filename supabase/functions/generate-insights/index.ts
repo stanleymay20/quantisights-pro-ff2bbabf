@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { capConfidence, computeVariance } from "../_shared/confidence-cap.ts";
+import { capConfidence, computeVariance, fetchCalibrationModel } from "../_shared/confidence-cap.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -79,6 +79,13 @@ serve(async (req) => {
       });
     }
 
+    // Fetch calibration model for adaptive corrections
+    const calModel = await fetchCalibrationModel(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+      organization_id
+    );
+
     const insights: {
       message: string; severity: string; category: string;
       raw_confidence: number; capped_confidence: number;
@@ -113,7 +120,7 @@ serve(async (req) => {
       }
 
       if (msg) {
-        const cap = capConfidence(rawConf, revenueMetrics.length, varianceScore);
+        const cap = capConfidence(rawConf, revenueMetrics.length, varianceScore, calModel);
         insights.push({
           message: msg, severity: sev, category: "revenue",
           raw_confidence: cap.raw_confidence, capped_confidence: cap.capped_confidence,
@@ -142,7 +149,7 @@ serve(async (req) => {
       }
 
       if (msg) {
-        const cap = capConfidence(rawConf, churnMetrics.length, varianceScore);
+        const cap = capConfidence(rawConf, churnMetrics.length, varianceScore, calModel);
         insights.push({
           message: msg, severity: sev, category: "churn",
           raw_confidence: cap.raw_confidence, capped_confidence: cap.capped_confidence,
@@ -160,7 +167,7 @@ serve(async (req) => {
       const previous = values[values.length - 2];
       const costChange = ((recent - previous) / previous) * 100;
       if (costChange > 15) {
-        const cap = capConfidence(75, costMetrics.length, computeVariance(values));
+        const cap = capConfidence(75, costMetrics.length, computeVariance(values), calModel);
         insights.push({
           message: `Cost increased ${costChange.toFixed(1)}% period-over-period. Evaluate cost-saving opportunities.`,
           severity: "medium", category: "cost",
@@ -181,7 +188,7 @@ serve(async (req) => {
         const last = values[values.length - 1];
         const regionChange = ((last - first) / first) * 100;
         if (regionChange < -15) {
-          const cap = capConfidence(80, regionData.length, computeVariance(values));
+          const cap = capConfidence(80, regionData.length, computeVariance(values), calModel);
           insights.push({
             message: `Revenue in ${region} dropped ${Math.abs(regionChange).toFixed(1)}%. Investigate regional market conditions.`,
             severity: "high", category: "regional",
@@ -194,7 +201,7 @@ serve(async (req) => {
     }
 
     if (insights.length === 0) {
-      const cap = capConfidence(90, metrics.length);
+      const cap = capConfidence(90, metrics.length, undefined, calModel);
       insights.push({
         message: "All metrics within normal ranges. Continue monitoring for changes.",
         severity: "info", category: "general",

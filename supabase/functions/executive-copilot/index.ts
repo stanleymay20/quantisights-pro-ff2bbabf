@@ -163,8 +163,8 @@ serve(async (req) => {
       content: message,
     });
 
-    // Fetch context data in parallel
-    const [riskResult, alertsResult, kpisResult, briefsResult, historyResult] = await Promise.all([
+    // Fetch context data in parallel (including calibration model)
+    const [riskResult, alertsResult, kpisResult, briefsResult, historyResult, calibrationResult] = await Promise.all([
       serviceClient
         .from("executive_risk_index")
         .select("score, components, last_updated, escalation_required, escalation_reason")
@@ -198,6 +198,12 @@ serve(async (req) => {
         .eq("session_id", currentSessionId)
         .order("created_at", { ascending: true })
         .limit(20),
+      serviceClient
+        .from("calibration_models")
+        .select("overall_calibration_score, overall_bias_direction, mean_absolute_error, band_corrections, model_version")
+        .eq("organization_id", organization_id)
+        .order("computed_at", { ascending: false })
+        .limit(1),
     ]);
 
     // Build context
@@ -237,6 +243,12 @@ serve(async (req) => {
     if (briefsResult.data && briefsResult.data.length > 0) {
       const latest = briefsResult.data[0] as any;
       contextParts.push(`LATEST BRIEF (${latest.generated_at}): Risk score ${latest.risk_score}. Summary: ${JSON.stringify(latest.summary_json).slice(0, 500)}`);
+    }
+
+    // Adaptive Calibration context
+    if (calibrationResult.data && calibrationResult.data.length > 0) {
+      const cal = calibrationResult.data[0] as any;
+      contextParts.push(`ADAPTIVE CALIBRATION (v${cal.model_version}): Score ${cal.overall_calibration_score}/100, Bias: ${cal.overall_bias_direction}, MAE: ${cal.mean_absolute_error}pp. When stating confidence levels, apply these learned corrections: ${JSON.stringify(cal.band_corrections)}`);
     }
 
     contextParts.push(`ROLE: ${role_type.toUpperCase()}`);

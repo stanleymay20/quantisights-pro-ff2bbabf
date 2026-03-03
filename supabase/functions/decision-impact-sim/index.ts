@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { capConfidence, computeVariance } from "../_shared/confidence-cap.ts";
+import { capConfidence, computeVariance, fetchCalibrationModel } from "../_shared/confidence-cap.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -183,7 +183,8 @@ serve(async (req) => {
     }
 
     const adjustedRawConf = Math.max(20, Math.min(95, rawConf + learningAdjustment));
-    const conf = capConfidence(adjustedRawConf, sampleSize, varianceScore);
+    const calibrationModel = await fetchCalibrationModel(supabaseUrl, serviceKey, organization_id);
+    const conf = capConfidence(adjustedRawConf, sampleSize, varianceScore, calibrationModel);
 
     const result = {
       organization_id,

@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { capConfidence, computeVariance, dataSufficiencyRating } from "../_shared/confidence-cap.ts";
+import { capConfidence, computeVariance, dataSufficiencyRating, fetchCalibrationModel } from "../_shared/confidence-cap.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -144,10 +144,11 @@ serve(async (req) => {
     const probNegative = finalValues.filter((v) => v < lastValue).length / finalValues.length;
     const var95 = lastValue - percentile(finalValues, 0.05);
 
-    // Confidence based on sample size and variance
+    // Confidence based on sample size and variance + adaptive calibration
     const varianceScore = computeVariance(values);
     const rawConf = Math.max(30, Math.min(95, 90 - varianceScore * 0.5));
-    const conf = capConfidence(rawConf, sampleSize, varianceScore);
+    const calibrationModel = await fetchCalibrationModel(supabaseUrl, serviceKey, organization_id);
+    const conf = capConfidence(rawConf, sampleSize, varianceScore, calibrationModel);
 
     const result = {
       organization_id,

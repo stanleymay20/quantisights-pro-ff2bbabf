@@ -321,6 +321,14 @@ No markdown, no code fences, no text outside JSON.`,
       }
     }
 
+    // Fetch calibration model for context
+    const { data: calModel } = await serviceClient
+      .from("calibration_models")
+      .select("overall_calibration_score, overall_bias_direction, model_version")
+      .eq("organization_id", organization_id)
+      .order("computed_at", { ascending: false })
+      .limit(1);
+
     const result = {
       baseline_risk: baselineRisk,
       baseline_components: baselineComponents,
@@ -332,6 +340,11 @@ No markdown, no code fences, no text outside JSON.`,
       ai_board_summary: aiBoardSummary,
       ai_recommended_actions: aiRecommendedActions,
       scenario_parameters: params,
+      calibration_context: calModel?.[0] ? {
+        score: calModel[0].overall_calibration_score,
+        bias: calModel[0].overall_bias_direction,
+        model_version: calModel[0].model_version,
+      } : null,
     };
 
     return new Response(JSON.stringify(result), {
