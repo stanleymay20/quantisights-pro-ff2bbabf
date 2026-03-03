@@ -447,86 +447,87 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
                   }`}
                   onClick={() => setFocusIndex(index)}
                 >
-                  <div className="flex items-start gap-3">
-                    {/* Left: Icon + Urgency */}
-                    <div className="flex flex-col items-center gap-1.5 pt-0.5 shrink-0">
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${style.badge}`}>
-                        <Icon className="w-4 h-4" />
+                  <div className="flex flex-col sm:flex-row items-start gap-3">
+                    <div className="flex items-start gap-3 flex-1 min-w-0">
+                      {/* Left: Icon + Urgency */}
+                      <div className="flex flex-col items-center gap-1.5 pt-0.5 shrink-0">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${style.badge}`}>
+                          <Icon className="w-4 h-4" />
+                        </div>
+                        <span className={`text-[9px] font-bold uppercase tracking-widest ${style.badge} px-1.5 py-0.5 rounded`}>
+                          {decision.urgency}
+                        </span>
                       </div>
-                      <span className={`text-[9px] font-bold uppercase tracking-widest ${style.badge} px-1.5 py-0.5 rounded`}>
-                        {decision.urgency}
-                      </span>
-                    </div>
 
-                    {/* Middle: Content */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <p className="text-sm font-semibold leading-tight">{decision.title}</p>
-                        {/* Escalation badge */}
-                        {escalation !== "fresh" && (
-                          <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded flex items-center gap-1 ${escConfig.badgeClass}`}>
-                            <escConfig.icon className="w-2.5 h-2.5" />
-                            {escConfig.label}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-muted-foreground leading-relaxed mb-2">{decision.context}</p>
+                      {/* Middle: Content */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          <p className="text-sm font-semibold leading-tight">{decision.title}</p>
+                          {escalation !== "fresh" && (
+                            <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded flex items-center gap-1 ${escConfig.badgeClass}`}>
+                              <escConfig.icon className="w-2.5 h-2.5" />
+                              {escConfig.label}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground leading-relaxed mb-2">{decision.context}</p>
 
-                      {/* Cost of Delay */}
-                      <div className="flex items-start gap-2 mb-2.5 p-2 rounded-lg bg-background/80 border border-border/20">
-                        <AlertTriangle className={`w-3 h-3 mt-0.5 shrink-0 ${
-                          decision.riskIfIgnored === "high" ? "text-destructive" :
-                          decision.riskIfIgnored === "medium" ? "text-warning" : "text-muted-foreground"
-                        }`} />
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-1.5 mb-0.5">
-                            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                              Cost of Delay
-                            </span>
-                            <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${RISK_STYLES[decision.riskIfIgnored]}`}>
-                              {decision.riskIfIgnored}
-                            </span>
+                        {/* Cost of Delay */}
+                        <div className="flex items-start gap-2 mb-2.5 p-2 rounded-lg bg-background/80 border border-border/20">
+                          <AlertTriangle className={`w-3 h-3 mt-0.5 shrink-0 ${
+                            decision.riskIfIgnored === "high" ? "text-destructive" :
+                            decision.riskIfIgnored === "medium" ? "text-warning" : "text-muted-foreground"
+                          }`} />
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5 mb-0.5">
+                              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                                Cost of Delay
+                              </span>
+                              <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${RISK_STYLES[decision.riskIfIgnored]}`}>
+                                {decision.riskIfIgnored}
+                              </span>
+                            </div>
+                            <p className="text-[11px] leading-relaxed text-foreground/80">{decision.costOfDelay}</p>
                           </div>
-                          <p className="text-[11px] leading-relaxed text-foreground/80">{decision.costOfDelay}</p>
+                        </div>
+
+                        <div className="flex items-center gap-2 flex-wrap mb-3">
+                          <span className="text-[10px] bg-muted/50 text-muted-foreground px-2 py-0.5 rounded">
+                            {decision.source}
+                          </span>
+                          {decision.confidence != null && (
+                            <span className="text-[10px] bg-muted/50 text-muted-foreground px-2 py-0.5 rounded">
+                              {decision.confidence}% confidence
+                            </span>
+                          )}
+                          {decision.timeframe && (
+                            <span className="text-[10px] bg-muted/50 text-muted-foreground px-2 py-0.5 rounded flex items-center gap-1">
+                              <Clock className="w-2.5 h-2.5" /> {decision.timeframe}
+                            </span>
+                          )}
+                          {age && (
+                            <span className="text-[10px] bg-muted/50 text-muted-foreground px-2 py-0.5 rounded flex items-center gap-1">
+                              <Clock className="w-2.5 h-2.5" /> {age}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Recommended Action */}
+                        <div className="p-2.5 rounded-lg bg-background/60 border border-border/30">
+                          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+                            AI Recommendation
+                          </p>
+                          <p className="text-xs font-medium">{decision.recommendedAction}</p>
                         </div>
                       </div>
-
-                      <div className="flex items-center gap-2 flex-wrap mb-3">
-                        <span className="text-[10px] bg-muted/50 text-muted-foreground px-2 py-0.5 rounded">
-                          {decision.source}
-                        </span>
-                        {decision.confidence != null && (
-                          <span className="text-[10px] bg-muted/50 text-muted-foreground px-2 py-0.5 rounded">
-                            {decision.confidence}% confidence
-                          </span>
-                        )}
-                        {decision.timeframe && (
-                          <span className="text-[10px] bg-muted/50 text-muted-foreground px-2 py-0.5 rounded flex items-center gap-1">
-                            <Clock className="w-2.5 h-2.5" /> {decision.timeframe}
-                          </span>
-                        )}
-                        {age && (
-                          <span className="text-[10px] bg-muted/50 text-muted-foreground px-2 py-0.5 rounded flex items-center gap-1">
-                            <Clock className="w-2.5 h-2.5" /> {age}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Recommended Action */}
-                      <div className="p-2.5 rounded-lg bg-background/60 border border-border/30">
-                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
-                          AI Recommendation
-                        </p>
-                        <p className="text-xs font-medium">{decision.recommendedAction}</p>
-                      </div>
                     </div>
 
-                    {/* Right: Action Buttons */}
-                    <div className="flex flex-col gap-1.5 shrink-0">
+                    {/* Action Buttons - row on mobile, column on desktop */}
+                    <div className="flex sm:flex-col gap-1.5 shrink-0 w-full sm:w-auto">
                       <button
                         onClick={() => handleApprove(decision)}
                         disabled={isActing}
-                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
+                        className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
                       >
                         {isActing ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
                         Approve
@@ -534,14 +535,14 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
                       <button
                         onClick={() => handleDismiss(decision)}
                         disabled={isActing}
-                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border/50 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors disabled:opacity-50"
+                        className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-border/50 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors disabled:opacity-50"
                       >
                         <XCircle className="w-3 h-3" />
                         Dismiss
                       </button>
                       <button
                         disabled={isActing}
-                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors disabled:opacity-50"
+                        className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors disabled:opacity-50"
                       >
                         <Pencil className="w-3 h-3" />
                         Modify

@@ -146,20 +146,20 @@ const ProtectionStatus = memo(({ organizationId, calibrationScore, pendingDecisi
       animate={{ opacity: 1, y: 0 }}
       className={`rounded-xl border ${config.containerClass} p-4 md:p-5`}
     >
-      <div className="flex items-start justify-between gap-4 mb-4">
-        <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${config.badgeClass}`}>
+      <div className="flex items-start gap-3 mb-4">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${config.badgeClass}`}>
             <LevelIcon className="w-5 h-5" />
           </div>
-          <div>
-            <div className="flex items-center gap-2">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
               <h2 className="text-sm font-semibold">Decision Protection</h2>
               <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${config.badgeClass} flex items-center gap-1.5`}>
                 <span className={`w-1.5 h-1.5 rounded-full ${config.dotClass} animate-pulse`} />
                 {config.label}
               </span>
             </div>
-            <p className="text-xs text-muted-foreground mt-0.5">{config.description}</p>
+            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2 sm:line-clamp-none">{config.description}</p>
           </div>
         </div>
       </div>

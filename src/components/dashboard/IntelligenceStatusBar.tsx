@@ -39,39 +39,39 @@ const IntelligenceStatusBar = ({ hasData, insights, openAdvisories = 0, riskLeve
   const statusColor = signals === 0 ? "text-emerald-400" : signals <= 2 ? "text-warning" : "text-destructive";
 
   return (
-    <div className="h-9 border-b border-border/30 bg-card/40 backdrop-blur-sm flex items-center px-8 gap-6 shrink-0">
+    <div className="h-9 border-b border-border/30 bg-card/40 backdrop-blur-sm flex items-center px-3 md:px-8 gap-3 md:gap-6 shrink-0 overflow-x-auto scrollbar-hide">
       {/* System status */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 shrink-0">
         <div className={`w-1.5 h-1.5 rounded-full ${signals === 0 ? "bg-emerald-400" : signals <= 2 ? "bg-warning" : "bg-destructive"}`} />
         <span className={`text-[11px] font-semibold uppercase tracking-wider ${statusColor}`}>
           {systemStatus}
         </span>
       </div>
 
-      <span className="w-px h-3.5 bg-border/50" />
+      <span className="w-px h-3.5 bg-border/50 shrink-0" />
 
       {/* Risk level */}
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1.5 shrink-0">
         <Shield className={`w-3 h-3 ${riskStyle.color}`} />
-        <span className="text-[11px] text-muted-foreground">Risk:</span>
+        <span className="text-[11px] text-muted-foreground hidden sm:inline">Risk:</span>
         <span className={`text-[11px] font-semibold ${riskStyle.color}`}>{riskStyle.label}</span>
       </div>
 
-      <span className="w-px h-3.5 bg-border/50" />
+      <span className="w-px h-3.5 bg-border/50 shrink-0" />
 
       {/* Signals */}
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1.5 shrink-0">
         <AlertTriangle className="w-3 h-3 text-muted-foreground" />
-        <span className="text-[11px] text-muted-foreground">Signals:</span>
+        <span className="text-[11px] text-muted-foreground hidden sm:inline">Signals:</span>
         <span className={`text-[11px] font-semibold ${signals > 0 ? "text-warning" : "text-muted-foreground"}`}>
           {signals}
         </span>
       </div>
 
-      <span className="w-px h-3.5 bg-border/50" />
+      <span className="w-px h-3.5 bg-border/50 shrink-0 hidden sm:block" />
 
-      {/* Open advisories */}
-      <div className="flex items-center gap-1.5">
+      {/* Open advisories - hidden on mobile */}
+      <div className="hidden sm:flex items-center gap-1.5 shrink-0">
         <Lightbulb className="w-3 h-3 text-muted-foreground" />
         <span className="text-[11px] text-muted-foreground">Advisories:</span>
         <span className={`text-[11px] font-semibold ${openAdvisories > 0 ? "text-primary" : "text-muted-foreground"}`}>
@@ -79,10 +79,10 @@ const IntelligenceStatusBar = ({ hasData, insights, openAdvisories = 0, riskLeve
         </span>
       </div>
 
-      <span className="w-px h-3.5 bg-border/50" />
+      <span className="w-px h-3.5 bg-border/50 shrink-0 hidden sm:block" />
 
-      {/* Insights */}
-      <div className="flex items-center gap-1.5">
+      {/* Insights - hidden on mobile */}
+      <div className="hidden sm:flex items-center gap-1.5 shrink-0">
         <Activity className="w-3 h-3 text-muted-foreground" />
         <span className="text-[11px] text-muted-foreground">Insights:</span>
         <span className="text-[11px] font-semibold text-muted-foreground">{infoCount}</span>
@@ -91,8 +91,8 @@ const IntelligenceStatusBar = ({ hasData, insights, openAdvisories = 0, riskLeve
       {/* Data Freshness */}
       {lastUpdated && (
         <>
-          <span className="w-px h-3.5 bg-border/50" />
-          <div className="flex items-center gap-1.5 ml-auto">
+          <span className="w-px h-3.5 bg-border/50 shrink-0 hidden md:block" />
+          <div className="hidden md:flex items-center gap-1.5 ml-auto shrink-0">
             <Clock className="w-3 h-3 text-muted-foreground" />
             <span className="text-[11px] text-muted-foreground">
               Data updated: {formatFreshness(lastUpdated)}
