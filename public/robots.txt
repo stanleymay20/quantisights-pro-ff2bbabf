@@ -13,4 +13,4 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://quantisights-pro.lovable.app/sitemap.xml
+Sitemap: https://www.quantivis.io/sitemap.xml
