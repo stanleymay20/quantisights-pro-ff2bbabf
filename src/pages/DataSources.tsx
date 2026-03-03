@@ -51,6 +51,64 @@ const SOURCE_TYPES: { value: SourceType; label: string; icon: typeof Database; d
   { value: "database", label: "Database", icon: Database, description: "Postgres, MySQL, BigQuery", tierRequired: "enterprise" },
 ];
 
+const SyncButton = ({ source, organizationId, onComplete }: { source: DataSource; organizationId: string; onComplete: () => void }) => {
+  const [syncing, setSyncing] = useState(false);
+  const [result, setResult] = useState<{ records: number; errors: string[] } | null>(null);
+  const { toast } = useToast();
+
+  const handleSync = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSyncing(true);
+    setResult(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("connector-pull", {
+        body: {
+          connector_type: (source.config as any)?.connector_type || "stripe",
+          data_source_id: source.id,
+          organization_id: organizationId,
+        },
+      });
+      if (error) throw error;
+      const syncResult = { records: data?.records || 0, errors: data?.errors || [] };
+      setResult(syncResult);
+      toast({
+        title: syncResult.errors.length > 0 && syncResult.records === 0
+          ? "Sync failed"
+          : `Synced ${syncResult.records} records`,
+        description: syncResult.errors.length > 0 ? syncResult.errors[0] : undefined,
+        variant: syncResult.errors.length > 0 && syncResult.records === 0 ? "destructive" : "default",
+      });
+      onComplete();
+    } catch (err: any) {
+      setResult({ records: 0, errors: [err.message] });
+      toast({ title: "Sync failed", description: err.message, variant: "destructive" });
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  return (
+    <div className="mt-3 pt-3 border-t border-border">
+      <button
+        onClick={handleSync}
+        disabled={syncing}
+        className="flex items-center gap-1.5 text-xs text-primary font-semibold hover:underline disabled:opacity-50"
+      >
+        {syncing ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Play className="w-3 h-3" />}
+        {syncing ? "Syncing..." : "Pull Data Now"}
+      </button>
+      {result && !syncing && (
+        <div className={`mt-2 text-xs flex items-center gap-1.5 ${result.errors.length > 0 && result.records === 0 ? "text-destructive" : "text-success"}`}>
+          {result.errors.length > 0 && result.records === 0
+            ? <><XCircle className="w-3 h-3" /> {result.errors[0]}</>
+            : <><CheckCircle2 className="w-3 h-3" /> {result.records} metrics synced{result.errors.length > 0 ? ` (${result.errors.length} warnings)` : ""}</>
+          }
+        </div>
+      )}
+    </div>
+  );
+};
+
 const DataSources = () => {
   const { user } = useAuth();
   const { currentOrgId } = useOrganization();
@@ -348,32 +406,14 @@ const DataSources = () => {
                       )}
 
                       {src.source_type === "api" && (
-                        <div className="mt-3 pt-3 border-t border-border">
-                          <button
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              toast({ title: "Pulling data..." });
-                              try {
-                                const { data, error } = await supabase.functions.invoke("connector-pull", {
-                                  body: {
-                                    connector_type: (src.config as any)?.connector_type || "stripe",
-                                    data_source_id: src.id,
-                                    organization_id: currentOrgId,
-                                  },
-                                });
-                                if (error) throw error;
-                                toast({ title: `Synced ${data?.records || 0} records` });
-                                fetchSources();
-                                if (selectedSource === src.id) fetchJobs(src.id);
-                              } catch (err: any) {
-                                toast({ title: "Sync failed", description: err.message, variant: "destructive" });
-                              }
-                            }}
-                            className="flex items-center gap-1.5 text-xs text-primary font-semibold hover:underline"
-                          >
-                            <Play className="w-3 h-3" /> Pull Data Now
-                          </button>
-                        </div>
+                        <SyncButton
+                          source={src}
+                          organizationId={currentOrgId!}
+                          onComplete={() => {
+                            fetchSources();
+                            if (selectedSource === src.id) fetchJobs(src.id);
+                          }}
+                        />
                       )}
 
                       {src.last_synced_at && (
