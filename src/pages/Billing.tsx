@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, Fragment } from "react";
 import { motion } from "framer-motion";
 import DashboardSidebar, { SidebarMobileToggle } from "@/components/dashboard/DashboardSidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -284,8 +284,8 @@ const Billing = () => {
                     </thead>
                     <tbody>
                       {FEATURE_MATRIX.map((group) => (
-                        <>
-                          <tr key={group.category}>
+                        <Fragment key={group.category}>
+                          <tr>
                             <td colSpan={4} className="py-2.5 pr-4 text-xs uppercase tracking-widest text-primary font-semibold bg-primary/[0.03] border-b border-border/50">
                               {group.category}
                             </td>
@@ -303,7 +303,7 @@ const Billing = () => {
                               })}
                             </tr>
                           ))}
-                        </>
+                        </Fragment>
                       ))}
                     </tbody>
                   </table>

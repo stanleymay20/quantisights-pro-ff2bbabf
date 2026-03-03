@@ -1,10 +1,11 @@
+import { forwardRef } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { ArrowRight, Mail, Phone, Linkedin } from "lucide-react";
 
-const CTASection = () => {
+const CTASection = forwardRef<HTMLElement>((_, ref) => {
   return (
-    <section id="contact" className="py-24 relative">
+    <section ref={ref} id="contact" className="py-24 relative">
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[300px] bg-primary/5 rounded-full blur-[120px]" />
       </div>
@@ -71,6 +72,8 @@ const CTASection = () => {
       </div>
     </section>
   );
-};
+});
+
+CTASection.displayName = "CTASection";
 
 export default CTASection;
