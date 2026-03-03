@@ -40,8 +40,8 @@ const SECTIONS: { title: string; icon: React.ElementType; items: QAItem[] }[] = 
     icon: KeyRound,
     items: [
       { id: "AC-1", question: "What authentication mechanisms are supported?", answer: "Email/password authentication with mandatory password strength validation (including HaveIBeenPwned breach database checking). JWT-based session management with automatic token refresh. No anonymous sign-ups are permitted." },
-      { id: "AC-2", question: "Is multi-factor authentication (MFA) supported and enforced?", answer: "Yes. MFA is enforced at the route level using AAL2 (Authenticator Assurance Level 2). Users must complete a TOTP-based second-factor challenge to access protected pages. MFA cannot be bypassed." },
-      { id: "AC-3", question: "How is role-based access control implemented?", answer: "Five roles are supported: Owner, Admin, Executive, Analyst, and Viewer. Roles are stored in a dedicated user_roles table (never on the profile). Access is enforced at the database layer via RLS policies using security-definer functions, preventing privilege escalation." },
+      { id: "AC-2", question: "Is multi-factor authentication (MFA) supported and enforced?", answer: "Yes. MFA is enforced at the route level using AAL2 (Authenticator Assurance Level 2). Users must complete a TOTP-based second-factor challenge to access protected pages. There is no application-level mechanism to bypass MFA." },
+      { id: "AC-3", question: "How is role-based access control implemented?", answer: "Five roles are supported: Owner, Admin, Executive, Analyst, and Viewer. Roles are stored in a dedicated user_roles table (not on the profile). Access is enforced at the database layer via RLS policies using security-definer functions, preventing privilege escalation." },
       { id: "AC-4", question: "Are there least-privilege controls for sensitive data?", answer: "Yes. Strategic tables (decision_ledger, advisory_instances, decision_simulations, executive_modes, executive_briefs) use RESTRICTIVE RLS policies limiting access to Owner, Admin, and Executive roles. Viewers and Analysts cannot access strategic intelligence." },
     ],
   },
@@ -50,7 +50,7 @@ const SECTIONS: { title: string; icon: React.ElementType; items: QAItem[] }[] = 
     icon: Server,
     items: [
       { id: "IN-1", question: "Where is your application hosted?", answer: "Quantivis is hosted on a managed cloud platform (AWS-backed infrastructure, Supabase). Database services run on managed PostgreSQL with SOC 2 Type II and ISO 27001 certified data centers, automated encrypted backups, and point-in-time recovery." },
-      { id: "IN-2", question: "Are secrets and API keys managed securely?", answer: "Yes. All secrets (API keys, service role keys, webhook secrets) are stored in encrypted vault storage and injected as environment variables. Service role keys are never exposed to client-side code. The client bundle only contains the publishable anon key." },
+      { id: "IN-2", question: "Are secrets and API keys managed securely?", answer: "Yes. All secrets (API keys, service role keys, webhook secrets) are stored in encrypted vault storage and injected as environment variables. Service role keys are not exposed to client-side code. The client bundle only contains the publishable anon key." },
       { id: "IN-3", question: "What DDoS and network-level protections are in place?", answer: "DDoS protection and network-level firewalling are provided by the infrastructure layer. Edge functions include code-level rate limiting for sensitive operations." },
       { id: "IN-4", question: "How are backups managed?", answer: "Automated encrypted backups are provided by the managed database service with point-in-time recovery. Backup retention follows the infrastructure provider's schedule." },
     ],
