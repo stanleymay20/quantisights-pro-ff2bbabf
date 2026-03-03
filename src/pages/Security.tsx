@@ -19,7 +19,7 @@ const PILLARS = [
   {
     icon: Server,
     title: "Infrastructure Security",
-    description: "Enterprise-grade hosting with SOC 2 compliant infrastructure, automated backups, and network isolation.",
+    description: "Enterprise-grade hosting on SOC 2 Type II certified infrastructure, automated backups, and network isolation.",
     items: [
       "All data encrypted at rest (AES-256) and in transit (TLS 1.3)",
       "Automated encrypted backups with point-in-time recovery",
@@ -71,9 +71,9 @@ const PILLARS = [
   {
     icon: Eye,
     title: "AI Data Governance",
-    description: "Your data is yours. We do not train models on client data, and every AI output is explainable and auditable.",
+    description: "Your data is yours. We do not train our models on client data. Third-party AI processing is scoped and stateless.",
     items: [
-      "Client data is never used to train or fine-tune AI models",
+      "Client data is never used to train or fine-tune Quantivis models",
       "All AI outputs include confidence scores and attribution explanations",
       "Cognitive bias detection monitors AI recommendation quality",
       "No cross-organization learning without explicit opt-in",
@@ -105,7 +105,7 @@ const ROLE_MATRIX = [
 ];
 
 const CERTIFICATIONS = [
-  { icon: ShieldCheck, title: "SOC 2 Type II", subtitle: "Infrastructure Provider", status: "Controls Aligned" },
+  { icon: ShieldCheck, title: "SOC 2 Type II", subtitle: "Infrastructure Provider", status: "Audit Planned" },
   { icon: Globe, title: "GDPR", subtitle: "Data Protection", status: "Compliant" },
   { icon: Fingerprint, title: "MFA (AAL2)", subtitle: "Authentication", status: "Enforced" },
   { icon: Network, title: "RLS", subtitle: "Data Isolation", status: "100% Coverage" },
@@ -121,12 +121,12 @@ const PROOF_ITEMS = [
 ];
 
 const SECURITY_FAQ = [
-  { q: "Is Quantivis SOC 2 certified?", a: "Our infrastructure provider (Supabase / AWS) holds SOC 2 Type II certification. Quantivis has aligned its application-level controls to SOC 2 standards, including RLS enforcement, immutable audit logging, MFA, and encrypted secrets management. Formal SOC 2 Type II certification for Quantivis as an entity is on our compliance roadmap." },
+  { q: "Is Quantivis SOC 2 certified?", a: "Our infrastructure provider holds SOC 2 Type II certification. Quantivis has aligned its application-level controls to SOC 2 standards — including RLS enforcement, immutable audit logging, MFA, and encrypted secrets management. A formal SOC 2 Type II audit for Quantivis as an entity is planned." },
   { q: "Where is my data stored?", a: "All data is stored in managed PostgreSQL databases hosted in SOC 2 and ISO 27001 certified data centers. Encryption at rest uses AES-256. Backups are automated and encrypted." },
   { q: "Can Quantivis employees access my data?", a: "No. All data access is scoped by organization_id at the database layer via Row-Level Security. Administrative access to infrastructure is limited to a small team with MFA and audit logging." },
-  { q: "How do you handle a security breach?", a: "We follow GDPR Article 33 requirements: affected customers are notified within 72 hours. Our incident response process includes containment, forensic investigation, customer communication, and post-incident review." },
+  { q: "How do you handle a security breach?", a: "We follow GDPR Article 33 requirements: affected customers are notified within 72 hours where required by applicable law. Our incident response process includes containment, forensic investigation, customer communication, and post-incident review." },
   { q: "What happens when I delete my account?", a: "A secure Edge Function performs atomic deletion or anonymization across 25+ tables (metrics, advisories, audit logs, decisions, copilot sessions, etc.) and purges your record from the authentication system." },
-  { q: "Do you train AI models on my data?", a: "Absolutely not. Client data is never used to train, fine-tune, or improve any AI model. AI outputs are generated per-request and scoped to your organization only." },
+  { q: "Do you train AI models on my data?", a: "No. Client data is never used to train, fine-tune, or improve Quantivis models. AI features use third-party inference APIs (e.g. Google Gemini) in stateless, per-request mode — no data is retained by the provider after processing." },
   { q: "How is MFA enforced?", a: "MFA is enforced at the route level using AAL2 (Authenticator Assurance Level 2). Users must complete a second-factor challenge to access protected pages. TOTP-based authenticator apps are supported." },
   { q: "Can I get a DPA or subprocessor list?", a: "Yes. Our Data Processing Agreement (DPA), subprocessor list, data retention policy, and privacy policy are all publicly available and linked from this page." },
 ];
@@ -170,7 +170,7 @@ const Security = () => {
             </p>
             <div className="flex items-center justify-center gap-2 mt-4 text-xs text-muted-foreground">
               <Clock className="w-3.5 h-3.5" />
-              Last updated: March 3, 2026
+              Last reviewed: March 3, 2026
             </div>
           </div>
 
@@ -292,10 +292,10 @@ const Security = () => {
 
           <div className="grid sm:grid-cols-2 gap-4">
             {[
-              { icon: Shield, title: "No model training on your data", desc: "Your business data is never used to train, fine-tune, or improve AI models. Period." },
+              { icon: Shield, title: "No model training on your data", desc: "Your business data is never used to train or fine-tune Quantivis models. Third-party AI inference is stateless and per-request." },
               { icon: Database, title: "Complete data isolation", desc: "Organization data is siloed at the database layer. No cross-org queries are architecturally possible." },
               { icon: Lock, title: "You own your data", desc: "Export all data at any time. Delete your account and all data is purged across 25+ tables within 30 days." },
-              { icon: AlertTriangle, title: "Breach notification", desc: "In the unlikely event of a breach, affected customers are notified within 72 hours per GDPR requirements." },
+              { icon: AlertTriangle, title: "Breach notification", desc: "In the unlikely event of a breach, affected customers are notified within 72 hours where required by applicable law." },
               { icon: Users, title: "No cross-org learning", desc: "Insights, patterns, and intelligence from one organization are never shared with another without explicit consent." },
               { icon: ScrollText, title: "Immutable decision history", desc: "Decision logs, calibration data, and audit trails cannot be altered retroactively — not even by administrators." },
             ].map((item) => (
@@ -399,6 +399,41 @@ const Security = () => {
                 )}
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* What We Can Provide */}
+      <section className="container mx-auto px-6 py-16">
+        <div className="max-w-2xl mx-auto">
+          <div className="rounded-xl border border-primary/20 bg-primary/5 p-8">
+            <h2 className="text-xl font-bold font-display mb-2">Enterprise Security Pack</h2>
+            <p className="text-sm text-muted-foreground mb-6">Available on request for procurement and security review teams.</p>
+            <div className="grid sm:grid-cols-2 gap-3">
+              {[
+                "Data Processing Agreement (DPA)",
+                "RLS policy summary & architecture overview",
+                "Role-based access control matrix",
+                "Incident response procedure",
+                "Subprocessor list with safeguards",
+                "Data retention & deletion policy",
+                "AI governance & third-party processing disclosure",
+                "Security questionnaire responses (SIG Lite / CAIQ)",
+              ].map((item) => (
+                <div key={item} className="flex items-center gap-2 text-sm">
+                  <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
+                  <span>{item}</span>
+                </div>
+              ))}
+            </div>
+            <div className="mt-6">
+              <a
+                href="mailto:security@quantivis.io?subject=Enterprise%20Security%20Pack%20Request"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:brightness-110 transition-all"
+              >
+                Request Security Pack <ArrowRight className="w-4 h-4" />
+              </a>
+            </div>
           </div>
         </div>
       </section>
