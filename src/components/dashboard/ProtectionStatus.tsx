@@ -1,0 +1,192 @@
+import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { Shield, ShieldCheck, ShieldAlert, Activity, Brain, AlertTriangle, Clock } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+
+interface ProtectionStatusProps {
+  organizationId: string;
+  calibrationScore: number | null;
+  pendingDecisions: number;
+  criticalSignals: number;
+}
+
+type ProtectionLevel = "covered" | "watch" | "exposed";
+
+interface Driver {
+  label: string;
+  value: string;
+  status: "good" | "warning" | "critical";
+  icon: typeof Shield;
+}
+
+const LEVEL_CONFIG: Record<ProtectionLevel, {
+  label: string;
+  description: string;
+  icon: typeof Shield;
+  containerClass: string;
+  badgeClass: string;
+  dotClass: string;
+}> = {
+  covered: {
+    label: "Covered",
+    description: "Decision governance is active. All signals addressed, calibration healthy.",
+    icon: ShieldCheck,
+    containerClass: "border-success/30 bg-success/[0.03]",
+    badgeClass: "bg-success/10 text-success",
+    dotClass: "bg-success",
+  },
+  watch: {
+    label: "Watch",
+    description: "Some governance gaps detected. Review pending items to maintain protection.",
+    icon: Shield,
+    containerClass: "border-warning/30 bg-warning/[0.03]",
+    badgeClass: "bg-warning/10 text-warning",
+    dotClass: "bg-warning",
+  },
+  exposed: {
+    label: "Exposed",
+    description: "Critical governance gaps. Unresolved signals and unclosed decisions increase board risk.",
+    icon: ShieldAlert,
+    containerClass: "border-destructive/30 bg-destructive/[0.03]",
+    badgeClass: "bg-destructive/10 text-destructive",
+    dotClass: "bg-destructive",
+  },
+};
+
+const ProtectionStatus = ({ organizationId, calibrationScore, pendingDecisions, criticalSignals }: ProtectionStatusProps) => {
+  const [driftStatus, setDriftStatus] = useState<string>("stable");
+  const [unclosedOutcomes, setUnclosedOutcomes] = useState(0);
+
+  useEffect(() => {
+    if (!organizationId) return;
+    const fetchDrivers = async () => {
+      // Fetch drift from latest two calibration models
+      const { data: models } = await supabase
+        .from("calibration_models")
+        .select("mean_absolute_error, overall_bias_direction")
+        .eq("organization_id", organizationId)
+        .order("computed_at", { ascending: false })
+        .limit(2);
+
+      if (models && models.length >= 2) {
+        const maeDelta = (models[0].mean_absolute_error ?? 0) - (models[1].mean_absolute_error ?? 0);
+        const biasSame = models[0].overall_bias_direction === models[1].overall_bias_direction;
+        if (maeDelta > 0.03 || !biasSame) setDriftStatus("degrading");
+        else if (maeDelta > 0.01) setDriftStatus("watch");
+        else setDriftStatus("stable");
+      }
+
+      // Unclosed outcomes: decisions older than 30 days with no outcome
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const { count } = await supabase
+        .from("decision_ledger")
+        .select("*", { count: "exact", head: true })
+        .eq("organization_id", organizationId)
+        .eq("execution_status", "not_started")
+        .lt("created_at", thirtyDaysAgo.toISOString());
+      setUnclosedOutcomes(count ?? 0);
+    };
+    fetchDrivers();
+  }, [organizationId]);
+
+  // Calculate protection level
+  const calculateLevel = (): ProtectionLevel => {
+    let score = 0;
+    if (criticalSignals > 0) score += 3;
+    if (unclosedOutcomes > 2) score += 2;
+    else if (unclosedOutcomes > 0) score += 1;
+    if (driftStatus === "degrading") score += 2;
+    else if (driftStatus === "watch") score += 1;
+    if (calibrationScore != null && calibrationScore < 50) score += 2;
+    else if (calibrationScore != null && calibrationScore < 70) score += 1;
+    if (pendingDecisions > 5) score += 1;
+
+    if (score >= 4) return "exposed";
+    if (score >= 2) return "watch";
+    return "covered";
+  };
+
+  const level = calculateLevel();
+  const config = LEVEL_CONFIG[level];
+  const LevelIcon = config.icon;
+
+  const drivers: Driver[] = [
+    {
+      label: "Calibration",
+      value: calibrationScore != null ? `${calibrationScore}%` : "No data",
+      status: calibrationScore == null ? "warning" : calibrationScore >= 70 ? "good" : calibrationScore >= 50 ? "warning" : "critical",
+      icon: Brain,
+    },
+    {
+      label: "Model Drift",
+      value: driftStatus === "stable" ? "Stable" : driftStatus === "watch" ? "Monitoring" : "Degrading",
+      status: driftStatus === "stable" ? "good" : driftStatus === "watch" ? "warning" : "critical",
+      icon: Activity,
+    },
+    {
+      label: "Open Signals",
+      value: `${criticalSignals}`,
+      status: criticalSignals === 0 ? "good" : criticalSignals <= 2 ? "warning" : "critical",
+      icon: AlertTriangle,
+    },
+    {
+      label: "Unclosed Outcomes",
+      value: `${unclosedOutcomes}`,
+      status: unclosedOutcomes === 0 ? "good" : unclosedOutcomes <= 2 ? "warning" : "critical",
+      icon: Clock,
+    },
+  ];
+
+  const STATUS_DOT: Record<string, string> = {
+    good: "bg-success",
+    warning: "bg-warning",
+    critical: "bg-destructive",
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={`rounded-xl border ${config.containerClass} p-4 md:p-5`}
+    >
+      <div className="flex items-start justify-between gap-4 mb-4">
+        <div className="flex items-center gap-3">
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${config.badgeClass}`}>
+            <LevelIcon className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm font-semibold">Decision Protection</h2>
+              <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${config.badgeClass} flex items-center gap-1.5`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${config.dotClass} animate-pulse`} />
+                {config.label}
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-0.5">{config.description}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {drivers.map(driver => (
+          <div
+            key={driver.label}
+            className="flex items-center gap-2.5 p-2.5 rounded-lg bg-background/50 border border-border/20"
+          >
+            <driver.icon className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+            <div className="min-w-0">
+              <p className="text-[10px] text-muted-foreground">{driver.label}</p>
+              <div className="flex items-center gap-1.5">
+                <span className={`w-1.5 h-1.5 rounded-full ${STATUS_DOT[driver.status]}`} />
+                <p className="text-xs font-semibold">{driver.value}</p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </motion.div>
+  );
+};
+
+export default ProtectionStatus;
