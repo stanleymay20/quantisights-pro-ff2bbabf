@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, memo, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Shield, ShieldCheck, ShieldAlert, Activity, Brain, AlertTriangle, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -53,14 +53,19 @@ const LEVEL_CONFIG: Record<ProtectionLevel, {
   },
 };
 
-const ProtectionStatus = ({ organizationId, calibrationScore, pendingDecisions, criticalSignals }: ProtectionStatusProps) => {
+const STATUS_DOT: Record<string, string> = {
+  good: "bg-success",
+  warning: "bg-warning",
+  critical: "bg-destructive",
+};
+
+const ProtectionStatus = memo(({ organizationId, calibrationScore, pendingDecisions, criticalSignals }: ProtectionStatusProps) => {
   const [driftStatus, setDriftStatus] = useState<string>("stable");
   const [unclosedOutcomes, setUnclosedOutcomes] = useState(0);
 
   useEffect(() => {
     if (!organizationId) return;
     const fetchDrivers = async () => {
-      // Fetch drift from latest two calibration models
       const { data: models } = await supabase
         .from("calibration_models")
         .select("mean_absolute_error, overall_bias_direction")
@@ -76,7 +81,6 @@ const ProtectionStatus = ({ organizationId, calibrationScore, pendingDecisions, 
         else setDriftStatus("stable");
       }
 
-      // Unclosed outcomes: decisions older than 30 days with no outcome
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       const { count } = await supabase
@@ -90,8 +94,7 @@ const ProtectionStatus = ({ organizationId, calibrationScore, pendingDecisions, 
     fetchDrivers();
   }, [organizationId]);
 
-  // Calculate protection level
-  const calculateLevel = (): ProtectionLevel => {
+  const level = useMemo((): ProtectionLevel => {
     let score = 0;
     if (criticalSignals > 0) score += 3;
     if (unclosedOutcomes > 2) score += 2;
@@ -105,13 +108,12 @@ const ProtectionStatus = ({ organizationId, calibrationScore, pendingDecisions, 
     if (score >= 4) return "exposed";
     if (score >= 2) return "watch";
     return "covered";
-  };
+  }, [criticalSignals, unclosedOutcomes, driftStatus, calibrationScore, pendingDecisions]);
 
-  const level = calculateLevel();
   const config = LEVEL_CONFIG[level];
   const LevelIcon = config.icon;
 
-  const drivers: Driver[] = [
+  const drivers: Driver[] = useMemo(() => [
     {
       label: "Calibration",
       value: calibrationScore != null ? `${calibrationScore}%` : "No data",
@@ -136,13 +138,7 @@ const ProtectionStatus = ({ organizationId, calibrationScore, pendingDecisions, 
       status: unclosedOutcomes === 0 ? "good" : unclosedOutcomes <= 2 ? "warning" : "critical",
       icon: Clock,
     },
-  ];
-
-  const STATUS_DOT: Record<string, string> = {
-    good: "bg-success",
-    warning: "bg-warning",
-    critical: "bg-destructive",
-  };
+  ], [calibrationScore, driftStatus, criticalSignals, unclosedOutcomes]);
 
   return (
     <motion.div
@@ -187,6 +183,8 @@ const ProtectionStatus = ({ organizationId, calibrationScore, pendingDecisions, 
       </div>
     </motion.div>
   );
-};
+});
+
+ProtectionStatus.displayName = "ProtectionStatus";
 
 export default ProtectionStatus;
