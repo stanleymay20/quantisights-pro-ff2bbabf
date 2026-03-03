@@ -46,7 +46,7 @@ const SocialProofSection = () => {
             className="text-center mb-14"
           >
             <p className="text-xs uppercase tracking-widest text-primary font-semibold mb-3">Measurable Impact</p>
-            <h2 className="text-4xl font-bold font-display mb-4">
+            <h2 className="text-2xl sm:text-4xl font-bold font-display mb-4">
               The ROI of <span className="gradient-text">Better Decisions</span>
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
@@ -84,7 +84,7 @@ const SocialProofSection = () => {
             className="text-center mb-14"
           >
             <p className="text-xs uppercase tracking-widest text-primary font-semibold mb-3">Representative Scenarios</p>
-            <h2 className="text-4xl font-bold font-display mb-4">
+            <h2 className="text-2xl sm:text-4xl font-bold font-display mb-4">
               How Leaders <span className="gradient-text">Protect Their Decisions</span>
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">

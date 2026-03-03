@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import { motion } from "framer-motion";
 import { Check, X } from "lucide-react";
 
@@ -83,8 +84,8 @@ const ComparisonSection = ({ inline = false }: { inline?: boolean }) => (
             </thead>
             <tbody>
               {comparisons.map((group) => (
-                <>
-                  <tr key={group.category}>
+                <Fragment key={group.category}>
+                  <tr>
                     <td colSpan={5} className="py-3 px-4 md:px-6 text-xs uppercase tracking-widest text-primary font-semibold bg-primary/[0.03] border-b border-border/50">
                       {group.category}
                     </td>
@@ -98,7 +99,7 @@ const ComparisonSection = ({ inline = false }: { inline?: boolean }) => (
                       <td className="text-center py-3 px-3 md:px-4 hidden sm:table-cell"><CellIcon value={row.mosaic} /></td>
                     </tr>
                   ))}
-                </>
+                </Fragment>
               ))}
             </tbody>
           </table>
