@@ -75,7 +75,7 @@ async function pullStripe(
   const toTs = Math.floor(to.getTime() / 1000).toString();
 
   try {
-    // Charges → Revenue
+    // Charges → Revenue (net of refunds)
     const chargesResult = await stripeFetchAll("charges", {
       "created[gte]": fromTs,
       "created[lte]": toTs,
@@ -83,15 +83,26 @@ async function pullStripe(
     errors.push(...chargesResult.errors);
 
     if (chargesResult.data.length > 0) {
-      const byMonth: Record<string, number> = {};
+      const grossByMonth: Record<string, number> = {};
+      const refundsByMonth: Record<string, number> = {};
       for (const c of chargesResult.data) {
         if (c.status !== "succeeded") continue;
         const d = new Date(c.created * 1000);
         const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
-        byMonth[key] = (byMonth[key] || 0) + c.amount / 100;
+        grossByMonth[key] = (grossByMonth[key] || 0) + c.amount / 100;
+        if (c.amount_refunded > 0) {
+          refundsByMonth[key] = (refundsByMonth[key] || 0) + c.amount_refunded / 100;
+        }
       }
-      for (const [date, value] of Object.entries(byMonth)) {
-        metrics.push({ organization_id: config.organization_id, metric_type: "revenue", value, date, source_type: "connector", source_id: config.data_source_id, quality_score: 95 });
+      for (const [date, gross] of Object.entries(grossByMonth)) {
+        const refunds = refundsByMonth[date] || 0;
+        metrics.push(
+          { organization_id: config.organization_id, metric_type: "revenue", value: gross - refunds, date, source_type: "connector", source_id: config.data_source_id, quality_score: 95 },
+          { organization_id: config.organization_id, metric_type: "gross_revenue", value: gross, date, source_type: "connector", source_id: config.data_source_id, quality_score: 95 },
+        );
+        if (refunds > 0) {
+          metrics.push({ organization_id: config.organization_id, metric_type: "refunds", value: refunds, date, source_type: "connector", source_id: config.data_source_id, quality_score: 95 });
+        }
       }
     }
 
