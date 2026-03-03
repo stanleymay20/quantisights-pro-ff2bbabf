@@ -1,38 +1,17 @@
-import { lazy, Suspense } from "react";
+import { useState, useEffect } from "react";
 import DashboardSidebar, { SidebarMobileToggle } from "@/components/dashboard/DashboardSidebar";
-import KPICards from "@/components/dashboard/KPICards";
 import OrgSwitcher from "@/components/dashboard/OrgSwitcher";
 import IntelligenceStatusBar from "@/components/dashboard/IntelligenceStatusBar";
-import DailyActions from "@/components/dashboard/DailyActions";
-import QuickDecisionLog from "@/components/dashboard/QuickDecisionLog";
-import CalibrationProgress from "@/components/dashboard/CalibrationProgress";
+import CommandCenter from "@/components/dashboard/CommandCenter";
 import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
-
-// Lazy-load heavy chart components (recharts is ~200KB)
-const RevenueChart = lazy(() => import("@/components/dashboard/RevenueChart"));
-const CustomerSegmentation = lazy(() => import("@/components/dashboard/CustomerSegmentation"));
-const AIInsights = lazy(() => import("@/components/dashboard/AIInsights"));
-const AnomalyDetection = lazy(() => import("@/components/dashboard/AnomalyDetection"));
-const WaterfallChart = lazy(() => import("@/components/dashboard/WaterfallChart"));
-const CohortAnalysis = lazy(() => import("@/components/dashboard/CohortAnalysis"));
-const FunnelChart = lazy(() => import("@/components/dashboard/FunnelChart"));
-const PeriodComparison = lazy(() => import("@/components/dashboard/PeriodComparison"));
-const HeatmapChart = lazy(() => import("@/components/dashboard/HeatmapChart"));
-const TreemapChart = lazy(() => import("@/components/dashboard/TreemapChart"));
-const ScatterBubbleChart = lazy(() => import("@/components/dashboard/ScatterBubbleChart"));
-const RadarChartComponent = lazy(() => import("@/components/dashboard/RadarChart"));
-const GaugeChart = lazy(() => import("@/components/dashboard/GaugeChart"));
-const SankeyChart = lazy(() => import("@/components/dashboard/SankeyChart"));
-const BoxPlotChart = lazy(() => import("@/components/dashboard/BoxPlotChart"));
 import { useAuth } from "@/contexts/AuthContext";
 import { useOrganization } from "@/hooks/useOrganization";
 import { useMetrics } from "@/hooks/useMetrics";
 import { useInsights } from "@/hooks/useInsights";
-import { Bell, User, Upload, RefreshCw, ArrowRight, Shield, Zap, TrendingUp } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Bell, User, RefreshCw, Shield, Upload, Zap, TrendingUp, ArrowRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import GuidedTour from "@/components/dashboard/GuidedTour";
 
@@ -64,7 +43,6 @@ const Dashboard = () => {
     checkOnboarding();
   }, [currentOrgId, orgLoading, navigate]);
 
-  // Fetch open advisory count + pending decisions + calibration score
   useEffect(() => {
     if (!currentOrgId) return;
     const fetchCount = async () => {
@@ -101,7 +79,6 @@ const Dashboard = () => {
         body: { organization_id: currentOrgId },
       });
       toast({ title: "Intelligence refreshed" });
-      // Controlled refresh via navigation instead of full page reload
       navigate(0);
     } catch {
       toast({ title: "Refresh failed", variant: "destructive" });
@@ -126,7 +103,6 @@ const Dashboard = () => {
       {hasData && <GuidedTour />}
       <DashboardSidebar />
       <div className="flex-1 flex flex-col min-h-screen">
-        {/* Global Intelligence Status Bar */}
         <IntelligenceStatusBar
           hasData={hasData}
           insights={insights}
@@ -142,27 +118,27 @@ const Dashboard = () => {
           </div>
           <div className="flex items-center gap-1 md:gap-1.5">
             {hasData && (
-              <button
-                onClick={handleRecalculate}
-                disabled={recalculating}
-                className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-all disabled:opacity-50"
-              >
-                <RefreshCw className={`w-3 h-3 ${recalculating ? "animate-spin" : ""}`} />
-                Refresh
-              </button>
-            )}
-            {hasData && (
-              <button
-                onClick={handleRecalculate}
-                disabled={recalculating}
-                className="sm:hidden p-2 rounded-lg hover:bg-secondary/60 transition-colors disabled:opacity-50"
-                aria-label="Refresh intelligence"
-              >
-                <RefreshCw className={`w-4 h-4 text-muted-foreground ${recalculating ? "animate-spin" : ""}`} />
-              </button>
+              <>
+                <button
+                  onClick={handleRecalculate}
+                  disabled={recalculating}
+                  className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-all disabled:opacity-50"
+                >
+                  <RefreshCw className={`w-3 h-3 ${recalculating ? "animate-spin" : ""}`} />
+                  Refresh
+                </button>
+                <button
+                  onClick={handleRecalculate}
+                  disabled={recalculating}
+                  className="sm:hidden p-2 rounded-lg hover:bg-secondary/60 transition-colors disabled:opacity-50"
+                  aria-label="Refresh intelligence"
+                >
+                  <RefreshCw className={`w-4 h-4 text-muted-foreground ${recalculating ? "animate-spin" : ""}`} />
+                </button>
+              </>
             )}
             <button className="p-2 rounded-lg hover:bg-secondary/60 transition-colors relative" aria-label="Notifications">
-              <Bell className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
+              <Bell className="w-4 h-4 text-muted-foreground" />
               {hasAnomalies && (
                 <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-destructive" />
               )}
@@ -237,15 +213,14 @@ const Dashboard = () => {
               </div>
             </motion.div>
           ) : isLoading ? (
-            /* ── Skeleton Loading ── */
             <DashboardSkeleton />
           ) : (
-            /* ── Command Center ── */
-            <div className="space-y-6 max-w-[1400px]">
-              {/* Greeting */}
+            /* ── Decision Intelligence Command Center ── */
+            <>
               <motion.div
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
+                className="mb-6 max-w-[1400px]"
               >
                 <h1 className="text-2xl font-bold font-display tracking-tight">
                   {greeting()}, {displayName}
@@ -258,161 +233,22 @@ const Dashboard = () => {
                 </p>
               </motion.div>
 
-              {/* Priority Actions Today */}
-              <DailyActions
+              <CommandCenter
+                organizationId={currentOrgId!}
                 insights={insights}
                 hasData={hasData}
                 churnRate={latestChurn}
                 revenue={totalRevenue}
+                totalCustomers={totalCustomers}
+                latestCost={latestCost}
                 pendingDecisions={pendingDecisions}
                 calibrationScore={calibrationScore}
+                metrics={metrics}
+                revenueByMonth={revenueByMonth}
+                segmentData={segmentData}
+                onDecisionLogged={() => setPendingDecisions(p => p + 1)}
               />
-
-              {/* Quick Decision Log + Calibration Progress */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                <QuickDecisionLog
-                  organizationId={currentOrgId!}
-                  onLogged={() => setPendingDecisions(p => p + 1)}
-                />
-                <CalibrationProgress organizationId={currentOrgId!} />
-              </div>
-
-              {/* Contextual Nudge */}
-              {hasAnomalies && (
-                <motion.div
-                  initial={{ opacity: 0, y: 4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.15 }}
-                  className="nudge-card flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <Zap className="w-4 h-4 text-primary shrink-0" />
-                    <span className="text-sm truncate">
-                      <span className="font-semibold">Signal detected</span>
-                      <span className="text-muted-foreground"> — {criticalInsights[0]?.message?.slice(0, 80)}</span>
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0 ml-4">
-                    <Link to="/diagnostics" className="text-[11px] font-semibold text-muted-foreground hover:text-foreground transition-colors">
-                      Dismiss
-                    </Link>
-                    <Link to="/advisory" className="text-[11px] font-semibold text-primary hover:underline flex items-center gap-1">
-                      Investigate <ArrowRight className="w-3 h-3" />
-                    </Link>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* KPIs */}
-              <KPICards
-                revenue={totalRevenue}
-                customers={totalCustomers}
-                costRate={latestCost}
-                churnRate={latestChurn}
-              />
-
-              {/* Charts — lazy loaded for faster initial paint */}
-              <Suspense fallback={<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">{Array.from({length: 3}).map((_, i) => <div key={i} className="h-64 rounded-xl bg-muted/30 animate-pulse" />)}</div>}>
-
-                {/* Mobile: show only key charts + action-oriented content */}
-                <div className="block md:hidden space-y-4">
-                  <AIInsights insights={insights} />
-                  <AnomalyDetection insights={insights} />
-                  <div className="glass-card p-5 rounded-xl">
-                    <RevenueChart data={revenueByMonth} />
-                  </div>
-                  <div className="grid grid-cols-3 gap-3">
-                    <GaugeChart
-                      value={latestChurn > 0 ? Math.max(0, 100 - latestChurn * 100) : 85}
-                      label="Retention"
-                    />
-                    <GaugeChart
-                      value={latestCost > 0 ? Math.max(0, 100 - latestCost * 100) : 70}
-                      label="Cost Eff."
-                    />
-                    <GaugeChart
-                      value={revenueByMonth.length >= 2
-                        ? Math.min(100, Math.max(0, ((revenueByMonth[revenueByMonth.length - 1]?.revenue ?? 0) / (revenueByMonth[0]?.revenue || 1) - 1) * 100 + 50))
-                        : 50}
-                      label="Growth"
-                    />
-                  </div>
-                </div>
-
-                {/* Desktop: full chart grid */}
-                <div className="hidden md:block space-y-5">
-                  {/* Charts Row 1 */}
-                  <div className="grid lg:grid-cols-3 gap-5">
-                    <div className="lg:col-span-2">
-                      <RevenueChart data={revenueByMonth} />
-                    </div>
-                    <CustomerSegmentation data={segmentData} />
-                  </div>
-
-                  {/* Charts Row 2 */}
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-                    <WaterfallChart data={metrics} />
-                    <FunnelChart metrics={metrics} />
-                    <PeriodComparison data={revenueByMonth} />
-                  </div>
-
-                  <CohortAnalysis metrics={metrics} />
-
-                  {/* Enterprise Visualizations Row 3 */}
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-                    <HeatmapChart metrics={metrics} />
-                    <TreemapChart metrics={metrics} />
-                    <RadarChartComponent metrics={metrics} />
-                  </div>
-
-                  {/* Enterprise Visualizations Row 4 */}
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-                    <ScatterBubbleChart metrics={metrics} />
-                    <SankeyChart metrics={metrics} />
-                    <BoxPlotChart metrics={metrics} />
-                  </div>
-
-                  {/* Gauge Row */}
-                  <div className="grid md:grid-cols-3 gap-5">
-                    <GaugeChart
-                      value={latestChurn > 0 ? Math.max(0, 100 - latestChurn * 100) : 85}
-                      label="Retention Health"
-                    />
-                    <GaugeChart
-                      value={latestCost > 0 ? Math.max(0, 100 - latestCost * 100) : 70}
-                      label="Cost Efficiency"
-                    />
-                    <GaugeChart
-                      value={revenueByMonth.length >= 2
-                        ? Math.min(100, Math.max(0, ((revenueByMonth[revenueByMonth.length - 1]?.revenue ?? 0) / (revenueByMonth[0]?.revenue || 1) - 1) * 100 + 50))
-                        : 50}
-                      label="Growth Momentum"
-                    />
-                  </div>
-
-                  {/* Intelligence Row */}
-                  <div className="grid lg:grid-cols-3 gap-5">
-                    <AIInsights insights={insights} />
-                    <AnomalyDetection insights={insights} />
-                    <div className="glass-card p-6 rounded-xl">
-                      <div className="flex items-center justify-between mb-1">
-                        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Historical Growth</h3>
-                        <TrendingUp className="w-3.5 h-3.5 text-muted-foreground" />
-                      </div>
-                      <p className="text-[11px] text-muted-foreground mb-6">Period-over-period change</p>
-                      <div className="text-center py-4">
-                        <p className="text-4xl font-bold font-display gradient-text">
-                          {revenueByMonth.length >= 2
-                            ? `${(((revenueByMonth[revenueByMonth.length - 1]?.revenue ?? 0) / (revenueByMonth[0]?.revenue || 1) - 1) * 100).toFixed(1)}%`
-                            : "—"}
-                        </p>
-                        <p className="text-[11px] text-muted-foreground mt-3">Growth over data period</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </Suspense>
-            </div>
+            </>
           )}
         </main>
       </div>
