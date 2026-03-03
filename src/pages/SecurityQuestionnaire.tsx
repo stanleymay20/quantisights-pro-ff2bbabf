@@ -31,7 +31,7 @@ const SECTIONS: { title: string; icon: React.ElementType; items: QAItem[] }[] = 
       { id: "DP-2", question: "Is customer data isolated between tenants?", answer: "Yes. Multi-tenant isolation is enforced at the database layer via Row-Level Security (RLS) policies on 100% of tables. Every query is scoped to organization_id. No cross-organization data access is architecturally possible." },
       { id: "DP-3", question: "Do you process data in compliance with GDPR?", answer: "Yes. We offer a Data Processing Agreement (DPA), support Subject Access Requests (SAR) via automated data export, and implement GDPR-compliant account deletion that purges data across 25+ tables. Our subprocessor list is publicly disclosed." },
       { id: "DP-4", question: "Where is customer data stored geographically?", answer: "Primary data storage (databases, file storage, backups) is located within the European Union (AWS EU-West-1, Ireland). Data transferred to subprocessors outside the EU is protected by Standard Contractual Clauses (SCCs)." },
-      { id: "DP-5", question: "What is your data retention and deletion policy?", answer: "Configurable freshness policies are available per dataset. Account deletion triggers atomic purge across 25+ tables (metrics, advisories, audit logs, decisions, copilot sessions, etc.) and removes the user from the authentication system. Backups follow infrastructure provider retention schedules." },
+      { id: "DP-5", question: "What is your data retention and deletion policy?", answer: "Configurable freshness policies are available per dataset. Account deletion triggers atomic purge across 25+ tables and removes the user from the authentication system. Database backups are encrypted and retained for 7 days on a rolling basis; deleted data may persist in backups until natural expiry." },
       { id: "DP-6", question: "Is customer data used to train AI/ML models?", answer: "No. Customer data is never used to train, fine-tune, or improve Quantivis models. AI features use third-party inference APIs (Google Gemini) in stateless, per-request mode — no data is retained by the provider after processing." },
     ],
   },
@@ -70,8 +70,8 @@ const SECTIONS: { title: string; icon: React.ElementType; items: QAItem[] }[] = 
     icon: AlertTriangle,
     items: [
       { id: "IR-1", question: "Do you have a documented incident response process?", answer: "Yes. Our incident response process includes: (1) detection and containment, (2) forensic investigation, (3) customer notification within 72 hours where required by applicable law, and (4) post-incident review with remediation." },
-      { id: "IR-2", question: "How are customers notified in the event of a breach?", answer: "Affected customers are notified within 72 hours of confirmed breach detection, as required by GDPR Article 33. Notification includes the nature of the breach, data affected, and remediation steps taken." },
-      { id: "IR-3", question: "What is your disaster recovery strategy?", answer: "Automated encrypted backups with point-in-time recovery. Infrastructure runs on managed services with built-in redundancy. Application state is stateless — edge functions can be redeployed immediately." },
+      { id: "IR-2", question: "How are customers notified in the event of a breach?", answer: "We notify affected customers without undue delay where required by applicable law. Under GDPR Article 33, this means within 72 hours of confirmed detection. Notification includes the nature of the breach, data affected, and remediation steps taken." },
+      { id: "IR-3", question: "What is your disaster recovery strategy?", answer: "Daily encrypted backups with 7-day rolling retention. Target RPO: 24 hours. Target RTO: 4 hours. Infrastructure runs on managed services with built-in redundancy. Application logic is stateless and can be redeployed immediately." },
     ],
   },
   {
@@ -130,6 +130,61 @@ const SecurityQuestionnaire = () => (
         <div className="flex items-center gap-4 mt-4 text-xs text-muted-foreground">
           <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" /> Last reviewed: March 3, 2026</span>
           <span className="flex items-center gap-1.5"><FileCheck className="w-3.5 h-3.5" /> {SECTIONS.reduce((sum, s) => sum + s.items.length, 0)} questions answered</span>
+        </div>
+      </div>
+
+      {/* Scope & Overview */}
+      <div className="rounded-xl border border-border/50 bg-card/50 p-6 mb-12 space-y-6">
+        <div>
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3">Scope</h2>
+          <p className="text-sm text-foreground/90 leading-relaxed">
+            This questionnaire applies to the Quantivis production environment and all customer data processed within it.
+            It does not cover customer-managed systems, devices, or third-party integrations configured by the customer.
+          </p>
+        </div>
+
+        <div className="grid sm:grid-cols-2 gap-6">
+          <div>
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Hosting & Data Location</h3>
+            <ul className="space-y-1.5 text-sm">
+              <li className="flex justify-between"><span className="text-muted-foreground">Hosted on</span><span className="font-medium">AWS (managed PostgreSQL)</span></li>
+              <li className="flex justify-between"><span className="text-muted-foreground">Primary region</span><span className="font-medium">EU-West-1 (Ireland)</span></li>
+              <li className="flex justify-between"><span className="text-muted-foreground">Data residency options</span><span className="font-medium">EU only (default)</span></li>
+            </ul>
+          </div>
+          <div>
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Encryption</h3>
+            <ul className="space-y-1.5 text-sm">
+              <li className="flex justify-between"><span className="text-muted-foreground">In transit</span><span className="font-medium">TLS 1.2+ / 1.3</span></li>
+              <li className="flex justify-between"><span className="text-muted-foreground">At rest</span><span className="font-medium">AES-256</span></li>
+              <li className="flex justify-between"><span className="text-muted-foreground">Key management</span><span className="font-medium">Platform-managed (AWS KMS)</span></li>
+            </ul>
+          </div>
+          <div>
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Backups & Recovery</h3>
+            <ul className="space-y-1.5 text-sm">
+              <li className="flex justify-between"><span className="text-muted-foreground">Backup frequency</span><span className="font-medium">Daily, encrypted</span></li>
+              <li className="flex justify-between"><span className="text-muted-foreground">Retention</span><span className="font-medium">7 days rolling</span></li>
+              <li className="flex justify-between"><span className="text-muted-foreground">Target RPO</span><span className="font-medium">24 hours</span></li>
+              <li className="flex justify-between"><span className="text-muted-foreground">Target RTO</span><span className="font-medium">4 hours</span></li>
+            </ul>
+          </div>
+          <div>
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Vulnerability Management</h3>
+            <ul className="space-y-1.5 text-sm">
+              <li className="flex justify-between"><span className="text-muted-foreground">Patching cadence</span><span className="font-medium">Managed by platform</span></li>
+              <li className="flex justify-between"><span className="text-muted-foreground">Penetration testing</span><span className="font-medium">Planned (annual)</span></li>
+              <li className="flex justify-between"><span className="text-muted-foreground">Bug reporting</span><span className="font-medium">security@quantivis.io</span></li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="border-t border-border/50 pt-4">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Shared Responsibility</h3>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            Quantivis is responsible for platform security, data isolation, encryption, access control enforcement, and incident response.
+            Customers are responsible for managing their user accounts, device security, organizational access policies, and the accuracy of data they upload.
+          </p>
         </div>
       </div>
 
