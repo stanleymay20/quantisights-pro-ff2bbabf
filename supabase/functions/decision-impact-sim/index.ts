@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { capConfidence, computeVariance, fetchCalibrationModel } from "../_shared/confidence-cap.ts";
+import { applyAdaptiveConfidenceWithFetch, computeVariance } from "../_shared/adaptive-confidence.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -55,7 +55,6 @@ serve(async (req) => {
       );
     }
 
-    // Verify org membership
     const { data: isMember } = await svc.rpc("is_org_member", {
       _user_id: user.id,
       _org_id: organization_id,
@@ -67,7 +66,7 @@ serve(async (req) => {
       });
     }
 
-    // Fetch historical revenue, cost, churn metrics for volatility estimation
+    // Fetch historical metrics for volatility estimation
     const metricTypes = ["revenue", "cost", "churn_rate"];
     const metricData: Record<string, number[]> = {};
 
@@ -85,7 +84,6 @@ serve(async (req) => {
     const costValues = metricData.cost;
     const churnValues = metricData.churn_rate;
 
-    // Sample size = minimum across all used metrics (conservative)
     const sampleSize = Math.max(
       3,
       Math.min(
@@ -95,48 +93,37 @@ serve(async (req) => {
       )
     );
 
-    // Compute volatilities
     const revenueVol = computeLogVolatility(revenueValues);
     const costVol = computeLogVolatility(costValues);
     const churnVol = computeLogVolatility(churnValues);
 
-    // Base values (latest or defaults)
     const baseRevenue = revenueValues.length > 0 ? revenueValues[revenueValues.length - 1] : 100000;
     const baseCost = costValues.length > 0 ? costValues[costValues.length - 1] : 50000;
     const baseChurn = churnValues.length > 0 ? churnValues[churnValues.length - 1] : 5;
 
     const runs = Math.min(simulation_runs, 50000);
     const steps = time_to_impact_months;
-
-    // Correlation assumptions (revenue-cost typically correlated ~0.6)
     const correlations = { revenue_cost: 0.6, revenue_churn: -0.3 };
 
     const netImpacts: number[] = [];
 
     for (let r = 0; r < runs; r++) {
-      // Correlated random normals using Cholesky
       const z1 = randn();
       const z2 = correlations.revenue_cost * z1 + Math.sqrt(1 - correlations.revenue_cost ** 2) * randn();
       const z3 = correlations.revenue_churn * z1 + Math.sqrt(1 - correlations.revenue_churn ** 2) * randn();
 
-      // Simulate revenue path
       const revDrift = (revenue_delta_pct / 100) / steps;
       const revShock = (revenueVol / 100) * Math.sqrt(steps) * z1;
       const simRevenue = baseRevenue * Math.exp(revDrift * steps + revShock);
 
-      // Simulate cost path
       const costDrift = (cost_delta_pct / 100) / steps;
       const costShock = (costVol / 100) * Math.sqrt(steps) * z2;
       const simCost = baseCost * Math.exp(costDrift * steps + costShock);
 
-      // Simulate churn path (bounded 0-100)
       const churnDelta = baseChurn * (churn_change_pct / 100) + (churnVol / 100) * baseChurn * z3;
       const simChurn = Math.max(0, Math.min(100, baseChurn + churnDelta));
 
-      // Churn revenue erosion (monthly compounding)
       const retentionFactor = Math.pow(1 - simChurn / 100, steps);
-
-      // Net impact = (new revenue × retention) - new cost - implementation cost - baseline profit
       const baselineProfit = (baseRevenue * Math.pow(1 - baseChurn / 100, steps)) - baseCost;
       const simProfit = (simRevenue * retentionFactor) - simCost - implementation_cost;
       const netImpact = simProfit - baselineProfit;
@@ -144,7 +131,6 @@ serve(async (req) => {
       netImpacts.push(netImpact);
     }
 
-    // Sort for percentile extraction
     netImpacts.sort((a, b) => a - b);
 
     const percentile = (arr: number[], p: number) => {
@@ -161,12 +147,12 @@ serve(async (req) => {
     const probCashStress = netImpacts.filter((v) => v < -implementation_cost * 0.5).length / netImpacts.length;
     const riskAdjustedEV = expectedNet * probPositiveRoi;
 
-    // Confidence governance
+    // Confidence governance via universal helper
     const allValues = [...revenueValues, ...costValues, ...churnValues];
     const varianceScore = computeVariance(allValues.length > 1 ? allValues : [1, 1]);
     const rawConf = Math.max(30, Math.min(95, 85 - varianceScore * 0.4));
 
-    // Fetch learning adjustment from past calibrations
+    // Learning adjustment from past simulations
     const { data: pastSims } = await svc
       .from("decision_simulations")
       .select("calibration_delta")
@@ -178,13 +164,14 @@ serve(async (req) => {
     let learningAdjustment = 0;
     if (pastSims && pastSims.length >= 5) {
       const avgCalDelta = pastSims.reduce((s, p) => s + Number(p.calibration_delta), 0) / pastSims.length;
-      // If we've been systematically over/under-confident, adjust
-      learningAdjustment = -avgCalDelta * 0.1; // gentle correction
+      learningAdjustment = -avgCalDelta * 0.1;
     }
 
     const adjustedRawConf = Math.max(20, Math.min(95, rawConf + learningAdjustment));
-    const calibrationModel = await fetchCalibrationModel(supabaseUrl, serviceKey, organization_id);
-    const conf = capConfidence(adjustedRawConf, sampleSize, varianceScore, calibrationModel);
+    const conf = await applyAdaptiveConfidenceWithFetch(
+      { rawConfidence: adjustedRawConf, sampleSize, variance: varianceScore },
+      supabaseUrl, serviceKey, organization_id,
+    );
 
     const result = {
       organization_id,
@@ -202,19 +189,26 @@ serve(async (req) => {
       probability_positive_roi: round2(probPositiveRoi * 100),
       probability_cashflow_stress: round2(probCashStress * 100),
       risk_adjusted_expected_value: round2(riskAdjustedEV),
+      // Standardized adaptive confidence metadata
+      confidence: conf.confidence,
       raw_confidence: conf.raw_confidence,
       capped_confidence: conf.capped_confidence,
       confidence_cap_reason: conf.confidence_cap_reason,
       variance_score: conf.variance_score,
       sample_size: sampleSize,
       data_sufficiency: conf.data_sufficiency,
+      adaptive_calibration_applied: conf.adaptive_calibration_applied,
+      calibration_model_version: conf.calibration_model_version,
+      calibration_band_used: conf.calibration_band_used,
+      calibration_correction_applied_pp: conf.calibration_correction_applied_pp,
+      calibration_low_sample_band: conf.calibration_low_sample_band,
+      confidence_source: conf.confidence_source,
       correlation_assumptions: correlations,
       model_version: 1,
       simulation_runs: runs,
       created_by: user.id,
     };
 
-    // Store simulation
     const { data: inserted, error: insertErr } = await svc
       .from("decision_simulations")
       .insert(result)
@@ -223,7 +217,6 @@ serve(async (req) => {
 
     if (insertErr) throw insertErr;
 
-    // Link to decision if provided
     if (decision_id) {
       await svc
         .from("decision_ledger")
@@ -256,7 +249,7 @@ function randn(): number {
 }
 
 function computeLogVolatility(values: number[]): number {
-  if (values.length < 2) return 20; // default 20% vol
+  if (values.length < 2) return 20;
   const logReturns: number[] = [];
   for (let i = 1; i < values.length; i++) {
     if (values[i - 1] > 0 && values[i] > 0) {

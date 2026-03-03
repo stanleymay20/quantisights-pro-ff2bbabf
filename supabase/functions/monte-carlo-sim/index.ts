@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { capConfidence, computeVariance, dataSufficiencyRating, fetchCalibrationModel } from "../_shared/confidence-cap.ts";
+import { applyAdaptiveConfidenceWithFetch, computeVariance } from "../_shared/adaptive-confidence.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -103,11 +103,10 @@ serve(async (req) => {
     );
 
     const lastValue = values[values.length - 1];
-    const steps = forecast_horizon; // each step = 1 month
-    const dt = 1; // monthly steps
-    const runs = Math.min(simulation_runs, 50000); // cap for performance
+    const steps = forecast_horizon;
+    const dt = 1;
+    const runs = Math.min(simulation_runs, 50000);
 
-    // Box-Muller transform for normal random
     function randn(): number {
       let u = 0, v = 0;
       while (u === 0) u = Math.random();
@@ -127,7 +126,6 @@ serve(async (req) => {
       finalValues.push(price);
     }
 
-    // Sort for percentile extraction
     finalValues.sort((a, b) => a - b);
 
     const percentile = (arr: number[], p: number) => {
@@ -144,11 +142,13 @@ serve(async (req) => {
     const probNegative = finalValues.filter((v) => v < lastValue).length / finalValues.length;
     const var95 = lastValue - percentile(finalValues, 0.05);
 
-    // Confidence based on sample size and variance + adaptive calibration
+    // Confidence via universal adaptive helper
     const varianceScore = computeVariance(values);
     const rawConf = Math.max(30, Math.min(95, 90 - varianceScore * 0.5));
-    const calibrationModel = await fetchCalibrationModel(supabaseUrl, serviceKey, organization_id);
-    const conf = capConfidence(rawConf, sampleSize, varianceScore, calibrationModel);
+    const conf = await applyAdaptiveConfidenceWithFetch(
+      { rawConfidence: rawConf, sampleSize, variance: varianceScore },
+      supabaseUrl, serviceKey, organization_id,
+    );
 
     const result = {
       organization_id,
@@ -165,12 +165,20 @@ serve(async (req) => {
       value_at_risk_95: round2(var95),
       mean_growth_rate: round2(mu * 100),
       volatility: round2(sigma * 100),
+      // Standardized adaptive confidence metadata
+      confidence: conf.confidence,
       raw_confidence: conf.raw_confidence,
       capped_confidence: conf.capped_confidence,
       confidence_cap_reason: conf.confidence_cap_reason,
       variance_score: conf.variance_score,
       sample_size: sampleSize,
       data_sufficiency: conf.data_sufficiency,
+      adaptive_calibration_applied: conf.adaptive_calibration_applied,
+      calibration_model_version: conf.calibration_model_version,
+      calibration_band_used: conf.calibration_band_used,
+      calibration_correction_applied_pp: conf.calibration_correction_applied_pp,
+      calibration_low_sample_band: conf.calibration_low_sample_band,
+      confidence_source: conf.confidence_source,
       created_by: user.id,
     };
 

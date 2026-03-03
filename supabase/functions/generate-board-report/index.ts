@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { capConfidence, fetchCalibrationModel } from "../_shared/confidence-cap.ts";
+import { applyAdaptiveConfidence, fetchCalibrationModel } from "../_shared/adaptive-confidence.ts";
+import { capConfidence } from "../_shared/confidence-cap.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -63,57 +64,39 @@ serve(async (req) => {
       });
     }
 
-    // Calculate 30-day cutoff
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    // Fetch all data in parallel — including historical trend data
     const [
-      orgResult,
-      riskResult,
-      convergenceLatestResult,
-      convergenceHistoryResult,
-      conflictsResult,
-      simulationResult,
+      orgResult, riskResult, convergenceLatestResult,
+      convergenceHistoryResult, conflictsResult, simulationResult,
     ] = await Promise.all([
       serviceClient.from("organizations").select("name").eq("id", organization_id).single(),
-      serviceClient
-        .from("executive_risk_index")
+      serviceClient.from("executive_risk_index")
         .select("role_type, score, components, last_updated, escalation_required, escalation_reason")
         .eq("organization_id", organization_id),
-      serviceClient
-        .from("executive_convergence_index")
+      serviceClient.from("executive_convergence_index")
         .select("score, dispersion, conflict_penalty, volatility_divergence, alignment_status, created_at")
         .eq("organization_id", organization_id)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle(),
-      serviceClient
-        .from("executive_convergence_index")
+        .order("created_at", { ascending: false }).limit(1).maybeSingle(),
+      serviceClient.from("executive_convergence_index")
         .select("score, dispersion, conflict_penalty, volatility_divergence, alignment_status, created_at")
         .eq("organization_id", organization_id)
         .gte("created_at", thirtyDaysAgo.toISOString())
         .order("created_at", { ascending: true }),
-      serviceClient
-        .from("executive_conflicts")
+      serviceClient.from("executive_conflicts")
         .select("rule_triggered, severity, role_1, role_2, description, created_at")
-        .eq("organization_id", organization_id)
-        .is("resolved_at", null)
+        .eq("organization_id", organization_id).is("resolved_at", null)
         .order("created_at", { ascending: false }),
-      serviceClient
-        .from("scenario_results")
+      serviceClient.from("scenario_results")
         .select("kpi_id, baseline_value, simulated_value, delta_value, date")
         .eq("organization_id", organization_id)
-        .order("created_at", { ascending: false })
-        .limit(10),
+        .order("created_at", { ascending: false }).limit(10),
     ]);
 
     const roleRisks = (riskResult.data || []).map((r: any) => ({
-      role_type: r.role_type,
-      score: r.score,
-      components: r.components,
-      last_updated: r.last_updated,
-      escalation_required: r.escalation_required,
+      role_type: r.role_type, score: r.score, components: r.components,
+      last_updated: r.last_updated, escalation_required: r.escalation_required,
       escalation_reason: r.escalation_reason,
     }));
 
@@ -122,7 +105,7 @@ serve(async (req) => {
     const conflicts = conflictsResult.data || [];
     const simulation = simulationResult.data || [];
 
-    // Compute governance posture
+    // Governance posture
     const maxRiskScore = roleRisks.length > 0 ? Math.max(...roleRisks.map((r: any) => r.score)) : 0;
     const hasEscalation = roleRisks.some((r: any) => r.escalation_required);
     const criticalConflicts = conflicts.filter((c: any) => c.severity === "critical" || c.severity === "high").length;
@@ -134,7 +117,7 @@ serve(async (req) => {
       governanceStatus = "amber";
     }
 
-    // Generate deterministic headline
+    // Governance headline
     let governanceHeadline = "";
     if (governanceStatus === "red") {
       if (hasEscalation) {
@@ -146,16 +129,14 @@ serve(async (req) => {
         governanceHeadline = `Elevated Risk Profile Requires Immediate Board Attention`;
       }
     } else if (governanceStatus === "amber") {
-      if (convergence?.alignment_status === "misalignment") {
-        governanceHeadline = `Moderate Structural Misalignment Detected Across Executive Functions`;
-      } else {
-        governanceHeadline = `Executive Tension Identified — Monitoring Recommended`;
-      }
+      governanceHeadline = convergence?.alignment_status === "misalignment"
+        ? `Moderate Structural Misalignment Detected Across Executive Functions`
+        : `Executive Tension Identified — Monitoring Recommended`;
     } else {
       governanceHeadline = `Governance Aligned — No Immediate Intervention Required`;
     }
 
-    // Deterministic board summary
+    // Board summary
     const summaryLines: string[] = [];
     if (roleRisks.length > 0) {
       const highest = roleRisks.reduce((a: any, b: any) => a.score > b.score ? a : b);
@@ -165,13 +146,11 @@ serve(async (req) => {
     if (convergence) {
       summaryLines.push(`Executive Convergence Index stands at ${convergence.score}/100 with ${convergence.alignment_status.replace("_", " ")} status.`);
     }
-    if (conflicts.length > 0) {
-      summaryLines.push(`${conflicts.length} active governance conflict${conflicts.length > 1 ? "s" : ""} remain${conflicts.length === 1 ? "s" : ""} unresolved, contributing to alignment degradation.`);
-    } else {
-      summaryLines.push("No active governance conflicts detected.");
-    }
+    summaryLines.push(conflicts.length > 0
+      ? `${conflicts.length} active governance conflict${conflicts.length > 1 ? "s" : ""} remain${conflicts.length === 1 ? "s" : ""} unresolved.`
+      : "No active governance conflicts detected.");
 
-    // Deterministic governance actions
+    // Governance actions
     const governanceActions: { action: string; priority: "immediate" | "medium_term"; trigger: string }[] = [];
     const cfo = roleRisks.find((r: any) => r.role_type === "cfo");
     const ceo = roleRisks.find((r: any) => r.role_type === "ceo");
@@ -194,7 +173,7 @@ serve(async (req) => {
       governanceActions.push({ action: "Establish quarterly executive risk review cadence", priority: "medium_term", trigger: `Max risk score ${maxRiskScore} in moderate range` });
     }
 
-    // ECI trend computation
+    // ECI trend
     let eciTrend: { direction: "up" | "down" | "stable"; percentChange: number; dataPoints: number } | null = null;
     if (convergenceHistory.length >= 2) {
       const oldest = convergenceHistory[0];
@@ -208,7 +187,7 @@ serve(async (req) => {
       };
     }
 
-    // AI narrative for Enterprise
+    // AI narrative for Enterprise with standardized adaptive confidence
     let aiNarrative: any = null;
     if (tier === "enterprise" && lovableApiKey) {
       const contextBlock = `
@@ -226,7 +205,7 @@ ${convergence ? `Score: ${convergence.score}/100 | Status: ${convergence.alignme
 ACTIVE CONFLICTS (${conflicts.length}):
 ${conflicts.length > 0 ? conflicts.map((c: any) => `[${c.severity.toUpperCase()}] ${c.role_1} vs ${c.role_2}: ${c.description}`).join("\n") : "None"}
 
-DETERMINISTIC ACTIONS ALREADY GENERATED:
+DETERMINISTIC ACTIONS:
 ${governanceActions.map((a) => `[${a.priority}] ${a.action}`).join("\n")}
 
 ECI TREND (30 days):
@@ -234,9 +213,10 @@ ${eciTrend ? `Direction: ${eciTrend.direction} | Change: ${eciTrend.percentChang
 `;
 
       try {
-          // Count total data points for confidence cap
-          const totalDataPoints = roleRisks.length + (convergence ? 1 : 0) + conflicts.length + convergenceHistory.length;
-          const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        const totalDataPoints = roleRisks.length + (convergence ? 1 : 0) + conflicts.length + convergenceHistory.length;
+        const calModel = await fetchCalibrationModel(supabaseUrl, serviceKey, organization_id);
+
+        const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
           method: "POST",
           headers: {
             Authorization: `Bearer ${lovableApiKey}`,
@@ -290,16 +270,25 @@ Refine the deterministic actions already provided. Be authoritative. Reference o
           const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
           if (toolCall?.function?.arguments) {
             aiNarrative = JSON.parse(toolCall.function.arguments);
-            // EPISTEMIC ENFORCEMENT: Cap AI confidence + adaptive calibration
+            // EPISTEMIC ENFORCEMENT: Apply universal adaptive confidence
             if (aiNarrative?.confidence_score !== undefined) {
-              const calModel = await fetchCalibrationModel(supabaseUrl, serviceKey, organization_id);
-              const cap = capConfidence(aiNarrative.confidence_score, totalDataPoints, undefined, calModel);
-              aiNarrative.raw_confidence = cap.raw_confidence;
-              aiNarrative.capped_confidence = cap.capped_confidence;
-              aiNarrative.confidence_cap_reason = cap.confidence_cap_reason;
-              aiNarrative.confidence_score = cap.calibrated_confidence ?? cap.capped_confidence;
-              aiNarrative.data_sufficiency = cap.data_sufficiency;
-              aiNarrative.adaptive_adjustment = cap.adaptive_adjustment ?? 0;
+              const meta = applyAdaptiveConfidence({
+                rawConfidence: aiNarrative.confidence_score,
+                sampleSize: totalDataPoints,
+                calibrationModel: calModel,
+              });
+              aiNarrative.confidence = meta.confidence;
+              aiNarrative.raw_confidence = meta.raw_confidence;
+              aiNarrative.capped_confidence = meta.capped_confidence;
+              aiNarrative.confidence_cap_reason = meta.confidence_cap_reason;
+              aiNarrative.confidence_score = meta.confidence;
+              aiNarrative.data_sufficiency = meta.data_sufficiency;
+              aiNarrative.adaptive_calibration_applied = meta.adaptive_calibration_applied;
+              aiNarrative.calibration_model_version = meta.calibration_model_version;
+              aiNarrative.calibration_band_used = meta.calibration_band_used;
+              aiNarrative.calibration_correction_applied_pp = meta.calibration_correction_applied_pp;
+              aiNarrative.calibration_low_sample_band = meta.calibration_low_sample_band;
+              aiNarrative.confidence_source = meta.confidence_source;
             }
           }
         }
@@ -313,38 +302,21 @@ Refine the deterministic actions already provided. Be authoritative. Reference o
       generated_at: new Date().toISOString(),
       generated_by: user.email,
       tier,
-      // Page 1 — Executive Summary
       governance_status: governanceStatus,
       governance_headline: governanceHeadline,
       board_summary: summaryLines,
       max_risk_score: maxRiskScore,
       has_escalation: hasEscalation,
       active_conflicts_count: conflicts.length,
-      // Risk data
       role_risks: roleRisks,
       convergence,
       conflicts,
       simulation,
-      // Trend intelligence
       eci_trend: eciTrend,
       convergence_history: convergenceHistory,
-      // Governance actions
       governance_actions: governanceActions,
-      // AI (Enterprise)
       ai_narrative: aiNarrative,
     };
-
-    console.log(JSON.stringify({
-      event: "board_report_generated",
-      organization_id,
-      governance_status: governanceStatus,
-      roles_count: roleRisks.length,
-      conflicts_count: conflicts.length,
-      has_convergence: !!convergence,
-      has_ai: !!aiNarrative,
-      trend_points: convergenceHistory.length,
-      actions_count: governanceActions.length,
-    }));
 
     return new Response(JSON.stringify(report), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { authenticateRequest, verifyOrgMembership } from "../_shared/auth-guard.ts";
-import { capConfidence, computeVariance, fetchCalibrationModel } from "../_shared/confidence-cap.ts";
+import { applyAdaptiveConfidenceWithFetch, computeVariance } from "../_shared/adaptive-confidence.ts";
+import type { AdaptiveConfidenceMeta } from "../_shared/adaptive-confidence.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -24,6 +25,7 @@ interface DiagnosticResult {
   trend_direction: "improving" | "declining" | "stable" | "volatile";
   change_pct: number;
   recommendation: string;
+  // Standardized adaptive confidence metadata
   confidence: number;
   raw_confidence: number;
   capped_confidence: number;
@@ -31,9 +33,43 @@ interface DiagnosticResult {
   sample_size: number;
   data_sufficiency: string;
   variance_score: number | null;
+  adaptive_calibration_applied: boolean;
+  calibration_model_version: number | null;
+  calibration_band_used: string | null;
+  calibration_correction_applied_pp: number | null;
+  calibration_low_sample_band: boolean;
+  confidence_source: string;
 }
 
-function computeDiagnostics(metrics: MetricRow[], calibrationModel?: any): DiagnosticResult[] {
+function applyMeta(meta: AdaptiveConfidenceMeta): Pick<DiagnosticResult,
+  "confidence" | "raw_confidence" | "capped_confidence" | "confidence_cap_reason" |
+  "sample_size" | "data_sufficiency" | "variance_score" | "adaptive_calibration_applied" |
+  "calibration_model_version" | "calibration_band_used" | "calibration_correction_applied_pp" |
+  "calibration_low_sample_band" | "confidence_source"
+> {
+  return {
+    confidence: meta.confidence,
+    raw_confidence: meta.raw_confidence,
+    capped_confidence: meta.capped_confidence,
+    confidence_cap_reason: meta.confidence_cap_reason,
+    sample_size: meta.sample_size,
+    data_sufficiency: meta.data_sufficiency,
+    variance_score: meta.variance_score,
+    adaptive_calibration_applied: meta.adaptive_calibration_applied,
+    calibration_model_version: meta.calibration_model_version,
+    calibration_band_used: meta.calibration_band_used,
+    calibration_correction_applied_pp: meta.calibration_correction_applied_pp,
+    calibration_low_sample_band: meta.calibration_low_sample_band,
+    confidence_source: meta.confidence_source,
+  };
+}
+
+async function computeDiagnostics(
+  metrics: MetricRow[],
+  supabaseUrl: string,
+  serviceKey: string,
+  organizationId: string,
+): Promise<DiagnosticResult[]> {
   const grouped: Record<string, MetricRow[]> = {};
   for (const m of metrics) {
     if (!grouped[m.metric_type]) grouped[m.metric_type] = [];
@@ -45,7 +81,10 @@ function computeDiagnostics(metrics: MetricRow[], calibrationModel?: any): Diagn
   for (const [type, rows] of Object.entries(grouped)) {
     if (rows.length < 8) {
       if (rows.length >= 2) {
-        const cap = capConfidence(0, rows.length);
+        const meta = await applyAdaptiveConfidenceWithFetch(
+          { rawConfidence: 0, sampleSize: rows.length },
+          supabaseUrl, serviceKey, organizationId,
+        );
         results.push({
           metric_type: type,
           diagnosis: `Insufficient data (${rows.length} points). Minimum 8 required for credible analysis.`,
@@ -55,13 +94,7 @@ function computeDiagnostics(metrics: MetricRow[], calibrationModel?: any): Diagn
           trend_direction: "stable",
           change_pct: 0,
           recommendation: "Upload more historical data to enable diagnostics.",
-          confidence: 0,
-          raw_confidence: cap.raw_confidence,
-          capped_confidence: cap.capped_confidence,
-          confidence_cap_reason: cap.confidence_cap_reason,
-          sample_size: cap.sample_size,
-          data_sufficiency: cap.data_sufficiency,
-          variance_score: null,
+          ...applyMeta(meta),
         });
       }
       continue;
@@ -71,7 +104,6 @@ function computeDiagnostics(metrics: MetricRow[], calibrationModel?: any): Diagn
     const values = sorted.map(r => Number(r.value));
     const latest = values[values.length - 1];
     const previous = values[values.length - 2];
-    const oldest = values[0];
     const changePct = previous !== 0 ? ((latest - previous) / Math.abs(previous)) * 100 : 0;
 
     const mean = values.reduce((s, v) => s + v, 0) / values.length;
@@ -205,7 +237,10 @@ function computeDiagnostics(metrics: MetricRow[], calibrationModel?: any): Diagn
     }
 
     // EPISTEMIC ENFORCEMENT: Apply confidence cap + adaptive calibration
-    const cap = capConfidence(rawConfidence, n, volatility, calibrationModel);
+    const meta = await applyAdaptiveConfidenceWithFetch(
+      { rawConfidence, sampleSize: n, variance: volatility },
+      supabaseUrl, serviceKey, organizationId,
+    );
 
     results.push({
       metric_type: type,
@@ -216,13 +251,7 @@ function computeDiagnostics(metrics: MetricRow[], calibrationModel?: any): Diagn
       trend_direction,
       change_pct: Math.round(changePct * 10) / 10,
       recommendation,
-      confidence: cap.capped_confidence,
-      raw_confidence: cap.raw_confidence,
-      capped_confidence: cap.capped_confidence,
-      confidence_cap_reason: cap.confidence_cap_reason,
-      sample_size: cap.sample_size,
-      data_sufficiency: cap.data_sufficiency,
-      variance_score: cap.variance_score,
+      ...applyMeta(meta),
     });
   }
 
@@ -266,11 +295,13 @@ serve(async (req) => {
       });
     }
 
-    // Fetch adaptive calibration model
-    const calibrationModel = await fetchCalibrationModel(supabaseUrl, serviceKey, organization_id);
-    const diagnostics = computeDiagnostics(metrics, calibrationModel);
+    const diagnostics = await computeDiagnostics(metrics, supabaseUrl, serviceKey, organization_id);
 
-    return new Response(JSON.stringify({ diagnostics, analyzed_metrics: metrics.length, calibration_model_applied: !!calibrationModel }), {
+    return new Response(JSON.stringify({
+      diagnostics,
+      analyzed_metrics: metrics.length,
+      adaptive_calibration_applied: diagnostics.some(d => d.adaptive_calibration_applied),
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err: any) {

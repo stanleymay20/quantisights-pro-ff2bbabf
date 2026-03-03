@@ -245,10 +245,19 @@ serve(async (req) => {
       contextParts.push(`LATEST BRIEF (${latest.generated_at}): Risk score ${latest.risk_score}. Summary: ${JSON.stringify(latest.summary_json).slice(0, 500)}`);
     }
 
-    // Adaptive Calibration context
+    // Adaptive Calibration context — standardized metadata for copilot reasoning
     if (calibrationResult.data && calibrationResult.data.length > 0) {
       const cal = calibrationResult.data[0] as any;
-      contextParts.push(`ADAPTIVE CALIBRATION (v${cal.model_version}): Score ${cal.overall_calibration_score}/100, Bias: ${cal.overall_bias_direction}, MAE: ${cal.mean_absolute_error}pp. When stating confidence levels, apply these learned corrections: ${JSON.stringify(cal.band_corrections)}`);
+      contextParts.push(`ADAPTIVE CALIBRATION (v${cal.model_version}):
+- Overall Score: ${cal.overall_calibration_score}/100
+- Bias Direction: ${cal.overall_bias_direction}
+- Mean Absolute Error: ${cal.mean_absolute_error}pp
+- Band Corrections: ${JSON.stringify(cal.band_corrections)}
+- adaptive_calibration_applied: true
+- calibration_model_version: ${cal.model_version}
+When stating confidence levels, apply these learned corrections. Every confidence you report must be corrected by these band adjustments.`);
+    } else {
+      contextParts.push(`ADAPTIVE CALIBRATION: No calibration model available. adaptive_calibration_applied: false`);
     }
 
     contextParts.push(`ROLE: ${role_type.toUpperCase()}`);
