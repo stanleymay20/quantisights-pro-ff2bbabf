@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { capConfidence } from "../_shared/confidence-cap.ts";
+import { capConfidence, fetchCalibrationModel } from "../_shared/confidence-cap.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -290,14 +290,16 @@ Refine the deterministic actions already provided. Be authoritative. Reference o
           const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
           if (toolCall?.function?.arguments) {
             aiNarrative = JSON.parse(toolCall.function.arguments);
-            // EPISTEMIC ENFORCEMENT: Cap AI confidence
+            // EPISTEMIC ENFORCEMENT: Cap AI confidence + adaptive calibration
             if (aiNarrative?.confidence_score !== undefined) {
-              const cap = capConfidence(aiNarrative.confidence_score, totalDataPoints);
+              const calModel = await fetchCalibrationModel(supabaseUrl, serviceKey, organization_id);
+              const cap = capConfidence(aiNarrative.confidence_score, totalDataPoints, undefined, calModel);
               aiNarrative.raw_confidence = cap.raw_confidence;
               aiNarrative.capped_confidence = cap.capped_confidence;
               aiNarrative.confidence_cap_reason = cap.confidence_cap_reason;
-              aiNarrative.confidence_score = cap.capped_confidence;
+              aiNarrative.confidence_score = cap.calibrated_confidence ?? cap.capped_confidence;
               aiNarrative.data_sufficiency = cap.data_sufficiency;
+              aiNarrative.adaptive_adjustment = cap.adaptive_adjustment ?? 0;
             }
           }
         }

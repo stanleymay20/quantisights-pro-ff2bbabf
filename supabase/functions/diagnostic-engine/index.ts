@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { authenticateRequest, verifyOrgMembership } from "../_shared/auth-guard.ts";
-import { capConfidence, computeVariance } from "../_shared/confidence-cap.ts";
+import { capConfidence, computeVariance, fetchCalibrationModel } from "../_shared/confidence-cap.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -33,7 +33,7 @@ interface DiagnosticResult {
   variance_score: number | null;
 }
 
-function computeDiagnostics(metrics: MetricRow[]): DiagnosticResult[] {
+function computeDiagnostics(metrics: MetricRow[], calibrationModel?: any): DiagnosticResult[] {
   const grouped: Record<string, MetricRow[]> = {};
   for (const m of metrics) {
     if (!grouped[m.metric_type]) grouped[m.metric_type] = [];
@@ -204,8 +204,8 @@ function computeDiagnostics(metrics: MetricRow[]): DiagnosticResult[] {
       if (volatility > 20) causalFactors.push(`High volatility (${volatility.toFixed(0)}% CV)`);
     }
 
-    // EPISTEMIC ENFORCEMENT: Apply confidence cap
-    const cap = capConfidence(rawConfidence, n, volatility);
+    // EPISTEMIC ENFORCEMENT: Apply confidence cap + adaptive calibration
+    const cap = capConfidence(rawConfidence, n, volatility, calibrationModel);
 
     results.push({
       metric_type: type,
@@ -266,9 +266,11 @@ serve(async (req) => {
       });
     }
 
-    const diagnostics = computeDiagnostics(metrics);
+    // Fetch adaptive calibration model
+    const calibrationModel = await fetchCalibrationModel(supabaseUrl, serviceKey, organization_id);
+    const diagnostics = computeDiagnostics(metrics, calibrationModel);
 
-    return new Response(JSON.stringify({ diagnostics, analyzed_metrics: metrics.length }), {
+    return new Response(JSON.stringify({ diagnostics, analyzed_metrics: metrics.length, calibration_model_applied: !!calibrationModel }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err: any) {
