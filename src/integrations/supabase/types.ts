@@ -2539,8 +2539,10 @@ export type Database = {
       }
       organizations: {
         Row: {
+          ai_raw_text_enabled: boolean
           created_at: string
           created_by: string | null
+          data_retention_days: number
           id: string
           industry: string | null
           name: string
@@ -2549,8 +2551,10 @@ export type Database = {
           size_band: string | null
         }
         Insert: {
+          ai_raw_text_enabled?: boolean
           created_at?: string
           created_by?: string | null
+          data_retention_days?: number
           id?: string
           industry?: string | null
           name: string
@@ -2559,8 +2563,10 @@ export type Database = {
           size_band?: string | null
         }
         Update: {
+          ai_raw_text_enabled?: boolean
           created_at?: string
           created_by?: string | null
+          data_retention_days?: number
           id?: string
           industry?: string | null
           name?: string
