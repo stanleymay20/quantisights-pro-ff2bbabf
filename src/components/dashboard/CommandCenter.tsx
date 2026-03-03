@@ -1,6 +1,7 @@
 import { useState, lazy, Suspense } from "react";
 import { motion } from "framer-motion";
 import { BarChart3, Sparkles, Plus, ArrowRight } from "lucide-react";
+import ProtectionStatus from "./ProtectionStatus";
 import DecisionQueue from "./DecisionQueue";
 import QuickDecisionLog from "./QuickDecisionLog";
 import CalibrationProgress from "./CalibrationProgress";
@@ -48,6 +49,14 @@ const CommandCenter = ({
 
   return (
     <div className="space-y-6 max-w-[1400px]">
+      {/* Protection Status — THE trust widget */}
+      <ProtectionStatus
+        organizationId={organizationId}
+        calibrationScore={calibrationScore}
+        pendingDecisions={pendingDecisions}
+        criticalSignals={criticalInsights.length}
+      />
+
       {/* Decision Queue — THE primary interface */}
       <DecisionQueue
         organizationId={organizationId}
