@@ -13,6 +13,7 @@ import {
   Upload, FileSpreadsheet, ArrowRight, Check, X,
   AlertTriangle, ShieldCheck, BarChart3, Info,
 } from "lucide-react";
+import UploadTrustBadges from "@/components/security/UploadTrustBadges";
 
 type Step = "upload" | "preview" | "mapping" | "validation" | "importing" | "done";
 
@@ -344,6 +345,7 @@ const DataUpload = () => {
               <p className="text-muted-foreground text-sm mb-4">Drag & drop or click to browse</p>
               <p className="text-xs text-muted-foreground">Supports: CSV files up to 20MB with date and value columns</p>
               <input id="csv-input" type="file" accept=".csv" className="hidden" onChange={handleFileSelect} />
+              <UploadTrustBadges />
             </div>
           )}
 
