@@ -1,4 +1,4 @@
-import { ArrowRight, Zap, Shield, TrendingDown, Eye, EyeOff, AlertTriangle } from "lucide-react";
+import { ArrowRight, Zap, TrendingDown, Eye, AlertTriangle, BookOpen, Brain } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import type { Insight } from "@/hooks/useInsights";
@@ -8,6 +8,8 @@ interface DailyActionsProps {
   hasData: boolean;
   churnRate: number;
   revenue: number;
+  pendingDecisions?: number;
+  calibrationScore?: number | null;
 }
 
 interface Action {
@@ -27,7 +29,7 @@ const PRIORITY_STYLES = {
   medium: "border-primary/20 bg-primary/[0.03]",
 };
 
-const DailyActions = ({ insights, hasData, churnRate, revenue }: DailyActionsProps) => {
+const DailyActions = ({ insights, hasData, churnRate, revenue, pendingDecisions = 0, calibrationScore }: DailyActionsProps) => {
   if (!hasData) return null;
 
   const criticalInsights = insights.filter(i => i.severity === "high");
@@ -75,8 +77,32 @@ const DailyActions = ({ insights, hasData, churnRate, revenue }: DailyActionsPro
     });
   }
 
-  // No filler actions — only show real data-driven priorities
-  // If nothing needs attention, show nothing.
+  // Proactive nudges when no urgent signals
+  if (actions.length === 0 && pendingDecisions > 0) {
+    actions.push({
+      id: "review-pending",
+      icon: BookOpen,
+      title: "Review pending decisions",
+      description: `${pendingDecisions} decision${pendingDecisions > 1 ? "s" : ""} awaiting outcome — log results to improve accuracy`,
+      path: "/decisions",
+      cta: "Update outcomes",
+      priority: "medium",
+      color: "text-primary",
+    });
+  }
+
+  if (actions.length === 0 && calibrationScore != null && calibrationScore < 70) {
+    actions.push({
+      id: "improve-calibration",
+      icon: Brain,
+      title: "Improve your calibration",
+      description: `Score at ${calibrationScore}% — log more decisions with outcomes to strengthen the model`,
+      path: "/decisions",
+      cta: "Log a decision",
+      priority: "medium",
+      color: "text-primary",
+    });
+  }
 
   const displayActions = actions.slice(0, 3);
 
@@ -104,7 +130,7 @@ const DailyActions = ({ insights, hasData, churnRate, revenue }: DailyActionsPro
             <div className="flex items-center justify-between">
               <action.icon className={`w-4 h-4 ${action.color}`} />
               <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">
-                {i + 1}/3
+                {i + 1}/{displayActions.length}
               </span>
             </div>
             <div>

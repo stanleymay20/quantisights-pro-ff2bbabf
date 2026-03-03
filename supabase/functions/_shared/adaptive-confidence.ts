@@ -119,5 +119,86 @@ export async function applyAdaptiveConfidenceWithFetch(
   return applyAdaptiveConfidence({ ...input, calibrationModel: model });
 }
 
+/**
+ * Drift Detection: compare consecutive calibration models to detect degradation.
+ * 
+ * Returns a drift signal based on MAE trend and bias direction stability.
+ */
+export interface DriftSignal {
+  drift_status: "stable" | "watch" | "degrading";
+  drift_reason: string;
+  current_mae: number | null;
+  previous_mae: number | null;
+  mae_delta: number | null;
+  bias_direction: string | null;
+  bias_flipped: boolean;
+}
+
+export async function detectCalibrationDrift(
+  supabaseUrl: string,
+  serviceKey: string,
+  organizationId: string,
+): Promise<DriftSignal> {
+  const defaultSignal: DriftSignal = {
+    drift_status: "stable",
+    drift_reason: "Insufficient calibration history",
+    current_mae: null,
+    previous_mae: null,
+    mae_delta: null,
+    bias_direction: null,
+    bias_flipped: false,
+  };
+
+  try {
+    const headers = { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` };
+    const resp = await fetch(
+      `${supabaseUrl}/rest/v1/calibration_models?organization_id=eq.${organizationId}&order=computed_at.desc&limit=2&select=mean_absolute_error,overall_bias_direction,model_version`,
+      { headers }
+    );
+    if (!resp.ok) return defaultSignal;
+    const models = await resp.json();
+    if (!models || models.length < 2) return defaultSignal;
+
+    const [current, previous] = models;
+    const currentMae = current.mean_absolute_error;
+    const previousMae = previous.mean_absolute_error;
+    const biasFlipped = !!(current.overall_bias_direction && previous.overall_bias_direction
+      && current.overall_bias_direction !== previous.overall_bias_direction);
+
+    if (currentMae == null || previousMae == null) return defaultSignal;
+
+    const maeDelta = currentMae - previousMae;
+    const maeWorsened = maeDelta > 2; // >2pp degradation
+    const maeSignificantlyWorsened = maeDelta > 5;
+
+    let status: DriftSignal["drift_status"] = "stable";
+    let reason = "Calibration accuracy is stable";
+
+    if (maeSignificantlyWorsened || (maeWorsened && biasFlipped)) {
+      status = "degrading";
+      reason = maeSignificantlyWorsened
+        ? `MAE increased by ${maeDelta.toFixed(1)}pp (${previousMae.toFixed(1)} → ${currentMae.toFixed(1)})`
+        : `MAE worsened and bias direction flipped (${previous.overall_bias_direction} → ${current.overall_bias_direction})`;
+    } else if (maeWorsened || biasFlipped) {
+      status = "watch";
+      reason = maeWorsened
+        ? `MAE increased by ${maeDelta.toFixed(1)}pp — monitoring`
+        : `Bias direction changed from ${previous.overall_bias_direction} to ${current.overall_bias_direction}`;
+    }
+
+    return {
+      drift_status: status,
+      drift_reason: reason,
+      current_mae: currentMae,
+      previous_mae: previousMae,
+      mae_delta: maeDelta,
+      bias_direction: current.overall_bias_direction,
+      bias_flipped: biasFlipped,
+    };
+  } catch {
+    return defaultSignal;
+  }
+}
+
 // Re-export for convenience
 export { computeVariance, fetchCalibrationModel } from "./confidence-cap.ts";
