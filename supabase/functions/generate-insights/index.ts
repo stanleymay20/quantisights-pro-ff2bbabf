@@ -1,10 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { capConfidence, computeVariance, fetchCalibrationModel } from "../_shared/confidence-cap.ts";
+import { applyAdaptiveConfidence, fetchCalibrationModel } from "../_shared/adaptive-confidence.ts";
+import { capConfidence } from "../_shared/confidence-cap.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 serve(async (req) => {
@@ -48,10 +50,9 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "Not a member" }), { status: 403, headers: corsHeaders });
     }
 
-    const serviceSupabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const serviceSupabase = createClient(supabaseUrl, serviceKey);
 
     const { data: sub } = await serviceSupabase
       .from("subscriptions")
@@ -79,19 +80,46 @@ serve(async (req) => {
       });
     }
 
-    // Fetch calibration model for adaptive corrections
-    const calModel = await fetchCalibrationModel(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-      organization_id
-    );
+    // Fetch calibration model once for all insights
+    const calModel = await fetchCalibrationModel(supabaseUrl, serviceKey, organization_id);
+
+    const { computeVariance } = await import("../_shared/adaptive-confidence.ts");
 
     const insights: {
       message: string; severity: string; category: string;
+      confidence: number;
       raw_confidence: number; capped_confidence: number;
       confidence_cap_reason: string; sample_size: number;
       variance_score: number | null; data_quality_index: number;
+      adaptive_calibration_applied: boolean;
+      calibration_model_version: number | null;
+      calibration_band_used: string | null;
+      calibration_correction_applied_pp: number | null;
+      calibration_low_sample_band: boolean;
+      confidence_source: string;
     }[] = [];
+
+    function buildInsight(
+      msg: string, sev: string, cat: string,
+      rawConf: number, sampleSize: number, variance?: number,
+    ) {
+      const meta = applyAdaptiveConfidence({
+        rawConfidence: rawConf, sampleSize, variance, calibrationModel: calModel,
+      });
+      insights.push({
+        message: msg, severity: sev, category: cat,
+        confidence: meta.confidence,
+        raw_confidence: meta.raw_confidence, capped_confidence: meta.capped_confidence,
+        confidence_cap_reason: meta.confidence_cap_reason, sample_size: meta.sample_size,
+        variance_score: meta.variance_score, data_quality_index: 100,
+        adaptive_calibration_applied: meta.adaptive_calibration_applied,
+        calibration_model_version: meta.calibration_model_version,
+        calibration_band_used: meta.calibration_band_used,
+        calibration_correction_applied_pp: meta.calibration_correction_applied_pp,
+        calibration_low_sample_band: meta.calibration_low_sample_band,
+        confidence_source: meta.confidence_source,
+      });
+    }
 
     // Revenue analysis
     const revenueMetrics = metrics.filter((m) => m.metric_type === "revenue");
@@ -103,30 +131,21 @@ serve(async (req) => {
       const secondHalf = values.slice(half).reduce((s, v) => s + v, 0);
       const change = ((secondHalf - firstHalf) / firstHalf) * 100;
 
-      let rawConf = 70;
-      let msg = "";
-      let sev = "info";
-
       if (change < -10) {
-        rawConf = 85;
-        msg = `Revenue dropped ${Math.abs(change).toFixed(1)}% in recent period. Review pricing strategy and market conditions.`;
-        sev = "high";
+        buildInsight(
+          `Revenue dropped ${Math.abs(change).toFixed(1)}% in recent period. Review pricing strategy and market conditions.`,
+          "high", "revenue", 85, revenueMetrics.length, varianceScore,
+        );
       } else if (change > 20) {
-        rawConf = 80;
-        msg = `Strong revenue growth of ${change.toFixed(1)}%. Consider scaling operations to sustain momentum.`;
+        buildInsight(
+          `Strong revenue growth of ${change.toFixed(1)}%. Consider scaling operations to sustain momentum.`,
+          "info", "revenue", 80, revenueMetrics.length, varianceScore,
+        );
       } else if (change > 0) {
-        rawConf = 75;
-        msg = `Revenue grew ${change.toFixed(1)}%. Steady growth — optimize top-performing segments.`;
-      }
-
-      if (msg) {
-        const cap = capConfidence(rawConf, revenueMetrics.length, varianceScore, calModel);
-        insights.push({
-          message: msg, severity: sev, category: "revenue",
-          raw_confidence: cap.raw_confidence, capped_confidence: cap.capped_confidence,
-          confidence_cap_reason: cap.confidence_cap_reason, sample_size: cap.sample_size,
-          variance_score: cap.variance_score, data_quality_index: 100,
-        });
+        buildInsight(
+          `Revenue grew ${change.toFixed(1)}%. Steady growth — optimize top-performing segments.`,
+          "info", "revenue", 75, revenueMetrics.length, varianceScore,
+        );
       }
     }
 
@@ -136,26 +155,17 @@ serve(async (req) => {
       const values = churnMetrics.map(m => Number(m.value));
       const latestChurn = values[values.length - 1];
       const varianceScore = computeVariance(values);
-      let rawConf = 70;
-      let msg = "";
-      let sev = "info";
 
       if (latestChurn > 5) {
-        rawConf = 85; sev = "high";
-        msg = `Churn rate at ${latestChurn}% exceeds threshold. Implement retention campaigns immediately.`;
+        buildInsight(
+          `Churn rate at ${latestChurn}% exceeds threshold. Implement retention campaigns immediately.`,
+          "high", "churn", 85, churnMetrics.length, varianceScore,
+        );
       } else if (latestChurn > 3) {
-        rawConf = 75; sev = "medium";
-        msg = `Churn rate at ${latestChurn}%. Monitor closely and assess customer satisfaction.`;
-      }
-
-      if (msg) {
-        const cap = capConfidence(rawConf, churnMetrics.length, varianceScore, calModel);
-        insights.push({
-          message: msg, severity: sev, category: "churn",
-          raw_confidence: cap.raw_confidence, capped_confidence: cap.capped_confidence,
-          confidence_cap_reason: cap.confidence_cap_reason, sample_size: cap.sample_size,
-          variance_score: cap.variance_score, data_quality_index: 100,
-        });
+        buildInsight(
+          `Churn rate at ${latestChurn}%. Monitor closely and assess customer satisfaction.`,
+          "medium", "churn", 75, churnMetrics.length, varianceScore,
+        );
       }
     }
 
@@ -167,14 +177,10 @@ serve(async (req) => {
       const previous = values[values.length - 2];
       const costChange = ((recent - previous) / previous) * 100;
       if (costChange > 15) {
-        const cap = capConfidence(75, costMetrics.length, computeVariance(values), calModel);
-        insights.push({
-          message: `Cost increased ${costChange.toFixed(1)}% period-over-period. Evaluate cost-saving opportunities.`,
-          severity: "medium", category: "cost",
-          raw_confidence: cap.raw_confidence, capped_confidence: cap.capped_confidence,
-          confidence_cap_reason: cap.confidence_cap_reason, sample_size: cap.sample_size,
-          variance_score: cap.variance_score, data_quality_index: 100,
-        });
+        buildInsight(
+          `Cost increased ${costChange.toFixed(1)}% period-over-period. Evaluate cost-saving opportunities.`,
+          "medium", "cost", 75, costMetrics.length, computeVariance(values),
+        );
       }
     }
 
@@ -188,27 +194,19 @@ serve(async (req) => {
         const last = values[values.length - 1];
         const regionChange = ((last - first) / first) * 100;
         if (regionChange < -15) {
-          const cap = capConfidence(80, regionData.length, computeVariance(values), calModel);
-          insights.push({
-            message: `Revenue in ${region} dropped ${Math.abs(regionChange).toFixed(1)}%. Investigate regional market conditions.`,
-            severity: "high", category: "regional",
-            raw_confidence: cap.raw_confidence, capped_confidence: cap.capped_confidence,
-            confidence_cap_reason: cap.confidence_cap_reason, sample_size: cap.sample_size,
-            variance_score: cap.variance_score, data_quality_index: 100,
-          });
+          buildInsight(
+            `Revenue in ${region} dropped ${Math.abs(regionChange).toFixed(1)}%. Investigate regional market conditions.`,
+            "high", "regional", 80, regionData.length, computeVariance(values),
+          );
         }
       }
     }
 
     if (insights.length === 0) {
-      const cap = capConfidence(90, metrics.length, undefined, calModel);
-      insights.push({
-        message: "All metrics within normal ranges. Continue monitoring for changes.",
-        severity: "info", category: "general",
-        raw_confidence: cap.raw_confidence, capped_confidence: cap.capped_confidence,
-        confidence_cap_reason: cap.confidence_cap_reason, sample_size: cap.sample_size,
-        variance_score: null, data_quality_index: 100,
-      });
+      buildInsight(
+        "All metrics within normal ranges. Continue monitoring for changes.",
+        "info", "general", 90, metrics.length,
+      );
     }
 
     const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
@@ -223,7 +221,7 @@ serve(async (req) => {
       message: i.message,
       severity: i.severity,
       category: i.category,
-      confidence_score: i.capped_confidence,
+      confidence_score: i.confidence,
       raw_confidence: i.raw_confidence,
       capped_confidence: i.capped_confidence,
       confidence_cap_reason: i.confidence_cap_reason,

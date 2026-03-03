@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { fetchCalibrationModel } from "../_shared/adaptive-confidence.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -321,13 +322,8 @@ No markdown, no code fences, no text outside JSON.`,
       }
     }
 
-    // Fetch calibration model for context
-    const { data: calModel } = await serviceClient
-      .from("calibration_models")
-      .select("overall_calibration_score, overall_bias_direction, model_version")
-      .eq("organization_id", organization_id)
-      .order("computed_at", { ascending: false })
-      .limit(1);
+    // Fetch calibration model for standardized metadata
+    const calModel = await fetchCalibrationModel(supabaseUrl, serviceKey, organization_id);
 
     const result = {
       baseline_risk: baselineRisk,
@@ -340,10 +336,15 @@ No markdown, no code fences, no text outside JSON.`,
       ai_board_summary: aiBoardSummary,
       ai_recommended_actions: aiRecommendedActions,
       scenario_parameters: params,
-      calibration_context: calModel?.[0] ? {
-        score: calModel[0].overall_calibration_score,
-        bias: calModel[0].overall_bias_direction,
-        model_version: calModel[0].model_version,
+      // Standardized adaptive calibration metadata
+      adaptive_calibration_applied: !!calModel,
+      calibration_model_version: calModel?.model_version ?? null,
+      calibration_context: calModel ? {
+        score: calModel.overall_calibration_score,
+        bias: (calModel as any).overall_bias_direction ?? null,
+        model_version: calModel.model_version,
+        band_corrections: calModel.band_corrections,
+        low_sample_bands: calModel.low_sample_bands,
       } : null,
     };
 
