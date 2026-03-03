@@ -4,6 +4,8 @@ import KPICards from "@/components/dashboard/KPICards";
 import OrgSwitcher from "@/components/dashboard/OrgSwitcher";
 import IntelligenceStatusBar from "@/components/dashboard/IntelligenceStatusBar";
 import DailyActions from "@/components/dashboard/DailyActions";
+import QuickDecisionLog from "@/components/dashboard/QuickDecisionLog";
+import CalibrationProgress from "@/components/dashboard/CalibrationProgress";
 import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
 
 // Lazy-load heavy chart components (recharts is ~200KB)
@@ -44,6 +46,8 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [recalculating, setRecalculating] = useState(false);
   const [openAdvisoryCount, setOpenAdvisoryCount] = useState(0);
+  const [pendingDecisions, setPendingDecisions] = useState(0);
+  const [calibrationScore, setCalibrationScore] = useState<number | null>(null);
 
   useEffect(() => {
     if (orgLoading || !currentOrgId) return;
@@ -60,16 +64,31 @@ const Dashboard = () => {
     checkOnboarding();
   }, [currentOrgId, orgLoading, navigate]);
 
-  // Fetch open advisory count
+  // Fetch open advisory count + pending decisions + calibration score
   useEffect(() => {
     if (!currentOrgId) return;
     const fetchCount = async () => {
-      const { count } = await supabase
-        .from("advisory_instances")
-        .select("*", { count: "exact", head: true })
-        .eq("organization_id", currentOrgId)
-        .in("status", ["open", "in_progress"]);
-      setOpenAdvisoryCount(count || 0);
+      const [advisoryRes, decisionRes, calRes] = await Promise.all([
+        supabase
+          .from("advisory_instances")
+          .select("*", { count: "exact", head: true })
+          .eq("organization_id", currentOrgId)
+          .in("status", ["open", "in_progress"]),
+        supabase
+          .from("decision_ledger")
+          .select("*", { count: "exact", head: true })
+          .eq("organization_id", currentOrgId)
+          .eq("execution_status", "not_started"),
+        supabase
+          .from("calibration_models")
+          .select("overall_calibration_score")
+          .eq("organization_id", currentOrgId)
+          .order("computed_at", { ascending: false })
+          .limit(1),
+      ]);
+      setOpenAdvisoryCount(advisoryRes.count || 0);
+      setPendingDecisions(decisionRes.count || 0);
+      setCalibrationScore(calRes.data?.[0]?.overall_calibration_score ?? null);
     };
     fetchCount();
   }, [currentOrgId]);
@@ -245,7 +264,18 @@ const Dashboard = () => {
                 hasData={hasData}
                 churnRate={latestChurn}
                 revenue={totalRevenue}
+                pendingDecisions={pendingDecisions}
+                calibrationScore={calibrationScore}
               />
+
+              {/* Quick Decision Log + Calibration Progress */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                <QuickDecisionLog
+                  organizationId={currentOrgId!}
+                  onLogged={() => setPendingDecisions(p => p + 1)}
+                />
+                <CalibrationProgress organizationId={currentOrgId!} />
+              </div>
 
               {/* Contextual Nudge */}
               {hasAnomalies && (
