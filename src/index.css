@@ -258,3 +258,17 @@
     @apply text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60 px-4 pt-6 pb-2;
   }
 }
+
+/* Print stylesheet for security questionnaire */
+@media print {
+  body { background: white !important; color: black !important; font-size: 11pt; }
+  .print\:hidden { display: none !important; }
+  main { padding: 0 !important; }
+  h1 { font-size: 20pt !important; margin-bottom: 8pt !important; }
+  h2 { font-size: 14pt !important; break-after: avoid; }
+  h3 { font-size: 11pt !important; break-after: avoid; }
+  section { break-inside: avoid; }
+  .rounded-xl { border-radius: 4px !important; border-color: #ddd !important; }
+  a { color: inherit !important; text-decoration: none !important; }
+  footer { display: none !important; }
+}
