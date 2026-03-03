@@ -253,10 +253,19 @@ const Billing = () => {
                       ))}
                     </div>
                   </div>
-                  <Button onClick={() => navigate("/pricing")} size="lg" className="gap-2 shadow-lg shadow-primary/20">
-                    <Zap className="w-4 h-4" />
-                    {activeTier === "starter" ? "Upgrade to Growth — €249/mo" : "Contact Sales for Enterprise"}
-                  </Button>
+                  {activeTier === "starter" ? (
+                    <Button onClick={() => navigate("/pricing")} size="lg" className="gap-2 shadow-lg shadow-primary/20">
+                      <Zap className="w-4 h-4" />
+                      Upgrade to Growth — €249/mo
+                    </Button>
+                  ) : (
+                    <Button asChild size="lg" className="gap-2 shadow-lg shadow-primary/20">
+                      <a href="mailto:hello@quantivis.io">
+                        <Zap className="w-4 h-4" />
+                        Contact Sales for Enterprise
+                      </a>
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
             </motion.div>
