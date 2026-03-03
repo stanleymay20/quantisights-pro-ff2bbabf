@@ -34,7 +34,7 @@ const comparisons = [
   },
 ];
 
-const CellIcon = ({ value }: { value: boolean | string }) => {
+const renderCellIcon = (value: boolean | string) => {
   if (value === true) return <Check className="w-4 h-4 text-primary mx-auto" />;
   if (value === false) return <X className="w-4 h-4 text-muted-foreground/30 mx-auto" />;
   return <span className="text-xs font-medium text-foreground">{value}</span>;
@@ -93,10 +93,10 @@ const ComparisonSection = ({ inline = false }: { inline?: boolean }) => (
                   {group.rows.map((row) => (
                     <tr key={row.feature} className="border-b border-border/20 hover:bg-card/50 transition-colors">
                       <td className="py-3 px-4 md:px-6 font-medium text-xs md:text-sm">{row.feature}</td>
-                      <td className="text-center py-3 px-3 md:px-4 bg-primary/[0.02]"><CellIcon value={row.quantivis} /></td>
-                      <td className="text-center py-3 px-3 md:px-4"><CellIcon value={row.mckinsey} /></td>
-                      <td className="text-center py-3 px-3 md:px-4 hidden sm:table-cell"><CellIcon value={row.tableau} /></td>
-                      <td className="text-center py-3 px-3 md:px-4 hidden sm:table-cell"><CellIcon value={row.mosaic} /></td>
+                      <td className="text-center py-3 px-3 md:px-4 bg-primary/[0.02]">{renderCellIcon(row.quantivis)}</td>
+                      <td className="text-center py-3 px-3 md:px-4">{renderCellIcon(row.mckinsey)}</td>
+                      <td className="text-center py-3 px-3 md:px-4 hidden sm:table-cell">{renderCellIcon(row.tableau)}</td>
+                      <td className="text-center py-3 px-3 md:px-4 hidden sm:table-cell">{renderCellIcon(row.mosaic)}</td>
                     </tr>
                   ))}
                 </Fragment>
