@@ -1,8 +1,10 @@
 import { Link } from "react-router-dom";
+import { useState } from "react";
 import {
   Shield, Lock, Eye, Database, FileCheck, Users, Server,
   KeyRound, ScrollText, Globe, AlertTriangle, CheckCircle2,
-  ArrowRight, Fingerprint, Network, ShieldCheck
+  ArrowRight, Fingerprint, Network, ShieldCheck, ChevronDown,
+  Terminal, HardDrive, Clock
 } from "lucide-react";
 import logo from "@/assets/quantivis-logo.png";
 
@@ -103,13 +105,35 @@ const ROLE_MATRIX = [
 ];
 
 const CERTIFICATIONS = [
-  { icon: ShieldCheck, title: "SOC 2 Type II", subtitle: "Infrastructure Provider", status: "Compliant" },
+  { icon: ShieldCheck, title: "SOC 2 Type II", subtitle: "Infrastructure Provider", status: "Controls Aligned" },
   { icon: Globe, title: "GDPR", subtitle: "Data Protection", status: "Compliant" },
   { icon: Fingerprint, title: "MFA (AAL2)", subtitle: "Authentication", status: "Enforced" },
   { icon: Network, title: "RLS", subtitle: "Data Isolation", status: "100% Coverage" },
 ];
 
-const Security = () => (
+const PROOF_ITEMS = [
+  { icon: Database, claim: "RLS enforced on 100% of tables", detail: "Every table in the public schema has Row-Level Security enabled with RESTRICTIVE policies scoped to organization_id." },
+  { icon: Shield, claim: "Org isolation via organization_id policies", detail: "All queries are scoped at the PostgreSQL layer — application code cannot bypass isolation." },
+  { icon: Terminal, claim: "Service role key never shipped to client", detail: "Client bundle only contains the anon key. Service role keys exist exclusively in encrypted Edge Function secrets." },
+  { icon: Lock, claim: "Edge functions authenticated + least-privileged", detail: "Every Edge Function validates JWT auth and verifies organization membership before processing any request." },
+  { icon: HardDrive, claim: "Audit logs are append-only", detail: "No UPDATE or DELETE RLS policies exist on the audit_log table — records are immutable by design." },
+  { icon: Users, claim: "Strategic data restricted to leadership", detail: "Tables like decision_ledger and advisory_instances use RESTRICTIVE policies limiting access to Owner, Admin, and Executive roles." },
+];
+
+const SECURITY_FAQ = [
+  { q: "Is Quantivis SOC 2 certified?", a: "Our infrastructure provider (Supabase / AWS) holds SOC 2 Type II certification. Quantivis has aligned its application-level controls to SOC 2 standards, including RLS enforcement, immutable audit logging, MFA, and encrypted secrets management. Formal SOC 2 Type II certification for Quantivis as an entity is on our compliance roadmap." },
+  { q: "Where is my data stored?", a: "All data is stored in managed PostgreSQL databases hosted in SOC 2 and ISO 27001 certified data centers. Encryption at rest uses AES-256. Backups are automated and encrypted." },
+  { q: "Can Quantivis employees access my data?", a: "No. All data access is scoped by organization_id at the database layer via Row-Level Security. Administrative access to infrastructure is limited to a small team with MFA and audit logging." },
+  { q: "How do you handle a security breach?", a: "We follow GDPR Article 33 requirements: affected customers are notified within 72 hours. Our incident response process includes containment, forensic investigation, customer communication, and post-incident review." },
+  { q: "What happens when I delete my account?", a: "A secure Edge Function performs atomic deletion or anonymization across 25+ tables (metrics, advisories, audit logs, decisions, copilot sessions, etc.) and purges your record from the authentication system." },
+  { q: "Do you train AI models on my data?", a: "Absolutely not. Client data is never used to train, fine-tune, or improve any AI model. AI outputs are generated per-request and scoped to your organization only." },
+  { q: "How is MFA enforced?", a: "MFA is enforced at the route level using AAL2 (Authenticator Assurance Level 2). Users must complete a second-factor challenge to access protected pages. TOTP-based authenticator apps are supported." },
+  { q: "Can I get a DPA or subprocessor list?", a: "Yes. Our Data Processing Agreement (DPA), subprocessor list, data retention policy, and privacy policy are all publicly available and linked from this page." },
+];
+
+const Security = () => {
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+  return (
   <div className="min-h-screen bg-background">
     {/* Header */}
     <header className="border-b border-border/30 bg-background/80 backdrop-blur-sm sticky top-0 z-30">
@@ -144,6 +168,10 @@ const Security = () => (
               and database-level data isolation. Every forecast is auditable. Every decision is traceable.
               No data leaves your organization without consent.
             </p>
+            <div className="flex items-center justify-center gap-2 mt-4 text-xs text-muted-foreground">
+              <Clock className="w-3.5 h-3.5" />
+              Last updated: March 3, 2026
+            </div>
           </div>
 
           {/* Stats */}
@@ -319,6 +347,62 @@ const Security = () => (
         </div>
       </section>
 
+      {/* Architecture Proof */}
+      <section className="container mx-auto px-6 py-20">
+        <div className="text-center mb-12">
+          <h2 className="text-2xl md:text-3xl font-bold font-display mb-3">Verifiable Security Controls</h2>
+          <p className="text-muted-foreground max-w-xl mx-auto">
+            Not marketing claims — architecture facts. Every statement below is enforced
+            by database policies, not application code.
+          </p>
+        </div>
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-5xl mx-auto">
+          {PROOF_ITEMS.map((item) => (
+            <div key={item.claim} className="rounded-xl border border-primary/20 bg-primary/5 p-5 group hover:border-primary/40 transition-colors">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                  <item.icon className="w-4 h-4 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold mb-1">{item.claim}</h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed">{item.detail}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Security FAQ */}
+      <section className="border-y border-border/30 bg-card/20">
+        <div className="container mx-auto px-6 py-20">
+          <div className="text-center mb-12">
+            <h2 className="text-2xl md:text-3xl font-bold font-display mb-3">Security FAQ</h2>
+            <p className="text-muted-foreground max-w-xl mx-auto">
+              Common questions from security reviewers and procurement teams.
+            </p>
+          </div>
+          <div className="max-w-3xl mx-auto space-y-2">
+            {SECURITY_FAQ.map((item, index) => (
+              <div key={index} className="rounded-xl border border-border/50 bg-card/50 overflow-hidden">
+                <button
+                  onClick={() => setOpenFaq(openFaq === index ? null : index)}
+                  className="w-full flex items-center justify-between p-4 text-left hover:bg-muted/30 transition-colors"
+                >
+                  <span className="text-sm font-semibold pr-4">{item.q}</span>
+                  <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${openFaq === index ? "rotate-180" : ""}`} />
+                </button>
+                {openFaq === index && (
+                  <div className="px-4 pb-4 pt-0">
+                    <p className="text-sm text-muted-foreground leading-relaxed">{item.a}</p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* CTA */}
       <section className="container mx-auto px-6 py-16">
         <div className="max-w-2xl mx-auto text-center">
@@ -357,6 +441,7 @@ const Security = () => (
       </div>
     </footer>
   </div>
-);
+  );
+};
 
 export default Security;
