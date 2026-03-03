@@ -370,6 +370,62 @@ export type Database = {
         }
         Relationships: []
       }
+      calibration_models: {
+        Row: {
+          ai_narrative: string | null
+          band_corrections: Json
+          band_sample_sizes: Json
+          computed_at: string
+          confidence_bands_count: number
+          created_at: string
+          id: string
+          mean_absolute_error: number | null
+          model_version: number
+          organization_id: string
+          overall_bias_direction: string | null
+          overall_calibration_score: number | null
+          total_decisions_analyzed: number
+        }
+        Insert: {
+          ai_narrative?: string | null
+          band_corrections?: Json
+          band_sample_sizes?: Json
+          computed_at?: string
+          confidence_bands_count?: number
+          created_at?: string
+          id?: string
+          mean_absolute_error?: number | null
+          model_version?: number
+          organization_id: string
+          overall_bias_direction?: string | null
+          overall_calibration_score?: number | null
+          total_decisions_analyzed?: number
+        }
+        Update: {
+          ai_narrative?: string | null
+          band_corrections?: Json
+          band_sample_sizes?: Json
+          computed_at?: string
+          confidence_bands_count?: number
+          created_at?: string
+          id?: string
+          mean_absolute_error?: number | null
+          model_version?: number
+          organization_id?: string
+          overall_bias_direction?: string | null
+          overall_calibration_score?: number | null
+          total_decisions_analyzed?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calibration_models_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       causal_models: {
         Row: {
           confidence_score: number | null
