@@ -1,91 +1,94 @@
 import { motion } from "framer-motion";
 import {
   Brain, Zap, Shield, TrendingUp, FileText, Users,
-  ArrowRight, Network, BrainCircuit, FlipVertical,
+  ArrowRight, ShieldCheck, AlertTriangle, Eye,
   BarChart3, Target, Sparkles, Bell,
 } from "lucide-react";
 
 const HOW_IT_WORKS = [
-  { step: "01", title: "Ingest", desc: "Connect CSV, webhook, or API. Data flows in with versioning, quality scoring, and lineage tracking." },
-  { step: "02", title: "Diagnose", desc: "Autonomous root cause analysis with causal inference DAGs — not just correlation, but true causation." },
-  { step: "03", title: "Prescribe", desc: "AI generates actionable playbooks with confidence scores, bias detection, and traceable evidence chains." },
-  { step: "04", title: "Govern", desc: "Board-ready reports, convergence indices, counterfactual validation, and multi-role executive intelligence." },
+  { step: "01", title: "Log", desc: "Record a strategic decision in 3 clicks — confidence level, expected outcome, time horizon. That's it." },
+  { step: "02", title: "Calibrate", desc: "The system measures your actual accuracy against your predicted confidence — revealing systematic blind spots." },
+  { step: "03", title: "Correct", desc: "Adaptive algorithms learn from your outcomes and automatically adjust future confidence scores across the platform." },
+  { step: "04", title: "Defend", desc: "Board-ready reports show corrected probabilities, decision trails, and governance-grade audit evidence." },
 ];
 
-const DIFFERENTIATORS = [
+const TOP_DIFFERENTIATORS = [
   {
-    icon: Network,
-    title: "Causal Inference Engine",
-    description: "Directed Acyclic Graphs distinguish true causation from coincidence. Know exactly why your KPIs moved.",
+    icon: AlertTriangle,
+    title: "Overconfidence Detection",
+    description: "Automatically identifies when your team systematically overestimates success on mid-range strategic bets — the most expensive blind spot in executive decision-making.",
     tag: "Only Platform",
-    category: "Decision Science",
+    category: "Protection",
   },
   {
-    icon: BrainCircuit,
-    title: "Cognitive Bias Detection",
-    description: "Auto-detect anchoring, sunk cost, confirmation bias, recency bias, and overconfidence in your decision patterns.",
+    icon: ShieldCheck,
+    title: "Self-Correcting Confidence",
+    description: "Every probability in the system is automatically corrected based on your organization's actual historical accuracy. The more you use it, the more accurate it becomes.",
     tag: "Unique",
-    category: "Decision Science",
+    category: "Protection",
   },
   {
-    icon: FlipVertical,
-    title: "Counterfactual Explanations",
-    description: "'What would need to change for the opposite recommendation?' Critical for executive trust and audit trails.",
+    icon: Eye,
+    title: "Decision Audit Trail",
+    description: "Full provenance for every strategic recommendation — what was predicted, what actually happened, and how the model adjusted. Board-defensible by design.",
     tag: "Unique",
-    category: "Decision Science",
+    category: "Governance",
   },
+];
+
+const CAPABILITIES = [
   {
     icon: Sparkles,
-    title: "Predictive Forecasting",
-    description: "AI-powered exponential smoothing with seasonality detection, growth rates, and MAPE accuracy scoring.",
+    title: "Executive Intelligence Copilot",
+    description: "Ask strategic questions in plain English. Get answers grounded in your actual data, corrected for your historical bias patterns.",
     category: "Intelligence",
   },
   {
     icon: Brain,
     title: "Prescriptive Advisory Engine",
-    description: "Every recommendation comes with confidence scoring, epistemic capping, actionable playbooks, and lifecycle tracking.",
+    description: "Every recommendation comes with confidence scoring, epistemic guardrails, actionable playbooks, and full lifecycle tracking.",
     category: "Advisory",
   },
   {
     icon: Shield,
-    title: "Executive Convergence Index",
-    description: "Detects strategic conflicts across CEO, CFO, CMO, and COO roles. Unified alignment scoring with escalation triggers.",
-    category: "Governance",
+    title: "C-Suite Convergence Index",
+    description: "Detects strategic misalignment across CEO, CFO, CMO, and COO before it becomes a costly conflict. Unified alignment scoring.",
+    category: "Alignment",
   },
   {
     icon: TrendingUp,
-    title: "Monte Carlo War Room",
-    description: "Model multi-variable scenarios with probability distributions. Project P10/P50/P90 impacts on your Strategic Risk Index.",
+    title: "Scenario War Room",
+    description: "Model multi-variable scenarios with probability distributions. See P10/P50/P90 impact projections — all corrected for your accuracy history.",
     category: "Strategy",
   },
   {
     icon: FileText,
-    title: "Board Governance Reports",
-    description: "One-click export with governance posture banners, trend intelligence, risk attribution, and deterministic action frameworks.",
+    title: "One-Click Board Reports",
+    description: "Generate governance-grade reports with risk attribution, trend intelligence, and corrected confidence levels. Press one button, not prep for five days.",
     category: "Reporting",
   },
   {
     icon: Target,
     title: "OKR Alignment & Benchmarking",
-    description: "Cascading objectives with weighted key results, KPI linking, and industry percentile benchmarking (P25/P50/P75/P90).",
+    description: "Cascading objectives with weighted key results, KPI linking, and industry percentile benchmarking to know where you stand.",
     category: "Strategy",
   },
   {
     icon: Bell,
-    title: "Alert Playbooks & Escalation",
-    description: "Configurable threshold-based escalation chains with cooldown periods, Slack/email routing, and execution audit logs.",
+    title: "Proactive Risk Alerts",
+    description: "Threshold-based escalation chains that notify the right executive before a risk becomes a crisis. No more dashboard-checking.",
     category: "Operations",
   },
   {
     icon: BarChart3,
     title: "Decision Ledger",
-    description: "Track every strategic decision with calibration scoring. Learn from past predictions to improve future confidence.",
+    description: "Track every strategic call with calibration scoring. See your prediction accuracy improve over time — your executive performance system.",
     category: "Governance",
   },
   {
     icon: Users,
     title: "Multi-Org Command Center",
-    description: "Manage multiple client organizations. RBAC, team invitations, audit logs, and tiered subscription enforcement.",
+    description: "Manage multiple organizations with role-based access, team invitations, audit logs, and tiered governance controls.",
     category: "Scale",
   },
 ];
@@ -104,10 +107,10 @@ const FeaturesSection = () => {
           >
             <p className="text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-3">How It Works</p>
             <h2 className="text-4xl font-bold font-display mb-4">
-              Four Steps to <span className="gradient-text">Strategic Autonomy</span>
+              Log. Calibrate. <span className="gradient-text">Improve.</span>
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Replace the manual cycle of data gathering, analysis, consulting, and reporting with an autonomous intelligence loop.
+              The system learns from every decision your team makes — and gets smarter with each outcome.
             </p>
           </motion.div>
 
@@ -146,15 +149,15 @@ const FeaturesSection = () => {
             viewport={{ once: true }}
             className="glass-card-elevated p-10 md:p-14 text-center"
           >
-            <p className="text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-3">What Makes Us Different</p>
+            <p className="text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-3">Why This Is Different</p>
             <h2 className="text-3xl md:text-4xl font-bold font-display mb-4">
               Three Capabilities <span className="gradient-text">No One Else Has</span>
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto mb-10">
-              We don't just visualize data. We apply decision science — causal reasoning, cognitive psychology, and counterfactual logic — to make your strategic choices defensible and auditable.
+              Most platforms show you what happened. Quantivis measures how wrong you were — and makes you less wrong next time.
             </p>
             <div className="grid md:grid-cols-3 gap-6">
-              {DIFFERENTIATORS.slice(0, 3).map((d, i) => (
+              {TOP_DIFFERENTIATORS.map((d, i) => (
                 <motion.div
                   key={d.title}
                   initial={{ opacity: 0, y: 16 }}
@@ -193,15 +196,15 @@ const FeaturesSection = () => {
           >
             <p className="text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-3">Full Platform</p>
             <h2 className="text-4xl font-bold font-display mb-4">
-              20+ Modules. One <span className="gradient-text">Intelligence Engine.</span>
+              Everything You Need to <span className="gradient-text">Decide with Confidence</span>
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Every feature converts raw data into confident, defensible strategic decisions — with full provenance and audit trails.
+              From the first strategic question to the board presentation — one system that learns, corrects, and defends.
             </p>
           </motion.div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {DIFFERENTIATORS.slice(3).map((feature, i) => (
+            {CAPABILITIES.map((feature, i) => (
               <motion.div
                 key={feature.title}
                 initial={{ opacity: 0, y: 20 }}

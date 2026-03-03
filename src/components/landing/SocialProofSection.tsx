@@ -1,11 +1,11 @@
 import { motion } from "framer-motion";
-import { TrendingUp, Clock, DollarSign, ShieldCheck, ArrowRight } from "lucide-react";
+import { TrendingDown, Clock, DollarSign, ShieldCheck, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const ROI_METRICS = [
+  { icon: TrendingDown, value: "7–12pp", label: "Overconfidence reduction", detail: "Systematic bias correction" },
   { icon: Clock, value: "92%", label: "Less time on board prep", detail: "From 5 days to 2 hours" },
-  { icon: TrendingUp, value: "3.2×", label: "Faster strategic decisions", detail: "Causal inference, not gut feel" },
-  { icon: DollarSign, value: "€180K", label: "Avg. consulting replaced", detail: "Advisory retainers eliminated" },
+  { icon: DollarSign, value: "€180K", label: "Avg. advisory spend replaced", detail: "Consulting retainers eliminated" },
   { icon: ShieldCheck, value: "100%", label: "Decision traceability", detail: "Every recommendation auditable" },
 ];
 
@@ -13,23 +13,23 @@ const CASE_STUDIES = [
   {
     industry: "SaaS",
     company: "Series B · 120 employees",
-    challenge: "Manual KPI tracking across 12 spreadsheets. Monthly board reports took 5 days to compile.",
-    result: "Automated intelligence pipeline reduced board prep to 2 hours. Identified €340K revenue leak through autonomous diagnostics.",
-    metrics: ["5 days → 2 hours", "€340K recovered", "4 C-suite roles unified"],
+    challenge: "Leadership team was consistently overestimating product-market expansion probabilities by ~11pp, leading to over-investment in low-ROI initiatives.",
+    result: "Adaptive calibration flagged the systematic bias within 8 weeks. Re-calibrated capital allocation saved an estimated €340K in avoidable downside exposure.",
+    metrics: ["11pp bias corrected", "€340K downside avoided", "4 C-suite roles aligned"],
   },
   {
     industry: "Manufacturing",
     company: "Mid-market · 800 employees",
-    challenge: "Siloed data across ERP, CRM, and BI tools. No unified risk view for executive team.",
-    result: "Single intelligence layer across all data sources. Strategic Risk Index flagged supply chain disruption 6 weeks before impact.",
-    metrics: ["6-week early warning", "3 systems unified", "Convergence Index: 87"],
+    challenge: "No unified view of strategic risk across ERP, CRM, and BI tools. CFO could not defend capital decisions to the board with traceable evidence.",
+    result: "Single intelligence layer with corrected confidence scores. Strategic Risk Index flagged supply chain disruption 6 weeks before impact — with full audit trail.",
+    metrics: ["6-week early warning", "Board-defensible output", "Convergence Index: 87"],
   },
   {
     industry: "Financial Services",
     company: "Enterprise · 2,400 employees",
-    challenge: "Compliance reporting consumed 30% of analyst capacity. Advisory recommendations lacked data provenance.",
-    result: "Fully traceable advisory engine with confidence scoring. Audit-ready intelligence trail for every strategic recommendation.",
-    metrics: ["30% capacity freed", "100% traceability", "SOC 2 aligned"],
+    challenge: "Compliance reporting consumed 30% of analyst capacity. Strategic recommendations had no provenance trail for regulators.",
+    result: "Fully traceable advisory engine with self-correcting confidence scoring. Every recommendation linked to evidence, sample size, and historical accuracy.",
+    metrics: ["30% capacity freed", "100% traceability", "Regulator-ready"],
   },
 ];
 
@@ -47,10 +47,10 @@ const SocialProofSection = () => {
           >
             <p className="text-xs uppercase tracking-widest text-primary font-semibold mb-3">Measurable Impact</p>
             <h2 className="text-4xl font-bold font-display mb-4">
-              The ROI of <span className="gradient-text">Decision Intelligence</span>
+              The ROI of <span className="gradient-text">Better Decisions</span>
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Quantivis replaces the entire manual consulting cycle — from data gathering to board-ready strategic recommendations.
+              Quantivis doesn't just show you data — it measures how accurate your strategic calls are and makes them better over time.
             </p>
           </motion.div>
 
@@ -85,10 +85,10 @@ const SocialProofSection = () => {
           >
             <p className="text-xs uppercase tracking-widest text-primary font-semibold mb-3">Representative Scenarios</p>
             <h2 className="text-4xl font-bold font-display mb-4">
-              How Leaders Use <span className="gradient-text">Quantivis</span>
+              How Leaders <span className="gradient-text">Protect Their Decisions</span>
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Composite scenarios based on common enterprise challenges — illustrating how autonomous intelligence transforms strategic operations.
+              Composite scenarios showing how self-correcting intelligence transforms strategic operations and reduces costly overconfidence.
             </p>
           </motion.div>
 
@@ -108,12 +108,12 @@ const SocialProofSection = () => {
                 </div>
 
                 <div className="mb-4">
-                  <p className="text-[11px] uppercase tracking-widest text-muted-foreground/60 font-semibold mb-1.5">Challenge</p>
+                  <p className="text-[11px] uppercase tracking-widest text-muted-foreground/60 font-semibold mb-1.5">The Risk</p>
                   <p className="text-sm text-foreground/80 leading-relaxed">{study.challenge}</p>
                 </div>
 
                 <div className="mb-5">
-                  <p className="text-[11px] uppercase tracking-widest text-primary/80 font-semibold mb-1.5">Result</p>
+                  <p className="text-[11px] uppercase tracking-widest text-primary/80 font-semibold mb-1.5">The Protection</p>
                   <p className="text-sm text-foreground/90 leading-relaxed">{study.result}</p>
                 </div>
 
@@ -136,7 +136,7 @@ const SocialProofSection = () => {
               to="/register"
               className="inline-flex items-center gap-2 text-primary font-semibold hover:underline"
             >
-              Start your own success story <ArrowRight className="w-4 h-4" />
+              Start protecting your strategic calls <ArrowRight className="w-4 h-4" />
             </Link>
           </motion.div>
         </div>
