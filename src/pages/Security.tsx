@@ -427,11 +427,17 @@ const Security = () => {
               ))}
             </div>
             <div className="mt-6">
-              <a
-                href="mailto:security@quantivis.io?subject=Enterprise%20Security%20Pack%20Request"
+              <Link
+                to="/security-questionnaire"
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:brightness-110 transition-all"
               >
-                Request Security Pack <ArrowRight className="w-4 h-4" />
+                View Security Questionnaire <ArrowRight className="w-4 h-4" />
+              </Link>
+              <a
+                href="mailto:security@quantivis.io?subject=Enterprise%20Security%20Pack%20Request"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border border-border text-sm font-medium hover:bg-muted/50 transition-colors"
+              >
+                Request Custom Pack
               </a>
             </div>
           </div>

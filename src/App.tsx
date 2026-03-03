@@ -62,6 +62,7 @@ const Demo = lazy(() => import("./pages/Demo"));
 const CalibrationAssessment = lazy(() => import("./pages/CalibrationAssessment"));
 const Misses = lazy(() => import("./pages/Misses"));
 const Security = lazy(() => import("./pages/Security"));
+const SecurityQuestionnaire = lazy(() => import("./pages/SecurityQuestionnaire"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -107,6 +108,7 @@ const App = () => (
               <Route path="/demo" element={<Demo />} />
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/security" element={<Security />} />
+              <Route path="/security-questionnaire" element={<SecurityQuestionnaire />} />
               <Route path="/calibration" element={<CalibrationAssessment />} />
               <Route path="*" element={<NotFound />} />
 
