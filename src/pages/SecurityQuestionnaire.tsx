@@ -20,19 +20,19 @@ const SECTIONS: { title: string; icon: React.ElementType; items: QAItem[] }[] = 
       { id: "OG-1", question: "Does your organization have a formal information security program?", answer: "Yes. Quantivis maintains a formal information security program with documented policies covering access control, data classification, incident response, and secure development lifecycle. Controls are aligned with SOC 2 Type II criteria." },
       { id: "OG-2", question: "Do you have a designated security officer or team?", answer: "Yes. Security responsibilities are assigned to a dedicated team. Security architecture decisions are reviewed before deployment. Contact: security@quantivis.io." },
       { id: "OG-3", question: "Is there a risk management process in place?", answer: "Yes. Risks are identified, assessed, and mitigated through regular review cycles. Our architecture enforces least-privilege access, immutable audit trails, and database-level data isolation as structural risk controls." },
-      { id: "OG-4", question: "What is your SOC 2 certification status?", answer: "Our infrastructure provider holds SOC 2 Type II certification. Quantivis has aligned its application-level controls to SOC 2 criteria (access control, audit logging, encryption, change management). A formal SOC 2 Type II audit for Quantivis as an entity is planned." },
+      { id: "OG-4", question: "What is your SOC 2 certification status?", answer: "Our infrastructure provider holds SOC 2 Type II certification. Quantivis has aligned its application-level controls to SOC 2 Trust Services Criteria (access control, audit logging, encryption, change management). A formal SOC 2 Type II audit for Quantivis as an entity is planned. If you need signed documents: DPA + Subprocessor Addendum are available on request." },
     ],
   },
   {
     title: "Data Protection & Privacy",
     icon: Lock,
     items: [
-      { id: "DP-1", question: "How is data encrypted at rest and in transit?", answer: "All data is encrypted at rest using AES-256 via the managed PostgreSQL service. All data in transit is encrypted using TLS 1.3. No unencrypted channels are supported." },
+      { id: "DP-1", question: "How is data encrypted at rest and in transit?", answer: "All data is encrypted at rest using AES-256 via the managed PostgreSQL service. All data in transit is encrypted using TLS 1.2 minimum (TLS 1.3 where supported). No unencrypted channels are permitted." },
       { id: "DP-2", question: "Is customer data isolated between tenants?", answer: "Yes. Multi-tenant isolation is enforced at the database layer via Row-Level Security (RLS) policies on 100% of tables. Every query is scoped to organization_id. No cross-organization data access is architecturally possible." },
       { id: "DP-3", question: "Do you process data in compliance with GDPR?", answer: "Yes. We offer a Data Processing Agreement (DPA), support Subject Access Requests (SAR) via automated data export, and implement GDPR-compliant account deletion that purges data across 25+ tables. Our subprocessor list is publicly disclosed." },
       { id: "DP-4", question: "Where is customer data stored geographically?", answer: "Primary data storage (databases, file storage, backups) is located within the European Union (AWS EU-West-1, Ireland). Data transferred to subprocessors outside the EU is protected by Standard Contractual Clauses (SCCs)." },
       { id: "DP-5", question: "What is your data retention and deletion policy?", answer: "Configurable freshness policies are available per dataset. Account deletion triggers atomic purge across 25+ tables and removes the user from the authentication system. Database backups are encrypted and retained for 7 days on a rolling basis; deleted data may persist in backups until natural expiry." },
-      { id: "DP-6", question: "Is customer data used to train AI/ML models?", answer: "No. Customer data is never used to train, fine-tune, or improve Quantivis models. AI features use third-party inference APIs (Google Gemini) in stateless, per-request mode — no data is retained by the provider after processing." },
+      { id: "DP-6", question: "Is customer data used to train AI/ML models?", answer: "No. Customer data is not used to train, fine-tune, or improve Quantivis models. AI features use third-party inference APIs (Google Gemini) in stateless, per-request mode — no data is retained by the provider after processing. Third-party processing is disclosed in the Subprocessor list." },
     ],
   },
   {
@@ -49,7 +49,7 @@ const SECTIONS: { title: string; icon: React.ElementType; items: QAItem[] }[] = 
     title: "Infrastructure & Network Security",
     icon: Server,
     items: [
-      { id: "IN-1", question: "Where is your application hosted?", answer: "Quantivis is hosted on managed infrastructure (AWS) with SOC 2 Type II and ISO 27001 certified data centers. Database services run on managed PostgreSQL with automated encrypted backups and point-in-time recovery." },
+      { id: "IN-1", question: "Where is your application hosted?", answer: "Quantivis is hosted on a managed cloud platform (AWS-backed infrastructure, Supabase). Database services run on managed PostgreSQL with SOC 2 Type II and ISO 27001 certified data centers, automated encrypted backups, and point-in-time recovery." },
       { id: "IN-2", question: "Are secrets and API keys managed securely?", answer: "Yes. All secrets (API keys, service role keys, webhook secrets) are stored in encrypted vault storage and injected as environment variables. Service role keys are never exposed to client-side code. The client bundle only contains the publishable anon key." },
       { id: "IN-3", question: "What DDoS and network-level protections are in place?", answer: "DDoS protection and network-level firewalling are provided by the infrastructure layer. Edge functions include code-level rate limiting for sensitive operations." },
       { id: "IN-4", question: "How are backups managed?", answer: "Automated encrypted backups are provided by the managed database service with point-in-time recovery. Backup retention follows the infrastructure provider's schedule." },
@@ -71,7 +71,7 @@ const SECTIONS: { title: string; icon: React.ElementType; items: QAItem[] }[] = 
     items: [
       { id: "IR-1", question: "Do you have a documented incident response process?", answer: "Yes. Our incident response process includes: (1) detection and containment, (2) forensic investigation, (3) customer notification within 72 hours where required by applicable law, and (4) post-incident review with remediation." },
       { id: "IR-2", question: "How are customers notified in the event of a breach?", answer: "We notify affected customers without undue delay where required by applicable law. Under GDPR Article 33, this means within 72 hours of confirmed detection. Notification includes the nature of the breach, data affected, and remediation steps taken." },
-      { id: "IR-3", question: "What is your disaster recovery strategy?", answer: "Daily encrypted backups with 7-day rolling retention. Target RPO: 24 hours. Target RTO: 4 hours. Infrastructure runs on managed services with built-in redundancy. Application logic is stateless and can be redeployed immediately." },
+      { id: "IR-3", question: "What is your disaster recovery strategy?", answer: "Daily encrypted backups with 7-day rolling retention. Target RPO: 24 hours (best effort). Target RTO: 4 hours (best effort) — may vary during major incidents. Infrastructure runs on managed services with built-in redundancy. Application logic is stateless and can be redeployed immediately." },
     ],
   },
   {
@@ -88,7 +88,7 @@ const SECTIONS: { title: string; icon: React.ElementType; items: QAItem[] }[] = 
     icon: Eye,
     items: [
       { id: "AI-1", question: "How do you ensure AI transparency?", answer: "All AI outputs include confidence scores and feature attribution explanations. Counterfactual analysis shows what would need to change for a different recommendation. Cognitive bias detection monitors recommendation quality." },
-      { id: "AI-2", question: "Is there cross-organization learning?", answer: "No. There is no cross-organization learning. AI insights are generated per-request using only the requesting organization's data. No patterns or intelligence are shared between organizations without explicit opt-in." },
+      { id: "AI-2", question: "Is there cross-organization learning?", answer: "No. AI insights are generated per-request using only the requesting organization's data. No customer data is shared across organizations. Third-party processing is disclosed in the Subprocessor list." },
       { id: "AI-3", question: "How are AI confidence scores calibrated?", answer: "Confidence scores are capped using a data-quality-aware system that accounts for sample size, data freshness, and variance. Calibration assessments track overconfidence and underconfidence over time. Historical calibration errors are recorded and used to adjust future outputs." },
     ],
   },
@@ -126,6 +126,7 @@ const SecurityQuestionnaire = () => (
         <p className="text-muted-foreground leading-relaxed max-w-2xl">
           Pre-answered responses to standard enterprise security questionnaire topics
           (SIG Lite / CAIQ aligned). Designed for procurement, InfoSec, and compliance review teams.
+          If you need signed documents: DPA + Subprocessor Addendum available on request.
         </p>
         <div className="flex items-center gap-4 mt-4 text-xs text-muted-foreground">
           <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" /> Last reviewed: March 3, 2026</span>
@@ -147,7 +148,7 @@ const SecurityQuestionnaire = () => (
           <div>
             <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Hosting & Data Location</h3>
             <ul className="space-y-1.5 text-sm">
-              <li className="flex justify-between"><span className="text-muted-foreground">Hosted on</span><span className="font-medium">AWS (managed PostgreSQL)</span></li>
+              <li className="flex justify-between"><span className="text-muted-foreground">Hosted on</span><span className="font-medium">Supabase (AWS-backed)</span></li>
               <li className="flex justify-between"><span className="text-muted-foreground">Primary region</span><span className="font-medium">EU-West-1 (Ireland)</span></li>
               <li className="flex justify-between"><span className="text-muted-foreground">Data residency options</span><span className="font-medium">EU only (default)</span></li>
             </ul>
@@ -155,7 +156,7 @@ const SecurityQuestionnaire = () => (
           <div>
             <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Encryption</h3>
             <ul className="space-y-1.5 text-sm">
-              <li className="flex justify-between"><span className="text-muted-foreground">In transit</span><span className="font-medium">TLS 1.2+ / 1.3</span></li>
+              <li className="flex justify-between"><span className="text-muted-foreground">In transit</span><span className="font-medium">TLS 1.2 minimum / 1.3</span></li>
               <li className="flex justify-between"><span className="text-muted-foreground">At rest</span><span className="font-medium">AES-256</span></li>
               <li className="flex justify-between"><span className="text-muted-foreground">Key management</span><span className="font-medium">Platform-managed (AWS KMS)</span></li>
             </ul>
@@ -165,15 +166,15 @@ const SecurityQuestionnaire = () => (
             <ul className="space-y-1.5 text-sm">
               <li className="flex justify-between"><span className="text-muted-foreground">Backup frequency</span><span className="font-medium">Daily, encrypted</span></li>
               <li className="flex justify-between"><span className="text-muted-foreground">Retention</span><span className="font-medium">7 days rolling</span></li>
-              <li className="flex justify-between"><span className="text-muted-foreground">Target RPO</span><span className="font-medium">24 hours</span></li>
-              <li className="flex justify-between"><span className="text-muted-foreground">Target RTO</span><span className="font-medium">4 hours</span></li>
+              <li className="flex justify-between"><span className="text-muted-foreground">Target RPO</span><span className="font-medium">24 hours (best effort)</span></li>
+              <li className="flex justify-between"><span className="text-muted-foreground">Target RTO</span><span className="font-medium">4 hours (best effort)</span></li>
             </ul>
           </div>
           <div>
             <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Vulnerability Management</h3>
             <ul className="space-y-1.5 text-sm">
               <li className="flex justify-between"><span className="text-muted-foreground">Patching cadence</span><span className="font-medium">Managed by platform</span></li>
-              <li className="flex justify-between"><span className="text-muted-foreground">Penetration testing</span><span className="font-medium">Planned (annual)</span></li>
+              <li className="flex justify-between"><span className="text-muted-foreground">Penetration testing</span><span className="font-medium">Planned; annual once active</span></li>
               <li className="flex justify-between"><span className="text-muted-foreground">Bug reporting</span><span className="font-medium">security@quantivis.io</span></li>
             </ul>
           </div>
