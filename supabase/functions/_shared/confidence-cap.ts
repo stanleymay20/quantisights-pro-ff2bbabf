@@ -8,7 +8,11 @@
  * 
  * This is a hardcoded, non-negotiable rule across ALL advisory/insight/diagnostic functions.
  * One epistemic policy across all inference surfaces.
+ * 
+ * v2: Now supports optional adaptive calibration correction from learned models.
  */
+
+import { applyCalibrationAfterCap, type CalibrationModel } from "./calibration-correction.ts";
 
 export interface ConfidenceResult {
   raw_confidence: number;
@@ -18,9 +22,18 @@ export interface ConfidenceResult {
   sample_size: number;
   data_sufficiency: "insufficient" | "limited" | "moderate" | "robust";
   variance_score: number | null;
+  /** Present when adaptive calibration is applied */
+  adaptive_adjustment?: number;
+  /** Confidence after both capping and adaptive correction */
+  calibrated_confidence?: number;
 }
 
-export function capConfidence(rawConfidence: number, sampleSize: number, variance?: number): ConfidenceResult {
+export function capConfidence(
+  rawConfidence: number,
+  sampleSize: number,
+  variance?: number,
+  calibrationModel?: CalibrationModel | null
+): ConfidenceResult {
   let ceiling: number;
   let reason: string;
 
@@ -37,7 +50,7 @@ export function capConfidence(rawConfidence: number, sampleSize: number, varianc
 
   const capped = Math.min(rawConfidence, ceiling);
 
-  return {
+  const result: ConfidenceResult = {
     raw_confidence: Math.round(rawConfidence),
     capped_confidence: Math.round(capped),
     confidence_cap_reason: reason,
@@ -46,6 +59,15 @@ export function capConfidence(rawConfidence: number, sampleSize: number, varianc
     data_sufficiency: dataSufficiencyRating(sampleSize),
     variance_score: variance !== undefined ? Math.round(variance * 100) / 100 : null,
   };
+
+  // Apply adaptive calibration correction if model is provided
+  if (calibrationModel) {
+    const correction = applyCalibrationAfterCap(result.capped_confidence, ceiling, calibrationModel);
+    result.adaptive_adjustment = correction.correction_applied;
+    result.calibrated_confidence = correction.adjusted;
+  }
+
+  return result;
 }
 
 /**
@@ -79,4 +101,31 @@ export function computeCalibrationError(
 ): number {
   const actualOutcome = outcomeSuccess ? 100 : 0;
   return Math.abs(predictedConfidence - actualOutcome);
+}
+
+/**
+ * Helper: Fetch the latest calibration model for an org.
+ * Used by edge functions that want to apply adaptive corrections.
+ */
+export async function fetchCalibrationModel(
+  supabaseUrl: string,
+  serviceKey: string,
+  organizationId: string
+): Promise<CalibrationModel | null> {
+  try {
+    const headers = { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` };
+    const resp = await fetch(
+      `${supabaseUrl}/rest/v1/calibration_models?organization_id=eq.${organizationId}&order=computed_at.desc&limit=1&select=band_corrections,band_sample_sizes,low_sample_bands,overall_calibration_score,model_version`,
+      { headers }
+    );
+    if (!resp.ok) {
+      await resp.text();
+      return null;
+    }
+    const data = await resp.json();
+    if (!data || data.length === 0) return null;
+    return data[0] as CalibrationModel;
+  } catch {
+    return null;
+  }
 }

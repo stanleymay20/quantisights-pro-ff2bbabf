@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { authenticateRequest, verifyOrgMembership } from "../_shared/auth-guard.ts";
-import { capConfidence, dataSufficiencyRating } from "../_shared/confidence-cap.ts";
+import { capConfidence, dataSufficiencyRating, fetchCalibrationModel } from "../_shared/confidence-cap.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -44,12 +44,13 @@ serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const headers = { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` };
 
-    // Fetch data in parallel
-    const [metricsResp, riskResp, insightsResp, kpisResp] = await Promise.all([
+    // Fetch data + calibration model in parallel
+    const [metricsResp, riskResp, insightsResp, kpisResp, calibrationModel] = await Promise.all([
       fetch(`${supabaseUrl}/rest/v1/metrics?organization_id=eq.${organization_id}&order=date.asc&limit=500`, { headers }),
       fetch(`${supabaseUrl}/rest/v1/executive_risk_index?organization_id=eq.${organization_id}&select=score,role_type,components`, { headers }),
       fetch(`${supabaseUrl}/rest/v1/insights?organization_id=eq.${organization_id}&severity=in.(high,medium)&order=created_at.desc&limit=20`, { headers }),
       fetch(`${supabaseUrl}/rest/v1/kpis?organization_id=eq.${organization_id}&status=eq.active&limit=20`, { headers }),
+      fetchCalibrationModel(supabaseUrl, serviceKey, organization_id),
     ]);
 
     const metrics = await metricsResp.json();
@@ -98,7 +99,7 @@ serve(async (req) => {
           action: "Implement emergency revenue recovery program targeting top 20% accounts",
           expected_impact: `Recover ${Math.abs(changePct * 0.5).toFixed(0)}% of lost revenue within 60 days`,
           timeframe: "Immediate — 60 days",
-          confidence: capConfidence(82, revValues.length),
+          confidence: capConfidence(82, revValues.length, undefined, calibrationModel),
           rationale: `Revenue declined ${Math.abs(changePct).toFixed(1)}% period-over-period. Without intervention, compounding losses project ${(changePct * 3).toFixed(0)}% annual impact.`,
           kpi_affected: ["Revenue", "MRR", "Net Revenue Retention"],
           playbook_steps: [
@@ -120,7 +121,7 @@ serve(async (req) => {
           action: "Implement expansion revenue program to accelerate from steady to high growth",
           expected_impact: "Increase growth rate by 2-3x within 90 days",
           timeframe: "30-90 days",
-          confidence: capConfidence(70, revValues.length),
+          confidence: capConfidence(70, revValues.length, undefined, calibrationModel),
           rationale: `Current growth at ${changePct.toFixed(1)}% is stable but below potential. Market conditions support aggressive expansion.`,
           kpi_affected: ["Revenue Growth Rate", "ARPU", "Expansion Revenue"],
           playbook_steps: [
@@ -149,7 +150,7 @@ serve(async (req) => {
           action: "Launch structured cost reduction targeting top 3 expense categories",
           expected_impact: `Reduce operating costs by ${Math.min(costChange * 0.4, 15).toFixed(0)}% within 90 days`,
           timeframe: "30-90 days",
-          confidence: capConfidence(78, costValues.length),
+          confidence: capConfidence(78, costValues.length, undefined, calibrationModel),
           rationale: `Costs increased ${costChange.toFixed(1)}% while revenue growth hasn't matched. Gross margin is compressing.`,
           kpi_affected: ["Operating Costs", "Gross Margin", "Burn Rate"],
           playbook_steps: [
@@ -176,7 +177,7 @@ serve(async (req) => {
           action: "Deploy multi-channel retention program targeting at-risk customer segments",
           expected_impact: `Reduce churn by ${Math.min(latestChurn * 0.3, 5).toFixed(1)} percentage points within 90 days`,
           timeframe: "Immediate — 90 days",
-          confidence: capConfidence(80, churnValues.length),
+          confidence: capConfidence(80, churnValues.length, undefined, calibrationModel),
           rationale: `Churn rate at ${latestChurn.toFixed(1)}% exceeds the 5% healthy threshold. Each point of churn represents significant lifetime value loss.`,
           kpi_affected: ["Churn Rate", "Net Revenue Retention", "Customer LTV"],
           playbook_steps: [
@@ -202,7 +203,7 @@ serve(async (req) => {
           action: `Initiate board-level review of ${role} risk factors and implement mitigation plan`,
           expected_impact: `Reduce ${role} risk score from ${risk.score} to below 50 within 60 days`,
           timeframe: risk.score >= 85 ? "Immediate" : "30 days",
-          confidence: capConfidence(85, totalSampleSize),
+          confidence: capConfidence(85, totalSampleSize, undefined, calibrationModel),
           rationale: `${role.toUpperCase()} strategic risk index at ${risk.score}/100 — ${risk.score >= 85 ? "critical" : "elevated"} territory. Components: deviation=${risk.components?.deviation || 0}, trend=${risk.components?.trend || 0}, volatility=${risk.components?.volatility || 0}.`,
           kpi_affected: ["Strategic Risk Index", "Board Confidence", "Operational Stability"],
           playbook_steps: [
@@ -227,7 +228,7 @@ serve(async (req) => {
         action: "Conduct cross-functional root cause analysis for clustered anomalies",
         expected_impact: "Identify and resolve systemic operational issues within 30 days",
         timeframe: "Immediate — 30 days",
-        confidence: capConfidence(72, highInsights.length),
+        confidence: capConfidence(72, highInsights.length, undefined, calibrationModel),
         rationale: `${highInsights.length} high-severity insights detected simultaneously, suggesting interconnected operational failures rather than isolated incidents.`,
         kpi_affected: ["Operational Health", "System Reliability", "Executive Confidence"],
         playbook_steps: [
@@ -254,6 +255,8 @@ serve(async (req) => {
       data_sufficiency: dataSufficiencyRating(totalSampleSize),
       sample_size: totalSampleSize,
       confidence_ceiling: totalSampleSize < 12 ? 60 : totalSampleSize < 30 ? 75 : 90,
+      adaptive_calibration_applied: !!calibrationModel,
+      calibration_model_version: calibrationModel?.model_version ?? null,
       generated_at: new Date().toISOString(),
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -8,77 +8,126 @@ const corsHeaders = {
 };
 
 /**
- * Adaptive Calibration Engine
+ * Adaptive Calibration Engine v2
  * 
- * This is the layer that makes Quantivis cross from "interprets" to "learns."
- * 
- * It analyzes completed decisions with measured outcomes, fits a calibration
- * curve per confidence band, computes correction factors, and stores them
- * so future confidence outputs are automatically adjusted.
- * 
- * The correction formula:
- *   adjusted_confidence = raw_confidence + band_correction[band]
- * 
- * Where band_correction = actual_success_rate - mean_predicted_confidence
- * for each 10-point confidence band.
+ * Hardened version with:
+ * - Laplace/Beta smoothing per band (prevents wild corrections from small samples)
+ * - Windowed computation (most recent 500 decisions)
+ * - Improved success metric (prefers prediction_accuracy_score over binary outcome_delta)
+ * - Minimal column select (no select("*"))
+ * - Model metadata (window bounds, success metric, low-sample warnings)
  */
+
+const DECISION_COLUMNS = "execution_status, capped_confidence, raw_confidence, outcome_delta, prediction_accuracy_score, created_at" as const;
+const WINDOW_SIZE = 500;
+const MIN_DECISIONS = 5;
+const MIN_BAND_COUNT = 2;
+const SMOOTHING_ALPHA = 1; // Beta prior α
+const SMOOTHING_BETA = 1;  // Beta prior β
+const LOW_SAMPLE_THRESHOLD = 5;
 
 interface BandData {
   predicted_sum: number;
-  actual_successes: number;
+  successes: number; // smoothed will be computed from this
   count: number;
 }
 
+/**
+ * Compute success signal for a single decision.
+ * Prefers prediction_accuracy_score (0–100 continuous).
+ * Falls back to outcome_delta with a neutral zone (±1% = 0.5).
+ * Returns a value between 0 and 1.
+ */
+function computeSuccess(d: any): { value: number; metric: "prediction_accuracy_score" | "outcome_delta" } {
+  const accuracy = d.prediction_accuracy_score != null ? Number(d.prediction_accuracy_score) : null;
+  if (accuracy != null && Number.isFinite(accuracy)) {
+    // Normalize 0–100 to 0–1
+    return { value: Math.min(1, Math.max(0, accuracy / 100)), metric: "prediction_accuracy_score" };
+  }
+
+  const delta = d.outcome_delta != null ? Number(d.outcome_delta) : null;
+  if (delta != null && Number.isFinite(delta)) {
+    // Neutral zone: within ±1% = 0.5 (ambiguous)
+    if (Math.abs(delta) <= 1) return { value: 0.5, metric: "outcome_delta" };
+    return { value: delta > 0 ? 1 : 0, metric: "outcome_delta" };
+  }
+
+  return { value: 0.5, metric: "outcome_delta" }; // No data = neutral
+}
+
 function computeCalibrationModel(decisions: any[]) {
-  // Filter to completed decisions with confidence and outcome data
+  // Filter to completed decisions with at least one success signal
   const calibrated = decisions.filter(
     (d) =>
       d.execution_status === "completed" &&
       d.capped_confidence != null &&
-      d.outcome_delta != null
+      (d.prediction_accuracy_score != null || d.outcome_delta != null)
   );
 
-  if (calibrated.length < 5) {
+  if (calibrated.length < MIN_DECISIONS) {
     return { insufficient: true, count: calibrated.length };
   }
 
-  // Build 10-point confidence bands: 0-10, 10-20, ..., 90-100
+  // Window: use most recent
+  const windowed = calibrated
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(0, WINDOW_SIZE);
+
+  const windowStart = windowed[windowed.length - 1]?.created_at;
+  const windowEnd = windowed[0]?.created_at;
+
+  // Track which success metric is dominant
+  let accuracyCount = 0;
+  let deltaCount = 0;
+
+  // Build 10-point confidence bands
   const bands: Record<string, BandData> = {};
   for (let b = 0; b < 100; b += 10) {
     const key = `${b}-${b + 10}`;
-    bands[key] = { predicted_sum: 0, actual_successes: 0, count: 0 };
+    bands[key] = { predicted_sum: 0, successes: 0, count: 0 };
   }
 
-  calibrated.forEach((d) => {
+  windowed.forEach((d) => {
     const conf = Math.min(99, Math.max(0, Number(d.capped_confidence ?? d.raw_confidence ?? 50)));
     const bandStart = Math.floor(conf / 10) * 10;
     const key = `${bandStart}-${bandStart + 10}`;
-    const wasPositive = (Number(d.outcome_delta) || 0) >= 0 ? 1 : 0;
+    const { value, metric } = computeSuccess(d);
+
+    if (metric === "prediction_accuracy_score") accuracyCount++;
+    else deltaCount++;
 
     bands[key].predicted_sum += conf;
-    bands[key].actual_successes += wasPositive;
+    bands[key].successes += value;
     bands[key].count++;
   });
 
-  // Compute corrections per band
+  const successMetric = accuracyCount >= deltaCount ? "prediction_accuracy_score" : "outcome_delta";
+
+  // Compute corrections per band with Laplace/Beta smoothing
   const band_corrections: Record<string, number> = {};
   const band_sample_sizes: Record<string, number> = {};
+  const low_sample_bands: string[] = [];
   let totalAbsError = 0;
   let bandsWithData = 0;
   let overconfidentBands = 0;
   let underconfidentBands = 0;
 
   for (const [key, band] of Object.entries(bands)) {
-    if (band.count < 2) continue; // Need minimum 2 decisions per band
+    if (band.count < MIN_BAND_COUNT) continue;
 
     const meanPredicted = band.predicted_sum / band.count;
-    const actualRate = (band.actual_successes / band.count) * 100;
-    const correction = Math.round((actualRate - meanPredicted) * 10) / 10;
+    // Smoothed actual rate using Beta prior: (successes + α) / (count + α + β)
+    const smoothedRate = ((band.successes + SMOOTHING_ALPHA) / (band.count + SMOOTHING_ALPHA + SMOOTHING_BETA)) * 100;
+    const correction = Math.round((smoothedRate - meanPredicted) * 10) / 10;
 
     band_corrections[key] = correction;
     band_sample_sizes[key] = band.count;
     totalAbsError += Math.abs(correction);
     bandsWithData++;
+
+    if (band.count < LOW_SAMPLE_THRESHOLD) {
+      low_sample_bands.push(key);
+    }
 
     if (correction < -3) overconfidentBands++;
     if (correction > 3) underconfidentBands++;
@@ -86,7 +135,6 @@ function computeCalibrationModel(decisions: any[]) {
 
   const mae = bandsWithData > 0 ? Math.round((totalAbsError / bandsWithData) * 10) / 10 : 0;
 
-  // Overall bias direction
   let biasDirection = "neutral";
   if (overconfidentBands > underconfidentBands && overconfidentBands >= 2) {
     biasDirection = "overconfident";
@@ -94,7 +142,6 @@ function computeCalibrationModel(decisions: any[]) {
     biasDirection = "underconfident";
   }
 
-  // Overall calibration score: 100 - MAE (higher = better calibrated)
   const calibrationScore = Math.max(0, Math.round(100 - mae));
 
   return {
@@ -104,8 +151,15 @@ function computeCalibrationModel(decisions: any[]) {
     overall_calibration_score: calibrationScore,
     overall_bias_direction: biasDirection,
     mean_absolute_error: mae,
-    total_decisions_analyzed: calibrated.length,
+    total_decisions_analyzed: windowed.length,
     confidence_bands_count: bandsWithData,
+    success_metric: successMetric,
+    window_start: windowStart,
+    window_end: windowEnd,
+    window_decisions_count: windowed.length,
+    low_sample_bands,
+    smoothing_alpha: SMOOTHING_ALPHA,
+    smoothing_beta: SMOOTHING_BETA,
   };
 }
 
@@ -157,20 +211,21 @@ serve(async (req) => {
       });
     }
 
-    // Fetch all decisions for this org
+    // Minimal select — only columns we actually use
     const { data: decisions } = await svc
       .from("decision_ledger")
-      .select("*")
+      .select(DECISION_COLUMNS)
       .eq("organization_id", organization_id)
-      .order("created_at", { ascending: true })
-      .limit(500);
+      .eq("execution_status", "completed")
+      .order("created_at", { ascending: false })
+      .limit(WINDOW_SIZE);
 
     if (!decisions || decisions.length === 0) {
       return new Response(
         JSON.stringify({
           model: null,
           insufficient_data: true,
-          message: "No decisions found",
+          message: "No completed decisions found",
           decisions_count: 0,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -184,14 +239,14 @@ serve(async (req) => {
         JSON.stringify({
           model: null,
           insufficient_data: true,
-          message: `Need at least 5 completed decisions with outcomes. Currently: ${result.count}`,
+          message: `Need at least ${MIN_DECISIONS} completed decisions with outcomes. Currently: ${result.count}`,
           decisions_count: result.count,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Generate AI narrative about the calibration pattern
+    // AI narrative — only aggregated stats, never raw decision data
     let aiNarrative = "";
     if (lovableApiKey) {
       try {
@@ -206,17 +261,18 @@ serve(async (req) => {
             messages: [
               {
                 role: "system",
-                content: `You are an expert in decision science calibration. Given calibration band corrections and overall stats, write a concise 2-3 sentence executive summary explaining: 1) Whether the organization tends to be overconfident or underconfident, 2) Which confidence bands need the most correction, 3) One specific actionable recommendation. Be direct and quantitative. Return plain text only.`,
+                content: `You are an expert in decision science calibration. Given calibration band corrections and stats, write a concise 2-3 sentence executive summary: 1) Whether the organization is overconfident or underconfident, 2) Which bands need correction, 3) One actionable recommendation. Be direct and quantitative. Plain text only.`,
               },
               {
                 role: "user",
                 content: JSON.stringify({
                   band_corrections: result.band_corrections,
-                  band_sample_sizes: result.band_sample_sizes,
                   overall_bias: result.overall_bias_direction,
                   calibration_score: result.overall_calibration_score,
                   mae: result.mean_absolute_error,
                   total_decisions: result.total_decisions_analyzed,
+                  success_metric: result.success_metric,
+                  low_sample_bands: result.low_sample_bands,
                 }),
               },
             ],
@@ -225,6 +281,8 @@ serve(async (req) => {
         if (aiResp.ok) {
           const aiData = await aiResp.json();
           aiNarrative = aiData.choices?.[0]?.message?.content || "";
+        } else {
+          await aiResp.text(); // consume body
         }
       } catch (e) {
         console.error("AI narrative error:", e);
@@ -241,7 +299,6 @@ serve(async (req) => {
 
     const nextVersion = (existing?.[0]?.model_version ?? 0) + 1;
 
-    // Store the new calibration model
     const modelRecord = {
       organization_id,
       band_corrections: result.band_corrections,
@@ -253,22 +310,23 @@ serve(async (req) => {
       confidence_bands_count: result.confidence_bands_count,
       mean_absolute_error: result.mean_absolute_error,
       ai_narrative: aiNarrative || null,
+      success_metric: result.success_metric,
+      window_start: result.window_start,
+      window_end: result.window_end,
+      window_decisions_count: result.window_decisions_count,
+      smoothing_alpha: result.smoothing_alpha,
+      smoothing_beta: result.smoothing_beta,
+      low_sample_bands: result.low_sample_bands,
     };
 
-    const { error: insertError } = await svc
-      .from("calibration_models")
-      .insert(modelRecord);
-
+    const { error: insertError } = await svc.from("calibration_models").insert(modelRecord);
     if (insertError) {
       console.error("Failed to store calibration model:", insertError);
     }
 
     return new Response(
       JSON.stringify({
-        model: {
-          ...modelRecord,
-          ai_narrative: aiNarrative,
-        },
+        model: modelRecord,
         insufficient_data: false,
         computed_at: new Date().toISOString(),
       }),
