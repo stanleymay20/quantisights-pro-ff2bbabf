@@ -24,7 +24,7 @@ const PILLARS = [
       "All data encrypted at rest (AES-256) and in transit (TLS 1.3)",
       "Automated encrypted backups with point-in-time recovery",
       "Environment variables and secrets stored in encrypted vaults",
-      "Service role keys never exposed to client-side code",
+      "Service role keys not exposed to client-side code",
       "DDoS protection and network-level firewalling",
       "Infrastructure hosted in EU-compliant data centers",
     ],
@@ -73,7 +73,7 @@ const PILLARS = [
     title: "AI Data Governance",
     description: "Your data is yours. We do not train our models on client data. Third-party AI processing is scoped and stateless.",
     items: [
-      "Client data is never used to train or fine-tune Quantivis models",
+      "Client data is not used to train or fine-tune Quantivis models",
       "All AI outputs include confidence scores and attribution explanations",
       "Cognitive bias detection monitors AI recommendation quality",
       "No cross-organization learning without explicit opt-in",
@@ -112,9 +112,9 @@ const CERTIFICATIONS = [
 ];
 
 const PROOF_ITEMS = [
-  { icon: Database, claim: "RLS enforced on 100% of tables", detail: "Every table in the public schema has Row-Level Security enabled with RESTRICTIVE policies scoped to organization_id." },
+  { icon: Database, claim: "RLS enforced across all public tables", detail: "Every table in the public schema has Row-Level Security enabled with RESTRICTIVE policies scoped to organization_id." },
   { icon: Shield, claim: "Org isolation via organization_id policies", detail: "All queries are scoped at the PostgreSQL layer — application code cannot bypass isolation." },
-  { icon: Terminal, claim: "Service role key never shipped to client", detail: "Client bundle only contains the anon key. Service role keys exist exclusively in encrypted Edge Function secrets." },
+  { icon: Terminal, claim: "Service role key not shipped to client", detail: "Client bundle only contains the anon key. Service role keys exist exclusively in encrypted Edge Function secrets." },
   { icon: Lock, claim: "Edge functions authenticated + least-privileged", detail: "Every Edge Function validates JWT auth and verifies organization membership before processing any request." },
   { icon: HardDrive, claim: "Audit logs are append-only", detail: "No UPDATE or DELETE RLS policies exist on the audit_log table — records are immutable by design." },
   { icon: Users, claim: "Strategic data restricted to leadership", detail: "Tables like decision_ledger and advisory_instances use RESTRICTIVE policies limiting access to Owner, Admin, and Executive roles." },
@@ -126,7 +126,7 @@ const SECURITY_FAQ = [
   { q: "Can Quantivis employees access my data?", a: "No. All data access is scoped by organization_id at the database layer via Row-Level Security. Administrative access to infrastructure is limited to a small team with MFA and audit logging." },
   { q: "How do you handle a security breach?", a: "We follow GDPR Article 33 requirements: affected customers are notified within 72 hours where required by applicable law. Our incident response process includes containment, forensic investigation, customer communication, and post-incident review." },
   { q: "What happens when I delete my account?", a: "A secure Edge Function performs atomic deletion or anonymization across 25+ tables (metrics, advisories, audit logs, decisions, copilot sessions, etc.) and purges your record from the authentication system." },
-  { q: "Do you train AI models on my data?", a: "No. Client data is never used to train, fine-tune, or improve Quantivis models. AI features use third-party inference APIs (e.g. Google Gemini) in stateless, per-request mode — no data is retained by the provider after processing." },
+  { q: "Do you train AI models on my data?", a: "No. Client data is not used to train, fine-tune, or improve Quantivis models. AI features use third-party inference APIs (e.g. Google Gemini) in stateless, per-request mode — no data is retained by the provider after processing." },
   { q: "How is MFA enforced?", a: "MFA is enforced at the route level using AAL2 (Authenticator Assurance Level 2). Users must complete a second-factor challenge to access protected pages. TOTP-based authenticator apps are supported." },
   { q: "Can I get a DPA or subprocessor list?", a: "Yes. Our Data Processing Agreement (DPA), subprocessor list, data retention policy, and privacy policy are all publicly available and linked from this page." },
 ];
@@ -292,11 +292,11 @@ const Security = () => {
 
           <div className="grid sm:grid-cols-2 gap-4">
             {[
-              { icon: Shield, title: "No model training on your data", desc: "Your business data is never used to train or fine-tune Quantivis models. Third-party AI inference is stateless and per-request." },
-              { icon: Database, title: "Complete data isolation", desc: "Organization data is siloed at the database layer. No cross-org queries are architecturally possible." },
+              { icon: Shield, title: "No model training on your data", desc: "Your business data is not used to train or fine-tune Quantivis models. Third-party AI inference is stateless and per-request." },
+              { icon: Database, title: "Data isolation by design", desc: "Organization data is siloed at the database layer via RLS. Cross-org queries are not architecturally possible." },
               { icon: Lock, title: "You own your data", desc: "Export all data at any time. Delete your account and all data is purged across 25+ tables within 30 days." },
               { icon: AlertTriangle, title: "Breach notification", desc: "In the unlikely event of a breach, affected customers are notified within 72 hours where required by applicable law." },
-              { icon: Users, title: "No cross-org learning", desc: "Insights, patterns, and intelligence from one organization are never shared with another without explicit consent." },
+              { icon: Users, title: "No cross-org learning", desc: "Insights, patterns, and intelligence from one organization are not shared with another without explicit consent." },
               { icon: ScrollText, title: "Immutable decision history", desc: "Decision logs, calibration data, and audit trails cannot be altered retroactively — not even by administrators." },
             ].map((item) => (
               <div key={item.title} className="rounded-xl border border-border/50 bg-card/50 p-5 flex gap-4">
