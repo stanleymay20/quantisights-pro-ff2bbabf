@@ -175,9 +175,14 @@ serve(async (req) => {
 
     for (let i = 0; i < records.length; i++) {
       const r = records[i];
-      const date = r[fieldMap.date || "date"];
+      let date = r[fieldMap.date || "date"];
       const rawValue = r[fieldMap.value || "value"];
       const value = parseFloat(rawValue);
+
+      // Normalize year-only dates (e.g., "1990" → "1990-01-01")
+      if (date && /^\d{4}$/.test(String(date).trim())) {
+        date = `${String(date).trim()}-01-01`;
+      }
 
       if (!date || !isValidISODate(date)) {
         errors.push(`Record ${i}: invalid date "${date}"`);
