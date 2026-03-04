@@ -23,7 +23,7 @@ export const useInsights = (orgId: string | null) => {
       return;
     }
 
-    const fetch = async () => {
+    const fetchData = async () => {
       setLoading(true);
       const { data, error } = await supabase
         .from("insights")
@@ -36,7 +36,7 @@ export const useInsights = (orgId: string | null) => {
       setLoading(false);
     };
 
-    fetch();
+    fetchData();
   }, [orgId]);
 
   return { insights, loading };
