@@ -29,7 +29,7 @@ serve(async (req) => {
   if (auth.response) return auth.response;
 
   try {
-    const { organization_id, role_type } = await req.json();
+    const { organization_id, dataset_id, role_type } = await req.json();
     if (!organization_id) throw new Error("organization_id required");
 
     // Verify org membership
@@ -44,11 +44,21 @@ serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const headers = { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` };
 
+    // Build dataset-scoped metrics URL
+    let metricsUrl = `${supabaseUrl}/rest/v1/metrics?organization_id=eq.${organization_id}&order=date.asc&limit=500`;
+    if (dataset_id) {
+      metricsUrl += `&dataset_id=eq.${dataset_id}`;
+    }
+    let insightsUrl = `${supabaseUrl}/rest/v1/insights?organization_id=eq.${organization_id}&severity=in.(high,medium)&order=created_at.desc&limit=20`;
+    if (dataset_id) {
+      insightsUrl += `&dataset_id=eq.${dataset_id}`;
+    }
+
     // Fetch data + calibration model in parallel
     const [metricsResp, riskResp, insightsResp, kpisResp, calibrationModel] = await Promise.all([
-      fetch(`${supabaseUrl}/rest/v1/metrics?organization_id=eq.${organization_id}&order=date.asc&limit=500`, { headers }),
+      fetch(metricsUrl, { headers }),
       fetch(`${supabaseUrl}/rest/v1/executive_risk_index?organization_id=eq.${organization_id}&select=score,role_type,components`, { headers }),
-      fetch(`${supabaseUrl}/rest/v1/insights?organization_id=eq.${organization_id}&severity=in.(high,medium)&order=created_at.desc&limit=20`, { headers }),
+      fetch(insightsUrl, { headers }),
       fetch(`${supabaseUrl}/rest/v1/kpis?organization_id=eq.${organization_id}&status=eq.active&limit=20`, { headers }),
       fetchCalibrationModel(supabaseUrl, serviceKey, organization_id),
     ]);

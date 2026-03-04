@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useOrganization } from "@/hooks/useOrganization";
+import { useProject } from "@/contexts/ProjectContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { BrainCircuit, Loader2, AlertTriangle, Shield, Eye, EyeOff, Anchor, TrendingDown, CheckCircle2, Search } from "lucide-react";
@@ -40,6 +41,7 @@ const severityFromConfidence = (c: number) =>
 
 const CognitiveBiasDetection = () => {
   const { currentOrgId } = useOrganization();
+  const { activeDatasetId } = useProject();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<BiasResult | null>(null);
@@ -50,7 +52,7 @@ const CognitiveBiasDetection = () => {
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("cognitive-bias-detect", {
-        body: { organization_id: currentOrgId },
+        body: { organization_id: currentOrgId, dataset_id: activeDatasetId },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);

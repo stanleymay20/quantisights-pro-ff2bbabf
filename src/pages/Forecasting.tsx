@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useOrganization } from "@/hooks/useOrganization";
+import { useProject } from "@/contexts/ProjectContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, ComposedChart } from "recharts";
@@ -25,6 +26,7 @@ interface ForecastData {
 
 const Forecasting = () => {
   const { currentOrgId } = useOrganization();
+  const { activeDatasetId } = useProject();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [metricType, setMetricType] = useState("revenue");
@@ -36,7 +38,7 @@ const Forecasting = () => {
     setLoading(true);
     try {
       const { data: result, error } = await supabase.functions.invoke("predictive-forecast", {
-        body: { organization_id: currentOrgId, metric_type: metricType, horizon_months: horizon },
+        body: { organization_id: currentOrgId, dataset_id: activeDatasetId, metric_type: metricType, horizon_months: horizon },
       });
       if (error) throw error;
       if (result?.error) throw new Error(result.error);
