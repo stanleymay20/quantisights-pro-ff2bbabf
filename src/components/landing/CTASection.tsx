@@ -26,7 +26,7 @@ const CTASection = () => {
             Start Building Your Decision Ledger
           </h2>
           <p className="text-muted-foreground text-base sm:text-lg mb-8 max-w-xl mx-auto">
-            Within 90 days, your finance team can track, evaluate, and continuously improve the accuracy of every strategic call.
+            Within 90 days, your leadership team can track, evaluate, and continuously improve the accuracy of every strategic call.
           </p>
 
           {/* 90-day timeline */}
