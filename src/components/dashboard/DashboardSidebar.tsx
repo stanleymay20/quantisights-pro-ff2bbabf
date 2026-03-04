@@ -10,6 +10,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import logo from "@/assets/quantivis-logo.png";
+import WorkspaceSwitcher from "@/components/dashboard/WorkspaceSwitcher";
 
 const navSections = [
   {
@@ -116,6 +117,10 @@ const DashboardSidebar = () => {
             <X className="w-5 h-5 text-sidebar-foreground" />
           </button>
         )}
+      </div>
+
+      <div className="px-3 pb-2">
+        <WorkspaceSwitcher />
       </div>
 
       <nav className="flex-1 px-3 overflow-y-auto">

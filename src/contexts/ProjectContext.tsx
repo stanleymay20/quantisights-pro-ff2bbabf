@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, useCallback, ReactNode 
 import { supabase } from "@/integrations/supabase/client";
 import { useOrganization } from "@/hooks/useOrganization";
 import { useAuth } from "@/contexts/AuthContext";
+import { useWorkspace } from "@/contexts/WorkspaceContext";
 
 interface Project {
   id: string;
@@ -38,6 +39,7 @@ const STORAGE_KEY = "quantivis_project_id";
 export const ProjectProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
   const { currentOrgId } = useOrganization();
+  const { currentWorkspaceId } = useWorkspace();
   const [projects, setProjects] = useState<Project[]>([]);
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -52,11 +54,18 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
     }
 
     setLoading(true);
-    const { data, error } = await supabase
+    let query = supabase
       .from("projects")
       .select("id, name, description, active_dataset_id, organization_id, created_at")
       .eq("organization_id", currentOrgId)
       .order("created_at", { ascending: false });
+
+    // Scope to workspace if available
+    if (currentWorkspaceId) {
+      query = query.eq("workspace_id", currentWorkspaceId);
+    }
+
+    const { data, error } = await query;
 
     if (error || !data) {
       setLoading(false);
@@ -72,7 +81,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
     setCurrentProjectId(nextId);
     if (nextId) sessionStorage.setItem(STORAGE_KEY, nextId);
     setLoading(false);
-  }, [currentOrgId]);
+  }, [currentOrgId, currentWorkspaceId]);
 
   useEffect(() => {
     fetchProjects();
@@ -104,6 +113,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
         name,
         description: description || null,
         created_by: user.id,
+        workspace_id: currentWorkspaceId,
       })
       .select("id, name, description, active_dataset_id, organization_id, created_at")
       .single();
