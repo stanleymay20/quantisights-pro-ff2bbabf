@@ -270,7 +270,7 @@ serve(async (req) => {
   if (auth.response) return auth.response;
 
   try {
-    const { organization_id } = await req.json();
+    const { organization_id, dataset_id } = await req.json();
     if (!organization_id) throw new Error("organization_id required");
 
     const isMember = await verifyOrgMembership(auth.userId, organization_id);
@@ -283,8 +283,12 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
+    let metricsUrl = `${supabaseUrl}/rest/v1/metrics?organization_id=eq.${organization_id}&order=date.asc&limit=500`;
+    if (dataset_id) {
+      metricsUrl += `&dataset_id=eq.${dataset_id}`;
+    }
     const metricsResp = await fetch(
-      `${supabaseUrl}/rest/v1/metrics?organization_id=eq.${organization_id}&order=date.asc&limit=500`,
+      metricsUrl,
       { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` } }
     );
     const metrics: MetricRow[] = await metricsResp.json();

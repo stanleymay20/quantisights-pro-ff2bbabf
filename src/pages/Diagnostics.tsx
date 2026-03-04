@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useOrganization } from "@/hooks/useOrganization";
+import { useProject } from "@/contexts/ProjectContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -40,6 +41,7 @@ const TREND_ICONS = {
 
 const Diagnostics = () => {
   const { currentOrgId } = useOrganization();
+  const { activeDatasetId } = useProject();
   const { toast } = useToast();
   const [diagnostics, setDiagnostics] = useState<DiagnosticResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -51,7 +53,7 @@ const Diagnostics = () => {
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("diagnostic-engine", {
-        body: { organization_id: currentOrgId },
+        body: { organization_id: currentOrgId, dataset_id: activeDatasetId },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);

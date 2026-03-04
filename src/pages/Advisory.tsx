@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useOrganization } from "@/hooks/useOrganization";
+import { useProject } from "@/contexts/ProjectContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -78,6 +79,7 @@ const STATUS_CONFIG: Record<string, { icon: typeof PlayCircle; color: string; la
 
 const AdvisoryPage = () => {
   const { currentOrgId } = useOrganization();
+  const { activeDatasetId } = useProject();
   const { toast } = useToast();
   const [advisories, setAdvisories] = useState<Advisory[]>([]);
   const [instances, setInstances] = useState<AdvisoryInstance[]>([]);
@@ -93,7 +95,7 @@ const AdvisoryPage = () => {
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("prescriptive-advisory", {
-        body: { organization_id: currentOrgId },
+        body: { organization_id: currentOrgId, dataset_id: activeDatasetId },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
