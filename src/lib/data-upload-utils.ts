@@ -22,6 +22,7 @@ export interface DetectedSchema {
   confidence: number;
   reason: string;
   sampleValues: string[];
+  rulesApplied: string[];
   autoFix?: "year_to_date";
 }
 
@@ -133,26 +134,25 @@ export function inferSchema(headers: string[], rows: string[][]): DetectedSchema
   const sampleRows = rows.slice(0, sampleSize);
 
   // First pass: detect all types
-  const detections = headers.map((header) => {
-    const colIdx = headers.indexOf(header);
+  const detections: DetectedSchema[] = headers.map((header, colIdx) => {
     const samples = sampleRows.map(r => r[colIdx]).filter(Boolean);
     const lower = header.toLowerCase().trim();
     const uniqueValues = new Set(samples.map(s => s.toLowerCase().trim()));
+    const numericRate = samples.filter(s => !isNaN(parseFloat(s)) && isFinite(parseFloat(s))).length / Math.max(samples.length, 1);
 
-    // 0. Explicit NOT-date check: *_years, tenure_years, age, duration, etc.
+    // 0. Explicit NOT-date check
     if (isNotDateHeader(header)) {
-      const numericRate = samples.filter(s => !isNaN(parseFloat(s)) && isFinite(parseFloat(s))).length / Math.max(samples.length, 1);
       if (numericRate > 0.7) {
         return {
           column: header, inferredType: "value" as const, confidence: 88,
           reason: "Numeric duration/measurement column (not a date)",
           sampleValues: samples.slice(0, 3),
+          rulesApplied: ["NOT_DATE_PATTERNS", `numericRate=${(numericRate * 100).toFixed(0)}%`],
         };
       }
     }
 
-    // 1. Date detection: header hint OR year-only values (1900–2100)
-    //    Only match exact header names: year, date, period, time (not substrings like "time_zone")
+    // 1. Date detection
     const isDateHeader = lower === "year" || lower === "date" || lower === "period" || lower === "time"
       || lower === "month" || lower === "quarter" || lower.endsWith("_date") || lower.startsWith("date_");
     if (isDateHeader) {
@@ -163,6 +163,7 @@ export function inferSchema(headers: string[], rows: string[][]): DetectedSchema
           column: header, inferredType: "date" as const, confidence: 92,
           reason: "Year values detected (1900–2100 range)",
           sampleValues: samples.slice(0, 3), autoFix: "year_to_date" as const,
+          rulesApplied: ["header_match:date_keyword", "allYears=true", "range:1900-2100"],
         };
       }
       if (allDates) {
@@ -170,16 +171,18 @@ export function inferSchema(headers: string[], rows: string[][]): DetectedSchema
           column: header, inferredType: "date" as const, confidence: 95,
           reason: "Standard date format detected",
           sampleValues: samples.slice(0, 3),
+          rulesApplied: ["header_match:date_keyword", "Date.parse:all_valid"],
         };
       }
       return {
         column: header, inferredType: "date" as const, confidence: 70,
         reason: "Column name suggests date field",
         sampleValues: samples.slice(0, 3),
+        rulesApplied: ["header_match:date_keyword", "values_inconclusive"],
       };
     }
 
-    // 1b. Additional date detection for columns whose VALUES are all dates (even if header isn't "date")
+    // 1b. Year-like values with "year" in header
     if (!isNotDateHeader(header)) {
       const allYears = samples.length > 0 && samples.every(s => /^\d{4}$/.test(s.trim()) && parseInt(s) >= 1900 && parseInt(s) <= 2100);
       if (allYears && (lower === "year" || lower.includes("year"))) {
@@ -187,11 +190,12 @@ export function inferSchema(headers: string[], rows: string[][]): DetectedSchema
           column: header, inferredType: "date" as const, confidence: 88,
           reason: "Year values detected in header containing 'year'",
           sampleValues: samples.slice(0, 3), autoFix: "year_to_date" as const,
+          rulesApplied: ["header_contains:year", "allYears=true"],
         };
       }
     }
 
-    // 2a. Region code detection (2-3 letter ISO codes, site codes, dept IDs)
+    // 2a. Region code detection
     if (lower.includes("code") || lower.includes("iso") || lower.includes("site_id") || lower.includes("dept_id") || lower.includes("territory_code")) {
       const codeRate = samples.filter(s => /^[A-Z0-9]{2,5}$/i.test(s.trim())).length / Math.max(samples.length, 1);
       if (codeRate > 0.7) {
@@ -199,16 +203,18 @@ export function inferSchema(headers: string[], rows: string[][]): DetectedSchema
           column: header, inferredType: "region_code" as const, confidence: 85,
           reason: "Short codes detected (ISO/site/dept)",
           sampleValues: samples.slice(0, 3),
+          rulesApplied: ["header_match:code_keyword", `codeRate=${(codeRate * 100).toFixed(0)}%`],
         };
       }
     }
 
-    // 2b. Region detection: header hint OR country name matching
+    // 2b. Region detection
     if (lower.includes("region") || lower.includes("country") || lower.includes("nation") || lower.includes("state") || lower.includes("territory") || lower === "country_code") {
       return {
         column: header, inferredType: "region" as const, confidence: 90,
         reason: "Geographic identifiers detected",
         sampleValues: samples.slice(0, 3),
+        rulesApplied: ["header_match:geo_keyword"],
       };
     }
     const countryMatchRate = samples.filter(s => COUNTRY_SAMPLES.has(s.toLowerCase().trim())).length / Math.max(samples.length, 1);
@@ -217,11 +223,11 @@ export function inferSchema(headers: string[], rows: string[][]): DetectedSchema
         column: header, inferredType: "region" as const, confidence: 85,
         reason: `${Math.round(countryMatchRate * 100)}% of values match known countries`,
         sampleValues: samples.slice(0, 3),
+        rulesApplied: ["COUNTRY_SAMPLES", `matchRate=${(countryMatchRate * 100).toFixed(0)}%`],
       };
     }
 
-    // 3. Value detection: header hint OR large numeric values
-    const numericRate = samples.filter(s => !isNaN(parseFloat(s)) && isFinite(parseFloat(s))).length / Math.max(samples.length, 1);
+    // 3. Value detection: header hint
     if (lower.includes("value") || lower.includes("amount") || lower.includes("revenue") ||
         lower.includes("gdp") || lower.includes("price") || lower.includes("cost") ||
         lower.includes("total") || lower.includes("sales") || lower.includes("income") ||
@@ -231,15 +237,18 @@ export function inferSchema(headers: string[], rows: string[][]): DetectedSchema
         lower.includes("throughput") || lower.includes("utilization") || lower.includes("headcount") ||
         lower.includes("attrition") || lower.includes("nps") || lower.includes("satisfaction") ||
         lower.includes("conversion") || lower.includes("churn") || lower.includes("retention")) {
+      const matchedKeyword = ["value","amount","revenue","gdp","price","cost","total","sales","income","profit","spend","rate","inflation","unemployment","expectancy","growth","index","score","throughput","utilization","headcount","attrition","nps","satisfaction","conversion","churn","retention"]
+        .find(k => lower.includes(k)) || "keyword";
       return {
         column: header, inferredType: "value" as const, confidence: 90,
         reason: "Numeric metric column detected",
         sampleValues: samples.slice(0, 3),
+        rulesApplied: [`header_match:${matchedKeyword}`, `numericRate=${(numericRate * 100).toFixed(0)}%`],
       };
     }
+    // Value by statistics
     const avgMagnitude = samples.reduce((sum, s) => sum + Math.abs(parseFloat(s) || 0), 0) / Math.max(samples.length, 1);
     if (numericRate > 0.9 && avgMagnitude > 1) {
-      // Extra guard: if numeric values are all in 1900-2100 range and header doesn't suggest value, skip
       const allLookLikeYears = samples.every(s => {
         const n = parseFloat(s);
         return n >= 1900 && n <= 2100 && Number.isInteger(n);
@@ -249,12 +258,14 @@ export function inferSchema(headers: string[], rows: string[][]): DetectedSchema
           column: header, inferredType: "skip" as const, confidence: 50,
           reason: "Ambiguous: looks like year values but header is unclear",
           sampleValues: samples.slice(0, 3),
+          rulesApplied: ["numericRate>90%", "allLookLikeYears=true", "no_value_keyword"],
         };
       }
       return {
         column: header, inferredType: "value" as const, confidence: 80,
         reason: `Numeric values (avg: ${avgMagnitude.toLocaleString(undefined, { maximumFractionDigits: 1 })})`,
         sampleValues: samples.slice(0, 3),
+        rulesApplied: [`numericRate=${(numericRate * 100).toFixed(0)}%`, `avgMagnitude=${avgMagnitude.toFixed(1)}`],
       };
     }
 
@@ -264,6 +275,7 @@ export function inferSchema(headers: string[], rows: string[][]): DetectedSchema
         column: header, inferredType: "segment" as const, confidence: 85,
         reason: "Categorical grouping detected",
         sampleValues: samples.slice(0, 3),
+        rulesApplied: ["header_match:segment_keyword"],
       };
     }
 
@@ -273,6 +285,7 @@ export function inferSchema(headers: string[], rows: string[][]): DetectedSchema
         column: header, inferredType: "metric_type" as const, confidence: 80,
         reason: "Metric type identifiers detected",
         sampleValues: samples.slice(0, 3),
+        rulesApplied: ["header_match:metric_keyword"],
       };
     }
 
@@ -282,6 +295,7 @@ export function inferSchema(headers: string[], rows: string[][]): DetectedSchema
         column: header, inferredType: "segment" as const, confidence: 60,
         reason: `Low-cardinality text (${uniqueValues.size} unique values)`,
         sampleValues: samples.slice(0, 3),
+        rulesApplied: [`uniqueValues=${uniqueValues.size}`, `numericRate=${(numericRate * 100).toFixed(0)}%`],
       };
     }
 
@@ -289,6 +303,7 @@ export function inferSchema(headers: string[], rows: string[][]): DetectedSchema
       column: header, inferredType: "skip" as const, confidence: 40,
       reason: "No clear pattern detected",
       sampleValues: samples.slice(0, 3),
+      rulesApplied: ["no_rule_matched"],
     };
   });
 
@@ -296,17 +311,20 @@ export function inferSchema(headers: string[], rows: string[][]): DetectedSchema
   const dateDetections = detections.filter(d => d.inferredType === "date");
   if (dateDetections.length > 1) {
     const bestDate = dateDetections.reduce((best, d) => d.confidence > best.confidence ? d : best);
-    detections.forEach(d => {
+    detections.forEach((d, i) => {
       if (d.inferredType === "date" && d.column !== bestDate.column) {
-        const numRate = sampleRows.map(r => r[headers.indexOf(d.column)]).filter(s => !isNaN(parseFloat(s)) && isFinite(parseFloat(s))).length / Math.max(sampleRows.length, 1);
+        const colSamples = sampleRows.map(r => r[i]).filter(Boolean);
+        const numRate = colSamples.filter(s => !isNaN(parseFloat(s)) && isFinite(parseFloat(s))).length / Math.max(colSamples.length, 1);
         if (numRate > 0.8) {
           (d as any).inferredType = "value";
           d.reason = "Reclassified as value (another column chosen as date)";
           d.confidence = 65;
+          d.rulesApplied = [...d.rulesApplied, "single_date_rule:demoted_to_value"];
         } else {
           (d as any).inferredType = "skip";
           d.reason = "Multiple date columns detected — demoted";
           d.confidence = 40;
+          d.rulesApplied = [...d.rulesApplied, "single_date_rule:demoted_to_skip"];
         }
       }
     });
