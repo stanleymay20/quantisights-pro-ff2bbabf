@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import DashboardSidebar, { SidebarMobileToggle } from "@/components/dashboard/DashboardSidebar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOrganization } from "@/hooks/useOrganization";
+import { useProject } from "@/contexts/ProjectContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -48,6 +49,7 @@ const typeIcon = (t: string) => {
 const DataUpload = () => {
   const { user } = useAuth();
   const { currentOrgId } = useOrganization();
+  const { currentProject, createProject, attachDataset, setActiveDataset } = useProject();
   const { tier, subscribed } = useSubscription();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -391,6 +393,15 @@ const DataUpload = () => {
         created_by: user.id,
         is_active: true,
       });
+
+      // Auto-create or use current project, attach dataset, and set as active
+      let projectId = currentProject?.id;
+      if (!projectId) {
+        const proj = await createProject(datasetName || file.name.replace(/\.\w+$/, ""));
+        projectId = proj.id;
+      }
+      await attachDataset(projectId, dataset.id);
+      await setActiveDataset(projectId, dataset.id);
 
       await supabase.functions.invoke("generate-insights", {
         body: { organization_id: currentOrgId },
