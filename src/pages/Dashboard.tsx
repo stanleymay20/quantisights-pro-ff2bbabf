@@ -11,7 +11,7 @@ import { useProject } from "@/contexts/ProjectContext";
 import { useMetrics } from "@/hooks/useMetrics";
 import { useInsights } from "@/hooks/useInsights";
 import { Bell, User, RefreshCw, Shield, Upload, Zap, TrendingUp, ArrowRight } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
@@ -26,6 +26,7 @@ const Dashboard = () => {
   const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "User";
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
   const [recalculating, setRecalculating] = useState(false);
   const [openAdvisoryCount, setOpenAdvisoryCount] = useState(0);
   const [pendingDecisions, setPendingDecisions] = useState(0);
@@ -45,6 +46,13 @@ const Dashboard = () => {
     };
     checkOnboarding();
   }, [currentOrgId, orgLoading, navigate]);
+
+  // Portfolio is now the default landing — redirect if user hits /dashboard directly
+  useEffect(() => {
+    if (location.pathname === "/dashboard" && !hasData && !metricsLoading) {
+      navigate("/portfolio", { replace: true });
+    }
+  }, [location.pathname, hasData, metricsLoading, navigate]);
 
   useEffect(() => {
     if (!currentOrgId) return;
