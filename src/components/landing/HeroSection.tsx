@@ -4,16 +4,15 @@ import { ArrowRight, ShieldCheck, Target, TrendingDown, BarChart3 } from "lucide
 import heroVisual from "@/assets/hero-visual.png";
 
 const CAPABILITY_PILLS = [
-  { icon: ShieldCheck, label: "Overconfidence Protection" },
-  { icon: Target, label: "Board-Ready Defensibility" },
-  { icon: TrendingDown, label: "Downside Risk Reduction" },
-  { icon: BarChart3, label: "Decision Accuracy Tracking" },
+  { icon: ShieldCheck, label: "Decision Audit Trails" },
+  { icon: Target, label: "Forecast Calibration" },
+  { icon: TrendingDown, label: "Overconfidence Detection" },
+  { icon: BarChart3, label: "Board-Ready Defensibility" },
 ];
 
 const HeroSection = () => {
   return (
     <header className="relative min-h-[85vh] flex items-center overflow-hidden pt-20" role="banner">
-      {/* Background image */}
       <img
         src={heroVisual}
         alt=""
@@ -25,7 +24,6 @@ const HeroSection = () => {
       />
       <div className="absolute inset-0 z-[1] bg-gradient-to-b from-background/60 via-background/40 to-background" />
 
-      {/* Ambient glow */}
       <div className="absolute inset-0 pointer-events-none z-[2]">
         <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/6 rounded-full blur-[150px]" />
         <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-primary/[0.04] rounded-full blur-[120px]" />
@@ -45,18 +43,20 @@ const HeroSection = () => {
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary/20 bg-primary/5 text-xs font-semibold text-primary mb-6 sm:mb-8"
             >
               <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-              Executive Decision Governance Platform
+              Decision Governance Software for Finance Teams
             </motion.div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold font-display leading-[1.05] mb-4 sm:mb-6">
-              Reduce Overconfidence.{" "}
+              Make Every Strategic Decision{" "}
               <br className="hidden sm:block" />
-              Defend Every{" "}
-              <span className="gradient-text">Strategic Call.</span>
+              <span className="gradient-text">Board-Defensible.</span>
             </h1>
             <p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto mb-6 sm:mb-10 leading-relaxed">
-              Leadership teams systematically overestimate strategic bets by 7–12 percentage points. Quantivis measures, corrects, and{" "}
-              <span className="text-foreground font-medium">continuously improves your decision accuracy</span> — so every call is board-defensible.
+              Quantivis helps finance teams track, evaluate, and continuously improve the accuracy of
+              strategic decisions — from budget forecasts to capital allocation.{" "}
+              <span className="text-foreground font-medium">
+                Instead of just dashboards, your organization gains a decision ledger that learns from outcomes.
+              </span>
             </p>
 
             {/* Capability pills */}
@@ -85,33 +85,35 @@ const HeroSection = () => {
                 to="/demo"
                 className="inline-flex items-center justify-center gap-2 px-6 sm:px-10 py-3.5 sm:py-4 rounded-xl bg-primary text-primary-foreground font-semibold text-sm sm:text-base hover:brightness-110 transition-all shadow-lg shadow-primary/25"
               >
-                See How It Protects You <ArrowRight className="w-4 h-4" />
+                Start Tracking Strategic Decisions <ArrowRight className="w-4 h-4" />
               </Link>
               <Link
                 to="/register"
                 className="inline-flex items-center justify-center gap-2 px-6 sm:px-10 py-3.5 sm:py-4 rounded-xl border border-border bg-card/50 text-foreground font-semibold text-sm sm:text-base hover:border-primary/30 transition-all"
               >
-                Start 14-Day Free Trial
+                See a Sample Audit Trail
               </Link>
             </div>
 
-            {/* Risk stats strip */}
+            {/* 90-day promise strip */}
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.7 }}
               className="mt-12 pt-6 border-t border-border/30"
             >
-              <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground/50 mb-3">What you're leaving unprotected</p>
-              <div className="flex flex-wrap gap-x-4 gap-y-1.5 sm:gap-6 justify-center">
+              <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground/50 mb-3">Your 90-day path to calibrated decisions</p>
+              <div className="flex flex-wrap gap-x-6 gap-y-1.5 justify-center">
                 {[
-                  "Unaudited Board Decisions",
-                  "Unchecked Confidence Bias",
-                  "Invisible Strategic Drift",
-                  "Manual Risk Assessment",
-                  "Gut-Feel Capital Allocation",
-                ].map((risk) => (
-                  <span key={risk} className="text-xs sm:text-sm text-muted-foreground/40 line-through decoration-muted-foreground/20">{risk}</span>
+                  { month: "Month 1", label: "Decision Ledger" },
+                  { month: "Month 2", label: "Outcome Tracking" },
+                  { month: "Month 3", label: "Calibration Active" },
+                ].map((step, i) => (
+                  <span key={step.month} className="text-xs sm:text-sm text-muted-foreground/60">
+                    <span className="text-primary font-semibold">{step.month}</span>
+                    <span className="mx-1.5 text-border">→</span>
+                    {step.label}
+                  </span>
                 ))}
               </div>
             </motion.div>
