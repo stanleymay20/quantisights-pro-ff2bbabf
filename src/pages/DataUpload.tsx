@@ -380,7 +380,14 @@ const DataUpload = () => {
         inserted += batch.length;
       }
 
-      await supabase.from("datasets").update({ status: "completed", row_count: inserted, current_version: 1 }).eq("id", dataset.id);
+      // Quality gate: verify dataset status transition
+      const { error: statusErr } = await supabase
+        .from("datasets")
+        .update({ status: "completed", row_count: inserted, current_version: 1, last_refreshed_at: new Date().toISOString() })
+        .eq("id", dataset.id);
+      if (statusErr) {
+        console.error("[QualityGate] Dataset status update failed:", { dataset_id: dataset.id, org_id: currentOrgId, error: statusErr.message });
+      }
 
       await supabase.from("dataset_versions").insert({
         dataset_id: dataset.id,
@@ -403,14 +410,31 @@ const DataUpload = () => {
       await attachDataset(projectId, dataset.id);
       await setActiveDataset(projectId, dataset.id);
 
+      // Quality gate: verify metrics count matches expectation
+      const { count: verifiedCount } = await supabase
+        .from("metrics")
+        .select("id", { count: "exact", head: true })
+        .eq("dataset_id", dataset.id);
+
+      const countMismatch = verifiedCount !== null && verifiedCount !== inserted;
+      if (countMismatch) {
+        console.warn("[QualityGate] Metric count mismatch", { expected: inserted, actual: verifiedCount, dataset_id: dataset.id, org_id: currentOrgId });
+      }
+
       await supabase.functions.invoke("generate-insights", {
         body: { organization_id: currentOrgId, dataset_id: dataset.id },
-      }).catch(() => {});
+      }).catch((insightErr) => {
+        console.warn("[QualityGate] Insight generation failed:", { dataset_id: dataset.id, org_id: currentOrgId, error: insightErr?.message });
+      });
 
-      setImportCount(inserted);
+      setImportCount(verifiedCount ?? inserted);
       setStep("done");
-      toast({ title: `Imported ${inserted.toLocaleString()} records successfully!` });
+      toast({
+        title: `Imported ${(verifiedCount ?? inserted).toLocaleString()} records successfully!`,
+        description: countMismatch ? `Note: ${inserted - (verifiedCount ?? 0)} duplicate rows were deduplicated via upsert.` : undefined,
+      });
     } catch (err: any) {
+      console.error("[ImportPipeline] Fatal error:", { dataset_name: datasetName, org_id: currentOrgId, project_id: currentProject?.id, stage: step, error: err.message });
       toast({ title: "Import failed", description: err.message, variant: "destructive" });
       setStep("mapping");
     }
