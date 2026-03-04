@@ -4,6 +4,7 @@ import DashboardSidebar, { SidebarMobileToggle } from "@/components/dashboard/Da
 import { useAuth } from "@/contexts/AuthContext";
 import { useOrganization } from "@/hooks/useOrganization";
 import { useProject } from "@/contexts/ProjectContext";
+import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -50,6 +51,7 @@ const DataUpload = () => {
   const { user } = useAuth();
   const { currentOrgId } = useOrganization();
   const { currentProject, createProject, attachDataset, setActiveDataset } = useProject();
+  const { currentWorkspaceId } = useWorkspace();
   const { tier, subscribed } = useSubscription();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -278,6 +280,7 @@ const DataUpload = () => {
         .from("datasets")
         .insert({
           organization_id: currentOrgId,
+          workspace_id: currentWorkspaceId || null,
           name: datasetName,
           file_path: filePath,
           uploaded_by: user.id,
@@ -294,6 +297,7 @@ const DataUpload = () => {
       const { data: versionData } = await supabase.from("dataset_versions").insert({
         dataset_id: dataset.id,
         organization_id: currentOrgId,
+        workspace_id: currentWorkspaceId || null,
         version_number: 1,
         file_path: filePath,
         row_count: allRows.length,
@@ -310,6 +314,7 @@ const DataUpload = () => {
       // Create pipeline run for observability
       const { data: pipelineRun } = await supabase.from("pipeline_runs").insert({
         organization_id: currentOrgId,
+        workspace_id: currentWorkspaceId || null,
         dataset_id: dataset.id,
         run_type: "full",
         status: "running",
@@ -337,6 +342,7 @@ const DataUpload = () => {
         });
         rawRecords.push({
           organization_id: currentOrgId,
+          workspace_id: currentWorkspaceId || null,
           dataset_id: dataset.id,
           dataset_version_id: versionData?.id || null,
           row_index: i,
@@ -440,6 +446,7 @@ const DataUpload = () => {
           const mt = metricTypeIdx >= 0 ? (row[metricTypeIdx]?.trim() || defaultMetricType) : defaultMetricType;
           metricsToInsert.push({
             organization_id: currentOrgId,
+            workspace_id: currentWorkspaceId || null,
             dataset_id: dataset.id,
             metric_type: mt,
             value: val,
