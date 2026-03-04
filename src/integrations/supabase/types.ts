@@ -2835,6 +2835,92 @@ export type Database = {
           },
         ]
       }
+      portfolio_companies: {
+        Row: {
+          cash_runway_months: number | null
+          created_at: string
+          current_valuation: number | null
+          ebitda_ltm: number | null
+          ebitda_margin_pct: number | null
+          fund_name: string | null
+          headcount: number | null
+          health_status: string | null
+          id: string
+          investment_amount: number | null
+          investment_date: string | null
+          last_board_date: string | null
+          name: string
+          next_board_date: string | null
+          notes: string | null
+          organization_id: string
+          ownership_pct: number | null
+          revenue_growth_pct: number | null
+          revenue_ltm: number | null
+          risk_score: number | null
+          risk_trend: string | null
+          sector: string
+          updated_at: string
+        }
+        Insert: {
+          cash_runway_months?: number | null
+          created_at?: string
+          current_valuation?: number | null
+          ebitda_ltm?: number | null
+          ebitda_margin_pct?: number | null
+          fund_name?: string | null
+          headcount?: number | null
+          health_status?: string | null
+          id?: string
+          investment_amount?: number | null
+          investment_date?: string | null
+          last_board_date?: string | null
+          name: string
+          next_board_date?: string | null
+          notes?: string | null
+          organization_id: string
+          ownership_pct?: number | null
+          revenue_growth_pct?: number | null
+          revenue_ltm?: number | null
+          risk_score?: number | null
+          risk_trend?: string | null
+          sector?: string
+          updated_at?: string
+        }
+        Update: {
+          cash_runway_months?: number | null
+          created_at?: string
+          current_valuation?: number | null
+          ebitda_ltm?: number | null
+          ebitda_margin_pct?: number | null
+          fund_name?: string | null
+          headcount?: number | null
+          health_status?: string | null
+          id?: string
+          investment_amount?: number | null
+          investment_date?: string | null
+          last_board_date?: string | null
+          name?: string
+          next_board_date?: string | null
+          notes?: string | null
+          organization_id?: string
+          ownership_pct?: number | null
+          revenue_growth_pct?: number | null
+          revenue_ltm?: number | null
+          risk_score?: number | null
+          risk_trend?: string | null
+          sector?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portfolio_companies_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
