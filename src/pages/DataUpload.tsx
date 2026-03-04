@@ -8,468 +8,27 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import {
   Upload, FileSpreadsheet, ArrowRight, Check, X,
   AlertTriangle, ShieldCheck, BarChart3, Info,
   Sparkles, Wand2, Globe, Calendar, Hash, TrendingUp,
-  Zap, Eye, ChevronRight,
+  Zap, Eye, ChevronRight, Layers, Database, Activity,
 } from "lucide-react";
 import UploadTrustBadges from "@/components/security/UploadTrustBadges";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  type DetectedSchema, type ValidationResult, type HumanizedError,
+  type DatasetIntelligence, type DatasetDiagnostics, type DatasetClassification,
+  type ImportMode,
+  inferSchema, validateData, generateIntelligence, computeDiagnostics,
+  classifyDataset, confidenceColor, qualityColor, humanizeError,
+} from "@/lib/data-upload-utils";
 
 type Step = "upload" | "autodetect" | "mapping" | "validation" | "intelligence" | "importing" | "done";
 
 const METRIC_TYPES = ["revenue", "cost", "customers", "churn", "headcount", "marketing_spend"] as const;
 const COLUMN_TARGETS = ["date", "value", "region", "segment", "metric_type", "skip"] as const;
-
-// --- Country detection for region inference ---
-const COUNTRY_SAMPLES = new Set([
-  "united states", "usa", "us", "china", "india", "germany", "france", "japan",
-  "united kingdom", "uk", "brazil", "canada", "australia", "italy", "spain",
-  "mexico", "south korea", "russia", "indonesia", "turkey", "saudi arabia",
-  "netherlands", "switzerland", "sweden", "norway", "denmark", "finland",
-  "egypt", "nigeria", "south africa", "argentina", "colombia", "chile",
-  "uae", "qatar", "kuwait", "bahrain", "oman", "iraq", "iran", "israel",
-  "thailand", "vietnam", "malaysia", "singapore", "philippines", "pakistan",
-  "bangladesh", "poland", "portugal", "greece", "czech republic", "austria",
-  "belgium", "ireland", "new zealand", "peru", "venezuela",
-]);
-
-interface DetectedSchema {
-  column: string;
-  inferredType: "date" | "value" | "region" | "segment" | "metric_type" | "skip";
-  confidence: number;
-  reason: string;
-  sampleValues: string[];
-  autoFix?: "year_to_date";
-}
-
-interface ValidationResult {
-  totalRows: number;
-  validRows: number;
-  invalidRows: number;
-  errors: HumanizedError[];
-  qualityScore: number;
-  completeness: number;
-  dateRange: { min: string; max: string } | null;
-  valueRange: { min: number; max: number } | null;
-}
-
-interface HumanizedError {
-  row: number;
-  rawMessage: string;
-  friendlyTitle: string;
-  friendlyDescription: string;
-  suggestion?: string;
-  autoFixable: boolean;
-  fixType?: "year_to_date" | "remove_row" | "trim_value";
-}
-
-interface DatasetIntelligence {
-  recordCount: number;
-  columnCount: number;
-  dateSpan: string | null;
-  regionCount: number;
-  regions: string[];
-  metricTypes: string[];
-  signals: { icon: string; title: string; description: string }[];
-  qualityScore: number;
-  qualityLabel: string;
-}
-
-// ---- Schema Autodetection Engine ----
-function inferSchema(headers: string[], rows: string[][]): DetectedSchema[] {
-  const sampleSize = Math.min(rows.length, 50);
-  const sampleRows = rows.slice(0, sampleSize);
-
-  return headers.map((header) => {
-    const colIdx = headers.indexOf(header);
-    const samples = sampleRows.map(r => r[colIdx]).filter(Boolean);
-    const lower = header.toLowerCase().trim();
-    const uniqueValues = new Set(samples.map(s => s.toLowerCase().trim()));
-
-    // 1. Date detection: header hint OR year-only values (1900–2100)
-    if (lower.includes("date") || lower.includes("year") || lower === "period" || lower === "time") {
-      const allYears = samples.every(s => /^\d{4}$/.test(s.trim()) && parseInt(s) >= 1900 && parseInt(s) <= 2100);
-      const allDates = samples.every(s => !isNaN(Date.parse(s)));
-      if (allYears) {
-        return {
-          column: header, inferredType: "date", confidence: 92,
-          reason: "Year values detected (1900–2100 range)",
-          sampleValues: samples.slice(0, 3), autoFix: "year_to_date",
-        };
-      }
-      if (allDates) {
-        return {
-          column: header, inferredType: "date", confidence: 95,
-          reason: "Standard date format detected",
-          sampleValues: samples.slice(0, 3),
-        };
-      }
-      // Header says date but values aren't parseable — still infer with lower confidence
-      return {
-        column: header, inferredType: "date", confidence: 70,
-        reason: "Column name suggests date field",
-        sampleValues: samples.slice(0, 3),
-      };
-    }
-
-    // 2. Region detection: header hint OR country name matching
-    if (lower.includes("region") || lower.includes("country") || lower.includes("nation") || lower.includes("state") || lower.includes("territory")) {
-      return {
-        column: header, inferredType: "region", confidence: 90,
-        reason: "Geographic identifiers detected",
-        sampleValues: samples.slice(0, 3),
-      };
-    }
-    // Check if values are country names
-    const countryMatchRate = samples.filter(s => COUNTRY_SAMPLES.has(s.toLowerCase().trim())).length / Math.max(samples.length, 1);
-    if (countryMatchRate > 0.5) {
-      return {
-        column: header, inferredType: "region", confidence: 85,
-        reason: `${Math.round(countryMatchRate * 100)}% of values match known countries`,
-        sampleValues: samples.slice(0, 3),
-      };
-    }
-
-    // 3. Value detection: header hint OR large numeric values
-    if (lower.includes("value") || lower.includes("amount") || lower.includes("revenue") ||
-        lower.includes("gdp") || lower.includes("price") || lower.includes("cost") ||
-        lower.includes("total") || lower.includes("sales") || lower.includes("income") ||
-        lower.includes("profit") || lower.includes("spend")) {
-      return {
-        column: header, inferredType: "value", confidence: 90,
-        reason: "Numeric metric column detected",
-        sampleValues: samples.slice(0, 3),
-      };
-    }
-    const numericRate = samples.filter(s => !isNaN(parseFloat(s)) && isFinite(parseFloat(s))).length / Math.max(samples.length, 1);
-    const avgMagnitude = samples.reduce((sum, s) => sum + Math.abs(parseFloat(s) || 0), 0) / Math.max(samples.length, 1);
-    if (numericRate > 0.9 && avgMagnitude > 100) {
-      return {
-        column: header, inferredType: "value", confidence: 80,
-        reason: `High-magnitude numeric values (avg: ${avgMagnitude.toLocaleString(undefined, { maximumFractionDigits: 0 })})`,
-        sampleValues: samples.slice(0, 3),
-      };
-    }
-
-    // 4. Segment detection
-    if (lower.includes("segment") || lower.includes("category") || lower.includes("sector") || lower.includes("industry") || lower.includes("group")) {
-      return {
-        column: header, inferredType: "segment", confidence: 85,
-        reason: "Categorical grouping detected",
-        sampleValues: samples.slice(0, 3),
-      };
-    }
-
-    // 5. Metric type detection
-    if (lower.includes("metric") || lower.includes("type") || lower.includes("indicator") || lower.includes("measure")) {
-      return {
-        column: header, inferredType: "metric_type", confidence: 80,
-        reason: "Metric type identifiers detected",
-        sampleValues: samples.slice(0, 3),
-      };
-    }
-
-    // 6. Low-cardinality text → segment guess
-    if (uniqueValues.size > 1 && uniqueValues.size <= 20 && numericRate < 0.3) {
-      return {
-        column: header, inferredType: "segment", confidence: 60,
-        reason: `Low-cardinality text (${uniqueValues.size} unique values)`,
-        sampleValues: samples.slice(0, 3),
-      };
-    }
-
-    return {
-      column: header, inferredType: "skip", confidence: 40,
-      reason: "No clear pattern detected",
-      sampleValues: samples.slice(0, 3),
-    };
-  });
-}
-
-// ---- Humanized Error Translation ----
-function humanizeError(row: number, rawMessage: string): HumanizedError {
-  const lower = rawMessage.toLowerCase();
-
-  if (lower.includes("invalid date") || lower.includes("date format")) {
-    const yearMatch = rawMessage.match(/"(\d{4})"/);
-    if (yearMatch) {
-      return {
-        row, rawMessage,
-        friendlyTitle: "Year-only date detected",
-        friendlyDescription: `Row ${row} contains "${yearMatch[1]}" instead of a full date.`,
-        suggestion: `We can convert this automatically: ${yearMatch[1]} → ${yearMatch[1]}-01-01`,
-        autoFixable: true, fixType: "year_to_date",
-      };
-    }
-    return {
-      row, rawMessage,
-      friendlyTitle: "Date format issue",
-      friendlyDescription: `Row ${row} has an unrecognized date format.`,
-      suggestion: "Expected format: YYYY-MM-DD (e.g., 2024-01-15)",
-      autoFixable: false,
-    };
-  }
-
-  if (lower.includes("missing date")) {
-    return {
-      row, rawMessage,
-      friendlyTitle: "Missing date",
-      friendlyDescription: `Row ${row} is missing a date value.`,
-      suggestion: "This row will be skipped during import unless a date is provided.",
-      autoFixable: true, fixType: "remove_row",
-    };
-  }
-
-  if (lower.includes("missing value")) {
-    return {
-      row, rawMessage,
-      friendlyTitle: "Missing metric value",
-      friendlyDescription: `Row ${row} has no numeric value.`,
-      suggestion: "Rows without values will be excluded from analysis.",
-      autoFixable: true, fixType: "remove_row",
-    };
-  }
-
-  if (lower.includes("non-numeric") || lower.includes("not a number")) {
-    return {
-      row, rawMessage,
-      friendlyTitle: "Non-numeric value detected",
-      friendlyDescription: `Row ${row} contains text where a number is expected.`,
-      suggestion: "Check for currency symbols, commas, or text in your value column.",
-      autoFixable: false,
-    };
-  }
-
-  if (lower.includes("exceeds limit") || lower.includes("exceeds max")) {
-    return {
-      row, rawMessage,
-      friendlyTitle: "Value out of range",
-      friendlyDescription: `Row ${row} has an unusually large value that exceeds safe limits.`,
-      suggestion: "Values must be within ±1 trillion. Check for unit mismatches.",
-      autoFixable: true, fixType: "trim_value",
-    };
-  }
-
-  return {
-    row, rawMessage,
-    friendlyTitle: "Data issue",
-    friendlyDescription: rawMessage,
-    autoFixable: false,
-  };
-}
-
-// ---- Validation with humanized errors ----
-function validateData(
-  rows: string[][],
-  headers: string[],
-  mapping: Record<string, string>,
-): ValidationResult {
-  const dateCol = Object.entries(mapping).find(([, v]) => v === "date")?.[0];
-  const valueCol = Object.entries(mapping).find(([, v]) => v === "value")?.[0];
-  const dateIdx = dateCol ? headers.indexOf(dateCol) : -1;
-  const valueIdx = valueCol ? headers.indexOf(valueCol) : -1;
-
-  const errors: HumanizedError[] = [];
-  let validRows = 0;
-  const dates: string[] = [];
-  const values: number[] = [];
-  let totalCells = 0;
-  let filledCells = 0;
-
-  for (let i = 0; i < rows.length; i++) {
-    const row = rows[i];
-    let rowValid = true;
-
-    row.forEach((cell) => {
-      totalCells++;
-      if (cell && cell.trim()) filledCells++;
-    });
-
-    if (dateIdx >= 0) {
-      let d = row[dateIdx]?.trim();
-      // Normalize year-only values during validation too
-      if (d && /^\d{4}$/.test(d)) {
-        d = `${d}-01-01`;
-      }
-      if (!d) {
-        errors.push(humanizeError(i + 2, "Missing date value"));
-        rowValid = false;
-      } else if (isNaN(Date.parse(d))) {
-        errors.push(humanizeError(i + 2, `Invalid date format: "${d}"`));
-        rowValid = false;
-      } else {
-        dates.push(d);
-      }
-    }
-
-    if (valueIdx >= 0) {
-      const v = row[valueIdx];
-      const num = parseFloat(v);
-      if (!v || !v.trim()) {
-        errors.push(humanizeError(i + 2, "Missing value"));
-        rowValid = false;
-      } else if (isNaN(num) || !isFinite(num)) {
-        errors.push(humanizeError(i + 2, `Non-numeric value: "${v}"`));
-        rowValid = false;
-      } else if (Math.abs(num) > 1e12) {
-        errors.push(humanizeError(i + 2, `Value exceeds limit: ${num}`));
-        rowValid = false;
-      } else {
-        values.push(num);
-      }
-    }
-
-    if (rowValid) validRows++;
-  }
-
-  const completeness = totalCells > 0 ? Math.round((filledCells / totalCells) * 100) : 0;
-  const errorRate = rows.length > 0 ? (errors.length / rows.length) * 100 : 0;
-  const qualityScore = Math.max(0, Math.min(100, Math.round(
-    completeness * 0.4 + (100 - errorRate) * 0.4 + (dateIdx >= 0 && valueIdx >= 0 ? 20 : 0)
-  )));
-
-  return {
-    totalRows: rows.length,
-    validRows,
-    invalidRows: rows.length - validRows,
-    errors: errors.slice(0, 50),
-    qualityScore,
-    completeness,
-    dateRange: dates.length > 0
-      ? { min: dates.sort()[0], max: dates.sort()[dates.length - 1] }
-      : null,
-    valueRange: values.length > 0
-      ? { min: Math.min(...values), max: Math.max(...values) }
-      : null,
-  };
-}
-
-// ---- Dataset Intelligence Engine ----
-function generateIntelligence(
-  headers: string[],
-  rows: string[][],
-  mapping: Record<string, string>,
-  validation: ValidationResult,
-): DatasetIntelligence {
-  const regionCol = Object.entries(mapping).find(([, v]) => v === "region")?.[0];
-  const metricCol = Object.entries(mapping).find(([, v]) => v === "metric_type")?.[0];
-  const valueCol = Object.entries(mapping).find(([, v]) => v === "value")?.[0];
-  const dateCol = Object.entries(mapping).find(([, v]) => v === "date")?.[0];
-
-  const regionIdx = regionCol ? headers.indexOf(regionCol) : -1;
-  const metricIdx = metricCol ? headers.indexOf(metricCol) : -1;
-  const valueIdx = valueCol ? headers.indexOf(valueCol) : -1;
-  const dateIdx = dateCol ? headers.indexOf(dateCol) : -1;
-
-  const regions = regionIdx >= 0
-    ? [...new Set(rows.map(r => r[regionIdx]).filter(Boolean))]
-    : [];
-  const metricTypes = metricIdx >= 0
-    ? [...new Set(rows.map(r => r[metricIdx]).filter(Boolean))]
-    : [];
-
-  // Generate signals
-  const signals: { icon: string; title: string; description: string }[] = [];
-
-  // Volatility detection
-  if (valueIdx >= 0 && rows.length > 10) {
-    const values = rows.map(r => parseFloat(r[valueIdx])).filter(v => !isNaN(v));
-    const mean = values.reduce((a, b) => a + b, 0) / values.length;
-    const stdDev = Math.sqrt(values.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / values.length);
-    const cv = (stdDev / Math.abs(mean)) * 100;
-    if (cv > 50) {
-      signals.push({
-        icon: "📊", title: "High value volatility detected",
-        description: `Coefficient of variation: ${cv.toFixed(0)}% — significant fluctuations across the dataset.`,
-      });
-    }
-  }
-
-  // Trend detection (simple: compare first third vs last third)
-  if (valueIdx >= 0 && dateIdx >= 0 && rows.length > 20) {
-    const sorted = [...rows].sort((a, b) => {
-      const da = Date.parse(a[dateIdx]) || 0;
-      const db = Date.parse(b[dateIdx]) || 0;
-      return da - db;
-    });
-    const third = Math.floor(sorted.length / 3);
-    const earlyAvg = sorted.slice(0, third).reduce((s, r) => s + (parseFloat(r[valueIdx]) || 0), 0) / third;
-    const lateAvg = sorted.slice(-third).reduce((s, r) => s + (parseFloat(r[valueIdx]) || 0), 0) / third;
-    const changePct = ((lateAvg - earlyAvg) / Math.abs(earlyAvg || 1)) * 100;
-    if (Math.abs(changePct) > 15) {
-      signals.push({
-        icon: changePct > 0 ? "📈" : "📉",
-        title: `${changePct > 0 ? "Growth" : "Decline"} trend detected`,
-        description: `${Math.abs(changePct).toFixed(0)}% ${changePct > 0 ? "increase" : "decrease"} between early and late periods.`,
-      });
-    }
-  }
-
-  // Multi-region diversity
-  if (regions.length > 3) {
-    signals.push({
-      icon: "🌍", title: "Multi-region dataset",
-      description: `${regions.length} distinct regions detected — cross-regional comparison available.`,
-    });
-  }
-
-  // Date span
-  let dateSpan: string | null = null;
-  if (validation.dateRange) {
-    const minYear = new Date(validation.dateRange.min).getFullYear();
-    const maxYear = new Date(validation.dateRange.max).getFullYear();
-    dateSpan = `${minYear}–${maxYear}`;
-    const span = maxYear - minYear;
-    if (span > 10) {
-      signals.push({
-        icon: "📅", title: "Long-term historical data",
-        description: `${span}-year span enables trend analysis and cycle detection.`,
-      });
-    }
-  }
-
-  // Quality signal
-  if (validation.qualityScore >= 90) {
-    signals.push({
-      icon: "✅", title: "Excellent data quality",
-      description: `Quality score: ${validation.qualityScore}/100 — ready for high-confidence analysis.`,
-    });
-  } else if (validation.qualityScore < 60) {
-    signals.push({
-      icon: "⚠️", title: "Data quality concerns",
-      description: `Quality score: ${validation.qualityScore}/100 — insights will have reduced confidence.`,
-    });
-  }
-
-  const qScore = validation.qualityScore;
-  return {
-    recordCount: validation.totalRows,
-    columnCount: headers.length,
-    dateSpan,
-    regionCount: regions.length,
-    regions: regions.slice(0, 8),
-    metricTypes: metricTypes.slice(0, 6),
-    signals,
-    qualityScore: qScore,
-    qualityLabel: qScore >= 80 ? "Excellent" : qScore >= 50 ? "Fair" : "Poor",
-  };
-}
-
-// ---- Confidence badge color ----
-const confidenceColor = (c: number) =>
-  c >= 80 ? "bg-green-500/10 text-green-600 border-green-500/20" :
-  c >= 60 ? "bg-yellow-500/10 text-yellow-600 border-yellow-500/20" :
-  "bg-muted text-muted-foreground border-border";
-
-const qualityColor = (score: number) =>
-  score >= 80 ? "text-green-500" : score >= 50 ? "text-yellow-500" : "text-red-500";
-
-const qualityLabel = (score: number) =>
-  score >= 80 ? "Excellent" : score >= 50 ? "Fair" : "Poor";
 
 const typeIcon = (t: string) => {
   switch (t) {
@@ -503,6 +62,18 @@ const DataUpload = () => {
   const [detectedSchema, setDetectedSchema] = useState<DetectedSchema[]>([]);
   const [intelligence, setIntelligence] = useState<DatasetIntelligence | null>(null);
   const [yearAutoFixed, setYearAutoFixed] = useState(false);
+  const [importMode, setImportMode] = useState<ImportMode>("single");
+  const [diagnostics, setDiagnostics] = useState<DatasetDiagnostics | null>(null);
+  const [classification, setClassification] = useState<DatasetClassification | null>(null);
+
+  // Count value columns for auto-detecting multi-metric mode
+  const valueColumnCount = useMemo(() => {
+    return Object.values(mapping).filter(v => v === "value").length;
+  }, [mapping]);
+
+  const dateColumnCount = useMemo(() => {
+    return Object.values(mapping).filter(v => v === "date").length;
+  }, [mapping]);
 
   const parseCSV = useCallback((text: string) => {
     const lines = text.trim().split("\n").map((l) =>
@@ -515,14 +86,22 @@ const DataUpload = () => {
     setAllRows(dataRows);
     setRows(dataRows.slice(0, 100));
 
-    // Run autodetection
     const schema = inferSchema(hdrs, dataRows);
     setDetectedSchema(schema);
 
-    // Build auto-mapping from detection
     const autoMap: Record<string, string> = {};
     schema.forEach(s => { autoMap[s.column] = s.inferredType; });
     setMapping(autoMap);
+
+    // Auto-detect import mode: if multiple value columns, suggest multi-metric
+    const valCount = schema.filter(s => s.inferredType === "value").length;
+    if (valCount > 1) {
+      setImportMode("multi");
+    }
+
+    // Auto-classify
+    const cls = classifyDataset(hdrs, autoMap);
+    setClassification(cls);
   }, []);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -567,13 +146,11 @@ const DataUpload = () => {
     reader.readAsText(f);
   };
 
-  // Auto-fix year-only dates
   const applyYearToDateFix = () => {
     const dateCol = Object.entries(mapping).find(([, v]) => v === "date")?.[0];
     if (!dateCol) return;
     const dateIdx = headers.indexOf(dateCol);
     if (dateIdx < 0) return;
-
     const fixedRows = allRows.map(row => {
       const newRow = [...row];
       const val = newRow[dateIdx]?.trim();
@@ -593,18 +170,32 @@ const DataUpload = () => {
   }, [detectedSchema]);
 
   const runValidation = () => {
+    // Enforce single date column
+    if (dateColumnCount > 1) {
+      toast({
+        title: "Multiple date columns detected",
+        description: "Only one column can be mapped as date. Please choose one primary time dimension.",
+        variant: "destructive",
+      });
+      return;
+    }
     const hasMappedDate = Object.values(mapping).includes("date");
     const hasMappedValue = Object.values(mapping).includes("value");
     if (!hasMappedDate || !hasMappedValue) {
       toast({ title: "Date and Value columns required", description: "Please map at least a date and value column.", variant: "destructive" });
       return;
     }
-    const result = validateData(allRows, headers, mapping);
+    const result = validateData(allRows, headers, mapping, importMode);
     setValidation(result);
 
-    // Generate intelligence preview
-    const intel = generateIntelligence(headers, allRows, mapping, result);
+    const intel = generateIntelligence(headers, allRows, mapping, result, importMode);
     setIntelligence(intel);
+
+    const diag = computeDiagnostics(allRows, headers, mapping);
+    setDiagnostics(diag);
+
+    const cls = classifyDataset(headers, mapping);
+    setClassification(cls);
 
     if (result.errors.length === 0 || result.validRows > 0) {
       setStep("intelligence");
@@ -654,44 +245,65 @@ const DataUpload = () => {
       if (dsError) throw dsError;
 
       const dateCol = Object.entries(mapping).find(([, v]) => v === "date")?.[0];
-      const valueCol = Object.entries(mapping).find(([, v]) => v === "value")?.[0];
       const regionCol = Object.entries(mapping).find(([, v]) => v === "region")?.[0];
       const segmentCol = Object.entries(mapping).find(([, v]) => v === "segment")?.[0];
       const metricTypeCol = Object.entries(mapping).find(([, v]) => v === "metric_type")?.[0];
+      const valueCols = Object.entries(mapping).filter(([, v]) => v === "value").map(([k]) => k);
 
       const dateIdx = headers.indexOf(dateCol!);
-      const valueIdx = headers.indexOf(valueCol!);
       const regionIdx = regionCol ? headers.indexOf(regionCol) : -1;
       const segmentIdx = segmentCol ? headers.indexOf(segmentCol) : -1;
       const metricTypeIdx = metricTypeCol ? headers.indexOf(metricTypeCol) : -1;
 
-      const metricsToInsert = allRows
-        .map((cols) => {
-          const val = parseFloat(cols[valueIdx]);
-          let dateVal = cols[dateIdx]?.trim();
-          if (!dateVal) return null;
-          // Safety net: normalize year-only values even if user skipped auto-fix
-          if (/^\d{4}$/.test(dateVal)) {
-            dateVal = `${dateVal}-01-01`;
+      const metricsToInsert: any[] = [];
+
+      for (const row of allRows) {
+        let dateVal = row[dateIdx]?.trim();
+        if (!dateVal) continue;
+        if (/^\d{4}$/.test(dateVal)) dateVal = `${dateVal}-01-01`;
+        if (isNaN(Date.parse(dateVal))) continue;
+
+        const regionVal = regionIdx >= 0 ? row[regionIdx] || null : null;
+        const segmentVal = segmentIdx >= 0 ? row[segmentIdx] || null : null;
+
+        if (importMode === "multi" && valueCols.length > 1) {
+          // Wide → Long normalization: each value column becomes a separate metric row
+          for (const valCol of valueCols) {
+            const valIdx = headers.indexOf(valCol);
+            const val = parseFloat(row[valIdx]);
+            if (isNaN(val) || !isFinite(val) || Math.abs(val) > 1e12) continue;
+            metricsToInsert.push({
+              organization_id: currentOrgId,
+              dataset_id: dataset.id,
+              metric_type: valCol.toLowerCase().replace(/\s+/g, "_"),
+              value: val,
+              date: dateVal,
+              region: regionVal,
+              segment: segmentVal,
+            });
           }
-          if (isNaN(val) || !isFinite(val) || Math.abs(val) > 1e12) return null;
-          if (isNaN(Date.parse(dateVal))) return null;
-          return {
+        } else {
+          // Single metric mode
+          const valueCol = valueCols[0];
+          const valueIdx = headers.indexOf(valueCol);
+          const val = parseFloat(row[valueIdx]);
+          if (isNaN(val) || !isFinite(val) || Math.abs(val) > 1e12) continue;
+          metricsToInsert.push({
             organization_id: currentOrgId,
             dataset_id: dataset.id,
-            metric_type: metricTypeIdx >= 0 ? cols[metricTypeIdx] : defaultMetricType,
+            metric_type: metricTypeIdx >= 0 ? row[metricTypeIdx] : defaultMetricType,
             value: val,
             date: dateVal,
-            region: regionIdx >= 0 ? cols[regionIdx] || null : null,
-            segment: segmentIdx >= 0 ? cols[segmentIdx] || null : null,
-          };
-        })
-        .filter(Boolean);
+            region: regionVal,
+            segment: segmentVal,
+          });
+        }
+      }
 
       let inserted = 0;
       for (let i = 0; i < metricsToInsert.length; i += 500) {
         const batch = metricsToInsert.slice(i, i + 500);
-        const { error } = await supabase.from("metrics").insert(batch as any);
+        const { error } = await supabase.from("metrics").insert(batch);
         if (error) throw error;
         inserted += batch.length;
       }
@@ -705,7 +317,7 @@ const DataUpload = () => {
         file_path: filePath,
         row_count: inserted,
         column_mapping: mapping,
-        change_summary: "Initial upload",
+        change_summary: importMode === "multi" ? `Multi-metric import (${valueCols.length} metrics normalized)` : "Initial upload",
         created_by: user.id,
         is_active: true,
       });
@@ -716,14 +328,14 @@ const DataUpload = () => {
 
       setImportCount(inserted);
       setStep("done");
-      toast({ title: `Imported ${inserted} records successfully!` });
+      toast({ title: `Imported ${inserted.toLocaleString()} records successfully!` });
     } catch (err: any) {
       toast({ title: "Import failed", description: err.message, variant: "destructive" });
       setStep("mapping");
     }
   };
 
-  // ---- Step indicator ----
+  // Step indicator
   const steps = [
     { key: "upload", label: "Upload" },
     { key: "autodetect", label: "Detect" },
@@ -744,27 +356,18 @@ const DataUpload = () => {
           </div>
         </header>
 
-        {/* Step indicator */}
         {step !== "upload" && step !== "done" && (
           <div className="px-8 py-3 border-b border-border/20 bg-muted/20">
             <div className="flex items-center gap-1 max-w-xl">
               {steps.map((s, i) => (
                 <div key={s.key} className="flex items-center gap-1">
                   <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all ${
-                    i <= currentStepIndex
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground"
+                    i <= currentStepIndex ? "bg-primary/10 text-primary" : "text-muted-foreground"
                   }`}>
-                    {i < currentStepIndex ? (
-                      <Check className="w-3 h-3" />
-                    ) : (
-                      <span className="w-4 text-center">{i + 1}</span>
-                    )}
+                    {i < currentStepIndex ? <Check className="w-3 h-3" /> : <span className="w-4 text-center">{i + 1}</span>}
                     {s.label}
                   </div>
-                  {i < steps.length - 1 && (
-                    <ChevronRight className="w-3 h-3 text-muted-foreground/40" />
-                  )}
+                  {i < steps.length - 1 && <ChevronRight className="w-3 h-3 text-muted-foreground/40" />}
                 </div>
               ))}
             </div>
@@ -792,7 +395,7 @@ const DataUpload = () => {
               </motion.div>
             )}
 
-            {/* Step: Autodetect — Schema Intelligence */}
+            {/* Step: Autodetect */}
             {step === "autodetect" && (
               <motion.div
                 key="autodetect"
@@ -812,6 +415,69 @@ const DataUpload = () => {
                         </p>
                       </div>
                     </div>
+
+                    {/* Dataset Classification Badge */}
+                    {classification && classification.confidence > 40 && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
+                        className="mt-4 p-3 rounded-lg border border-primary/20 bg-primary/5 flex items-center gap-3"
+                      >
+                        <Database className="w-4 h-4 text-primary shrink-0" />
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-foreground">
+                            Dataset Type: <span className="text-primary">{classification.type}</span>
+                            {classification.subType && <span className="text-muted-foreground"> · {classification.subType}</span>}
+                          </p>
+                        </div>
+                        <Badge variant="outline" className={`text-[10px] shrink-0 ${confidenceColor(classification.confidence)}`}>
+                          {classification.confidence}% confidence
+                        </Badge>
+                      </motion.div>
+                    )}
+
+                    {/* Import Mode Toggle */}
+                    {valueColumnCount >= 2 && (
+                      <motion.div
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                        className="mt-4 p-4 rounded-lg border border-border bg-muted/20"
+                      >
+                        <p className="text-sm font-medium mb-3 flex items-center gap-2">
+                          <Layers className="w-4 h-4 text-primary" /> Import Mode
+                        </p>
+                        <div className="flex gap-3">
+                          <button
+                            onClick={() => setImportMode("single")}
+                            className={`flex-1 p-3 rounded-lg border text-left transition-all ${
+                              importMode === "single"
+                                ? "border-primary bg-primary/5 ring-1 ring-primary/20"
+                                : "border-border hover:border-primary/30"
+                            }`}
+                          >
+                            <p className="text-sm font-medium">Single Metric</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">One value column mapped to a metric type</p>
+                          </button>
+                          <button
+                            onClick={() => setImportMode("multi")}
+                            className={`flex-1 p-3 rounded-lg border text-left transition-all ${
+                              importMode === "multi"
+                                ? "border-primary bg-primary/5 ring-1 ring-primary/20"
+                                : "border-border hover:border-primary/30"
+                            }`}
+                          >
+                            <p className="text-sm font-medium">Multi-Metric Dataset</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              Each numeric column becomes a separate metric ({valueColumnCount} detected)
+                            </p>
+                          </button>
+                        </div>
+                        {importMode === "multi" && (
+                          <p className="text-xs text-primary mt-2 flex items-center gap-1">
+                            <Zap className="w-3 h-3" />
+                            Wide format will be automatically normalized to long format during import.
+                          </p>
+                        )}
+                      </motion.div>
+                    )}
 
                     <div className="mt-6 space-y-2">
                       {detectedSchema.map((det) => (
@@ -913,7 +579,50 @@ const DataUpload = () => {
                 <Card>
                   <CardContent className="p-6">
                     <h2 className="text-lg font-semibold font-display mb-1">Adjust Column Mapping</h2>
-                    <p className="text-xs text-muted-foreground mb-6">Fine-tune the auto-detected mapping. Date and Value are required.</p>
+                    <p className="text-xs text-muted-foreground mb-4">Fine-tune the auto-detected mapping. Date and Value are required.</p>
+
+                    {/* Date column warning */}
+                    {dateColumnCount > 1 && (
+                      <div className="mb-4 p-3 rounded-lg border border-destructive/30 bg-destructive/5 flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4 text-destructive shrink-0" />
+                        <p className="text-xs text-destructive">
+                          Multiple date columns detected ({dateColumnCount}). Only one column can be mapped as date. Please choose one primary time dimension.
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Import mode toggle in mapping */}
+                    <div className="mb-6 p-3 rounded-lg border border-border bg-muted/20 flex items-center gap-4">
+                      <p className="text-sm font-medium flex items-center gap-2">
+                        <Layers className="w-4 h-4 text-primary" /> Import Mode:
+                      </p>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setImportMode("single")}
+                          className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                            importMode === "single"
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-muted text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          Single Metric
+                        </button>
+                        <button
+                          onClick={() => setImportMode("multi")}
+                          className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                            importMode === "multi"
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-muted text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          Multi-Metric
+                        </button>
+                      </div>
+                      {importMode === "multi" && valueColumnCount > 1 && (
+                        <span className="text-xs text-primary">{valueColumnCount} metrics will be normalized</span>
+                      )}
+                    </div>
+
                     <div className="space-y-3">
                       {headers.map((h) => (
                         <div key={h} className="flex items-center gap-4">
@@ -945,7 +654,7 @@ const DataUpload = () => {
                         maxLength={100}
                       />
                     </div>
-                    {!Object.values(mapping).includes("metric_type") && (
+                    {importMode === "single" && !Object.values(mapping).includes("metric_type") && (
                       <div className="mt-4">
                         <label className="block text-sm font-medium mb-1.5">Default Metric Type</label>
                         <select
@@ -987,7 +696,6 @@ const DataUpload = () => {
                     </div>
 
                     <div className="space-y-3">
-                      {/* Group errors by type */}
                       {(() => {
                         const grouped = new Map<string, HumanizedError[]>();
                         validation.errors.forEach(err => {
@@ -1029,13 +737,13 @@ const DataUpload = () => {
                 </Card>
 
                 <div className="flex gap-3">
-                  <Button variant="outline" onClick={() => setStep("mapping")}>
-                    Back to Mapping
-                  </Button>
+                  <Button variant="outline" onClick={() => setStep("mapping")}>Back to Mapping</Button>
                   {validation.validRows > 0 && (
                     <Button onClick={() => {
-                      const intel = generateIntelligence(headers, allRows, mapping, validation);
+                      const intel = generateIntelligence(headers, allRows, mapping, validation, importMode);
                       setIntelligence(intel);
+                      const diag = computeDiagnostics(allRows, headers, mapping);
+                      setDiagnostics(diag);
                       setStep("intelligence");
                     }} className="gap-2">
                       Continue with {validation.validRows} valid rows <ArrowRight className="w-4 h-4" />
@@ -1052,6 +760,27 @@ const DataUpload = () => {
                 initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}
                 className="space-y-6"
               >
+                {/* Dataset Classification */}
+                {classification && classification.confidence > 40 && (
+                  <Card className="overflow-hidden border-primary/20">
+                    <CardContent className="p-4 flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                        <Database className="w-5 h-5 text-primary" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Dataset Type Detected</p>
+                        <p className="text-lg font-semibold font-display text-foreground">
+                          {classification.type}
+                          {classification.subType && <span className="text-sm text-muted-foreground font-normal ml-2">· {classification.subType}</span>}
+                        </p>
+                      </div>
+                      <Badge variant="outline" className={`text-xs ${confidenceColor(classification.confidence)}`}>
+                        {classification.confidence}% confidence
+                      </Badge>
+                    </CardContent>
+                  </Card>
+                )}
+
                 <Card className="overflow-hidden">
                   <div className="bg-gradient-to-r from-primary/5 to-primary/0 p-6 border-b border-border/30">
                     <div className="flex items-center gap-3 mb-1">
@@ -1066,10 +795,12 @@ const DataUpload = () => {
                   </div>
                   <CardContent className="p-6">
                     {/* KPI Strip */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
                       <div className="bg-muted/30 rounded-lg p-4 text-center">
                         <p className="text-2xl font-bold text-foreground">{intelligence.recordCount.toLocaleString()}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">Records</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {importMode === "multi" ? "Records (normalized)" : "Records"}
+                        </p>
                       </div>
                       <div className="bg-muted/30 rounded-lg p-4 text-center">
                         <p className="text-2xl font-bold text-foreground">{intelligence.dateSpan || "—"}</p>
@@ -1078,6 +809,10 @@ const DataUpload = () => {
                       <div className="bg-muted/30 rounded-lg p-4 text-center">
                         <p className="text-2xl font-bold text-foreground">{intelligence.regionCount || "—"}</p>
                         <p className="text-xs text-muted-foreground mt-0.5">Regions</p>
+                      </div>
+                      <div className="bg-muted/30 rounded-lg p-4 text-center">
+                        <p className="text-2xl font-bold text-foreground">{intelligence.metricTypes.length || "—"}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Metrics</p>
                       </div>
                       <div className="bg-muted/30 rounded-lg p-4 text-center">
                         <p className={`text-2xl font-bold ${qualityColor(intelligence.qualityScore)}`}>
@@ -1093,6 +828,18 @@ const DataUpload = () => {
                         </Badge>
                       </div>
                     </div>
+
+                    {/* Metrics detected */}
+                    {intelligence.metricTypes.length > 0 && (
+                      <div className="mb-5">
+                        <p className="text-xs text-muted-foreground mb-2 font-medium uppercase tracking-wider">Metrics Detected</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {intelligence.metricTypes.map(m => (
+                            <Badge key={m} variant="outline" className="text-xs">{m}</Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     {/* Regions */}
                     {intelligence.regions.length > 0 && (
@@ -1111,7 +858,7 @@ const DataUpload = () => {
 
                     {/* Signals */}
                     {intelligence.signals.length > 0 && (
-                      <div>
+                      <div className="mb-5">
                         <p className="text-xs text-muted-foreground mb-2 font-medium uppercase tracking-wider">Signals Detected</p>
                         <div className="space-y-2">
                           {intelligence.signals.map((sig, i) => (
@@ -1129,32 +876,70 @@ const DataUpload = () => {
 
                     {/* Value range */}
                     {validation.valueRange && (
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-4">
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <BarChart3 className="w-3.5 h-3.5" />
                         Value range: {validation.valueRange.min.toLocaleString()} → {validation.valueRange.max.toLocaleString()}
-                      </div>
-                    )}
-
-                    {/* Errors summary */}
-                    {validation.invalidRows > 0 && (
-                      <div className="mt-4 p-3 rounded-lg border border-yellow-500/20 bg-yellow-500/5 flex items-center gap-2">
-                        <AlertTriangle className="w-4 h-4 text-yellow-500 shrink-0" />
-                        <p className="text-xs text-muted-foreground">
-                          {validation.invalidRows} row{validation.invalidRows > 1 ? "s" : ""} will be skipped due to data issues.
-                          <button onClick={() => setStep("validation")} className="text-primary ml-1 hover:underline">View details</button>
-                        </p>
                       </div>
                     )}
                   </CardContent>
                 </Card>
 
+                {/* Data Diagnostics Panel */}
+                {diagnostics && (
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center gap-3 mb-4">
+                        <Activity className="w-5 h-5 text-primary" />
+                        <h3 className="text-base font-semibold font-display">Data Diagnostics</h3>
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="p-3 rounded-lg bg-muted/30 border border-border/40">
+                          <p className={`text-lg font-bold ${diagnostics.missingValuesPct > 5 ? "text-yellow-500" : "text-green-500"}`}>
+                            {diagnostics.missingValuesPct}%
+                          </p>
+                          <p className="text-xs text-muted-foreground">Missing values</p>
+                        </div>
+                        <div className="p-3 rounded-lg bg-muted/30 border border-border/40">
+                          <p className={`text-lg font-bold ${diagnostics.outlierCount > 5 ? "text-yellow-500" : "text-green-500"}`}>
+                            {diagnostics.outlierCount}
+                          </p>
+                          <p className="text-xs text-muted-foreground">Outliers detected</p>
+                        </div>
+                        <div className="p-3 rounded-lg bg-muted/30 border border-border/40">
+                          <p className={`text-lg font-bold ${diagnostics.duplicateRows > 0 ? "text-yellow-500" : "text-green-500"}`}>
+                            {diagnostics.duplicateRows}
+                          </p>
+                          <p className="text-xs text-muted-foreground">Duplicate rows</p>
+                        </div>
+                        <div className="p-3 rounded-lg bg-muted/30 border border-border/40">
+                          <p className={`text-lg font-bold ${diagnostics.dateContinuity === "OK" ? "text-green-500" : diagnostics.dateContinuity === "Gaps detected" ? "text-yellow-500" : "text-muted-foreground"}`}>
+                            {diagnostics.dateContinuity}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Date continuity{diagnostics.dateGapCount > 0 ? ` (${diagnostics.dateGapCount} gap${diagnostics.dateGapCount > 1 ? "s" : ""})` : ""}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Errors summary */}
+                {validation.invalidRows > 0 && (
+                  <div className="p-3 rounded-lg border border-yellow-500/20 bg-yellow-500/5 flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-yellow-500 shrink-0" />
+                    <p className="text-xs text-muted-foreground">
+                      {validation.invalidRows} row{validation.invalidRows > 1 ? "s" : ""} will be skipped due to data issues.
+                      <button onClick={() => setStep("validation")} className="text-primary ml-1 hover:underline">View details</button>
+                    </p>
+                  </div>
+                )}
+
                 <div className="flex gap-3">
-                  <Button variant="outline" onClick={() => setStep("mapping")}>
-                    Edit Mapping
-                  </Button>
+                  <Button variant="outline" onClick={() => setStep("mapping")}>Edit Mapping</Button>
                   {validation.validRows > 0 && (
                     <Button onClick={handleImport} className="gap-2">
-                      Import {validation.validRows.toLocaleString()} Records <Check className="w-4 h-4" />
+                      Import {(importMode === "multi" && valueColumnCount > 1 ? validation.validRows * valueColumnCount : validation.validRows).toLocaleString()} Records <Check className="w-4 h-4" />
                     </Button>
                   )}
                 </div>
@@ -1170,7 +955,9 @@ const DataUpload = () => {
               >
                 <div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin mb-4" />
                 <p className="text-lg font-semibold font-display">Importing data...</p>
-                <p className="text-sm text-muted-foreground mt-1">Processing and generating intelligence signals</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {importMode === "multi" ? "Normalizing multi-metric dataset and generating intelligence signals" : "Processing and generating intelligence signals"}
+                </p>
               </motion.div>
             )}
 
@@ -1185,11 +972,16 @@ const DataUpload = () => {
                   <Check className="w-8 h-8 text-green-500" />
                 </div>
                 <h2 className="text-xl font-semibold font-display mb-2">Import Complete</h2>
-                <p className="text-muted-foreground text-sm mb-6">{importCount.toLocaleString()} records imported · Intelligence signals generated</p>
+                <p className="text-muted-foreground text-sm mb-6">
+                  {importCount.toLocaleString()} records imported
+                  {importMode === "multi" ? " (multi-metric normalized)" : ""}
+                  {" · "}Intelligence signals generated
+                </p>
                 <div className="flex gap-3">
                   <Button variant="outline" onClick={() => {
                     setStep("upload"); setFile(null); setRows([]); setAllRows([]); setHeaders([]);
                     setValidation(null); setDetectedSchema([]); setIntelligence(null); setYearAutoFixed(false);
+                    setDiagnostics(null); setClassification(null); setImportMode("single");
                   }}>
                     Upload Another
                   </Button>
