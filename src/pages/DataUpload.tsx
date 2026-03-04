@@ -327,6 +327,7 @@ const DataUpload = () => {
       // Build raw records from parsed rows
       const rawRecords: Array<{
         organization_id: string;
+        workspace_id: string | null;
         dataset_id: string;
         dataset_version_id: string | null;
         row_index: number;
@@ -393,6 +394,7 @@ const DataUpload = () => {
 
       const metricsToInsert: Array<{
         organization_id: string;
+        workspace_id: string | null;
         dataset_id: string;
         metric_type: string;
         value: number;
