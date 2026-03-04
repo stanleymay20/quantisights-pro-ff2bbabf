@@ -404,7 +404,7 @@ const DataUpload = () => {
       await setActiveDataset(projectId, dataset.id);
 
       await supabase.functions.invoke("generate-insights", {
-        body: { organization_id: currentOrgId },
+        body: { organization_id: currentOrgId, dataset_id: dataset.id },
       }).catch(() => {});
 
       setImportCount(inserted);

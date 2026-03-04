@@ -22,7 +22,7 @@ const Dashboard = () => {
   const { organizations, currentOrgId, currentOrg, switchOrganization, loading: orgLoading } = useOrganization();
   const { currentProject, activeDatasetId } = useProject();
   const { metrics, totalRevenue, totalCustomers, latestCost, latestChurn, revenueByMonth, segmentData, hasData, lastUpdated, loading: metricsLoading } = useMetrics(currentOrgId, activeDatasetId);
-  const { insights, loading: insightsLoading } = useInsights(currentOrgId);
+  const { insights, loading: insightsLoading } = useInsights(currentOrgId, activeDatasetId);
   const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "User";
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -79,7 +79,7 @@ const Dashboard = () => {
     setRecalculating(true);
     try {
       await supabase.functions.invoke("generate-insights", {
-        body: { organization_id: currentOrgId },
+        body: { organization_id: currentOrgId, dataset_id: activeDatasetId },
       });
       toast({ title: "Intelligence refreshed" });
       navigate(0);
