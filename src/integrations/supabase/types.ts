@@ -1844,6 +1844,7 @@ export type Database = {
           confidence_score: number | null
           created_at: string
           data_quality_index: number | null
+          dataset_id: string | null
           generation_model: string | null
           id: string
           is_read: boolean
@@ -1863,6 +1864,7 @@ export type Database = {
           confidence_score?: number | null
           created_at?: string
           data_quality_index?: number | null
+          dataset_id?: string | null
           generation_model?: string | null
           id?: string
           is_read?: boolean
@@ -1882,6 +1884,7 @@ export type Database = {
           confidence_score?: number | null
           created_at?: string
           data_quality_index?: number | null
+          dataset_id?: string | null
           generation_model?: string | null
           id?: string
           is_read?: boolean
@@ -1895,6 +1898,13 @@ export type Database = {
           variance_score?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "insights_dataset_id_fkey"
+            columns: ["dataset_id"]
+            isOneToOne: false
+            referencedRelation: "datasets"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "insights_organization_id_fkey"
             columns: ["organization_id"]
@@ -2741,6 +2751,13 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "projects_active_dataset_fkey"
+            columns: ["active_dataset_id"]
+            isOneToOne: false
+            referencedRelation: "datasets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_active_dataset_id_fkey"
             columns: ["active_dataset_id"]
             isOneToOne: false
             referencedRelation: "datasets"

@@ -12,7 +12,7 @@ export interface Insight {
   generation_model?: string;
 }
 
-export const useInsights = (orgId: string | null) => {
+export const useInsights = (orgId: string | null, datasetId?: string | null) => {
   const [insights, setInsights] = useState<Insight[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -25,19 +25,26 @@ export const useInsights = (orgId: string | null) => {
 
     const fetchData = async () => {
       setLoading(true);
-      const { data, error } = await supabase
+      let query = supabase
         .from("insights")
         .select("*")
         .eq("organization_id", orgId)
         .order("created_at", { ascending: false })
         .limit(20);
 
+      // Scope to dataset if provided; fall back to org-wide
+      if (datasetId) {
+        query = query.eq("dataset_id", datasetId);
+      }
+
+      const { data, error } = await query;
+
       if (!error && data) setInsights(data);
       setLoading(false);
     };
 
     fetchData();
-  }, [orgId]);
+  }, [orgId, datasetId]);
 
   return { insights, loading };
 };
