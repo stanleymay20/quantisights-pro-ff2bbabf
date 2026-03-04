@@ -43,7 +43,7 @@ const HeroSection = () => {
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary/20 bg-primary/5 text-xs font-semibold text-primary mb-6 sm:mb-8"
             >
               <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-              Decision Governance Software for Finance Teams
+              Decision Governance for Leadership Teams
             </motion.div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold font-display leading-[1.05] mb-4 sm:mb-6">
@@ -52,8 +52,8 @@ const HeroSection = () => {
               <span className="gradient-text">Board-Defensible.</span>
             </h1>
             <p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto mb-6 sm:mb-10 leading-relaxed">
-              Quantivis helps finance teams track, evaluate, and continuously improve the accuracy of
-              strategic decisions — from budget forecasts to capital allocation.{" "}
+              Quantivis helps leadership teams track, evaluate, and continuously improve the accuracy of
+              strategic decisions — from budget forecasts to market expansion.{" "}
               <span className="text-foreground font-medium">
                 Instead of just dashboards, your organization gains a decision ledger that learns from outcomes.
               </span>

@@ -97,7 +97,7 @@ const CalibrationProofSection = () => {
             ))}
           </div>
           <p className="text-center text-sm text-muted-foreground mt-6">
-            The result: a finance team that makes <span className="text-foreground font-medium">increasingly accurate strategic calls</span>.
+            The result: a leadership team that makes <span className="text-foreground font-medium">increasingly accurate strategic calls</span>.
           </p>
         </motion.div>
       </div>
