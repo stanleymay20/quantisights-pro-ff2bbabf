@@ -4,8 +4,8 @@ import {
   LayoutDashboard, Upload, FileText, TrendingUp, Settings, CreditCard, LogOut,
   Database, BarChart3, Shuffle, Users, Building2, Search, Zap, Menu, X,
   BookOpen, Target, Brain, MessageSquare, GitBranch, Globe,
-  Sparkles, GitCommitVertical, Crosshair, Bell, Network, BrainCircuit, FlipVertical,
-  Gauge, XCircle, Briefcase, ChevronDown,
+  Sparkles, GitCommitVertical, Crosshair, Bell,
+  Briefcase, ChevronDown,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -45,14 +45,9 @@ const navSections: NavSection[] = [
       { icon: Zap, label: "Advisory", path: "/advisory" },
       { icon: Brain, label: "Decision Intelligence", path: "/decision-intelligence" },
       { icon: BookOpen, label: "Decision Ledger", path: "/decisions" },
-      { icon: Network, label: "Causal Inference", path: "/causal-inference" },
-      { icon: BrainCircuit, label: "Bias Detection", path: "/cognitive-bias" },
-      { icon: FlipVertical, label: "Counterfactuals", path: "/counterfactual" },
-      { icon: Gauge, label: "Calibration", path: "/calibration" },
-      { icon: XCircle, label: "Prediction Misses", path: "/misses" },
-      { icon: MessageSquare, label: "Ask Quantivis", path: "/ask" },
       { icon: Sparkles, label: "Forecasting", path: "/forecasting" },
       { icon: Target, label: "Benchmarking", path: "/benchmarking" },
+      { icon: MessageSquare, label: "Ask Quantivis", path: "/ask" },
     ],
   },
   {
@@ -65,7 +60,6 @@ const navSections: NavSection[] = [
       { icon: Globe, label: "Market Intelligence", path: "/market-intelligence" },
       { icon: Bell, label: "Alert Playbooks", path: "/alert-playbooks" },
       { icon: FileText, label: "Reports", path: "/reports" },
-      { icon: BarChart3, label: "Strategy Pack", path: "/strategy-pack" },
       { icon: Crosshair, label: "OKR Alignment", path: "/okrs" },
     ],
   },
