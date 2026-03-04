@@ -46,7 +46,6 @@ const Portfolio = () => {
             </div>
           ) : (
             <>
-              {/* KPI Bar */}
               <PortfolioKPIBar
                 companyCount={companies.length}
                 totalAUM={totalAUM}
@@ -55,16 +54,10 @@ const Portfolio = () => {
                 atRiskCount={atRiskCount}
                 avgEbitdaMargin={avgEbitdaMargin}
               />
-
-              {/* Visual Risk Grid */}
               <PortfolioRiskGrid companies={companies} onSelect={setSelected} />
-
-              {/* Selected Company Detail */}
               {selected && (
                 <PortfolioCompanyDetail company={selected} onClose={() => setSelected(null)} />
               )}
-
-              {/* Full Table */}
               <div>
                 <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Portfolio Companies</h2>
                 <PortfolioRiskHeatmap

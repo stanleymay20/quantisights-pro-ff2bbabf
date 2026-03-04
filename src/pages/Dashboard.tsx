@@ -48,7 +48,6 @@ const Dashboard = () => {
     checkOnboarding();
   }, [currentOrgId, orgLoading, navigate]);
 
-  // Portfolio is now the default landing — redirect if user hits /dashboard directly
   useEffect(() => {
     if (location.pathname === "/dashboard" && !hasData && !metricsLoading) {
       navigate("/portfolio", { replace: true });
@@ -168,7 +167,6 @@ const Dashboard = () => {
 
         <main id="main-content" className="flex-1 p-3 sm:p-4 md:p-8 overflow-auto">
           {!hasData && !isLoading ? (
-            /* ── Smart Empty State ── */
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -229,7 +227,6 @@ const Dashboard = () => {
           ) : isLoading ? (
             <DashboardSkeleton />
           ) : (
-            /* ── Decision Intelligence Command Center ── */
             <>
               <motion.div
                 initial={{ opacity: 0, y: 8 }}
