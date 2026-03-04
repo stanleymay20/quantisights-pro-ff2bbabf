@@ -106,16 +106,19 @@ function isNotDateHeader(header: string): boolean {
 
 // ---- Robust CSV Parser (PapaParse) ----
 export function parseCSVText(text: string): { headers: string[]; rows: string[][] } {
-  const result = Papa.parse(text.trim(), {
+  // Strip BOM and normalize line endings
+  const cleaned = text.replace(/^\uFEFF/, "").replace(/\r\n?/g, "\n");
+  const result = Papa.parse(cleaned.trim(), {
     header: false,
-    skipEmptyLines: true,
+    skipEmptyLines: "greedy",
     transformHeader: (h: string) => h.trim(),
     transform: (val: string) => val.trim(),
   });
   const data = result.data as string[][];
   if (data.length < 2) return { headers: [], rows: [] };
   const headers = data[0].map(h => h.replace(/^"|"$/g, "").trim());
-  const rows = data.slice(1);
+  // Filter out completely empty rows
+  const rows = data.slice(1).filter(row => row.some(cell => cell && cell.trim()));
   return { headers, rows };
 }
 
@@ -163,7 +166,10 @@ export function inferSchema(headers: string[], rows: string[][]): DetectedSchema
     const samples = sampleRows.map(r => r[colIdx]).filter(Boolean);
     const lower = header.toLowerCase().trim();
     const uniqueValues = new Set(samples.map(s => s.toLowerCase().trim()));
-    const numericRate = samples.filter(s => !isNaN(parseFloat(s)) && isFinite(parseFloat(s))).length / Math.max(samples.length, 1);
+    const numericRate = samples.filter(s => {
+      const cleaned = s.replace(/[\s$€£¥₹,]/g, "").replace(/\(([^)]+)\)/, "-$1");
+      return !isNaN(parseFloat(cleaned)) && isFinite(parseFloat(cleaned));
+    }).length / Math.max(samples.length, 1);
 
     // 0. Explicit NOT-date check
     if (isNotDateHeader(header)) {
@@ -430,6 +436,15 @@ export function humanizeError(row: number, rawMessage: string): HumanizedError {
   };
 }
 
+// ---- Clean numeric value: strip currency symbols, thousand separators ----
+function cleanNumericVal(raw: string | undefined): number {
+  if (!raw) return NaN;
+  const cleaned = raw
+    .replace(/[\s$€£¥₹,]/g, "")
+    .replace(/\(([^)]+)\)/, "-$1"); // (123) → -123
+  return parseFloat(cleaned);
+}
+
 // ---- Validation (supports multi-metric mode, counts validPoints) ----
 export function validateData(
   rows: string[][],
@@ -483,7 +498,7 @@ export function validateData(
     const checkIndices = importMode === "multi" ? valueIndices : (primaryValueIdx >= 0 ? [primaryValueIdx] : []);
     for (const vIdx of checkIndices) {
       const v = row[vIdx];
-      const num = parseFloat(v);
+      const num = cleanNumericVal(v);
       if (!v || !v.trim()) {
         if (importMode === "single") {
           errors.push(humanizeError(i + 2, "Missing value"));
