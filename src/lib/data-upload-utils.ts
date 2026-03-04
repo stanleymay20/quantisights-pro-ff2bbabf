@@ -1,6 +1,8 @@
 // ---- Data Upload Utility Functions ----
 // Extracted from DataUpload.tsx for maintainability
 
+import Papa from "papaparse";
+
 // --- Country detection for region inference ---
 export const COUNTRY_SAMPLES = new Set([
   "united states", "usa", "us", "china", "india", "germany", "france", "japan",
@@ -16,7 +18,7 @@ export const COUNTRY_SAMPLES = new Set([
 
 export interface DetectedSchema {
   column: string;
-  inferredType: "date" | "value" | "region" | "segment" | "metric_type" | "skip";
+  inferredType: "date" | "value" | "region" | "region_code" | "segment" | "metric_type" | "skip";
   confidence: number;
   reason: string;
   sampleValues: string[];
@@ -27,6 +29,9 @@ export interface ValidationResult {
   totalRows: number;
   validRows: number;
   invalidRows: number;
+  validPoints: number;
+  invalidPoints: number;
+  totalPoints: number;
   errors: HumanizedError[];
   qualityScore: number;
   completeness: number;
@@ -46,6 +51,7 @@ export interface HumanizedError {
 
 export interface DatasetIntelligence {
   recordCount: number;
+  validPointCount: number;
   columnCount: number;
   dateSpan: string | null;
   regionCount: number;
@@ -68,9 +74,58 @@ export interface DatasetClassification {
   type: string;
   confidence: number;
   subType?: string;
+  recommendedWorkflows: string[];
 }
 
 export type ImportMode = "single" | "multi";
+
+// ---- NOT-date header patterns ----
+const NOT_DATE_PATTERNS = [
+  /_years$/i, /^life_expectancy/i, /^tenure/i, /^age$/i, /^duration/i,
+  /_duration$/i, /_age$/i, /^experience/i, /^months$/i, /^days$/i,
+  /_months$/i, /_days$/i, /_count$/i, /^headcount$/i,
+];
+
+function isNotDateHeader(header: string): boolean {
+  return NOT_DATE_PATTERNS.some(p => p.test(header.trim()));
+}
+
+// ---- Robust CSV Parser (PapaParse) ----
+export function parseCSVText(text: string): { headers: string[]; rows: string[][] } {
+  const result = Papa.parse(text.trim(), {
+    header: false,
+    skipEmptyLines: true,
+    transformHeader: (h: string) => h.trim(),
+    transform: (val: string) => val.trim(),
+  });
+  const data = result.data as string[][];
+  if (data.length < 2) return { headers: [], rows: [] };
+  const headers = data[0].map(h => h.replace(/^"|"$/g, "").trim());
+  const rows = data.slice(1);
+  return { headers, rows };
+}
+
+// ---- Slugify metric name ----
+export function slugifyMetric(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[%]/g, "_pct")
+    .replace(/[/]/g, "_per_")
+    .replace(/[()]/g, "")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .replace(/_+/g, "_");
+}
+
+/** Deduplicate metric slugs by appending _2, _3 etc */
+export function deduplicateMetricSlugs(slugs: string[]): string[] {
+  const counts = new Map<string, number>();
+  return slugs.map(s => {
+    const count = (counts.get(s) ?? 0) + 1;
+    counts.set(s, count);
+    return count > 1 ? `${s}_${count}` : s;
+  });
+}
 
 // ---- Schema Autodetection Engine ----
 export function inferSchema(headers: string[], rows: string[][]): DetectedSchema[] {
@@ -84,8 +139,23 @@ export function inferSchema(headers: string[], rows: string[][]): DetectedSchema
     const lower = header.toLowerCase().trim();
     const uniqueValues = new Set(samples.map(s => s.toLowerCase().trim()));
 
+    // 0. Explicit NOT-date check: *_years, tenure_years, age, duration, etc.
+    if (isNotDateHeader(header)) {
+      const numericRate = samples.filter(s => !isNaN(parseFloat(s)) && isFinite(parseFloat(s))).length / Math.max(samples.length, 1);
+      if (numericRate > 0.7) {
+        return {
+          column: header, inferredType: "value" as const, confidence: 88,
+          reason: "Numeric duration/measurement column (not a date)",
+          sampleValues: samples.slice(0, 3),
+        };
+      }
+    }
+
     // 1. Date detection: header hint OR year-only values (1900–2100)
-    if (lower.includes("date") || lower === "year" || lower === "period" || lower === "time") {
+    //    Only match exact header names: year, date, period, time (not substrings like "time_zone")
+    const isDateHeader = lower === "year" || lower === "date" || lower === "period" || lower === "time"
+      || lower === "month" || lower === "quarter" || lower.endsWith("_date") || lower.startsWith("date_");
+    if (isDateHeader) {
       const allYears = samples.every(s => /^\d{4}$/.test(s.trim()) && parseInt(s) >= 1900 && parseInt(s) <= 2100);
       const allDates = samples.every(s => !isNaN(Date.parse(s)));
       if (allYears) {
@@ -102,18 +172,39 @@ export function inferSchema(headers: string[], rows: string[][]): DetectedSchema
           sampleValues: samples.slice(0, 3),
         };
       }
-      // Only map as date if header is specifically "year", "date", "period"
-      if (lower === "year" || lower === "date" || lower === "period" || lower === "time") {
+      return {
+        column: header, inferredType: "date" as const, confidence: 70,
+        reason: "Column name suggests date field",
+        sampleValues: samples.slice(0, 3),
+      };
+    }
+
+    // 1b. Additional date detection for columns whose VALUES are all dates (even if header isn't "date")
+    if (!isNotDateHeader(header)) {
+      const allYears = samples.length > 0 && samples.every(s => /^\d{4}$/.test(s.trim()) && parseInt(s) >= 1900 && parseInt(s) <= 2100);
+      if (allYears && (lower === "year" || lower.includes("year"))) {
         return {
-          column: header, inferredType: "date" as const, confidence: 70,
-          reason: "Column name suggests date field",
+          column: header, inferredType: "date" as const, confidence: 88,
+          reason: "Year values detected in header containing 'year'",
+          sampleValues: samples.slice(0, 3), autoFix: "year_to_date" as const,
+        };
+      }
+    }
+
+    // 2a. Region code detection (2-3 letter ISO codes, site codes, dept IDs)
+    if (lower.includes("code") || lower.includes("iso") || lower.includes("site_id") || lower.includes("dept_id") || lower.includes("territory_code")) {
+      const codeRate = samples.filter(s => /^[A-Z0-9]{2,5}$/i.test(s.trim())).length / Math.max(samples.length, 1);
+      if (codeRate > 0.7) {
+        return {
+          column: header, inferredType: "region_code" as const, confidence: 85,
+          reason: "Short codes detected (ISO/site/dept)",
           sampleValues: samples.slice(0, 3),
         };
       }
     }
 
-    // 2. Region detection: header hint OR country name matching
-    if (lower.includes("region") || lower.includes("country") || lower.includes("nation") || lower.includes("state") || lower.includes("territory") || lower.includes("country_code")) {
+    // 2b. Region detection: header hint OR country name matching
+    if (lower.includes("region") || lower.includes("country") || lower.includes("nation") || lower.includes("state") || lower.includes("territory") || lower === "country_code") {
       return {
         column: header, inferredType: "region" as const, confidence: 90,
         reason: "Geographic identifiers detected",
@@ -129,18 +220,6 @@ export function inferSchema(headers: string[], rows: string[][]): DetectedSchema
       };
     }
 
-    // 2b. Country code detection (2-3 letter codes)
-    if (lower.includes("code") || lower.includes("iso")) {
-      const codeRate = samples.filter(s => /^[A-Z]{2,3}$/i.test(s.trim())).length / Math.max(samples.length, 1);
-      if (codeRate > 0.7) {
-        return {
-          column: header, inferredType: "region" as const, confidence: 82,
-          reason: "ISO country codes detected",
-          sampleValues: samples.slice(0, 3),
-        };
-      }
-    }
-
     // 3. Value detection: header hint OR large numeric values
     const numericRate = samples.filter(s => !isNaN(parseFloat(s)) && isFinite(parseFloat(s))).length / Math.max(samples.length, 1);
     if (lower.includes("value") || lower.includes("amount") || lower.includes("revenue") ||
@@ -148,7 +227,10 @@ export function inferSchema(headers: string[], rows: string[][]): DetectedSchema
         lower.includes("total") || lower.includes("sales") || lower.includes("income") ||
         lower.includes("profit") || lower.includes("spend") || lower.includes("rate") ||
         lower.includes("inflation") || lower.includes("unemployment") || lower.includes("expectancy") ||
-        lower.includes("growth") || lower.includes("index") || lower.includes("score")) {
+        lower.includes("growth") || lower.includes("index") || lower.includes("score") ||
+        lower.includes("throughput") || lower.includes("utilization") || lower.includes("headcount") ||
+        lower.includes("attrition") || lower.includes("nps") || lower.includes("satisfaction") ||
+        lower.includes("conversion") || lower.includes("churn") || lower.includes("retention")) {
       return {
         column: header, inferredType: "value" as const, confidence: 90,
         reason: "Numeric metric column detected",
@@ -157,6 +239,18 @@ export function inferSchema(headers: string[], rows: string[][]): DetectedSchema
     }
     const avgMagnitude = samples.reduce((sum, s) => sum + Math.abs(parseFloat(s) || 0), 0) / Math.max(samples.length, 1);
     if (numericRate > 0.9 && avgMagnitude > 1) {
+      // Extra guard: if numeric values are all in 1900-2100 range and header doesn't suggest value, skip
+      const allLookLikeYears = samples.every(s => {
+        const n = parseFloat(s);
+        return n >= 1900 && n <= 2100 && Number.isInteger(n);
+      });
+      if (allLookLikeYears && !lower.includes("value") && !lower.includes("amount")) {
+        return {
+          column: header, inferredType: "skip" as const, confidence: 50,
+          reason: "Ambiguous: looks like year values but header is unclear",
+          sampleValues: samples.slice(0, 3),
+        };
+      }
       return {
         column: header, inferredType: "value" as const, confidence: 80,
         reason: `Numeric values (avg: ${avgMagnitude.toLocaleString(undefined, { maximumFractionDigits: 1 })})`,
@@ -165,7 +259,7 @@ export function inferSchema(headers: string[], rows: string[][]): DetectedSchema
     }
 
     // 4. Segment detection
-    if (lower.includes("segment") || lower.includes("category") || lower.includes("sector") || lower.includes("industry") || lower.includes("group")) {
+    if (lower.includes("segment") || lower.includes("category") || lower.includes("sector") || lower.includes("industry") || lower.includes("group") || lower.includes("department") || lower.includes("team")) {
       return {
         column: header, inferredType: "segment" as const, confidence: 85,
         reason: "Categorical grouping detected",
@@ -204,7 +298,6 @@ export function inferSchema(headers: string[], rows: string[][]): DetectedSchema
     const bestDate = dateDetections.reduce((best, d) => d.confidence > best.confidence ? d : best);
     detections.forEach(d => {
       if (d.inferredType === "date" && d.column !== bestDate.column) {
-        // Demote non-best date columns
         const numRate = sampleRows.map(r => r[headers.indexOf(d.column)]).filter(s => !isNaN(parseFloat(s)) && isFinite(parseFloat(s))).length / Math.max(sampleRows.length, 1);
         if (numRate > 0.8) {
           (d as any).inferredType = "value";
@@ -294,7 +387,7 @@ export function humanizeError(row: number, rawMessage: string): HumanizedError {
   };
 }
 
-// ---- Validation (supports multi-metric mode) ----
+// ---- Validation (supports multi-metric mode, counts validPoints) ----
 export function validateData(
   rows: string[][],
   headers: string[],
@@ -304,13 +397,14 @@ export function validateData(
   const dateCol = Object.entries(mapping).find(([, v]) => v === "date")?.[0];
   const dateIdx = dateCol ? headers.indexOf(dateCol) : -1;
 
-  // In single mode, one value column. In multi mode, all value columns.
   const valueCols = Object.entries(mapping).filter(([, v]) => v === "value").map(([k]) => k);
   const valueIndices = valueCols.map(c => headers.indexOf(c));
   const primaryValueIdx = valueIndices[0] ?? -1;
 
   const errors: HumanizedError[] = [];
   let validRows = 0;
+  let validPoints = 0;
+  let invalidPoints = 0;
   const dates: string[] = [];
   const values: number[] = [];
   let totalCells = 0;
@@ -325,6 +419,8 @@ export function validateData(
       if (cell && cell.trim()) filledCells++;
     });
 
+    // Date validation
+    let dateValid = true;
     if (dateIdx >= 0) {
       let d = row[dateIdx]?.trim();
       if (d && /^\d{4}$/.test(d)) {
@@ -333,32 +429,37 @@ export function validateData(
       if (!d) {
         errors.push(humanizeError(i + 2, "Missing date value"));
         rowValid = false;
+        dateValid = false;
       } else if (isNaN(Date.parse(d))) {
         errors.push(humanizeError(i + 2, `Invalid date format: "${d}"`));
         rowValid = false;
+        dateValid = false;
       } else {
         dates.push(d);
       }
     }
 
-    // Validate values - in multi mode, check all value columns; in single, just the first
+    // Validate values — count per metric-point pair
     const checkIndices = importMode === "multi" ? valueIndices : (primaryValueIdx >= 0 ? [primaryValueIdx] : []);
     for (const vIdx of checkIndices) {
       const v = row[vIdx];
       const num = parseFloat(v);
       if (!v || !v.trim()) {
-        // In multi mode, allow sparse values
         if (importMode === "single") {
           errors.push(humanizeError(i + 2, "Missing value"));
           rowValid = false;
         }
+        invalidPoints++;
       } else if (isNaN(num) || !isFinite(num)) {
         errors.push(humanizeError(i + 2, `Non-numeric value: "${v}"`));
         rowValid = false;
+        invalidPoints++;
       } else if (Math.abs(num) > 1e12) {
         errors.push(humanizeError(i + 2, `Value exceeds limit: ${num}`));
         rowValid = false;
+        invalidPoints++;
       } else {
+        if (dateValid) validPoints++;
         values.push(num);
       }
     }
@@ -366,6 +467,7 @@ export function validateData(
     if (rowValid) validRows++;
   }
 
+  const totalPoints = importMode === "multi" ? rows.length * valueIndices.length : rows.length;
   const completeness = totalCells > 0 ? Math.round((filledCells / totalCells) * 100) : 0;
   const errorRate = rows.length > 0 ? (errors.length / rows.length) * 100 : 0;
   const qualityScore = Math.max(0, Math.min(100, Math.round(
@@ -376,6 +478,9 @@ export function validateData(
     totalRows: rows.length,
     validRows,
     invalidRows: rows.length - validRows,
+    validPoints,
+    invalidPoints,
+    totalPoints,
     errors: errors.slice(0, 50),
     qualityScore,
     completeness,
@@ -409,19 +514,17 @@ export function generateIntelligence(
     ? [...new Set(rows.map(r => r[regionIdx]).filter(Boolean))]
     : [];
 
-  // Metric types: from column if present, or from multi-metric column names
   let metricTypes: string[];
   if (metricIdx >= 0) {
     metricTypes = [...new Set(rows.map(r => r[metricIdx]).filter(Boolean))];
   } else if (importMode === "multi" && valueCols.length > 1) {
-    metricTypes = valueCols;
+    metricTypes = valueCols.map(c => slugifyMetric(c));
   } else {
     metricTypes = [];
   }
 
   const signals: { icon: string; title: string; description: string }[] = [];
 
-  // Multi-metric signal
   if (importMode === "multi" && valueCols.length > 1) {
     signals.push({
       icon: "📊", title: `${valueCols.length} metrics detected`,
@@ -502,9 +605,8 @@ export function generateIntelligence(
 
   const qScore = validation.qualityScore;
   return {
-    recordCount: importMode === "multi" && valueCols.length > 1
-      ? validation.totalRows * valueCols.length
-      : validation.totalRows,
+    recordCount: validation.validPoints > 0 ? validation.validPoints : validation.validRows,
+    validPointCount: validation.validPoints,
     columnCount: headers.length,
     dateSpan,
     regionCount: regions.length,
@@ -527,7 +629,6 @@ export function computeDiagnostics(
   const valueCols = Object.entries(mapping).filter(([, v]) => v === "value").map(([k]) => k);
   const valueIndices = valueCols.map(c => headers.indexOf(c));
 
-  // Missing values %
   let totalCells = 0;
   let emptyCells = 0;
   rows.forEach(row => {
@@ -538,7 +639,6 @@ export function computeDiagnostics(
   });
   const missingValuesPct = totalCells > 0 ? parseFloat(((emptyCells / totalCells) * 100).toFixed(1)) : 0;
 
-  // Outlier detection (values beyond 3 standard deviations)
   let outlierCount = 0;
   for (const vIdx of valueIndices) {
     const values = rows.map(r => parseFloat(r[vIdx])).filter(v => !isNaN(v));
@@ -550,7 +650,6 @@ export function computeDiagnostics(
     }
   }
 
-  // Duplicate row detection
   const rowStrings = new Set<string>();
   let duplicateRows = 0;
   rows.forEach(row => {
@@ -559,7 +658,6 @@ export function computeDiagnostics(
     else rowStrings.add(key);
   });
 
-  // Date continuity check
   let dateContinuity: "OK" | "Gaps detected" | "N/A" = "N/A";
   let dateGapCount = 0;
   if (dateIdx >= 0) {
@@ -573,7 +671,6 @@ export function computeDiagnostics(
       .sort((a, b) => a - b);
 
     if (dates.length > 2) {
-      // Check for year-level gaps
       const years = [...new Set(dates.map(d => new Date(d).getFullYear()))].sort((a, b) => a - b);
       for (let i = 1; i < years.length; i++) {
         if (years[i] - years[i - 1] > 1) dateGapCount++;
@@ -586,10 +683,11 @@ export function computeDiagnostics(
 }
 
 // ---- Dataset Classification ----
-const DATASET_PATTERNS: { type: string; keywords: string[]; subTypes?: { type: string; keywords: string[] }[] }[] = [
+const DATASET_PATTERNS: { type: string; keywords: string[]; workflows: string[]; subTypes?: { type: string; keywords: string[] }[] }[] = [
   {
     type: "Macroeconomic Indicators",
     keywords: ["gdp", "inflation", "unemployment", "interest_rate", "cpi", "ppi", "trade_balance", "fiscal", "monetary", "economic"],
+    workflows: ["Forecasting", "Scenario Modeling", "Anomaly Detection", "Cross-metric Correlation"],
     subTypes: [
       { type: "National Accounts", keywords: ["gdp", "gnp", "consumption", "investment"] },
       { type: "Labor Market", keywords: ["unemployment", "employment", "labor", "workforce", "jobs"] },
@@ -599,30 +697,47 @@ const DATASET_PATTERNS: { type: string; keywords: string[]; subTypes?: { type: s
   {
     type: "Sales Performance",
     keywords: ["revenue", "sales", "orders", "conversion", "deal", "pipeline", "booking", "arr", "mrr"],
+    workflows: ["Forecasting", "KPI Monitoring", "Decision Ledger", "Scenario Planning"],
   },
   {
-    type: "Marketing Funnel",
+    type: "Marketing Analytics",
     keywords: ["marketing", "campaign", "leads", "cac", "cpl", "impressions", "clicks", "ctr", "roas", "funnel"],
+    workflows: ["Funnel Analysis", "Attribution Modeling", "Anomaly Detection", "Forecasting"],
   },
   {
     type: "Operational Metrics",
     keywords: ["operations", "throughput", "cycle_time", "utilization", "capacity", "sla", "uptime", "incidents"],
+    workflows: ["KPI Monitoring", "Anomaly Detection", "Scenario Planning", "Decision Ledger"],
   },
   {
     type: "Financial Statements",
     keywords: ["revenue", "expense", "profit", "ebitda", "margin", "balance", "assets", "liabilities", "equity", "cashflow"],
+    workflows: ["Forecasting", "Scenario Modeling", "Benchmarking", "Decision Ledger"],
   },
   {
     type: "Customer Analytics",
     keywords: ["customer", "churn", "retention", "nps", "satisfaction", "ltv", "arpu", "cohort", "engagement"],
+    workflows: ["Cohort Analysis", "Churn Prediction", "KPI Monitoring", "Scenario Planning"],
   },
   {
-    type: "HR / People Analytics",
-    keywords: ["headcount", "attrition", "hiring", "compensation", "salary", "employee", "turnover"],
+    type: "People Analytics",
+    keywords: ["headcount", "attrition", "hiring", "compensation", "salary", "employee", "turnover", "tenure", "diversity"],
+    workflows: ["Workforce Planning", "Attrition Forecasting", "KPI Monitoring", "Benchmarking"],
   },
   {
     type: "Energy & Commodities",
     keywords: ["oil", "gas", "energy", "commodity", "crude", "barrel", "electricity", "mining", "production"],
+    workflows: ["Price Forecasting", "Scenario Modeling", "Anomaly Detection", "Cross-metric Correlation"],
+  },
+  {
+    type: "Product Analytics",
+    keywords: ["feature", "adoption", "dau", "mau", "session", "activation", "onboarding", "usage", "engagement"],
+    workflows: ["Engagement Analysis", "Funnel Optimization", "Anomaly Detection", "KPI Monitoring"],
+  },
+  {
+    type: "Risk & Compliance",
+    keywords: ["risk", "compliance", "incident", "audit", "violation", "exposure", "probability", "severity"],
+    workflows: ["Risk Monitoring", "Anomaly Detection", "Decision Ledger", "Scenario Planning"],
   },
 ];
 
@@ -631,15 +746,14 @@ export function classifyDataset(headers: string[], mapping: Record<string, strin
   const valueCols = Object.entries(mapping).filter(([, v]) => v === "value").map(([k]) => k.toLowerCase().replace(/[_\-]/g, " "));
   const searchText = allText + " " + valueCols.join(" ");
 
-  let bestMatch: DatasetClassification = { type: "General Dataset", confidence: 30 };
+  let bestMatch: DatasetClassification = { type: "General Dataset", confidence: 30, recommendedWorkflows: ["KPI Monitoring", "Forecasting", "Anomaly Detection"] };
 
   for (const pattern of DATASET_PATTERNS) {
     const matchCount = pattern.keywords.filter(k => searchText.includes(k)).length;
     const score = Math.min(95, Math.round((matchCount / pattern.keywords.length) * 100) + 20);
     if (matchCount > 0 && score > bestMatch.confidence) {
-      bestMatch = { type: pattern.type, confidence: score };
+      bestMatch = { type: pattern.type, confidence: score, recommendedWorkflows: pattern.workflows };
 
-      // Check subtypes
       if (pattern.subTypes) {
         for (const sub of pattern.subTypes) {
           const subMatchCount = sub.keywords.filter(k => searchText.includes(k)).length;
