@@ -2,32 +2,49 @@ import { createContext, useContext, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Upload, FileText, TrendingUp, Settings, CreditCard, LogOut,
-  Database, BarChart3, Shuffle, Crown, Users, Building2, Search, Zap, Menu, X,
-  HelpCircle, BookOpen, Target, Brain, MessageSquare, GitBranch, Globe,
+  Database, BarChart3, Shuffle, Users, Building2, Search, Zap, Menu, X,
+  BookOpen, Target, Brain, MessageSquare, GitBranch, Globe,
   Sparkles, GitCommitVertical, Crosshair, Bell, Network, BrainCircuit, FlipVertical,
-  Gauge, XCircle, Briefcase,
+  Gauge, XCircle, Briefcase, ChevronDown,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import logo from "@/assets/quantivis-logo.png";
 import WorkspaceSwitcher from "@/components/dashboard/WorkspaceSwitcher";
+import { cn } from "@/lib/utils";
 
-const navSections = [
+interface NavItem {
+  icon: React.ElementType;
+  label: string;
+  path: string;
+}
+
+interface NavSection {
+  label: string;
+  icon: React.ElementType;
+  items: NavItem[];
+  defaultOpen?: boolean;
+}
+
+const navSections: NavSection[] = [
   {
     label: "Portfolio",
+    icon: Briefcase,
+    defaultOpen: true,
     items: [
-      { icon: Briefcase, label: "Portfolio Overview", path: "/portfolio" },
+      { icon: Briefcase, label: "Overview", path: "/portfolio" },
+      { icon: LayoutDashboard, label: "Command Center", path: "/dashboard" },
+      { icon: BarChart3, label: "KPI Builder", path: "/kpis" },
     ],
   },
   {
     label: "Intelligence",
+    icon: Brain,
     items: [
-      { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
-      { icon: BarChart3, label: "KPI Builder", path: "/kpis" },
       { icon: Search, label: "Diagnostics", path: "/diagnostics" },
       { icon: Zap, label: "Advisory", path: "/advisory" },
-      { icon: BookOpen, label: "Decision Ledger", path: "/decisions" },
       { icon: Brain, label: "Decision Intelligence", path: "/decision-intelligence" },
+      { icon: BookOpen, label: "Decision Ledger", path: "/decisions" },
       { icon: Network, label: "Causal Inference", path: "/causal-inference" },
       { icon: BrainCircuit, label: "Bias Detection", path: "/cognitive-bias" },
       { icon: FlipVertical, label: "Counterfactuals", path: "/counterfactual" },
@@ -40,13 +57,13 @@ const navSections = [
   },
   {
     label: "Strategy",
+    icon: TrendingUp,
     items: [
       { icon: Shuffle, label: "Scenarios", path: "/scenarios" },
       { icon: GitBranch, label: "What-If Branching", path: "/branching" },
       { icon: TrendingUp, label: "Simulations", path: "/simulations" },
       { icon: Globe, label: "Market Intelligence", path: "/market-intelligence" },
       { icon: Bell, label: "Alert Playbooks", path: "/alert-playbooks" },
-      { icon: Crown, label: "Executive Command", path: "/executive" },
       { icon: FileText, label: "Reports", path: "/reports" },
       { icon: BarChart3, label: "Strategy Pack", path: "/strategy-pack" },
       { icon: Crosshair, label: "OKR Alignment", path: "/okrs" },
@@ -54,6 +71,7 @@ const navSections = [
   },
   {
     label: "Data",
+    icon: Database,
     items: [
       { icon: Database, label: "Data Sources", path: "/data-sources" },
       { icon: Upload, label: "Data Upload", path: "/data-upload" },
@@ -62,9 +80,10 @@ const navSections = [
   },
   {
     label: "Organization",
+    icon: Building2,
     items: [
       { icon: Users, label: "Team", path: "/team" },
-      { icon: Building2, label: "Client Portfolio", path: "/clients" },
+      { icon: Building2, label: "Clients", path: "/clients" },
       { icon: CreditCard, label: "Billing", path: "/billing" },
       { icon: Settings, label: "Settings", path: "/settings" },
     ],
@@ -96,6 +115,55 @@ export const SidebarMobileToggle = () => {
   );
 };
 
+const CollapsibleSection = ({ section, location, onNavClick }: { section: NavSection; location: ReturnType<typeof useLocation>; onNavClick: () => void }) => {
+  const hasActiveChild = section.items.some(item => location.pathname === item.path);
+  const [open, setOpen] = useState(section.defaultOpen || hasActiveChild);
+
+  return (
+    <div>
+      <button
+        onClick={() => setOpen(p => !p)}
+        className={cn(
+          "flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-[11px] font-semibold uppercase tracking-wider transition-colors",
+          hasActiveChild
+            ? "text-primary"
+            : "text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/50"
+        )}
+      >
+        <section.icon className="w-4 h-4" />
+        <span className="flex-1 text-left">{section.label}</span>
+        <ChevronDown className={cn("w-3.5 h-3.5 transition-transform duration-200", open && "rotate-180")} />
+      </button>
+      {open && (
+        <div className="ml-3 pl-3 border-l border-border/40 mt-0.5 space-y-0.5">
+          {section.items.map((item) => {
+            const isActive = location.pathname === item.path;
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                onClick={onNavClick}
+                className={cn(
+                  "group flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[12.5px] font-medium transition-all duration-150",
+                  isActive
+                    ? "bg-primary/10 text-primary"
+                    : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                )}
+              >
+                <item.icon className={cn("w-[15px] h-[15px] transition-colors", isActive ? "text-primary" : "text-muted-foreground group-hover:text-sidebar-accent-foreground")} />
+                {item.label}
+                {isActive && (
+                  <span className="ml-auto w-1.5 h-1.5 rounded-full bg-primary" />
+                )}
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const DashboardSidebar = () => {
   const { signOut } = useAuth();
   const navigate = useNavigate();
@@ -113,10 +181,10 @@ const DashboardSidebar = () => {
   };
 
   const sidebarContent = (
-    <aside className="w-64 h-screen bg-sidebar border-r border-sidebar-border flex flex-col shrink-0">
-      <div className="p-6 pb-4 flex items-center justify-between">
+    <aside className="w-56 h-screen bg-sidebar border-r border-sidebar-border flex flex-col shrink-0">
+      <div className="p-4 pb-3 flex items-center justify-between">
         <Link to="/" onClick={handleNavClick}>
-          <img src={logo} alt="Quantivis Global" className="h-9 w-auto" />
+          <img src={logo} alt="Quantivis" className="h-7 w-auto" />
         </Link>
         {isMobile && (
           <button onClick={toggle} className="p-1.5 rounded-lg hover:bg-sidebar-accent transition-colors">
@@ -129,82 +197,54 @@ const DashboardSidebar = () => {
         <WorkspaceSwitcher />
       </div>
 
-      <nav className="flex-1 px-3 overflow-y-auto">
+      <nav className="flex-1 px-2 overflow-y-auto space-y-1">
         {navSections.map((section) => (
-          <div key={section.label}>
-            <p className="section-label">{section.label}</p>
-            <div className="space-y-0.5">
-              {section.items.map((item) => {
-                const isActive = location.pathname === item.path;
-                return (
-                  <Link
-                    key={item.label}
-                    to={item.path}
-                    onClick={handleNavClick}
-                    className={`group flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all duration-200 ${
-                      isActive
-                        ? "bg-primary/10 text-primary shadow-sm shadow-primary/5"
-                        : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                    }`}
-                  >
-                    <item.icon className={`w-[18px] h-[18px] transition-colors ${isActive ? "text-primary" : "text-muted-foreground group-hover:text-sidebar-accent-foreground"}`} />
-                    {item.label}
-                    {isActive && (
-                      <span className="ml-auto w-1.5 h-1.5 rounded-full bg-primary glow-dot" />
-                    )}
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
+          <CollapsibleSection
+            key={section.label}
+            section={section}
+            location={location}
+            onNavClick={handleNavClick}
+          />
         ))}
       </nav>
 
-      <div className="p-3 border-t border-sidebar-border space-y-0.5">
+      <div className="p-2 border-t border-sidebar-border space-y-0.5">
         <Link
           to="/docs"
           onClick={handleNavClick}
-          className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-colors w-full ${
+          className={cn(
+            "flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[12px] font-medium transition-colors w-full",
             location.pathname === "/docs"
               ? "bg-primary/10 text-primary"
               : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-          }`}
+          )}
         >
-          <BookOpen className="w-[18px] h-[18px] text-muted-foreground" />
-          Documentation
-        </Link>
-        <Link
-          to="/terms"
-          onClick={handleNavClick}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors w-full"
-        >
-          <HelpCircle className="w-[18px] h-[18px] text-muted-foreground" />
-          Help & Legal
+          <BookOpen className="w-[15px] h-[15px] text-muted-foreground" />
+          Docs
         </Link>
         <button
           onClick={handleSignOut}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors w-full"
+          className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[12px] font-medium text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors w-full"
         >
-          <LogOut className="w-[18px] h-[18px] text-muted-foreground" />
+          <LogOut className="w-[15px] h-[15px] text-muted-foreground" />
           Sign Out
         </button>
       </div>
     </aside>
   );
 
-  // Desktop: static sidebar
   if (!isMobile) return sidebarContent;
 
-  // Mobile: overlay drawer
   return (
     <>
       {open && (
         <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={toggle} />
       )}
       <div
-        className={`fixed inset-y-0 left-0 z-50 transition-transform duration-300 ease-in-out ${
+        className={cn(
+          "fixed inset-y-0 left-0 z-50 transition-transform duration-300 ease-in-out",
           open ? "translate-x-0" : "-translate-x-full"
-        }`}
+        )}
       >
         {sidebarContent}
       </div>
