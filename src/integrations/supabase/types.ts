@@ -2862,6 +2862,7 @@ export type Database = {
           name: string
           organization_id: string
           updated_at: string
+          workspace_id: string | null
         }
         Insert: {
           active_dataset_id?: string | null
@@ -2872,6 +2873,7 @@ export type Database = {
           name: string
           organization_id: string
           updated_at?: string
+          workspace_id?: string | null
         }
         Update: {
           active_dataset_id?: string | null
@@ -2882,6 +2884,7 @@ export type Database = {
           name?: string
           organization_id?: string
           updated_at?: string
+          workspace_id?: string | null
         }
         Relationships: [
           {
@@ -2903,6 +2906,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
             referencedColumns: ["id"]
           },
         ]
@@ -3411,6 +3421,51 @@ export type Database = {
           },
         ]
       }
+      usage_metering: {
+        Row: {
+          id: string
+          metric_name: string
+          metric_value: number
+          organization_id: string
+          period_date: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          id?: string
+          metric_name: string
+          metric_value?: number
+          organization_id: string
+          period_date?: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          id?: string
+          metric_name?: string
+          metric_value?: number
+          organization_id?: string
+          period_date?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "usage_metering_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "usage_metering_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string
@@ -3429,12 +3484,136 @@ export type Database = {
         }
         Relationships: []
       }
+      workspace_members: {
+        Row: {
+          added_at: string
+          id: string
+          role: Database["public"]["Enums"]["workspace_role"]
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          added_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["workspace_role"]
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          added_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["workspace_role"]
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_members_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workspace_quotas: {
+        Row: {
+          created_at: string
+          id: string
+          max_api_calls_per_day: number
+          max_copilot_queries_per_day: number
+          max_datasets: number
+          max_rows_per_day: number
+          max_simulations_per_day: number
+          max_team_seats: number
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          max_api_calls_per_day?: number
+          max_copilot_queries_per_day?: number
+          max_datasets?: number
+          max_rows_per_day?: number
+          max_simulations_per_day?: number
+          max_team_seats?: number
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          max_api_calls_per_day?: number
+          max_copilot_queries_per_day?: number
+          max_datasets?: number
+          max_rows_per_day?: number
+          max_simulations_per_day?: number
+          max_team_seats?: number
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_quotas_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: true
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workspaces: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          name: string
+          organization_id: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          name: string
+          organization_id: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          name?: string
+          organization_id?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspaces_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
       accept_invitation: { Args: { _token: string }; Returns: Json }
+      check_workspace_quota: {
+        Args: { _metric_name: string; _workspace_id: string }
+        Returns: Json
+      }
       cleanup_old_copilot_messages: { Args: never; Returns: undefined }
       get_user_org_role: {
         Args: { _org_id: string; _user_id: string }
@@ -3458,6 +3637,15 @@ export type Database = {
         Args: { _org_id: string }
         Returns: undefined
       }
+      increment_workspace_usage: {
+        Args: {
+          _increment?: number
+          _metric_name: string
+          _org_id: string
+          _workspace_id: string
+        }
+        Returns: undefined
+      }
       is_org_member: {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean
@@ -3471,6 +3659,10 @@ export type Database = {
     Enums: {
       app_role: "admin" | "analyst" | "executive" | "client_viewer"
       org_role: "owner" | "admin" | "analyst" | "executive" | "viewer"
+      workspace_role:
+        | "workspace_admin"
+        | "workspace_editor"
+        | "workspace_viewer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3600,6 +3792,11 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "analyst", "executive", "client_viewer"],
       org_role: ["owner", "admin", "analyst", "executive", "viewer"],
+      workspace_role: [
+        "workspace_admin",
+        "workspace_editor",
+        "workspace_viewer",
+      ],
     },
   },
 } as const

@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProjectProvider } from "@/contexts/ProjectContext";
+import { WorkspaceProvider } from "@/contexts/WorkspaceContext";
 import { DatasetProvider } from "@/contexts/DatasetContext";
 import { SidebarProvider } from "@/components/dashboard/DashboardSidebar";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
@@ -114,39 +115,39 @@ const App = () => (
               <Route path="/calibration" element={<CalibrationAssessment />} />
               <Route path="*" element={<NotFound />} />
 
-              {/* Protected routes — wrapped in SidebarProvider + ProjectProvider */}
-              <Route path="/onboarding" element={<ProtectedRoute><SidebarProvider><ProjectProvider><DatasetProvider><Onboarding /></DatasetProvider></ProjectProvider></SidebarProvider></ProtectedRoute>} />
-              <Route path="/dashboard" element={<ProtectedRoute><SidebarProvider><ProjectProvider><DatasetProvider><Dashboard /></DatasetProvider></ProjectProvider></SidebarProvider></ProtectedRoute>} />
-              <Route path="/data-upload" element={<ProtectedRoute><SidebarProvider><ProjectProvider><DatasetProvider><DataUpload /></DatasetProvider></ProjectProvider></SidebarProvider></ProtectedRoute>} />
-              <Route path="/data-sources" element={<ProtectedRoute><SidebarProvider><ProjectProvider><DatasetProvider><DataSources /></DatasetProvider></ProjectProvider></SidebarProvider></ProtectedRoute>} />
-              <Route path="/kpis" element={<ProtectedRoute><SidebarProvider><ProjectProvider><DatasetProvider><KPIs /></DatasetProvider></ProjectProvider></SidebarProvider></ProtectedRoute>} />
-              <Route path="/diagnostics" element={<ProtectedRoute><SidebarProvider><ProjectProvider><DatasetProvider><Diagnostics /></DatasetProvider></ProjectProvider></SidebarProvider></ProtectedRoute>} />
-              <Route path="/advisory" element={<ProtectedRoute><SidebarProvider><ProjectProvider><DatasetProvider><Advisory /></DatasetProvider></ProjectProvider></SidebarProvider></ProtectedRoute>} />
-              <Route path="/decisions" element={<ProtectedRoute><SidebarProvider><ProjectProvider><DatasetProvider><DecisionLedger /></DatasetProvider></ProjectProvider></SidebarProvider></ProtectedRoute>} />
-              <Route path="/decision-intelligence" element={<ProtectedRoute><SidebarProvider><ProjectProvider><DatasetProvider><DecisionIntelligence /></DatasetProvider></ProjectProvider></SidebarProvider></ProtectedRoute>} />
-              <Route path="/benchmarking" element={<ProtectedRoute><SidebarProvider><ProjectProvider><DatasetProvider><Benchmarking /></DatasetProvider></ProjectProvider></SidebarProvider></ProtectedRoute>} />
-              <Route path="/scenarios" element={<ProtectedRoute><SidebarProvider><ProjectProvider><DatasetProvider><Scenarios /></DatasetProvider></ProjectProvider></SidebarProvider></ProtectedRoute>} />
-              <Route path="/simulations" element={<ProtectedRoute><SidebarProvider><ProjectProvider><DatasetProvider><Simulations /></DatasetProvider></ProjectProvider></SidebarProvider></ProtectedRoute>} />
-              <Route path="/reports" element={<ProtectedRoute><SidebarProvider><ProjectProvider><DatasetProvider><Reports /></DatasetProvider></ProjectProvider></SidebarProvider></ProtectedRoute>} />
-              <Route path="/strategy-pack" element={<ProtectedRoute><SidebarProvider><ProjectProvider><DatasetProvider><StrategyPack /></DatasetProvider></ProjectProvider></SidebarProvider></ProtectedRoute>} />
-              <Route path="/executive" element={<ProtectedRoute><SidebarProvider><ProjectProvider><DatasetProvider><Executive /></DatasetProvider></ProjectProvider></SidebarProvider></ProtectedRoute>} />
-              <Route path="/board-report" element={<ProtectedRoute><SidebarProvider><ProjectProvider><DatasetProvider><BoardReport /></DatasetProvider></ProjectProvider></SidebarProvider></ProtectedRoute>} />
-              <Route path="/team" element={<ProtectedRoute><SidebarProvider><ProjectProvider><DatasetProvider><Team /></DatasetProvider></ProjectProvider></SidebarProvider></ProtectedRoute>} />
-              <Route path="/clients" element={<ProtectedRoute><SidebarProvider><ProjectProvider><DatasetProvider><Clients /></DatasetProvider></ProjectProvider></SidebarProvider></ProtectedRoute>} />
-              <Route path="/billing" element={<ProtectedRoute><SidebarProvider><ProjectProvider><DatasetProvider><Billing /></DatasetProvider></ProjectProvider></SidebarProvider></ProtectedRoute>} />
-              <Route path="/settings" element={<ProtectedRoute><SidebarProvider><ProjectProvider><DatasetProvider><Settings /></DatasetProvider></ProjectProvider></SidebarProvider></ProtectedRoute>} />
-              <Route path="/docs" element={<ProtectedRoute><SidebarProvider><ProjectProvider><DatasetProvider><Documentation /></DatasetProvider></ProjectProvider></SidebarProvider></ProtectedRoute>} />
-              <Route path="/ask" element={<ProtectedRoute><SidebarProvider><ProjectProvider><DatasetProvider><NaturalLanguageQuery /></DatasetProvider></ProjectProvider></SidebarProvider></ProtectedRoute>} />
-              <Route path="/branching" element={<ProtectedRoute><SidebarProvider><ProjectProvider><DatasetProvider><ScenarioBranching /></DatasetProvider></ProjectProvider></SidebarProvider></ProtectedRoute>} />
-              <Route path="/market-intelligence" element={<ProtectedRoute><SidebarProvider><ProjectProvider><DatasetProvider><MarketIntelligence /></DatasetProvider></ProjectProvider></SidebarProvider></ProtectedRoute>} />
-              <Route path="/forecasting" element={<ProtectedRoute><SidebarProvider><ProjectProvider><DatasetProvider><Forecasting /></DatasetProvider></ProjectProvider></SidebarProvider></ProtectedRoute>} />
-              <Route path="/lineage" element={<ProtectedRoute><SidebarProvider><ProjectProvider><DatasetProvider><DataLineage /></DatasetProvider></ProjectProvider></SidebarProvider></ProtectedRoute>} />
-              <Route path="/okrs" element={<ProtectedRoute><SidebarProvider><ProjectProvider><DatasetProvider><OKRs /></DatasetProvider></ProjectProvider></SidebarProvider></ProtectedRoute>} />
-              <Route path="/alert-playbooks" element={<ProtectedRoute><SidebarProvider><ProjectProvider><DatasetProvider><AlertPlaybooks /></DatasetProvider></ProjectProvider></SidebarProvider></ProtectedRoute>} />
-              <Route path="/causal-inference" element={<ProtectedRoute><SidebarProvider><ProjectProvider><DatasetProvider><CausalInference /></DatasetProvider></ProjectProvider></SidebarProvider></ProtectedRoute>} />
-              <Route path="/cognitive-bias" element={<ProtectedRoute><SidebarProvider><ProjectProvider><DatasetProvider><CognitiveBiasDetection /></DatasetProvider></ProjectProvider></SidebarProvider></ProtectedRoute>} />
-              <Route path="/counterfactual" element={<ProtectedRoute><SidebarProvider><ProjectProvider><DatasetProvider><CounterfactualExplanation /></DatasetProvider></ProjectProvider></SidebarProvider></ProtectedRoute>} />
-              <Route path="/misses" element={<ProtectedRoute><SidebarProvider><ProjectProvider><DatasetProvider><Misses /></DatasetProvider></ProjectProvider></SidebarProvider></ProtectedRoute>} />
+              {/* Protected routes — wrapped in SidebarProvider + WorkspaceProvider + ProjectProvider */}
+              <Route path="/onboarding" element={<ProtectedRoute><SidebarProvider><WorkspaceProvider><ProjectProvider><DatasetProvider><Onboarding /></DatasetProvider></ProjectProvider></WorkspaceProvider></SidebarProvider></ProtectedRoute>} />
+              <Route path="/dashboard" element={<ProtectedRoute><SidebarProvider><WorkspaceProvider><ProjectProvider><DatasetProvider><Dashboard /></DatasetProvider></ProjectProvider></WorkspaceProvider></SidebarProvider></ProtectedRoute>} />
+              <Route path="/data-upload" element={<ProtectedRoute><SidebarProvider><WorkspaceProvider><ProjectProvider><DatasetProvider><DataUpload /></DatasetProvider></ProjectProvider></WorkspaceProvider></SidebarProvider></ProtectedRoute>} />
+              <Route path="/data-sources" element={<ProtectedRoute><SidebarProvider><WorkspaceProvider><ProjectProvider><DatasetProvider><DataSources /></DatasetProvider></ProjectProvider></WorkspaceProvider></SidebarProvider></ProtectedRoute>} />
+              <Route path="/kpis" element={<ProtectedRoute><SidebarProvider><WorkspaceProvider><ProjectProvider><DatasetProvider><KPIs /></DatasetProvider></ProjectProvider></WorkspaceProvider></SidebarProvider></ProtectedRoute>} />
+              <Route path="/diagnostics" element={<ProtectedRoute><SidebarProvider><WorkspaceProvider><ProjectProvider><DatasetProvider><Diagnostics /></DatasetProvider></ProjectProvider></WorkspaceProvider></SidebarProvider></ProtectedRoute>} />
+              <Route path="/advisory" element={<ProtectedRoute><SidebarProvider><WorkspaceProvider><ProjectProvider><DatasetProvider><Advisory /></DatasetProvider></ProjectProvider></WorkspaceProvider></SidebarProvider></ProtectedRoute>} />
+              <Route path="/decisions" element={<ProtectedRoute><SidebarProvider><WorkspaceProvider><ProjectProvider><DatasetProvider><DecisionLedger /></DatasetProvider></ProjectProvider></WorkspaceProvider></SidebarProvider></ProtectedRoute>} />
+              <Route path="/decision-intelligence" element={<ProtectedRoute><SidebarProvider><WorkspaceProvider><ProjectProvider><DatasetProvider><DecisionIntelligence /></DatasetProvider></ProjectProvider></WorkspaceProvider></SidebarProvider></ProtectedRoute>} />
+              <Route path="/benchmarking" element={<ProtectedRoute><SidebarProvider><WorkspaceProvider><ProjectProvider><DatasetProvider><Benchmarking /></DatasetProvider></ProjectProvider></WorkspaceProvider></SidebarProvider></ProtectedRoute>} />
+              <Route path="/scenarios" element={<ProtectedRoute><SidebarProvider><WorkspaceProvider><ProjectProvider><DatasetProvider><Scenarios /></DatasetProvider></ProjectProvider></WorkspaceProvider></SidebarProvider></ProtectedRoute>} />
+              <Route path="/simulations" element={<ProtectedRoute><SidebarProvider><WorkspaceProvider><ProjectProvider><DatasetProvider><Simulations /></DatasetProvider></ProjectProvider></WorkspaceProvider></SidebarProvider></ProtectedRoute>} />
+              <Route path="/reports" element={<ProtectedRoute><SidebarProvider><WorkspaceProvider><ProjectProvider><DatasetProvider><Reports /></DatasetProvider></ProjectProvider></WorkspaceProvider></SidebarProvider></ProtectedRoute>} />
+              <Route path="/strategy-pack" element={<ProtectedRoute><SidebarProvider><WorkspaceProvider><ProjectProvider><DatasetProvider><StrategyPack /></DatasetProvider></ProjectProvider></WorkspaceProvider></SidebarProvider></ProtectedRoute>} />
+              <Route path="/executive" element={<ProtectedRoute><SidebarProvider><WorkspaceProvider><ProjectProvider><DatasetProvider><Executive /></DatasetProvider></ProjectProvider></WorkspaceProvider></SidebarProvider></ProtectedRoute>} />
+              <Route path="/board-report" element={<ProtectedRoute><SidebarProvider><WorkspaceProvider><ProjectProvider><DatasetProvider><BoardReport /></DatasetProvider></ProjectProvider></WorkspaceProvider></SidebarProvider></ProtectedRoute>} />
+              <Route path="/team" element={<ProtectedRoute><SidebarProvider><WorkspaceProvider><ProjectProvider><DatasetProvider><Team /></DatasetProvider></ProjectProvider></WorkspaceProvider></SidebarProvider></ProtectedRoute>} />
+              <Route path="/clients" element={<ProtectedRoute><SidebarProvider><WorkspaceProvider><ProjectProvider><DatasetProvider><Clients /></DatasetProvider></ProjectProvider></WorkspaceProvider></SidebarProvider></ProtectedRoute>} />
+              <Route path="/billing" element={<ProtectedRoute><SidebarProvider><WorkspaceProvider><ProjectProvider><DatasetProvider><Billing /></DatasetProvider></ProjectProvider></WorkspaceProvider></SidebarProvider></ProtectedRoute>} />
+              <Route path="/settings" element={<ProtectedRoute><SidebarProvider><WorkspaceProvider><ProjectProvider><DatasetProvider><Settings /></DatasetProvider></ProjectProvider></WorkspaceProvider></SidebarProvider></ProtectedRoute>} />
+              <Route path="/docs" element={<ProtectedRoute><SidebarProvider><WorkspaceProvider><ProjectProvider><DatasetProvider><Documentation /></DatasetProvider></ProjectProvider></WorkspaceProvider></SidebarProvider></ProtectedRoute>} />
+              <Route path="/ask" element={<ProtectedRoute><SidebarProvider><WorkspaceProvider><ProjectProvider><DatasetProvider><NaturalLanguageQuery /></DatasetProvider></ProjectProvider></WorkspaceProvider></SidebarProvider></ProtectedRoute>} />
+              <Route path="/branching" element={<ProtectedRoute><SidebarProvider><WorkspaceProvider><ProjectProvider><DatasetProvider><ScenarioBranching /></DatasetProvider></ProjectProvider></WorkspaceProvider></SidebarProvider></ProtectedRoute>} />
+              <Route path="/market-intelligence" element={<ProtectedRoute><SidebarProvider><WorkspaceProvider><ProjectProvider><DatasetProvider><MarketIntelligence /></DatasetProvider></ProjectProvider></WorkspaceProvider></SidebarProvider></ProtectedRoute>} />
+              <Route path="/forecasting" element={<ProtectedRoute><SidebarProvider><WorkspaceProvider><ProjectProvider><DatasetProvider><Forecasting /></DatasetProvider></ProjectProvider></WorkspaceProvider></SidebarProvider></ProtectedRoute>} />
+              <Route path="/lineage" element={<ProtectedRoute><SidebarProvider><WorkspaceProvider><ProjectProvider><DatasetProvider><DataLineage /></DatasetProvider></ProjectProvider></WorkspaceProvider></SidebarProvider></ProtectedRoute>} />
+              <Route path="/okrs" element={<ProtectedRoute><SidebarProvider><WorkspaceProvider><ProjectProvider><DatasetProvider><OKRs /></DatasetProvider></ProjectProvider></WorkspaceProvider></SidebarProvider></ProtectedRoute>} />
+              <Route path="/alert-playbooks" element={<ProtectedRoute><SidebarProvider><WorkspaceProvider><ProjectProvider><DatasetProvider><AlertPlaybooks /></DatasetProvider></ProjectProvider></WorkspaceProvider></SidebarProvider></ProtectedRoute>} />
+              <Route path="/causal-inference" element={<ProtectedRoute><SidebarProvider><WorkspaceProvider><ProjectProvider><DatasetProvider><CausalInference /></DatasetProvider></ProjectProvider></WorkspaceProvider></SidebarProvider></ProtectedRoute>} />
+              <Route path="/cognitive-bias" element={<ProtectedRoute><SidebarProvider><WorkspaceProvider><ProjectProvider><DatasetProvider><CognitiveBiasDetection /></DatasetProvider></ProjectProvider></WorkspaceProvider></SidebarProvider></ProtectedRoute>} />
+              <Route path="/counterfactual" element={<ProtectedRoute><SidebarProvider><WorkspaceProvider><ProjectProvider><DatasetProvider><CounterfactualExplanation /></DatasetProvider></ProjectProvider></WorkspaceProvider></SidebarProvider></ProtectedRoute>} />
+              <Route path="/misses" element={<ProtectedRoute><SidebarProvider><WorkspaceProvider><ProjectProvider><DatasetProvider><Misses /></DatasetProvider></ProjectProvider></WorkspaceProvider></SidebarProvider></ProtectedRoute>} />
             </Routes>
             </Suspense>
           </AuthProvider>
