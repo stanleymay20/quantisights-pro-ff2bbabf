@@ -65,6 +65,7 @@ const Demo = lazy(() => import("./pages/Demo"));
 const CalibrationAssessment = lazy(() => import("./pages/CalibrationAssessment"));
 const Misses = lazy(() => import("./pages/Misses"));
 const Security = lazy(() => import("./pages/Security"));
+const Portfolio = lazy(() => import("./pages/Portfolio"));
 const SecurityQuestionnaire = lazy(() => import("./pages/SecurityQuestionnaire"));
 
 const queryClient = new QueryClient({
@@ -148,6 +149,7 @@ const App = () => (
               <Route path="/cognitive-bias" element={<ProtectedRoute><SidebarProvider><WorkspaceProvider><ProjectProvider><DatasetProvider><CognitiveBiasDetection /></DatasetProvider></ProjectProvider></WorkspaceProvider></SidebarProvider></ProtectedRoute>} />
               <Route path="/counterfactual" element={<ProtectedRoute><SidebarProvider><WorkspaceProvider><ProjectProvider><DatasetProvider><CounterfactualExplanation /></DatasetProvider></ProjectProvider></WorkspaceProvider></SidebarProvider></ProtectedRoute>} />
               <Route path="/misses" element={<ProtectedRoute><SidebarProvider><WorkspaceProvider><ProjectProvider><DatasetProvider><Misses /></DatasetProvider></ProjectProvider></WorkspaceProvider></SidebarProvider></ProtectedRoute>} />
+              <Route path="/portfolio" element={<ProtectedRoute><SidebarProvider><WorkspaceProvider><ProjectProvider><DatasetProvider><Portfolio /></DatasetProvider></ProjectProvider></WorkspaceProvider></SidebarProvider></ProtectedRoute>} />
             </Routes>
             </Suspense>
           </AuthProvider>

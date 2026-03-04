@@ -5,7 +5,7 @@ import {
   Database, BarChart3, Shuffle, Crown, Users, Building2, Search, Zap, Menu, X,
   HelpCircle, BookOpen, Target, Brain, MessageSquare, GitBranch, Globe,
   Sparkles, GitCommitVertical, Crosshair, Bell, Network, BrainCircuit, FlipVertical,
-  Gauge, XCircle,
+  Gauge, XCircle, Briefcase,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -13,6 +13,12 @@ import logo from "@/assets/quantivis-logo.png";
 import WorkspaceSwitcher from "@/components/dashboard/WorkspaceSwitcher";
 
 const navSections = [
+  {
+    label: "Portfolio",
+    items: [
+      { icon: Briefcase, label: "Portfolio Overview", path: "/portfolio" },
+    ],
+  },
   {
     label: "Intelligence",
     items: [
