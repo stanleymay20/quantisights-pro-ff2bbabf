@@ -206,8 +206,9 @@ serve(async (req) => {
         metric_type: r[fieldMap.metric_type || "metric_type"] || defaultMetricType,
         date,
         value,
-        region: r[fieldMap.region || "region"] || null,
-        segment: r[fieldMap.segment || "segment"] || null,
+        region: (r[fieldMap.region || "region"] || "").trim() || "",
+        segment: (r[fieldMap.segment || "segment"] || "").trim() || "",
+        source_id: sourceId,
       });
     }
 

@@ -299,23 +299,46 @@ const DataUpload = () => {
       const valueColHeaders = valueColIndices.map(i => headers[i] || `col_${i}`);
       const metricSlugs = deduplicateMetricSlugs(valueColHeaders.map(c => slugifyMetric(c)));
 
+      // Null sentinel for source_id (matches DB default)
+      const NULL_SOURCE = "00000000-0000-0000-0000-000000000000";
+
+      // Clean a numeric string: strip currency symbols, thousand separators, whitespace
+      const cleanNumeric = (raw: string | undefined): number => {
+        if (!raw) return NaN;
+        const cleaned = raw
+          .replace(/[\s$€£¥₹,]/g, "")
+          .replace(/\(([^)]+)\)/, "-$1"); // (123) → -123
+        return parseFloat(cleaned);
+      };
+
       const metricsToInsert: any[] = [];
 
       for (const row of allRows) {
+        // Skip completely empty rows
+        if (row.every(cell => !cell || !cell.trim())) continue;
+
         let dateVal = dateIdx >= 0 ? row[dateIdx]?.trim() : undefined;
         if (!dateVal) continue;
+        // Normalize year-only, quarter, month formats
         if (/^\d{4}$/.test(dateVal)) dateVal = `${dateVal}-01-01`;
+        else if (/^\d{4}[/-]Q[1-4]$/i.test(dateVal)) {
+          const y = dateVal.slice(0, 4);
+          const q = parseInt(dateVal.slice(-1));
+          dateVal = `${y}-${String((q - 1) * 3 + 1).padStart(2, "0")}-01`;
+        } else if (/^\d{4}[/-]\d{2}$/.test(dateVal)) {
+          dateVal = `${dateVal}-01`;
+        }
         if (isNaN(Date.parse(dateVal))) continue;
 
-        const regionVal = regionIdx >= 0 ? row[regionIdx] || null : null;
-        const regionCodeVal = regionCodeIdx >= 0 ? row[regionCodeIdx] || null : null;
-        const effectiveRegion = regionVal || regionCodeVal;
-        const segmentVal = segmentIdx >= 0 ? row[segmentIdx] || null : null;
+        const regionVal = regionIdx >= 0 ? (row[regionIdx]?.trim() || "") : "";
+        const regionCodeVal = regionCodeIdx >= 0 ? (row[regionCodeIdx]?.trim() || "") : "";
+        const effectiveRegion = regionVal || regionCodeVal || "";
+        const segmentVal = segmentIdx >= 0 ? (row[segmentIdx]?.trim() || "") : "";
 
         if (importMode === "multi" && valueColIndices.length > 1) {
           for (let vi = 0; vi < valueColIndices.length; vi++) {
             const valIdx = valueColIndices[vi];
-            const val = parseFloat(row[valIdx]);
+            const val = cleanNumeric(row[valIdx]);
             if (isNaN(val) || !isFinite(val) || Math.abs(val) > 1e12) continue;
             metricsToInsert.push({
               organization_id: currentOrgId,
@@ -325,21 +348,24 @@ const DataUpload = () => {
               date: dateVal,
               region: effectiveRegion,
               segment: segmentVal,
+              source_id: NULL_SOURCE,
             });
           }
         } else {
           const valueIdx = valueColIndices[0];
           if (valueIdx === undefined) continue;
-          const val = parseFloat(row[valueIdx]);
+          const val = cleanNumeric(row[valueIdx]);
           if (isNaN(val) || !isFinite(val) || Math.abs(val) > 1e12) continue;
+          const mt = metricTypeIdx >= 0 ? (row[metricTypeIdx]?.trim() || defaultMetricType) : defaultMetricType;
           metricsToInsert.push({
             organization_id: currentOrgId,
             dataset_id: dataset.id,
-            metric_type: metricTypeIdx >= 0 ? row[metricTypeIdx] : defaultMetricType,
+            metric_type: mt,
             value: val,
             date: dateVal,
             region: effectiveRegion,
             segment: segmentVal,
+            source_id: NULL_SOURCE,
           });
         }
       }

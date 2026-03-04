@@ -2207,9 +2207,9 @@ export type Database = {
           metric_type: string
           organization_id: string
           quality_score: number | null
-          region: string | null
-          segment: string | null
-          source_id: string | null
+          region: string
+          segment: string
+          source_id: string
           source_type: string
           value: number
         }
@@ -2222,9 +2222,9 @@ export type Database = {
           metric_type: string
           organization_id: string
           quality_score?: number | null
-          region?: string | null
-          segment?: string | null
-          source_id?: string | null
+          region?: string
+          segment?: string
+          source_id?: string
           source_type?: string
           value: number
         }
@@ -2237,9 +2237,9 @@ export type Database = {
           metric_type?: string
           organization_id?: string
           quality_score?: number | null
-          region?: string | null
-          segment?: string | null
-          source_id?: string | null
+          region?: string
+          segment?: string
+          source_id?: string
           source_type?: string
           value?: number
         }
