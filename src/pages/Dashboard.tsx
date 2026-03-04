@@ -5,6 +5,7 @@ import ProjectSwitcher from "@/components/dashboard/ProjectSwitcher";
 import IntelligenceStatusBar from "@/components/dashboard/IntelligenceStatusBar";
 import CommandCenter from "@/components/dashboard/CommandCenter";
 import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
+import GlobalContextBar from "@/components/layout/GlobalContextBar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOrganization } from "@/hooks/useOrganization";
 import { useProject } from "@/contexts/ProjectContext";
@@ -114,6 +115,7 @@ const Dashboard = () => {
       {hasData && <GuidedTour />}
       <DashboardSidebar />
       <div className="flex-1 flex flex-col min-h-screen">
+        <GlobalContextBar />
         <IntelligenceStatusBar
           hasData={hasData}
           insights={insights}
