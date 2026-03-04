@@ -21,7 +21,7 @@ const Dashboard = () => {
   const { user } = useAuth();
   const { organizations, currentOrgId, currentOrg, switchOrganization, loading: orgLoading } = useOrganization();
   const { currentProject, activeDatasetId } = useProject();
-  const { metrics, totalRevenue, totalCustomers, latestCost, latestChurn, revenueByMonth, segmentData, hasData, lastUpdated, loading: metricsLoading } = useMetrics(currentOrgId);
+  const { metrics, totalRevenue, totalCustomers, latestCost, latestChurn, revenueByMonth, segmentData, hasData, lastUpdated, loading: metricsLoading } = useMetrics(currentOrgId, activeDatasetId);
   const { insights, loading: insightsLoading } = useInsights(currentOrgId);
   const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "User";
   const { toast } = useToast();

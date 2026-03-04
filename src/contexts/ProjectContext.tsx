@@ -50,6 +50,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
+    setLoading(true);
     const { data, error } = await supabase
       .from("projects")
       .select("id, name, description, active_dataset_id, organization_id, created_at")
@@ -63,10 +64,12 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
 
     setProjects(data);
 
-    // Restore from sessionStorage or pick first
+    // Restore from sessionStorage, but only if it belongs to this org
     const stored = sessionStorage.getItem(STORAGE_KEY);
     const valid = data.find((p) => p.id === stored);
-    setCurrentProjectId(valid ? valid.id : data[0]?.id ?? null);
+    const nextId = valid ? valid.id : data[0]?.id ?? null;
+    setCurrentProjectId(nextId);
+    if (nextId) sessionStorage.setItem(STORAGE_KEY, nextId);
     setLoading(false);
   }, [currentOrgId]);
 

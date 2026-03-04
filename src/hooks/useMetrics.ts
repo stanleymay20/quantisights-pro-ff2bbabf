@@ -10,11 +10,12 @@ export interface MetricRow {
   date: string;
   region: string | null;
   segment: string | null;
+  dataset_id?: string | null;
 }
 
 const REALTIME_TIERS: TierKey[] = ["growth", "enterprise"];
 
-export const useMetrics = (orgId: string | null) => {
+export const useMetrics = (orgId: string | null, datasetId?: string | null) => {
   const [metrics, setMetrics] = useState<MetricRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
@@ -31,7 +32,7 @@ export const useMetrics = (orgId: string | null) => {
     setLastUpdated(latest || null);
   }, []);
 
-  // Initial fetch
+  // Initial fetch — scoped to dataset if provided
   useEffect(() => {
     if (!orgId) {
       setMetrics([]);
@@ -42,11 +43,18 @@ export const useMetrics = (orgId: string | null) => {
 
     const fetchMetrics = async () => {
       setLoading(true);
-      const { data, error } = await supabase
+      let query = supabase
         .from("metrics")
-        .select("id, metric_type, value, date, region, segment, created_at")
+        .select("id, metric_type, value, date, region, segment, dataset_id, created_at")
         .eq("organization_id", orgId)
         .order("date", { ascending: true });
+
+      // If a specific dataset is active, scope to it
+      if (datasetId) {
+        query = query.eq("dataset_id", datasetId);
+      }
+
+      const { data, error } = await query;
 
       if (!error && data) {
         setMetrics(data);
@@ -56,7 +64,7 @@ export const useMetrics = (orgId: string | null) => {
     };
 
     fetchMetrics();
-  }, [orgId, updateLastUpdated]);
+  }, [orgId, datasetId, updateLastUpdated]);
 
   // Realtime subscription (Growth+ only)
   useEffect(() => {
@@ -66,7 +74,7 @@ export const useMetrics = (orgId: string | null) => {
     }
 
     const channel = supabase
-      .channel(`metrics-live-${orgId}`)
+      .channel(`metrics-live-${orgId}-${datasetId || "all"}`)
       .on(
         "postgres_changes",
         {
@@ -77,6 +85,8 @@ export const useMetrics = (orgId: string | null) => {
         },
         (payload) => {
           const newRow = payload.new as MetricRow & { created_at?: string };
+          // If scoped to dataset, only include matching rows
+          if (datasetId && newRow.dataset_id !== datasetId) return;
           setMetrics((prev) => {
             const updated = [...prev, newRow].sort(
               (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
@@ -96,6 +106,7 @@ export const useMetrics = (orgId: string | null) => {
         },
         (payload) => {
           const updated = payload.new as MetricRow;
+          if (datasetId && updated.dataset_id !== datasetId) return;
           setMetrics((prev) =>
             prev.map((m) => (m.id === updated.id ? updated : m))
           );
@@ -122,7 +133,7 @@ export const useMetrics = (orgId: string | null) => {
       supabase.removeChannel(channel);
       setIsStreaming(false);
     };
-  }, [orgId, canStream]);
+  }, [orgId, datasetId, canStream]);
 
   // Derived KPIs
   const totalRevenue = metrics
