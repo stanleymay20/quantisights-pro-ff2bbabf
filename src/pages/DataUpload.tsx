@@ -21,7 +21,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   type DetectedSchema, type ValidationResult, type HumanizedError,
   type DatasetIntelligence, type DatasetDiagnostics, type DatasetClassification,
-  type ImportMode,
+  type ImportMode, type ColumnMapping,
   inferSchema, validateData, generateIntelligence, computeDiagnostics,
   classifyDataset, confidenceColor, qualityColor, humanizeError, parseCSVText,
   slugifyMetric, deduplicateMetricSlugs,
@@ -57,7 +57,7 @@ const DataUpload = () => {
   const [headers, setHeaders] = useState<string[]>([]);
   const [rows, setRows] = useState<string[][]>([]);
   const [allRows, setAllRows] = useState<string[][]>([]);
-  const [mapping, setMapping] = useState<Record<string, string>>({});
+  const [mapping, setMapping] = useState<ColumnMapping>({});
   const [datasetName, setDatasetName] = useState("");
   const [defaultMetricType, setDefaultMetricType] = useState("revenue");
   const [importCount, setImportCount] = useState(0);
@@ -87,8 +87,9 @@ const DataUpload = () => {
     const schema = inferSchema(hdrs, dataRows);
     setDetectedSchema(schema);
 
-    const autoMap: Record<string, string> = {};
-    schema.forEach(s => { autoMap[s.column] = s.inferredType; });
+    // Build mapping keyed by colIdx
+    const autoMap: ColumnMapping = {};
+    schema.forEach(s => { autoMap[s.colIdx] = s.inferredType; });
     setMapping(autoMap);
 
     const valCount = schema.filter(s => s.inferredType === "value").length;
@@ -142,10 +143,20 @@ const DataUpload = () => {
     reader.readAsText(f);
   };
 
+  // Helper: find colIdx mapped to a target type
+  const findMappedColIdx = (target: string): number => {
+    const entry = Object.entries(mapping).find(([, v]) => v === target);
+    return entry ? Number(entry[0]) : -1;
+  };
+
+  const findAllMappedColIdx = (target: string): number[] => {
+    return Object.entries(mapping)
+      .filter(([, v]) => v === target)
+      .map(([k]) => Number(k));
+  };
+
   const applyYearToDateFix = () => {
-    const dateCol = Object.entries(mapping).find(([, v]) => v === "date")?.[0];
-    if (!dateCol) return;
-    const dateIdx = headers.indexOf(dateCol);
+    const dateIdx = findMappedColIdx("date");
     if (dateIdx < 0) return;
     const fixedRows = allRows.map(row => {
       const newRow = [...row];
@@ -162,32 +173,35 @@ const DataUpload = () => {
   };
 
   const autoSelectBestDate = () => {
-    // Find best date column candidate and set only that one
     const dateCols = Object.entries(mapping).filter(([, v]) => v === "date");
     if (dateCols.length <= 1) return;
     // Pick the one with best schema confidence
-    const best = dateCols.reduce((bestCol, [col]) => {
-      const det = detectedSchema.find(d => d.column === col);
-      const bestDet = detectedSchema.find(d => d.column === bestCol);
-      return (det?.confidence ?? 0) > (bestDet?.confidence ?? 0) ? col : bestCol;
-    }, dateCols[0][0]);
+    const best = dateCols.reduce((bestEntry, [colIdxStr]) => {
+      const colIdx = Number(colIdxStr);
+      const det = detectedSchema.find(d => d.colIdx === colIdx);
+      const bestDet = detectedSchema.find(d => d.colIdx === Number(bestEntry[0]));
+      return (det?.confidence ?? 0) > (bestDet?.confidence ?? 0) ? [colIdxStr, "date"] : bestEntry;
+    }, dateCols[0]);
+    const bestColIdx = Number(best[0]);
     const newMapping = { ...mapping };
-    dateCols.forEach(([col]) => {
-      if (col !== best) newMapping[col] = "value";
+    dateCols.forEach(([colIdxStr]) => {
+      const colIdx = Number(colIdxStr);
+      if (colIdx !== bestColIdx) newMapping[colIdx] = "value";
     });
     setMapping(newMapping);
-    toast({ title: "Date column selected", description: `"${best}" set as primary time dimension.` });
+    const bestHeader = headers[bestColIdx] || `col ${bestColIdx}`;
+    toast({ title: "Date column selected", description: `"${bestHeader}" set as primary time dimension.` });
   };
 
   const hasYearOnlyDates = useMemo(() => {
     return detectedSchema.some(s => s.autoFix === "year_to_date");
   }, [detectedSchema]);
 
-  // Get sample values for each header from first 3 rows
-  const sampleValuesByHeader = useMemo(() => {
-    const map: Record<string, string[]> = {};
-    headers.forEach((h, idx) => {
-      map[h] = rows.slice(0, 3).map(r => r[idx] || "").filter(Boolean);
+  // Get sample values for each column index from first 3 rows
+  const sampleValuesByColIdx = useMemo(() => {
+    const map: Record<number, string[]> = {};
+    headers.forEach((_, idx) => {
+      map[idx] = rows.slice(0, 3).map(r => r[idx] || "").filter(Boolean);
     });
     return map;
   }, [headers, rows]);
@@ -250,6 +264,18 @@ const DataUpload = () => {
       const filePath = `${currentOrgId}/${Date.now()}_${file.name}`;
       await supabase.storage.from("datasets").upload(filePath, file);
 
+      // Convert colIdx mapping to header-name mapping for storage (human readable)
+      const storedMapping: Record<string, string> = {};
+      Object.entries(mapping).forEach(([colIdxStr, target]) => {
+        const colIdx = Number(colIdxStr);
+        const headerName = headers[colIdx] || `col_${colIdx}`;
+        // Use composite key for storage to handle duplicates
+        const key = headers.filter((h, i) => i < colIdx && h === headerName).length > 0
+          ? `${headerName}__col${colIdx}`
+          : headerName;
+        storedMapping[key] = target;
+      });
+
       const { data: dataset, error: dsError } = await supabase
         .from("datasets")
         .insert({
@@ -258,7 +284,7 @@ const DataUpload = () => {
           file_path: filePath,
           uploaded_by: user.id,
           row_count: allRows.length,
-          column_mapping: mapping,
+          column_mapping: storedMapping,
           status: "processing",
         })
         .select()
@@ -266,39 +292,33 @@ const DataUpload = () => {
 
       if (dsError) throw dsError;
 
-      const dateCol = Object.entries(mapping).find(([, v]) => v === "date")?.[0];
-      const regionCol = Object.entries(mapping).find(([, v]) => v === "region")?.[0];
-      const regionCodeCol = Object.entries(mapping).find(([, v]) => v === "region_code")?.[0];
-      const segmentCol = Object.entries(mapping).find(([, v]) => v === "segment")?.[0];
-      const metricTypeCol = Object.entries(mapping).find(([, v]) => v === "metric_type")?.[0];
-      const valueCols = Object.entries(mapping).filter(([, v]) => v === "value").map(([k]) => k);
-
-      const dateIdx = headers.indexOf(dateCol!);
-      const regionIdx = regionCol ? headers.indexOf(regionCol) : -1;
-      const regionCodeIdx = regionCodeCol ? headers.indexOf(regionCodeCol) : -1;
-      const segmentIdx = segmentCol ? headers.indexOf(segmentCol) : -1;
-      const metricTypeIdx = metricTypeCol ? headers.indexOf(metricTypeCol) : -1;
+      const dateIdx = findMappedColIdx("date");
+      const regionIdx = findMappedColIdx("region");
+      const regionCodeIdx = findMappedColIdx("region_code");
+      const segmentIdx = findMappedColIdx("segment");
+      const metricTypeIdx = findMappedColIdx("metric_type");
+      const valueColIndices = findAllMappedColIdx("value");
 
       // Pre-compute slugified & deduplicated metric names for multi-metric
-      const metricSlugs = deduplicateMetricSlugs(valueCols.map(c => slugifyMetric(c)));
+      const valueColHeaders = valueColIndices.map(i => headers[i] || `col_${i}`);
+      const metricSlugs = deduplicateMetricSlugs(valueColHeaders.map(c => slugifyMetric(c)));
 
       const metricsToInsert: any[] = [];
 
       for (const row of allRows) {
-        let dateVal = row[dateIdx]?.trim();
+        let dateVal = dateIdx >= 0 ? row[dateIdx]?.trim() : undefined;
         if (!dateVal) continue;
         if (/^\d{4}$/.test(dateVal)) dateVal = `${dateVal}-01-01`;
         if (isNaN(Date.parse(dateVal))) continue;
 
         const regionVal = regionIdx >= 0 ? row[regionIdx] || null : null;
-        // Use region_code as region if no region column mapped
         const regionCodeVal = regionCodeIdx >= 0 ? row[regionCodeIdx] || null : null;
         const effectiveRegion = regionVal || regionCodeVal;
         const segmentVal = segmentIdx >= 0 ? row[segmentIdx] || null : null;
 
-        if (importMode === "multi" && valueCols.length > 1) {
-          for (let vi = 0; vi < valueCols.length; vi++) {
-            const valIdx = headers.indexOf(valueCols[vi]);
+        if (importMode === "multi" && valueColIndices.length > 1) {
+          for (let vi = 0; vi < valueColIndices.length; vi++) {
+            const valIdx = valueColIndices[vi];
             const val = parseFloat(row[valIdx]);
             if (isNaN(val) || !isFinite(val) || Math.abs(val) > 1e12) continue;
             metricsToInsert.push({
@@ -312,8 +332,8 @@ const DataUpload = () => {
             });
           }
         } else {
-          const valueCol = valueCols[0];
-          const valueIdx = headers.indexOf(valueCol);
+          const valueIdx = valueColIndices[0];
+          if (valueIdx === undefined) continue;
           const val = parseFloat(row[valueIdx]);
           if (isNaN(val) || !isFinite(val) || Math.abs(val) > 1e12) continue;
           metricsToInsert.push({
@@ -344,8 +364,8 @@ const DataUpload = () => {
         version_number: 1,
         file_path: filePath,
         row_count: inserted,
-        column_mapping: mapping,
-        change_summary: importMode === "multi" ? `Multi-metric import (${valueCols.length} metrics normalized)` : "Initial upload",
+        column_mapping: storedMapping,
+        change_summary: importMode === "multi" ? `Multi-metric import (${valueColIndices.length} metrics normalized)` : "Initial upload",
         created_by: user.id,
         is_active: true,
       });
@@ -519,11 +539,14 @@ const DataUpload = () => {
 
                     <div className="mt-6 space-y-2">
                       {detectedSchema.map((det) => (
-                        <div key={det.column} className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 border border-border/40">
+                        <div key={det.colIdx} className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 border border-border/40">
                           <div className="flex items-center gap-2 w-44 shrink-0">
                             {typeIcon(det.inferredType)}
                             <div className="min-w-0">
-                              <span className="text-sm font-medium truncate block">{det.column}</span>
+                              <span className="text-sm font-medium truncate block">
+                                {det.column}
+                                <span className="text-[9px] text-muted-foreground/50 ml-1">#{det.colIdx}</span>
+                              </span>
                               {/* Sample value chips */}
                               <div className="flex gap-1 mt-0.5">
                                 {(det.sampleValues || []).slice(0, 3).map((sv, i) => (
@@ -598,8 +621,8 @@ const DataUpload = () => {
                         <table className="w-full text-xs">
                           <thead>
                             <tr className="border-b border-border bg-muted/50">
-                              {headers.map((h) => (
-                                <th key={h} className="text-left py-2 px-3 text-muted-foreground font-medium">{h}</th>
+                              {headers.map((h, idx) => (
+                                <th key={idx} className="text-left py-2 px-3 text-muted-foreground font-medium">{h}</th>
                               ))}
                             </tr>
                           </thead>
@@ -687,13 +710,16 @@ const DataUpload = () => {
                     </div>
 
                     <div className="space-y-3">
-                      {headers.map((h) => (
-                        <div key={h} className="flex items-center gap-4">
+                      {headers.map((h, colIdx) => (
+                        <div key={colIdx} className="flex items-center gap-4">
                           <div className="w-44 shrink-0">
-                            <span className="text-sm font-medium truncate block">{h}</span>
+                            <span className="text-sm font-medium truncate block">
+                              {h}
+                              <span className="text-[9px] text-muted-foreground/50 ml-1">#{colIdx}</span>
+                            </span>
                             {/* Sample value chips in mapping */}
                             <div className="flex gap-1 mt-0.5">
-                              {(sampleValuesByHeader[h] || []).slice(0, 3).map((sv, i) => (
+                              {(sampleValuesByColIdx[colIdx] || []).slice(0, 3).map((sv, i) => (
                                 <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-muted/60 text-muted-foreground truncate max-w-[80px]">
                                   {sv}
                                 </span>
@@ -702,15 +728,15 @@ const DataUpload = () => {
                           </div>
                           <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0" />
                           <select
-                            value={mapping[h] || "skip"}
-                            onChange={(e) => setMapping((prev) => ({ ...prev, [h]: e.target.value }))}
+                            value={mapping[colIdx] || "skip"}
+                            onChange={(e) => setMapping((prev) => ({ ...prev, [colIdx]: e.target.value }))}
                             className="flex-1 px-3 py-2 rounded-lg bg-secondary border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
                           >
                             {COLUMN_TARGETS.map((t) => (
                               <option key={t} value={t}>{t === "region_code" ? "region_code (ID/ISO)" : t}</option>
                             ))}
                           </select>
-                          {mapping[h] && mapping[h] !== "skip" && (
+                          {mapping[colIdx] && mapping[colIdx] !== "skip" && (
                             <Badge variant="outline" className="text-xs">
                               <Check className="w-3 h-3 mr-1" /> Mapped
                             </Badge>

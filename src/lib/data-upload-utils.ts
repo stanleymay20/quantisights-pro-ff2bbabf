@@ -27,6 +27,9 @@ export interface DetectedSchema {
   autoFix?: "year_to_date";
 }
 
+/** Mapping is keyed by colIdx (column position), not header name */
+export type ColumnMapping = Record<number, string>;
+
 export interface ValidationResult {
   totalRows: number;
   validRows: number;
@@ -127,6 +130,18 @@ export function deduplicateMetricSlugs(slugs: string[]): string[] {
     counts.set(s, count);
     return count > 1 ? `${s}_${count}` : s;
   });
+}
+
+// ---- Helper: get colIdx from mapping by target type ----
+function findMappedIdx(mapping: ColumnMapping, target: string): number {
+  const entry = Object.entries(mapping).find(([, v]) => v === target);
+  return entry ? Number(entry[0]) : -1;
+}
+
+function findAllMappedIdx(mapping: ColumnMapping, target: string): number[] {
+  return Object.entries(mapping)
+    .filter(([, v]) => v === target)
+    .map(([k]) => Number(k));
 }
 
 // ---- Schema Autodetection Engine ----
@@ -410,14 +425,11 @@ export function humanizeError(row: number, rawMessage: string): HumanizedError {
 export function validateData(
   rows: string[][],
   headers: string[],
-  mapping: Record<string, string>,
+  mapping: ColumnMapping,
   importMode: ImportMode = "single",
 ): ValidationResult {
-  const dateCol = Object.entries(mapping).find(([, v]) => v === "date")?.[0];
-  const dateIdx = dateCol ? headers.indexOf(dateCol) : -1;
-
-  const valueCols = Object.entries(mapping).filter(([, v]) => v === "value").map(([k]) => k);
-  const valueIndices = valueCols.map(c => headers.indexOf(c));
+  const dateIdx = findMappedIdx(mapping, "date");
+  const valueIndices = findAllMappedIdx(mapping, "value");
   const primaryValueIdx = valueIndices[0] ?? -1;
 
   const errors: HumanizedError[] = [];
@@ -516,22 +528,20 @@ export function validateData(
 export function generateIntelligence(
   headers: string[],
   rows: string[][],
-  mapping: Record<string, string>,
+  mapping: ColumnMapping,
   validation: ValidationResult,
   importMode: ImportMode = "single",
 ): DatasetIntelligence {
-  const regionCol = Object.entries(mapping).find(([, v]) => v === "region")?.[0];
-  const metricCol = Object.entries(mapping).find(([, v]) => v === "metric_type")?.[0];
-  const valueCols = Object.entries(mapping).filter(([, v]) => v === "value").map(([k]) => k);
-  const dateCol = Object.entries(mapping).find(([, v]) => v === "date")?.[0];
-
-  const regionIdx = regionCol ? headers.indexOf(regionCol) : -1;
-  const metricIdx = metricCol ? headers.indexOf(metricCol) : -1;
-  const dateIdx = dateCol ? headers.indexOf(dateCol) : -1;
+  const regionIdx = findMappedIdx(mapping, "region");
+  const metricIdx = findMappedIdx(mapping, "metric_type");
+  const valueIndices = findAllMappedIdx(mapping, "value");
+  const dateIdx = findMappedIdx(mapping, "date");
 
   const regions = regionIdx >= 0
     ? [...new Set(rows.map(r => r[regionIdx]).filter(Boolean))]
     : [];
+
+  const valueCols = valueIndices.map(i => headers[i] || `col_${i}`);
 
   let metricTypes: string[];
   if (metricIdx >= 0) {
@@ -552,7 +562,7 @@ export function generateIntelligence(
   }
 
   // Volatility detection
-  const primaryValueIdx = valueCols[0] ? headers.indexOf(valueCols[0]) : -1;
+  const primaryValueIdx = valueIndices[0] ?? -1;
   if (primaryValueIdx >= 0 && rows.length > 10) {
     const values = rows.map(r => parseFloat(r[primaryValueIdx])).filter(v => !isNaN(v));
     const mean = values.reduce((a, b) => a + b, 0) / values.length;
@@ -641,12 +651,10 @@ export function generateIntelligence(
 export function computeDiagnostics(
   rows: string[][],
   headers: string[],
-  mapping: Record<string, string>,
+  mapping: ColumnMapping,
 ): DatasetDiagnostics {
-  const dateCol = Object.entries(mapping).find(([, v]) => v === "date")?.[0];
-  const dateIdx = dateCol ? headers.indexOf(dateCol) : -1;
-  const valueCols = Object.entries(mapping).filter(([, v]) => v === "value").map(([k]) => k);
-  const valueIndices = valueCols.map(c => headers.indexOf(c));
+  const dateIdx = findMappedIdx(mapping, "date");
+  const valueIndices = findAllMappedIdx(mapping, "value");
 
   let totalCells = 0;
   let emptyCells = 0;
@@ -760,9 +768,10 @@ const DATASET_PATTERNS: { type: string; keywords: string[]; workflows: string[];
   },
 ];
 
-export function classifyDataset(headers: string[], mapping: Record<string, string>): DatasetClassification {
+export function classifyDataset(headers: string[], mapping: ColumnMapping): DatasetClassification {
   const allText = headers.map(h => h.toLowerCase().replace(/[_\-]/g, " ")).join(" ");
-  const valueCols = Object.entries(mapping).filter(([, v]) => v === "value").map(([k]) => k.toLowerCase().replace(/[_\-]/g, " "));
+  const valueIndices = findAllMappedIdx(mapping, "value");
+  const valueCols = valueIndices.map(i => (headers[i] || "").toLowerCase().replace(/[_\-]/g, " "));
   const searchText = allText + " " + valueCols.join(" ");
 
   let bestMatch: DatasetClassification = { type: "General Dataset", confidence: 30, recommendedWorkflows: ["KPI Monitoring", "Forecasting", "Anomaly Detection"] };
