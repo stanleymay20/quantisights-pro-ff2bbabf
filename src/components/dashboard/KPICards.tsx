@@ -48,7 +48,7 @@ const KPICards = ({ revenue, customers, costRate, churnRate }: KPICardsProps) =>
       prefix: "€",
       icon: DollarSign,
       variant: "kpi-gradient-revenue",
-      color: "text-emerald-400",
+      color: "text-success",
       trend: revenue > 0 ? "up" as const : null,
     },
     {
@@ -94,7 +94,7 @@ const KPICards = ({ revenue, customers, costRate, churnRate }: KPICardsProps) =>
               <span className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{kpi.label}</span>
               <div className="flex items-center gap-1.5">
                 {TrendIcon && (
-                  <TrendIcon className={`w-3.5 h-3.5 ${kpi.trend === "up" ? "text-emerald-400" : "text-destructive"}`} />
+                  <TrendIcon className={`w-3.5 h-3.5 ${kpi.trend === "up" ? "text-success" : "text-destructive"}`} />
                 )}
                 <kpi.icon className={`w-4 h-4 ${kpi.color} opacity-60`} />
               </div>
