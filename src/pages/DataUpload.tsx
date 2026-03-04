@@ -431,6 +431,7 @@ const DataUpload = () => {
             if (isNaN(val) || !isFinite(val) || Math.abs(val) > 1e12) continue;
             metricsToInsert.push({
               organization_id: currentOrgId,
+              workspace_id: currentWorkspaceId || null,
               dataset_id: dataset.id,
               metric_type: metricSlugs[vi],
               value: val,
