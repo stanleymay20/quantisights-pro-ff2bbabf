@@ -76,16 +76,16 @@ interface ImpactSim {
 }
 
 const STATUS_COLORS: Record<string, { bg: string; text: string; label: string }> = {
-  pending: { bg: "bg-amber-500/10", text: "text-amber-500", label: "Pending" },
-  approved: { bg: "bg-sky-500/10", text: "text-sky-500", label: "Approved" },
+  pending: { bg: "bg-warning/10", text: "text-warning", label: "Pending" },
+  approved: { bg: "bg-primary/10", text: "text-primary", label: "Approved" },
   rejected: { bg: "bg-destructive/10", text: "text-destructive", label: "Rejected" },
   deferred: { bg: "bg-muted", text: "text-muted-foreground", label: "Deferred" },
 };
 
 const EXEC_STATUS: Record<string, { bg: string; text: string; label: string }> = {
   not_started: { bg: "bg-muted", text: "text-muted-foreground", label: "Not Started" },
-  in_progress: { bg: "bg-sky-500/10", text: "text-sky-500", label: "In Progress" },
-  completed: { bg: "bg-emerald-500/10", text: "text-emerald-500", label: "Completed" },
+  in_progress: { bg: "bg-primary/10", text: "text-primary", label: "In Progress" },
+  completed: { bg: "bg-success/10", text: "text-success", label: "Completed" },
   blocked: { bg: "bg-destructive/10", text: "text-destructive", label: "Blocked" },
 };
 
@@ -278,19 +278,19 @@ const DecisionLedgerPage = () => {
             <Card>
               <CardContent className="p-4">
                 <p className="text-xs text-muted-foreground">Active</p>
-                <p className="text-2xl font-bold mt-1 text-sky-500">{activeDecisions.length}</p>
+                <p className="text-2xl font-bold mt-1 text-primary">{activeDecisions.length}</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4">
                 <p className="text-xs text-muted-foreground">Completed</p>
-                <p className="text-2xl font-bold mt-1 text-emerald-500">{completedDecisions.length}</p>
+                <p className="text-2xl font-bold mt-1 text-success">{completedDecisions.length}</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4">
                 <p className="text-xs text-muted-foreground flex items-center gap-1"><TrendingUp className="w-3 h-3" /> Avg Outcome</p>
-                <p className={`text-2xl font-bold mt-1 ${avgOutcomeDelta !== null && avgOutcomeDelta > 0 ? "text-emerald-500" : avgOutcomeDelta !== null && avgOutcomeDelta < 0 ? "text-destructive" : ""}`}>
+                <p className={`text-2xl font-bold mt-1 ${avgOutcomeDelta !== null && avgOutcomeDelta > 0 ? "text-success" : avgOutcomeDelta !== null && avgOutcomeDelta < 0 ? "text-destructive" : ""}`}>
                   {avgOutcomeDelta !== null ? `${avgOutcomeDelta > 0 ? "+" : ""}${avgOutcomeDelta.toFixed(1)}%` : "—"}
                 </p>
               </CardContent>
@@ -298,7 +298,7 @@ const DecisionLedgerPage = () => {
             <Card>
               <CardContent className="p-4">
                 <p className="text-xs text-muted-foreground flex items-center gap-1"><Activity className="w-3 h-3" /> Cal. Error</p>
-                <p className={`text-2xl font-bold mt-1 ${avgCalibrationError !== null && avgCalibrationError < 30 ? "text-emerald-500" : avgCalibrationError !== null && avgCalibrationError > 50 ? "text-destructive" : "text-amber-500"}`}>
+                <p className={`text-2xl font-bold mt-1 ${avgCalibrationError !== null && avgCalibrationError < 30 ? "text-success" : avgCalibrationError !== null && avgCalibrationError > 50 ? "text-destructive" : "text-warning"}`}>
                   {avgCalibrationError !== null ? `${avgCalibrationError.toFixed(0)}` : "—"}
                 </p>
               </CardContent>
@@ -306,7 +306,7 @@ const DecisionLedgerPage = () => {
             <Card>
               <CardContent className="p-4">
                 <p className="text-xs text-muted-foreground flex items-center gap-1"><ShieldCheck className="w-3 h-3" /> Success Rate</p>
-                <p className={`text-2xl font-bold mt-1 ${decisionSuccessRate !== null && decisionSuccessRate > 60 ? "text-emerald-500" : decisionSuccessRate !== null && decisionSuccessRate < 40 ? "text-destructive" : "text-amber-500"}`}>
+                <p className={`text-2xl font-bold mt-1 ${decisionSuccessRate !== null && decisionSuccessRate > 60 ? "text-success" : decisionSuccessRate !== null && decisionSuccessRate < 40 ? "text-destructive" : "text-warning"}`}>
                   {decisionSuccessRate !== null ? `${decisionSuccessRate.toFixed(0)}%` : "—"}
                 </p>
               </CardContent>
@@ -519,7 +519,7 @@ const DecisionLedgerPage = () => {
                                 </span>
                               )}
                               {d.predicted_roi_probability !== null && (
-                                <Badge className={`border-none text-xs ${Number(d.predicted_roi_probability) >= 50 ? "bg-emerald-500/10 text-emerald-500" : "bg-destructive/10 text-destructive"}`}>
+                                <Badge className={`border-none text-xs ${Number(d.predicted_roi_probability) >= 50 ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"}`}>
                                   <DollarSign className="w-3 h-3 mr-0.5" /> P(ROI+): {Number(d.predicted_roi_probability).toFixed(0)}%
                                 </Badge>
                               )}
@@ -600,9 +600,9 @@ const DecisionLedgerPage = () => {
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2 flex-wrap">
                           <Badge variant="outline" className="text-xs capitalize">{d.decision_type.replace(/_/g, " ")}</Badge>
-                          <Badge className="bg-emerald-500/10 text-emerald-500 border-none text-xs">Completed</Badge>
+                          <Badge className="bg-success/10 text-success border-none text-xs">Completed</Badge>
                           {d.outcome_delta !== null && (
-                            <Badge className={`border-none text-xs ${d.outcome_delta >= 0 ? "bg-emerald-500/10 text-emerald-500" : "bg-destructive/10 text-destructive"}`}>
+                            <Badge className={`border-none text-xs ${d.outcome_delta >= 0 ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"}`}>
                               {d.outcome_delta >= 0 ? <TrendingUp className="w-3 h-3 mr-1" /> : <TrendingDown className="w-3 h-3 mr-1" />}
                               {d.outcome_delta > 0 ? "+" : ""}{d.outcome_delta}% delta
                             </Badge>
@@ -613,7 +613,7 @@ const DecisionLedgerPage = () => {
                             </Badge>
                           )}
                           {d.calibration_error !== null && (
-                            <Badge variant="outline" className={`text-xs gap-1 ${Number(d.calibration_error) > 50 ? "border-destructive/30 text-destructive" : "border-emerald-500/30 text-emerald-500"}`}>
+                            <Badge variant="outline" className={`text-xs gap-1 ${Number(d.calibration_error) > 50 ? "border-destructive/30 text-destructive" : "border-success/30 text-success"}`}>
                               <Activity className="w-3 h-3" /> Cal. Error: {Number(d.calibration_error).toFixed(0)}
                             </Badge>
                           )}
@@ -674,7 +674,7 @@ function ResultCard({ label, value, positive }: { label: string; value: string; 
     <Card>
       <CardContent className="p-3">
         <p className="text-[11px] text-muted-foreground">{label}</p>
-        <p className={`text-lg font-bold font-mono mt-0.5 ${positive ? "text-emerald-500" : "text-destructive"}`}>
+        <p className={`text-lg font-bold font-mono mt-0.5 ${positive ? "text-success" : "text-destructive"}`}>
           {value}
         </p>
       </CardContent>

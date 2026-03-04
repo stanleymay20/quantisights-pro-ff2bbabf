@@ -107,22 +107,22 @@ const URGENCY_STYLES: Record<string, { bg: string; text: string; label: string }
 };
 
 const STATUS_STYLES: Record<string, { dot: string; label: string }> = {
-  on_track: { dot: "bg-emerald-400", label: "On Track" },
-  at_risk: { dot: "bg-amber-400", label: "At Risk" },
+  on_track: { dot: "bg-success", label: "On Track" },
+  at_risk: { dot: "bg-warning", label: "At Risk" },
   critical: { dot: "bg-destructive", label: "Critical" },
-  exceeding: { dot: "bg-sky-400", label: "Exceeding" },
+  exceeding: { dot: "bg-primary", label: "Exceeding" },
 };
 
 const IMPACT_STYLES: Record<string, string> = {
-  high: "border-emerald-500/30 bg-emerald-500/5",
-  medium: "border-amber-500/30 bg-amber-500/5",
+  high: "border-success/30 bg-success/5",
+  medium: "border-warning/30 bg-warning/5",
   low: "border-muted-foreground/20 bg-muted/5",
 };
 
 const SEVERITY_STYLES: Record<string, { icon: typeof AlertTriangle; color: string }> = {
   critical: { icon: AlertTriangle, color: "text-destructive" },
-  warning: { icon: AlertTriangle, color: "text-amber-400" },
-  info: { icon: Shield, color: "text-sky-400" },
+  warning: { icon: AlertTriangle, color: "text-warning" },
+  info: { icon: Shield, color: "text-primary" },
 };
 
 // Risk Dial Component
