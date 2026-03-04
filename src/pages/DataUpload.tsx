@@ -14,6 +14,7 @@ import {
   AlertTriangle, ShieldCheck, BarChart3, Info,
   Sparkles, Wand2, Globe, Calendar, Hash, TrendingUp,
   Zap, Eye, ChevronRight, Layers, Database, Activity,
+  Tag,
 } from "lucide-react";
 import UploadTrustBadges from "@/components/security/UploadTrustBadges";
 import { motion, AnimatePresence } from "framer-motion";
@@ -22,19 +23,21 @@ import {
   type DatasetIntelligence, type DatasetDiagnostics, type DatasetClassification,
   type ImportMode,
   inferSchema, validateData, generateIntelligence, computeDiagnostics,
-  classifyDataset, confidenceColor, qualityColor, humanizeError,
+  classifyDataset, confidenceColor, qualityColor, humanizeError, parseCSVText,
+  slugifyMetric, deduplicateMetricSlugs,
 } from "@/lib/data-upload-utils";
 
 type Step = "upload" | "autodetect" | "mapping" | "validation" | "intelligence" | "importing" | "done";
 
 const METRIC_TYPES = ["revenue", "cost", "customers", "churn", "headcount", "marketing_spend"] as const;
-const COLUMN_TARGETS = ["date", "value", "region", "segment", "metric_type", "skip"] as const;
+const COLUMN_TARGETS = ["date", "value", "region", "region_code", "segment", "metric_type", "skip"] as const;
 
 const typeIcon = (t: string) => {
   switch (t) {
     case "date": return <Calendar className="w-3.5 h-3.5" />;
     case "value": return <Hash className="w-3.5 h-3.5" />;
     case "region": return <Globe className="w-3.5 h-3.5" />;
+    case "region_code": return <Tag className="w-3.5 h-3.5" />;
     case "segment": return <BarChart3 className="w-3.5 h-3.5" />;
     case "metric_type": return <TrendingUp className="w-3.5 h-3.5" />;
     default: return <X className="w-3.5 h-3.5" />;
@@ -66,7 +69,6 @@ const DataUpload = () => {
   const [diagnostics, setDiagnostics] = useState<DatasetDiagnostics | null>(null);
   const [classification, setClassification] = useState<DatasetClassification | null>(null);
 
-  // Count value columns for auto-detecting multi-metric mode
   const valueColumnCount = useMemo(() => {
     return Object.values(mapping).filter(v => v === "value").length;
   }, [mapping]);
@@ -75,13 +77,9 @@ const DataUpload = () => {
     return Object.values(mapping).filter(v => v === "date").length;
   }, [mapping]);
 
-  const parseCSV = useCallback((text: string) => {
-    const lines = text.trim().split("\n").map((l) =>
-      l.split(",").map((c) => c.trim().replace(/^"|"$/g, ""))
-    );
-    if (lines.length < 2) return;
-    const hdrs = lines[0];
-    const dataRows = lines.slice(1);
+  const handleParse = useCallback((text: string) => {
+    const { headers: hdrs, rows: dataRows } = parseCSVText(text);
+    if (hdrs.length === 0) return;
     setHeaders(hdrs);
     setAllRows(dataRows);
     setRows(dataRows.slice(0, 100));
@@ -93,13 +91,11 @@ const DataUpload = () => {
     schema.forEach(s => { autoMap[s.column] = s.inferredType; });
     setMapping(autoMap);
 
-    // Auto-detect import mode: if multiple value columns, suggest multi-metric
     const valCount = schema.filter(s => s.inferredType === "value").length;
     if (valCount > 1) {
       setImportMode("multi");
     }
 
-    // Auto-classify
     const cls = classifyDataset(hdrs, autoMap);
     setClassification(cls);
   }, []);
@@ -119,7 +115,7 @@ const DataUpload = () => {
     setDatasetName(f.name.replace(/\.csv$/i, ""));
     const reader = new FileReader();
     reader.onload = (ev) => {
-      parseCSV(ev.target?.result as string);
+      handleParse(ev.target?.result as string);
       setStep("autodetect");
     };
     reader.readAsText(f);
@@ -140,7 +136,7 @@ const DataUpload = () => {
     setDatasetName(f.name.replace(/\.csv$/i, ""));
     const reader = new FileReader();
     reader.onload = (ev) => {
-      parseCSV(ev.target?.result as string);
+      handleParse(ev.target?.result as string);
       setStep("autodetect");
     };
     reader.readAsText(f);
@@ -165,12 +161,38 @@ const DataUpload = () => {
     toast({ title: "Dates converted", description: "Year values converted to YYYY-01-01 format." });
   };
 
+  const autoSelectBestDate = () => {
+    // Find best date column candidate and set only that one
+    const dateCols = Object.entries(mapping).filter(([, v]) => v === "date");
+    if (dateCols.length <= 1) return;
+    // Pick the one with best schema confidence
+    const best = dateCols.reduce((bestCol, [col]) => {
+      const det = detectedSchema.find(d => d.column === col);
+      const bestDet = detectedSchema.find(d => d.column === bestCol);
+      return (det?.confidence ?? 0) > (bestDet?.confidence ?? 0) ? col : bestCol;
+    }, dateCols[0][0]);
+    const newMapping = { ...mapping };
+    dateCols.forEach(([col]) => {
+      if (col !== best) newMapping[col] = "value";
+    });
+    setMapping(newMapping);
+    toast({ title: "Date column selected", description: `"${best}" set as primary time dimension.` });
+  };
+
   const hasYearOnlyDates = useMemo(() => {
     return detectedSchema.some(s => s.autoFix === "year_to_date");
   }, [detectedSchema]);
 
+  // Get sample values for each header from first 3 rows
+  const sampleValuesByHeader = useMemo(() => {
+    const map: Record<string, string[]> = {};
+    headers.forEach((h, idx) => {
+      map[h] = rows.slice(0, 3).map(r => r[idx] || "").filter(Boolean);
+    });
+    return map;
+  }, [headers, rows]);
+
   const runValidation = () => {
-    // Enforce single date column
     if (dateColumnCount > 1) {
       toast({
         title: "Multiple date columns detected",
@@ -246,14 +268,19 @@ const DataUpload = () => {
 
       const dateCol = Object.entries(mapping).find(([, v]) => v === "date")?.[0];
       const regionCol = Object.entries(mapping).find(([, v]) => v === "region")?.[0];
+      const regionCodeCol = Object.entries(mapping).find(([, v]) => v === "region_code")?.[0];
       const segmentCol = Object.entries(mapping).find(([, v]) => v === "segment")?.[0];
       const metricTypeCol = Object.entries(mapping).find(([, v]) => v === "metric_type")?.[0];
       const valueCols = Object.entries(mapping).filter(([, v]) => v === "value").map(([k]) => k);
 
       const dateIdx = headers.indexOf(dateCol!);
       const regionIdx = regionCol ? headers.indexOf(regionCol) : -1;
+      const regionCodeIdx = regionCodeCol ? headers.indexOf(regionCodeCol) : -1;
       const segmentIdx = segmentCol ? headers.indexOf(segmentCol) : -1;
       const metricTypeIdx = metricTypeCol ? headers.indexOf(metricTypeCol) : -1;
+
+      // Pre-compute slugified & deduplicated metric names for multi-metric
+      const metricSlugs = deduplicateMetricSlugs(valueCols.map(c => slugifyMetric(c)));
 
       const metricsToInsert: any[] = [];
 
@@ -264,26 +291,27 @@ const DataUpload = () => {
         if (isNaN(Date.parse(dateVal))) continue;
 
         const regionVal = regionIdx >= 0 ? row[regionIdx] || null : null;
+        // Use region_code as region if no region column mapped
+        const regionCodeVal = regionCodeIdx >= 0 ? row[regionCodeIdx] || null : null;
+        const effectiveRegion = regionVal || regionCodeVal;
         const segmentVal = segmentIdx >= 0 ? row[segmentIdx] || null : null;
 
         if (importMode === "multi" && valueCols.length > 1) {
-          // Wide → Long normalization: each value column becomes a separate metric row
-          for (const valCol of valueCols) {
-            const valIdx = headers.indexOf(valCol);
+          for (let vi = 0; vi < valueCols.length; vi++) {
+            const valIdx = headers.indexOf(valueCols[vi]);
             const val = parseFloat(row[valIdx]);
             if (isNaN(val) || !isFinite(val) || Math.abs(val) > 1e12) continue;
             metricsToInsert.push({
               organization_id: currentOrgId,
               dataset_id: dataset.id,
-              metric_type: valCol.toLowerCase().replace(/\s+/g, "_"),
+              metric_type: metricSlugs[vi],
               value: val,
               date: dateVal,
-              region: regionVal,
+              region: effectiveRegion,
               segment: segmentVal,
             });
           }
         } else {
-          // Single metric mode
           const valueCol = valueCols[0];
           const valueIdx = headers.indexOf(valueCol);
           const val = parseFloat(row[valueIdx]);
@@ -294,7 +322,7 @@ const DataUpload = () => {
             metric_type: metricTypeIdx >= 0 ? row[metricTypeIdx] : defaultMetricType,
             value: val,
             date: dateVal,
-            region: regionVal,
+            region: effectiveRegion,
             segment: segmentVal,
           });
         }
@@ -420,18 +448,28 @@ const DataUpload = () => {
                     {classification && classification.confidence > 40 && (
                       <motion.div
                         initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
-                        className="mt-4 p-3 rounded-lg border border-primary/20 bg-primary/5 flex items-center gap-3"
+                        className="mt-4 p-3 rounded-lg border border-primary/20 bg-primary/5"
                       >
-                        <Database className="w-4 h-4 text-primary shrink-0" />
-                        <div className="flex-1">
-                          <p className="text-sm font-medium text-foreground">
-                            Dataset Type: <span className="text-primary">{classification.type}</span>
-                            {classification.subType && <span className="text-muted-foreground"> · {classification.subType}</span>}
-                          </p>
+                        <div className="flex items-center gap-3">
+                          <Database className="w-4 h-4 text-primary shrink-0" />
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-foreground">
+                              Detected domain: <span className="text-primary">{classification.type}</span>
+                              {classification.subType && <span className="text-muted-foreground"> · {classification.subType}</span>}
+                            </p>
+                          </div>
+                          <Badge variant="outline" className={`text-[10px] shrink-0 ${confidenceColor(classification.confidence)}`}>
+                            {classification.confidence}% confidence
+                          </Badge>
                         </div>
-                        <Badge variant="outline" className={`text-[10px] shrink-0 ${confidenceColor(classification.confidence)}`}>
-                          {classification.confidence}% confidence
-                        </Badge>
+                        {classification.recommendedWorkflows.length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-1.5 ml-7">
+                            <span className="text-[10px] text-muted-foreground">Recommended:</span>
+                            {classification.recommendedWorkflows.map(w => (
+                              <Badge key={w} variant="outline" className="text-[10px] bg-muted/30">{w}</Badge>
+                            ))}
+                          </div>
+                        )}
                       </motion.div>
                     )}
 
@@ -484,7 +522,17 @@ const DataUpload = () => {
                         <div key={det.column} className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 border border-border/40">
                           <div className="flex items-center gap-2 w-44 shrink-0">
                             {typeIcon(det.inferredType)}
-                            <span className="text-sm font-medium truncate">{det.column}</span>
+                            <div className="min-w-0">
+                              <span className="text-sm font-medium truncate block">{det.column}</span>
+                              {/* Sample value chips */}
+                              <div className="flex gap-1 mt-0.5">
+                                {(det.sampleValues || []).slice(0, 3).map((sv, i) => (
+                                  <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-muted/60 text-muted-foreground truncate max-w-[80px]">
+                                    {sv}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
                           </div>
                           <ArrowRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                           <div className="flex-1 flex items-center gap-2">
@@ -581,13 +629,16 @@ const DataUpload = () => {
                     <h2 className="text-lg font-semibold font-display mb-1">Adjust Column Mapping</h2>
                     <p className="text-xs text-muted-foreground mb-4">Fine-tune the auto-detected mapping. Date and Value are required.</p>
 
-                    {/* Date column warning */}
+                    {/* Date column warning with auto-fix */}
                     {dateColumnCount > 1 && (
                       <div className="mb-4 p-3 rounded-lg border border-destructive/30 bg-destructive/5 flex items-center gap-2">
                         <AlertTriangle className="w-4 h-4 text-destructive shrink-0" />
-                        <p className="text-xs text-destructive">
-                          Multiple date columns detected ({dateColumnCount}). Only one column can be mapped as date. Please choose one primary time dimension.
+                        <p className="text-xs text-destructive flex-1">
+                          Multiple date columns detected ({dateColumnCount}). Only one column can be mapped as date.
                         </p>
+                        <Button size="sm" variant="outline" onClick={autoSelectBestDate} className="gap-1 text-xs h-7 shrink-0">
+                          <Zap className="w-3 h-3" /> Auto-select best date
+                        </Button>
                       </div>
                     )}
 
@@ -626,7 +677,17 @@ const DataUpload = () => {
                     <div className="space-y-3">
                       {headers.map((h) => (
                         <div key={h} className="flex items-center gap-4">
-                          <span className="w-40 text-sm font-medium truncate">{h}</span>
+                          <div className="w-44 shrink-0">
+                            <span className="text-sm font-medium truncate block">{h}</span>
+                            {/* Sample value chips in mapping */}
+                            <div className="flex gap-1 mt-0.5">
+                              {(sampleValuesByHeader[h] || []).slice(0, 3).map((sv, i) => (
+                                <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-muted/60 text-muted-foreground truncate max-w-[80px]">
+                                  {sv}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
                           <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0" />
                           <select
                             value={mapping[h] || "skip"}
@@ -634,7 +695,7 @@ const DataUpload = () => {
                             className="flex-1 px-3 py-2 rounded-lg bg-secondary border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
                           >
                             {COLUMN_TARGETS.map((t) => (
-                              <option key={t} value={t}>{t}</option>
+                              <option key={t} value={t}>{t === "region_code" ? "region_code (ID/ISO)" : t}</option>
                             ))}
                           </select>
                           {mapping[h] && mapping[h] !== "skip" && (
@@ -690,7 +751,7 @@ const DataUpload = () => {
                       <div>
                         <h2 className="text-lg font-semibold font-display">Data Issues Found</h2>
                         <p className="text-xs text-muted-foreground">
-                          {validation.validRows} of {validation.totalRows} rows are valid · {validation.errors.length} issue{validation.errors.length !== 1 ? "s" : ""} detected
+                          {validation.validRows} of {validation.totalRows} rows valid · {validation.validPoints.toLocaleString()} of {validation.totalPoints.toLocaleString()} data points valid · {validation.errors.length} issue{validation.errors.length !== 1 ? "s" : ""}
                         </p>
                       </div>
                     </div>
@@ -746,7 +807,7 @@ const DataUpload = () => {
                       setDiagnostics(diag);
                       setStep("intelligence");
                     }} className="gap-2">
-                      Continue with {validation.validRows} valid rows <ArrowRight className="w-4 h-4" />
+                      Continue with {validation.validPoints.toLocaleString()} valid points <ArrowRight className="w-4 h-4" />
                     </Button>
                   )}
                 </div>
@@ -763,20 +824,30 @@ const DataUpload = () => {
                 {/* Dataset Classification */}
                 {classification && classification.confidence > 40 && (
                   <Card className="overflow-hidden border-primary/20">
-                    <CardContent className="p-4 flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                        <Database className="w-5 h-5 text-primary" />
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                          <Database className="w-5 h-5 text-primary" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Detected Domain</p>
+                          <p className="text-lg font-semibold font-display text-foreground">
+                            {classification.type}
+                            {classification.subType && <span className="text-sm text-muted-foreground font-normal ml-2">· {classification.subType}</span>}
+                          </p>
+                        </div>
+                        <Badge variant="outline" className={`text-xs ${confidenceColor(classification.confidence)}`}>
+                          {classification.confidence}% confidence
+                        </Badge>
                       </div>
-                      <div className="flex-1">
-                        <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Dataset Type Detected</p>
-                        <p className="text-lg font-semibold font-display text-foreground">
-                          {classification.type}
-                          {classification.subType && <span className="text-sm text-muted-foreground font-normal ml-2">· {classification.subType}</span>}
-                        </p>
-                      </div>
-                      <Badge variant="outline" className={`text-xs ${confidenceColor(classification.confidence)}`}>
-                        {classification.confidence}% confidence
-                      </Badge>
+                      {classification.recommendedWorkflows.length > 0 && (
+                        <div className="mt-3 flex flex-wrap gap-1.5 ml-14">
+                          <span className="text-[10px] text-muted-foreground self-center">Recommended workflows:</span>
+                          {classification.recommendedWorkflows.map(w => (
+                            <Badge key={w} variant="outline" className="text-[10px] bg-primary/5">{w}</Badge>
+                          ))}
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 )}
@@ -797,9 +868,9 @@ const DataUpload = () => {
                     {/* KPI Strip */}
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
                       <div className="bg-muted/30 rounded-lg p-4 text-center">
-                        <p className="text-2xl font-bold text-foreground">{intelligence.recordCount.toLocaleString()}</p>
+                        <p className="text-2xl font-bold text-foreground">{intelligence.validPointCount.toLocaleString()}</p>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          {importMode === "multi" ? "Records (normalized)" : "Records"}
+                          Valid data points
                         </p>
                       </div>
                       <div className="bg-muted/30 rounded-lg p-4 text-center">
@@ -808,7 +879,7 @@ const DataUpload = () => {
                       </div>
                       <div className="bg-muted/30 rounded-lg p-4 text-center">
                         <p className="text-2xl font-bold text-foreground">{intelligence.regionCount || "—"}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">Regions</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Entities</p>
                       </div>
                       <div className="bg-muted/30 rounded-lg p-4 text-center">
                         <p className="text-2xl font-bold text-foreground">{intelligence.metricTypes.length || "—"}</p>
@@ -844,7 +915,7 @@ const DataUpload = () => {
                     {/* Regions */}
                     {intelligence.regions.length > 0 && (
                       <div className="mb-5">
-                        <p className="text-xs text-muted-foreground mb-2 font-medium uppercase tracking-wider">Regions</p>
+                        <p className="text-xs text-muted-foreground mb-2 font-medium uppercase tracking-wider">Entities</p>
                         <div className="flex flex-wrap gap-1.5">
                           {intelligence.regions.map(r => (
                             <Badge key={r} variant="outline" className="text-xs">{r}</Badge>
@@ -929,7 +1000,7 @@ const DataUpload = () => {
                   <div className="p-3 rounded-lg border border-yellow-500/20 bg-yellow-500/5 flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4 text-yellow-500 shrink-0" />
                     <p className="text-xs text-muted-foreground">
-                      {validation.invalidRows} row{validation.invalidRows > 1 ? "s" : ""} will be skipped due to data issues.
+                      {validation.invalidPoints.toLocaleString()} data point{validation.invalidPoints !== 1 ? "s" : ""} will be skipped.
                       <button onClick={() => setStep("validation")} className="text-primary ml-1 hover:underline">View details</button>
                     </p>
                   </div>
@@ -937,9 +1008,9 @@ const DataUpload = () => {
 
                 <div className="flex gap-3">
                   <Button variant="outline" onClick={() => setStep("mapping")}>Edit Mapping</Button>
-                  {validation.validRows > 0 && (
+                  {validation.validPoints > 0 && (
                     <Button onClick={handleImport} className="gap-2">
-                      Import {(importMode === "multi" && valueColumnCount > 1 ? validation.validRows * valueColumnCount : validation.validRows).toLocaleString()} Records <Check className="w-4 h-4" />
+                      Import {validation.validPoints.toLocaleString()} Data Points <Check className="w-4 h-4" />
                     </Button>
                   )}
                 </div>
@@ -973,7 +1044,7 @@ const DataUpload = () => {
                 </div>
                 <h2 className="text-xl font-semibold font-display mb-2">Import Complete</h2>
                 <p className="text-muted-foreground text-sm mb-6">
-                  {importCount.toLocaleString()} records imported
+                  {importCount.toLocaleString()} data points imported
                   {importMode === "multi" ? " (multi-metric normalized)" : ""}
                   {" · "}Intelligence signals generated
                 </p>
