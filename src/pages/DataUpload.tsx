@@ -290,8 +290,12 @@ function validateData(
     });
 
     if (dateIdx >= 0) {
-      const d = row[dateIdx];
-      if (!d || !d.trim()) {
+      let d = row[dateIdx]?.trim();
+      // Normalize year-only values during validation too
+      if (d && /^\d{4}$/.test(d)) {
+        d = `${d}-01-01`;
+      }
+      if (!d) {
         errors.push(humanizeError(i + 2, "Missing date value"));
         rowValid = false;
       } else if (isNaN(Date.parse(d))) {
@@ -664,9 +668,14 @@ const DataUpload = () => {
       const metricsToInsert = allRows
         .map((cols) => {
           const val = parseFloat(cols[valueIdx]);
-          const dateVal = cols[dateIdx];
+          let dateVal = cols[dateIdx]?.trim();
+          if (!dateVal) return null;
+          // Safety net: normalize year-only values even if user skipped auto-fix
+          if (/^\d{4}$/.test(dateVal)) {
+            dateVal = `${dateVal}-01-01`;
+          }
           if (isNaN(val) || !isFinite(val) || Math.abs(val) > 1e12) return null;
-          if (!dateVal || isNaN(Date.parse(dateVal))) return null;
+          if (isNaN(Date.parse(dateVal))) return null;
           return {
             organization_id: currentOrgId,
             dataset_id: dataset.id,
