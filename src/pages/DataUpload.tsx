@@ -347,7 +347,7 @@ const DataUpload = () => {
       let inserted = 0;
       for (let i = 0; i < metricsToInsert.length; i += 500) {
         const batch = metricsToInsert.slice(i, i + 500);
-        const { error } = await supabase.from("metrics").insert(batch);
+        const { error } = await supabase.from("metrics").upsert(batch, { onConflict: "organization_id,metric_type,date,region,segment,source_id" });
         if (error) throw error;
         inserted += batch.length;
       }

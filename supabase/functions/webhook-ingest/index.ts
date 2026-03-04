@@ -219,7 +219,7 @@ serve(async (req) => {
     let inserted = 0;
     for (let i = 0; i < metrics.length; i += 500) {
       const batch = metrics.slice(i, i + 500);
-      const { error } = await supabase.from("metrics").insert(batch);
+      const { error } = await supabase.from("metrics").upsert(batch, { onConflict: "organization_id,metric_type,date,region,segment,source_id" });
       if (error) throw error;
       inserted += batch.length;
     }
