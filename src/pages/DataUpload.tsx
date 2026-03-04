@@ -265,7 +265,7 @@ const DataUpload = () => {
       await supabase.storage.from("datasets").upload(filePath, file);
 
       // Convert colIdx mapping to deterministic composite keys for storage
-      const storedMapping: Record<string, string> = {};
+      const storedMapping: Record<string, ColumnTarget> = {};
       Object.entries(mapping).forEach(([colIdxStr, target]) => {
         const colIdx = Number(colIdxStr);
         const headerName = headers[colIdx] || `col_${colIdx}`;
