@@ -6,6 +6,7 @@ import { useOrganization } from "@/hooks/useOrganization";
 import { useProject } from "@/contexts/ProjectContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Database, ArrowRight, FileText, Target, BarChart3, Loader2, GitCommitVertical } from "lucide-react";
+import DataPipelineStatus from "@/components/dashboard/DataPipelineStatus";
 
 interface LineageNode {
   id: string;
@@ -123,7 +124,9 @@ const DataLineage = () => {
           </div>
         </header>
 
-        <main className="flex-1 p-8 overflow-auto">
+        <main className="flex-1 p-8 overflow-auto space-y-6">
+          <DataPipelineStatus orgId={currentOrgId} datasetId={activeDatasetId} />
+
           {loading ? (
             <div className="flex items-center justify-center h-64">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />

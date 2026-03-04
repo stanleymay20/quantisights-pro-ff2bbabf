@@ -2207,6 +2207,72 @@ export type Database = {
           },
         ]
       }
+      metric_aggregates: {
+        Row: {
+          agg_avg: number | null
+          agg_count: number
+          agg_max: number | null
+          agg_min: number | null
+          agg_sum: number
+          computed_at: string
+          dataset_id: string | null
+          id: string
+          metric_type: string
+          organization_id: string
+          period_start: string
+          period_type: string
+          region: string
+          segment: string
+        }
+        Insert: {
+          agg_avg?: number | null
+          agg_count?: number
+          agg_max?: number | null
+          agg_min?: number | null
+          agg_sum?: number
+          computed_at?: string
+          dataset_id?: string | null
+          id?: string
+          metric_type: string
+          organization_id: string
+          period_start: string
+          period_type?: string
+          region?: string
+          segment?: string
+        }
+        Update: {
+          agg_avg?: number | null
+          agg_count?: number
+          agg_max?: number | null
+          agg_min?: number | null
+          agg_sum?: number
+          computed_at?: string
+          dataset_id?: string | null
+          id?: string
+          metric_type?: string
+          organization_id?: string
+          period_start?: string
+          period_type?: string
+          region?: string
+          segment?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "metric_aggregates_dataset_id_fkey"
+            columns: ["dataset_id"]
+            isOneToOne: false
+            referencedRelation: "datasets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "metric_aggregates_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       metrics: {
         Row: {
           created_at: string
@@ -2586,6 +2652,75 @@ export type Database = {
         }
         Relationships: []
       }
+      pipeline_runs: {
+        Row: {
+          aggregated_count: number | null
+          completed_at: string | null
+          dataset_id: string
+          duration_ms: number | null
+          error_count: number | null
+          error_message: string | null
+          id: string
+          metadata: Json | null
+          organization_id: string
+          raw_count: number | null
+          run_type: string
+          stage: string
+          started_at: string
+          status: string
+          transformed_count: number | null
+        }
+        Insert: {
+          aggregated_count?: number | null
+          completed_at?: string | null
+          dataset_id: string
+          duration_ms?: number | null
+          error_count?: number | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          organization_id: string
+          raw_count?: number | null
+          run_type?: string
+          stage?: string
+          started_at?: string
+          status?: string
+          transformed_count?: number | null
+        }
+        Update: {
+          aggregated_count?: number | null
+          completed_at?: string | null
+          dataset_id?: string
+          duration_ms?: number | null
+          error_count?: number | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          organization_id?: string
+          raw_count?: number | null
+          run_type?: string
+          stage?: string
+          started_at?: string
+          status?: string
+          transformed_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pipeline_runs_dataset_id_fkey"
+            columns: ["dataset_id"]
+            isOneToOne: false
+            referencedRelation: "datasets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pipeline_runs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       playbook_executions: {
         Row: {
           completed_at: string | null
@@ -2765,6 +2900,67 @@ export type Database = {
           },
           {
             foreignKeyName: "projects_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      raw_records: {
+        Row: {
+          dataset_id: string
+          dataset_version_id: string | null
+          id: string
+          ingested_at: string
+          organization_id: string
+          raw_data: Json
+          row_index: number
+          transform_error: string | null
+          transform_status: string
+          transformed_at: string | null
+        }
+        Insert: {
+          dataset_id: string
+          dataset_version_id?: string | null
+          id?: string
+          ingested_at?: string
+          organization_id: string
+          raw_data?: Json
+          row_index: number
+          transform_error?: string | null
+          transform_status?: string
+          transformed_at?: string | null
+        }
+        Update: {
+          dataset_id?: string
+          dataset_version_id?: string | null
+          id?: string
+          ingested_at?: string
+          organization_id?: string
+          raw_data?: Json
+          row_index?: number
+          transform_error?: string | null
+          transform_status?: string
+          transformed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "raw_records_dataset_id_fkey"
+            columns: ["dataset_id"]
+            isOneToOne: false
+            referencedRelation: "datasets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raw_records_dataset_version_id_fkey"
+            columns: ["dataset_version_id"]
+            isOneToOne: false
+            referencedRelation: "dataset_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raw_records_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"

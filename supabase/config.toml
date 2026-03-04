@@ -95,3 +95,9 @@ verify_jwt = false
 
 [functions.cognitive-bias-detect]
 verify_jwt = false
+
+[functions.transform-metrics]
+verify_jwt = false
+
+[functions.refresh-aggregates]
+verify_jwt = false

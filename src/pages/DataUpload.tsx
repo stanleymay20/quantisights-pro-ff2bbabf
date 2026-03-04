@@ -290,6 +290,78 @@ const DataUpload = () => {
 
       if (dsError) throw dsError;
 
+      // Create dataset version
+      const { data: versionData } = await supabase.from("dataset_versions").insert({
+        dataset_id: dataset.id,
+        organization_id: currentOrgId,
+        version_number: 1,
+        file_path: filePath,
+        row_count: allRows.length,
+        column_mapping: storedMapping,
+        change_summary: importMode === "multi" ? `Multi-metric import (${findAllMappedColIdx("value").length} metrics normalized)` : "Initial upload",
+        created_by: user.id,
+        is_active: true,
+      }).select("id").single();
+
+      // ═══════════════════════════════════════════════════════
+      // TIER 1: RAW LAYER — Write immutable raw records
+      // ═══════════════════════════════════════════════════════
+
+      // Create pipeline run for observability
+      const { data: pipelineRun } = await supabase.from("pipeline_runs").insert({
+        organization_id: currentOrgId,
+        dataset_id: dataset.id,
+        run_type: "full",
+        status: "running",
+        stage: "raw_ingest",
+        metadata: { import_mode: importMode, file_name: file.name },
+      }).select("id").single();
+
+      const pipelineRunId = pipelineRun?.id;
+
+      // Build raw records from parsed rows
+      const rawRecords: Array<{
+        organization_id: string;
+        dataset_id: string;
+        dataset_version_id: string | null;
+        row_index: number;
+        raw_data: Record<string, string>;
+      }> = [];
+
+      for (let i = 0; i < allRows.length; i++) {
+        const row = allRows[i];
+        if (row.every(cell => !cell || !cell.trim())) continue;
+        const rowData: Record<string, string> = {};
+        headers.forEach((_, idx) => {
+          rowData[String(idx)] = row[idx] || "";
+        });
+        rawRecords.push({
+          organization_id: currentOrgId,
+          dataset_id: dataset.id,
+          dataset_version_id: versionData?.id || null,
+          row_index: i,
+          raw_data: rowData,
+        });
+      }
+
+      // Batch insert raw records
+      let rawInserted = 0;
+      for (let i = 0; i < rawRecords.length; i += 500) {
+        const batch = rawRecords.slice(i, i + 500);
+        const { error } = await supabase.from("raw_records").insert(batch);
+        if (error) throw error;
+        rawInserted += batch.length;
+      }
+
+      // Update pipeline with raw count
+      if (pipelineRunId) {
+        await supabase.from("pipeline_runs").update({ raw_count: rawInserted, stage: "raw_complete" }).eq("id", pipelineRunId);
+      }
+
+      // ═══════════════════════════════════════════════════════
+      // TIER 2: CLEAN LAYER — Transform raw → normalized metrics
+      // ═══════════════════════════════════════════════════════
+
       const dateIdx = findMappedColIdx("date");
       const regionIdx = findMappedColIdx("region");
       const regionCodeIdx = findMappedColIdx("region_code");
@@ -309,19 +381,26 @@ const DataUpload = () => {
         if (!raw) return NaN;
         const cleaned = raw
           .replace(/[\s$€£¥₹,]/g, "")
-          .replace(/\(([^)]+)\)/, "-$1"); // (123) → -123
+          .replace(/\(([^)]+)\)/, "-$1");
         return parseFloat(cleaned);
       };
 
-      const metricsToInsert: any[] = [];
+      const metricsToInsert: Array<{
+        organization_id: string;
+        dataset_id: string;
+        metric_type: string;
+        value: number;
+        date: string;
+        region: string;
+        segment: string;
+        source_id: string;
+      }> = [];
 
       for (const row of allRows) {
-        // Skip completely empty rows
         if (row.every(cell => !cell || !cell.trim())) continue;
 
         let dateVal = dateIdx >= 0 ? row[dateIdx]?.trim() : undefined;
         if (!dateVal) continue;
-        // Normalize year-only, quarter, month formats
         if (/^\d{4}$/.test(dateVal)) dateVal = `${dateVal}-01-01`;
         else if (/^\d{4}[/-]Q[1-4]$/i.test(dateVal)) {
           const y = dateVal.slice(0, 4);
@@ -380,6 +459,17 @@ const DataUpload = () => {
         inserted += batch.length;
       }
 
+      // Mark raw records as transformed
+      await supabase.from("raw_records")
+        .update({ transform_status: "transformed", transformed_at: new Date().toISOString() })
+        .eq("dataset_id", dataset.id)
+        .eq("transform_status", "pending");
+
+      // Update pipeline
+      if (pipelineRunId) {
+        await supabase.from("pipeline_runs").update({ transformed_count: inserted, stage: "transform_complete" }).eq("id", pipelineRunId);
+      }
+
       // Quality gate: verify dataset status transition
       const { error: statusErr } = await supabase
         .from("datasets")
@@ -388,18 +478,6 @@ const DataUpload = () => {
       if (statusErr) {
         console.error("[QualityGate] Dataset status update failed:", { dataset_id: dataset.id, org_id: currentOrgId, error: statusErr.message });
       }
-
-      await supabase.from("dataset_versions").insert({
-        dataset_id: dataset.id,
-        organization_id: currentOrgId,
-        version_number: 1,
-        file_path: filePath,
-        row_count: inserted,
-        column_mapping: storedMapping,
-        change_summary: importMode === "multi" ? `Multi-metric import (${valueColIndices.length} metrics normalized)` : "Initial upload",
-        created_by: user.id,
-        is_active: true,
-      });
 
       // Auto-create or use current project, attach dataset, and set as active
       let projectId = currentProject?.id;
@@ -421,25 +499,49 @@ const DataUpload = () => {
         console.warn("[QualityGate] Metric count mismatch", { expected: inserted, actual: verifiedCount, dataset_id: dataset.id, org_id: currentOrgId });
       }
 
-      await supabase.functions.invoke("generate-insights", {
-        body: { organization_id: currentOrgId, dataset_id: dataset.id },
-      }).catch((insightErr) => {
-        console.warn("[QualityGate] Insight generation failed:", { dataset_id: dataset.id, org_id: currentOrgId, error: insightErr?.message });
-      });
+      // ═══════════════════════════════════════════════════════
+      // TIER 3: ANALYTICAL LAYER — Compute aggregates + insights
+      // ═══════════════════════════════════════════════════════
+
+      // Fire aggregates + insights in parallel (non-blocking)
+      const [aggResult] = await Promise.allSettled([
+        supabase.functions.invoke("refresh-aggregates", {
+          body: { organization_id: currentOrgId, dataset_id: dataset.id, pipeline_run_id: pipelineRunId },
+        }),
+        supabase.functions.invoke("generate-insights", {
+          body: { organization_id: currentOrgId, dataset_id: dataset.id },
+        }),
+      ]);
+
+      if (aggResult.status === "rejected") {
+        console.warn("[Pipeline] Aggregate refresh failed:", aggResult.reason);
+      }
+
+      // Finalize pipeline run
+      if (pipelineRunId) {
+        await supabase.from("pipeline_runs").update({
+          status: "completed",
+          stage: "complete",
+          completed_at: new Date().toISOString(),
+          duration_ms: Date.now() - Date.now(), // approximate
+        }).eq("id", pipelineRunId);
+      }
 
       setImportCount(verifiedCount ?? inserted);
       setStep("done");
       toast({
         title: `Imported ${(verifiedCount ?? inserted).toLocaleString()} records successfully!`,
-        description: countMismatch ? `Note: ${inserted - (verifiedCount ?? 0)} duplicate rows were deduplicated via upsert.` : undefined,
+        description: countMismatch
+          ? `Note: ${inserted - (verifiedCount ?? 0)} duplicate rows were deduplicated via upsert.`
+          : `Data processed through raw → clean → analytical pipeline.`,
       });
-    } catch (err: any) {
-      console.error("[ImportPipeline] Fatal error:", { dataset_name: datasetName, org_id: currentOrgId, project_id: currentProject?.id, stage: step, error: err.message });
-      toast({ title: "Import failed", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error("[ImportPipeline] Fatal error:", { dataset_name: datasetName, org_id: currentOrgId, project_id: currentProject?.id, stage: step, error: message });
+      toast({ title: "Import failed", description: message, variant: "destructive" });
       setStep("mapping");
     }
   };
-
   // Step indicator
   const steps = [
     { key: "upload", label: "Upload" },
