@@ -535,11 +535,23 @@ const DataUpload = () => {
                             </div>
                           </div>
                           <ArrowRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                          <div className="flex-1 flex items-center gap-2">
-                            <Badge variant="outline" className={`text-xs ${confidenceColor(det.confidence)}`}>
-                              {det.inferredType === "skip" ? "Not mapped" : det.inferredType}
-                            </Badge>
-                            <span className="text-xs text-muted-foreground">{det.reason}</span>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline" className={`text-xs ${confidenceColor(det.confidence)}`}>
+                                {det.inferredType === "skip" ? "Not mapped" : det.inferredType}
+                              </Badge>
+                              <span className="text-xs text-muted-foreground">{det.reason}</span>
+                            </div>
+                            {/* Rules applied (Why this mapping?) */}
+                            {det.rulesApplied && det.rulesApplied.length > 0 && (
+                              <div className="flex gap-1 mt-1 flex-wrap">
+                                {det.rulesApplied.map((rule, ri) => (
+                                  <span key={ri} className="text-[9px] px-1.5 py-0.5 rounded bg-muted/50 text-muted-foreground font-mono">
+                                    {rule}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
                           </div>
                           <Badge variant="outline" className={`text-[10px] shrink-0 ${confidenceColor(det.confidence)}`}>
                             {det.confidence}%
