@@ -18,6 +18,7 @@ export const COUNTRY_SAMPLES = new Set([
 
 export interface DetectedSchema {
   column: string;
+  colIdx: number;
   inferredType: "date" | "value" | "region" | "region_code" | "segment" | "metric_type" | "skip";
   confidence: number;
   reason: string;
@@ -144,7 +145,7 @@ export function inferSchema(headers: string[], rows: string[][]): DetectedSchema
     if (isNotDateHeader(header)) {
       if (numericRate > 0.7) {
         return {
-          column: header, inferredType: "value" as const, confidence: 88,
+          column: header, colIdx, inferredType: "value" as const, confidence: 88,
           reason: "Numeric duration/measurement column (not a date)",
           sampleValues: samples.slice(0, 3),
           rulesApplied: ["NOT_DATE_PATTERNS", `numericRate=${(numericRate * 100).toFixed(0)}%`],
@@ -160,7 +161,7 @@ export function inferSchema(headers: string[], rows: string[][]): DetectedSchema
       const allDates = samples.every(s => !isNaN(Date.parse(s)));
       if (allYears) {
         return {
-          column: header, inferredType: "date" as const, confidence: 92,
+          column: header, colIdx, inferredType: "date" as const, confidence: 92,
           reason: "Year values detected (1900–2100 range)",
           sampleValues: samples.slice(0, 3), autoFix: "year_to_date" as const,
           rulesApplied: ["header_match:date_keyword", "allYears=true", "range:1900-2100"],
@@ -168,14 +169,14 @@ export function inferSchema(headers: string[], rows: string[][]): DetectedSchema
       }
       if (allDates) {
         return {
-          column: header, inferredType: "date" as const, confidence: 95,
+          column: header, colIdx, inferredType: "date" as const, confidence: 95,
           reason: "Standard date format detected",
           sampleValues: samples.slice(0, 3),
           rulesApplied: ["header_match:date_keyword", "Date.parse:all_valid"],
         };
       }
       return {
-        column: header, inferredType: "date" as const, confidence: 70,
+        column: header, colIdx, inferredType: "date" as const, confidence: 70,
         reason: "Column name suggests date field",
         sampleValues: samples.slice(0, 3),
         rulesApplied: ["header_match:date_keyword", "values_inconclusive"],
@@ -187,7 +188,7 @@ export function inferSchema(headers: string[], rows: string[][]): DetectedSchema
       const allYears = samples.length > 0 && samples.every(s => /^\d{4}$/.test(s.trim()) && parseInt(s) >= 1900 && parseInt(s) <= 2100);
       if (allYears && (lower === "year" || lower.includes("year"))) {
         return {
-          column: header, inferredType: "date" as const, confidence: 88,
+          column: header, colIdx, inferredType: "date" as const, confidence: 88,
           reason: "Year values detected in header containing 'year'",
           sampleValues: samples.slice(0, 3), autoFix: "year_to_date" as const,
           rulesApplied: ["header_contains:year", "allYears=true"],
@@ -200,7 +201,7 @@ export function inferSchema(headers: string[], rows: string[][]): DetectedSchema
       const codeRate = samples.filter(s => /^[A-Z0-9]{2,5}$/i.test(s.trim())).length / Math.max(samples.length, 1);
       if (codeRate > 0.7) {
         return {
-          column: header, inferredType: "region_code" as const, confidence: 85,
+          column: header, colIdx, inferredType: "region_code" as const, confidence: 85,
           reason: "Short codes detected (ISO/site/dept)",
           sampleValues: samples.slice(0, 3),
           rulesApplied: ["header_match:code_keyword", `codeRate=${(codeRate * 100).toFixed(0)}%`],
@@ -211,7 +212,7 @@ export function inferSchema(headers: string[], rows: string[][]): DetectedSchema
     // 2b. Region detection
     if (lower.includes("region") || lower.includes("country") || lower.includes("nation") || lower.includes("state") || lower.includes("territory") || lower === "country_code") {
       return {
-        column: header, inferredType: "region" as const, confidence: 90,
+        column: header, colIdx, inferredType: "region" as const, confidence: 90,
         reason: "Geographic identifiers detected",
         sampleValues: samples.slice(0, 3),
         rulesApplied: ["header_match:geo_keyword"],
@@ -220,7 +221,7 @@ export function inferSchema(headers: string[], rows: string[][]): DetectedSchema
     const countryMatchRate = samples.filter(s => COUNTRY_SAMPLES.has(s.toLowerCase().trim())).length / Math.max(samples.length, 1);
     if (countryMatchRate > 0.5) {
       return {
-        column: header, inferredType: "region" as const, confidence: 85,
+        column: header, colIdx, inferredType: "region" as const, confidence: 85,
         reason: `${Math.round(countryMatchRate * 100)}% of values match known countries`,
         sampleValues: samples.slice(0, 3),
         rulesApplied: ["COUNTRY_SAMPLES", `matchRate=${(countryMatchRate * 100).toFixed(0)}%`],
@@ -240,7 +241,7 @@ export function inferSchema(headers: string[], rows: string[][]): DetectedSchema
       const matchedKeyword = ["value","amount","revenue","gdp","price","cost","total","sales","income","profit","spend","rate","inflation","unemployment","expectancy","growth","index","score","throughput","utilization","headcount","attrition","nps","satisfaction","conversion","churn","retention"]
         .find(k => lower.includes(k)) || "keyword";
       return {
-        column: header, inferredType: "value" as const, confidence: 90,
+        column: header, colIdx, inferredType: "value" as const, confidence: 90,
         reason: "Numeric metric column detected",
         sampleValues: samples.slice(0, 3),
         rulesApplied: [`header_match:${matchedKeyword}`, `numericRate=${(numericRate * 100).toFixed(0)}%`],
@@ -255,14 +256,14 @@ export function inferSchema(headers: string[], rows: string[][]): DetectedSchema
       });
       if (allLookLikeYears && !lower.includes("value") && !lower.includes("amount")) {
         return {
-          column: header, inferredType: "skip" as const, confidence: 50,
+          column: header, colIdx, inferredType: "skip" as const, confidence: 50,
           reason: "Ambiguous: looks like year values but header is unclear",
           sampleValues: samples.slice(0, 3),
           rulesApplied: ["numericRate>90%", "allLookLikeYears=true", "no_value_keyword"],
         };
       }
       return {
-        column: header, inferredType: "value" as const, confidence: 80,
+        column: header, colIdx, inferredType: "value" as const, confidence: 80,
         reason: `Numeric values (avg: ${avgMagnitude.toLocaleString(undefined, { maximumFractionDigits: 1 })})`,
         sampleValues: samples.slice(0, 3),
         rulesApplied: [`numericRate=${(numericRate * 100).toFixed(0)}%`, `avgMagnitude=${avgMagnitude.toFixed(1)}`],
@@ -272,7 +273,7 @@ export function inferSchema(headers: string[], rows: string[][]): DetectedSchema
     // 4. Segment detection
     if (lower.includes("segment") || lower.includes("category") || lower.includes("sector") || lower.includes("industry") || lower.includes("group") || lower.includes("department") || lower.includes("team")) {
       return {
-        column: header, inferredType: "segment" as const, confidence: 85,
+        column: header, colIdx, inferredType: "segment" as const, confidence: 85,
         reason: "Categorical grouping detected",
         sampleValues: samples.slice(0, 3),
         rulesApplied: ["header_match:segment_keyword"],
@@ -282,7 +283,7 @@ export function inferSchema(headers: string[], rows: string[][]): DetectedSchema
     // 5. Metric type detection
     if (lower.includes("metric") || lower.includes("type") || lower.includes("indicator") || lower.includes("measure")) {
       return {
-        column: header, inferredType: "metric_type" as const, confidence: 80,
+        column: header, colIdx, inferredType: "metric_type" as const, confidence: 80,
         reason: "Metric type identifiers detected",
         sampleValues: samples.slice(0, 3),
         rulesApplied: ["header_match:metric_keyword"],
@@ -292,7 +293,7 @@ export function inferSchema(headers: string[], rows: string[][]): DetectedSchema
     // 6. Low-cardinality text → segment guess
     if (uniqueValues.size > 1 && uniqueValues.size <= 20 && numericRate < 0.3) {
       return {
-        column: header, inferredType: "segment" as const, confidence: 60,
+        column: header, colIdx, inferredType: "segment" as const, confidence: 60,
         reason: `Low-cardinality text (${uniqueValues.size} unique values)`,
         sampleValues: samples.slice(0, 3),
         rulesApplied: [`uniqueValues=${uniqueValues.size}`, `numericRate=${(numericRate * 100).toFixed(0)}%`],
@@ -300,7 +301,7 @@ export function inferSchema(headers: string[], rows: string[][]): DetectedSchema
     }
 
     return {
-      column: header, inferredType: "skip" as const, confidence: 40,
+      column: header, colIdx, inferredType: "skip" as const, confidence: 40,
       reason: "No clear pattern detected",
       sampleValues: samples.slice(0, 3),
       rulesApplied: ["no_rule_matched"],
@@ -311,9 +312,9 @@ export function inferSchema(headers: string[], rows: string[][]): DetectedSchema
   const dateDetections = detections.filter(d => d.inferredType === "date");
   if (dateDetections.length > 1) {
     const bestDate = dateDetections.reduce((best, d) => d.confidence > best.confidence ? d : best);
-    detections.forEach((d, i) => {
-      if (d.inferredType === "date" && d.column !== bestDate.column) {
-        const colSamples = sampleRows.map(r => r[i]).filter(Boolean);
+    detections.forEach((d) => {
+      if (d.inferredType === "date" && d.colIdx !== bestDate.colIdx) {
+        const colSamples = sampleRows.map(r => r[d.colIdx]).filter(Boolean);
         const numRate = colSamples.filter(s => !isNaN(parseFloat(s)) && isFinite(parseFloat(s))).length / Math.max(colSamples.length, 1);
         if (numRate > 0.8) {
           (d as any).inferredType = "value";
