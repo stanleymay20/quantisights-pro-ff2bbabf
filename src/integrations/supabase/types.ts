@@ -766,6 +766,7 @@ export type Database = {
           records_failed: number | null
           score: number | null
           status: string
+          workspace_id: string | null
         }
         Insert: {
           check_type?: string
@@ -778,6 +779,7 @@ export type Database = {
           records_failed?: number | null
           score?: number | null
           status?: string
+          workspace_id?: string | null
         }
         Update: {
           check_type?: string
@@ -790,6 +792,7 @@ export type Database = {
           records_failed?: number | null
           score?: number | null
           status?: string
+          workspace_id?: string | null
         }
         Relationships: [
           {
@@ -804,6 +807,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "data_quality_checks_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
             referencedColumns: ["id"]
           },
         ]
@@ -925,6 +935,7 @@ export type Database = {
           organization_id: string
           row_count: number | null
           version_number: number
+          workspace_id: string | null
         }
         Insert: {
           change_summary?: string | null
@@ -938,6 +949,7 @@ export type Database = {
           organization_id: string
           row_count?: number | null
           version_number?: number
+          workspace_id?: string | null
         }
         Update: {
           change_summary?: string | null
@@ -951,6 +963,7 @@ export type Database = {
           organization_id?: string
           row_count?: number | null
           version_number?: number
+          workspace_id?: string | null
         }
         Relationships: [
           {
@@ -965,6 +978,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dataset_versions_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
             referencedColumns: ["id"]
           },
         ]
@@ -985,6 +1005,7 @@ export type Database = {
           row_count: number | null
           status: string
           uploaded_by: string
+          workspace_id: string | null
         }
         Insert: {
           column_mapping?: Json | null
@@ -1001,6 +1022,7 @@ export type Database = {
           row_count?: number | null
           status?: string
           uploaded_by: string
+          workspace_id?: string | null
         }
         Update: {
           column_mapping?: Json | null
@@ -1017,6 +1039,7 @@ export type Database = {
           row_count?: number | null
           status?: string
           uploaded_by?: string
+          workspace_id?: string | null
         }
         Relationships: [
           {
@@ -1031,6 +1054,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "datasets_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
             referencedColumns: ["id"]
           },
         ]
@@ -2223,6 +2253,7 @@ export type Database = {
           period_type: string
           region: string
           segment: string
+          workspace_id: string | null
         }
         Insert: {
           agg_avg?: number | null
@@ -2239,6 +2270,7 @@ export type Database = {
           period_type?: string
           region?: string
           segment?: string
+          workspace_id?: string | null
         }
         Update: {
           agg_avg?: number | null
@@ -2255,6 +2287,7 @@ export type Database = {
           period_type?: string
           region?: string
           segment?: string
+          workspace_id?: string | null
         }
         Relationships: [
           {
@@ -2269,6 +2302,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "metric_aggregates_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
             referencedColumns: ["id"]
           },
         ]
@@ -2288,6 +2328,7 @@ export type Database = {
           source_id: string
           source_type: string
           value: number
+          workspace_id: string | null
         }
         Insert: {
           created_at?: string
@@ -2303,6 +2344,7 @@ export type Database = {
           source_id?: string
           source_type?: string
           value: number
+          workspace_id?: string | null
         }
         Update: {
           created_at?: string
@@ -2318,6 +2360,7 @@ export type Database = {
           source_id?: string
           source_type?: string
           value?: number
+          workspace_id?: string | null
         }
         Relationships: [
           {
@@ -2332,6 +2375,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "metrics_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
             referencedColumns: ["id"]
           },
         ]
@@ -2669,6 +2719,7 @@ export type Database = {
           started_at: string
           status: string
           transformed_count: number | null
+          workspace_id: string | null
         }
         Insert: {
           aggregated_count?: number | null
@@ -2686,6 +2737,7 @@ export type Database = {
           started_at?: string
           status?: string
           transformed_count?: number | null
+          workspace_id?: string | null
         }
         Update: {
           aggregated_count?: number | null
@@ -2703,6 +2755,7 @@ export type Database = {
           started_at?: string
           status?: string
           transformed_count?: number | null
+          workspace_id?: string | null
         }
         Relationships: [
           {
@@ -2717,6 +2770,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pipeline_runs_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
             referencedColumns: ["id"]
           },
         ]
@@ -2929,6 +2989,7 @@ export type Database = {
           transform_error: string | null
           transform_status: string
           transformed_at: string | null
+          workspace_id: string | null
         }
         Insert: {
           dataset_id: string
@@ -2941,6 +3002,7 @@ export type Database = {
           transform_error?: string | null
           transform_status?: string
           transformed_at?: string | null
+          workspace_id?: string | null
         }
         Update: {
           dataset_id?: string
@@ -2953,6 +3015,7 @@ export type Database = {
           transform_error?: string | null
           transform_status?: string
           transformed_at?: string | null
+          workspace_id?: string | null
         }
         Relationships: [
           {
@@ -2974,6 +3037,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raw_records_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
             referencedColumns: ["id"]
           },
         ]
@@ -3652,6 +3722,10 @@ export type Database = {
       }
       is_organization_member: {
         Args: { _org_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_workspace_member: {
+        Args: { _user_id: string; _workspace_id: string }
         Returns: boolean
       }
       update_dataset_staleness: { Args: never; Returns: undefined }

@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useProject } from "@/contexts/ProjectContext";
+import { useWorkspace } from "@/contexts/WorkspaceContext";
 
 interface Dataset {
   id: string;
@@ -31,6 +32,7 @@ export const useDataset = () => {
 
 export const DatasetProvider = ({ children }: { children: ReactNode }) => {
   const { currentProject, currentProjectId, activeDatasetId } = useProject();
+  const { currentWorkspaceId } = useWorkspace();
   const [datasets, setDatasets] = useState<Dataset[]>([]);
   const [loading, setLoading] = useState(false);
 

@@ -41,7 +41,7 @@ serve(async (req) => {
   }
 
   try {
-    const { organization_id, dataset_id, pipeline_run_id, column_mapping, headers: colHeaders, default_metric_type } = await req.json();
+    const { organization_id, dataset_id, pipeline_run_id, column_mapping, headers: colHeaders, default_metric_type, workspace_id } = await req.json();
 
     if (!organization_id || !dataset_id) {
       return new Response(JSON.stringify({ error: "organization_id and dataset_id required" }), {
@@ -136,6 +136,7 @@ serve(async (req) => {
             if (isNaN(val) || !isFinite(val) || Math.abs(val) > MAX_VALUE) continue;
             metricsToUpsert.push({
               organization_id, dataset_id,
+              workspace_id: workspace_id || null,
               metric_type: dedupedSlugs[vi],
               value: val, date: dateVal,
               region: effectiveRegion, segment: segmentVal,
@@ -153,6 +154,7 @@ serve(async (req) => {
           const mt = metricTypeIdx !== undefined ? (d[metricTypeIdx]?.trim() || default_metric_type || "revenue") : (default_metric_type || "revenue");
           metricsToUpsert.push({
             organization_id, dataset_id,
+            workspace_id: workspace_id || null,
             metric_type: mt, value: val, date: dateVal,
             region: effectiveRegion, segment: segmentVal,
             source_id: NULL_SOURCE,

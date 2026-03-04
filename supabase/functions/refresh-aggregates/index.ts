@@ -22,7 +22,7 @@ serve(async (req) => {
   }
 
   try {
-    const { organization_id, dataset_id, pipeline_run_id, period_types } = await req.json();
+    const { organization_id, dataset_id, pipeline_run_id, period_types, workspace_id } = await req.json();
 
     if (!organization_id) {
       return new Response(JSON.stringify({ error: "organization_id required" }), {
@@ -115,6 +115,7 @@ serve(async (req) => {
       rows.push({
         organization_id,
         dataset_id: dsId === "null" ? null : dsId,
+        workspace_id: workspace_id || null,
         metric_type: metricType,
         period_type: periodType,
         period_start: periodStart,
