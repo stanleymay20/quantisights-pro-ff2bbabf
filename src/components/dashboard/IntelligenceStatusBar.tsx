@@ -10,7 +10,7 @@ interface IntelligenceStatusBarProps {
 }
 
 const RISK_STYLES = {
-  low: { color: "text-emerald-400", dot: "bg-emerald-400", label: "Low" },
+  low: { color: "text-success", dot: "bg-success", label: "Low" },
   moderate: { color: "text-primary", dot: "bg-primary", label: "Moderate" },
   elevated: { color: "text-warning", dot: "bg-warning", label: "Elevated" },
   high: { color: "text-destructive", dot: "bg-destructive", label: "High" },
@@ -36,13 +36,13 @@ const IntelligenceStatusBar = ({ hasData, insights, openAdvisories = 0, riskLeve
   const riskStyle = RISK_STYLES[computedRisk];
 
   const systemStatus = signals === 0 ? "Nominal" : signals <= 2 ? "Active Signals" : "Attention Required";
-  const statusColor = signals === 0 ? "text-emerald-400" : signals <= 2 ? "text-warning" : "text-destructive";
+  const statusColor = signals === 0 ? "text-success" : signals <= 2 ? "text-warning" : "text-destructive";
 
   return (
     <div className="h-9 border-b border-border/30 bg-card/40 backdrop-blur-sm flex items-center px-3 md:px-8 gap-3 md:gap-6 shrink-0 overflow-x-auto scrollbar-hide">
       {/* System status */}
       <div className="flex items-center gap-2 shrink-0">
-        <div className={`w-1.5 h-1.5 rounded-full ${signals === 0 ? "bg-emerald-400" : signals <= 2 ? "bg-warning" : "bg-destructive"}`} />
+        <div className={`w-1.5 h-1.5 rounded-full ${signals === 0 ? "bg-success" : signals <= 2 ? "bg-warning" : "bg-destructive"}`} />
         <span className={`text-[11px] font-semibold uppercase tracking-wider ${statusColor}`}>
           {systemStatus}
         </span>

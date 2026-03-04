@@ -1,53 +1,134 @@
 import { useMemo } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, ReferenceLine } from "recharts";
-import { ArrowRightLeft } from "lucide-react";
+import { ArrowRightLeft, AlertTriangle, Info } from "lucide-react";
 import { MetricRow } from "@/hooks/useMetrics";
+import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface Props {
   metrics: MetricRow[];
+  datasetLabel?: string;
 }
 
-const EBITDABridgeChart = ({ metrics }: Props) => {
-  const items = useMemo(() => {
-    const revenue = metrics.filter(d => d.metric_type === "revenue").reduce((s, d) => s + Number(d.value), 0);
-    const cost = metrics.filter(d => d.metric_type === "cost").reduce((s, d) => s + Number(d.value), 0);
-    if (revenue === 0) return null;
+/**
+ * DATA-HONEST EBITDA Bridge.
+ *
+ * Mode 1: Full bridge when metric_types {revenue, cogs, opex} all exist.
+ * Mode 2: Simplified "Revenue → Cost → Contribution" when only {revenue, cost}.
+ * Mode 3: Empty state with guidance when data is insufficient.
+ *
+ * ZERO hardcoded percentages or assumed splits.
+ */
+const EBITDABridgeChart = ({ metrics, datasetLabel }: Props) => {
+  const analysis = useMemo(() => {
+    const revenue = metrics
+      .filter((d) => d.metric_type === "revenue")
+      .reduce((s, d) => s + Number(d.value), 0);
+    const cogs = metrics
+      .filter((d) => d.metric_type === "cogs")
+      .reduce((s, d) => s + Number(d.value), 0);
+    const opex = metrics
+      .filter((d) => d.metric_type === "opex")
+      .reduce((s, d) => s + Number(d.value), 0);
+    const cost = metrics
+      .filter((d) => d.metric_type === "cost")
+      .reduce((s, d) => s + Number(d.value), 0);
 
-    const cogs = cost * 0.55;
-    const grossProfit = revenue - cogs;
-    const opex = cost * 0.35;
-    const dna = cost * 0.1;
-    const ebitda = grossProfit - opex;
+    const hasCogs = metrics.some((d) => d.metric_type === "cogs");
+    const hasOpex = metrics.some((d) => d.metric_type === "opex");
+    const hasCost = metrics.some((d) => d.metric_type === "cost");
+    const hasRevenue = revenue > 0;
 
-    const steps = [
-      { name: "Revenue", value: revenue, start: 0, type: "total" },
-      { name: "COGS", value: -cogs, start: revenue, type: "negative" },
-      { name: "Gross Profit", value: grossProfit, start: 0, type: "subtotal" },
-      { name: "OpEx", value: -opex, start: grossProfit, type: "negative" },
-      { name: "EBITDA", value: ebitda, start: 0, type: "total" },
-    ];
+    // Mode 1: Full EBITDA bridge
+    if (hasRevenue && hasCogs && hasOpex) {
+      const grossProfit = revenue - cogs;
+      const ebitda = grossProfit - opex;
+      return {
+        mode: "full" as const,
+        title: "EBITDA Bridge",
+        subtitle: "Revenue → EBITDA (from mapped data)",
+        steps: [
+          { name: "Revenue", value: revenue, bottom: 0, height: revenue, type: "total" },
+          { name: "COGS", value: -cogs, bottom: revenue - cogs, height: cogs, type: "negative" },
+          { name: "Gross Profit", value: grossProfit, bottom: 0, height: grossProfit, type: "subtotal" },
+          { name: "OpEx", value: -opex, bottom: grossProfit - opex, height: opex, type: "negative" },
+          { name: "EBITDA", value: ebitda, bottom: 0, height: Math.abs(ebitda), type: ebitda >= 0 ? "total" : "negative" },
+        ],
+      };
+    }
 
-    return steps.map(s => ({
-      ...s,
-      bottom: s.type === "total" || s.type === "subtotal" ? 0 : s.start + s.value,
-      height: Math.abs(s.value),
-    }));
+    // Mode 2: Simplified contribution margin
+    if (hasRevenue && hasCost) {
+      const contribution = revenue - cost;
+      return {
+        mode: "simplified" as const,
+        title: "Revenue → Operating Margin",
+        subtitle: "Data-limited: cost is not split (COGS/OpEx not provided)",
+        steps: [
+          { name: "Revenue", value: revenue, bottom: 0, height: revenue, type: "total" },
+          { name: "Total Cost", value: -cost, bottom: revenue - cost, height: cost, type: "negative" },
+          { name: "Contribution", value: contribution, bottom: 0, height: Math.abs(contribution), type: contribution >= 0 ? "subtotal" : "negative" },
+        ],
+      };
+    }
+
+    // Mode 3: Insufficient data
+    return { mode: "empty" as const, title: null, subtitle: null, steps: null };
   }, [metrics]);
 
   const colors: Record<string, string> = {
     total: "hsl(var(--primary))",
-    subtotal: "hsl(var(--severity-success))",
+    subtotal: "hsl(var(--success))",
     negative: "hsl(var(--destructive))",
   };
 
-  if (!items) {
+  const existingTypes = useMemo(() => {
+    const types = new Set(metrics.map((m) => m.metric_type));
+    return {
+      revenue: types.has("revenue"),
+      cogs: types.has("cogs"),
+      opex: types.has("opex"),
+      cost: types.has("cost"),
+    };
+  }, [metrics]);
+
+  // Mode 3: Empty state
+  if (analysis.mode === "empty") {
     return (
       <div className="glass-card p-5 rounded-xl">
-        <div className="flex items-center gap-2 mb-3">
+        <div className="flex items-center gap-2 mb-4">
           <ArrowRightLeft className="w-4 h-4 text-primary" />
           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">EBITDA Bridge</h3>
         </div>
-        <p className="text-xs text-muted-foreground">Upload revenue & cost data to view the EBITDA bridge.</p>
+        <div className="py-4 text-center space-y-3">
+          <div className="w-10 h-10 rounded-xl bg-warning/10 flex items-center justify-center mx-auto">
+            <AlertTriangle className="w-5 h-5 text-warning" />
+          </div>
+          <div>
+            <p className="text-sm font-medium mb-1">Insufficient data for EBITDA Bridge</p>
+            <p className="text-xs text-muted-foreground max-w-xs mx-auto">
+              Map your columns to the required metric types to enable this chart.
+            </p>
+          </div>
+          <div className="text-left max-w-xs mx-auto space-y-1.5 pt-2">
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Required metric types:</p>
+            {[
+              { key: "revenue", label: "Revenue", present: existingTypes.revenue },
+              { key: "cogs", label: "COGS (Cost of Goods Sold)", present: existingTypes.cogs },
+              { key: "opex", label: "OpEx (Operating Expenses)", present: existingTypes.opex },
+            ].map((item) => (
+              <div key={item.key} className="flex items-center gap-2 text-xs">
+                <span className={`w-1.5 h-1.5 rounded-full ${item.present ? "bg-success" : "bg-muted-foreground/30"}`} />
+                <span className={item.present ? "text-foreground" : "text-muted-foreground"}>{item.label}</span>
+                <span className={`ml-auto text-[10px] font-medium ${item.present ? "text-success" : "text-muted-foreground/50"}`}>
+                  {item.present ? "✓ mapped" : "missing"}
+                </span>
+              </div>
+            ))}
+          </div>
+          <p className="text-[11px] text-muted-foreground pt-1">
+            Alternatively, map <strong>revenue</strong> + <strong>cost</strong> for a simplified view.
+          </p>
+        </div>
       </div>
     );
   }
@@ -57,26 +138,56 @@ const EBITDABridgeChart = ({ metrics }: Props) => {
       <div className="flex items-center justify-between mb-1">
         <div className="flex items-center gap-2">
           <ArrowRightLeft className="w-4 h-4 text-primary" />
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">EBITDA Bridge</h3>
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{analysis.title}</h3>
         </div>
-        <span className="text-[10px] text-muted-foreground">Revenue → EBITDA</span>
+        {datasetLabel && (
+          <span className="text-[10px] text-muted-foreground truncate max-w-[120px]" title={datasetLabel}>
+            {datasetLabel}
+          </span>
+        )}
       </div>
-      <p className="text-[11px] text-muted-foreground mb-4">How revenue converts to operating earnings</p>
+      <div className="flex items-center gap-1.5 mb-4">
+        <p className="text-[11px] text-muted-foreground">{analysis.subtitle}</p>
+        {analysis.mode === "simplified" && (
+          <TooltipProvider>
+            <UITooltip>
+              <TooltipTrigger>
+                <Info className="w-3 h-3 text-warning" />
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="max-w-[240px] text-xs">
+                Cost is reported as a single total. To show a full EBITDA bridge, map separate <strong>cogs</strong> and <strong>opex</strong> metric types in your data upload.
+              </TooltipContent>
+            </UITooltip>
+          </TooltipProvider>
+        )}
+      </div>
 
       <div className="h-[220px]">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={items} barCategoryGap="20%">
+          <BarChart data={analysis.steps!} barCategoryGap="20%">
             <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} />
-            <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false}
-              tickFormatter={v => v >= 1e6 ? `$${(v / 1e6).toFixed(0)}M` : v >= 1e3 ? `$${(v / 1e3).toFixed(0)}K` : `$${v}`} />
+            <YAxis
+              stroke="hsl(var(--muted-foreground))"
+              fontSize={10}
+              tickLine={false}
+              axisLine={false}
+              tickFormatter={(v) =>
+                v >= 1e6 ? `$${(v / 1e6).toFixed(0)}M` : v >= 1e3 ? `$${(v / 1e3).toFixed(0)}K` : `$${v}`
+              }
+            />
             <Tooltip
-              contentStyle={{ fontSize: 11, background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }}
+              contentStyle={{
+                fontSize: 11,
+                background: "hsl(var(--card))",
+                border: "1px solid hsl(var(--border))",
+                borderRadius: 8,
+              }}
               formatter={(v: number) => [`$${Math.abs(v).toLocaleString()}`, "Amount"]}
             />
             <ReferenceLine y={0} stroke="hsl(var(--border))" />
             <Bar dataKey="bottom" stackId="bridge" fill="transparent" />
             <Bar dataKey="height" stackId="bridge" radius={[4, 4, 0, 0]}>
-              {items.map((entry, i) => (
+              {analysis.steps!.map((entry, i) => (
                 <Cell key={i} fill={colors[entry.type]} fillOpacity={0.85} />
               ))}
             </Bar>

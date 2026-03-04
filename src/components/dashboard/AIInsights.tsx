@@ -9,7 +9,7 @@ interface AIInsightsProps {
 }
 
 const ConfidenceBadge = ({ score }: { score: number }) => {
-  const color = score >= 80 ? "text-emerald-400" : score >= 50 ? "text-amber-400" : "text-destructive";
+  const color = score >= 80 ? "text-success" : score >= 50 ? "text-warning" : "text-destructive";
   return (
     <span className={`inline-flex items-center gap-0.5 text-[10px] font-semibold ${color}`}>
       <ShieldCheck className="w-2.5 h-2.5" />
