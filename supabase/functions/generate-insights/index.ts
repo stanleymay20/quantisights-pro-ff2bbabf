@@ -33,7 +33,7 @@ serve(async (req) => {
     }
 
     const userId = claimsData.claims.sub;
-    const { organization_id } = await req.json();
+    const { organization_id, dataset_id } = await req.json();
 
     if (!organization_id) {
       return new Response(JSON.stringify({ error: "organization_id required" }), { status: 400, headers: corsHeaders });
@@ -68,11 +68,17 @@ serve(async (req) => {
       );
     }
 
-    const { data: metrics } = await supabase
+    let metricsQuery = supabase
       .from("metrics")
       .select("metric_type, value, date, region, segment")
       .eq("organization_id", organization_id)
       .order("date", { ascending: true });
+
+    if (dataset_id) {
+      metricsQuery = metricsQuery.eq("dataset_id", dataset_id);
+    }
+
+    const { data: metrics } = await metricsQuery;
 
     if (!metrics || metrics.length === 0) {
       return new Response(JSON.stringify({ message: "No metrics to analyze", count: 0 }), {
@@ -210,14 +216,21 @@ serve(async (req) => {
     }
 
     const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-    await serviceSupabase
+    let deleteQuery = serviceSupabase
       .from("insights")
       .delete()
       .eq("organization_id", organization_id)
       .lt("created_at", yesterday);
 
+    // If dataset-scoped, only clean up insights for this dataset
+    if (dataset_id) {
+      deleteQuery = deleteQuery.eq("dataset_id", dataset_id);
+    }
+    await deleteQuery;
+
     const insightRows = insights.map((i) => ({
       organization_id,
+      dataset_id: dataset_id || null,
       message: i.message,
       severity: i.severity,
       category: i.category,

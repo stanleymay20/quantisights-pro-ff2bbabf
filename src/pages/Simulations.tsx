@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrganization } from "@/hooks/useOrganization";
+import { useProject } from "@/contexts/ProjectContext";
 import DashboardSidebar, { SidebarMobileToggle } from "@/components/dashboard/DashboardSidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,19 +15,24 @@ import IntelligenceDisclaimer from "@/components/IntelligenceDisclaimer";
 
 const Simulations = () => {
   const { currentOrgId: organizationId } = useOrganization();
+  const { activeDatasetId } = useProject();
   const queryClient = useQueryClient();
   const [metricType, setMetricType] = useState("");
   const [horizon, setHorizon] = useState("6");
 
   // Fetch available metric types
   const { data: metricTypes } = useQuery({
-    queryKey: ["metric-types", organizationId],
+    queryKey: ["metric-types", organizationId, activeDatasetId],
     queryFn: async () => {
       if (!organizationId) return [];
-      const { data } = await supabase
+      let query = supabase
         .from("metrics")
         .select("metric_type")
         .eq("organization_id", organizationId);
+      if (activeDatasetId) {
+        query = query.eq("dataset_id", activeDatasetId);
+      }
+      const { data } = await query;
       const unique = [...new Set((data || []).map((m) => m.metric_type))];
       return unique.sort();
     },

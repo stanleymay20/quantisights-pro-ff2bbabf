@@ -3,6 +3,7 @@ import DashboardSidebar, { SidebarMobileToggle } from "@/components/dashboard/Da
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useOrganization } from "@/hooks/useOrganization";
+import { useProject } from "@/contexts/ProjectContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Database, ArrowRight, FileText, Target, BarChart3, Loader2, GitCommitVertical } from "lucide-react";
 
@@ -28,6 +29,7 @@ const NODE_STYLES: Record<string, { icon: any; bg: string; border: string }> = {
 
 const DataLineage = () => {
   const { currentOrgId } = useOrganization();
+  const { activeDatasetId } = useProject();
   const [loading, setLoading] = useState(true);
   const [sources, setSources] = useState<any[]>([]);
   const [kpis, setKpis] = useState<any[]>([]);
@@ -38,11 +40,15 @@ const DataLineage = () => {
     if (!currentOrgId) return;
     const load = async () => {
       setLoading(true);
+      let metricsQuery = supabase.from("metrics").select("metric_type").eq("organization_id", currentOrgId);
+      if (activeDatasetId) {
+        metricsQuery = metricsQuery.eq("dataset_id", activeDatasetId);
+      }
       const [srcRes, kpiRes, decRes, metRes] = await Promise.all([
         supabase.from("data_sources").select("id, name, source_type, status").eq("organization_id", currentOrgId),
         supabase.from("kpis").select("id, name, formula, metric_dependencies").eq("organization_id", currentOrgId).eq("status", "active"),
         supabase.from("decision_ledger").select("id, recommended_action, decision_status, kpi_id").eq("organization_id", currentOrgId).order("created_at", { ascending: false }).limit(20),
-        supabase.from("metrics").select("metric_type").eq("organization_id", currentOrgId),
+        metricsQuery,
       ]);
       setSources(srcRes.data || []);
       setKpis(kpiRes.data || []);
@@ -52,7 +58,7 @@ const DataLineage = () => {
       setLoading(false);
     };
     load();
-  }, [currentOrgId]);
+  }, [currentOrgId, activeDatasetId]);
 
   const { nodes, edges } = useMemo(() => {
     const n: LineageNode[] = [];
