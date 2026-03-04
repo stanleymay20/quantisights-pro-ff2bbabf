@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import DashboardSidebar, { SidebarMobileToggle } from "@/components/dashboard/DashboardSidebar";
 import OrgSwitcher from "@/components/dashboard/OrgSwitcher";
+import ProjectSwitcher from "@/components/dashboard/ProjectSwitcher";
 import IntelligenceStatusBar from "@/components/dashboard/IntelligenceStatusBar";
 import CommandCenter from "@/components/dashboard/CommandCenter";
 import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOrganization } from "@/hooks/useOrganization";
+import { useProject } from "@/contexts/ProjectContext";
 import { useMetrics } from "@/hooks/useMetrics";
 import { useInsights } from "@/hooks/useInsights";
 import { Bell, User, RefreshCw, Shield, Upload, Zap, TrendingUp, ArrowRight } from "lucide-react";
@@ -18,6 +20,7 @@ import GuidedTour from "@/components/dashboard/GuidedTour";
 const Dashboard = () => {
   const { user } = useAuth();
   const { organizations, currentOrgId, currentOrg, switchOrganization, loading: orgLoading } = useOrganization();
+  const { currentProject, activeDatasetId } = useProject();
   const { metrics, totalRevenue, totalCustomers, latestCost, latestChurn, revenueByMonth, segmentData, hasData, lastUpdated, loading: metricsLoading } = useMetrics(currentOrgId);
   const { insights, loading: insightsLoading } = useInsights(currentOrgId);
   const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "User";
@@ -115,6 +118,7 @@ const Dashboard = () => {
           <div className="flex items-center gap-2 min-w-0">
             <SidebarMobileToggle />
             <OrgSwitcher organizations={organizations} currentOrg={currentOrg} onSwitch={switchOrganization} />
+            <ProjectSwitcher />
           </div>
           <div className="flex items-center gap-1 md:gap-1.5">
             {hasData && (
