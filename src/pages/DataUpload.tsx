@@ -21,7 +21,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   type DetectedSchema, type ValidationResult, type HumanizedError,
   type DatasetIntelligence, type DatasetDiagnostics, type DatasetClassification,
-  type ImportMode, type ColumnMapping,
+  type ImportMode, type ColumnMapping, type ColumnTarget,
   inferSchema, validateData, generateIntelligence, computeDiagnostics,
   classifyDataset, confidenceColor, qualityColor, humanizeError, parseCSVText,
   slugifyMetric, deduplicateMetricSlugs,
@@ -144,12 +144,12 @@ const DataUpload = () => {
   };
 
   // Helper: find colIdx mapped to a target type
-  const findMappedColIdx = (target: string): number => {
+  const findMappedColIdx = (target: ColumnTarget): number => {
     const entry = Object.entries(mapping).find(([, v]) => v === target);
     return entry ? Number(entry[0]) : -1;
   };
 
-  const findAllMappedColIdx = (target: string): number[] => {
+  const findAllMappedColIdx = (target: ColumnTarget): number[] => {
     return Object.entries(mapping)
       .filter(([, v]) => v === target)
       .map(([k]) => Number(k));
@@ -186,7 +186,7 @@ const DataUpload = () => {
     const newMapping = { ...mapping };
     dateCols.forEach(([colIdxStr]) => {
       const colIdx = Number(colIdxStr);
-      if (colIdx !== bestColIdx) newMapping[colIdx] = "value";
+      if (colIdx !== bestColIdx) newMapping[colIdx] = "skip";
     });
     setMapping(newMapping);
     const bestHeader = headers[bestColIdx] || `col ${bestColIdx}`;
@@ -264,16 +264,12 @@ const DataUpload = () => {
       const filePath = `${currentOrgId}/${Date.now()}_${file.name}`;
       await supabase.storage.from("datasets").upload(filePath, file);
 
-      // Convert colIdx mapping to header-name mapping for storage (human readable)
+      // Convert colIdx mapping to deterministic composite keys for storage
       const storedMapping: Record<string, string> = {};
       Object.entries(mapping).forEach(([colIdxStr, target]) => {
         const colIdx = Number(colIdxStr);
         const headerName = headers[colIdx] || `col_${colIdx}`;
-        // Use composite key for storage to handle duplicates
-        const key = headers.filter((h, i) => i < colIdx && h === headerName).length > 0
-          ? `${headerName}__col${colIdx}`
-          : headerName;
-        storedMapping[key] = target;
+        storedMapping[`${colIdx}:${headerName}`] = target;
       });
 
       const { data: dataset, error: dsError } = await supabase
@@ -729,7 +725,7 @@ const DataUpload = () => {
                           <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0" />
                           <select
                             value={mapping[colIdx] || "skip"}
-                            onChange={(e) => setMapping((prev) => ({ ...prev, [colIdx]: e.target.value }))}
+                            onChange={(e) => setMapping((prev) => ({ ...prev, [colIdx]: e.target.value as ColumnTarget }))}
                             className="flex-1 px-3 py-2 rounded-lg bg-secondary border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
                           >
                             {COLUMN_TARGETS.map((t) => (

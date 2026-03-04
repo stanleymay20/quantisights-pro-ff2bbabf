@@ -16,10 +16,19 @@ export const COUNTRY_SAMPLES = new Set([
   "belgium", "ireland", "new zealand", "peru", "venezuela",
 ]);
 
+export type ColumnTarget =
+  | "date"
+  | "value"
+  | "region"
+  | "region_code"
+  | "segment"
+  | "metric_type"
+  | "skip";
+
 export interface DetectedSchema {
   column: string;
   colIdx: number;
-  inferredType: "date" | "value" | "region" | "region_code" | "segment" | "metric_type" | "skip";
+  inferredType: ColumnTarget;
   confidence: number;
   reason: string;
   sampleValues: string[];
@@ -27,8 +36,8 @@ export interface DetectedSchema {
   autoFix?: "year_to_date";
 }
 
-/** Mapping is keyed by colIdx (column position), not header name */
-export type ColumnMapping = Record<number, string>;
+/** Mapping is keyed by colIdx (column position), value is ColumnTarget */
+export type ColumnMapping = Record<number, ColumnTarget>;
 
 export interface ValidationResult {
   totalRows: number;
@@ -498,7 +507,7 @@ export function validateData(
     if (rowValid) validRows++;
   }
 
-  const totalPoints = importMode === "multi" ? rows.length * valueIndices.length : rows.length;
+  const totalPoints = importMode === "multi" ? rows.length * Math.max(1, valueIndices.length) : rows.length;
   const completeness = totalCells > 0 ? Math.round((filledCells / totalCells) * 100) : 0;
   const errorRate = rows.length > 0 ? (errors.length / rows.length) * 100 : 0;
   const qualityScore = Math.max(0, Math.min(100, Math.round(
