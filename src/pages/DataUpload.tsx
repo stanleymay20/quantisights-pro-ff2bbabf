@@ -705,40 +705,59 @@ const DataUpload = () => {
                       )}
                     </div>
 
+                    {importMode === "multi" && valueColumnCount > 1 && (
+                      <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/10 border border-primary/20 mb-4">
+                        <Layers className="w-4 h-4 text-primary shrink-0" />
+                        <p className="text-xs text-primary">
+                          <span className="font-semibold">Multi-metric dataset detected</span> — {valueColumnCount} metrics will be normalized into long format. Each "metric" column becomes a separate time series.
+                        </p>
+                      </div>
+                    )}
+
                     <div className="space-y-3">
-                      {headers.map((h, colIdx) => (
-                        <div key={colIdx} className="flex items-center gap-4">
-                          <div className="w-44 shrink-0">
-                            <span className="text-sm font-medium truncate block">
-                              {h}
-                              <span className="text-[9px] text-muted-foreground/50 ml-1">#{colIdx}</span>
-                            </span>
-                            {/* Sample value chips in mapping */}
-                            <div className="flex gap-1 mt-0.5">
-                              {(sampleValuesByColIdx[colIdx] || []).slice(0, 3).map((sv, i) => (
-                                <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-muted/60 text-muted-foreground truncate max-w-[80px]">
-                                  {sv}
-                                </span>
-                              ))}
+                      {headers.map((h, colIdx) => {
+                        const currentTarget = mapping[colIdx] || "skip";
+                        const displayLabel = (t: string) => {
+                          if (t === "value" && importMode === "multi") return "metric";
+                          if (t === "region_code") return "region_code (ID/ISO)";
+                          return t;
+                        };
+                        return (
+                          <div key={colIdx} className="flex items-center gap-4">
+                            <div className="w-44 shrink-0">
+                              <span className="text-sm font-medium truncate block">
+                                {h}
+                                <span className="text-[9px] text-muted-foreground/50 ml-1">#{colIdx}</span>
+                              </span>
+                              <div className="flex gap-1 mt-0.5">
+                                {(sampleValuesByColIdx[colIdx] || []).slice(0, 3).map((sv, i) => (
+                                  <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-muted/60 text-muted-foreground truncate max-w-[80px]">
+                                    {sv}
+                                  </span>
+                                ))}
+                              </div>
                             </div>
+                            <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                            <select
+                              value={currentTarget}
+                              onChange={(e) => setMapping((prev) => ({ ...prev, [colIdx]: e.target.value as ColumnTarget }))}
+                              className="flex-1 px-3 py-2 rounded-lg bg-secondary border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                            >
+                              {COLUMN_TARGETS.map((t) => (
+                                <option key={t} value={t}>{displayLabel(t)}</option>
+                              ))}
+                            </select>
+                            {currentTarget !== "skip" && (
+                              <Badge variant="outline" className="text-xs">
+                                {currentTarget === "value" && importMode === "multi"
+                                  ? <><TrendingUp className="w-3 h-3 mr-1" /> Metric</>
+                                  : <><Check className="w-3 h-3 mr-1" /> Mapped</>
+                                }
+                              </Badge>
+                            )}
                           </div>
-                          <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0" />
-                          <select
-                            value={mapping[colIdx] || "skip"}
-                            onChange={(e) => setMapping((prev) => ({ ...prev, [colIdx]: e.target.value as ColumnTarget }))}
-                            className="flex-1 px-3 py-2 rounded-lg bg-secondary border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-                          >
-                            {COLUMN_TARGETS.map((t) => (
-                              <option key={t} value={t}>{t === "region_code" ? "region_code (ID/ISO)" : t}</option>
-                            ))}
-                          </select>
-                          {mapping[colIdx] && mapping[colIdx] !== "skip" && (
-                            <Badge variant="outline" className="text-xs">
-                              <Check className="w-3 h-3 mr-1" /> Mapped
-                            </Badge>
-                          )}
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                     <div className="mt-6">
                       <label className="block text-sm font-medium mb-1.5">Dataset Name</label>
