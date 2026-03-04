@@ -46,6 +46,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
     if (!currentOrgId) {
       setProjects([]);
       setCurrentProjectId(null);
+      sessionStorage.removeItem(STORAGE_KEY);
       setLoading(false);
       return;
     }
