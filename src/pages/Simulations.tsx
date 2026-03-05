@@ -12,6 +12,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { toast } from "@/hooks/use-toast";
 import { Activity, TrendingUp, TrendingDown, Shield, Info, Loader2, BarChart3 } from "lucide-react";
 import IntelligenceDisclaimer from "@/components/IntelligenceDisclaimer";
+import DatasetRequired from "@/components/layout/DatasetRequired";
 
 const Simulations = () => {
   const { currentOrgId: organizationId } = useOrganization();
@@ -82,6 +83,7 @@ const Simulations = () => {
   const latest = simulations?.[0];
 
   return (
+    <DatasetRequired moduleName="Simulations">
     <main className="flex-1 overflow-y-auto">
         <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-lg border-b border-border px-6 py-4">
           <div className="flex items-center gap-3">
@@ -245,6 +247,7 @@ const Simulations = () => {
           </Card>
         </div>
     </main>
+    </DatasetRequired>
   );
 };
 

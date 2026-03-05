@@ -21,6 +21,7 @@ import {
   ComposedChart, Line, Bar, XAxis, YAxis, Tooltip,
   ResponsiveContainer, CartesianGrid, Legend, Area
 } from "recharts";
+import DatasetRequired from "@/components/layout/DatasetRequired";
 
 interface Scenario {
   id: string;
@@ -291,6 +292,7 @@ const Scenarios = () => {
   };
 
   return (
+    <DatasetRequired moduleName="Scenarios">
     <>
         <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
           <div className="flex items-center gap-4">
@@ -613,6 +615,7 @@ const Scenarios = () => {
           )}
         </main>
     </>
+    </DatasetRequired>
   );
 };
 

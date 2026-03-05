@@ -13,6 +13,7 @@ import {
   BarChart3, Briefcase, Target, Eye,
 } from "lucide-react";
 import IntelligenceDisclaimer from "@/components/IntelligenceDisclaimer";
+import DatasetRequired from "@/components/layout/DatasetRequired";
 
 // ─── Types ───
 interface RoleRisk {
@@ -171,6 +172,7 @@ const StrategyPack = () => {
   }
 
   return (
+    <DatasetRequired moduleName="Strategy Pack">
     <>
       <main className="flex-1 overflow-y-auto">
         {/* Header */}
@@ -485,6 +487,7 @@ const StrategyPack = () => {
         }
       `}</style>
     </>
+    </DatasetRequired>
   );
 };
 

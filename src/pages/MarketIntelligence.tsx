@@ -12,6 +12,7 @@ import {
   Globe, Loader2, RefreshCw, TrendingUp, TrendingDown,
   AlertTriangle, Zap, Shield, BarChart3, Minus,
 } from "lucide-react";
+import DatasetRequired from "@/components/layout/DatasetRequired";
 
 interface Signal {
   category: string;
@@ -114,6 +115,7 @@ const MarketIntelligence = () => {
   };
 
   return (
+    <DatasetRequired moduleName="Market Intelligence">
     <>
         <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
           <div className="flex items-center gap-3">
@@ -267,6 +269,7 @@ const MarketIntelligence = () => {
           )}
         </main>
     </>
+    </DatasetRequired>
   );
 };
 

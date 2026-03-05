@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   AlertTriangle, TrendingDown, Target, XCircle, CheckCircle2, Activity, Crosshair,
 } from "lucide-react";
+import DatasetRequired from "@/components/layout/DatasetRequired";
 
 interface Decision {
   id: string;
@@ -137,6 +138,7 @@ const MissesPage = () => {
   };
 
   return (
+    <DatasetRequired moduleName="Prediction Accuracy">
     <>
         <header className="h-14 border-b border-border/30 flex items-center px-8 shrink-0 bg-background/60 backdrop-blur-sm">
           <SidebarMobileToggle />
@@ -292,6 +294,7 @@ const MissesPage = () => {
           </Card>
         </main>
     </>
+    </DatasetRequired>
   );
 };
 

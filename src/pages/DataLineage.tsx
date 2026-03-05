@@ -7,6 +7,7 @@ import { useProject } from "@/contexts/ProjectContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Database, ArrowRight, FileText, Target, BarChart3, Loader2, GitCommitVertical } from "lucide-react";
 import DataPipelineStatus from "@/components/dashboard/DataPipelineStatus";
+import DatasetRequired from "@/components/layout/DatasetRequired";
 
 interface LineageNode {
   id: string;
@@ -113,6 +114,7 @@ const DataLineage = () => {
   const layerKeys = ["source", "metric", "kpi", "decision"];
 
   return (
+    <DatasetRequired moduleName="Data Lineage">
     <>
         <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
           <div className="flex items-center gap-3">
@@ -201,6 +203,7 @@ const DataLineage = () => {
           )}
         </main>
     </>
+    </DatasetRequired>
   );
 };
 

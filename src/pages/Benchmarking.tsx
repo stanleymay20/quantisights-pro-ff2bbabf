@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   BarChart3, TrendingUp, TrendingDown, Minus, Loader2, Building2, Target, Award, RefreshCw,
 } from "lucide-react";
+import DatasetRequired from "@/components/layout/DatasetRequired";
 
 interface BenchmarkScore {
   id: string;
@@ -104,6 +105,7 @@ const BenchmarkingPage = () => {
   const topQuartileCount = scores.filter(s => s.quartile === 4).length;
 
   return (
+    <DatasetRequired moduleName="Benchmarking">
     <>
         <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
           <div className="flex items-center gap-3">
@@ -241,6 +243,7 @@ const BenchmarkingPage = () => {
           )}
         </main>
     </>
+    </DatasetRequired>
   );
 };
 

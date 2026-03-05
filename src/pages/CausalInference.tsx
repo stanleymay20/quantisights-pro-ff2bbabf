@@ -8,6 +8,7 @@ import { useProject } from "@/contexts/ProjectContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Network, Loader2, ArrowRight, AlertTriangle, CheckCircle } from "lucide-react";
+import DatasetRequired from "@/components/layout/DatasetRequired";
 
 interface CausalNode {
   id: string;
@@ -63,6 +64,7 @@ const CausalInference = () => {
     s >= 0.7 ? "text-success" : s >= 0.5 ? "text-warning" : "text-muted-foreground";
 
   return (
+    <DatasetRequired moduleName="Causal Inference">
     <>
         <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
           <div className="flex items-center gap-3">
@@ -217,6 +219,7 @@ const CausalInference = () => {
           )}
         </main>
     </>
+    </DatasetRequired>
   );
 };
 

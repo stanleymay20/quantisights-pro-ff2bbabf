@@ -17,6 +17,7 @@ import {
   BarChart3, AlertTriangle, ArrowUpRight, ArrowDownRight, Loader2, Trash2, Eye
 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, CartesianGrid } from "recharts";
+import DatasetRequired from "@/components/layout/DatasetRequired";
 
 interface KPI {
   id: string;
@@ -248,6 +249,7 @@ const KPIs = () => {
   };
 
   return (
+    <DatasetRequired moduleName="KPIs">
     <>
         <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
           <div className="flex items-center gap-4">
@@ -580,6 +582,7 @@ const KPIs = () => {
           </div>
         </main>
     </>
+    </DatasetRequired>
   );
 };
 
