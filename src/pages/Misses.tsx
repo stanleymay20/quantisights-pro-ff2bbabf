@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useOrganization } from "@/hooks/useOrganization";
+import { useProject } from "@/contexts/ProjectContext";
 import { supabase } from "@/integrations/supabase/client";
 import {
   AlertTriangle, TrendingDown, Target, XCircle, CheckCircle2, Activity, Crosshair,
@@ -60,6 +61,7 @@ function isBadOutcome(d: Decision): boolean {
 
 const MissesPage = () => {
   const { currentOrgId } = useOrganization();
+  const { activeDatasetId } = useProject();
   const [decisions, setDecisions] = useState<Decision[]>([]);
   const [loading, setLoading] = useState(true);
 

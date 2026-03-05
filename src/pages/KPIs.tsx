@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOrganization } from "@/hooks/useOrganization";
+import { useProject } from "@/contexts/ProjectContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useToast } from "@/hooks/use-toast";
 import { SidebarMobileToggle } from "@/components/layout/ProtectedShell";
@@ -56,6 +57,7 @@ const TIER_KPI_LIMITS: Record<string, number> = { starter: 3, growth: 25, enterp
 const KPIs = () => {
   const { user } = useAuth();
   const { currentOrgId } = useOrganization();
+  const { activeDatasetId } = useProject();
   const { tier } = useSubscription();
   const { toast } = useToast();
 
@@ -160,7 +162,7 @@ const KPIs = () => {
     setComputing(true);
     try {
       const { data, error } = await supabase.functions.invoke("compute-kpi", {
-        body: { kpi_id: kpiId },
+        body: { kpi_id: kpiId, dataset_id: activeDatasetId },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
@@ -181,7 +183,7 @@ const KPIs = () => {
     setAnalyzing(true);
     try {
       const { data, error } = await supabase.functions.invoke("ai-kpi-analysis", {
-        body: { kpi_id: kpiId },
+        body: { kpi_id: kpiId, dataset_id: activeDatasetId },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);

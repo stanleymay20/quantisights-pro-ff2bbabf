@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOrganization } from "@/hooks/useOrganization";
+import { useProject } from "@/contexts/ProjectContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useToast } from "@/hooks/use-toast";
 import { SidebarMobileToggle } from "@/components/layout/ProtectedShell";
@@ -68,6 +69,7 @@ const TIER_LIMITS: Record<string, number> = { starter: 0, growth: 3, enterprise:
 const Scenarios = () => {
   const { user } = useAuth();
   const { currentOrgId } = useOrganization();
+  const { activeDatasetId } = useProject();
   const { tier } = useSubscription();
   const { toast } = useToast();
 
@@ -192,7 +194,7 @@ const Scenarios = () => {
     setSimulating(true);
     try {
       const { data, error } = await supabase.functions.invoke("simulate-scenario", {
-        body: { scenario_id: selectedId },
+        body: { scenario_id: selectedId, dataset_id: activeDatasetId },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
@@ -211,7 +213,7 @@ const Scenarios = () => {
     setAnalyzing(true);
     try {
       const { data, error } = await supabase.functions.invoke("ai-scenario-analysis", {
-        body: { scenario_id: selectedId },
+        body: { scenario_id: selectedId, dataset_id: activeDatasetId },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);

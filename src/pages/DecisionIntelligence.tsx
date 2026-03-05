@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { SidebarMobileToggle } from "@/components/layout/ProtectedShell";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOrganization } from "@/hooks/useOrganization";
+import { useProject } from "@/contexts/ProjectContext";
 import { useMetrics } from "@/hooks/useMetrics";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -267,6 +268,7 @@ const CalibrationPanel = ({ decisions }: { decisions: any[] }) => {
 const DecisionIntelligence = () => {
   const { user } = useAuth();
   const { currentOrgId } = useOrganization();
+  const { activeDatasetId } = useProject();
   const { toast } = useToast();
   const [decisions, setDecisions] = useState<any[]>([]);
   const [simulations, setSimulations] = useState<any[]>([]);

@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useOrganization } from "@/hooks/useOrganization";
+import { useProject } from "@/contexts/ProjectContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -28,6 +29,7 @@ interface Branch {
 
 const ScenarioBranching = () => {
   const { currentOrgId } = useOrganization();
+  const { activeDatasetId } = useProject();
   const { user } = useAuth();
   const { toast } = useToast();
   const [branches, setBranches] = useState<Branch[]>([]);
@@ -91,6 +93,7 @@ const ScenarioBranching = () => {
       const { data, error } = await supabase.functions.invoke("strategic-simulation", {
         body: {
           organization_id: currentOrgId,
+          dataset_id: activeDatasetId,
           role_type: "ceo",
           scenario_parameters: branch.parameters,
         },

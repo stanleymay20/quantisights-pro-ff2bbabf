@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOrganization } from "@/hooks/useOrganization";
+import { useProject } from "@/contexts/ProjectContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
 import { SidebarMobileToggle } from "@/components/layout/ProtectedShell";
@@ -185,6 +186,7 @@ const RiskDial = ({ score, lastUpdated }: { score: number; lastUpdated?: string 
 const Executive = () => {
   const { user } = useAuth();
   const { currentOrgId } = useOrganization();
+  const { activeDatasetId } = useProject();
   const { tier } = useSubscription();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -286,7 +288,7 @@ const Executive = () => {
     setSignalsLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("compute-executive-signals", {
-        body: { role_type: activeRole, organization_id: currentOrgId },
+        body: { role_type: activeRole, organization_id: currentOrgId, dataset_id: activeDatasetId },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
@@ -344,7 +346,7 @@ const Executive = () => {
     setBrief(null);
     try {
       const { data, error } = await supabase.functions.invoke("executive-brief", {
-        body: { role_type: activeRole, organization_id: currentOrgId },
+        body: { role_type: activeRole, organization_id: currentOrgId, dataset_id: activeDatasetId },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
