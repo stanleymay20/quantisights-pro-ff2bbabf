@@ -26,6 +26,7 @@ export type Database = {
           created_at: string
           data_quality_index: number | null
           data_snapshot_date: string | null
+          dataset_id: string | null
           expected_impact: string | null
           generation_version: number | null
           id: string
@@ -56,6 +57,7 @@ export type Database = {
           created_at?: string
           data_quality_index?: number | null
           data_snapshot_date?: string | null
+          dataset_id?: string | null
           expected_impact?: string | null
           generation_version?: number | null
           id?: string
@@ -86,6 +88,7 @@ export type Database = {
           created_at?: string
           data_quality_index?: number | null
           data_snapshot_date?: string | null
+          dataset_id?: string | null
           expected_impact?: string | null
           generation_version?: number | null
           id?: string
@@ -106,6 +109,13 @@ export type Database = {
           variance_score?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "advisory_instances_dataset_id_fkey"
+            columns: ["dataset_id"]
+            isOneToOne: false
+            referencedRelation: "datasets"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "advisory_instances_organization_id_fkey"
             columns: ["organization_id"]
@@ -1715,6 +1725,7 @@ export type Database = {
       external_signals: {
         Row: {
           data: Json
+          dataset_id: string | null
           expires_at: string | null
           fetched_at: string
           id: string
@@ -1725,6 +1736,7 @@ export type Database = {
         }
         Insert: {
           data?: Json
+          dataset_id?: string | null
           expires_at?: string | null
           fetched_at?: string
           id?: string
@@ -1735,6 +1747,7 @@ export type Database = {
         }
         Update: {
           data?: Json
+          dataset_id?: string | null
           expires_at?: string | null
           fetched_at?: string
           id?: string
@@ -1744,6 +1757,13 @@ export type Database = {
           source?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "external_signals_dataset_id_fkey"
+            columns: ["dataset_id"]
+            isOneToOne: false
+            referencedRelation: "datasets"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "external_signals_organization_id_fkey"
             columns: ["organization_id"]
@@ -1757,6 +1777,7 @@ export type Database = {
         Row: {
           confidence_interval: number | null
           created_by: string
+          dataset_id: string | null
           forecast_horizon_months: number
           generated_at: string
           id: string
@@ -1771,6 +1792,7 @@ export type Database = {
         Insert: {
           confidence_interval?: number | null
           created_by: string
+          dataset_id?: string | null
           forecast_horizon_months?: number
           generated_at?: string
           id?: string
@@ -1785,6 +1807,7 @@ export type Database = {
         Update: {
           confidence_interval?: number | null
           created_by?: string
+          dataset_id?: string | null
           forecast_horizon_months?: number
           generated_at?: string
           id?: string
@@ -1797,6 +1820,13 @@ export type Database = {
           trend_direction?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "forecast_results_dataset_id_fkey"
+            columns: ["dataset_id"]
+            isOneToOne: false
+            referencedRelation: "datasets"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "forecast_results_organization_id_fkey"
             columns: ["organization_id"]
@@ -3147,6 +3177,7 @@ export type Database = {
       reports: {
         Row: {
           created_at: string
+          dataset_id: string | null
           file_path: string
           generated_by: string
           id: string
@@ -3155,6 +3186,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          dataset_id?: string | null
           file_path: string
           generated_by: string
           id?: string
@@ -3163,6 +3195,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          dataset_id?: string | null
           file_path?: string
           generated_by?: string
           id?: string
@@ -3170,6 +3203,13 @@ export type Database = {
           report_type?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "reports_dataset_id_fkey"
+            columns: ["dataset_id"]
+            isOneToOne: false
+            referencedRelation: "datasets"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "reports_organization_id_fkey"
             columns: ["organization_id"]
@@ -3326,6 +3366,7 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string
+          dataset_id: string | null
           description: string | null
           forecast_end_date: string
           forecast_start_date: string
@@ -3338,6 +3379,7 @@ export type Database = {
         Insert: {
           created_at?: string
           created_by: string
+          dataset_id?: string | null
           description?: string | null
           forecast_end_date: string
           forecast_start_date: string
@@ -3350,6 +3392,7 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string
+          dataset_id?: string | null
           description?: string | null
           forecast_end_date?: string
           forecast_start_date?: string
@@ -3360,6 +3403,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "scenarios_dataset_id_fkey"
+            columns: ["dataset_id"]
+            isOneToOne: false
+            referencedRelation: "datasets"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "scenarios_organization_id_fkey"
             columns: ["organization_id"]
@@ -3376,6 +3426,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           data_sufficiency: string
+          dataset_id: string | null
           expected_value: number
           forecast_horizon: number
           id: string
@@ -3401,6 +3452,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           data_sufficiency?: string
+          dataset_id?: string | null
           expected_value: number
           forecast_horizon?: number
           id?: string
@@ -3426,6 +3478,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           data_sufficiency?: string
+          dataset_id?: string | null
           expected_value?: number
           forecast_horizon?: number
           id?: string
@@ -3446,6 +3499,13 @@ export type Database = {
           volatility?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "simulation_results_dataset_id_fkey"
+            columns: ["dataset_id"]
+            isOneToOne: false
+            referencedRelation: "datasets"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "simulation_results_organization_id_fkey"
             columns: ["organization_id"]
