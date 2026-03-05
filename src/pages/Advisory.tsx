@@ -84,6 +84,8 @@ const AdvisoryPage = () => {
   const [instances, setInstances] = useState<AdvisoryInstance[]>([]);
   const [loading, setLoading] = useState(false);
   const [criticalCount, setCriticalCount] = useState(0);
+  const [dataSufficiency, setDataSufficiency] = useState<string | null>(null);
+  const [sampleSize, setSampleSize] = useState<number>(0);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [resolutionText, setResolutionText] = useState("");
   const [impactScore, setImpactScore] = useState("");
@@ -100,6 +102,8 @@ const AdvisoryPage = () => {
       if (data?.error) throw new Error(data.error);
       setAdvisories(data.advisories || []);
       setCriticalCount(data.critical_count || 0);
+      setDataSufficiency(data.data_sufficiency || null);
+      setSampleSize(data.sample_size || 0);
     } catch (err: any) {
       toast({ title: "Failed to load advisories", description: err.message, variant: "destructive" });
     } finally {
@@ -261,17 +265,18 @@ const AdvisoryPage = () => {
                   <p className="text-muted-foreground">Generating strategic recommendations...</p>
                 </CardContent></Card>
               ) : advisories.length === 0 ? (
-                <Card className="border-dashed border-border/50">
-                  <CardContent className="py-20 flex flex-col items-center gap-4">
+                <Card>
+                  <CardContent className="py-16 flex flex-col items-center gap-4">
                     <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
-                      <Lightbulb className="w-7 h-7 text-primary" />
+                      <CheckCircle2 className="w-7 h-7 text-primary" />
                     </div>
-                    <h2 className="text-lg font-semibold font-display">No Actionable Advisories</h2>
-                    <p className="text-muted-foreground text-sm text-center max-w-sm leading-relaxed">
-                      The active dataset is connected and analyzed. No high-priority strategic actions are currently required.
+                    <h2 className="text-lg font-semibold font-display">All Clear — No Actions Required</h2>
+                    <p className="text-muted-foreground text-sm text-center max-w-md leading-relaxed">
+                      Your dataset has been analyzed ({sampleSize} records, data sufficiency: {dataSufficiency || "—"}).
+                      All metrics are within healthy thresholds. No strategic interventions are recommended at this time.
                     </p>
-                    <Button onClick={fetchAdvisories} variant="outline" size="sm" className="mt-2">
-                      Re-run Analysis
+                    <Button onClick={fetchAdvisories} variant="outline" size="sm" className="mt-2 gap-2">
+                      <RefreshCw className="w-4 h-4" /> Re-run Analysis
                     </Button>
                   </CardContent>
                 </Card>
