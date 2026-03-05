@@ -36,7 +36,7 @@ const QuickDecisionLog = ({ organizationId, onLogged }: QuickDecisionLogProps) =
         decided_by: user?.id,
         confidence_at_decision: confidence[0],
         decision_status: "pending",
-      } as any);
+      });
       if (error) throw error;
       setSubmitted(true);
       toast({ title: "Decision logged", description: "Your strategic call is now tracked." });
@@ -59,11 +59,11 @@ const QuickDecisionLog = ({ organizationId, onLogged }: QuickDecisionLogProps) =
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="flex items-center gap-3 p-4 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.04]"
+        className="flex items-center gap-3 p-4 rounded-xl border border-success/20 bg-success/[0.04]"
       >
-        <Check className="w-5 h-5 text-emerald-500" />
+        <Check className="w-5 h-5 text-success" />
         <div>
-          <p className="text-sm font-semibold text-emerald-500">Decision logged</p>
+          <p className="text-sm font-semibold text-success">Decision logged</p>
           <p className="text-xs text-muted-foreground">The system will track this call and measure your accuracy.</p>
         </div>
       </motion.div>

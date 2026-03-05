@@ -143,7 +143,7 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
         decision_status: "approved",
         confidence_at_decision: decision.confidence ?? 65,
         decision_type: "strategic",
-      } as any);
+      });
 
       setDecisions(prev => prev.filter(d => d.id !== decision.id));
       setConfirmation({ decisionTitle: decision.title, action: "approved" });
@@ -188,7 +188,7 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
   useEffect(() => {
     if (!organizationId) return;
     buildQueue();
-  }, [organizationId, insights, churnRate, pendingDecisions]);
+  }, [organizationId, insights, churnRate, revenue, pendingDecisions, calibrationScore]);
 
   useEffect(() => {
     if (!confirmation) return;

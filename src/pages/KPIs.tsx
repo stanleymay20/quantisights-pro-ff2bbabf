@@ -250,7 +250,7 @@ const KPIs = () => {
 
   return (
     <DatasetRequired moduleName="KPIs">
-    <>
+    <div className="flex flex-col flex-1 overflow-hidden">
         <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
           <div className="flex items-center gap-4">
             <SidebarMobileToggle />
@@ -581,7 +581,7 @@ const KPIs = () => {
             </div>
           </div>
         </main>
-    </>
+    </div>
     </DatasetRequired>
   );
 };
