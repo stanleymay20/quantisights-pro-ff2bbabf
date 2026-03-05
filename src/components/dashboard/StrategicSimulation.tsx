@@ -30,6 +30,28 @@ interface Props {
   tier: string | null;
 }
 
+/** Data-driven score-to-stroke color using semantic tokens */
+function getScoreStroke(score: number): string {
+  if (score <= 25) return "stroke-success";
+  if (score <= 50) return "stroke-primary";
+  if (score <= 75) return "stroke-warning";
+  return "stroke-destructive";
+}
+
+/** Data-driven delta color: positive = good (success), negative = bad (destructive) */
+function getDeltaColor(delta: number, invertPositive = false): string {
+  if (delta === 0) return "text-muted-foreground";
+  const isPositive = invertPositive ? delta < 0 : delta > 0;
+  return isPositive ? "text-success" : "text-destructive";
+}
+
+/** Data-driven badge for slider values */
+function getSliderBadgeColor(value: number, invertPositive = false): string {
+  if (value === 0) return "";
+  const isGood = invertPositive ? value < 0 : value > 0;
+  return isGood ? "text-success" : "text-destructive";
+}
+
 const RiskDial = ({ score, label, size = "lg" }: { score: number; label: string; size?: "sm" | "lg" }) => {
   const radius = size === "lg" ? 70 : 45;
   const circumference = Math.PI * radius;
@@ -38,19 +60,12 @@ const RiskDial = ({ score, label, size = "lg" }: { score: number; label: string;
   const viewH = size === "lg" ? 85 : 55;
   const arcStart = size === "lg" ? "M 10 80 A 70 70 0 0 1 150 80" : "M 5 50 A 45 45 0 0 1 95 50";
 
-  const getColor = (s: number) => {
-    if (s <= 25) return "stroke-emerald-400";
-    if (s <= 50) return "stroke-sky-400";
-    if (s <= 75) return "stroke-amber-400";
-    return "stroke-destructive";
-  };
-
   return (
     <div className="flex flex-col items-center">
       <div className={size === "lg" ? "relative w-44 h-24 overflow-hidden" : "relative w-28 h-16 overflow-hidden"}>
         <svg viewBox={`0 0 ${viewW} ${viewH}`} className="w-full h-full">
           <path d={arcStart} fill="none" className="stroke-muted/30" strokeWidth={size === "lg" ? 10 : 7} strokeLinecap="round" />
-          <path d={arcStart} fill="none" className={getColor(score)} strokeWidth={size === "lg" ? 10 : 7} strokeLinecap="round"
+          <path d={arcStart} fill="none" className={getScoreStroke(score)} strokeWidth={size === "lg" ? 10 : 7} strokeLinecap="round"
             strokeDasharray={`${progress} ${circumference}`}
             style={{ transition: "stroke-dasharray 1s ease-out" }}
           />
@@ -146,51 +161,33 @@ const StrategicSimulation = ({ organizationId, roleType, tier }: Props) => {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label className="text-sm">Revenue Change</Label>
-                <Badge variant="outline" className={`text-xs font-mono ${revenueChange < 0 ? "text-destructive" : revenueChange > 0 ? "text-emerald-500" : ""}`}>
+                <Badge variant="outline" className={`text-xs font-mono ${getSliderBadgeColor(revenueChange)}`}>
                   {formatSliderLabel(revenueChange)}
                 </Badge>
               </div>
-              <Slider
-                value={[revenueChange]}
-                onValueChange={([v]) => setRevenueChange(v)}
-                min={-50}
-                max={50}
-                step={1}
-              />
+              <Slider value={[revenueChange]} onValueChange={([v]) => setRevenueChange(v)} min={-50} max={50} step={1} />
             </div>
 
             {/* Cost Slider */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label className="text-sm">Cost Change</Label>
-                <Badge variant="outline" className={`text-xs font-mono ${costChange > 0 ? "text-destructive" : costChange < 0 ? "text-emerald-500" : ""}`}>
+                <Badge variant="outline" className={`text-xs font-mono ${getSliderBadgeColor(costChange, true)}`}>
                   {formatSliderLabel(costChange)}
                 </Badge>
               </div>
-              <Slider
-                value={[costChange]}
-                onValueChange={([v]) => setCostChange(v)}
-                min={-50}
-                max={50}
-                step={1}
-              />
+              <Slider value={[costChange]} onValueChange={([v]) => setCostChange(v)} min={-50} max={50} step={1} />
             </div>
 
             {/* Headcount Slider */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label className="text-sm">Headcount Change</Label>
-                <Badge variant="outline" className={`text-xs font-mono ${headcountChange < -15 ? "text-destructive" : headcountChange < 0 ? "text-amber-500" : ""}`}>
+                <Badge variant="outline" className={`text-xs font-mono ${headcountChange < -15 ? "text-destructive" : headcountChange < 0 ? "text-warning" : ""}`}>
                   {formatSliderLabel(headcountChange)}
                 </Badge>
               </div>
-              <Slider
-                value={[headcountChange]}
-                onValueChange={([v]) => setHeadcountChange(v)}
-                min={-50}
-                max={50}
-                step={1}
-              />
+              <Slider value={[headcountChange]} onValueChange={([v]) => setHeadcountChange(v)} min={-50} max={50} step={1} />
             </div>
 
             {/* Marketing Slider */}
@@ -201,13 +198,7 @@ const StrategicSimulation = ({ organizationId, roleType, tier }: Props) => {
                   {formatSliderLabel(marketingChange)}
                 </Badge>
               </div>
-              <Slider
-                value={[marketingChange]}
-                onValueChange={([v]) => setMarketingChange(v)}
-                min={-50}
-                max={50}
-                step={1}
-              />
+              <Slider value={[marketingChange]} onValueChange={([v]) => setMarketingChange(v)} min={-50} max={50} step={1} />
             </div>
 
             {/* Custom Notes */}
@@ -270,14 +261,14 @@ const StrategicSimulation = ({ organizationId, roleType, tier }: Props) => {
                   <div className="grid grid-cols-3 gap-4 items-center">
                     <RiskDial score={result.baseline_risk} label="Baseline" />
                     <div className="flex flex-col items-center gap-2">
-                      <div className={`text-3xl font-bold ${result.risk_delta > 0 ? "text-destructive" : result.risk_delta < 0 ? "text-emerald-500" : "text-muted-foreground"}`}>
+                      <div className={`text-3xl font-bold ${getDeltaColor(result.risk_delta, true)}`}>
                         {result.risk_delta > 0 ? "+" : ""}{result.risk_delta}
                       </div>
                       <span className="text-xs text-muted-foreground">Risk Delta</span>
                       {result.risk_delta > 0 ? (
                         <TrendingUp className="w-5 h-5 text-destructive" />
                       ) : result.risk_delta < 0 ? (
-                        <TrendingDown className="w-5 h-5 text-emerald-500" />
+                        <TrendingDown className="w-5 h-5 text-success" />
                       ) : null}
                     </div>
                     <RiskDial score={result.projected_risk} label="Projected" />
@@ -293,7 +284,7 @@ const StrategicSimulation = ({ organizationId, roleType, tier }: Props) => {
                         <div key={key} className="text-center p-3 rounded-lg bg-muted/30">
                           <p className="text-xs text-muted-foreground capitalize mb-1">{key}</p>
                           <p className="text-sm font-semibold">{base} → {proj}</p>
-                          <p className={`text-xs font-mono ${delta > 0 ? "text-destructive" : delta < 0 ? "text-emerald-500" : "text-muted-foreground"}`}>
+                          <p className={`text-xs font-mono ${getDeltaColor(delta, true)}`}>
                             {delta > 0 ? "+" : ""}{delta}
                           </p>
                         </div>
@@ -322,7 +313,7 @@ const StrategicSimulation = ({ organizationId, roleType, tier }: Props) => {
                           <Badge
                             className={
                               kpi.delta_percent > 0
-                                ? "bg-emerald-500/10 text-emerald-500 border-none"
+                                ? "bg-success/10 text-success border-none"
                                 : kpi.delta_percent < 0
                                 ? "bg-destructive/10 text-destructive border-none"
                                 : "bg-muted text-muted-foreground border-none"
