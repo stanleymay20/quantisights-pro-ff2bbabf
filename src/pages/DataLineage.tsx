@@ -48,15 +48,14 @@ const DataLineage = () => {
       setLoading(true);
 
       // Fetch dataset info for lineage
-      let datasetPromise = Promise.resolve<any>(null);
-      if (activeDatasetId) {
-        datasetPromise = supabase
-          .from("datasets")
-          .select("name, row_count, column_mapping")
-          .eq("id", activeDatasetId)
-          .single()
-          .then(r => r.data);
-      }
+      const datasetPromise: Promise<any> = activeDatasetId
+        ? supabase
+            .from("datasets")
+            .select("name, row_count, column_mapping")
+            .eq("id", activeDatasetId)
+            .single()
+            .then(r => r.data)
+        : Promise.resolve(null);
 
       let metricsQuery = supabase.from("metrics").select("metric_type").eq("organization_id", currentOrgId);
       if (activeDatasetId) {
