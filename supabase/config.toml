@@ -101,3 +101,39 @@ verify_jwt = false
 
 [functions.refresh-aggregates]
 verify_jwt = false
+
+[functions.predictive-forecast]
+verify_jwt = false
+
+[functions.fetch-market-signals]
+verify_jwt = false
+
+[functions.causal-inference]
+verify_jwt = false
+
+[functions.counterfactual-explain]
+verify_jwt = false
+
+[functions.nlq-query]
+verify_jwt = false
+
+[functions.morning-brief]
+verify_jwt = false
+
+[functions.explain-ai]
+verify_jwt = false
+
+[functions.seed-demo-data]
+verify_jwt = false
+
+[functions.complete-onboarding]
+verify_jwt = false
+
+[functions.connector-pull]
+verify_jwt = false
+
+[functions.invite-team-member]
+verify_jwt = false
+
+[functions.create-demo-session]
+verify_jwt = false

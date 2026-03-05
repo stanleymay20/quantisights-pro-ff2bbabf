@@ -33,10 +33,14 @@ serve(async (req) => {
     }
 
     const userId = claimsData.claims.sub;
-    const { organization_id, dataset_id } = await req.json();
+    const body = await req.json();
+    const { organization_id, dataset_id, dry_run } = body;
 
     if (!organization_id) {
       return new Response(JSON.stringify({ error: "organization_id required" }), { status: 400, headers: corsHeaders });
+    }
+    if (!dataset_id) {
+      return new Response(JSON.stringify({ error: "dataset_id required by Active Data Contract" }), { status: 400, headers: corsHeaders });
     }
 
     const { data: membership } = await supabase
@@ -54,6 +58,24 @@ serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const serviceSupabase = createClient(supabaseUrl, serviceKey);
 
+    // Validate dataset belongs to org
+    const { data: dsCheck } = await serviceSupabase
+      .from("datasets")
+      .select("id")
+      .eq("id", dataset_id)
+      .eq("organization_id", organization_id)
+      .maybeSingle();
+    if (!dsCheck) {
+      return new Response(JSON.stringify({ error: "dataset_id does not belong to this organization" }), { status: 403, headers: corsHeaders });
+    }
+
+    // Dry run: validate contract only
+    if (dry_run) {
+      return new Response(JSON.stringify({ dry_run: true, status: "PASS", dataset_id, organization_id }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const { data: sub } = await serviceSupabase
       .from("subscriptions")
       .select("tier")
@@ -68,15 +90,12 @@ serve(async (req) => {
       );
     }
 
-    let metricsQuery = supabase
+    const metricsQuery = supabase
       .from("metrics")
       .select("metric_type, value, date, region, segment")
       .eq("organization_id", organization_id)
+      .eq("dataset_id", dataset_id)
       .order("date", { ascending: true });
-
-    if (dataset_id) {
-      metricsQuery = metricsQuery.eq("dataset_id", dataset_id);
-    }
 
     const { data: metrics } = await metricsQuery;
 

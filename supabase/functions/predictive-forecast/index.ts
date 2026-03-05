@@ -29,23 +29,33 @@ serve(async (req) => {
       });
     }
 
-    const { organization_id, dataset_id, metric_type, horizon_months = 6 } = await req.json();
+    const { organization_id, dataset_id, metric_type, horizon_months = 6, dry_run } = await req.json();
     if (!organization_id || !metric_type) {
       return new Response(JSON.stringify({ error: "organization_id and metric_type required" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    if (!dataset_id) {
+      return new Response(JSON.stringify({ error: "dataset_id required by Active Data Contract" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
-    // Fetch historical metrics — scoped to dataset if provided
-    let metricsQuery = userClient
+    // Dry run: validate contract only
+    if (dry_run) {
+      return new Response(JSON.stringify({ dry_run: true, status: "PASS", dataset_id, organization_id }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Fetch historical metrics — dataset-scoped (REQUIRED)
+    const metricsQuery = userClient
       .from("metrics")
       .select("value, date")
       .eq("organization_id", organization_id)
+      .eq("dataset_id", dataset_id)
       .eq("metric_type", metric_type)
       .order("date", { ascending: true });
-    if (dataset_id) {
-      metricsQuery = metricsQuery.eq("dataset_id", dataset_id);
-    }
     const { data: metrics, error: mErr } = await metricsQuery;
 
     if (mErr) throw mErr;

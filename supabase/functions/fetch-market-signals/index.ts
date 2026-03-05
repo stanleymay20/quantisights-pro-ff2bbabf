@@ -36,9 +36,14 @@ serve(async (req) => {
       });
     }
 
-    const { organization_id, industry, topics } = await req.json();
+    const { organization_id, dataset_id, industry, topics, dry_run } = await req.json();
     if (!organization_id) {
       return new Response(JSON.stringify({ error: "organization_id required" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (!dataset_id) {
+      return new Response(JSON.stringify({ error: "dataset_id required by Active Data Contract" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -47,6 +52,13 @@ serve(async (req) => {
     if (!isMember) {
       return new Response(JSON.stringify({ error: "Forbidden" }), {
         status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Dry run: validate contract only
+    if (dry_run) {
+      return new Response(JSON.stringify({ dry_run: true, status: "PASS", dataset_id, organization_id }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -137,6 +149,7 @@ serve(async (req) => {
     for (const signal of (result.signals || []).slice(0, 20)) {
       await svc.from("external_signals").insert({
         organization_id,
+        dataset_id,
         signal_type: signal.category,
         source: "ai_intelligence",
         data: signal,
