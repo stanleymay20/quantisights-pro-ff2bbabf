@@ -50,7 +50,7 @@ const Simulations = () => {
         .select("*")
         .eq("organization_id", organizationId)
         .order("created_at", { ascending: false })
-        .limit(20);
+        .limit(20) as any;
       if (activeDatasetId) {
         query = query.eq("dataset_id", activeDatasetId);
       }

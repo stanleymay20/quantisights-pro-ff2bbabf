@@ -59,7 +59,7 @@ const Reports = () => {
       .from("reports")
       .select("*")
       .eq("organization_id", currentOrgId)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false }) as any;
     if (activeDatasetId) {
       query = query.eq("dataset_id", activeDatasetId);
     }

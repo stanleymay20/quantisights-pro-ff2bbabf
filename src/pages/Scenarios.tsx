@@ -108,7 +108,7 @@ const Scenarios = () => {
       .select("*")
       .eq("organization_id", currentOrgId)
       .neq("status", "archived")
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false }) as any;
     if (activeDatasetId) {
       query = query.eq("dataset_id", activeDatasetId);
     }
