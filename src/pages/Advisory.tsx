@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useOrganization } from "@/hooks/useOrganization";
-import { useProject } from "@/contexts/ProjectContext";
+import { useActiveDataContext } from "@/hooks/useActiveDataContext";
+import DatasetRequired from "@/components/layout/DatasetRequired";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -57,9 +57,9 @@ interface AdvisoryInstance {
 
 const PRIORITY_CONFIG: Record<string, { bg: string; border: string; text: string; label: string }> = {
   critical: { bg: "bg-destructive/10", border: "border-destructive/30", text: "text-destructive", label: "Critical" },
-  high: { bg: "bg-amber-500/10", border: "border-amber-500/30", text: "text-amber-400", label: "High" },
-  medium: { bg: "bg-sky-500/10", border: "border-sky-500/30", text: "text-sky-400", label: "Medium" },
-  low: { bg: "bg-emerald-500/10", border: "border-emerald-500/30", text: "text-emerald-400", label: "Low" },
+  high: { bg: "bg-warning/10", border: "border-warning/30", text: "text-warning", label: "High" },
+  medium: { bg: "bg-primary/10", border: "border-primary/30", text: "text-primary", label: "Medium" },
+  low: { bg: "bg-success/10", border: "border-success/30", text: "text-success", label: "Low" },
 };
 
 const CATEGORY_ICONS: Record<string, typeof Lightbulb> = {
@@ -71,15 +71,14 @@ const CATEGORY_ICONS: Record<string, typeof Lightbulb> = {
 };
 
 const STATUS_CONFIG: Record<string, { icon: typeof PlayCircle; color: string; label: string }> = {
-  open: { icon: AlertTriangle, color: "text-amber-400", label: "Open" },
-  in_progress: { icon: PlayCircle, color: "text-sky-400", label: "In Progress" },
-  resolved: { icon: CheckCircle2, color: "text-emerald-400", label: "Resolved" },
+  open: { icon: AlertTriangle, color: "text-warning", label: "Open" },
+  in_progress: { icon: PlayCircle, color: "text-primary", label: "In Progress" },
+  resolved: { icon: CheckCircle2, color: "text-success", label: "Resolved" },
   dismissed: { icon: XCircle, color: "text-muted-foreground", label: "Dismissed" },
 };
 
 const AdvisoryPage = () => {
-  const { currentOrgId } = useOrganization();
-  const { activeDatasetId } = useProject();
+  const { orgId: currentOrgId, datasetId: activeDatasetId } = useActiveDataContext();
   const { toast } = useToast();
   const [advisories, setAdvisories] = useState<Advisory[]>([]);
   const [instances, setInstances] = useState<AdvisoryInstance[]>([]);
@@ -217,7 +216,8 @@ const AdvisoryPage = () => {
   const closedInstances = instances.filter(i => i.status === "resolved" || i.status === "dismissed");
 
   return (
-    <>
+    <DatasetRequired moduleName="Advisory">
+      <>
         <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
           <div className="flex items-center gap-3">
             <SidebarMobileToggle />
@@ -429,7 +429,8 @@ const AdvisoryPage = () => {
             </TabsContent>
           </Tabs>
         </main>
-    </>
+      </>
+    </DatasetRequired>
   );
 };
 

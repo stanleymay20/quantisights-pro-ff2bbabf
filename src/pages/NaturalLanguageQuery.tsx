@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { useOrganization } from "@/hooks/useOrganization";
+import { useActiveDataContext } from "@/hooks/useActiveDataContext";
+import DatasetRequired from "@/components/layout/DatasetRequired";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { MessageSquare, Loader2, Sparkles, ArrowRight, Database, HelpCircle } from "lucide-react";
@@ -33,7 +34,7 @@ const SUGGESTED_QUERIES = [
 ];
 
 const NaturalLanguageQuery = () => {
-  const { currentOrgId } = useOrganization();
+  const { orgId: currentOrgId, datasetId } = useActiveDataContext();
   const { toast } = useToast();
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
@@ -44,7 +45,7 @@ const NaturalLanguageQuery = () => {
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("nlq-query", {
-        body: { organization_id: currentOrgId, query: queryText },
+        body: { organization_id: currentOrgId, dataset_id: datasetId, query: queryText },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
@@ -62,7 +63,8 @@ const NaturalLanguageQuery = () => {
     c >= 70 ? "text-emerald-500" : c >= 40 ? "text-amber-500" : "text-destructive";
 
   return (
-    <>
+    <DatasetRequired moduleName="Natural Language Query">
+      <>
         <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
           <div className="flex items-center gap-3">
             <SidebarMobileToggle />
@@ -179,7 +181,8 @@ const NaturalLanguageQuery = () => {
             </Card>
           ))}
         </main>
-    </>
+      </>
+    </DatasetRequired>
   );
 };
 

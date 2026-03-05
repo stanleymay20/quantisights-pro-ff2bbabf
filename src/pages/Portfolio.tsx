@@ -7,6 +7,7 @@ import PortfolioRiskHeatmap from "@/components/portfolio/PortfolioRiskHeatmap";
 import PortfolioRiskGrid from "@/components/portfolio/PortfolioRiskGrid";
 import PortfolioCompanyDetail from "@/components/portfolio/PortfolioCompanyDetail";
 import AddPortfolioCompanyDialog from "@/components/portfolio/AddPortfolioCompanyDialog";
+import DatasetRequired from "@/components/layout/DatasetRequired";
 import { Briefcase } from "lucide-react";
 
 const Portfolio = () => {
@@ -15,7 +16,8 @@ const Portfolio = () => {
   const [selected, setSelected] = useState<PortfolioCompany | null>(null);
 
   return (
-    <main className="flex-1 flex flex-col overflow-auto">
+    <DatasetRequired moduleName="Portfolio">
+      <main className="flex-1 flex flex-col overflow-auto">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 flex-1">
           {/* Header */}
           <div className="flex items-center justify-between">
@@ -65,7 +67,8 @@ const Portfolio = () => {
             </>
           )}
         </div>
-    </main>
+      </main>
+    </DatasetRequired>
   );
 };
 

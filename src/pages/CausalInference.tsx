@@ -60,7 +60,7 @@ const CausalInference = () => {
   };
 
   const strengthColor = (s: number) =>
-    s >= 0.7 ? "text-emerald-400" : s >= 0.5 ? "text-amber-400" : "text-muted-foreground";
+    s >= 0.7 ? "text-success" : s >= 0.5 ? "text-warning" : "text-muted-foreground";
 
   return (
     <>
@@ -126,7 +126,7 @@ const CausalInference = () => {
                 <Card>
                   <CardContent className="p-4 text-center">
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Confidence</p>
-                    <p className={`text-2xl font-bold font-mono mt-1 ${result.confidence >= 70 ? "text-emerald-400" : result.confidence >= 50 ? "text-amber-400" : "text-destructive"}`}>
+                    <p className={`text-2xl font-bold font-mono mt-1 ${result.confidence >= 70 ? "text-success" : result.confidence >= 50 ? "text-warning" : "text-destructive"}`}>
                       {result.confidence}%
                     </p>
                   </CardContent>
@@ -176,7 +176,7 @@ const CausalInference = () => {
                       <div key={idx} className="flex items-center justify-between p-3 rounded-lg border border-border/30 hover:bg-muted/20 transition-colors">
                         <div className="flex items-center gap-3">
                           <Badge variant="outline" className="text-xs">{edge.from.replace(/_/g, " ")}</Badge>
-                          <ArrowRight className={`w-4 h-4 ${edge.direction === "positive" ? "text-emerald-400" : "text-destructive"}`} />
+                          <ArrowRight className={`w-4 h-4 ${edge.direction === "positive" ? "text-success" : "text-destructive"}`} />
                           <Badge variant="outline" className="text-xs">{edge.to.replace(/_/g, " ")}</Badge>
                         </div>
                         <div className="flex items-center gap-4 text-xs">

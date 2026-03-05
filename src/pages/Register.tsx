@@ -26,7 +26,7 @@ const Register = forwardRef<HTMLDivElement>((_, ref) => {
   const allPassed = passedRules.every(Boolean);
   const strength = passedRules.filter(Boolean).length;
   const strengthLabel = strength <= 1 ? "Weak" : strength <= 3 ? "Fair" : strength <= 4 ? "Good" : "Strong";
-  const strengthColor = strength <= 1 ? "bg-destructive" : strength <= 3 ? "bg-amber-500" : strength <= 4 ? "bg-primary" : "bg-emerald-500";
+  const strengthColor = strength <= 1 ? "bg-destructive" : strength <= 3 ? "bg-warning" : strength <= 4 ? "bg-primary" : "bg-success";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,7 +97,7 @@ const Register = forwardRef<HTMLDivElement>((_, ref) => {
                   <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
                     <div className={`h-full rounded-full transition-all duration-300 ${strengthColor}`} style={{ width: `${(strength / 5) * 100}%` }} />
                   </div>
-                  <span className={`text-[10px] font-semibold uppercase tracking-wider ${strength <= 1 ? "text-destructive" : strength <= 3 ? "text-amber-500" : "text-emerald-500"}`}>
+                  <span className={`text-[10px] font-semibold uppercase tracking-wider ${strength <= 1 ? "text-destructive" : strength <= 3 ? "text-warning" : "text-success"}`}>
                     {strengthLabel}
                   </span>
                 </div>
@@ -105,11 +105,11 @@ const Register = forwardRef<HTMLDivElement>((_, ref) => {
                   {PASSWORD_RULES.map((rule, i) => (
                     <div key={i} className="flex items-center gap-1.5">
                       {passedRules[i] ? (
-                        <Check className="w-3 h-3 text-emerald-400" />
+                        <Check className="w-3 h-3 text-success" />
                       ) : (
                         <X className="w-3 h-3 text-muted-foreground/50" />
                       )}
-                      <span className={`text-[11px] ${passedRules[i] ? "text-emerald-400" : "text-muted-foreground/60"}`}>{rule.label}</span>
+                      <span className={`text-[11px] ${passedRules[i] ? "text-success" : "text-muted-foreground/60"}`}>{rule.label}</span>
                     </div>
                   ))}
                 </div>

@@ -25,7 +25,7 @@ const ResetPassword = () => {
   const allPassed = passedRules.every(Boolean);
   const strength = passedRules.filter(Boolean).length;
   const strengthLabel = strength <= 1 ? "Weak" : strength <= 3 ? "Fair" : strength <= 4 ? "Good" : "Strong";
-  const strengthColor = strength <= 1 ? "bg-destructive" : strength <= 3 ? "bg-amber-500" : strength <= 4 ? "bg-primary" : "bg-emerald-500";
+  const strengthColor = strength <= 1 ? "bg-destructive" : strength <= 3 ? "bg-warning" : strength <= 4 ? "bg-primary" : "bg-success";
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
@@ -107,7 +107,7 @@ const ResetPassword = () => {
                   <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
                     <div className={`h-full rounded-full transition-all duration-300 ${strengthColor}`} style={{ width: `${(strength / 5) * 100}%` }} />
                   </div>
-                  <span className={`text-[10px] font-semibold uppercase tracking-wider ${strength <= 1 ? "text-destructive" : strength <= 3 ? "text-amber-500" : "text-emerald-500"}`}>
+                  <span className={`text-[10px] font-semibold uppercase tracking-wider ${strength <= 1 ? "text-destructive" : strength <= 3 ? "text-warning" : "text-success"}`}>
                     {strengthLabel}
                   </span>
                 </div>

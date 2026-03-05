@@ -312,6 +312,7 @@ const DataUpload = () => {
       // ═══════════════════════════════════════════════════════
 
       // Create pipeline run for observability
+      const pipelineStartedAt = Date.now();
       const { data: pipelineRun } = await supabase.from("pipeline_runs").insert({
         organization_id: currentOrgId,
         workspace_id: currentWorkspaceId || null,
@@ -533,7 +534,7 @@ const DataUpload = () => {
           status: "completed",
           stage: "complete",
           completed_at: new Date().toISOString(),
-          duration_ms: Date.now() - Date.now(), // approximate
+          duration_ms: Date.now() - pipelineStartedAt,
         }).eq("id", pipelineRunId);
       }
 
