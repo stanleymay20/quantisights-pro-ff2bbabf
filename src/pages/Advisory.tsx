@@ -17,6 +17,7 @@ import {
   Zap, BarChart3, PlayCircle, Archive, XCircle, History,
 } from "lucide-react";
 import IntelligenceDisclaimer from "@/components/IntelligenceDisclaimer";
+import ConfidenceBadge, { resolveConfidence } from "@/components/ConfidenceBadge";
 
 interface Advisory {
   id: string;
@@ -26,7 +27,7 @@ interface Advisory {
   action: string;
   expected_impact: string;
   timeframe: string;
-  confidence: number;
+  confidence: unknown;
   rationale: string;
   kpi_affected: string[];
   playbook_steps: string[];
