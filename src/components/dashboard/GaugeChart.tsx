@@ -11,28 +11,38 @@ interface GaugeChartProps {
 }
 
 const GaugeChart = ({ value, max = 100, label, unit = "%", thresholds = { warning: 60, danger: 30 } }: GaugeChartProps) => {
-  const { gaugeData, color, displayValue } = useMemo(() => {
+  const { gaugeData, colorClass, displayValue, statusLabel } = useMemo(() => {
     const clamped = Math.max(0, Math.min(value, max));
     const pct = (clamped / max) * 100;
     const filled = pct;
     const empty = 100 - pct;
 
-    let c: string;
+    // Use CSS variable-based colors instead of hardcoded HSL
+    let fillColor: string;
+    let cls: string;
+    let status: string;
     if (pct >= thresholds.warning) {
-      c = "hsl(142, 71%, 45%)"; // green
+      fillColor = "hsl(var(--success))";
+      cls = "text-success";
+      status = "Healthy";
     } else if (pct >= thresholds.danger) {
-      c = "hsl(38, 92%, 50%)"; // amber
+      fillColor = "hsl(var(--warning))";
+      cls = "text-warning";
+      status = "Warning";
     } else {
-      c = "hsl(0, 72%, 51%)"; // red
+      fillColor = "hsl(var(--destructive))";
+      cls = "text-destructive";
+      status = "Critical";
     }
 
     return {
       gaugeData: [
-        { value: filled, fill: c },
+        { value: filled, fill: fillColor },
         { value: empty, fill: "hsl(var(--muted))" },
       ],
-      color: c,
+      colorClass: cls,
       displayValue: pct,
+      statusLabel: status,
     };
   }, [value, max, thresholds]);
 
@@ -64,10 +74,8 @@ const GaugeChart = ({ value, max = 100, label, unit = "%", thresholds = { warnin
           </PieChart>
         </ResponsiveContainer>
         <div className="absolute inset-0 flex flex-col items-center justify-end pb-2">
-          <p className="text-2xl font-bold font-mono" style={{ color }}>{displayValue.toFixed(0)}{unit}</p>
-          <p className="text-[10px] text-muted-foreground mt-0.5">
-            {displayValue >= thresholds.warning ? "Healthy" : displayValue >= thresholds.danger ? "Warning" : "Critical"}
-          </p>
+          <p className={`text-2xl font-bold font-mono ${colorClass}`}>{displayValue.toFixed(0)}{unit}</p>
+          <p className="text-[10px] text-muted-foreground mt-0.5">{statusLabel}</p>
         </div>
       </div>
     </div>

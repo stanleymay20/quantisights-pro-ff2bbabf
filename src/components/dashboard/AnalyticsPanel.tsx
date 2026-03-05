@@ -52,17 +52,17 @@ const AnalyticsPanel = ({ metrics, revenueByMonth, segmentData, insights, latest
       {/* Row 4: Operational Health Gauges */}
       <div className="grid md:grid-cols-3 gap-5">
         <GaugeChart
-          value={latestChurn > 0 ? Math.max(0, 100 - latestChurn * 100) : 85}
+          value={latestChurn > 0 ? Math.max(0, 100 - latestChurn * 100) : 0}
           label="Retention Health"
         />
         <GaugeChart
-          value={latestCost > 0 ? Math.max(0, 100 - latestCost * 100) : 70}
+          value={latestCost > 0 ? Math.max(0, 100 - latestCost * 100) : 0}
           label="Cost Efficiency"
         />
         <GaugeChart
           value={revenueByMonth.length >= 2
             ? Math.min(100, Math.max(0, ((revenueByMonth[revenueByMonth.length - 1]?.revenue ?? 0) / (revenueByMonth[0]?.revenue || 1) - 1) * 100 + 50))
-            : 50}
+            : 0}
           label="Growth Momentum"
         />
       </div>

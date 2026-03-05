@@ -30,6 +30,14 @@ const SUGGESTION_PROMPTS = [
   "What immediate actions should I take this week?",
 ];
 
+/** Derive risk badge styling from score using semantic tokens */
+function getRiskBadge(score: number): { className: string; label: string } {
+  if (score <= 25) return { className: "bg-success/10 text-success border-none", label: "Low" };
+  if (score <= 50) return { className: "bg-primary/10 text-primary border-none", label: "Moderate" };
+  if (score <= 75) return { className: "bg-warning/10 text-warning border-none", label: "Elevated" };
+  return { className: "bg-destructive/10 text-destructive border-none", label: "High" };
+}
+
 const ExecutiveCopilot = ({ organizationId, roleType, riskScore, tier }: Props) => {
   const [messages, setMessages] = useState<CopilotMessage[]>([]);
   const [input, setInput] = useState("");
@@ -71,7 +79,6 @@ const ExecutiveCopilot = ({ organizationId, roleType, riskScore, tier }: Props) 
         }),
       });
 
-      // Capture session ID from header
       const newSessionId = resp.headers.get("X-Session-Id");
       if (newSessionId) setSessionId(newSessionId);
 
@@ -148,7 +155,6 @@ const ExecutiveCopilot = ({ organizationId, roleType, riskScore, tier }: Props) 
     } catch (e: any) {
       console.error("Copilot error:", e);
       setError(e.message);
-      // Remove user message if no response came
       if (!assistantSoFar) {
         setMessages(prev => prev.slice(0, -1));
       }
@@ -170,25 +176,20 @@ const ExecutiveCopilot = ({ organizationId, roleType, riskScore, tier }: Props) 
     setError(null);
   };
 
+  const riskBadge = riskScore !== undefined ? getRiskBadge(riskScore) : null;
+
   return (
     <div className="space-y-4">
       {/* Risk Summary Bar */}
-      {riskScore !== undefined && (
+      {riskScore !== undefined && riskBadge && (
         <div className="flex items-center gap-4 p-4 rounded-xl border bg-card">
           <Activity className="w-5 h-5 text-primary" />
           <div className="flex-1">
             <p className="text-sm font-medium">Current Risk Index</p>
             <p className="text-2xl font-bold">{riskScore}<span className="text-sm text-muted-foreground font-normal">/100</span></p>
           </div>
-          <Badge
-            className={
-              riskScore <= 25 ? "bg-emerald-500/10 text-emerald-400 border-none" :
-              riskScore <= 50 ? "bg-sky-500/10 text-sky-400 border-none" :
-              riskScore <= 75 ? "bg-amber-500/10 text-amber-400 border-none" :
-              "bg-destructive/10 text-destructive border-none"
-            }
-          >
-            {riskScore <= 25 ? "Low" : riskScore <= 50 ? "Moderate" : riskScore <= 75 ? "Elevated" : "High"}
+          <Badge className={riskBadge.className}>
+            {riskBadge.label}
           </Badge>
         </div>
       )}
@@ -213,7 +214,6 @@ const ExecutiveCopilot = ({ organizationId, roleType, riskScore, tier }: Props) 
         </CardHeader>
 
         <CardContent className="flex-1 flex flex-col min-h-0 pb-4">
-          {/* Messages Area */}
           <ScrollArea className="flex-1 pr-4" ref={scrollRef}>
             {messages.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full py-12 gap-6">
@@ -274,14 +274,12 @@ const ExecutiveCopilot = ({ organizationId, roleType, riskScore, tier }: Props) 
             )}
           </ScrollArea>
 
-          {/* Error */}
           {error && (
             <div className="flex-none mt-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-sm text-destructive">
               {error}
             </div>
           )}
 
-          {/* Input Area */}
           <div className="flex-none mt-3 flex gap-2">
             <Textarea
               ref={textareaRef}

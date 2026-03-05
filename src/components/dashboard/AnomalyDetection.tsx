@@ -1,4 +1,4 @@
-import { AlertTriangle, TrendingDown, DollarSign, ArrowRight, Eye, EyeOff, Shield } from "lucide-react";
+import { AlertTriangle, TrendingDown, DollarSign, ArrowRight, Shield } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { Insight } from "@/hooks/useInsights";
 
@@ -24,7 +24,7 @@ const AnomalyDetection = ({ insights }: AnomalyDetectionProps) => {
       <p className="text-[11px] text-muted-foreground mb-4">Detected deviations</p>
       {anomalies.length === 0 ? (
         <div className="py-6 text-center">
-          <Shield className="w-7 h-7 text-emerald-400/40 mx-auto mb-2" />
+          <Shield className="w-7 h-7 text-success/40 mx-auto mb-2" />
           <p className="text-xs text-muted-foreground">No anomalies — systems nominal</p>
         </div>
       ) : (
