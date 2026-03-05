@@ -37,8 +37,8 @@ interface KeyResult {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  on_track: "text-emerald-500 bg-emerald-500/10",
-  at_risk: "text-amber-500 bg-amber-500/10",
+  on_track: "text-success bg-success/10",
+  at_risk: "text-warning bg-warning/10",
   behind: "text-destructive bg-destructive/10",
   completed: "text-primary bg-primary/10",
   active: "text-foreground bg-muted",
@@ -230,7 +230,7 @@ const OKRs = () => {
                         const pct = kr.target_value > 0 ? (kr.current_value / kr.target_value) * 100 : 0;
                         return (
                           <div key={kr.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
-                            {pct >= 100 ? <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" /> : <Target className="w-4 h-4 text-primary shrink-0" />}
+                            {pct >= 100 ? <CheckCircle2 className="w-4 h-4 text-success shrink-0" /> : <Target className="w-4 h-4 text-primary shrink-0" />}
                             <div className="flex-1 min-w-0">
                               <p className="text-xs font-medium truncate">{kr.title}</p>
                               <div className="flex items-center gap-2 mt-1">

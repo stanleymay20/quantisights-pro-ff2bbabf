@@ -63,7 +63,7 @@ const AcceptInvite = () => {
 
           {status === "login_required" && (
             <>
-              <XCircle className="w-12 h-12 text-amber-400" />
+              <XCircle className="w-12 h-12 text-warning" />
               <h2 className="text-xl font-semibold">Login Required</h2>
               <p className="text-muted-foreground text-center">
                 Please log in or create an account to accept this invitation.
@@ -76,7 +76,7 @@ const AcceptInvite = () => {
 
           {status === "success" && (
             <>
-              <CheckCircle2 className="w-12 h-12 text-emerald-400" />
+              <CheckCircle2 className="w-12 h-12 text-success" />
               <h2 className="text-xl font-semibold">Welcome!</h2>
               <p className="text-muted-foreground text-center">{message}</p>
               <Button onClick={() => navigate("/dashboard")}>Go to Dashboard</Button>

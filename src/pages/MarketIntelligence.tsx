@@ -52,7 +52,7 @@ const CATEGORY_ICONS: Record<string, any> = {
 
 const IMPACT_COLORS: Record<string, string> = {
   high: "text-destructive border-destructive/30",
-  medium: "text-amber-500 border-amber-500/30",
+  medium: "text-warning border-warning/30",
   low: "text-muted-foreground border-border/50",
 };
 

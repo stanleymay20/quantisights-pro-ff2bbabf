@@ -4,8 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useOrganization } from "@/hooks/useOrganization";
-import { useProject } from "@/contexts/ProjectContext";
+import { useActiveDataContext } from "@/hooks/useActiveDataContext";
+import DatasetRequired from "@/components/layout/DatasetRequired";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, ComposedChart } from "recharts";
@@ -25,8 +25,7 @@ interface ForecastData {
 }
 
 const Forecasting = () => {
-  const { currentOrgId } = useOrganization();
-  const { activeDatasetId } = useProject();
+  const { orgId, datasetId } = useActiveDataContext();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [metricType, setMetricType] = useState("revenue");
@@ -34,11 +33,11 @@ const Forecasting = () => {
   const [data, setData] = useState<ForecastData | null>(null);
 
   const runForecast = async () => {
-    if (!currentOrgId) return;
+    if (!orgId) return;
     setLoading(true);
     try {
       const { data: result, error } = await supabase.functions.invoke("predictive-forecast", {
-        body: { organization_id: currentOrgId, dataset_id: activeDatasetId, metric_type: metricType, horizon_months: horizon },
+        body: { organization_id: orgId, dataset_id: datasetId, metric_type: metricType, horizon_months: horizon },
       });
       if (error) throw error;
       if (result?.error) throw new Error(result.error);
@@ -61,11 +60,12 @@ const Forecasting = () => {
   const TrendIcon = data?.trend_direction === "growing" ? TrendingUp
     : data?.trend_direction === "declining" ? TrendingDown : Minus;
 
-  const trendColor = data?.trend_direction === "growing" ? "text-emerald-500"
+  const trendColor = data?.trend_direction === "growing" ? "text-success"
     : data?.trend_direction === "declining" ? "text-destructive" : "text-muted-foreground";
 
   return (
-    <>
+    <DatasetRequired moduleName="Forecasting">
+      <>
         <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
           <div className="flex items-center gap-3">
             <SidebarMobileToggle />
@@ -100,7 +100,6 @@ const Forecasting = () => {
 
           {data && (
             <>
-              {/* Stats */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <Card>
                   <CardContent className="p-4 flex items-center gap-3">
@@ -122,7 +121,7 @@ const Forecasting = () => {
                 </Card>
                 <Card>
                   <CardContent className="p-4 flex items-center gap-3">
-                    <Activity className="w-8 h-8 text-amber-500" />
+                    <Activity className="w-8 h-8 text-warning" />
                     <div>
                       <p className="text-xs text-muted-foreground">Seasonality</p>
                       <p className="text-lg font-semibold">{data.seasonality_detected ? "Detected" : "None"}</p>
@@ -140,7 +139,6 @@ const Forecasting = () => {
                 </Card>
               </div>
 
-              {/* Chart */}
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base">Historical + Forecast ({metricType})</CardTitle>
@@ -163,7 +161,6 @@ const Forecasting = () => {
                 </CardContent>
               </Card>
 
-              {/* Narrative */}
               <Card>
                 <CardContent className="p-4">
                   <p className="text-sm text-muted-foreground">{data.confidence_narrative}</p>
@@ -172,7 +169,8 @@ const Forecasting = () => {
             </>
           )}
         </main>
-    </>
+      </>
+    </DatasetRequired>
   );
 };
 

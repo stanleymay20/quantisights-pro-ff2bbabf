@@ -5,8 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { useOrganization } from "@/hooks/useOrganization";
-import { useProject } from "@/contexts/ProjectContext";
+import { useActiveDataContext } from "@/hooks/useActiveDataContext";
+import DatasetRequired from "@/components/layout/DatasetRequired";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -28,20 +28,19 @@ interface DiagnosticResult {
 
 const SEVERITY_CONFIG = {
   critical: { bg: "bg-destructive/10", border: "border-destructive/30", text: "text-destructive", icon: AlertTriangle, label: "Critical" },
-  warning: { bg: "bg-amber-500/10", border: "border-amber-500/30", text: "text-amber-400", icon: AlertTriangle, label: "Warning" },
-  info: { bg: "bg-sky-500/10", border: "border-sky-500/30", text: "text-sky-400", icon: Activity, label: "Healthy" },
+  warning: { bg: "bg-warning/10", border: "border-warning/30", text: "text-warning", icon: AlertTriangle, label: "Warning" },
+  info: { bg: "bg-primary/10", border: "border-primary/30", text: "text-primary", icon: Activity, label: "Healthy" },
 };
 
 const TREND_ICONS = {
-  improving: { icon: TrendingUp, color: "text-emerald-400" },
+  improving: { icon: TrendingUp, color: "text-success" },
   declining: { icon: TrendingDown, color: "text-destructive" },
   stable: { icon: Minus, color: "text-muted-foreground" },
-  volatile: { icon: Zap, color: "text-amber-400" },
+  volatile: { icon: Zap, color: "text-warning" },
 };
 
 const Diagnostics = () => {
-  const { currentOrgId } = useOrganization();
-  const { activeDatasetId } = useProject();
+  const { orgId, datasetId } = useActiveDataContext();
   const { toast } = useToast();
   const [diagnostics, setDiagnostics] = useState<DiagnosticResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -49,18 +48,18 @@ const Diagnostics = () => {
   const [expanded, setExpanded] = useState<string | null>(null);
 
   const runDiagnostics = async () => {
-    if (!currentOrgId) return;
+    if (!orgId) return;
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("diagnostic-engine", {
-        body: { organization_id: currentOrgId, dataset_id: activeDatasetId },
+        body: { organization_id: orgId, dataset_id: datasetId },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       setDiagnostics(data.diagnostics || []);
       setAnalyzedCount(data.analyzed_metrics || 0);
       if (data.diagnostics?.length === 0) {
-        toast({ title: "No data to diagnose", description: "Upload data first to run diagnostics." });
+        toast({ title: "No anomalies detected", description: "All metrics within expected ranges." });
       }
     } catch (err: any) {
       toast({ title: "Diagnostic failed", description: err.message, variant: "destructive" });
@@ -70,14 +69,15 @@ const Diagnostics = () => {
   };
 
   useEffect(() => {
-    if (currentOrgId) runDiagnostics();
-  }, [currentOrgId]);
+    if (orgId && datasetId) runDiagnostics();
+  }, [orgId, datasetId]);
 
   const criticalCount = diagnostics.filter(d => d.severity === "critical").length;
   const warningCount = diagnostics.filter(d => d.severity === "warning").length;
 
   return (
-    <>
+    <DatasetRequired moduleName="Diagnostics">
+      <>
         <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
           <div className="flex items-center gap-3">
             <SidebarMobileToggle />
@@ -91,7 +91,6 @@ const Diagnostics = () => {
         </header>
 
         <main className="flex-1 p-8 overflow-auto space-y-6">
-          {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <Card>
               <CardContent className="p-4 flex items-center gap-3">
@@ -117,8 +116,8 @@ const Diagnostics = () => {
             </Card>
             <Card>
               <CardContent className="p-4 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                  <AlertTriangle className="w-5 h-5 text-amber-400" />
+                <div className="w-10 h-10 rounded-lg bg-warning/10 flex items-center justify-center">
+                  <AlertTriangle className="w-5 h-5 text-warning" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{warningCount}</p>
@@ -128,8 +127,8 @@ const Diagnostics = () => {
             </Card>
             <Card>
               <CardContent className="p-4 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-                  <BarChart3 className="w-5 h-5 text-emerald-400" />
+                <div className="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center">
+                  <BarChart3 className="w-5 h-5 text-success" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{diagnostics.length}</p>
@@ -139,7 +138,6 @@ const Diagnostics = () => {
             </Card>
           </div>
 
-          {/* Diagnostic Cards */}
           {loading ? (
             <Card>
               <CardContent className="py-16 flex flex-col items-center gap-4">
@@ -153,13 +151,10 @@ const Diagnostics = () => {
                 <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
                   <Search className="w-7 h-7 text-primary" />
                 </div>
-                <h2 className="text-lg font-semibold font-display">Diagnostic Engine Ready</h2>
+                <h2 className="text-lg font-semibold font-display">No Anomalies Detected</h2>
                 <p className="text-muted-foreground text-sm text-center max-w-sm leading-relaxed">
-                  Upload revenue, cost, and customer data to activate root cause analysis and causal pattern detection.
+                  All metrics are within expected ranges. Re-analyze after new data arrives.
                 </p>
-                <a href="/data-upload" className="mt-2 inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:brightness-110 transition-all">
-                  Upload Data
-                </a>
               </CardContent>
             </Card>
           ) : (
@@ -261,7 +256,8 @@ const Diagnostics = () => {
             </div>
           )}
         </main>
-    </>
+      </>
+    </DatasetRequired>
   );
 };
 
