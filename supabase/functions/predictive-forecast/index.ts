@@ -41,6 +41,24 @@ serve(async (req) => {
       });
     }
 
+    const serviceClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+
+    // Validate dataset belongs to org
+    const { data: dsCheck } = await serviceClient
+      .from("datasets")
+      .select("id")
+      .eq("id", dataset_id)
+      .eq("organization_id", organization_id)
+      .maybeSingle();
+    if (!dsCheck) {
+      return new Response(JSON.stringify({ error: "dataset_id does not belong to this organization" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Dry run: validate contract only
     if (dry_run) {
       return new Response(JSON.stringify({ dry_run: true, status: "PASS", dataset_id, organization_id }), {
@@ -49,14 +67,13 @@ serve(async (req) => {
     }
 
     // Fetch historical metrics — dataset-scoped (REQUIRED)
-    const metricsQuery = userClient
+    const { data: metrics, error: mErr } = await userClient
       .from("metrics")
       .select("value, date")
       .eq("organization_id", organization_id)
       .eq("dataset_id", dataset_id)
       .eq("metric_type", metric_type)
       .order("date", { ascending: true });
-    const { data: metrics, error: mErr } = await metricsQuery;
 
     if (mErr) throw mErr;
     if (!metrics || metrics.length < 3) {
@@ -117,14 +134,10 @@ Use exponential smoothing with trend and seasonal decomposition. Include 80% pre
 
     const forecast = JSON.parse(jsonMatch[0]);
 
-    // Store in database
-    const serviceClient = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    );
-
+    // Store in database — dataset-scoped
     await serviceClient.from("forecast_results").insert({
       organization_id,
+      dataset_id,
       metric_type,
       forecast_horizon_months: horizon_months,
       model_used: "ai-exponential-smoothing",

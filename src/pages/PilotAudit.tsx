@@ -12,8 +12,8 @@ import {
 
 interface CheckResult {
   module: string;
-  scope: "dataset" | "org" | "edge_dry_run" | "hook" | "context";
-  status: "pass" | "fail" | "warn";
+  scope: "dataset" | "org" | "edge_dry_run" | "edge_reject" | "context";
+  status: "pass" | "fail";
   detail: string;
 }
 
@@ -33,22 +33,22 @@ const DATASET_TABLES = [
   { module: "Advisory Instances", table: "advisory_instances" },
 ] as const;
 
-/** Tables that are org-scoped BY DESIGN (decisions, calibration, executive) */
+/** Tables that are org-scoped BY DESIGN */
 const ORG_TABLES = [
   { module: "Decision Ledger (org-wide)", table: "decision_ledger" },
   { module: "Calibration Models (org-wide)", table: "calibration_models" },
   { module: "Decision Simulations (org-wide)", table: "decision_simulations" },
 ] as const;
 
-/** Edge functions that enforce dataset_id + support dry_run */
-const EDGE_FUNCTIONS = [
-  "generate-insights",
-  "prescriptive-advisory",
-  "predictive-forecast",
-  "monte-carlo-sim",
-  "generate-report",
-  "fetch-market-signals",
-] as const;
+/** Edge functions with their minimal valid payloads for dry_run */
+const EDGE_FUNCTIONS: { name: string; payload: Record<string, unknown> }[] = [
+  { name: "generate-insights", payload: {} },
+  { name: "prescriptive-advisory", payload: { role_type: "cfo" } },
+  { name: "predictive-forecast", payload: { metric_type: "revenue" } },
+  { name: "monte-carlo-sim", payload: { metric_type: "revenue", forecast_horizon: 6, simulation_runs: 100 } },
+  { name: "generate-report", payload: { report_type: "executive" } },
+  { name: "fetch-market-signals", payload: { industry: "technology" } },
+];
 
 const PilotAudit = () => {
   const ctx = useActiveDataContext();
@@ -102,7 +102,7 @@ const PilotAudit = () => {
       }
     });
 
-    // 3. Org-scoped table checks (labelled as org-wide)
+    // 3. Org-scoped table checks
     const orgChecks = ORG_TABLES.map(async (tc) => {
       try {
         const { count, error } = await supabase
@@ -133,21 +133,20 @@ const PilotAudit = () => {
     ]);
     checks.push(...dsResults, ...orgResults);
 
-    // 4. Edge function dry_run contract validation
-    const edgeChecks = EDGE_FUNCTIONS.map(async (fnName) => {
+    // 4. Edge function dry_run contract validation (per-function payload)
+    const edgeChecks = EDGE_FUNCTIONS.map(async (fn) => {
       try {
-        const { data, error } = await supabase.functions.invoke(fnName, {
+        const { data, error } = await supabase.functions.invoke(fn.name, {
           body: {
             organization_id: ctx.orgId,
             dataset_id: ctx.datasetId,
             dry_run: true,
-            // Some functions need extra params to not fail validation
-            metric_type: "revenue",
+            ...fn.payload,
           },
         });
         if (error) {
           return {
-            module: `Edge: ${fnName}`,
+            module: `Edge: ${fn.name}`,
             scope: "edge_dry_run" as const,
             status: "fail" as const,
             detail: `Invoke error: ${error.message}`,
@@ -155,16 +154,16 @@ const PilotAudit = () => {
         }
         const isDryRunPass = data?.dry_run === true && data?.status === "PASS";
         return {
-          module: `Edge: ${fnName}`,
+          module: `Edge: ${fn.name}`,
           scope: "edge_dry_run" as const,
           status: isDryRunPass ? ("pass" as const) : ("fail" as const),
           detail: isDryRunPass
             ? `dry_run: PASS — dataset_id enforced ✓`
-            : `Unexpected response: ${JSON.stringify(data).slice(0, 100)}`,
+            : `Unexpected response: ${JSON.stringify(data).slice(0, 120)}`,
         };
       } catch (e: unknown) {
         return {
-          module: `Edge: ${fnName}`,
+          module: `Edge: ${fn.name}`,
           scope: "edge_dry_run" as const,
           status: "fail" as const,
           detail: e instanceof Error ? e.message : "Unknown error",
@@ -175,28 +174,41 @@ const PilotAudit = () => {
     const edgeResults = await Promise.all(edgeChecks);
     checks.push(...edgeResults);
 
-    // 5. Edge function rejection test (call without dataset_id → must fail)
-    try {
-      const { data } = await supabase.functions.invoke("generate-insights", {
-        body: { organization_id: ctx.orgId },
-      });
-      const rejected = data?.error?.includes("dataset_id required");
-      checks.push({
-        module: "Edge rejection: missing dataset_id",
-        scope: "edge_dry_run",
-        status: rejected ? "pass" : "fail",
-        detail: rejected
-          ? "Correctly rejected request without dataset_id ✓"
-          : `Expected rejection, got: ${JSON.stringify(data).slice(0, 100)}`,
-      });
-    } catch {
-      checks.push({
-        module: "Edge rejection: missing dataset_id",
-        scope: "edge_dry_run",
-        status: "pass",
-        detail: "Request rejected (throw) — dataset_id enforcement works ✓",
-      });
-    }
+    // 5. Edge function rejection tests (call WITHOUT dataset_id → must 400)
+    const rejectChecks = EDGE_FUNCTIONS.map(async (fn) => {
+      try {
+        const { data, error } = await supabase.functions.invoke(fn.name, {
+          body: {
+            organization_id: ctx.orgId,
+            ...fn.payload,
+            // dataset_id intentionally omitted
+          },
+        });
+        // We expect either an error or data.error containing "dataset_id required"
+        const rejected =
+          error?.message?.includes("dataset_id") ||
+          (typeof data?.error === "string" && data.error.includes("dataset_id"));
+        return {
+          module: `Reject: ${fn.name}`,
+          scope: "edge_reject" as const,
+          status: rejected ? ("pass" as const) : ("fail" as const),
+          detail: rejected
+            ? "Correctly rejected missing dataset_id ✓"
+            : `Expected rejection, got: ${JSON.stringify(data ?? error).slice(0, 120)}`,
+        };
+      } catch {
+        // A throw also counts as rejection
+        return {
+          module: `Reject: ${fn.name}`,
+          scope: "edge_reject" as const,
+          status: "pass" as const,
+          detail: "Request rejected (throw) — dataset_id enforcement works ✓",
+        };
+      }
+    });
+
+    const rejectResults = await Promise.all(rejectChecks);
+    checks.push(...rejectResults);
 
     setResults(checks);
     setRunning(false);
@@ -204,8 +216,7 @@ const PilotAudit = () => {
 
   const passCount = results.filter((r) => r.status === "pass").length;
   const failCount = results.filter((r) => r.status === "fail").length;
-  const warnCount = results.filter((r) => r.status === "warn").length;
-  const allPass = results.length > 0 && failCount === 0 && warnCount === 0;
+  const allPass = results.length > 0 && failCount === 0;
 
   return (
     <main className="flex-1 flex flex-col overflow-auto">
@@ -272,7 +283,7 @@ const PilotAudit = () => {
                       {allPass ? "Pilot Safe: YES" : "Pilot Safe: NO"}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {passCount} pass · {warnCount} warn · {failCount} fail
+                      {passCount} pass · {failCount} fail
                     </p>
                   </div>
                 </div>
@@ -287,25 +298,26 @@ const PilotAudit = () => {
         {/* Detailed Results */}
         {results.length > 0 && (
           <>
-            {/* Dataset-scoped checks */}
             <ResultSection
               title="Dataset-Scoped Tables"
               icon={<Layers className="w-4 h-4" />}
               items={results.filter((r) => r.scope === "dataset")}
             />
-            {/* Org-scoped checks */}
             <ResultSection
               title="Org-Scoped Tables (by design)"
               icon={<Database className="w-4 h-4" />}
               items={results.filter((r) => r.scope === "org")}
             />
-            {/* Edge function dry_run checks */}
             <ResultSection
               title="Edge Function dry_run Validation"
               icon={<Zap className="w-4 h-4" />}
               items={results.filter((r) => r.scope === "edge_dry_run")}
             />
-            {/* Context check */}
+            <ResultSection
+              title="Edge Function Rejection Tests (missing dataset_id)"
+              icon={<AlertTriangle className="w-4 h-4" />}
+              items={results.filter((r) => r.scope === "edge_reject")}
+            />
             <ResultSection
               title="Context"
               icon={<ShieldCheck className="w-4 h-4" />}
@@ -345,8 +357,6 @@ function ResultSection({
               <div className="flex items-center gap-3 min-w-0">
                 {r.status === "pass" ? (
                   <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
-                ) : r.status === "warn" ? (
-                  <AlertTriangle className="w-4 h-4 text-warning shrink-0" />
                 ) : (
                   <XCircle className="w-4 h-4 text-destructive shrink-0" />
                 )}
@@ -373,14 +383,13 @@ function ResultSection({
                     dry_run
                   </Badge>
                 )}
+                {r.scope === "edge_reject" && (
+                  <Badge variant="outline" className="text-[10px]">
+                    rejection
+                  </Badge>
+                )}
                 <Badge
-                  variant={
-                    r.status === "pass"
-                      ? "default"
-                      : r.status === "warn"
-                        ? "secondary"
-                        : "destructive"
-                  }
+                  variant={r.status === "pass" ? "default" : "destructive"}
                 >
                   {r.status.toUpperCase()}
                 </Badge>

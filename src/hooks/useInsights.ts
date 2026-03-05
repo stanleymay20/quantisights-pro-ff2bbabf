@@ -12,12 +12,15 @@ export interface Insight {
   generation_model?: string;
 }
 
-export const useInsights = (orgId: string | null, datasetId?: string | null) => {
+/**
+ * Hook to fetch insights — REQUIRES dataset_id (Active Data Contract).
+ */
+export const useInsights = (orgId: string | null, datasetId: string | null) => {
   const [insights, setInsights] = useState<Insight[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!orgId) {
+    if (!orgId || !datasetId) {
       setInsights([]);
       setLoading(false);
       return;
@@ -25,19 +28,13 @@ export const useInsights = (orgId: string | null, datasetId?: string | null) => 
 
     const fetchData = async () => {
       setLoading(true);
-      let query = supabase
+      const { data, error } = await supabase
         .from("insights")
         .select("*")
         .eq("organization_id", orgId)
+        .eq("dataset_id", datasetId)
         .order("created_at", { ascending: false })
         .limit(20);
-
-      // Scope to dataset if provided; fall back to org-wide
-      if (datasetId) {
-        query = query.eq("dataset_id", datasetId);
-      }
-
-      const { data, error } = await query;
 
       if (!error && data) setInsights(data);
       setLoading(false);

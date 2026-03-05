@@ -28,6 +28,9 @@ export interface PortfolioCompany {
   updated_at: string;
 }
 
+/**
+ * Hook to fetch portfolio companies — REQUIRES dataset_id (Active Data Contract).
+ */
 export const usePortfolioCompanies = (orgId: string | null, datasetId: string | null) => {
   const [companies, setCompanies] = useState<PortfolioCompany[]>([]);
   const [loading, setLoading] = useState(true);
