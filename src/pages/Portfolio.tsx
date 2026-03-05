@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { SidebarMobileToggle } from "@/components/layout/ProtectedShell";
-import { useOrganization } from "@/hooks/useOrganization";
+import { useActiveDataContext } from "@/hooks/useActiveDataContext";
 import { usePortfolioCompanies, PortfolioCompany } from "@/hooks/usePortfolioCompanies";
 import PortfolioKPIBar from "@/components/portfolio/PortfolioKPIBar";
 import PortfolioRiskHeatmap from "@/components/portfolio/PortfolioRiskHeatmap";
@@ -11,15 +11,14 @@ import DatasetRequired from "@/components/layout/DatasetRequired";
 import { Briefcase } from "lucide-react";
 
 const Portfolio = () => {
-  const { currentOrgId } = useOrganization();
-  const { companies, loading, totalAUM, totalRevenue, avgRisk, atRiskCount, avgEbitdaMargin, addCompany } = usePortfolioCompanies(currentOrgId);
+  const { orgId, datasetId } = useActiveDataContext();
+  const { companies, loading, totalAUM, totalRevenue, avgRisk, atRiskCount, avgEbitdaMargin, addCompany } = usePortfolioCompanies(orgId, datasetId);
   const [selected, setSelected] = useState<PortfolioCompany | null>(null);
 
   return (
     <DatasetRequired moduleName="Portfolio">
       <main className="flex-1 flex flex-col overflow-auto">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 flex-1">
-          {/* Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <SidebarMobileToggle />
@@ -31,8 +30,8 @@ const Portfolio = () => {
                 <p className="text-xs text-muted-foreground">Multi-company risk monitoring & performance tracking</p>
               </div>
             </div>
-            {currentOrgId && (
-              <AddPortfolioCompanyDialog organizationId={currentOrgId} onAdd={addCompany} />
+            {orgId && (
+              <AddPortfolioCompanyDialog organizationId={orgId} onAdd={(c) => addCompany({ ...c, dataset_id: datasetId })} />
             )}
           </div>
 

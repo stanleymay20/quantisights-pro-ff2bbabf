@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 export interface PortfolioCompany {
   id: string;
   organization_id: string;
+  dataset_id?: string | null;
   name: string;
   sector: string;
   investment_date: string | null;
@@ -27,21 +28,27 @@ export interface PortfolioCompany {
   updated_at: string;
 }
 
-export const usePortfolioCompanies = (orgId: string | null) => {
+export const usePortfolioCompanies = (orgId: string | null, datasetId?: string | null) => {
   const [companies, setCompanies] = useState<PortfolioCompany[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetch = useCallback(async () => {
     if (!orgId) { setCompanies([]); setLoading(false); return; }
     setLoading(true);
-    const { data, error } = await supabase
+    let query = supabase
       .from("portfolio_companies")
       .select("*")
       .eq("organization_id", orgId)
       .order("name");
+
+    if (datasetId) {
+      query = query.eq("dataset_id", datasetId);
+    }
+
+    const { data, error } = await query;
     if (!error && data) setCompanies(data as PortfolioCompany[]);
     setLoading(false);
-  }, [orgId]);
+  }, [orgId, datasetId]);
 
   useEffect(() => { fetch(); }, [fetch]);
 
