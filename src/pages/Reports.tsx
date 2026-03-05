@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { SidebarMobileToggle } from "@/components/layout/ProtectedShell";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOrganization } from "@/hooks/useOrganization";
+import { useProject } from "@/contexts/ProjectContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { FileText, Download, Loader2, Plus, BarChart3, Shield, TrendingUp, Crown } from "lucide-react";
@@ -44,6 +45,7 @@ const REPORT_TYPES = [
 const Reports = () => {
   const { user } = useAuth();
   const { currentOrgId } = useOrganization();
+  const { activeDatasetId } = useProject();
   const { toast } = useToast();
   const [reports, setReports] = useState<Report[]>([]);
   const [generating, setGenerating] = useState(false);
@@ -70,11 +72,11 @@ const Reports = () => {
     setGenerating(true);
     try {
       await supabase.functions.invoke("generate-insights", {
-        body: { organization_id: currentOrgId },
+        body: { organization_id: currentOrgId, dataset_id: activeDatasetId },
       });
 
       const { data, error } = await supabase.functions.invoke("generate-report", {
-        body: { organization_id: currentOrgId, report_type: selectedType },
+        body: { organization_id: currentOrgId, dataset_id: activeDatasetId, report_type: selectedType },
       });
 
       if (error) throw error;

@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useOrganization } from "@/hooks/useOrganization";
+import { useProject } from "@/contexts/ProjectContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -91,6 +92,7 @@ const EXEC_STATUS: Record<string, { bg: string; text: string; label: string }> =
 
 const DecisionLedgerPage = () => {
   const { currentOrgId } = useOrganization();
+  const { activeDatasetId } = useProject();
   const { user } = useAuth();
   const { toast } = useToast();
   const [decisions, setDecisions] = useState<Decision[]>([]);

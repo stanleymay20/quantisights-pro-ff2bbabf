@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useOrganization } from "@/hooks/useOrganization";
+import { useProject } from "@/contexts/ProjectContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -38,6 +39,7 @@ const TREND_ICONS: Record<string, typeof TrendingUp> = {
 
 const BenchmarkingPage = () => {
   const { currentOrgId } = useOrganization();
+  const { activeDatasetId } = useProject();
   const { toast } = useToast();
   const [scores, setScores] = useState<BenchmarkScore[]>([]);
   const [loading, setLoading] = useState(true);
@@ -76,7 +78,7 @@ const BenchmarkingPage = () => {
     setComputing(true);
     try {
       const { error } = await supabase.functions.invoke("compute-kpi", {
-        body: { organization_id: currentOrgId },
+        body: { organization_id: currentOrgId, dataset_id: activeDatasetId },
       });
       if (error) throw error;
       toast({ title: "Benchmarks computed", description: "Scores have been recalculated against industry peers." });

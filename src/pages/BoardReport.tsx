@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOrganization } from "@/hooks/useOrganization";
+import { useProject } from "@/contexts/ProjectContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Loader2, Download, ArrowLeft } from "lucide-react";
@@ -37,6 +38,7 @@ interface ReportData {
 const BoardReport = () => {
   const { user } = useAuth();
   const { currentOrgId } = useOrganization();
+  const { activeDatasetId } = useProject();
   const navigate = useNavigate();
   const [report, setReport] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -47,7 +49,7 @@ const BoardReport = () => {
       if (!currentOrgId) return;
       try {
         const { data, error: fnError } = await supabase.functions.invoke("generate-board-report", {
-          body: { organization_id: currentOrgId },
+          body: { organization_id: currentOrgId, dataset_id: activeDatasetId },
         });
         if (fnError) throw fnError;
         if (data?.error) throw new Error(data.error);
