@@ -266,13 +266,13 @@ const AdvisoryPage = () => {
                     <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
                       <Lightbulb className="w-7 h-7 text-primary" />
                     </div>
-                    <h2 className="text-lg font-semibold font-display">Advisory Engine Standby</h2>
+                    <h2 className="text-lg font-semibold font-display">No Actionable Advisories</h2>
                     <p className="text-muted-foreground text-sm text-center max-w-sm leading-relaxed">
-                      Upload operational data to receive AI-powered strategic recommendations with actionable playbooks.
+                      The active dataset is connected and analyzed. No high-priority strategic actions are currently required.
                     </p>
-                    <a href="/data-upload" className="mt-2 inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:brightness-110 transition-all">
-                      Upload Data
-                    </a>
+                    <Button onClick={fetchAdvisories} variant="outline" size="sm" className="mt-2">
+                      Re-run Analysis
+                    </Button>
                   </CardContent>
                 </Card>
               ) : (
