@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/hooks/useSubscription";
 import { TierKey } from "@/lib/stripe-tiers";
@@ -13,11 +13,21 @@ export interface MetricRow {
   dataset_id?: string | null;
 }
 
+/** Dynamic summary for any metric type */
+export interface MetricTypeSummary {
+  metricType: string;
+  total: number;
+  latest: number;
+  count: number;
+  trend: "up" | "down" | "flat" | null;
+  previousTotal: number | null;
+}
+
 const REALTIME_TIERS: TierKey[] = ["growth", "enterprise"];
 
 /**
  * Hook to fetch metrics — REQUIRES dataset_id (Active Data Contract).
- * Will not fetch if datasetId is missing.
+ * Returns BOTH legacy SaaS KPIs (for backward compat) AND dynamic metric summaries.
  */
 export const useMetrics = (orgId: string | null, datasetId: string | null) => {
   const [metrics, setMetrics] = useState<MetricRow[]>([]);
@@ -75,48 +85,26 @@ export const useMetrics = (orgId: string | null, datasetId: string | null) => {
       .channel(`metrics-live-${orgId}-${datasetId}`)
       .on(
         "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "metrics",
-          filter: `organization_id=eq.${orgId}`,
-        },
+        { event: "INSERT", schema: "public", table: "metrics", filter: `organization_id=eq.${orgId}` },
         (payload) => {
           const newRow = payload.new as MetricRow & { created_at?: string };
           if (newRow.dataset_id !== datasetId) return;
-          setMetrics((prev) => {
-            const updated = [...prev, newRow].sort(
-              (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-            );
-            return updated;
-          });
+          setMetrics((prev) => [...prev, newRow].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()));
           setLastUpdated(newRow.created_at || new Date().toISOString());
         }
       )
       .on(
         "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "metrics",
-          filter: `organization_id=eq.${orgId}`,
-        },
+        { event: "UPDATE", schema: "public", table: "metrics", filter: `organization_id=eq.${orgId}` },
         (payload) => {
           const updated = payload.new as MetricRow;
           if (updated.dataset_id !== datasetId) return;
-          setMetrics((prev) =>
-            prev.map((m) => (m.id === updated.id ? updated : m))
-          );
+          setMetrics((prev) => prev.map((m) => (m.id === updated.id ? updated : m)));
         }
       )
       .on(
         "postgres_changes",
-        {
-          event: "DELETE",
-          schema: "public",
-          table: "metrics",
-          filter: `organization_id=eq.${orgId}`,
-        },
+        { event: "DELETE", schema: "public", table: "metrics", filter: `organization_id=eq.${orgId}` },
         (payload) => {
           const deleted = payload.old as { id: string };
           setMetrics((prev) => prev.filter((m) => m.id !== deleted.id));
@@ -132,7 +120,54 @@ export const useMetrics = (orgId: string | null, datasetId: string | null) => {
     };
   }, [orgId, datasetId, canStream]);
 
-  // Derived KPIs
+  // ═══════════════════════════════════════════════════════
+  // DYNAMIC METRIC SUMMARIES — domain-agnostic
+  // ═══════════════════════════════════════════════════════
+
+  /** All unique metric types in the dataset */
+  const metricTypes = useMemo(() => {
+    return [...new Set(metrics.map((m) => m.metric_type))];
+  }, [metrics]);
+
+  /** Dynamic summary per metric type — sorted by total descending */
+  const metricSummaries = useMemo((): MetricTypeSummary[] => {
+    const byType = new Map<string, MetricRow[]>();
+    metrics.forEach((m) => {
+      const list = byType.get(m.metric_type) || [];
+      list.push(m);
+      byType.set(m.metric_type, list);
+    });
+
+    return Array.from(byType.entries())
+      .map(([metricType, rows]) => {
+        const sorted = [...rows].sort((a, b) => a.date.localeCompare(b.date));
+        const total = rows.reduce((s, r) => s + Number(r.value), 0);
+        const latest = sorted[sorted.length - 1]?.value ?? 0;
+
+        // Compute trend: compare first half vs second half
+        let trend: "up" | "down" | "flat" | null = null;
+        let previousTotal: number | null = null;
+        if (sorted.length >= 2) {
+          const mid = Math.floor(sorted.length / 2);
+          const firstHalf = sorted.slice(0, mid).reduce((s, r) => s + Number(r.value), 0);
+          const secondHalf = sorted.slice(mid).reduce((s, r) => s + Number(r.value), 0);
+          previousTotal = firstHalf;
+          const changePct = firstHalf !== 0 ? ((secondHalf - firstHalf) / Math.abs(firstHalf)) * 100 : 0;
+          trend = Math.abs(changePct) < 1 ? "flat" : changePct > 0 ? "up" : "down";
+        }
+
+        return { metricType, total, latest, count: rows.length, trend, previousTotal };
+      })
+      .sort((a, b) => b.count - a.count);
+  }, [metrics]);
+
+  /** Top N metric summaries for KPI display */
+  const topMetrics = useMemo(() => metricSummaries.slice(0, 4), [metricSummaries]);
+
+  // ═══════════════════════════════════════════════════════
+  // LEGACY SaaS KPIs — backward compatibility
+  // ═══════════════════════════════════════════════════════
+
   const totalRevenue = metrics
     .filter((m) => m.metric_type === "revenue")
     .reduce((s, m) => s + Number(m.value), 0);
@@ -164,6 +199,11 @@ export const useMetrics = (orgId: string | null, datasetId: string | null) => {
     lastUpdated,
     isStreaming,
     canStream,
+    // Dynamic (domain-agnostic)
+    metricTypes,
+    metricSummaries,
+    topMetrics,
+    // Legacy SaaS
     totalRevenue,
     totalCustomers,
     latestCost,

@@ -19,7 +19,7 @@ const stageLabels: Record<string, string> = {
 
 const statusIcon = (status: string) => {
   switch (status) {
-    case "completed": return <CheckCircle className="w-4 h-4 text-emerald-500" />;
+    case "completed": return <CheckCircle className="w-4 h-4 text-success" />;
     case "running": return <Loader2 className="w-4 h-4 text-primary animate-spin" />;
     case "failed": return <AlertCircle className="w-4 h-4 text-destructive" />;
     default: return <Clock className="w-4 h-4 text-muted-foreground" />;
@@ -32,10 +32,12 @@ const DataPipelineStatus = ({ orgId, datasetId }: DataPipelineStatusProps) => {
   if (loading || !latestRun) return null;
 
   const tiers = [
-    { label: "Raw", icon: Database, count: latestRun.raw_count, color: "text-blue-500" },
-    { label: "Clean", icon: Layers, count: latestRun.transformed_count, color: "text-emerald-500" },
-    { label: "Analytical", icon: BarChart3, count: latestRun.aggregated_count, color: "text-violet-500" },
+    { label: "Raw", icon: Database, colorClass: "text-primary" },
+    { label: "Clean", icon: Layers, colorClass: "text-success" },
+    { label: "Analytical", icon: BarChart3, colorClass: "text-accent-foreground" },
   ];
+
+  const tierCounts = [latestRun.raw_count, latestRun.transformed_count, latestRun.aggregated_count];
 
   return (
     <Card className="border-border/30">
@@ -55,9 +57,9 @@ const DataPipelineStatus = ({ orgId, datasetId }: DataPipelineStatusProps) => {
           {tiers.map((tier, i) => (
             <div key={tier.label} className="flex items-center gap-2">
               <div className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg bg-muted/40 min-w-[80px]">
-                <tier.icon className={`w-4 h-4 ${tier.color}`} />
+                <tier.icon className={`w-4 h-4 ${tier.colorClass}`} />
                 <span className="text-[10px] font-medium text-muted-foreground">{tier.label}</span>
-                <span className="text-sm font-bold">{tier.count.toLocaleString()}</span>
+                <span className="text-sm font-bold">{tierCounts[i].toLocaleString()}</span>
               </div>
               {i < tiers.length - 1 && <ArrowRight className="w-3 h-3 text-muted-foreground/40 shrink-0" />}
             </div>

@@ -22,7 +22,11 @@ const Dashboard = () => {
   const { user } = useAuth();
   const { organizations, currentOrgId, currentOrg, switchOrganization, loading: orgLoading } = useOrganization();
   const { currentProject, activeDatasetId } = useProject();
-  const { metrics, totalRevenue, totalCustomers, latestCost, latestChurn, revenueByMonth, segmentData, hasData, lastUpdated, loading: metricsLoading } = useMetrics(currentOrgId, activeDatasetId);
+  const {
+    metrics, totalRevenue, totalCustomers, latestCost, latestChurn,
+    revenueByMonth, segmentData, hasData, lastUpdated, loading: metricsLoading,
+    topMetrics, metricTypes,
+  } = useMetrics(currentOrgId, activeDatasetId);
   const { insights, loading: insightsLoading } = useInsights(currentOrgId, activeDatasetId);
   const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "User";
   const { toast } = useToast();
@@ -48,13 +52,9 @@ const Dashboard = () => {
     checkOnboarding();
   }, [currentOrgId, orgLoading, navigate]);
 
-  // Removed: redirect to /portfolio when no SaaS-specific metrics found.
-  // The dashboard should always show for any dataset type.
-
   useEffect(() => {
     if (!currentOrgId) return;
     const fetchCount = async () => {
-      // advisory_instances: dataset-scoped (has dataset_id column)
       let advisoryQuery = supabase
         .from("advisory_instances")
         .select("*", { count: "exact", head: true })
@@ -64,14 +64,12 @@ const Dashboard = () => {
         advisoryQuery = advisoryQuery.eq("dataset_id", activeDatasetId);
       }
 
-      // decision_ledger: org-scoped by design (no dataset_id column)
       const decisionQuery = supabase
         .from("decision_ledger")
         .select("*", { count: "exact", head: true })
         .eq("organization_id", currentOrgId)
         .eq("execution_status", "not_started");
 
-      // calibration_models: org-scoped by design
       const calQuery = supabase
         .from("calibration_models")
         .select("overall_calibration_score")
@@ -114,6 +112,11 @@ const Dashboard = () => {
     return "Good evening";
   };
 
+  /** Data-driven summary: show metric count and types instead of hardcoded SaaS terms */
+  const dataDescription = metricTypes.length > 0
+    ? `${metricTypes.length} metric type${metricTypes.length > 1 ? "s" : ""} detected across ${metrics.length.toLocaleString()} data points`
+    : "Upload verified operational data to enable intelligence. Every insight is derived from your data.";
+
   return (
     <>
       {hasData && <GuidedTour />}
@@ -124,7 +127,6 @@ const Dashboard = () => {
           lastUpdated={lastUpdated}
         />
 
-        {/* Header */}
         <header className="h-14 border-b border-border/30 flex items-center justify-between px-4 md:px-8 shrink-0 bg-background/60 backdrop-blur-sm">
           <div className="flex items-center gap-2 min-w-0">
             <SidebarMobileToggle />
@@ -188,14 +190,13 @@ const Dashboard = () => {
                   </p>
                 ) : (
                   <p className="text-muted-foreground text-base max-w-md mx-auto leading-relaxed">
-                    Upload verified operational data to enable intelligence. No synthetic metrics — every insight is derived from your data.
+                    {dataDescription}
                   </p>
                 )}
               </div>
 
               <div className="space-y-3">
                 {activeDatasetId ? (
-                  /* Dataset exists but no derived metrics yet — show "Run Analysis" instead of "Upload" */
                   [
                     { icon: Zap, title: "Run Intelligence Engine", desc: "Generate insights, diagnostics, and strategic recommendations from your dataset", path: null, action: "Run Analysis", onClick: handleRecalculate },
                     { icon: TrendingUp, title: "Strategic advisory activates", desc: "Prescriptive playbooks, scenario modeling, and board reports", path: "/advisory", action: "View Advisory" },
@@ -230,10 +231,9 @@ const Dashboard = () => {
                     </motion.div>
                   ))
                 ) : (
-                  /* No dataset at all — show upload flow */
                   [
-                    { icon: Upload, title: "Upload verified data", desc: "Revenue, cost, customer, and churn metrics via CSV or API", path: "/data-upload", action: "Upload Data" },
-                    { icon: Zap, title: "Autonomous diagnostics engage", desc: "Root cause analysis, anomaly detection, and risk scoring", path: null, action: null },
+                    { icon: Upload, title: "Upload verified data", desc: "Any structured CSV — financial, operational, academic, or custom metrics", path: "/data-upload", action: "Upload Data" },
+                    { icon: Zap, title: "Autonomous diagnostics engage", desc: "Root cause analysis, anomaly detection, and pattern recognition", path: null, action: null },
                     { icon: TrendingUp, title: "Strategic advisory activates", desc: "Prescriptive playbooks, scenario modeling, and board reports", path: null, action: null },
                   ].map((step, i) => (
                     <motion.div
@@ -285,7 +285,7 @@ const Dashboard = () => {
                 <p className="text-sm text-muted-foreground mt-0.5">
                   {hasAnomalies
                     ? `${criticalInsights.length} signal${criticalInsights.length > 1 ? "s" : ""} require attention`
-                    : "All systems nominal — no action required"
+                    : `${dataDescription} — all systems nominal`
                   }
                 </p>
               </motion.div>
@@ -304,6 +304,7 @@ const Dashboard = () => {
                 revenueByMonth={revenueByMonth}
                 segmentData={segmentData}
                 onDecisionLogged={() => setPendingDecisions(p => p + 1)}
+                topMetrics={topMetrics}
               />
             </>
           )}

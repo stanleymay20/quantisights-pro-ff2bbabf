@@ -5,16 +5,17 @@ import { Badge } from "@/components/ui/badge";
 import { useOrganization } from "@/hooks/useOrganization";
 import { useProject } from "@/contexts/ProjectContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Database, ArrowRight, FileText, Target, BarChart3, Loader2, GitCommitVertical } from "lucide-react";
+import { Database, ArrowRight, FileText, Target, BarChart3, Loader2, GitCommitVertical, Layers } from "lucide-react";
 import DataPipelineStatus from "@/components/dashboard/DataPipelineStatus";
 import DatasetRequired from "@/components/layout/DatasetRequired";
 
 interface LineageNode {
   id: string;
-  type: "source" | "metric" | "kpi" | "decision";
+  type: "source" | "raw" | "metric" | "kpi" | "decision";
   label: string;
   detail: string;
   status?: string;
+  count?: number;
 }
 
 interface LineageEdge {
@@ -23,10 +24,11 @@ interface LineageEdge {
 }
 
 const NODE_STYLES: Record<string, { icon: any; bg: string; border: string }> = {
-  source: { icon: Database, bg: "bg-blue-500/10", border: "border-blue-500/30" },
-  metric: { icon: BarChart3, bg: "bg-emerald-500/10", border: "border-emerald-500/30" },
+  source: { icon: Database, bg: "bg-primary/10", border: "border-primary/30" },
+  raw: { icon: Layers, bg: "bg-secondary/50", border: "border-border/40" },
+  metric: { icon: BarChart3, bg: "bg-success/10", border: "border-success/30" },
   kpi: { icon: Target, bg: "bg-primary/10", border: "border-primary/30" },
-  decision: { icon: FileText, bg: "bg-amber-500/10", border: "border-amber-500/30" },
+  decision: { icon: FileText, bg: "bg-warning/10", border: "border-warning/30" },
 };
 
 const DataLineage = () => {
@@ -37,26 +39,50 @@ const DataLineage = () => {
   const [kpis, setKpis] = useState<any[]>([]);
   const [decisions, setDecisions] = useState<any[]>([]);
   const [metricTypes, setMetricTypes] = useState<string[]>([]);
+  const [rawCount, setRawCount] = useState(0);
+  const [datasetInfo, setDatasetInfo] = useState<{ name: string; row_count: number | null; column_mapping: any } | null>(null);
 
   useEffect(() => {
     if (!currentOrgId) return;
     const load = async () => {
       setLoading(true);
+
+      // Fetch dataset info for lineage
+      let datasetPromise = Promise.resolve<any>(null);
+      if (activeDatasetId) {
+        datasetPromise = supabase
+          .from("datasets")
+          .select("name, row_count, column_mapping")
+          .eq("id", activeDatasetId)
+          .single()
+          .then(r => r.data);
+      }
+
       let metricsQuery = supabase.from("metrics").select("metric_type").eq("organization_id", currentOrgId);
       if (activeDatasetId) {
         metricsQuery = metricsQuery.eq("dataset_id", activeDatasetId);
       }
-      const [srcRes, kpiRes, decRes, metRes] = await Promise.all([
+
+      // Raw records count for the dataset
+      let rawQuery = activeDatasetId
+        ? supabase.from("raw_records").select("*", { count: "exact", head: true }).eq("dataset_id", activeDatasetId)
+        : Promise.resolve({ count: 0 });
+
+      const [srcRes, kpiRes, decRes, metRes, rawRes, dsInfo] = await Promise.all([
         supabase.from("data_sources").select("id, name, source_type, status").eq("organization_id", currentOrgId),
         supabase.from("kpis").select("id, name, formula, metric_dependencies").eq("organization_id", currentOrgId).eq("status", "active"),
         supabase.from("decision_ledger").select("id, recommended_action, decision_status, kpi_id").eq("organization_id", currentOrgId).order("created_at", { ascending: false }).limit(20),
         metricsQuery,
+        rawQuery,
+        datasetPromise,
       ]);
       setSources(srcRes.data || []);
       setKpis(kpiRes.data || []);
       setDecisions(decRes.data || []);
       const uniqueTypes = [...new Set((metRes.data || []).map((m: any) => m.metric_type))];
       setMetricTypes(uniqueTypes);
+      setRawCount((rawRes as any).count ?? 0);
+      setDatasetInfo(dsInfo);
       setLoading(false);
     };
     load();
@@ -66,29 +92,50 @@ const DataLineage = () => {
     const n: LineageNode[] = [];
     const e: LineageEdge[] = [];
 
+    // Dataset source node
+    if (datasetInfo) {
+      n.push({
+        id: "dataset-source",
+        type: "source",
+        label: datasetInfo.name,
+        detail: `${datasetInfo.row_count?.toLocaleString() ?? "?"} rows uploaded`,
+        count: datasetInfo.row_count ?? undefined,
+      });
+    }
+
     // Sources
     sources.forEach(s => {
       n.push({ id: `src-${s.id}`, type: "source", label: s.name, detail: s.source_type, status: s.status });
     });
 
-    // Metrics
+    // Raw layer
+    if (rawCount > 0) {
+      n.push({ id: "raw-layer", type: "raw", label: "Raw Records", detail: `${rawCount.toLocaleString()} immutable records`, count: rawCount });
+      if (datasetInfo) e.push({ from: "dataset-source", to: "raw-layer" });
+      sources.forEach(s => e.push({ from: `src-${s.id}`, to: "raw-layer" }));
+    }
+
+    // Metrics (from column mapping if available)
     metricTypes.forEach(mt => {
       const id = `met-${mt}`;
-      n.push({ id, type: "metric", label: mt, detail: "Aggregated metric" });
-      // Connect all sources to all metrics (simplified lineage)
-      sources.forEach(s => e.push({ from: `src-${s.id}`, to: id }));
+      const displayName = mt.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      n.push({ id, type: "metric", label: displayName, detail: "Normalized metric" });
+      if (rawCount > 0) {
+        e.push({ from: "raw-layer", to: id });
+      } else {
+        sources.forEach(s => e.push({ from: `src-${s.id}`, to: id }));
+        if (datasetInfo) e.push({ from: "dataset-source", to: id });
+      }
     });
 
     // KPIs
     kpis.forEach(k => {
       const id = `kpi-${k.id}`;
       n.push({ id, type: "kpi", label: k.name, detail: k.formula });
-      // Connect metric dependencies
       const deps = Array.isArray(k.metric_dependencies) ? k.metric_dependencies : [];
       deps.forEach((dep: string) => {
         if (metricTypes.includes(dep)) e.push({ from: `met-${dep}`, to: id });
       });
-      // If no deps matched, connect all metrics
       if (deps.length === 0) metricTypes.forEach(mt => e.push({ from: `met-${mt}`, to: id }));
     });
 
@@ -101,17 +148,13 @@ const DataLineage = () => {
     });
 
     return { nodes: n, edges: e };
-  }, [sources, metricTypes, kpis, decisions]);
+  }, [sources, metricTypes, kpis, decisions, rawCount, datasetInfo]);
 
-  const layers: Record<string, LineageNode[]> = {
-    source: nodes.filter(n => n.type === "source"),
-    metric: nodes.filter(n => n.type === "metric"),
-    kpi: nodes.filter(n => n.type === "kpi"),
-    decision: nodes.filter(n => n.type === "decision"),
-  };
-
-  const layerLabels = ["Data Sources", "Raw Metrics", "KPI Formulas", "Decisions"];
-  const layerKeys = ["source", "metric", "kpi", "decision"];
+  const layerKeys = ["source", "raw", "metric", "kpi", "decision"];
+  const layerLabels = ["Data Sources", "Raw Layer", "Clean Metrics", "KPI Formulas", "Decisions"];
+  const layers: Record<string, LineageNode[]> = Object.fromEntries(
+    layerKeys.map(k => [k, nodes.filter(n => n.type === k)])
+  );
 
   return (
     <DatasetRequired moduleName="Data Lineage">
@@ -136,7 +179,7 @@ const DataLineage = () => {
           ) : (
             <div className="space-y-2">
               {/* Legend */}
-              <div className="flex gap-4 mb-6">
+              <div className="flex gap-4 mb-6 flex-wrap">
                 {layerKeys.map((key, i) => {
                   const style = NODE_STYLES[key];
                   const Icon = style.icon;
@@ -151,13 +194,39 @@ const DataLineage = () => {
                 })}
               </div>
 
+              {/* Column mapping lineage */}
+              {datasetInfo?.column_mapping && (
+                <Card className="mb-4">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">Column Mapping Lineage</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                      {Object.entries(datasetInfo.column_mapping as Record<string, string>).map(([key, target]) => {
+                        const parts = key.split(":");
+                        const colName = parts.length > 1 ? parts.slice(1).join(":") : key;
+                        return (
+                          <div key={key} className="flex items-center gap-2 text-xs p-2 rounded-lg bg-muted/30 border border-border/20">
+                            <span className="font-mono truncate text-muted-foreground">{colName}</span>
+                            <ArrowRight className="w-3 h-3 text-muted-foreground/50 shrink-0" />
+                            <Badge variant={target === "skip" ? "outline" : "secondary"} className="text-[10px] capitalize shrink-0">
+                              {target}
+                            </Badge>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
               {/* Layered graph */}
               <div className="flex gap-6 overflow-x-auto pb-4">
                 {layerKeys.map((key, layerIdx) => (
                   <div key={key} className="flex items-start gap-4">
                     <div className="space-y-3 min-w-[200px]">
                       <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{layerLabels[layerIdx]}</p>
-                      {layers[key].length === 0 ? (
+                      {(layers[key]?.length ?? 0) === 0 ? (
                         <p className="text-xs text-muted-foreground/50 italic">None</p>
                       ) : (
                         layers[key].map(node => {
@@ -173,6 +242,9 @@ const DataLineage = () => {
                                   {node.status && (
                                     <Badge variant="outline" className="text-[9px] mt-1 capitalize">{node.status}</Badge>
                                   )}
+                                  {node.count != null && (
+                                    <p className="text-[9px] text-muted-foreground mt-0.5">{node.count.toLocaleString()} records</p>
+                                  )}
                                 </div>
                               </CardContent>
                             </Card>
@@ -180,7 +252,7 @@ const DataLineage = () => {
                         })
                       )}
                     </div>
-                    {layerIdx < 3 && (
+                    {layerIdx < layerKeys.length - 1 && (
                       <div className="flex items-center pt-10">
                         <ArrowRight className="w-5 h-5 text-muted-foreground/30" />
                       </div>
@@ -191,8 +263,9 @@ const DataLineage = () => {
 
               {/* Stats */}
               <Card className="mt-6">
-                <CardContent className="p-4 flex gap-8">
-                  <div><span className="text-2xl font-bold">{sources.length}</span><span className="text-xs text-muted-foreground ml-1">Sources</span></div>
+                <CardContent className="p-4 flex gap-8 flex-wrap">
+                  <div><span className="text-2xl font-bold">{sources.length + (datasetInfo ? 1 : 0)}</span><span className="text-xs text-muted-foreground ml-1">Sources</span></div>
+                  <div><span className="text-2xl font-bold">{rawCount.toLocaleString()}</span><span className="text-xs text-muted-foreground ml-1">Raw Records</span></div>
                   <div><span className="text-2xl font-bold">{metricTypes.length}</span><span className="text-xs text-muted-foreground ml-1">Metric Types</span></div>
                   <div><span className="text-2xl font-bold">{kpis.length}</span><span className="text-xs text-muted-foreground ml-1">Active KPIs</span></div>
                   <div><span className="text-2xl font-bold">{decisions.length}</span><span className="text-xs text-muted-foreground ml-1">Decisions</span></div>
