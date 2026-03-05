@@ -183,6 +183,7 @@ const App = () => (
               <Route path="/counterfactual" element={<P><CounterfactualExplanation /></P>} />
               <Route path="/misses" element={<P><Misses /></P>} />
               <Route path="/portfolio" element={<P><Portfolio /></P>} />
+              <Route path="/pilot-audit" element={<P><PilotAudit /></P>} />
             </Routes>
             </Suspense>
           </AuthProvider>
