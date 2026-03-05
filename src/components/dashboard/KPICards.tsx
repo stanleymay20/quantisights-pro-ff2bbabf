@@ -1,154 +1,108 @@
-import { useEffect, useRef, useState } from "react";
-import { DollarSign, Users, CreditCard, UserMinus, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { useEffect, useRef, useState, memo, useMemo } from "react";
+import { DollarSign, Users, CreditCard, UserMinus, TrendingUp, TrendingDown, Minus, BarChart3 } from "lucide-react";
+import type { MetricTypeSummary } from "@/hooks/useMetrics";
 
 interface KPICardsProps {
-  revenue: number;
-  customers: number;
-  costRate: number;
-  churnRate: number;
-  /** Previous period values for data-driven trend calculation */
+  /** Dynamic metric summaries from useMetrics — domain-agnostic */
+  topMetrics?: MetricTypeSummary[];
+  // Legacy SaaS props (backward compat)
+  revenue?: number;
+  customers?: number;
+  costRate?: number;
+  churnRate?: number;
   previousRevenue?: number;
   previousCustomers?: number;
   previousCostRate?: number;
   previousChurnRate?: number;
 }
 
-const formatValue = (v: number, prefix = "", suffix = "") => {
-  if (v >= 1_000_000) return `${prefix}${(v / 1_000_000).toFixed(1)}M${suffix}`;
-  if (v >= 1_000) return `${prefix}${(v / 1_000).toFixed(1)}K${suffix}`;
-  return `${prefix}${v.toFixed(1)}${suffix}`;
-};
-
-const AnimatedValue = ({ value, prefix = "", suffix = "" }: { value: number; prefix?: string; suffix?: string }) => {
-  const [display, setDisplay] = useState(0);
-  const ref = useRef<number>(0);
-
-  useEffect(() => {
-    const start = ref.current;
-    const end = value;
-    const duration = 800;
-    const startTime = performance.now();
-
-    const animate = (now: number) => {
-      const elapsed = now - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      const current = start + (end - start) * eased;
-      setDisplay(current);
-      ref.current = current;
-      if (progress < 1) requestAnimationFrame(animate);
-    };
-
-    requestAnimationFrame(animate);
-  }, [value]);
-
-  return <span>{formatValue(display, prefix, suffix)}</span>;
-};
-
-/** Data-driven trend: compare current vs previous period. Returns null if no comparison data. */
-function deriveTrend(
-  current: number,
-  previous: number | undefined,
-  invertPositive = false
-): "up" | "down" | "flat" | null {
+function deriveTrend(current: number, previous: number | undefined | null): "up" | "down" | "flat" | null {
   if (previous == null || previous === 0) return null;
   const changePct = ((current - previous) / Math.abs(previous)) * 100;
-  if (Math.abs(changePct) < 1) return "flat"; // <1% change = flat
-  const isUp = changePct > 0;
-  if (invertPositive) return isUp ? "down" : "up"; // for cost/churn, up is bad
-  return isUp ? "up" : "down";
+  return Math.abs(changePct) < 1 ? "flat" : changePct > 0 ? "up" : "down";
 }
 
-function trendColor(trend: "up" | "down" | "flat" | null, isNegativeMetric: boolean): string {
-  if (!trend || trend === "flat") return "text-muted-foreground";
-  if (isNegativeMetric) return trend === "down" ? "text-success" : "text-destructive"; // lower cost/churn = good
-  return trend === "up" ? "text-success" : "text-destructive";
+function formatMetricName(slug: string): string {
+  return slug
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase())
+    .replace(/Pct\b/, "%")
+    .replace(/Per\b/, "/");
 }
 
-const KPICards = ({
-  revenue, customers, costRate, churnRate,
-  previousRevenue, previousCustomers, previousCostRate, previousChurnRate,
+function formatValue(value: number): string {
+  const abs = Math.abs(value);
+  if (abs >= 1_000_000_000) return `${(value / 1_000_000_000).toFixed(1)}B`;
+  if (abs >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+  if (abs >= 10_000) return `${(value / 1_000).toFixed(1)}K`;
+  if (abs >= 100) return value.toFixed(0);
+  if (abs >= 1) return value.toFixed(1);
+  return value.toFixed(2);
+}
+
+const TrendIcon = ({ trend }: { trend: "up" | "down" | "flat" | null }) => {
+  if (trend === "up") return <TrendingUp className="w-3.5 h-3.5 text-success" />;
+  if (trend === "down") return <TrendingDown className="w-3.5 h-3.5 text-destructive" />;
+  if (trend === "flat") return <Minus className="w-3.5 h-3.5 text-muted-foreground" />;
+  return null;
+};
+
+const KPICards = memo(({
+  topMetrics,
+  revenue,
+  customers,
+  costRate,
+  churnRate,
+  previousRevenue,
+  previousCustomers,
+  previousCostRate,
+  previousChurnRate,
 }: KPICardsProps) => {
-  const revenueTrend = deriveTrend(revenue, previousRevenue);
-  const customerTrend = deriveTrend(customers, previousCustomers);
-  const costTrend = deriveTrend(costRate, previousCostRate, true);
-  const churnTrend = deriveTrend(churnRate, previousChurnRate, true);
+  const cards = useMemo(() => {
+    // Prefer dynamic metrics if available
+    if (topMetrics && topMetrics.length > 0) {
+      return topMetrics.slice(0, 4).map((m) => ({
+        label: formatMetricName(m.metricType),
+        value: formatValue(m.total),
+        trend: m.trend,
+        count: m.count,
+      }));
+    }
 
-  const kpis = [
-    {
-      label: "Revenue",
-      value: revenue,
-      prefix: "€",
-      icon: DollarSign,
-      variant: "kpi-gradient-revenue",
-      color: "text-success",
-      trend: revenueTrend,
-      isNegative: false,
-    },
-    {
-      label: "Customers",
-      value: customers,
-      prefix: "",
-      icon: Users,
-      variant: "kpi-gradient-customers",
-      color: "text-primary",
-      trend: customerTrend,
-      isNegative: false,
-    },
-    {
-      label: "Cost Rate",
-      value: costRate,
-      prefix: "€",
-      icon: CreditCard,
-      variant: "kpi-gradient-costs",
-      color: "text-warning",
-      trend: costTrend,
-      isNegative: true,
-    },
-    {
-      label: "Churn Rate",
-      value: churnRate,
-      prefix: "",
-      suffix: "%",
-      icon: UserMinus,
-      variant: "kpi-gradient-churn",
-      color: "text-destructive",
-      trend: churnTrend,
-      isNegative: true,
-    },
-  ];
+    // Fallback to legacy SaaS KPIs
+    return [
+      { label: "Total Revenue", value: formatValue(revenue ?? 0), trend: deriveTrend(revenue ?? 0, previousRevenue), count: null },
+      { label: "Total Customers", value: formatValue(customers ?? 0), trend: deriveTrend(customers ?? 0, previousCustomers), count: null },
+      { label: "Cost Rate", value: formatValue(costRate ?? 0), trend: deriveTrend(costRate ?? 0, previousCostRate), count: null },
+      { label: "Churn Rate", value: formatValue(churnRate ?? 0), trend: deriveTrend(churnRate ?? 0, previousChurnRate), count: null },
+    ].filter((c) => c.value !== "0" && c.value !== "0.0");
+  }, [topMetrics, revenue, customers, costRate, churnRate, previousRevenue, previousCustomers, previousCostRate, previousChurnRate]);
+
+  if (cards.length === 0) return null;
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 stagger-children">
-      {kpis.map((kpi) => {
-        const TrendIcon = kpi.trend === "up" ? TrendingUp : kpi.trend === "down" ? TrendingDown : kpi.trend === "flat" ? Minus : null;
-        const trendCls = trendColor(kpi.trend, kpi.isNegative);
-        return (
-          <div
-            key={kpi.label}
-            className={`${kpi.variant} glass-card p-3.5 sm:p-5 rounded-xl group hover:shadow-lg hover:shadow-primary/5 transition-all duration-300`}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{kpi.label}</span>
-              <div className="flex items-center gap-1.5">
-                {TrendIcon && (
-                  <TrendIcon className={`w-3.5 h-3.5 ${trendCls}`} />
-                )}
-                <kpi.icon className={`w-4 h-4 ${kpi.color} opacity-60`} />
-              </div>
-            </div>
-            <p className="text-xl sm:text-2xl font-bold font-display tracking-tight">
-              {kpi.suffix ? (
-                <>{kpi.value}{kpi.suffix}</>
-              ) : (
-                <AnimatedValue value={kpi.value} prefix={kpi.prefix} />
-              )}
-            </p>
+    <div className={`grid gap-4 ${cards.length >= 4 ? "grid-cols-2 lg:grid-cols-4" : cards.length === 3 ? "grid-cols-3" : cards.length === 2 ? "grid-cols-2" : "grid-cols-1"}`}>
+      {cards.map((card) => (
+        <div
+          key={card.label}
+          className="rounded-xl border border-border/30 bg-card/60 backdrop-blur-sm p-4 space-y-1"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted-foreground font-medium truncate">{card.label}</span>
+            <TrendIcon trend={card.trend} />
           </div>
-        );
-      })}
+          <p className="text-2xl font-bold tracking-tight">{card.value}</p>
+          {card.count != null && (
+            <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+              <BarChart3 className="w-3 h-3" /> {card.count.toLocaleString()} data points
+            </p>
+          )}
+        </div>
+      ))}
     </div>
   );
-};
+});
+
+KPICards.displayName = "KPICards";
 
 export default KPICards;

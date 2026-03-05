@@ -1,5 +1,4 @@
 import { useState, lazy, Suspense, memo, useMemo } from "react";
-import { motion } from "framer-motion";
 import { BarChart3, ArrowRight } from "lucide-react";
 import ProtectionStatus from "./ProtectionStatus";
 import DecisionQueue from "./DecisionQueue";
@@ -7,6 +6,7 @@ import QuickDecisionLog from "./QuickDecisionLog";
 import CalibrationProgress from "./CalibrationProgress";
 import KPICards from "./KPICards";
 import type { Insight } from "@/hooks/useInsights";
+import type { MetricTypeSummary } from "@/hooks/useMetrics";
 
 const AnalyticsPanel = lazy(() => import("./AnalyticsPanel"));
 
@@ -24,6 +24,8 @@ interface CommandCenterProps {
   revenueByMonth: any[];
   segmentData: Record<string, number>;
   onDecisionLogged: () => void;
+  /** Dynamic metric summaries — domain-agnostic */
+  topMetrics?: MetricTypeSummary[];
 }
 
 const CommandCenter = memo(({
@@ -40,6 +42,7 @@ const CommandCenter = memo(({
   revenueByMonth,
   segmentData,
   onDecisionLogged,
+  topMetrics,
 }: CommandCenterProps) => {
   const [showAnalytics, setShowAnalytics] = useState(false);
 
@@ -74,12 +77,7 @@ const CommandCenter = memo(({
         <CalibrationProgress organizationId={organizationId} />
       </div>
 
-      <KPICards
-        revenue={revenue}
-        customers={totalCustomers}
-        costRate={latestCost}
-        churnRate={churnRate}
-      />
+      <KPICards topMetrics={topMetrics} />
 
       <div className="flex items-center justify-center">
         <button
