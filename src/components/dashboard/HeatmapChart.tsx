@@ -53,13 +53,11 @@ const HeatmapChart = ({ metrics }: HeatmapChartProps) => {
     );
   }
 
+  // Use CSS variable-based primary color for heatmap gradient
   const getColor = (intensity: number) => {
-    const h = 199;
-    const s = 89;
-    const lMax = 85;
-    const lMin = 30;
-    const l = lMax - intensity * (lMax - lMin);
-    return `hsl(${h}, ${s}%, ${l}%)`;
+    // Map intensity to opacity of the primary color
+    const alpha = 0.15 + intensity * 0.85;
+    return `hsl(var(--primary) / ${alpha.toFixed(2)})`;
   };
 
   return (
@@ -98,7 +96,7 @@ const HeatmapChart = ({ metrics }: HeatmapChartProps) => {
           <div className="flex items-center gap-2 mt-3 ml-20">
             <span className="text-[9px] text-muted-foreground">Low</span>
             <div className="flex-1 h-2 rounded-full" style={{
-              background: `linear-gradient(to right, hsl(199, 89%, 85%), hsl(199, 89%, 30%))`
+              background: `linear-gradient(to right, hsl(var(--primary) / 0.15), hsl(var(--primary)))`
             }} />
             <span className="text-[9px] text-muted-foreground">High</span>
           </div>

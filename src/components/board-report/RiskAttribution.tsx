@@ -13,11 +13,11 @@ interface RiskAttributionProps {
 const RiskAttribution = ({ convergence }: RiskAttributionProps) => {
   if (!convergence) {
     return (
-      <div className="px-16 py-12 border-b border-slate-700/50 print:border-slate-200">
-        <h2 className="text-xs uppercase tracking-[0.2em] text-cyan-400 print:text-cyan-700 mb-8 font-semibold">
+      <div className="px-16 py-12 border-b border-border/50 print:border-border">
+        <h2 className="text-xs uppercase tracking-[0.2em] text-primary mb-8 font-semibold">
           Risk Attribution Breakdown
         </h2>
-        <p className="text-slate-400 italic">Convergence index not yet computed.</p>
+        <p className="text-muted-foreground italic">Convergence index not yet computed.</p>
       </div>
     );
   }
@@ -30,28 +30,28 @@ const RiskAttribution = ({ convergence }: RiskAttributionProps) => {
       label: "Dispersion",
       value: convergence.dispersion,
       pct: Math.round((convergence.dispersion / safeTotal) * 100),
-      color: "#38bdf8",
+      colorClass: "bg-primary text-primary",
       description: "Spread of risk scores across executive roles",
     },
     {
       label: "Conflict Penalty",
       value: convergence.conflict_penalty,
       pct: Math.round((convergence.conflict_penalty / safeTotal) * 100),
-      color: "#f97316",
+      colorClass: "bg-warning text-warning",
       description: "Governance conflicts between executive functions",
     },
     {
       label: "Volatility Divergence",
       value: convergence.volatility_divergence,
       pct: Math.round((convergence.volatility_divergence / safeTotal) * 100),
-      color: "#a855f7",
+      colorClass: "bg-destructive text-destructive",
       description: "Difference in risk volatility patterns across roles",
     },
   ];
 
   return (
-    <div className="px-16 py-12 border-b border-slate-700/50 print:border-slate-200">
-      <h2 className="text-xs uppercase tracking-[0.2em] text-cyan-400 print:text-cyan-700 mb-8 font-semibold">
+    <div className="px-16 py-12 border-b border-border/50 print:border-border">
+      <h2 className="text-xs uppercase tracking-[0.2em] text-primary mb-8 font-semibold">
         Risk Attribution Breakdown
       </h2>
 
@@ -61,8 +61,8 @@ const RiskAttribution = ({ convergence }: RiskAttributionProps) => {
           {factors.map((f) => (
             <div
               key={f.label}
-              className="flex items-center justify-center text-xs font-bold text-white"
-              style={{ width: `${f.pct}%`, backgroundColor: f.color, minWidth: f.pct > 0 ? "40px" : "0" }}
+              className={`flex items-center justify-center text-xs font-bold text-primary-foreground ${f.colorClass.split(" ")[0]}`}
+              style={{ width: `${f.pct}%`, minWidth: f.pct > 0 ? "40px" : "0" }}
             >
               {f.pct > 10 ? `${f.pct}%` : ""}
             </div>
@@ -74,22 +74,22 @@ const RiskAttribution = ({ convergence }: RiskAttributionProps) => {
       <div className="space-y-6">
         {factors.map((f) => (
           <div key={f.label} className="flex items-center gap-6">
-            <div className="w-4 h-4 rounded-full flex-shrink-0" style={{ backgroundColor: f.color }} />
+            <div className={`w-4 h-4 rounded-full flex-shrink-0 ${f.colorClass.split(" ")[0]}`} />
             <div className="flex-1">
               <div className="flex items-center justify-between mb-1">
-                <span className="text-sm font-semibold text-slate-200 print:text-slate-800">{f.label}</span>
+                <span className="text-sm font-semibold text-foreground/90 print:text-foreground">{f.label}</span>
                 <div className="flex items-center gap-4">
-                  <span className="text-sm font-mono text-slate-300 print:text-slate-700">{Number(f.value).toFixed(1)}</span>
-                  <span className="text-sm font-bold" style={{ color: f.color }}>
+                  <span className="text-sm font-mono text-foreground/70 print:text-foreground">{Number(f.value).toFixed(1)}</span>
+                  <span className={`text-sm font-bold ${f.colorClass.split(" ")[1]}`}>
                     {f.pct}%
                   </span>
                 </div>
               </div>
-              <p className="text-xs text-slate-500">{f.description}</p>
-              <div className="mt-1.5 h-1.5 rounded-full bg-slate-700/50 print:bg-slate-100 overflow-hidden">
+              <p className="text-xs text-muted-foreground">{f.description}</p>
+              <div className="mt-1.5 h-1.5 rounded-full bg-muted/50 print:bg-muted overflow-hidden">
                 <div
-                  className="h-full rounded-full"
-                  style={{ width: `${f.pct}%`, backgroundColor: f.color }}
+                  className={`h-full rounded-full ${f.colorClass.split(" ")[0]}`}
+                  style={{ width: `${f.pct}%` }}
                 />
               </div>
             </div>
@@ -97,9 +97,9 @@ const RiskAttribution = ({ convergence }: RiskAttributionProps) => {
         ))}
       </div>
 
-      <div className="mt-6 pt-4 border-t border-slate-700/30 print:border-slate-200 flex items-center justify-between text-sm">
-        <span className="text-slate-400">Composite ECI Score</span>
-        <span className="text-2xl font-bold text-slate-200 print:text-slate-800">{convergence.score}/100</span>
+      <div className="mt-6 pt-4 border-t border-border/30 print:border-border flex items-center justify-between text-sm">
+        <span className="text-muted-foreground">Composite ECI Score</span>
+        <span className="text-2xl font-bold text-foreground/90 print:text-foreground">{convergence.score}/100</span>
       </div>
     </div>
   );

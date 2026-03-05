@@ -12,26 +12,34 @@ interface ExecutiveSummaryProps {
 const statusConfig = {
   green: {
     label: "ALIGNED",
-    bg: "bg-emerald-500/10 print:bg-emerald-50",
-    border: "border-emerald-500/30 print:border-emerald-200",
-    text: "text-emerald-400 print:text-emerald-700",
+    bg: "bg-success/10 print:bg-success/5",
+    border: "border-success/30 print:border-success/20",
+    text: "text-success print:text-success",
     icon: ShieldCheck,
   },
   amber: {
     label: "TENSION DETECTED",
-    bg: "bg-amber-500/10 print:bg-amber-50",
-    border: "border-amber-500/30 print:border-amber-200",
-    text: "text-amber-400 print:text-amber-700",
+    bg: "bg-warning/10 print:bg-warning/5",
+    border: "border-warning/30 print:border-warning/20",
+    text: "text-warning print:text-warning",
     icon: Shield,
   },
   red: {
     label: "CRITICAL",
-    bg: "bg-red-500/10 print:bg-red-50",
-    border: "border-red-500/30 print:border-red-200",
-    text: "text-red-400 print:text-red-700",
+    bg: "bg-destructive/10 print:bg-destructive/5",
+    border: "border-destructive/30 print:border-destructive/20",
+    text: "text-destructive print:text-destructive",
     icon: ShieldAlert,
   },
 };
+
+/** Data-driven risk score color using semantic tokens */
+function getRiskScoreColor(score: number): string {
+  if (score > 75) return "text-destructive";
+  if (score > 50) return "text-warning";
+  if (score > 25) return "text-primary";
+  return "text-success";
+}
 
 const ExecutiveSummary = ({
   governanceStatus,
@@ -45,8 +53,8 @@ const ExecutiveSummary = ({
   const Icon = cfg.icon;
 
   return (
-    <div className="px-16 py-12 border-b border-slate-700/50 print:border-slate-200 print:break-after-page">
-      <h2 className="text-xs uppercase tracking-[0.2em] text-cyan-400 print:text-cyan-700 mb-8 font-semibold">
+    <div className="px-16 py-12 border-b border-border/50 print:border-border print:break-after-page">
+      <h2 className="text-xs uppercase tracking-[0.2em] text-primary mb-8 font-semibold">
         Executive Summary
       </h2>
 
@@ -65,51 +73,34 @@ const ExecutiveSummary = ({
 
       {/* Critical Risk Signal */}
       <div className="grid grid-cols-3 gap-6 mb-8">
-        <div className="border border-slate-700/50 print:border-slate-200 rounded-xl p-6 text-center">
-          <div
-            className="text-4xl font-bold mb-2"
-            style={{
-              color:
-                maxRiskScore > 75
-                  ? "#ef4444"
-                  : maxRiskScore > 50
-                  ? "#f59e0b"
-                  : maxRiskScore > 25
-                  ? "#38bdf8"
-                  : "#22c55e",
-            }}
-          >
+        <div className="border border-border/50 print:border-border rounded-xl p-6 text-center">
+          <div className={`text-4xl font-bold mb-2 ${getRiskScoreColor(maxRiskScore)}`}>
             {maxRiskScore}
           </div>
-          <div className="text-sm text-slate-400">Peak Risk Score</div>
+          <div className="text-sm text-muted-foreground">Peak Risk Score</div>
         </div>
-        <div className="border border-slate-700/50 print:border-slate-200 rounded-xl p-6 text-center">
-          <div className={`text-4xl font-bold mb-2 ${hasEscalation ? "text-red-400 print:text-red-700" : "text-emerald-400 print:text-emerald-700"}`}>
+        <div className="border border-border/50 print:border-border rounded-xl p-6 text-center">
+          <div className={`text-4xl font-bold mb-2 ${hasEscalation ? "text-destructive" : "text-success"}`}>
             {hasEscalation ? "YES" : "NO"}
           </div>
-          <div className="text-sm text-slate-400">Escalation Active</div>
+          <div className="text-sm text-muted-foreground">Escalation Active</div>
         </div>
-        <div className="border border-slate-700/50 print:border-slate-200 rounded-xl p-6 text-center">
-          <div
-            className="text-4xl font-bold mb-2"
-            style={{
-              color: activeConflictsCount > 2 ? "#ef4444" : activeConflictsCount > 0 ? "#f59e0b" : "#22c55e",
-            }}
-          >
+        <div className="border border-border/50 print:border-border rounded-xl p-6 text-center">
+          <div className={`text-4xl font-bold mb-2 ${activeConflictsCount > 2 ? "text-destructive" : activeConflictsCount > 0 ? "text-warning" : "text-success"}`}>
             {activeConflictsCount}
           </div>
-          <div className="text-sm text-slate-400">Active Conflicts</div>
+          <div className="text-sm text-muted-foreground">Active Conflicts</div>
         </div>
       </div>
 
       {/* Board-Level Summary */}
-      <div className="border border-slate-700/50 print:border-slate-200 rounded-xl p-6">
-        <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">
+      <div className="border border-border/50 print:border-border rounded-xl p-6">
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
           Board-Level Assessment
         </h3>
         <div className="space-y-2">
           {boardSummary.map((line, i) => (
-            <p key={i} className="text-base leading-relaxed text-slate-200 print:text-slate-800">
+            <p key={i} className="text-base leading-relaxed text-foreground/90 print:text-foreground">
               {line}
             </p>
           ))}

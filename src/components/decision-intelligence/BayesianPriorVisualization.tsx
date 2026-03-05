@@ -18,7 +18,6 @@ interface Decision {
  */
 const BayesianPriorVisualization = ({ decisions }: { decisions: Decision[] }) => {
   const chartData = useMemo(() => {
-    // Sort by creation date and build a running calibration series
     const sorted = [...decisions]
       .filter(d => d.capped_confidence != null)
       .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
@@ -92,7 +91,7 @@ const BayesianPriorVisualization = ({ decisions }: { decisions: Decision[] }) =>
             />
             <Line type="monotone" dataKey="rawConfidence" stroke="hsl(var(--muted-foreground))" strokeDasharray="4 4" dot={false} strokeWidth={1.5} />
             <Line type="monotone" dataKey="cappedConfidence" stroke="hsl(var(--primary))" dot={false} strokeWidth={2} />
-            <Line type="monotone" dataKey="rollingAccuracy" stroke="hsl(142 76% 56%)" dot={false} strokeWidth={2} connectNulls />
+            <Line type="monotone" dataKey="rollingAccuracy" stroke="hsl(var(--success))" dot={false} strokeWidth={2} connectNulls />
           </LineChart>
         </ResponsiveContainer>
       </div>
@@ -100,13 +99,13 @@ const BayesianPriorVisualization = ({ decisions }: { decisions: Decision[] }) =>
       <div className="grid grid-cols-3 gap-3 mt-4">
         <div className="text-center bg-muted/20 rounded-lg p-2">
           <p className="text-[10px] text-muted-foreground">Calibration Adj.</p>
-          <p className={`text-sm font-bold font-mono ${latestAdj > 0 ? "text-emerald-400" : latestAdj < 0 ? "text-warning" : ""}`}>
+          <p className={`text-sm font-bold font-mono ${latestAdj > 0 ? "text-success" : latestAdj < 0 ? "text-warning" : ""}`}>
             {latestAdj > 0 ? "+" : ""}{(latestAdj * 100).toFixed(1)}%
           </p>
         </div>
         <div className="text-center bg-muted/20 rounded-lg p-2">
           <p className="text-[10px] text-muted-foreground">Rolling Accuracy</p>
-          <p className={`text-sm font-bold font-mono ${(latestAccuracy ?? 0) >= 70 ? "text-emerald-400" : "text-warning"}`}>
+          <p className={`text-sm font-bold font-mono ${(latestAccuracy ?? 0) >= 70 ? "text-success" : "text-warning"}`}>
             {latestAccuracy != null ? `${latestAccuracy}%` : "—"}
           </p>
         </div>
@@ -124,7 +123,7 @@ const BayesianPriorVisualization = ({ decisions }: { decisions: Decision[] }) =>
           <span className="w-5 h-0.5 bg-primary" /> Capped
         </span>
         <span className="flex items-center gap-1">
-          <span className="w-5 h-0.5 bg-emerald-400" /> Actual Accuracy
+          <span className="w-5 h-0.5 bg-success" /> Actual Accuracy
         </span>
       </div>
     </div>

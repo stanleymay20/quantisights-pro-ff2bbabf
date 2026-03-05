@@ -43,11 +43,11 @@ const IntegrationsSection = () => (
             <div className="flex items-start justify-between mb-3">
               <h3 className="font-semibold text-sm">{integration.name}</h3>
               {integration.status === "live" ? (
-                <span className="flex items-center gap-1 text-[10px] font-semibold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                <span className="flex items-center gap-1 text-[10px] font-semibold text-success bg-success/10 px-2 py-0.5 rounded-full">
                   <CheckCircle2 className="w-3 h-3" /> Live
                 </span>
               ) : (
-                <span className="flex items-center gap-1 text-[10px] font-semibold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full">
+                <span className="flex items-center gap-1 text-[10px] font-semibold text-warning bg-warning/10 px-2 py-0.5 rounded-full">
                   <Clock className="w-3 h-3" /> Soon
                 </span>
               )}
@@ -61,13 +61,10 @@ const IntegrationsSection = () => (
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
         viewport={{ once: true }}
-        className="text-center text-sm text-muted-foreground mt-8"
+        transition={{ delay: 0.5 }}
+        className="text-center mt-10 text-sm text-muted-foreground"
       >
-        Need a specific integration?{" "}
-        <a href="mailto:hello@quantivis.io" className="text-primary hover:underline">
-          Let us know
-        </a>{" "}
-        — we ship fast.
+        Custom integrations available on Enterprise plans
       </motion.p>
     </div>
   </section>
