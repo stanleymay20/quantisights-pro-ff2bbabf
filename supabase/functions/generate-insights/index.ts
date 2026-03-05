@@ -56,9 +56,8 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "Not a member" }), { status: 403, headers: corsHeaders });
     }
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const serviceSupabase = createClient(supabaseUrl, serviceKey);
+
+    // serviceSupabase already created above
 
     // Validate dataset belongs to org
     const { data: dsCheck } = await serviceSupabase
