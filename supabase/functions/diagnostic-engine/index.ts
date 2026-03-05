@@ -1,11 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { authenticateRequest, verifyOrgMembership } from "../_shared/auth-guard.ts";
-import { applyAdaptiveConfidenceWithFetch, computeVariance } from "../_shared/adaptive-confidence.ts";
+import { applyAdaptiveConfidenceWithFetch } from "../_shared/adaptive-confidence.ts";
 import type { AdaptiveConfidenceMeta } from "../_shared/adaptive-confidence.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 interface MetricRow {
@@ -14,6 +15,23 @@ interface MetricRow {
   date: string;
   region: string | null;
   segment: string | null;
+}
+
+interface MetricStats {
+  metric_type: string;
+  data_points: number;
+  latest_value: number;
+  previous_value: number;
+  period_change_pct: number;
+  mean: number;
+  std_dev: number;
+  volatility_pct: number;
+  slope_normalized_pct: number;
+  trend_direction: string;
+  min: number;
+  max: number;
+  date_range: string;
+  segment_shifts: string[];
 }
 
 interface DiagnosticResult {
@@ -25,7 +43,6 @@ interface DiagnosticResult {
   trend_direction: "improving" | "declining" | "stable" | "volatile";
   change_pct: number;
   recommendation: string;
-  // Standardized adaptive confidence metadata
   confidence: number;
   raw_confidence: number;
   capped_confidence: number;
@@ -64,54 +81,32 @@ function applyMeta(meta: AdaptiveConfidenceMeta): Pick<DiagnosticResult,
   };
 }
 
-async function computeDiagnostics(
-  metrics: MetricRow[],
-  supabaseUrl: string,
-  serviceKey: string,
-  organizationId: string,
-): Promise<DiagnosticResult[]> {
+/** Compute pure statistics for each metric type — no hardcoded interpretations. */
+function computeStats(metrics: MetricRow[]): MetricStats[] {
   const grouped: Record<string, MetricRow[]> = {};
   for (const m of metrics) {
     if (!grouped[m.metric_type]) grouped[m.metric_type] = [];
     grouped[m.metric_type].push(m);
   }
 
-  const results: DiagnosticResult[] = [];
+  const results: MetricStats[] = [];
 
   for (const [type, rows] of Object.entries(grouped)) {
-    if (rows.length < 8) {
-      if (rows.length >= 2) {
-        const meta = await applyAdaptiveConfidenceWithFetch(
-          { rawConfidence: 0, sampleSize: rows.length },
-          supabaseUrl, serviceKey, organizationId,
-        );
-        results.push({
-          metric_type: type,
-          diagnosis: `Insufficient data (${rows.length} points). Minimum 8 required for credible analysis.`,
-          severity: "info",
-          root_cause: "Data depth insufficient for statistical validity.",
-          causal_factors: [`Only ${rows.length} data points available`],
-          trend_direction: "stable",
-          change_pct: 0,
-          recommendation: "Upload more historical data to enable diagnostics.",
-          ...applyMeta(meta),
-        });
-      }
-      continue;
-    }
+    if (rows.length < 2) continue;
 
     const sorted = rows.sort((a, b) => a.date.localeCompare(b.date));
     const values = sorted.map(r => Number(r.value));
-    const latest = values[values.length - 1];
-    const previous = values[values.length - 2];
+    const n = values.length;
+    const latest = values[n - 1];
+    const previous = values[n - 2];
     const changePct = previous !== 0 ? ((latest - previous) / Math.abs(previous)) * 100 : 0;
 
-    const mean = values.reduce((s, v) => s + v, 0) / values.length;
-    const variance = values.reduce((s, v) => s + (v - mean) ** 2, 0) / values.length;
+    const mean = values.reduce((s, v) => s + v, 0) / n;
+    const variance = values.reduce((s, v) => s + (v - mean) ** 2, 0) / n;
     const stdDev = Math.sqrt(variance);
     const volatility = mean !== 0 ? (stdDev / Math.abs(mean)) * 100 : 0;
 
-    const n = values.length;
+    // Linear regression slope
     const xMean = (n - 1) / 2;
     let num = 0, den = 0;
     for (let i = 0; i < n; i++) {
@@ -121,146 +116,143 @@ async function computeDiagnostics(
     const slope = den !== 0 ? num / den : 0;
     const slopeNorm = mean !== 0 ? (slope / Math.abs(mean)) * 100 : 0;
 
-    let trend_direction: DiagnosticResult["trend_direction"] = "stable";
+    let trend_direction = "stable";
     if (volatility > 30) trend_direction = "volatile";
     else if (slopeNorm > 5) trend_direction = "improving";
     else if (slopeNorm < -5) trend_direction = "declining";
 
+    // Segment breakdown
     const segmentBreakdown: Record<string, number[]> = {};
     for (const r of sorted) {
       const seg = r.segment || r.region || "overall";
       if (!segmentBreakdown[seg]) segmentBreakdown[seg] = [];
       segmentBreakdown[seg].push(Number(r.value));
     }
-
-    const causalFactors: string[] = [];
+    const segmentShifts: string[] = [];
     for (const [seg, vals] of Object.entries(segmentBreakdown)) {
       if (vals.length < 2 || seg === "overall") continue;
       const segChange = vals[vals.length - 1] - vals[0];
       const segChangePct = vals[0] !== 0 ? (segChange / Math.abs(vals[0])) * 100 : 0;
-      if (Math.abs(segChangePct) > 15) {
-        causalFactors.push(`${seg}: ${segChangePct > 0 ? "+" : ""}${segChangePct.toFixed(1)}% shift`);
+      if (Math.abs(segChangePct) > 10) {
+        segmentShifts.push(`${seg}: ${segChangePct > 0 ? "+" : ""}${segChangePct.toFixed(1)}%`);
       }
     }
-
-    let severity: DiagnosticResult["severity"] = "info";
-    let diagnosis = "";
-    let rootCause = "";
-    let recommendation = "";
-    const sampleBonus = Math.min((n - 8) * 2, 20);
-    const stabilityBonus = volatility < 15 ? 10 : volatility < 30 ? 5 : 0;
-    let rawConfidence = 50 + sampleBonus + stabilityBonus;
-
-    if (type === "revenue") {
-      if (changePct < -10) {
-        severity = "critical";
-        diagnosis = `Revenue dropped ${Math.abs(changePct).toFixed(1)}% — immediate investigation required.`;
-        rootCause = volatility > 25
-          ? "High revenue volatility suggests inconsistent sales pipeline or seasonal dependency."
-          : "Sustained decline indicates structural demand erosion or competitive displacement.";
-        recommendation = "Conduct segment-level revenue audit. Identify churning customer cohorts and run retention campaigns.";
-        rawConfidence = 85;
-      } else if (changePct < -5) {
-        severity = "warning";
-        diagnosis = `Revenue declined ${Math.abs(changePct).toFixed(1)}% — trend requires monitoring.`;
-        rootCause = "Moderate decline may indicate market softening or pricing pressure.";
-        recommendation = "Review pricing strategy and customer acquisition cost trends.";
-        rawConfidence = 75;
-      } else if (changePct > 15) {
-        severity = "info";
-        diagnosis = `Revenue surged ${changePct.toFixed(1)}% — validate sustainability.`;
-        rootCause = "Sharp growth may be driven by one-time deals or seasonal factors.";
-        recommendation = "Verify growth is recurring. Stress-test capacity and unit economics.";
-        rawConfidence = 80;
-      } else {
-        diagnosis = `Revenue is ${trend_direction} with ${changePct.toFixed(1)}% recent change.`;
-        rootCause = "No significant anomalies detected in revenue trajectory.";
-        recommendation = "Continue monitoring. Consider growth acceleration strategies.";
-      }
-    } else if (type === "churn") {
-      if (latest > 8) {
-        severity = "critical";
-        diagnosis = `Churn rate at ${latest.toFixed(1)}% — exceeds sustainable threshold.`;
-        rootCause = "Elevated churn suggests product-market fit erosion, support failures, or competitive pressure.";
-        recommendation = "Launch exit-survey analysis. Implement proactive retention for at-risk accounts.";
-        rawConfidence = 85;
-      } else if (latest > 5) {
-        severity = "warning";
-        diagnosis = `Churn at ${latest.toFixed(1)}% — approaching risk threshold.`;
-        rootCause = "Rising churn often correlates with onboarding friction or unmet feature expectations.";
-        recommendation = "Review NPS scores and support ticket patterns for recurring issues.";
-        rawConfidence = 75;
-      } else {
-        diagnosis = `Churn is healthy at ${latest.toFixed(1)}%.`;
-        rootCause = "Retention metrics within expected range.";
-        recommendation = "Maintain current retention programs.";
-      }
-    } else if (type === "cost") {
-      if (changePct > 15) {
-        severity = "warning";
-        diagnosis = `Costs increased ${changePct.toFixed(1)}% — margin compression risk.`;
-        rootCause = "Cost escalation may stem from scaling inefficiencies, vendor price increases, or uncontrolled hiring.";
-        recommendation = "Conduct cost-per-unit analysis. Identify top 3 cost drivers and negotiate or optimize.";
-        rawConfidence = 75;
-      } else {
-        diagnosis = `Costs are ${trend_direction} with ${changePct.toFixed(1)}% change.`;
-        rootCause = "Cost structure appears stable.";
-        recommendation = "Continue monitoring burn rate relative to revenue growth.";
-      }
-    } else if (type === "customers") {
-      if (changePct < -5) {
-        severity = "warning";
-        diagnosis = `Customer base contracted ${Math.abs(changePct).toFixed(1)}%.`;
-        rootCause = "Customer loss may indicate market contraction, competitor gains, or product issues.";
-        recommendation = "Analyze lost customers by segment. Identify common churn triggers.";
-        rawConfidence = 75;
-      } else if (changePct > 20) {
-        severity = "info";
-        diagnosis = `Customer base grew ${changePct.toFixed(1)}% — validate unit economics.`;
-        rootCause = "Rapid growth needs validation that CAC and LTV remain healthy.";
-        recommendation = "Monitor CAC payback period and ensure support capacity scales.";
-        rawConfidence = 80;
-      } else {
-        diagnosis = `Customer base is ${trend_direction} with ${changePct.toFixed(1)}% change.`;
-        rootCause = "Customer growth within normal parameters.";
-        recommendation = "Focus on improving activation and expansion revenue.";
-      }
-    } else {
-      diagnosis = `${type} shows ${changePct.toFixed(1)}% change (${trend_direction}).`;
-      rootCause = `${type} trajectory is ${volatility > 25 ? "volatile" : "steady"}.`;
-      recommendation = `Review ${type} drivers and set monitoring thresholds.`;
-    }
-
-    if (causalFactors.length === 0) {
-      causalFactors.push(`Overall ${trend_direction} trend over ${n} data points`);
-      if (volatility > 20) causalFactors.push(`High volatility (${volatility.toFixed(0)}% CV)`);
-    }
-
-    // EPISTEMIC ENFORCEMENT: Apply confidence cap + adaptive calibration
-    const meta = await applyAdaptiveConfidenceWithFetch(
-      { rawConfidence, sampleSize: n, variance: volatility },
-      supabaseUrl, serviceKey, organizationId,
-    );
 
     results.push({
       metric_type: type,
-      diagnosis,
-      severity,
-      root_cause: rootCause,
-      causal_factors: causalFactors,
+      data_points: n,
+      latest_value: Number(latest.toFixed(4)),
+      previous_value: Number(previous.toFixed(4)),
+      period_change_pct: Number(changePct.toFixed(2)),
+      mean: Number(mean.toFixed(4)),
+      std_dev: Number(stdDev.toFixed(4)),
+      volatility_pct: Number(volatility.toFixed(2)),
+      slope_normalized_pct: Number(slopeNorm.toFixed(2)),
       trend_direction,
-      change_pct: Math.round(changePct * 10) / 10,
-      recommendation,
-      ...applyMeta(meta),
+      min: Number(Math.min(...values).toFixed(4)),
+      max: Number(Math.max(...values).toFixed(4)),
+      date_range: `${sorted[0].date} to ${sorted[n - 1].date}`,
+      segment_shifts: segmentShifts,
     });
   }
 
-  results.sort((a, b) => {
-    const order = { critical: 0, warning: 1, info: 2 };
-    return order[a.severity] - order[b.severity];
-  });
-
   return results;
+}
+
+/** Use AI to generate real diagnostic intelligence from computed statistics. */
+async function generateAIDiagnostics(stats: MetricStats[]): Promise<any[]> {
+  const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
+  if (!lovableApiKey || stats.length === 0) return [];
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30000);
+
+  try {
+    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      signal: controller.signal,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${lovableApiKey}`,
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [{
+          role: "user",
+          content: `You are an enterprise diagnostic intelligence engine performing root cause analysis on organizational metrics.
+
+METRIC STATISTICS (computed from real data):
+${JSON.stringify(stats, null, 2)}
+
+For EACH metric, generate a diagnostic assessment. Return ONLY a JSON array:
+[
+  {
+    "metric_type": "exact metric_type from input",
+    "diagnosis": "1-2 sentence clinical diagnosis referencing specific values and percentages from the statistics",
+    "severity": "critical" | "warning" | "info",
+    "root_cause": "2-3 sentence root cause analysis explaining WHY this pattern exists, referencing volatility, trend slope, and segment shifts",
+    "causal_factors": ["factor1", "factor2", "factor3"],
+    "trend_direction": "improving" | "declining" | "stable" | "volatile",
+    "change_pct": <number from period_change_pct>,
+    "raw_confidence": <60-90 based on data quality>
+  }
+]
+
+Rules:
+- Be domain-agnostic. These metrics could be economic, financial, SaaS, industrial, or any domain.
+- Reference ACTUAL values, percentages, and data point counts from the statistics.
+- severity "critical": period_change_pct < -10% OR volatility > 40% OR clear structural decline
+- severity "warning": moderate decline (5-10%), emerging instability, threshold approaches
+- severity "info": stable/improving metrics, healthy patterns
+- causal_factors MUST reference specific statistical evidence (segment shifts, volatility levels, trend slopes)
+- raw_confidence should reflect data_points count: <12 pts = max 65, <20 pts = max 75, 20+ pts = max 85
+- Do NOT invent data not present in the statistics
+- Return ONLY the JSON array`,
+        }],
+      }),
+    });
+
+    clearTimeout(timeout);
+
+    if (!resp.ok) return [];
+
+    const data = await resp.json();
+    const content = data.choices?.[0]?.message?.content || "";
+    const jsonMatch = content.match(/\[[\s\S]*\]/);
+    if (!jsonMatch) return [];
+
+    return JSON.parse(jsonMatch[0]);
+  } catch (e) {
+    clearTimeout(timeout);
+    console.error("AI diagnostic generation error:", e);
+    return [];
+  }
+}
+
+/** Rule-based fallback when AI is unavailable — still data-driven, not hardcoded per metric. */
+function fallbackDiagnostics(stats: MetricStats[]): any[] {
+  return stats.map(s => {
+    let severity: "critical" | "warning" | "info" = "info";
+    if (s.period_change_pct < -10 || s.volatility_pct > 40) severity = "critical";
+    else if (Math.abs(s.period_change_pct) > 5 || s.volatility_pct > 25) severity = "warning";
+
+    const factors = [
+      `${s.trend_direction} trend over ${s.data_points} data points`,
+      ...(s.volatility_pct > 20 ? [`${s.volatility_pct.toFixed(0)}% coefficient of variation`] : []),
+      ...s.segment_shifts.slice(0, 3),
+    ];
+
+    return {
+      metric_type: s.metric_type,
+      diagnosis: `${s.metric_type.replace(/_/g, " ")} changed ${s.period_change_pct > 0 ? "+" : ""}${s.period_change_pct.toFixed(1)}% (latest: ${s.latest_value}, mean: ${s.mean.toFixed(2)}). Trend is ${s.trend_direction} with ${s.volatility_pct.toFixed(0)}% volatility across ${s.data_points} observations.`,
+      severity,
+      root_cause: `Regression analysis shows a normalized slope of ${s.slope_normalized_pct.toFixed(1)}% with ${s.volatility_pct.toFixed(0)}% volatility. ${s.segment_shifts.length > 0 ? `Segment-level shifts detected: ${s.segment_shifts.join(", ")}.` : "No significant segment-level divergences found."}`,
+      causal_factors: factors.length > 0 ? factors : [`Overall ${s.trend_direction} pattern`],
+      trend_direction: s.trend_direction,
+      change_pct: s.period_change_pct,
+      raw_confidence: Math.min(50 + Math.min((s.data_points - 2) * 2, 20) + (s.volatility_pct < 15 ? 10 : s.volatility_pct < 30 ? 5 : 0), 85),
+    };
+  });
 }
 
 serve(async (req) => {
@@ -287,23 +279,85 @@ serve(async (req) => {
     if (dataset_id) {
       metricsUrl += `&dataset_id=eq.${dataset_id}`;
     }
-    const metricsResp = await fetch(
-      metricsUrl,
-      { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` } }
-    );
+    const metricsResp = await fetch(metricsUrl, {
+      headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` },
+    });
     const metrics: MetricRow[] = await metricsResp.json();
 
     if (!metrics || metrics.length < 2) {
-      return new Response(JSON.stringify({ diagnostics: [], message: "Insufficient data for diagnosis" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      return new Response(JSON.stringify({
+        diagnostics: [],
+        analyzed_metrics: metrics?.length || 0,
+        message: "Insufficient data for diagnosis (minimum 2 data points required)",
+      }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // Step 1: Compute pure statistics from real data
+    const stats = computeStats(metrics);
+
+    // Step 2: Generate AI-driven diagnostics from statistics
+    let aiResults = await generateAIDiagnostics(stats);
+
+    // Step 3: Fallback to data-driven rule engine if AI unavailable
+    if (aiResults.length === 0) {
+      aiResults = fallbackDiagnostics(stats);
+    }
+
+    // Step 4: Apply epistemic confidence capping + adaptive calibration
+    const diagnostics: DiagnosticResult[] = [];
+    for (const ai of aiResults) {
+      const matchingStat = stats.find(s => s.metric_type === ai.metric_type);
+      const sampleSize = matchingStat?.data_points || 2;
+      const volatility = matchingStat?.volatility_pct || 0;
+
+      // Insufficient data gets a transparent "insufficient" result, not a fake diagnosis
+      if (sampleSize < 8) {
+        const meta = await applyAdaptiveConfidenceWithFetch(
+          { rawConfidence: 0, sampleSize },
+          supabaseUrl, serviceKey, organization_id,
+        );
+        diagnostics.push({
+          metric_type: ai.metric_type,
+          diagnosis: `Insufficient data (${sampleSize} points). Minimum 8 required for credible analysis.`,
+          severity: "info",
+          root_cause: "Data depth insufficient for statistical validity.",
+          causal_factors: [`Only ${sampleSize} data points available`],
+          trend_direction: matchingStat?.trend_direction as DiagnosticResult["trend_direction"] || "stable",
+          change_pct: matchingStat?.period_change_pct || 0,
+          recommendation: "Collect more historical data to enable diagnostic intelligence.",
+          ...applyMeta(meta),
+        });
+        continue;
+      }
+
+      const meta = await applyAdaptiveConfidenceWithFetch(
+        { rawConfidence: ai.raw_confidence || 60, sampleSize, variance: volatility },
+        supabaseUrl, serviceKey, organization_id,
+      );
+
+      diagnostics.push({
+        metric_type: ai.metric_type,
+        diagnosis: ai.diagnosis || "",
+        severity: ai.severity || "info",
+        root_cause: ai.root_cause || "",
+        causal_factors: Array.isArray(ai.causal_factors) ? ai.causal_factors : [],
+        trend_direction: ai.trend_direction || matchingStat?.trend_direction || "stable",
+        change_pct: typeof ai.change_pct === "number" ? ai.change_pct : (matchingStat?.period_change_pct || 0),
+        recommendation: ai.recommendation || "",
+        ...applyMeta(meta),
       });
     }
 
-    const diagnostics = await computeDiagnostics(metrics, supabaseUrl, serviceKey, organization_id);
+    // Sort: critical first, then warning, then info
+    diagnostics.sort((a, b) => {
+      const order = { critical: 0, warning: 1, info: 2 };
+      return order[a.severity] - order[b.severity];
+    });
 
     return new Response(JSON.stringify({
       diagnostics,
       analyzed_metrics: metrics.length,
+      metric_types_analyzed: stats.map(s => s.metric_type),
       adaptive_calibration_applied: diagnostics.some(d => d.adaptive_calibration_applied),
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
