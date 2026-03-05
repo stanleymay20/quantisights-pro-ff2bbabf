@@ -180,6 +180,8 @@ Rules:
         }),
       });
 
+      clearTimeout(aiTimeout);
+
       if (aiRes.ok) {
         const aiData = await aiRes.json();
         const content = aiData.choices?.[0]?.message?.content || "";

@@ -127,6 +127,7 @@ Use exponential smoothing with trend and seasonal decomposition. Include 80% pre
       }),
     });
 
+    clearTimeout(aiTimeout);
     if (!aiRes.ok) throw new Error(`AI service error: ${aiRes.status}`);
     const aiData = await aiRes.json();
     const content = aiData.choices?.[0]?.message?.content || "";

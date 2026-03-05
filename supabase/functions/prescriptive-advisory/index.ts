@@ -183,6 +183,8 @@ Rules:
       }),
     });
 
+    clearTimeout(aiTimeout);
+
     if (!aiRes.ok) {
       console.error("AI advisory error:", aiRes.status);
       // Fallback: return empty advisories rather than failing
