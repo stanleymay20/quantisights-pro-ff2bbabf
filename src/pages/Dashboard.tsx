@@ -48,11 +48,8 @@ const Dashboard = () => {
     checkOnboarding();
   }, [currentOrgId, orgLoading, navigate]);
 
-  useEffect(() => {
-    if (location.pathname === "/dashboard" && !hasData && !metricsLoading) {
-      navigate("/portfolio", { replace: true });
-    }
-  }, [location.pathname, hasData, metricsLoading, navigate]);
+  // Removed: redirect to /portfolio when no SaaS-specific metrics found.
+  // The dashboard should always show for any dataset type.
 
   useEffect(() => {
     if (!currentOrgId) return;

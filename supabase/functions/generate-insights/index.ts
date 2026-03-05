@@ -1,7 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { applyAdaptiveConfidence, fetchCalibrationModel } from "../_shared/adaptive-confidence.ts";
-import { capConfidence } from "../_shared/confidence-cap.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -69,35 +68,19 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "dataset_id does not belong to this organization" }), { status: 403, headers: corsHeaders });
     }
 
-    // Dry run: validate contract only
     if (dry_run) {
       return new Response(JSON.stringify({ dry_run: true, status: "PASS", dataset_id, organization_id }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const { data: sub } = await serviceSupabase
-      .from("subscriptions")
-      .select("tier")
-      .eq("organization_id", organization_id)
-      .eq("status", "active")
-      .maybeSingle();
-
-    if (!sub || !["growth", "enterprise"].includes(sub.tier)) {
-      return new Response(
-        JSON.stringify({ error: "AI Insights require a Growth or Enterprise plan." }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const metricsQuery = supabase
+    // No subscription gate — insights should work for all tiers
+    const { data: metrics } = await supabase
       .from("metrics")
       .select("metric_type, value, date, region, segment")
       .eq("organization_id", organization_id)
       .eq("dataset_id", dataset_id)
       .order("date", { ascending: true });
-
-    const { data: metrics } = await metricsQuery;
 
     if (!metrics || metrics.length === 0) {
       return new Response(JSON.stringify({ message: "No metrics to analyze", count: 0 }), {
@@ -105,171 +88,196 @@ serve(async (req) => {
       });
     }
 
-    // Fetch calibration model once for all insights
     const calModel = await fetchCalibrationModel(supabaseUrl, serviceKey, organization_id);
-
     const { computeVariance } = await import("../_shared/adaptive-confidence.ts");
 
-    const insights: {
-      message: string; severity: string; category: string;
-      confidence: number;
-      raw_confidence: number; capped_confidence: number;
-      confidence_cap_reason: string; sample_size: number;
-      variance_score: number | null; data_quality_index: number;
-      adaptive_calibration_applied: boolean;
-      calibration_model_version: number | null;
-      calibration_band_used: string | null;
-      calibration_correction_applied_pp: number | null;
-      calibration_low_sample_band: boolean;
-      confidence_source: string;
-    }[] = [];
+    // Group metrics by type with statistical summary
+    const metricsByType: Record<string, { values: number[]; dates: string[]; regions: Set<string>; segments: Set<string> }> = {};
+    for (const m of metrics) {
+      if (!metricsByType[m.metric_type]) {
+        metricsByType[m.metric_type] = { values: [], dates: [], regions: new Set(), segments: new Set() };
+      }
+      metricsByType[m.metric_type].values.push(Number(m.value));
+      metricsByType[m.metric_type].dates.push(m.date);
+      if (m.region) metricsByType[m.metric_type].regions.add(m.region);
+      if (m.segment) metricsByType[m.metric_type].segments.add(m.segment);
+    }
 
-    function buildInsight(
-      msg: string, sev: string, cat: string,
-      rawConf: number, sampleSize: number, variance?: number,
-    ) {
-      const meta = applyAdaptiveConfidence({
-        rawConfidence: rawConf, sampleSize, variance, calibrationModel: calModel,
+    // Build statistical summaries for AI
+    const metricSummaries = Object.entries(metricsByType).map(([type, data]) => {
+      const vals = data.values;
+      const n = vals.length;
+      const mean = vals.reduce((s, v) => s + v, 0) / n;
+      const latest = vals[n - 1];
+      const earliest = vals[0];
+      const changePct = earliest !== 0 ? ((latest - earliest) / Math.abs(earliest)) * 100 : 0;
+      const half = Math.floor(n / 2);
+      const recentAvg = vals.slice(half).reduce((s, v) => s + v, 0) / vals.slice(half).length;
+      const earlyAvg = vals.slice(0, half).length > 0 ? vals.slice(0, half).reduce((s, v) => s + v, 0) / vals.slice(0, half).length : recentAvg;
+      const trendPct = earlyAvg !== 0 ? ((recentAvg - earlyAvg) / Math.abs(earlyAvg)) * 100 : 0;
+      const volatility = mean !== 0 ? (Math.sqrt(vals.reduce((s, v) => s + (v - mean) ** 2, 0) / n) / Math.abs(mean)) * 100 : 0;
+
+      return {
+        metric_type: type,
+        data_points: n,
+        date_range: `${data.dates[0]} to ${data.dates[n - 1]}`,
+        latest_value: Number(latest.toFixed(4)),
+        earliest_value: Number(earliest.toFixed(4)),
+        total_change_pct: Number(changePct.toFixed(2)),
+        recent_trend_pct: Number(trendPct.toFixed(2)),
+        mean: Number(mean.toFixed(4)),
+        min: Number(Math.min(...vals).toFixed(4)),
+        max: Number(Math.max(...vals).toFixed(4)),
+        volatility_pct: Number(volatility.toFixed(2)),
+        regions: [...data.regions],
+        segments: [...data.segments],
+      };
+    });
+
+    // Use AI to generate domain-agnostic insights
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+
+    let aiInsights: any[] = [];
+
+    if (LOVABLE_API_KEY) {
+      const aiRes = await fetch("https://ai.lovable.dev/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: [{
+            role: "user",
+            content: `You are an enterprise data intelligence engine. Analyze the following dataset metrics and generate strategic insights.
+
+METRIC SUMMARIES:
+${JSON.stringify(metricSummaries, null, 2)}
+
+Generate 5-10 insights. Return ONLY a JSON array:
+[
+  {
+    "message": "Clear, actionable insight (1-2 sentences referencing specific metrics and values)",
+    "severity": "high" | "medium" | "info",
+    "category": "trend" | "anomaly" | "risk" | "opportunity" | "regional" | "general",
+    "raw_confidence": 60-90
+  }
+]
+
+Rules:
+- Be domain-agnostic — these could be economic, financial, SaaS, or industrial metrics
+- Reference actual metric names, values, and percentage changes
+- High severity: significant declines (>10%), extreme volatility (>50%), or critical thresholds
+- Medium severity: moderate changes (5-10%), emerging trends, notable patterns
+- Info: positive trends, stable metrics, opportunities
+- At least 1 high severity if any metric shows >10% decline or >40% volatility
+- Return ONLY the JSON array`,
+          }],
+        }),
       });
-      insights.push({
-        message: msg, severity: sev, category: cat,
-        confidence: meta.confidence,
-        raw_confidence: meta.raw_confidence, capped_confidence: meta.capped_confidence,
-        confidence_cap_reason: meta.confidence_cap_reason, sample_size: meta.sample_size,
-        variance_score: meta.variance_score, data_quality_index: 100,
-        adaptive_calibration_applied: meta.adaptive_calibration_applied,
-        calibration_model_version: meta.calibration_model_version,
-        calibration_band_used: meta.calibration_band_used,
-        calibration_correction_applied_pp: meta.calibration_correction_applied_pp,
-        calibration_low_sample_band: meta.calibration_low_sample_band,
-        confidence_source: meta.confidence_source,
-      });
-    }
 
-    // Revenue analysis
-    const revenueMetrics = metrics.filter((m) => m.metric_type === "revenue");
-    if (revenueMetrics.length >= 2) {
-      const values = revenueMetrics.map(m => Number(m.value));
-      const varianceScore = computeVariance(values);
-      const half = Math.floor(revenueMetrics.length / 2);
-      const firstHalf = values.slice(0, half).reduce((s, v) => s + v, 0);
-      const secondHalf = values.slice(half).reduce((s, v) => s + v, 0);
-      const change = ((secondHalf - firstHalf) / firstHalf) * 100;
-
-      if (change < -10) {
-        buildInsight(
-          `Revenue dropped ${Math.abs(change).toFixed(1)}% in recent period. Review pricing strategy and market conditions.`,
-          "high", "revenue", 85, revenueMetrics.length, varianceScore,
-        );
-      } else if (change > 20) {
-        buildInsight(
-          `Strong revenue growth of ${change.toFixed(1)}%. Consider scaling operations to sustain momentum.`,
-          "info", "revenue", 80, revenueMetrics.length, varianceScore,
-        );
-      } else if (change > 0) {
-        buildInsight(
-          `Revenue grew ${change.toFixed(1)}%. Steady growth — optimize top-performing segments.`,
-          "info", "revenue", 75, revenueMetrics.length, varianceScore,
-        );
-      }
-    }
-
-    // Churn analysis
-    const churnMetrics = metrics.filter((m) => m.metric_type === "churn");
-    if (churnMetrics.length > 0) {
-      const values = churnMetrics.map(m => Number(m.value));
-      const latestChurn = values[values.length - 1];
-      const varianceScore = computeVariance(values);
-
-      if (latestChurn > 5) {
-        buildInsight(
-          `Churn rate at ${latestChurn}% exceeds threshold. Implement retention campaigns immediately.`,
-          "high", "churn", 85, churnMetrics.length, varianceScore,
-        );
-      } else if (latestChurn > 3) {
-        buildInsight(
-          `Churn rate at ${latestChurn}%. Monitor closely and assess customer satisfaction.`,
-          "medium", "churn", 75, churnMetrics.length, varianceScore,
-        );
-      }
-    }
-
-    // Cost analysis
-    const costMetrics = metrics.filter((m) => m.metric_type === "cost");
-    if (costMetrics.length >= 2) {
-      const values = costMetrics.map(m => Number(m.value));
-      const recent = values[values.length - 1];
-      const previous = values[values.length - 2];
-      const costChange = ((recent - previous) / previous) * 100;
-      if (costChange > 15) {
-        buildInsight(
-          `Cost increased ${costChange.toFixed(1)}% period-over-period. Evaluate cost-saving opportunities.`,
-          "medium", "cost", 75, costMetrics.length, computeVariance(values),
-        );
-      }
-    }
-
-    // Regional analysis
-    const regions = [...new Set(revenueMetrics.filter((m) => m.region).map((m) => m.region))];
-    for (const region of regions) {
-      const regionData = revenueMetrics.filter((m) => m.region === region);
-      if (regionData.length >= 2) {
-        const values = regionData.map(m => Number(m.value));
-        const first = values[0];
-        const last = values[values.length - 1];
-        const regionChange = ((last - first) / first) * 100;
-        if (regionChange < -15) {
-          buildInsight(
-            `Revenue in ${region} dropped ${Math.abs(regionChange).toFixed(1)}%. Investigate regional market conditions.`,
-            "high", "regional", 80, regionData.length, computeVariance(values),
-          );
+      if (aiRes.ok) {
+        const aiData = await aiRes.json();
+        const content = aiData.choices?.[0]?.message?.content || "";
+        const jsonMatch = content.match(/\[[\s\S]*\]/);
+        if (jsonMatch) {
+          try {
+            aiInsights = JSON.parse(jsonMatch[0]);
+          } catch {
+            console.error("Failed to parse AI insights JSON");
+          }
         }
       }
     }
 
-    if (insights.length === 0) {
-      buildInsight(
-        "All metrics within normal ranges. Continue monitoring for changes.",
-        "info", "general", 90, metrics.length,
-      );
+    // Fallback: rule-based analysis if AI fails or is unavailable
+    if (aiInsights.length === 0) {
+      for (const [type, data] of Object.entries(metricsByType)) {
+        const vals = data.values;
+        if (vals.length < 2) continue;
+        const mean = vals.reduce((s, v) => s + v, 0) / vals.length;
+        const latest = vals[vals.length - 1];
+        const earliest = vals[0];
+        const changePct = earliest !== 0 ? ((latest - earliest) / Math.abs(earliest)) * 100 : 0;
+        const volatility = mean !== 0 ? (Math.sqrt(vals.reduce((s, v) => s + (v - mean) ** 2, 0) / vals.length) / Math.abs(mean)) * 100 : 0;
+
+        if (changePct < -10) {
+          aiInsights.push({
+            message: `${type.replace(/_/g, ' ')} declined ${Math.abs(changePct).toFixed(1)}% over the dataset period. Review contributing factors.`,
+            severity: "high",
+            category: "trend",
+            raw_confidence: 80,
+          });
+        } else if (changePct > 20) {
+          aiInsights.push({
+            message: `${type.replace(/_/g, ' ')} grew ${changePct.toFixed(1)}%. Strong upward trajectory detected.`,
+            severity: "info",
+            category: "opportunity",
+            raw_confidence: 78,
+          });
+        }
+        if (volatility > 40) {
+          aiInsights.push({
+            message: `${type.replace(/_/g, ' ')} shows high volatility (${volatility.toFixed(1)}% CV). Monitor for stability risks.`,
+            severity: "medium",
+            category: "risk",
+            raw_confidence: 72,
+          });
+        }
+      }
+
+      if (aiInsights.length === 0) {
+        aiInsights.push({
+          message: "All metrics within normal ranges. Continue monitoring for changes.",
+          severity: "info",
+          category: "general",
+          raw_confidence: 90,
+        });
+      }
     }
 
+    // Apply confidence capping
+    const insightRows = aiInsights.map((i: any) => {
+      const rawConf = i.raw_confidence || 70;
+      const sampleSize = metrics.length;
+      const meta = applyAdaptiveConfidence({
+        rawConfidence: rawConf, sampleSize, calibrationModel: calModel,
+      });
+
+      return {
+        organization_id,
+        dataset_id,
+        message: i.message,
+        severity: i.severity || "info",
+        category: i.category || "general",
+        confidence_score: meta.confidence,
+        raw_confidence: meta.raw_confidence,
+        capped_confidence: meta.capped_confidence,
+        confidence_cap_reason: meta.confidence_cap_reason,
+        sample_size: meta.sample_size,
+        variance_score: meta.variance_score,
+        data_quality_index: 100,
+      };
+    });
+
+    // Clean old insights for this dataset
     const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-    let deleteQuery = serviceSupabase
+    await serviceSupabase
       .from("insights")
       .delete()
       .eq("organization_id", organization_id)
+      .eq("dataset_id", dataset_id)
       .lt("created_at", yesterday);
-
-    // If dataset-scoped, only clean up insights for this dataset
-    if (dataset_id) {
-      deleteQuery = deleteQuery.eq("dataset_id", dataset_id);
-    }
-    await deleteQuery;
-
-    const insightRows = insights.map((i) => ({
-      organization_id,
-      dataset_id: dataset_id || null,
-      message: i.message,
-      severity: i.severity,
-      category: i.category,
-      confidence_score: i.confidence,
-      raw_confidence: i.raw_confidence,
-      capped_confidence: i.capped_confidence,
-      confidence_cap_reason: i.confidence_cap_reason,
-      sample_size: i.sample_size,
-      variance_score: i.variance_score,
-      data_quality_index: i.data_quality_index,
-    }));
 
     const { error: insertError } = await serviceSupabase.from("insights").insert(insightRows);
     if (insertError) throw insertError;
 
     return new Response(
-      JSON.stringify({ message: "Insights generated", count: insights.length }),
+      JSON.stringify({ message: "Insights generated", count: insightRows.length }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
-  } catch (err) {
+  } catch (err: any) {
     return new Response(JSON.stringify({ error: err.message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

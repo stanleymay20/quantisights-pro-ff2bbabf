@@ -7,24 +7,9 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-interface Advisory {
-  id: string;
-  title: string;
-  category: "cost_optimization" | "revenue_growth" | "risk_mitigation" | "operational" | "strategic";
-  priority: "critical" | "high" | "medium" | "low";
-  action: string;
-  expected_impact: string;
-  timeframe: string;
-  confidence: number;
-  rationale: string;
-  kpi_affected: string[];
-  playbook_steps: string[];
-}
-
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
-  // Auth guard
   const auth = await authenticateRequest(req);
   if (auth.response) return auth.response;
 
@@ -33,7 +18,6 @@ serve(async (req) => {
     if (!organization_id) throw new Error("organization_id required");
     if (!dataset_id) throw new Error("dataset_id required by Active Data Contract");
 
-    // Verify org membership
     const isMember = await verifyOrgMembership(auth.userId, organization_id);
     if (!isMember) {
       return new Response(JSON.stringify({ error: "Forbidden" }), {
@@ -41,7 +25,6 @@ serve(async (req) => {
       });
     }
 
-    // Dry run: validate contract only
     if (dry_run) {
       return new Response(JSON.stringify({ dry_run: true, status: "PASS", dataset_id, organization_id }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -52,29 +35,23 @@ serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const headers = { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` };
 
-    // Build dataset-scoped metrics URL — dataset_id is REQUIRED
     const metricsUrl = `${supabaseUrl}/rest/v1/metrics?organization_id=eq.${organization_id}&dataset_id=eq.${dataset_id}&order=date.asc&limit=500`;
     const insightsUrl = `${supabaseUrl}/rest/v1/insights?organization_id=eq.${organization_id}&dataset_id=eq.${dataset_id}&severity=in.(high,medium)&order=created_at.desc&limit=20`;
 
-    // Fetch data + calibration model in parallel
-    const [metricsResp, riskResp, insightsResp, kpisResp, calibrationModel] = await Promise.all([
+    const [metricsResp, riskResp, insightsResp, calibrationModel] = await Promise.all([
       fetch(metricsUrl, { headers }),
       fetch(`${supabaseUrl}/rest/v1/executive_risk_index?organization_id=eq.${organization_id}&select=score,role_type,components`, { headers }),
       fetch(insightsUrl, { headers }),
-      fetch(`${supabaseUrl}/rest/v1/kpis?organization_id=eq.${organization_id}&status=eq.active&limit=20`, { headers }),
       fetchCalibrationModel(supabaseUrl, serviceKey, organization_id),
     ]);
 
     const metrics = await metricsResp.json();
     const riskIndices = await riskResp.json();
     const insights = await insightsResp.json();
-    const kpis = await kpisResp.json();
 
-    const advisories: Advisory[] = [];
-    let advId = 0;
     const totalSampleSize = (metrics || []).length;
 
-    // Data quality gate: check quality scores
+    // Data quality gate
     const qualityMetrics = (metrics || []).filter((m: any) => (m.quality_score ?? 100) >= 60);
     if (qualityMetrics.length < 8) {
       return new Response(JSON.stringify({
@@ -88,127 +65,173 @@ serve(async (req) => {
       });
     }
 
-    // Analyze metrics for patterns
-    const metricsByType: Record<string, number[]> = {};
+    // Group metrics by type with time series
+    const metricsByType: Record<string, { values: number[]; dates: string[]; regions: Set<string> }> = {};
     for (const m of qualityMetrics) {
-      if (!metricsByType[m.metric_type]) metricsByType[m.metric_type] = [];
-      metricsByType[m.metric_type].push(Number(m.value));
+      if (!metricsByType[m.metric_type]) {
+        metricsByType[m.metric_type] = { values: [], dates: [], regions: new Set() };
+      }
+      metricsByType[m.metric_type].values.push(Number(m.value));
+      metricsByType[m.metric_type].dates.push(m.date);
+      if (m.region) metricsByType[m.metric_type].regions.add(m.region);
     }
 
-    // Revenue analysis
-    const revValues = metricsByType["revenue"] || [];
-    if (revValues.length >= 8) {
-      const latest = revValues[revValues.length - 1];
-      const prev = revValues[revValues.length - 2];
-      const changePct = prev !== 0 ? ((latest - prev) / Math.abs(prev)) * 100 : 0;
+    // Build summary for AI
+    const metricSummaries = Object.entries(metricsByType).map(([type, data]) => {
+      const vals = data.values;
+      const n = vals.length;
+      const mean = vals.reduce((s, v) => s + v, 0) / n;
+      const latest = vals[n - 1];
+      const earliest = vals[0];
+      const changePct = earliest !== 0 ? ((latest - earliest) / Math.abs(earliest)) * 100 : 0;
+      const half = Math.floor(n / 2);
+      const recentHalf = vals.slice(half);
+      const earlyHalf = vals.slice(0, half);
+      const recentAvg = recentHalf.reduce((s, v) => s + v, 0) / recentHalf.length;
+      const earlyAvg = earlyHalf.length > 0 ? earlyHalf.reduce((s, v) => s + v, 0) / earlyHalf.length : recentAvg;
+      const trendPct = earlyAvg !== 0 ? ((recentAvg - earlyAvg) / Math.abs(earlyAvg)) * 100 : 0;
+      const max = Math.max(...vals);
+      const min = Math.min(...vals);
+      const volatility = mean !== 0 ? (Math.sqrt(vals.reduce((s, v) => s + (v - mean) ** 2, 0) / n) / Math.abs(mean)) * 100 : 0;
 
-      if (changePct < -10) {
-        advisories.push({
-          id: `adv-${++advId}`,
-          title: "Revenue Recovery Plan Required",
-          category: "revenue_growth",
-          priority: "critical",
-          action: "Implement emergency revenue recovery program targeting top 20% accounts",
-          expected_impact: `Recover ${Math.abs(changePct * 0.5).toFixed(0)}% of lost revenue within 60 days`,
-          timeframe: "Immediate — 60 days",
-          confidence: capConfidence(82, revValues.length, undefined, calibrationModel),
-          rationale: `Revenue declined ${Math.abs(changePct).toFixed(1)}% period-over-period. Without intervention, compounding losses project ${(changePct * 3).toFixed(0)}% annual impact.`,
-          kpi_affected: ["Revenue", "MRR", "Net Revenue Retention"],
-          playbook_steps: [
-            "Identify top 20 accounts by revenue contribution",
-            "Conduct account health scoring (usage, support tickets, engagement)",
-            "Deploy dedicated account managers for at-risk accounts",
-            "Launch win-back campaign for recently churned customers",
-            "Review and adjust pricing for competitive segments",
-          ],
-        });
-      }
+      return {
+        metric_type: type,
+        data_points: n,
+        date_range: `${data.dates[0]} to ${data.dates[n - 1]}`,
+        latest_value: latest,
+        earliest_value: earliest,
+        total_change_pct: Number(changePct.toFixed(2)),
+        recent_trend_pct: Number(trendPct.toFixed(2)),
+        mean: Number(mean.toFixed(2)),
+        min: Number(min.toFixed(2)),
+        max: Number(max.toFixed(2)),
+        volatility_pct: Number(volatility.toFixed(2)),
+        regions: [...data.regions],
+      };
+    });
 
-      if (changePct > 0 && changePct < 5) {
-        advisories.push({
-          id: `adv-${++advId}`,
-          title: "Growth Acceleration Opportunity",
-          category: "revenue_growth",
-          priority: "medium",
-          action: "Implement expansion revenue program to accelerate from steady to high growth",
-          expected_impact: "Increase growth rate by 2-3x within 90 days",
-          timeframe: "30-90 days",
-          confidence: capConfidence(70, revValues.length, undefined, calibrationModel),
-          rationale: `Current growth at ${changePct.toFixed(1)}% is stable but below potential. Market conditions support aggressive expansion.`,
-          kpi_affected: ["Revenue Growth Rate", "ARPU", "Expansion Revenue"],
-          playbook_steps: [
-            "Analyze upsell opportunities within existing customer base",
-            "Launch tiered feature gates to drive plan upgrades",
-            "Implement usage-based pricing for high-consumption accounts",
-            "Create cross-sell bundles for complementary products",
-          ],
-        });
+    // Use AI to generate domain-agnostic advisories
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) {
+      return new Response(JSON.stringify({ error: "AI service not configured" }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const riskSummary = (riskIndices || []).map((r: any) => ({
+      role: r.role_type,
+      score: r.score,
+      components: r.components,
+    }));
+
+    const insightSummary = (insights || []).slice(0, 10).map((i: any) => ({
+      message: i.message,
+      severity: i.severity,
+      category: i.category,
+    }));
+
+    const aiRes = await fetch("https://ai.lovable.dev/api/chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [{
+          role: "user",
+          content: `You are an enterprise decision intelligence advisor for a $1B+ company.
+
+Analyze the following dataset metrics and generate strategic advisories.
+
+METRIC SUMMARIES:
+${JSON.stringify(metricSummaries, null, 2)}
+
+EXISTING RISK INDICES:
+${JSON.stringify(riskSummary, null, 2)}
+
+RECENT INSIGHTS:
+${JSON.stringify(insightSummary, null, 2)}
+
+Generate 3-7 strategic advisories. For EACH advisory, return ONLY valid JSON array with this structure:
+[
+  {
+    "title": "Clear advisory title",
+    "category": "cost_optimization" | "revenue_growth" | "risk_mitigation" | "operational" | "strategic",
+    "priority": "critical" | "high" | "medium" | "low",
+    "action": "Specific recommended action (1-2 sentences)",
+    "expected_impact": "Quantified expected impact",
+    "timeframe": "e.g. Immediate, 30 days, 30-90 days",
+    "raw_confidence": 60-90,
+    "rationale": "Evidence-based rationale referencing specific metrics and trends",
+    "kpi_affected": ["list", "of", "affected", "KPIs"],
+    "playbook_steps": ["Step 1", "Step 2", "Step 3", "Step 4", "Step 5"]
+  }
+]
+
+Rules:
+- Be domain-agnostic: these could be economic, financial, industrial, SaaS, or any domain metrics
+- Reference actual metric names and values from the data
+- Prioritize based on magnitude of change, volatility, and risk
+- Do NOT generate filler advisories if metrics are stable
+- Critical = immediate action needed, High = within 30 days, Medium = 30-90 days, Low = monitoring
+- Return ONLY the JSON array, no other text`,
+        }],
+      }),
+    });
+
+    if (!aiRes.ok) {
+      console.error("AI advisory error:", aiRes.status);
+      // Fallback: return empty advisories rather than failing
+      return new Response(JSON.stringify({
+        advisories: [],
+        total_advisories: 0,
+        critical_count: 0,
+        data_sufficiency: dataSufficiencyRating(totalSampleSize),
+        sample_size: totalSampleSize,
+        confidence_ceiling: totalSampleSize < 12 ? 60 : totalSampleSize < 30 ? 75 : 90,
+        adaptive_calibration_applied: !!calibrationModel,
+        calibration_model_version: calibrationModel?.model_version ?? null,
+        generated_at: new Date().toISOString(),
+        ai_error: "AI service temporarily unavailable",
+      }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    const aiData = await aiRes.json();
+    const content = aiData.choices?.[0]?.message?.content || "";
+
+    // Extract JSON array from response
+    const jsonMatch = content.match(/\[[\s\S]*\]/);
+    let aiAdvisories: any[] = [];
+    if (jsonMatch) {
+      try {
+        aiAdvisories = JSON.parse(jsonMatch[0]);
+      } catch {
+        console.error("Failed to parse AI advisory JSON");
       }
     }
 
-    // Cost analysis
-    const costValues = metricsByType["cost"] || [];
-    if (costValues.length >= 8) {
-      const latest = costValues[costValues.length - 1];
-      const prev = costValues[costValues.length - 2];
-      const costChange = prev !== 0 ? ((latest - prev) / Math.abs(prev)) * 100 : 0;
+    // Apply confidence capping to each advisory
+    const advisories = aiAdvisories.map((a: any, i: number) => ({
+      id: `adv-${i + 1}`,
+      title: a.title || "Strategic Advisory",
+      category: a.category || "strategic",
+      priority: a.priority || "medium",
+      action: a.action || "",
+      expected_impact: a.expected_impact || "",
+      timeframe: a.timeframe || "30-90 days",
+      confidence: capConfidence(a.raw_confidence || 70, totalSampleSize, undefined, calibrationModel),
+      rationale: a.rationale || "",
+      kpi_affected: a.kpi_affected || [],
+      playbook_steps: a.playbook_steps || [],
+    }));
 
-      if (costChange > 10) {
-        advisories.push({
-          id: `adv-${++advId}`,
-          title: "Cost Optimization Program",
-          category: "cost_optimization",
-          priority: "high",
-          action: "Launch structured cost reduction targeting top 3 expense categories",
-          expected_impact: `Reduce operating costs by ${Math.min(costChange * 0.4, 15).toFixed(0)}% within 90 days`,
-          timeframe: "30-90 days",
-          confidence: capConfidence(78, costValues.length, undefined, calibrationModel),
-          rationale: `Costs increased ${costChange.toFixed(1)}% while revenue growth hasn't matched. Gross margin is compressing.`,
-          kpi_affected: ["Operating Costs", "Gross Margin", "Burn Rate"],
-          playbook_steps: [
-            "Audit top 10 vendor contracts for renegotiation opportunities",
-            "Review headcount ROI by department",
-            "Identify automation opportunities for manual processes",
-            "Implement spend approval workflows for discretionary expenses",
-            "Set department-level budget caps with variance alerts",
-          ],
-        });
-      }
-    }
-
-    // Churn analysis
-    const churnValues = metricsByType["churn"] || [];
-    if (churnValues.length >= 8) {
-      const latestChurn = churnValues[churnValues.length - 1];
-      if (latestChurn > 5) {
-        advisories.push({
-          id: `adv-${++advId}`,
-          title: "Customer Retention Crisis Response",
-          category: "risk_mitigation",
-          priority: latestChurn > 8 ? "critical" : "high",
-          action: "Deploy multi-channel retention program targeting at-risk customer segments",
-          expected_impact: `Reduce churn by ${Math.min(latestChurn * 0.3, 5).toFixed(1)} percentage points within 90 days`,
-          timeframe: "Immediate — 90 days",
-          confidence: capConfidence(80, churnValues.length, undefined, calibrationModel),
-          rationale: `Churn rate at ${latestChurn.toFixed(1)}% exceeds the 5% healthy threshold. Each point of churn represents significant lifetime value loss.`,
-          kpi_affected: ["Churn Rate", "Net Revenue Retention", "Customer LTV"],
-          playbook_steps: [
-            "Implement predictive churn scoring using usage patterns",
-            "Launch automated health check emails for low-engagement users",
-            "Create dedicated success team for enterprise accounts",
-            "Offer targeted retention incentives (discounts, feature previews)",
-            "Establish quarterly business reviews for top accounts",
-          ],
-        });
-      }
-    }
-
-    // Risk-based advisories from risk index
+    // Add risk-based advisories from risk index (these are always relevant)
     for (const risk of (riskIndices || [])) {
       if (risk.score >= 70) {
         const role = risk.role_type || "executive";
         advisories.push({
-          id: `adv-${++advId}`,
+          id: `adv-risk-${role}`,
           title: `${role.toUpperCase()} Risk Escalation Protocol`,
           category: "strategic",
           priority: risk.score >= 85 ? "critical" : "high",
@@ -216,54 +239,57 @@ serve(async (req) => {
           expected_impact: `Reduce ${role} risk score from ${risk.score} to below 50 within 60 days`,
           timeframe: risk.score >= 85 ? "Immediate" : "30 days",
           confidence: capConfidence(85, totalSampleSize, undefined, calibrationModel),
-          rationale: `${role.toUpperCase()} strategic risk index at ${risk.score}/100 — ${risk.score >= 85 ? "critical" : "elevated"} territory. Components: deviation=${risk.components?.deviation || 0}, trend=${risk.components?.trend || 0}, volatility=${risk.components?.volatility || 0}.`,
-          kpi_affected: ["Strategic Risk Index", "Board Confidence", "Operational Stability"],
+          rationale: `${role.toUpperCase()} strategic risk index at ${risk.score}/100.`,
+          kpi_affected: ["Strategic Risk Index", "Board Confidence"],
           playbook_steps: [
-            `Schedule emergency ${role} strategy review session`,
-            "Identify top 3 risk contributors from component breakdown",
-            "Develop contingency plans for each high-risk scenario",
-            "Establish weekly risk monitoring cadence",
-            "Report mitigation progress to board within 14 days",
+            `Schedule emergency ${role} strategy review`,
+            "Identify top 3 risk contributors",
+            "Develop contingency plans",
+            "Establish weekly risk monitoring",
+            "Report mitigation progress within 14 days",
           ],
         });
       }
     }
 
-    // Insight-driven advisories
-    const highInsights = (insights || []).filter((i: any) => i.severity === "high");
-    if (highInsights.length >= 3) {
-      advisories.push({
-        id: `adv-${++advId}`,
-        title: "Systemic Issue Detection — Multiple High Alerts",
-        category: "operational",
-        priority: "high",
-        action: "Conduct cross-functional root cause analysis for clustered anomalies",
-        expected_impact: "Identify and resolve systemic operational issues within 30 days",
-        timeframe: "Immediate — 30 days",
-        confidence: capConfidence(72, highInsights.length, undefined, calibrationModel),
-        rationale: `${highInsights.length} high-severity insights detected simultaneously, suggesting interconnected operational failures rather than isolated incidents.`,
-        kpi_affected: ["Operational Health", "System Reliability", "Executive Confidence"],
-        playbook_steps: [
-          "Map all high-severity insights to common root causes",
-          "Assign cross-functional investigation team",
-          "Implement daily stand-ups until resolution",
-          "Create incident timeline and impact assessment",
-          "Develop preventive measures and monitoring enhancements",
-        ],
+    // Sort by priority
+    const priorityOrder: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
+    advisories.sort((a: any, b: any) => (priorityOrder[a.priority] ?? 3) - (priorityOrder[b.priority] ?? 3));
+
+    // Store advisories in advisory_instances
+    const supabaseServiceUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceHeaders = { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, "Content-Type": "application/json", Prefer: "return=minimal" };
+
+    if (advisories.length > 0) {
+      const rows = advisories.map((a: any) => ({
+        organization_id,
+        dataset_id,
+        title: a.title,
+        action: a.action,
+        advisory_type: "prescriptive",
+        category: a.category,
+        priority: a.priority,
+        confidence: a.confidence,
+        capped_confidence: a.confidence,
+        rationale: a.rationale,
+        expected_impact: a.expected_impact,
+        timeframe: a.timeframe,
+        kpi_affected: a.kpi_affected,
+        playbook_steps: a.playbook_steps,
+        status: "open",
+      }));
+
+      await fetch(`${supabaseServiceUrl}/rest/v1/advisory_instances`, {
+        method: "POST",
+        headers: serviceHeaders,
+        body: JSON.stringify(rows),
       });
     }
-
-    // No filler advisories — if nothing is wrong, return empty.
-    // Trust > synthetic intelligence.
-
-    // Sort by priority
-    const priorityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
-    advisories.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
 
     return new Response(JSON.stringify({
       advisories,
       total_advisories: advisories.length,
-      critical_count: advisories.filter(a => a.priority === "critical").length,
+      critical_count: advisories.filter((a: any) => a.priority === "critical").length,
       data_sufficiency: dataSufficiencyRating(totalSampleSize),
       sample_size: totalSampleSize,
       confidence_ceiling: totalSampleSize < 12 ? 60 : totalSampleSize < 30 ? 75 : 90,
