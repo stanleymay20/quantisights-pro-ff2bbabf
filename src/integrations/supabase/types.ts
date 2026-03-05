@@ -2840,6 +2840,7 @@ export type Database = {
           cash_runway_months: number | null
           created_at: string
           current_valuation: number | null
+          dataset_id: string | null
           ebitda_ltm: number | null
           ebitda_margin_pct: number | null
           fund_name: string | null
@@ -2865,6 +2866,7 @@ export type Database = {
           cash_runway_months?: number | null
           created_at?: string
           current_valuation?: number | null
+          dataset_id?: string | null
           ebitda_ltm?: number | null
           ebitda_margin_pct?: number | null
           fund_name?: string | null
@@ -2890,6 +2892,7 @@ export type Database = {
           cash_runway_months?: number | null
           created_at?: string
           current_valuation?: number | null
+          dataset_id?: string | null
           ebitda_ltm?: number | null
           ebitda_margin_pct?: number | null
           fund_name?: string | null
@@ -2912,6 +2915,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "portfolio_companies_dataset_id_fkey"
+            columns: ["dataset_id"]
+            isOneToOne: false
+            referencedRelation: "datasets"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "portfolio_companies_organization_id_fkey"
             columns: ["organization_id"]

@@ -68,6 +68,7 @@ const Misses = lazy(() => import("./pages/Misses"));
 const Security = lazy(() => import("./pages/Security"));
 const Portfolio = lazy(() => import("./pages/Portfolio"));
 const SecurityQuestionnaire = lazy(() => import("./pages/SecurityQuestionnaire"));
+const PilotAudit = lazy(() => import("./pages/PilotAudit"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -182,6 +183,7 @@ const App = () => (
               <Route path="/counterfactual" element={<P><CounterfactualExplanation /></P>} />
               <Route path="/misses" element={<P><Misses /></P>} />
               <Route path="/portfolio" element={<P><Portfolio /></P>} />
+              <Route path="/pilot-audit" element={<P><PilotAudit /></P>} />
             </Routes>
             </Suspense>
           </AuthProvider>
