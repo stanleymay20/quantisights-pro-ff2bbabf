@@ -60,7 +60,7 @@ const CalibrationProgress = ({ organizationId }: CalibrationProgressProps) => {
   if (loading || !data) return null;
 
   const scoreColor = data.overallScore != null
-    ? data.overallScore >= 80 ? "text-emerald-500" : data.overallScore >= 60 ? "text-primary" : "text-amber-500"
+    ? data.overallScore >= 80 ? "text-success" : data.overallScore >= 60 ? "text-primary" : "text-warning"
     : "text-muted-foreground";
 
   const biasIcon = data.biasDirection === "overconfident"
@@ -76,10 +76,10 @@ const CalibrationProgress = ({ organizationId }: CalibrationProgressProps) => {
     : "Well calibrated";
 
   const biasColor = data.biasDirection === "overconfident"
-    ? "text-amber-500"
+    ? "text-warning"
     : data.biasDirection === "underconfident"
-    ? "text-sky-500"
-    : "text-emerald-500";
+    ? "text-primary"
+    : "text-success";
 
   return (
     <motion.div
@@ -125,7 +125,7 @@ const CalibrationProgress = ({ organizationId }: CalibrationProgressProps) => {
         <div className="text-center">
           {data.improvementPp != null ? (
             <>
-              <p className={`text-2xl font-bold ${data.improvementPp > 0 ? "text-emerald-500" : data.improvementPp < 0 ? "text-destructive" : "text-muted-foreground"}`}>
+              <p className={`text-2xl font-bold ${data.improvementPp > 0 ? "text-success" : data.improvementPp < 0 ? "text-destructive" : "text-muted-foreground"}`}>
                 {data.improvementPp > 0 ? "+" : ""}{data.improvementPp.toFixed(1)}pp
               </p>
               <p className="text-[11px] text-muted-foreground mt-0.5">
@@ -151,8 +151,8 @@ const CalibrationProgress = ({ organizationId }: CalibrationProgressProps) => {
         </div>
         {data.totalDecisions < 12 && (
           <div className="flex items-center gap-1.5">
-            <AlertTriangle className="w-3 h-3 text-amber-500 shrink-0" />
-            <span className="text-[11px] text-amber-500 font-medium">
+            <AlertTriangle className="w-3 h-3 text-warning shrink-0" />
+            <span className="text-[11px] text-warning font-medium">
               {12 - data.totalDecisions} more to strengthen model
             </span>
           </div>
