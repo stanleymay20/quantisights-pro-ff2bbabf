@@ -93,8 +93,11 @@ serve(async (req) => {
 
     const historicalSummary = metrics.map((m: any) => `${m.date}: ${m.value}`).join("\n");
 
+    const aiController = new AbortController();
+    const aiTimeout = setTimeout(() => aiController.abort(), 30000);
     const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
+      signal: aiController.signal,
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${LOVABLE_API_KEY}`,
@@ -124,6 +127,7 @@ Use exponential smoothing with trend and seasonal decomposition. Include 80% pre
       }),
     });
 
+    clearTimeout(aiTimeout);
     if (!aiRes.ok) throw new Error(`AI service error: ${aiRes.status}`);
     const aiData = await aiRes.json();
     const content = aiData.choices?.[0]?.message?.content || "";
