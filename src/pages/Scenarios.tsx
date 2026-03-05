@@ -103,15 +103,19 @@ const Scenarios = () => {
   const fetchScenarios = useCallback(async () => {
     if (!currentOrgId) return;
     setLoading(true);
-    const { data } = await supabase
+    let query = supabase
       .from("scenarios")
       .select("*")
       .eq("organization_id", currentOrgId)
       .neq("status", "archived")
       .order("created_at", { ascending: false });
+    if (activeDatasetId) {
+      query = query.eq("dataset_id", activeDatasetId);
+    }
+    const { data } = await query;
     if (data) setScenarios(data as unknown as Scenario[]);
     setLoading(false);
-  }, [currentOrgId]);
+  }, [currentOrgId, activeDatasetId]);
 
   useEffect(() => { fetchScenarios(); }, [fetchScenarios]);
 
