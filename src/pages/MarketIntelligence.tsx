@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useOrganization } from "@/hooks/useOrganization";
+import { useProject } from "@/contexts/ProjectContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -65,6 +66,7 @@ const DIRECTION_ICONS: Record<string, any> = {
 
 const MarketIntelligence = () => {
   const { currentOrgId } = useOrganization();
+  const { activeDatasetId } = useProject();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [industry, setIndustry] = useState("Technology / SaaS");
@@ -91,7 +93,7 @@ const MarketIntelligence = () => {
     try {
       const topics = customTopics ? customTopics.split(",").map(t => t.trim()) : [];
       const { data: result, error } = await supabase.functions.invoke("fetch-market-signals", {
-        body: { organization_id: currentOrgId, industry, topics },
+        body: { organization_id: currentOrgId, dataset_id: activeDatasetId, industry, topics },
       });
       if (error) throw error;
       if (result?.error) throw new Error(result.error);

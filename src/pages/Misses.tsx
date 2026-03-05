@@ -70,6 +70,7 @@ const MissesPage = () => {
     if (!currentOrgId) return;
     (async () => {
       setLoading(true);
+      // decision_ledger is org-scoped by design (decisions span datasets)
       const { data } = await supabase
         .from("decision_ledger")
         .select("id, recommended_action, decision_type, confidence_at_decision, capped_confidence, calibration_error, prediction_accuracy_score, outcome_delta, actual_value, baseline_value, predicted_net_impact, execution_status, decided_at, outcome_measured_at, created_at")

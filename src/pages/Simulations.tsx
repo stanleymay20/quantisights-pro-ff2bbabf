@@ -40,17 +40,21 @@ const Simulations = () => {
     enabled: !!organizationId,
   });
 
-  // Fetch past simulations
+  // Fetch past simulations — dataset-scoped
   const { data: simulations, isLoading } = useQuery({
-    queryKey: ["simulations", organizationId],
+    queryKey: ["simulations", organizationId, activeDatasetId],
     queryFn: async () => {
       if (!organizationId) return [];
-      const { data, error } = await supabase
+      let query = supabase
         .from("simulation_results")
         .select("*")
         .eq("organization_id", organizationId)
         .order("created_at", { ascending: false })
-        .limit(20);
+        .limit(20) as any;
+      if (activeDatasetId) {
+        query = query.eq("dataset_id", activeDatasetId);
+      }
+      const { data, error } = await query;
       if (error) throw error;
       return data || [];
     },
@@ -62,6 +66,7 @@ const Simulations = () => {
       const { data, error } = await supabase.functions.invoke("monte-carlo-sim", {
         body: {
           organization_id: organizationId,
+          dataset_id: activeDatasetId,
           metric_type: metricType,
           forecast_horizon: parseInt(horizon),
           simulation_runs: 10000,

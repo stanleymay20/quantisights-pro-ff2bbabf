@@ -55,11 +55,15 @@ const Reports = () => {
 
   const fetchReports = async () => {
     if (!currentOrgId) return;
-    const { data } = await supabase
+    let query = supabase
       .from("reports")
       .select("*")
       .eq("organization_id", currentOrgId)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false }) as any;
+    if (activeDatasetId) {
+      query = query.eq("dataset_id", activeDatasetId);
+    }
+    const { data } = await query;
     setReports(data || []);
     setLoading(false);
   };

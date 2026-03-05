@@ -57,24 +57,27 @@ const Dashboard = () => {
   useEffect(() => {
     if (!currentOrgId) return;
     const fetchCount = async () => {
-      const [advisoryRes, decisionRes, calRes] = await Promise.all([
-        supabase
-          .from("advisory_instances")
-          .select("*", { count: "exact", head: true })
-          .eq("organization_id", currentOrgId)
-          .in("status", ["open", "in_progress"]),
-        supabase
-          .from("decision_ledger")
-          .select("*", { count: "exact", head: true })
-          .eq("organization_id", currentOrgId)
-          .eq("execution_status", "not_started"),
-        supabase
-          .from("calibration_models")
-          .select("overall_calibration_score")
-          .eq("organization_id", currentOrgId)
-          .order("computed_at", { ascending: false })
-          .limit(1),
-      ]);
+      let advisoryQuery = supabase
+        .from("advisory_instances")
+        .select("*", { count: "exact", head: true })
+        .eq("organization_id", currentOrgId)
+        .in("status", ["open", "in_progress"]);
+      let decisionQuery = supabase
+        .from("decision_ledger")
+        .select("*", { count: "exact", head: true })
+        .eq("organization_id", currentOrgId)
+        .eq("execution_status", "not_started");
+      const calQuery = supabase
+        .from("calibration_models")
+        .select("overall_calibration_score")
+        .eq("organization_id", currentOrgId)
+        .order("computed_at", { ascending: false })
+        .limit(1);
+
+      // Dataset scoping: advisory_instances and decision_ledger don't have dataset_id columns,
+      // but calibration_models is org-level. These are org-scoped entities by design.
+
+      const [advisoryRes, decisionRes, calRes] = await Promise.all([advisoryQuery, decisionQuery, calQuery]);
       setOpenAdvisoryCount(advisoryRes.count || 0);
       setPendingDecisions(decisionRes.count || 0);
       setCalibrationScore(calRes.data?.[0]?.overall_calibration_score ?? null);

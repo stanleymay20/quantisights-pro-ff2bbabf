@@ -132,6 +132,7 @@ const DecisionLedgerPage = () => {
       .eq("organization_id", currentOrgId)
       .order("created_at", { ascending: false })
       .limit(100);
+    // Note: decision_ledger is org-scoped by design (decisions span datasets)
     if (!error && data) setDecisions(data as unknown as Decision[]);
     setLoading(false);
   };
@@ -192,6 +193,7 @@ const DecisionLedgerPage = () => {
       const { data, error } = await supabase.functions.invoke("decision-impact-sim", {
         body: {
           organization_id: currentOrgId,
+          dataset_id: activeDatasetId,
           decision_id: decisionId,
           ...impactForm,
         },
