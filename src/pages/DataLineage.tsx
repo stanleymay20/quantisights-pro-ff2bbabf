@@ -64,9 +64,9 @@ const DataLineage = () => {
       }
 
       // Raw records count for the dataset
-      let rawQuery = activeDatasetId
+      const rawQuery = activeDatasetId
         ? supabase.from("raw_records").select("*", { count: "exact", head: true }).eq("dataset_id", activeDatasetId)
-        : Promise.resolve({ count: 0 });
+        : Promise.resolve({ count: 0, data: null, error: null });
 
       const [srcRes, kpiRes, decRes, metRes, rawRes, dsInfo] = await Promise.all([
         supabase.from("data_sources").select("id, name, source_type, status").eq("organization_id", currentOrgId),
