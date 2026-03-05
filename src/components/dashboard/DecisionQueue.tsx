@@ -208,29 +208,111 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
     [insights]
   );
 
+  // --- Helpers to derive contextual Cost of Delay and AI Recommendations ---
+
+  const deriveSignalCostOfDelay = (insight: Insight): string => {
+    const category = insight.category?.toLowerCase() ?? "";
+    const ageHours = (Date.now() - new Date(insight.created_at).getTime()) / 3_600_000;
+    const ageDays = Math.floor(ageHours / 24);
+
+    // Scale exposure by severity confidence and age
+    const confidenceMultiplier = (insight.confidence_score ?? 50) / 100;
+    const basePct = category.includes("churn") || category.includes("retention") ? 8 : category.includes("cost") ? 6 : category.includes("revenue") ? 10 : 7;
+    const agePenaltyPct = Math.min(basePct, ageDays * 0.5); // compounds over time
+    const lowPct = Math.max(1, Math.round((basePct - 2) * confidenceMultiplier));
+    const highPct = Math.round((basePct + agePenaltyPct) * confidenceMultiplier);
+
+    if (revenue <= 0) {
+      return ageDays > 7
+        ? `Unaddressed for ${ageDays}d — compounding risk. Quantify revenue to model financial exposure.`
+        : `Action within ${Math.max(1, 14 - ageDays)}d recommended to contain downstream impact`;
+    }
+
+    return `Estimated ${formatRevenueBand(lowPct)}–${formatRevenueBand(highPct)} downside exposure (${lowPct}–${highPct}% of revenue) if unaddressed within ${Math.max(1, 14 - ageDays)}d`;
+  };
+
+  const deriveSignalTitle = (insight: Insight): string => {
+    const category = insight.category?.toLowerCase() ?? "";
+    if (category.includes("churn") || category.includes("retention")) return "Retention anomaly detected — decision required";
+    if (category.includes("cost")) return "Cost anomaly flagged — review recommended";
+    if (category.includes("revenue")) return "Revenue signal requires strategic response";
+    if (category.includes("growth")) return "Growth trajectory deviation detected";
+    if (category.includes("margin")) return "Margin compression signal — action needed";
+    return "Critical signal requires strategic decision";
+  };
+
+  const deriveSignalRecommendation = (insight: Insight): string => {
+    const category = insight.category?.toLowerCase() ?? "";
+    const msg = insight.message?.toLowerCase() ?? "";
+
+    if (category.includes("churn") || msg.includes("churn")) return "Run cohort analysis and activate targeted retention playbook for at-risk segments";
+    if (category.includes("cost") || msg.includes("cost")) return "Initiate cost audit, identify top 3 cost drivers, and evaluate optimization scenarios";
+    if (category.includes("revenue") || msg.includes("revenue")) return "Diagnose revenue variance by segment and simulate recovery scenarios";
+    if (msg.includes("decline") || msg.includes("drop")) return "Investigate root cause via diagnostic engine and approve corrective action plan";
+    if (msg.includes("spike") || msg.includes("increase") || msg.includes("anomal")) return "Review anomaly source data, assess materiality, and determine intervention threshold";
+    return "Investigate root cause via diagnostics and approve appropriate corrective playbook";
+  };
+
+  const deriveAdvisoryCostOfDelay = (adv: { priority: string; category: string; timeframe: string | null; expected_impact: string | null; created_at: string }): string => {
+    if (adv.expected_impact) return `Projected impact: ${adv.expected_impact}`;
+
+    const ageDays = Math.floor((Date.now() - new Date(adv.created_at).getTime()) / 86_400_000);
+    const isHigh = adv.priority === "critical" || adv.priority === "high";
+    const category = adv.category?.toLowerCase() ?? "";
+
+    if (isHigh && revenue > 0) {
+      const exposurePct = adv.priority === "critical" ? 8 : 5;
+      return `${formatRevenueBand(exposurePct)} estimated exposure (${ageDays}d unresolved). ${adv.timeframe ? `Window: ${adv.timeframe}` : "Urgency increases with delay"}`;
+    }
+    if (isHigh) {
+      return `${ageDays}d unresolved — governance gap widens. Board audit trail incomplete without documented action`;
+    }
+    if (category.includes("operational")) return `Operational efficiency at risk — ${ageDays}d delay compounds process debt`;
+    if (category.includes("financial")) return `Financial optionality narrows with each day of inaction (${ageDays}d pending)`;
+    return `Strategic optionality reduces with delay (${ageDays}d pending). ${adv.timeframe ? `Recommended window: ${adv.timeframe}` : "Timely action preserves flexibility"}`;
+  };
+
+  const derivePendingCostOfDelay = (daysSince: number, confidenceAtDecision: number | null, totalPending: number): string => {
+    const confidenceStr = confidenceAtDecision != null ? `${confidenceAtDecision}%` : "unknown";
+
+    if (daysSince > 60) {
+      return `${daysSince}d stale — outcome data decays. Model cannot learn from this decision (logged at ${confidenceStr} confidence). ${totalPending} total unclosed.`;
+    }
+    if (daysSince > 30) {
+      return `${daysSince}d overdue — calibration model accuracy degrades ~${(daysSince * 0.02).toFixed(1)}pp per unclosed outcome. ${totalPending} total pending.`;
+    }
+    return `Closing this outcome within ${Math.max(1, 30 - daysSince)}d preserves calibration signal quality. ${totalPending > 3 ? `${totalPending} outcomes pending — batch closure recommended.` : ""}`;
+  };
+
+  const derivePendingRecommendation = (daysSince: number, decisionType: string): string => {
+    if (daysSince > 45) return `Record outcome immediately — this ${decisionType} decision is at risk of becoming unmeasurable`;
+    if (daysSince > 21) return `Schedule outcome review this week — the measurement window for this ${decisionType} call is closing`;
+    return `Record the actual outcome of this ${decisionType} decision to strengthen calibration model accuracy`;
+  };
+
   const buildQueue = async () => {
     setLoading(true);
     const queue: QueuedDecision[] = [];
 
-    // 1. Critical signals
+    // 1. Critical signals — contextual titles, recommendations, and cost of delay
     criticalInsights.slice(0, 2).forEach(insight => {
       queue.push({
         id: `signal-${insight.id}`,
         type: "signal",
         urgency: "critical",
-        title: "Anomaly requires strategic decision",
-        context: insight.message?.slice(0, 120) || "Critical signal detected in your data",
-        recommendedAction: "Investigate root cause and approve corrective playbook",
+        title: deriveSignalTitle(insight),
+        context: insight.message?.slice(0, 140) || "Critical signal detected in operational data",
+        recommendedAction: deriveSignalRecommendation(insight),
         confidence: insight.confidence_score,
-        source: "Diagnostic Engine",
+        source: insight.category ? `${insight.category} Diagnostics` : "Diagnostic Engine",
         sourceId: insight.id,
-        costOfDelay: `Potential ${formatRevenueBand(5)}–${formatRevenueBand(12)} downside exposure if unaddressed within 14 days`,
+        costOfDelay: deriveSignalCostOfDelay(insight),
         riskIfIgnored: "high",
         createdAt: insight.created_at,
       });
     });
 
-    // 2. Open advisories
+    // 2. Open advisories — contextual cost of delay with financial grounding
     const { data: advisories } = await supabase
       .from("advisory_instances")
       .select("id, title, action, priority, confidence, capped_confidence, category, timeframe, expected_impact, created_at")
@@ -252,17 +334,13 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
         source: `${adv.category} Advisory`,
         sourceId: adv.id,
         timeframe: adv.timeframe ?? undefined,
-        costOfDelay: adv.expected_impact
-          ? `Impact: ${adv.expected_impact}`
-          : isHigh
-            ? "Board risk: decision made without audit trail"
-            : "Delayed action reduces strategic optionality",
+        costOfDelay: deriveAdvisoryCostOfDelay(adv),
         riskIfIgnored: isHigh ? "high" : "medium",
         createdAt: adv.created_at,
       });
     });
 
-    // 3. Pending outcomes
+    // 3. Pending outcomes — age-aware cost of delay and actionable recommendations
     if (pendingDecisions > 0) {
       const { data: pending } = await supabase
         .from("decision_ledger")
@@ -277,46 +355,61 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
         queue.push({
           id: `pending-${dec.id}`,
           type: "pending_outcome",
-          urgency: "medium",
-          title: dec.recommended_action?.slice(0, 80) || "Decision awaiting outcome",
-          context: `Logged ${daysSince}d ago • ${dec.decision_type} • ${dec.confidence_at_decision ?? "?"}% confidence`,
-          recommendedAction: "Record the actual outcome to improve calibration accuracy",
+          urgency: daysSince > 30 ? "high" : "medium",
+          title: dec.recommended_action?.slice(0, 80) || "Decision awaiting outcome measurement",
+          context: `Logged ${daysSince}d ago · ${dec.decision_type} · ${dec.confidence_at_decision ?? "?"}% confidence at decision time`,
+          recommendedAction: derivePendingRecommendation(daysSince, dec.decision_type ?? "strategic"),
           source: "Decision Ledger",
           sourceId: dec.id,
-          costOfDelay: `Accuracy impact: closing this outcome improves calibration by ~0.8pp`,
-          riskIfIgnored: daysSince > 30 ? "medium" : "low",
+          costOfDelay: derivePendingCostOfDelay(daysSince, dec.confidence_at_decision, pendingDecisions),
+          riskIfIgnored: daysSince > 45 ? "high" : daysSince > 21 ? "medium" : "low",
           createdAt: dec.created_at,
         });
       });
     }
 
-    // 4. Proactive: churn
+    // 4. Proactive: churn — financially grounded with segment context
     if (churnRate > 5 && queue.length < 5) {
+      const churnSeverity = churnRate > 12 ? "critical" : churnRate > 8 ? "high" : "high";
+      const quarterlyExposure = revenue > 0 ? formatRevenueBand(churnRate * 3) : `${(churnRate * 3).toFixed(0)}% of ARR`;
+      const monthlyLoss = revenue > 0 ? formatRevenueBand(churnRate) : null;
+
       queue.push({
         id: "proactive-churn",
         type: "proactive",
-        urgency: "high",
-        title: `Retention risk: churn at ${churnRate.toFixed(1)}%`,
-        context: "Elevated churn rate detected. AI recommends reviewing customer cohort health and activating retention playbook.",
-        recommendedAction: "Approve retention playbook activation",
+        urgency: churnSeverity as "critical" | "high",
+        title: `Retention risk: ${churnRate.toFixed(1)}% churn rate ${churnRate > 10 ? "— exceeds critical threshold" : "— above target"}`,
+        context: `Churn at ${churnRate.toFixed(1)}% erodes customer base and compounds revenue loss. ${monthlyLoss ? `Estimated ${monthlyLoss}/mo at current rate.` : "Quantify revenue to model financial impact."} Cohort analysis recommended to identify at-risk segments.`,
+        recommendedAction: churnRate > 10
+          ? "Activate emergency retention protocol: identify top-decile churn risk cohort and deploy targeted intervention"
+          : "Run customer cohort health analysis and approve targeted retention playbook for highest-risk segments",
         source: "Proactive Intelligence",
-        costOfDelay: `At current rate, projected ${formatRevenueBand(churnRate * 2)} revenue at risk over next quarter`,
+        costOfDelay: revenue > 0
+          ? `Projected ${quarterlyExposure} quarterly revenue at risk. Each week of inaction compounds by ~${formatRevenueBand(churnRate * 0.25)}`
+          : `${churnRate.toFixed(1)}% monthly erosion compounds to ${(churnRate * 3).toFixed(0)}%+ quarterly customer loss without intervention`,
         riskIfIgnored: "high",
       });
     }
 
-    // 5. Proactive: calibration
+    // 5. Proactive: calibration — gap-specific guidance
     if (calibrationScore != null && calibrationScore < 65 && queue.length < 5) {
+      const gap = 65 - calibrationScore;
+      const severity = calibrationScore < 40 ? "high" : "medium";
+
       queue.push({
         id: "proactive-calibration",
         type: "proactive",
-        urgency: "medium",
-        title: "Calibration below threshold",
-        context: `Your team's decision accuracy is ${calibrationScore}%. Log more decision outcomes to strengthen the model.`,
-        recommendedAction: "Review and close 3 oldest pending decisions",
+        urgency: severity,
+        title: `Decision calibration at ${calibrationScore}% — ${gap}pp below governance threshold`,
+        context: `Team calibration score is ${calibrationScore}% (target: ≥65%). ${calibrationScore < 40 ? "Severely miscalibrated — predictions are unreliable." : "Moderately miscalibrated — prediction accuracy is compromised."} ${pendingDecisions > 0 ? `${pendingDecisions} outcomes awaiting closure.` : "Log more decision outcomes to train the model."}`,
+        recommendedAction: pendingDecisions >= 3
+          ? `Close the ${Math.min(pendingDecisions, 5)} oldest pending decision outcomes to provide calibration training data`
+          : "Log new strategic decisions with probability estimates and track outcomes over the next 2 weeks",
         source: "Calibration Engine",
-        costOfDelay: "Each unresolved outcome reduces model accuracy and weakens board defensibility",
-        riskIfIgnored: "medium",
+        costOfDelay: calibrationScore < 40
+          ? `Calibration at ${calibrationScore}% means >1 in 3 predictions are wrong. Board risk: decisions lack defensible accuracy basis`
+          : `Each week without outcome data widens the calibration gap. Current ${gap}pp deficit requires ~${Math.ceil(gap / 3)} resolved outcomes to close`,
+        riskIfIgnored: severity as "high" | "medium",
       });
     }
 
