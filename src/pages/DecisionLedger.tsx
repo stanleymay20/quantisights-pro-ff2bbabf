@@ -140,7 +140,7 @@ const DecisionLedgerPage = () => {
   const fetchLearningStats = async () => {
     if (!currentOrgId) return;
     const { data } = await supabase
-      .from("decision_simulations" as any)
+      .from("decision_simulations")
       .select("calibration_delta")
       .eq("organization_id", currentOrgId)
       .not("calibration_delta", "is", null)
@@ -174,7 +174,7 @@ const DecisionLedgerPage = () => {
         recommended_action: newAction,
         decision_type: newType,
         decided_by: user?.id,
-      } as any);
+      });
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {

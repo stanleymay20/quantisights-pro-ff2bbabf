@@ -108,11 +108,12 @@ const AdvisoryPage = () => {
   };
 
   const fetchInstances = async () => {
-    if (!currentOrgId) return;
+    if (!currentOrgId || !activeDatasetId) return;
     const { data, error } = await supabase
       .from("advisory_instances")
       .select("*")
       .eq("organization_id", currentOrgId)
+      .eq("dataset_id", activeDatasetId)
       .order("created_at", { ascending: false })
       .limit(100);
     if (!error && data) setInstances(data as AdvisoryInstance[]);

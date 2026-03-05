@@ -101,18 +101,15 @@ const Scenarios = () => {
   const canUseAI = currentTier !== "starter";
 
   const fetchScenarios = useCallback(async () => {
-    if (!currentOrgId) return;
+    if (!currentOrgId || !activeDatasetId) return;
     setLoading(true);
-    let query = supabase
+    const { data } = await supabase
       .from("scenarios")
       .select("*")
       .eq("organization_id", currentOrgId)
+      .eq("dataset_id", activeDatasetId)
       .neq("status", "archived")
-      .order("created_at", { ascending: false }) as any;
-    if (activeDatasetId) {
-      query = query.eq("dataset_id", activeDatasetId);
-    }
-    const { data } = await query;
+      .order("created_at", { ascending: false });
     if (data) setScenarios(data as unknown as Scenario[]);
     setLoading(false);
   }, [currentOrgId, activeDatasetId]);
@@ -155,6 +152,7 @@ const Scenarios = () => {
 
     const { data, error } = await supabase.from("scenarios").insert({
       organization_id: currentOrgId,
+      dataset_id: activeDatasetId,
       name: newName,
       description: newDesc || null,
       forecast_start_date: newStart,
@@ -169,7 +167,7 @@ const Scenarios = () => {
       setCreateOpen(false);
       setNewName(""); setNewDesc(""); setNewStart(""); setNewEnd("");
       fetchScenarios();
-      if (data) setSelectedId((data as any).id);
+      if (data) setSelectedId(data.id);
     }
   };
 
@@ -235,6 +233,7 @@ const Scenarios = () => {
     if (!sel || !currentOrgId || !user) return;
     const { data, error } = await supabase.from("scenarios").insert({
       organization_id: currentOrgId,
+      dataset_id: activeDatasetId,
       name: `${sel.name} (copy)`,
       description: sel.description,
       forecast_start_date: sel.forecast_start_date,
@@ -247,7 +246,7 @@ const Scenarios = () => {
       if (assumptions.length > 0) {
         await supabase.from("scenario_assumptions").insert(
           assumptions.map(a => ({
-            scenario_id: (data as any).id,
+            scenario_id: data.id,
             metric_type: a.metric_type,
             adjustment_type: a.adjustment_type,
             adjustment_value: a.adjustment_value,
@@ -256,7 +255,7 @@ const Scenarios = () => {
       }
       toast({ title: "Scenario duplicated" });
       fetchScenarios();
-      setSelectedId((data as any).id);
+      setSelectedId(data.id);
     }
   };
 

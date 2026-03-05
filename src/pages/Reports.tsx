@@ -54,16 +54,13 @@ const Reports = () => {
   const [selectedType, setSelectedType] = useState("executive");
 
   const fetchReports = async () => {
-    if (!currentOrgId) return;
-    let query = supabase
+    if (!currentOrgId || !activeDatasetId) return;
+    const { data } = await supabase
       .from("reports")
       .select("*")
       .eq("organization_id", currentOrgId)
-      .order("created_at", { ascending: false }) as any;
-    if (activeDatasetId) {
-      query = query.eq("dataset_id", activeDatasetId);
-    }
-    const { data } = await query;
+      .eq("dataset_id", activeDatasetId)
+      .order("created_at", { ascending: false });
     setReports(data || []);
     setLoading(false);
   };

@@ -75,11 +75,12 @@ const MarketIntelligence = () => {
   const [storedSignals, setStoredSignals] = useState<any[]>([]);
 
   const fetchStoredSignals = async () => {
-    if (!currentOrgId) return;
+    if (!currentOrgId || !activeDatasetId) return;
     const { data: signals } = await supabase
       .from("external_signals")
       .select("*")
       .eq("organization_id", currentOrgId)
+      .eq("dataset_id", activeDatasetId)
       .order("fetched_at", { ascending: false })
       .limit(30);
     if (signals) setStoredSignals(signals);

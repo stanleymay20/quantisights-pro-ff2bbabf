@@ -28,24 +28,20 @@ export interface PortfolioCompany {
   updated_at: string;
 }
 
-export const usePortfolioCompanies = (orgId: string | null, datasetId?: string | null) => {
+export const usePortfolioCompanies = (orgId: string | null, datasetId: string | null) => {
   const [companies, setCompanies] = useState<PortfolioCompany[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetch = useCallback(async () => {
-    if (!orgId) { setCompanies([]); setLoading(false); return; }
+    if (!orgId || !datasetId) { setCompanies([]); setLoading(false); return; }
     setLoading(true);
-    let query = supabase
+    const { data, error } = await supabase
       .from("portfolio_companies")
       .select("*")
       .eq("organization_id", orgId)
+      .eq("dataset_id", datasetId)
       .order("name");
 
-    if (datasetId) {
-      query = query.eq("dataset_id", datasetId);
-    }
-
-    const { data, error } = await query;
     if (!error && data) setCompanies(data as PortfolioCompany[]);
     setLoading(false);
   }, [orgId, datasetId]);

@@ -25,40 +25,34 @@ const Simulations = () => {
   const { data: metricTypes } = useQuery({
     queryKey: ["metric-types", organizationId, activeDatasetId],
     queryFn: async () => {
-      if (!organizationId) return [];
-      let query = supabase
+      if (!organizationId || !activeDatasetId) return [];
+      const { data } = await supabase
         .from("metrics")
         .select("metric_type")
-        .eq("organization_id", organizationId);
-      if (activeDatasetId) {
-        query = query.eq("dataset_id", activeDatasetId);
-      }
-      const { data } = await query;
+        .eq("organization_id", organizationId)
+        .eq("dataset_id", activeDatasetId);
       const unique = [...new Set((data || []).map((m) => m.metric_type))];
       return unique.sort();
     },
-    enabled: !!organizationId,
+    enabled: !!organizationId && !!activeDatasetId,
   });
 
   // Fetch past simulations — dataset-scoped
   const { data: simulations, isLoading } = useQuery({
     queryKey: ["simulations", organizationId, activeDatasetId],
     queryFn: async () => {
-      if (!organizationId) return [];
-      let query = supabase
+      if (!organizationId || !activeDatasetId) return [];
+      const { data, error } = await supabase
         .from("simulation_results")
         .select("*")
         .eq("organization_id", organizationId)
+        .eq("dataset_id", activeDatasetId)
         .order("created_at", { ascending: false })
-        .limit(20) as any;
-      if (activeDatasetId) {
-        query = query.eq("dataset_id", activeDatasetId);
-      }
-      const { data, error } = await query;
+        .limit(20);
       if (error) throw error;
       return data || [];
     },
-    enabled: !!organizationId,
+    enabled: !!organizationId && !!activeDatasetId,
   });
 
   const runSim = useMutation({
