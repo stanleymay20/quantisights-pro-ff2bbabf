@@ -1,6 +1,5 @@
 import { useState } from "react";
-import DashboardSidebar, { SidebarMobileToggle } from "@/components/dashboard/DashboardSidebar";
-import GlobalContextBar from "@/components/layout/GlobalContextBar";
+import { SidebarMobileToggle } from "@/components/layout/ProtectedShell";
 import { useOrganization } from "@/hooks/useOrganization";
 import { usePortfolioCompanies, PortfolioCompany } from "@/hooks/usePortfolioCompanies";
 import PortfolioKPIBar from "@/components/portfolio/PortfolioKPIBar";
@@ -16,10 +15,7 @@ const Portfolio = () => {
   const [selected, setSelected] = useState<PortfolioCompany | null>(null);
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <DashboardSidebar />
-      <main className="flex-1 flex flex-col overflow-auto">
-        <GlobalContextBar />
+    <main className="flex-1 flex flex-col overflow-auto">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 flex-1">
           {/* Header */}
           <div className="flex items-center justify-between">
@@ -69,8 +65,7 @@ const Portfolio = () => {
             </>
           )}
         </div>
-      </main>
-    </div>
+    </main>
   );
 };
 

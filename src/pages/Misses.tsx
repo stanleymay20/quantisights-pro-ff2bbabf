@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import DashboardSidebar, { SidebarMobileToggle } from "@/components/dashboard/DashboardSidebar";
+import { SidebarMobileToggle } from "@/components/layout/ProtectedShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -135,9 +135,7 @@ const MissesPage = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <DashboardSidebar />
-      <div className="flex-1 flex flex-col min-h-screen">
+    <>
         <header className="h-14 border-b border-border/30 flex items-center px-8 shrink-0 bg-background/60 backdrop-blur-sm">
           <SidebarMobileToggle />
           <div className="ml-3">
@@ -291,8 +289,7 @@ const MissesPage = () => {
             </CardContent>
           </Card>
         </main>
-      </div>
-    </div>
+    </>
   );
 };
 

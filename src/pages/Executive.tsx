@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useOrganization } from "@/hooks/useOrganization";
 import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
-import DashboardSidebar, { SidebarMobileToggle } from "@/components/dashboard/DashboardSidebar";
+import { SidebarMobileToggle } from "@/components/layout/ProtectedShell";
 import ExecutiveCopilot from "@/components/dashboard/ExecutiveCopilot";
 import StrategicSimulation from "@/components/dashboard/StrategicSimulation";
 import ExecutiveConvergence from "@/components/dashboard/ExecutiveConvergence";
@@ -363,9 +363,7 @@ const Executive = () => {
   const urgency = brief ? URGENCY_STYLES[brief.urgency_level] || URGENCY_STYLES.monitor : null;
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <DashboardSidebar />
-      <main className="flex-1 p-8 overflow-auto">
+    <main className="flex-1 p-8 overflow-auto">
         <IntelligenceDisclaimer variant="banner" context="executive" />
         <div className="max-w-6xl mx-auto space-y-8">
           {/* Header */}
@@ -912,8 +910,7 @@ const Executive = () => {
             </Tabs>
           )}
         </div>
-      </main>
-    </div>
+    </main>
   );
 };
 

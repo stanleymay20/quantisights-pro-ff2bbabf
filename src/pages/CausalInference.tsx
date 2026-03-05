@@ -1,5 +1,5 @@
 import { useState } from "react";
-import DashboardSidebar, { SidebarMobileToggle } from "@/components/dashboard/DashboardSidebar";
+import { SidebarMobileToggle } from "@/components/layout/ProtectedShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -63,9 +63,7 @@ const CausalInference = () => {
     s >= 0.7 ? "text-emerald-400" : s >= 0.5 ? "text-amber-400" : "text-muted-foreground";
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <DashboardSidebar />
-      <div className="flex-1 flex flex-col min-h-screen">
+    <>
         <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
           <div className="flex items-center gap-3">
             <SidebarMobileToggle />
@@ -218,8 +216,7 @@ const CausalInference = () => {
             </>
           )}
         </main>
-      </div>
-    </div>
+    </>
   );
 };
 
