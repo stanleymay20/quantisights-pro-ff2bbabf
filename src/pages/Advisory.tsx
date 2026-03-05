@@ -175,7 +175,7 @@ const AdvisoryPage = () => {
                   <p className="text-sm text-foreground/80 mt-1">{adv.action}</p>
                   <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {adv.timeframe}</span>
-                    <span className="flex items-center gap-1"><BarChart3 className="w-3 h-3" /> {adv.confidence}% confidence</span>
+                    <span className="flex items-center gap-1"><BarChart3 className="w-3 h-3" /> <ConfidenceBadge confidence={adv.confidence} showDetails /></span>
                     <span className="flex items-center gap-1"><Zap className="w-3 h-3" /> {adv.expected_impact}</span>
                   </div>
                 </div>
