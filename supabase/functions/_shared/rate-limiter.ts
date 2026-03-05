@@ -36,7 +36,7 @@ export function rateLimitResponse(retryAfterMs: number): Response {
         "Content-Type": "application/json",
         "Retry-After": String(Math.ceil(retryAfterMs / 1000)),
         "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+        "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
       },
     }
   );
