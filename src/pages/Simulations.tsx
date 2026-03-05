@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrganization } from "@/hooks/useOrganization";
 import { useProject } from "@/contexts/ProjectContext";
-import DashboardSidebar, { SidebarMobileToggle } from "@/components/dashboard/DashboardSidebar";
+import { SidebarMobileToggle } from "@/components/layout/ProtectedShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -82,9 +82,7 @@ const Simulations = () => {
   const latest = simulations?.[0];
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <DashboardSidebar />
-      <main className="flex-1 overflow-y-auto">
+    <main className="flex-1 overflow-y-auto">
         <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-lg border-b border-border px-6 py-4">
           <div className="flex items-center gap-3">
             <SidebarMobileToggle />
@@ -246,8 +244,7 @@ const Simulations = () => {
             </CardContent>
           </Card>
         </div>
-      </main>
-    </div>
+    </main>
   );
 };
 

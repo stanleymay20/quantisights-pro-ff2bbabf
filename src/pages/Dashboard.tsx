@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
-import DashboardSidebar, { SidebarMobileToggle } from "@/components/dashboard/DashboardSidebar";
+import { SidebarMobileToggle } from "@/components/layout/ProtectedShell";
 import OrgSwitcher from "@/components/dashboard/OrgSwitcher";
 import ProjectSwitcher from "@/components/dashboard/ProjectSwitcher";
 import IntelligenceStatusBar from "@/components/dashboard/IntelligenceStatusBar";
 import CommandCenter from "@/components/dashboard/CommandCenter";
 import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
-import GlobalContextBar from "@/components/layout/GlobalContextBar";
+
 import { useAuth } from "@/contexts/AuthContext";
 import { useOrganization } from "@/hooks/useOrganization";
 import { useProject } from "@/contexts/ProjectContext";
@@ -110,11 +110,8 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <>
       {hasData && <GuidedTour />}
-      <DashboardSidebar />
-      <div className="flex-1 flex flex-col min-h-screen">
-        <GlobalContextBar />
         <IntelligenceStatusBar
           hasData={hasData}
           insights={insights}
@@ -262,8 +259,7 @@ const Dashboard = () => {
             </>
           )}
         </main>
-      </div>
-    </div>
+    </>
   );
 };
 

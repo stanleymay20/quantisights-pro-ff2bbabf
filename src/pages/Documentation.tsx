@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import DashboardSidebar, { SidebarMobileToggle } from "@/components/dashboard/DashboardSidebar";
+import { SidebarMobileToggle } from "@/components/layout/ProtectedShell";
 import {
   BookOpen, Download, ChevronRight, Brain, Database, Shield, Zap,
   BarChart3, Target, Layers, GitBranch, Activity, Scale, Timer,
@@ -856,9 +856,7 @@ const Documentation = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <DashboardSidebar />
-      <div className="flex-1 flex flex-col min-h-screen">
+    <>
         <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
           <div className="flex items-center gap-2">
             <SidebarMobileToggle />
@@ -914,8 +912,7 @@ const Documentation = () => {
             </div>
           </main>
         </div>
-      </div>
-    </div>
+    </>
   );
 };
 

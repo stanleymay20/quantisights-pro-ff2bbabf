@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useTheme } from "@/components/ThemeProvider";
-import DashboardSidebar, { SidebarMobileToggle } from "@/components/dashboard/DashboardSidebar";
+import { SidebarMobileToggle } from "@/components/layout/ProtectedShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -167,9 +167,7 @@ const Settings = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <DashboardSidebar />
-      <div className="flex-1 flex flex-col min-h-screen">
+    <>
         <header className="h-14 border-b border-border/30 flex items-center px-8 shrink-0 bg-background/60 backdrop-blur-sm">
           <div className="flex items-center gap-3">
             <SidebarMobileToggle />
@@ -451,8 +449,7 @@ const Settings = () => {
             </Tabs>
           </div>
         </main>
-      </div>
-    </div>
+    </>
   );
 };
 

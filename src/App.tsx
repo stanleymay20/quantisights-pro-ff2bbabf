@@ -12,7 +12,7 @@ import { SidebarProvider } from "@/components/dashboard/DashboardSidebar";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { ThemeProvider } from "@/components/ThemeProvider";
-import ProtectedLayout from "@/components/layout/ProtectedLayout";
+import ProtectedLayout, { MinimalProtectedLayout } from "@/components/layout/ProtectedLayout";
 
 // Eager: landing page (critical path)
 import Index from "./pages/Index";
@@ -86,24 +86,33 @@ const PageLoader = () => (
   </div>
 );
 
-/**
- * Wraps a page component with all protected-route providers + unified layout shell.
- * This eliminates the 30x duplication of SidebarProvider > WorkspaceProvider > ProjectProvider > DatasetProvider.
- */
-const P = ({ children }: { children: React.ReactNode }) => (
+/** Providers stack for all protected routes */
+const Providers = ({ children }: { children: React.ReactNode }) => (
   <ProtectedRoute>
     <SidebarProvider>
       <WorkspaceProvider>
         <ProjectProvider>
           <DatasetProvider>
-            <ProtectedLayout>
-              {children}
-            </ProtectedLayout>
+            {children}
           </DatasetProvider>
         </ProjectProvider>
       </WorkspaceProvider>
     </SidebarProvider>
   </ProtectedRoute>
+);
+
+/** Full shell: providers + sidebar + context bar */
+const P = ({ children }: { children: React.ReactNode }) => (
+  <Providers>
+    <ProtectedLayout>{children}</ProtectedLayout>
+  </Providers>
+);
+
+/** Minimal: providers only (no sidebar/context bar) — for Onboarding, BoardReport */
+const PMinimal = ({ children }: { children: React.ReactNode }) => (
+  <Providers>
+    <MinimalProtectedLayout>{children}</MinimalProtectedLayout>
+  </Providers>
 );
 
 const App = () => (
@@ -137,8 +146,11 @@ const App = () => (
               <Route path="/calibration" element={<CalibrationAssessment />} />
               <Route path="*" element={<NotFound />} />
 
-              {/* Protected routes — unified layout shell via <P> wrapper */}
-              <Route path="/onboarding" element={<P><Onboarding /></P>} />
+              {/* Standalone protected routes (no sidebar shell) */}
+              <Route path="/onboarding" element={<PMinimal><Onboarding /></PMinimal>} />
+              <Route path="/board-report" element={<PMinimal><BoardReport /></PMinimal>} />
+
+              {/* Protected routes — unified shell with sidebar + context bar */}
               <Route path="/dashboard" element={<P><Dashboard /></P>} />
               <Route path="/data-upload" element={<P><DataUpload /></P>} />
               <Route path="/data-sources" element={<P><DataSources /></P>} />
@@ -153,7 +165,6 @@ const App = () => (
               <Route path="/reports" element={<P><Reports /></P>} />
               <Route path="/strategy-pack" element={<P><StrategyPack /></P>} />
               <Route path="/executive" element={<P><Executive /></P>} />
-              <Route path="/board-report" element={<P><BoardReport /></P>} />
               <Route path="/team" element={<P><Team /></P>} />
               <Route path="/clients" element={<P><Clients /></P>} />
               <Route path="/billing" element={<P><Billing /></P>} />

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useOrganization } from "@/hooks/useOrganization";
 import { supabase } from "@/integrations/supabase/client";
-import DashboardSidebar, { SidebarMobileToggle } from "@/components/dashboard/DashboardSidebar";
+import { SidebarMobileToggle } from "@/components/layout/ProtectedShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -161,21 +161,17 @@ const StrategyPack = () => {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen bg-background">
-        <DashboardSidebar />
-        <main className="flex-1 flex items-center justify-center">
-          <div className="text-center space-y-3">
-            <Loader2 className="w-10 h-10 text-primary animate-spin mx-auto" />
-            <p className="text-muted-foreground">Compiling Strategy Pack…</p>
-          </div>
-        </main>
-      </div>
+      <main className="flex-1 flex items-center justify-center">
+        <div className="text-center space-y-3">
+          <Loader2 className="w-10 h-10 text-primary animate-spin mx-auto" />
+          <p className="text-muted-foreground">Compiling Strategy Pack…</p>
+        </div>
+      </main>
     );
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <DashboardSidebar />
+    <>
       <main className="flex-1 overflow-y-auto">
         {/* Header */}
         <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-lg border-b border-border px-6 py-4 print:hidden">
@@ -488,7 +484,7 @@ const StrategyPack = () => {
           @page { margin: 0.5in; size: A4; }
         }
       `}</style>
-    </div>
+    </>
   );
 };
 
