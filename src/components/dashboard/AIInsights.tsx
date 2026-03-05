@@ -1,22 +1,13 @@
-import { Lightbulb, Target, TrendingDown, ArrowRight, ShieldCheck } from "lucide-react";
+import { Lightbulb, Target, TrendingDown, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { Insight } from "@/hooks/useInsights";
+import ConfidenceBadge from "@/components/ConfidenceBadge";
 
 const ICONS = [Target, Lightbulb, TrendingDown];
 
 interface AIInsightsProps {
   insights: Insight[];
 }
-
-const ConfidenceBadge = ({ score }: { score: number }) => {
-  const color = score >= 80 ? "text-success" : score >= 50 ? "text-warning" : "text-destructive";
-  return (
-    <span className={`inline-flex items-center gap-0.5 text-[10px] font-semibold ${color}`}>
-      <ShieldCheck className="w-2.5 h-2.5" />
-      {score}%
-    </span>
-  );
-};
 
 const AIInsights = ({ insights }: AIInsightsProps) => {
   const infoInsights = insights.filter((i) => i.severity === "info" || i.severity === "low").slice(0, 5);

@@ -43,7 +43,7 @@ interface AdvisoryInstance {
   action: string;
   expected_impact: string | null;
   timeframe: string | null;
-  confidence: number;
+  confidence: unknown;
   rationale: string | null;
   kpi_affected: any;
   playbook_steps: any;
