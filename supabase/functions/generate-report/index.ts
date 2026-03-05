@@ -36,12 +36,16 @@ serve(async (req) => {
     }
 
     const userId = user.id;
-    const { organization_id, report_type = "executive" } = await req.json();
+    const { organization_id, dataset_id, report_type = "executive", dry_run } = await req.json();
 
     if (!organization_id) {
       return new Response(JSON.stringify({ error: "organization_id required" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (!dataset_id) {
+      return new Response(JSON.stringify({ error: "dataset_id required by Active Data Contract" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -55,7 +59,13 @@ serve(async (req) => {
 
     if (!membership) {
       return new Response(JSON.stringify({ error: "Not a member" }), {
-        status: 403,
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Dry run: validate contract only
+    if (dry_run) {
+      return new Response(JSON.stringify({ dry_run: true, status: "PASS", dataset_id, organization_id }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

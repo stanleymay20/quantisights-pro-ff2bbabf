@@ -29,8 +29,9 @@ serve(async (req) => {
   if (auth.response) return auth.response;
 
   try {
-    const { organization_id, dataset_id, role_type } = await req.json();
+    const { organization_id, dataset_id, role_type, dry_run } = await req.json();
     if (!organization_id) throw new Error("organization_id required");
+    if (!dataset_id) throw new Error("dataset_id required by Active Data Contract");
 
     // Verify org membership
     const isMember = await verifyOrgMembership(auth.userId, organization_id);
@@ -40,19 +41,20 @@ serve(async (req) => {
       });
     }
 
+    // Dry run: validate contract only
+    if (dry_run) {
+      return new Response(JSON.stringify({ dry_run: true, status: "PASS", dataset_id, organization_id }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const headers = { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` };
 
-    // Build dataset-scoped metrics URL
-    let metricsUrl = `${supabaseUrl}/rest/v1/metrics?organization_id=eq.${organization_id}&order=date.asc&limit=500`;
-    if (dataset_id) {
-      metricsUrl += `&dataset_id=eq.${dataset_id}`;
-    }
-    let insightsUrl = `${supabaseUrl}/rest/v1/insights?organization_id=eq.${organization_id}&severity=in.(high,medium)&order=created_at.desc&limit=20`;
-    if (dataset_id) {
-      insightsUrl += `&dataset_id=eq.${dataset_id}`;
-    }
+    // Build dataset-scoped metrics URL — dataset_id is REQUIRED
+    const metricsUrl = `${supabaseUrl}/rest/v1/metrics?organization_id=eq.${organization_id}&dataset_id=eq.${dataset_id}&order=date.asc&limit=500`;
+    const insightsUrl = `${supabaseUrl}/rest/v1/insights?organization_id=eq.${organization_id}&dataset_id=eq.${dataset_id}&severity=in.(high,medium)&order=created_at.desc&limit=20`;
 
     // Fetch data + calibration model in parallel
     const [metricsResp, riskResp, insightsResp, kpisResp, calibrationModel] = await Promise.all([
