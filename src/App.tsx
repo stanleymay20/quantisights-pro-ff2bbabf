@@ -68,6 +68,7 @@ const Misses = lazy(() => import("./pages/Misses"));
 const Security = lazy(() => import("./pages/Security"));
 const Portfolio = lazy(() => import("./pages/Portfolio"));
 const SecurityQuestionnaire = lazy(() => import("./pages/SecurityQuestionnaire"));
+const PilotAudit = lazy(() => import("./pages/PilotAudit"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
