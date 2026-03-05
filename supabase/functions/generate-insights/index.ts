@@ -140,8 +140,11 @@ serve(async (req) => {
     let aiInsights: any[] = [];
 
     if (LOVABLE_API_KEY) {
+      const aiController = new AbortController();
+      const aiTimeout = setTimeout(() => aiController.abort(), 30000);
       const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
+        signal: aiController.signal,
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${LOVABLE_API_KEY}`,

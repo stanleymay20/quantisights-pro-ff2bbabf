@@ -54,16 +54,24 @@ const Dashboard = () => {
   useEffect(() => {
     if (!currentOrgId) return;
     const fetchCount = async () => {
+      // advisory_instances: dataset-scoped (has dataset_id column)
       let advisoryQuery = supabase
         .from("advisory_instances")
         .select("*", { count: "exact", head: true })
         .eq("organization_id", currentOrgId)
         .in("status", ["open", "in_progress"]);
-      let decisionQuery = supabase
+      if (activeDatasetId) {
+        advisoryQuery = advisoryQuery.eq("dataset_id", activeDatasetId);
+      }
+
+      // decision_ledger: org-scoped by design (no dataset_id column)
+      const decisionQuery = supabase
         .from("decision_ledger")
         .select("*", { count: "exact", head: true })
         .eq("organization_id", currentOrgId)
         .eq("execution_status", "not_started");
+
+      // calibration_models: org-scoped by design
       const calQuery = supabase
         .from("calibration_models")
         .select("overall_calibration_score")
@@ -71,16 +79,13 @@ const Dashboard = () => {
         .order("computed_at", { ascending: false })
         .limit(1);
 
-      // Dataset scoping: advisory_instances and decision_ledger don't have dataset_id columns,
-      // but calibration_models is org-level. These are org-scoped entities by design.
-
       const [advisoryRes, decisionRes, calRes] = await Promise.all([advisoryQuery, decisionQuery, calQuery]);
       setOpenAdvisoryCount(advisoryRes.count || 0);
       setPendingDecisions(decisionRes.count || 0);
       setCalibrationScore(calRes.data?.[0]?.overall_calibration_score ?? null);
     };
     fetchCount();
-  }, [currentOrgId]);
+  }, [currentOrgId, activeDatasetId]);
 
   const handleRecalculate = async () => {
     if (!currentOrgId) return;
@@ -177,48 +182,92 @@ const Dashboard = () => {
                 <h1 className="text-3xl font-bold font-display mb-3">
                   {greeting()}, {displayName}
                 </h1>
-                <p className="text-muted-foreground text-base max-w-md mx-auto leading-relaxed">
-                  Upload verified operational data to enable intelligence. No synthetic metrics — every insight is derived from your data.
-                </p>
+                {activeDatasetId ? (
+                  <p className="text-muted-foreground text-base max-w-md mx-auto leading-relaxed">
+                    Your dataset is loaded. Derived metrics are being processed. Click below to run the intelligence engine.
+                  </p>
+                ) : (
+                  <p className="text-muted-foreground text-base max-w-md mx-auto leading-relaxed">
+                    Upload verified operational data to enable intelligence. No synthetic metrics — every insight is derived from your data.
+                  </p>
+                )}
               </div>
 
               <div className="space-y-3">
-                {[
-                  { icon: Upload, title: "Upload verified data", desc: "Revenue, cost, customer, and churn metrics via CSV or API", path: "/data-upload", action: "Upload Data" },
-                  { icon: Zap, title: "Autonomous diagnostics engage", desc: "Root cause analysis, anomaly detection, and risk scoring", path: null, action: null },
-                  { icon: TrendingUp, title: "Strategic advisory activates", desc: "Prescriptive playbooks, scenario modeling, and board reports", path: null, action: null },
-                ].map((step, i) => (
-                  <motion.div
-                    key={step.title}
-                    initial={{ opacity: 0, x: -12 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.2 + i * 0.1 }}
-                    className={`flex items-center gap-4 p-4 rounded-xl border transition-all duration-200 ${
-                      i === 0
-                        ? "border-primary/30 bg-primary/[0.04] hover:bg-primary/[0.06] hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/5 cursor-pointer"
-                        : "border-border/30 bg-card/20 opacity-50"
-                    }`}
-                    onClick={() => step.path && navigate(step.path)}
-                  >
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
-                      i === 0 ? "bg-primary/15" : "bg-muted/50"
-                    }`}>
-                      <step.icon className={`w-5 h-5 ${i === 0 ? "text-primary" : "text-muted-foreground"}`} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold">{step.title}</p>
-                      <p className="text-xs text-muted-foreground">{step.desc}</p>
-                    </div>
-                    {step.action && (
-                      <span className="text-xs font-semibold text-primary flex items-center gap-1">
-                        {step.action} <ArrowRight className="w-3 h-3" />
+                {activeDatasetId ? (
+                  /* Dataset exists but no derived metrics yet — show "Run Analysis" instead of "Upload" */
+                  [
+                    { icon: Zap, title: "Run Intelligence Engine", desc: "Generate insights, diagnostics, and strategic recommendations from your dataset", path: null, action: "Run Analysis", onClick: handleRecalculate },
+                    { icon: TrendingUp, title: "Strategic advisory activates", desc: "Prescriptive playbooks, scenario modeling, and board reports", path: "/advisory", action: "View Advisory" },
+                    { icon: Upload, title: "Upload additional data", desc: "Add more datasets or update existing ones", path: "/data-upload", action: "Upload" },
+                  ].map((step, i) => (
+                    <motion.div
+                      key={step.title}
+                      initial={{ opacity: 0, x: -12 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.2 + i * 0.1 }}
+                      className={`flex items-center gap-4 p-4 rounded-xl border transition-all duration-200 ${
+                        i === 0
+                          ? "border-primary/30 bg-primary/[0.04] hover:bg-primary/[0.06] hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/5 cursor-pointer"
+                          : "border-border/30 bg-card/40 hover:bg-card/60 cursor-pointer"
+                      }`}
+                      onClick={() => step.onClick ? step.onClick() : step.path && navigate(step.path)}
+                    >
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
+                        i === 0 ? "bg-primary/15" : "bg-muted/50"
+                      }`}>
+                        <step.icon className={`w-5 h-5 ${i === 0 ? "text-primary" : "text-muted-foreground"}`} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold">{step.title}</p>
+                        <p className="text-xs text-muted-foreground">{step.desc}</p>
+                      </div>
+                      {step.action && (
+                        <span className="text-xs font-semibold text-primary flex items-center gap-1">
+                          {step.action} <ArrowRight className="w-3 h-3" />
+                        </span>
+                      )}
+                    </motion.div>
+                  ))
+                ) : (
+                  /* No dataset at all — show upload flow */
+                  [
+                    { icon: Upload, title: "Upload verified data", desc: "Revenue, cost, customer, and churn metrics via CSV or API", path: "/data-upload", action: "Upload Data" },
+                    { icon: Zap, title: "Autonomous diagnostics engage", desc: "Root cause analysis, anomaly detection, and risk scoring", path: null, action: null },
+                    { icon: TrendingUp, title: "Strategic advisory activates", desc: "Prescriptive playbooks, scenario modeling, and board reports", path: null, action: null },
+                  ].map((step, i) => (
+                    <motion.div
+                      key={step.title}
+                      initial={{ opacity: 0, x: -12 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.2 + i * 0.1 }}
+                      className={`flex items-center gap-4 p-4 rounded-xl border transition-all duration-200 ${
+                        i === 0
+                          ? "border-primary/30 bg-primary/[0.04] hover:bg-primary/[0.06] hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/5 cursor-pointer"
+                          : "border-border/30 bg-card/20 opacity-50"
+                      }`}
+                      onClick={() => step.path && navigate(step.path)}
+                    >
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
+                        i === 0 ? "bg-primary/15" : "bg-muted/50"
+                      }`}>
+                        <step.icon className={`w-5 h-5 ${i === 0 ? "text-primary" : "text-muted-foreground"}`} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold">{step.title}</p>
+                        <p className="text-xs text-muted-foreground">{step.desc}</p>
+                      </div>
+                      {step.action && (
+                        <span className="text-xs font-semibold text-primary flex items-center gap-1">
+                          {step.action} <ArrowRight className="w-3 h-3" />
+                        </span>
+                      )}
+                      <span className="w-6 h-6 rounded-full bg-muted/50 flex items-center justify-center text-[10px] font-bold text-muted-foreground shrink-0">
+                        {i + 1}
                       </span>
-                    )}
-                    <span className="w-6 h-6 rounded-full bg-muted/50 flex items-center justify-center text-[10px] font-bold text-muted-foreground shrink-0">
-                      {i + 1}
-                    </span>
-                  </motion.div>
-                ))}
+                    </motion.div>
+                  ))
+                )}
               </div>
             </motion.div>
           ) : isLoading ? (
