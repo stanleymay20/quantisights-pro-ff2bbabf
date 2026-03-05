@@ -91,7 +91,7 @@ const MarketIntelligence = () => {
     try {
       const topics = customTopics ? customTopics.split(",").map(t => t.trim()) : [];
       const { data: result, error } = await supabase.functions.invoke("fetch-market-signals", {
-        body: { organization_id: currentOrgId, industry, topics },
+        body: { organization_id: currentOrgId, dataset_id: activeDatasetId, industry, topics },
       });
       if (error) throw error;
       if (result?.error) throw new Error(result.error);
