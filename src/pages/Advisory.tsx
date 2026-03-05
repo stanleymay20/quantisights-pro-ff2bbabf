@@ -90,7 +90,7 @@ const AdvisoryPage = () => {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   const fetchAdvisories = async () => {
-    if (!currentOrgId) return;
+    if (!currentOrgId || !activeDatasetId) return;
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("prescriptive-advisory", {
@@ -120,11 +120,11 @@ const AdvisoryPage = () => {
   };
 
   useEffect(() => {
-    if (currentOrgId) {
+    if (currentOrgId && activeDatasetId) {
       fetchAdvisories();
       fetchInstances();
     }
-  }, [currentOrgId]);
+  }, [currentOrgId, activeDatasetId]);
 
   const updateInstanceStatus = async (id: string, status: string, extras?: Record<string, any>) => {
     setUpdatingId(id);
