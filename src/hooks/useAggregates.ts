@@ -17,13 +17,11 @@ export interface MetricAggregate {
 }
 
 /**
- * Hook to read pre-computed metric aggregates from the analytical layer.
- * Use this for dashboard KPI cards, charts, and reports at scale (100M+ metrics).
- * Falls back gracefully when no aggregates exist yet.
+ * Hook to read pre-computed metric aggregates — REQUIRES dataset_id (Active Data Contract).
  */
 export const useAggregates = (
   orgId: string | null,
-  datasetId?: string | null,
+  datasetId: string | null,
   periodType: string = "monthly"
 ) => {
   const [aggregates, setAggregates] = useState<MetricAggregate[]>([]);
@@ -31,7 +29,7 @@ export const useAggregates = (
   const [hasAggregates, setHasAggregates] = useState(false);
 
   const fetchAggregates = useCallback(async () => {
-    if (!orgId) {
+    if (!orgId || !datasetId) {
       setAggregates([]);
       setLoading(false);
       setHasAggregates(false);
@@ -39,18 +37,13 @@ export const useAggregates = (
     }
 
     setLoading(true);
-    let query = supabase
+    const { data, error } = await supabase
       .from("metric_aggregates")
       .select("*")
       .eq("organization_id", orgId)
+      .eq("dataset_id", datasetId)
       .eq("period_type", periodType)
       .order("period_start", { ascending: true });
-
-    if (datasetId) {
-      query = query.eq("dataset_id", datasetId);
-    }
-
-    const { data, error } = await query;
 
     if (!error && data) {
       setAggregates(data as MetricAggregate[]);

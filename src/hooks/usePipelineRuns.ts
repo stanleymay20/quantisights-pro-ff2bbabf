@@ -19,16 +19,15 @@ export interface PipelineRun {
 }
 
 /**
- * Hook to track data pipeline runs for observability.
- * Shows the 3-tier pipeline status: Raw → Clean → Analytical
+ * Hook to track data pipeline runs — REQUIRES dataset_id (Active Data Contract).
  */
-export const usePipelineRuns = (orgId: string | null, datasetId?: string | null) => {
+export const usePipelineRuns = (orgId: string | null, datasetId: string | null) => {
   const [runs, setRuns] = useState<PipelineRun[]>([]);
   const [loading, setLoading] = useState(true);
   const [latestRun, setLatestRun] = useState<PipelineRun | null>(null);
 
   useEffect(() => {
-    if (!orgId) {
+    if (!orgId || !datasetId) {
       setRuns([]);
       setLatestRun(null);
       setLoading(false);
@@ -37,18 +36,14 @@ export const usePipelineRuns = (orgId: string | null, datasetId?: string | null)
 
     const fetch = async () => {
       setLoading(true);
-      let query = supabase
+      const { data, error } = await supabase
         .from("pipeline_runs")
         .select("*")
         .eq("organization_id", orgId)
+        .eq("dataset_id", datasetId)
         .order("started_at", { ascending: false })
         .limit(10);
 
-      if (datasetId) {
-        query = query.eq("dataset_id", datasetId);
-      }
-
-      const { data, error } = await query;
       if (!error && data) {
         const typed = data as PipelineRun[];
         setRuns(typed);

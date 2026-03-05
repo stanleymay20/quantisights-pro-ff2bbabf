@@ -15,7 +15,11 @@ export interface MetricRow {
 
 const REALTIME_TIERS: TierKey[] = ["growth", "enterprise"];
 
-export const useMetrics = (orgId: string | null, datasetId?: string | null) => {
+/**
+ * Hook to fetch metrics — REQUIRES dataset_id (Active Data Contract).
+ * Will not fetch if datasetId is missing.
+ */
+export const useMetrics = (orgId: string | null, datasetId: string | null) => {
   const [metrics, setMetrics] = useState<MetricRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
@@ -24,17 +28,17 @@ export const useMetrics = (orgId: string | null, datasetId?: string | null) => {
 
   const canStream = subscribed && tier ? REALTIME_TIERS.includes(tier) : false;
 
-  const updateLastUpdated = useCallback((data: any[]) => {
+  const updateLastUpdated = useCallback((data: MetricRow[]) => {
     const latest = data.reduce((max, m) => {
-      const t = (m as any).created_at;
+      const t = (m as MetricRow & { created_at?: string }).created_at;
       return t && t > max ? t : max;
     }, "");
     setLastUpdated(latest || null);
   }, []);
 
-  // Initial fetch — scoped to dataset if provided
+  // Initial fetch — MANDATORY dataset_id
   useEffect(() => {
-    if (!orgId) {
+    if (!orgId || !datasetId) {
       setMetrics([]);
       setLoading(false);
       setLastUpdated(null);
@@ -43,18 +47,12 @@ export const useMetrics = (orgId: string | null, datasetId?: string | null) => {
 
     const fetchMetrics = async () => {
       setLoading(true);
-      let query = supabase
+      const { data, error } = await supabase
         .from("metrics")
         .select("id, metric_type, value, date, region, segment, dataset_id, created_at")
         .eq("organization_id", orgId)
+        .eq("dataset_id", datasetId)
         .order("date", { ascending: true });
-
-      // If a specific dataset is active, scope to it
-      if (datasetId) {
-        query = query.eq("dataset_id", datasetId);
-      }
-
-      const { data, error } = await query;
 
       if (!error && data) {
         setMetrics(data);
@@ -68,13 +66,13 @@ export const useMetrics = (orgId: string | null, datasetId?: string | null) => {
 
   // Realtime subscription (Growth+ only)
   useEffect(() => {
-    if (!orgId || !canStream) {
+    if (!orgId || !datasetId || !canStream) {
       setIsStreaming(false);
       return;
     }
 
     const channel = supabase
-      .channel(`metrics-live-${orgId}-${datasetId || "all"}`)
+      .channel(`metrics-live-${orgId}-${datasetId}`)
       .on(
         "postgres_changes",
         {
@@ -85,8 +83,7 @@ export const useMetrics = (orgId: string | null, datasetId?: string | null) => {
         },
         (payload) => {
           const newRow = payload.new as MetricRow & { created_at?: string };
-          // If scoped to dataset, only include matching rows
-          if (datasetId && newRow.dataset_id !== datasetId) return;
+          if (newRow.dataset_id !== datasetId) return;
           setMetrics((prev) => {
             const updated = [...prev, newRow].sort(
               (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
@@ -106,7 +103,7 @@ export const useMetrics = (orgId: string | null, datasetId?: string | null) => {
         },
         (payload) => {
           const updated = payload.new as MetricRow;
-          if (datasetId && updated.dataset_id !== datasetId) return;
+          if (updated.dataset_id !== datasetId) return;
           setMetrics((prev) =>
             prev.map((m) => (m.id === updated.id ? updated : m))
           );
