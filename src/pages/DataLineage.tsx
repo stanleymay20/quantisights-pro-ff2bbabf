@@ -74,12 +74,12 @@ const DataLineage = () => {
         supabase.from("decision_ledger").select("id, recommended_action, decision_status, kpi_id").eq("organization_id", currentOrgId).order("created_at", { ascending: false }).limit(20),
         metricsQuery,
         rawQuery,
-        datasetPromise,
+        fetchDatasetInfo(),
       ]);
       setSources(srcRes.data || []);
       setKpis(kpiRes.data || []);
       setDecisions(decRes.data || []);
-      const uniqueTypes = [...new Set((metRes.data || []).map((m: any) => m.metric_type))];
+      const uniqueTypes: string[] = [...new Set((metRes.data || []).map((m: any) => m.metric_type as string))];
       setMetricTypes(uniqueTypes);
       setRawCount((rawRes as any).count ?? 0);
       setDatasetInfo(dsInfo);
