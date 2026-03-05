@@ -149,6 +149,7 @@ serve(async (req) => {
     for (const signal of (result.signals || []).slice(0, 20)) {
       await svc.from("external_signals").insert({
         organization_id,
+        dataset_id,
         signal_type: signal.category,
         source: "ai_intelligence",
         data: signal,
