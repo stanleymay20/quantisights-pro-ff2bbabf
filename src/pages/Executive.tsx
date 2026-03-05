@@ -23,6 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import IntelligenceDisclaimer from "@/components/IntelligenceDisclaimer";
+import DatasetRequired from "@/components/layout/DatasetRequired";
 
 type RoleType = "ceo" | "cfo" | "cmo" | "coo";
 
@@ -365,6 +366,7 @@ const Executive = () => {
   const urgency = brief ? URGENCY_STYLES[brief.urgency_level] || URGENCY_STYLES.monitor : null;
 
   return (
+    <DatasetRequired moduleName="Executive Command">
     <main className="flex-1 p-8 overflow-auto">
         <IntelligenceDisclaimer variant="banner" context="executive" />
         <div className="max-w-6xl mx-auto space-y-8">
@@ -913,6 +915,7 @@ const Executive = () => {
           )}
         </div>
     </main>
+    </DatasetRequired>
   );
 };
 

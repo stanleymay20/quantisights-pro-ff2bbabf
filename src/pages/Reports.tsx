@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { FileText, Download, Loader2, Plus, BarChart3, Shield, TrendingUp, Crown } from "lucide-react";
 import IntelligenceDisclaimer from "@/components/IntelligenceDisclaimer";
+import DatasetRequired from "@/components/layout/DatasetRequired";
 
 interface Report {
   id: string;
@@ -102,6 +103,7 @@ const Reports = () => {
   const getTypeConfig = (type: string) => REPORT_TYPES.find(t => t.value === type) || REPORT_TYPES[0];
 
   return (
+    <DatasetRequired moduleName="Reports">
     <>
         <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
           <div className="flex items-center gap-3">
@@ -208,6 +210,7 @@ const Reports = () => {
           )}
         </main>
     </>
+    </DatasetRequired>
   );
 };
 

@@ -13,6 +13,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Crosshair, Plus, Loader2, ChevronDown, ChevronRight, Target, CheckCircle2, AlertCircle } from "lucide-react";
+import DatasetRequired from "@/components/layout/DatasetRequired";
 
 interface Objective {
   id: string;
@@ -150,6 +151,7 @@ const OKRs = () => {
     : 0;
 
   return (
+    <DatasetRequired moduleName="OKRs">
     <>
         <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
           <div className="flex items-center gap-3">
@@ -273,6 +275,7 @@ const OKRs = () => {
           )}
         </main>
     </>
+    </DatasetRequired>
   );
 };
 

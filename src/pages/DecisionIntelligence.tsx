@@ -8,6 +8,7 @@ import { useMetrics } from "@/hooks/useMetrics";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import IntelligenceDisclaimer from "@/components/IntelligenceDisclaimer";
+import DatasetRequired from "@/components/layout/DatasetRequired";
 import SensitivityAnalysis from "@/components/decision-intelligence/SensitivityAnalysis";
 import BayesianPriorVisualization from "@/components/decision-intelligence/BayesianPriorVisualization";
 import ValueOfInformation from "@/components/decision-intelligence/ValueOfInformation";
@@ -290,6 +291,7 @@ const DecisionIntelligence = () => {
   }, [currentOrgId]);
 
   return (
+    <DatasetRequired moduleName="Decision Intelligence">
     <>
         <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
           <div className="flex items-center gap-2">
@@ -353,6 +355,7 @@ const DecisionIntelligence = () => {
           )}
         </main>
     </>
+    </DatasetRequired>
   );
 };
 

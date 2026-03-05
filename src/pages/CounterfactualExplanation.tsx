@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { FlipVertical, Loader2, AlertTriangle, ArrowUpDown, Gauge } from "lucide-react";
+import DatasetRequired from "@/components/layout/DatasetRequired";
 
 interface Factor {
   factor: string;
@@ -89,6 +90,7 @@ const CounterfactualExplanation = () => {
     s === "high" ? "text-destructive" : s === "medium" ? "text-warning" : "text-emerald-400";
 
   return (
+    <DatasetRequired moduleName="Counterfactual Explanations">
     <>
         <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
           <div className="flex items-center gap-3">
@@ -256,6 +258,7 @@ const CounterfactualExplanation = () => {
           )}
         </main>
     </>
+    </DatasetRequired>
   );
 };
 

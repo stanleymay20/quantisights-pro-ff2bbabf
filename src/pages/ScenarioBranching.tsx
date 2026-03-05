@@ -15,6 +15,7 @@ import {
   GitBranch, Plus, Loader2, Play, Trash2, BarChart3,
   TrendingUp, TrendingDown, ArrowRight, AlertTriangle,
 } from "lucide-react";
+import DatasetRequired from "@/components/layout/DatasetRequired";
 
 interface Branch {
   id: string;
@@ -123,6 +124,7 @@ const ScenarioBranching = () => {
   const simulatedBranches = branches.filter(b => b.results);
 
   return (
+    <DatasetRequired moduleName="Scenario Branching">
     <>
         <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
           <div className="flex items-center gap-3">
@@ -330,6 +332,7 @@ const ScenarioBranching = () => {
           )}
         </main>
     </>
+    </DatasetRequired>
   );
 };
 

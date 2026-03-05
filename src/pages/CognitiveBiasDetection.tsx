@@ -8,6 +8,7 @@ import { useProject } from "@/contexts/ProjectContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { BrainCircuit, Loader2, AlertTriangle, Shield, Eye, EyeOff, Anchor, TrendingDown, CheckCircle2, Search } from "lucide-react";
+import DatasetRequired from "@/components/layout/DatasetRequired";
 
 interface BiasDetection {
   bias_type: string;
@@ -65,6 +66,7 @@ const CognitiveBiasDetection = () => {
   };
 
   return (
+    <DatasetRequired moduleName="Cognitive Bias Detection">
     <>
         <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
           <div className="flex items-center gap-3">
@@ -222,6 +224,7 @@ const CognitiveBiasDetection = () => {
           )}
         </main>
     </>
+    </DatasetRequired>
   );
 };
 
