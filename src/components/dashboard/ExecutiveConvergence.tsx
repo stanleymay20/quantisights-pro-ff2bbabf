@@ -49,38 +49,42 @@ interface Props {
   tier: string | null;
 }
 
+/** Semantic alignment styles using design tokens */
 const ALIGNMENT_STYLES: Record<string, { bg: string; text: string; label: string; icon: typeof Shield }> = {
-  aligned: { bg: "bg-emerald-500/10", text: "text-emerald-400", label: "Aligned", icon: Shield },
-  tension: { bg: "bg-sky-500/10", text: "text-sky-400", label: "Tension", icon: Activity },
-  misalignment: { bg: "bg-amber-500/10", text: "text-amber-400", label: "Misalignment", icon: AlertTriangle },
+  aligned: { bg: "bg-success/10", text: "text-success", label: "Aligned", icon: Shield },
+  tension: { bg: "bg-primary/10", text: "text-primary", label: "Tension", icon: Activity },
+  misalignment: { bg: "bg-warning/10", text: "text-warning", label: "Misalignment", icon: AlertTriangle },
   structural_conflict: { bg: "bg-destructive/10", text: "text-destructive", label: "Structural Conflict", icon: AlertTriangle },
 };
 
+/** Semantic severity styles using design tokens */
 const SEVERITY_COLORS: Record<string, string> = {
-  low: "bg-sky-500/10 text-sky-400 border-sky-500/30",
-  medium: "bg-amber-500/10 text-amber-400 border-amber-500/30",
-  high: "bg-orange-500/10 text-orange-400 border-orange-500/30",
+  low: "bg-primary/10 text-primary border-primary/30",
+  medium: "bg-warning/10 text-warning border-warning/30",
+  high: "bg-destructive/10 text-destructive border-destructive/30",
   critical: "bg-destructive/10 text-destructive border-destructive/30",
 };
+
+/** Data-driven score-to-color mapping */
+function getScoreColor(score: number): { stroke: string; bg: string } {
+  if (score >= 80) return { stroke: "stroke-success", bg: "bg-success" };
+  if (score >= 60) return { stroke: "stroke-primary", bg: "bg-primary" };
+  if (score >= 40) return { stroke: "stroke-warning", bg: "bg-warning" };
+  return { stroke: "stroke-destructive", bg: "bg-destructive" };
+}
 
 const ConvergenceDial = ({ score }: { score: number }) => {
   const radius = 70;
   const circumference = Math.PI * radius;
   const progress = (score / 100) * circumference;
-
-  const getColor = (s: number) => {
-    if (s >= 80) return "stroke-emerald-400";
-    if (s >= 60) return "stroke-sky-400";
-    if (s >= 40) return "stroke-amber-400";
-    return "stroke-destructive";
-  };
+  const { stroke } = getScoreColor(score);
 
   return (
     <div className="flex flex-col items-center">
       <div className="relative w-52 h-28 overflow-hidden">
         <svg viewBox="0 0 160 85" className="w-full h-full">
           <path d="M 10 80 A 70 70 0 0 1 150 80" fill="none" className="stroke-muted/30" strokeWidth="10" strokeLinecap="round" />
-          <path d="M 10 80 A 70 70 0 0 1 150 80" fill="none" className={getColor(score)} strokeWidth="10" strokeLinecap="round"
+          <path d="M 10 80 A 70 70 0 0 1 150 80" fill="none" className={stroke} strokeWidth="10" strokeLinecap="round"
             strokeDasharray={`${progress} ${circumference}`}
             style={{ transition: "stroke-dasharray 1s ease-out" }}
           />
@@ -172,7 +176,6 @@ const ExecutiveConvergence = ({ organizationId, tier }: Props) => {
         <>
           {/* Top row: Dial + Alignment + Recalculate */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Convergence Dial */}
             <Card className="lg:col-span-1">
               <CardContent className="flex flex-col items-center pt-6">
                 <ConvergenceDial score={result.convergence_score} />
@@ -202,8 +205,7 @@ const ExecutiveConvergence = ({ organizationId, tier }: Props) => {
               <CardContent>
                 <div className="space-y-3">
                   {result.role_risks.map((role) => {
-                    const pct = role.score;
-                    const barColor = pct <= 25 ? "bg-emerald-500" : pct <= 50 ? "bg-sky-500" : pct <= 75 ? "bg-amber-500" : "bg-destructive";
+                    const { bg: barColor } = getScoreColor(100 - role.score); // invert: high score = high risk = red
                     return (
                       <div key={role.role_type} className="space-y-1">
                         <div className="flex items-center justify-between">
@@ -211,7 +213,7 @@ const ExecutiveConvergence = ({ organizationId, tier }: Props) => {
                           <span className="text-sm font-mono">{role.score}/100</span>
                         </div>
                         <div className="h-3 rounded-full bg-muted/30 overflow-hidden">
-                          <div className={`h-full rounded-full ${barColor} transition-all duration-700`} style={{ width: `${pct}%` }} />
+                          <div className={`h-full rounded-full ${barColor} transition-all duration-700`} style={{ width: `${role.score}%` }} />
                         </div>
                         <div className="flex gap-4 text-xs text-muted-foreground">
                           <span>Dev: {role.components.deviation}</span>
@@ -248,7 +250,7 @@ const ExecutiveConvergence = ({ organizationId, tier }: Props) => {
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4 text-amber-400" />
+                  <AlertTriangle className="w-4 h-4 text-warning" />
                   Active Conflicts ({result.conflicts.length})
                 </CardTitle>
               </CardHeader>
@@ -272,9 +274,9 @@ const ExecutiveConvergence = ({ organizationId, tier }: Props) => {
           {result.conflicts.length === 0 && (
             <Card>
               <CardContent className="flex items-center gap-3 py-6">
-                <Shield className="w-6 h-6 text-emerald-400" />
+                <Shield className="w-6 h-6 text-success" />
                 <div>
-                  <p className="font-semibold text-emerald-400">No Active Conflicts</p>
+                  <p className="font-semibold text-success">No Active Conflicts</p>
                   <p className="text-sm text-muted-foreground">All executive risk perspectives are within acceptable alignment thresholds.</p>
                 </div>
               </CardContent>

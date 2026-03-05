@@ -69,7 +69,7 @@ const ESCALATION_CONFIG: Record<EscalationTier, {
 }> = {
   fresh: { label: "", badgeClass: "", icon: Clock },
   aging: { label: "Aging", badgeClass: "bg-warning/10 text-warning", icon: Clock },
-  escalating: { label: "Escalating", badgeClass: "bg-orange-500/10 text-orange-500", icon: Flame },
+  escalating: { label: "Escalating", badgeClass: "bg-destructive/10 text-destructive", icon: Flame },
   at_risk: { label: "At Risk", badgeClass: "bg-destructive/10 text-destructive animate-pulse", icon: Flame },
 };
 
@@ -370,7 +370,7 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
 
     // 4. Proactive: churn — financially grounded with segment context
     if (churnRate > 5 && queue.length < 5) {
-      const churnSeverity = churnRate > 12 ? "critical" : churnRate > 8 ? "high" : "high";
+      const churnSeverity = churnRate > 12 ? "critical" : churnRate > 8 ? "high" : "medium";
       const quarterlyExposure = revenue > 0 ? formatRevenueBand(churnRate * 3) : `${(churnRate * 3).toFixed(0)}% of ARR`;
       const monthlyLoss = revenue > 0 ? formatRevenueBand(churnRate) : null;
 

@@ -1,11 +1,16 @@
 import { useEffect, useRef, useState } from "react";
-import { DollarSign, Users, CreditCard, UserMinus, TrendingUp, TrendingDown } from "lucide-react";
+import { DollarSign, Users, CreditCard, UserMinus, TrendingUp, TrendingDown, Minus } from "lucide-react";
 
 interface KPICardsProps {
   revenue: number;
   customers: number;
   costRate: number;
   churnRate: number;
+  /** Previous period values for data-driven trend calculation */
+  previousRevenue?: number;
+  previousCustomers?: number;
+  previousCostRate?: number;
+  previousChurnRate?: number;
 }
 
 const formatValue = (v: number, prefix = "", suffix = "") => {
@@ -40,7 +45,35 @@ const AnimatedValue = ({ value, prefix = "", suffix = "" }: { value: number; pre
   return <span>{formatValue(display, prefix, suffix)}</span>;
 };
 
-const KPICards = ({ revenue, customers, costRate, churnRate }: KPICardsProps) => {
+/** Data-driven trend: compare current vs previous period. Returns null if no comparison data. */
+function deriveTrend(
+  current: number,
+  previous: number | undefined,
+  invertPositive = false
+): "up" | "down" | "flat" | null {
+  if (previous == null || previous === 0) return null;
+  const changePct = ((current - previous) / Math.abs(previous)) * 100;
+  if (Math.abs(changePct) < 1) return "flat"; // <1% change = flat
+  const isUp = changePct > 0;
+  if (invertPositive) return isUp ? "down" : "up"; // for cost/churn, up is bad
+  return isUp ? "up" : "down";
+}
+
+function trendColor(trend: "up" | "down" | "flat" | null, isNegativeMetric: boolean): string {
+  if (!trend || trend === "flat") return "text-muted-foreground";
+  if (isNegativeMetric) return trend === "down" ? "text-success" : "text-destructive"; // lower cost/churn = good
+  return trend === "up" ? "text-success" : "text-destructive";
+}
+
+const KPICards = ({
+  revenue, customers, costRate, churnRate,
+  previousRevenue, previousCustomers, previousCostRate, previousChurnRate,
+}: KPICardsProps) => {
+  const revenueTrend = deriveTrend(revenue, previousRevenue);
+  const customerTrend = deriveTrend(customers, previousCustomers);
+  const costTrend = deriveTrend(costRate, previousCostRate, true);
+  const churnTrend = deriveTrend(churnRate, previousChurnRate, true);
+
   const kpis = [
     {
       label: "Revenue",
@@ -49,7 +82,8 @@ const KPICards = ({ revenue, customers, costRate, churnRate }: KPICardsProps) =>
       icon: DollarSign,
       variant: "kpi-gradient-revenue",
       color: "text-success",
-      trend: revenue > 0 ? "up" as const : null,
+      trend: revenueTrend,
+      isNegative: false,
     },
     {
       label: "Customers",
@@ -58,7 +92,8 @@ const KPICards = ({ revenue, customers, costRate, churnRate }: KPICardsProps) =>
       icon: Users,
       variant: "kpi-gradient-customers",
       color: "text-primary",
-      trend: customers > 0 ? "up" as const : null,
+      trend: customerTrend,
+      isNegative: false,
     },
     {
       label: "Cost Rate",
@@ -67,7 +102,8 @@ const KPICards = ({ revenue, customers, costRate, churnRate }: KPICardsProps) =>
       icon: CreditCard,
       variant: "kpi-gradient-costs",
       color: "text-warning",
-      trend: null,
+      trend: costTrend,
+      isNegative: true,
     },
     {
       label: "Churn Rate",
@@ -77,14 +113,16 @@ const KPICards = ({ revenue, customers, costRate, churnRate }: KPICardsProps) =>
       icon: UserMinus,
       variant: "kpi-gradient-churn",
       color: "text-destructive",
-      trend: churnRate > 5 ? "down" as const : null,
+      trend: churnTrend,
+      isNegative: true,
     },
   ];
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 stagger-children">
       {kpis.map((kpi) => {
-        const TrendIcon = kpi.trend === "up" ? TrendingUp : kpi.trend === "down" ? TrendingDown : null;
+        const TrendIcon = kpi.trend === "up" ? TrendingUp : kpi.trend === "down" ? TrendingDown : kpi.trend === "flat" ? Minus : null;
+        const trendCls = trendColor(kpi.trend, kpi.isNegative);
         return (
           <div
             key={kpi.label}
@@ -94,7 +132,7 @@ const KPICards = ({ revenue, customers, costRate, churnRate }: KPICardsProps) =>
               <span className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{kpi.label}</span>
               <div className="flex items-center gap-1.5">
                 {TrendIcon && (
-                  <TrendIcon className={`w-3.5 h-3.5 ${kpi.trend === "up" ? "text-success" : "text-destructive"}`} />
+                  <TrendIcon className={`w-3.5 h-3.5 ${trendCls}`} />
                 )}
                 <kpi.icon className={`w-4 h-4 ${kpi.color} opacity-60`} />
               </div>
