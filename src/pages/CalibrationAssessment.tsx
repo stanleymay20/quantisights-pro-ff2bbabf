@@ -639,7 +639,20 @@ const CalibrationAssessment = () => {
                 </Card>
 
                 {/* CTAs */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <Button
+                    variant="outline"
+                    className="gap-2"
+                    onClick={() => {
+                      setStep("intro");
+                      setCurrentIndex(0);
+                      setUserProbability(50);
+                      setResponses([]);
+                      setResults(null);
+                    }}
+                  >
+                    <ArrowLeft className="w-4 h-4" /> Retake Assessment
+                  </Button>
                   {isAuthenticated ? (
                     <Button variant="outline" className="gap-2" onClick={() => navigate("/decisions")}>
                       <BookOpen className="w-4 h-4" /> Log Your Next Decision
