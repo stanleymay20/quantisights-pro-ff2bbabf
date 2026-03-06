@@ -261,7 +261,7 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
     // 2. Open advisories
     const { data: advisories } = await supabase
       .from("advisory_instances")
-      .select("id, title, action, priority, confidence, capped_confidence, confidence_cap_reason, category, timeframe, expected_impact, created_at, raw_confidence, impact_score, predicted_net_impact")
+      .select("id, title, action, priority, confidence, capped_confidence, confidence_cap_reason, category, timeframe, expected_impact, created_at, raw_confidence, impact_score")
       .eq("organization_id", organizationId)
       .in("status", ["open", "in_progress"])
       .order("created_at", { ascending: false })
