@@ -83,7 +83,11 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
     setLoading(false);
   }, [currentOrgId, currentWorkspaceId]);
 
+  // Eagerly clear stale state when workspace changes, then re-fetch
   useEffect(() => {
+    setProjects([]);
+    setCurrentProjectId(null);
+    sessionStorage.removeItem(STORAGE_KEY);
     fetchProjects();
   }, [fetchProjects]);
 
