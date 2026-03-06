@@ -32,6 +32,8 @@ export interface EnrichedDecision {
   cappedConfidence?: number | null;
   confidenceCapReason?: string | null;
   generatedAt: string;
+  /** Sample size backing the confidence value */
+  sampleSize?: number;
 }
 
 interface DecisionQueueProps {
@@ -363,13 +365,15 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
       });
     }
 
-    // 4. Proactive: churn
+    // 4. Proactive: churn (confidence is heuristic — labeled as such)
     if (churnRate > 5 && queue.length < 5) {
       const sev: CostOfDelayInput["severity"] = churnRate > 12 ? "critical" : churnRate > 8 ? "high" : "medium";
+      // Proactive signals use heuristic confidence — explicitly capped and labeled
+      const heuristicConf = Math.min(60, Math.round(40 + churnRate)); // never exceeds 60% for heuristic
 
       const codResult = computeCostOfDelay({
         severity: sev,
-        confidence: 75,
+        confidence: heuristicConf,
         affectedMetricType: "churn",
         revenue,
         trendAccelerating: churnRate > 10,
@@ -380,7 +384,7 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
         metricType: "churn",
         trendDirection: "up",
         severity: sev,
-        confidence: 75,
+        confidence: heuristicConf,
         category: "retention",
       });
 
@@ -389,16 +393,16 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
         type: "proactive",
         urgency: sev === "critical" ? "critical" : "high",
         title: `Retention risk: ${churnRate.toFixed(1)}% churn rate ${churnRate > 10 ? "— exceeds critical threshold" : "— above target"}`,
-        context: `Churn at ${churnRate.toFixed(1)}% erodes customer base and compounds revenue loss.`,
+        context: `Churn at ${churnRate.toFixed(1)}% erodes customer base and compounds revenue loss. Confidence is heuristic (threshold-based).`,
         recommendedAction: rec.recommendedAction,
         source: "Proactive Intelligence",
         costOfDelayResult: codResult,
         recommendation: rec,
         riskIfIgnored: "high",
         generatedAt: now,
-        rawConfidence: 75,
+        rawConfidence: heuristicConf,
         cappedConfidence: null,
-        confidenceCapReason: null,
+        confidenceCapReason: "Heuristic confidence: threshold-based proactive signal, not model-derived",
       });
     }
 
