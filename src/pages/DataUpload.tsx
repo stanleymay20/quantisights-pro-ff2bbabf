@@ -262,6 +262,8 @@ const DataUpload = () => {
     }
 
     setStep("importing");
+    const pipelineStartedAt = Date.now();
+    let pipelineRunId: string | null = null;
 
     try {
       const filePath = `${currentOrgId}/${Date.now()}_${file.name}`;

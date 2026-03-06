@@ -119,7 +119,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
     setCurrentProjectId(data.id);
     sessionStorage.setItem(STORAGE_KEY, data.id);
     return data;
-  }, [currentOrgId, user]);
+  }, [currentOrgId, user, currentWorkspaceId]);
 
   const attachDataset = useCallback(async (projectId: string, datasetId: string) => {
     if (!user) return;
