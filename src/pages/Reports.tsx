@@ -54,7 +54,12 @@ const Reports = () => {
   const [selectedType, setSelectedType] = useState("executive");
 
   const fetchReports = async () => {
-    if (!currentOrgId || !activeDatasetId) return;
+    if (!currentOrgId || !activeDatasetId) {
+      setReports([]);
+      setLoading(false);
+      return;
+    }
+
     const { data } = await supabase
       .from("reports")
       .select("*")
@@ -67,7 +72,7 @@ const Reports = () => {
 
   useEffect(() => {
     fetchReports();
-  }, [currentOrgId]);
+  }, [currentOrgId, activeDatasetId]);
 
   const handleGenerate = async () => {
     if (!currentOrgId) return;

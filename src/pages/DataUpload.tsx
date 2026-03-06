@@ -262,6 +262,8 @@ const DataUpload = () => {
     }
 
     setStep("importing");
+    const pipelineStartedAt = Date.now();
+    let pipelineRunId: string | null = null;
 
     try {
       const filePath = `${currentOrgId}/${Date.now()}_${file.name}`;
@@ -311,7 +313,6 @@ const DataUpload = () => {
       // ═══════════════════════════════════════════════════════
 
       // Create pipeline run for observability
-      const pipelineStartedAt = Date.now();
       const { data: pipelineRun } = await supabase.from("pipeline_runs").insert({
         organization_id: currentOrgId,
         workspace_id: currentWorkspaceId || null,
@@ -322,7 +323,7 @@ const DataUpload = () => {
         metadata: { import_mode: importMode, file_name: file.name },
       }).select("id").single();
 
-      const pipelineRunId = pipelineRun?.id;
+      pipelineRunId = pipelineRun?.id ?? null;
 
       // Build raw records from parsed rows
       const rawRecords: Array<{
@@ -565,6 +566,15 @@ const DataUpload = () => {
       });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
+      if (pipelineRunId) {
+        await supabase.from("pipeline_runs").update({
+          status: "failed",
+          stage: "failed",
+          error_message: message,
+          completed_at: new Date().toISOString(),
+          duration_ms: Date.now() - pipelineStartedAt,
+        }).eq("id", pipelineRunId);
+      }
       console.error("[ImportPipeline] Fatal error:", { dataset_name: datasetName, org_id: currentOrgId, project_id: currentProject?.id, stage: step, error: message });
       toast({ title: "Import failed", description: message, variant: "destructive" });
       setStep("mapping");
