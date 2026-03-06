@@ -529,9 +529,17 @@ const DataUpload = () => {
         }
       }
 
+      // Deduplicate metrics by conflict key before upserting
+      const deduped = new Map<string, typeof metricsToInsert[0]>();
+      for (const m of metricsToInsert) {
+        const key = `${m.organization_id}|${m.metric_type}|${m.date}|${m.region}|${m.segment}|${m.source_id}`;
+        deduped.set(key, m); // last-write-wins
+      }
+      const uniqueMetrics = Array.from(deduped.values());
+
       let inserted = 0;
-      for (let i = 0; i < metricsToInsert.length; i += 500) {
-        const batch = metricsToInsert.slice(i, i + 500);
+      for (let i = 0; i < uniqueMetrics.length; i += 500) {
+        const batch = uniqueMetrics.slice(i, i + 500);
         const { error } = await supabase.from("metrics").upsert(batch, { onConflict: "organization_id,metric_type,date,region,segment,source_id" });
         if (error) throw error;
         inserted += batch.length;
@@ -614,7 +622,11 @@ const DataUpload = () => {
           : `Data processed through raw → clean → analytical pipeline.`,
       });
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
+      const message = err instanceof Error
+        ? err.message
+        : (typeof err === "object" && err !== null && "message" in err)
+          ? String((err as Record<string, unknown>).message)
+          : JSON.stringify(err);
       if (pipelineRunId) {
         await supabase.from("pipeline_runs").update({
           status: "failed",
