@@ -116,4 +116,13 @@ export const FEATURE_MATRIX = [
     { label: "Full Audit Trail", starter: false, growth: false, enterprise: true },
     { label: "Priority Processing", starter: false, growth: false, enterprise: true },
   ]},
+  { category: "Services & Implementation", features: [
+    { label: "Paid Pilot Program (4–8 weeks)", starter: false, growth: "Add-on", enterprise: "Included" },
+    { label: "Onboarding & Setup", starter: "Self-serve", growth: "Guided", enterprise: "Dedicated" },
+    { label: "Custom KPI Design", starter: false, growth: "Add-on", enterprise: "Included" },
+    { label: "Executive Reporting Config", starter: false, growth: "Add-on", enterprise: "Included" },
+    { label: "Decision Governance Setup", starter: false, growth: false, enterprise: "Included" },
+    { label: "Team Training & Workshops", starter: false, growth: "Add-on", enterprise: "Included" },
+    { label: "Dedicated Account Manager", starter: false, growth: false, enterprise: true },
+  ]},
 ] as const;
