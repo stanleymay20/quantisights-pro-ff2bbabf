@@ -72,6 +72,7 @@ const GlobalContextBar = () => {
         icon={FolderKanban}
         label={currentProject?.name ?? null}
         fallback="No project"
+        onClick={() => navigate("/settings")}
       />
       <Separator />
       <ContextChip
