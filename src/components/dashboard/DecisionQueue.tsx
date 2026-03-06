@@ -590,7 +590,7 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
                           </span>
                           {decision.confidence != null && (
                             <span className="text-[10px] bg-muted/50 text-muted-foreground px-2 py-0.5 rounded">
-                              {decision.confidence}% confidence
+                              {typeof decision.confidence === "object" ? JSON.stringify(decision.confidence) : `${decision.confidence}%`} confidence
                             </span>
                           )}
                           {decision.timeframe && (
