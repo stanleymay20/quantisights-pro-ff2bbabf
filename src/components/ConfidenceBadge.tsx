@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ShieldCheck, Database, AlertTriangle, Info } from "lucide-react";
+import { ShieldCheck, Database, AlertTriangle, Info, Cpu } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 export interface ConfidenceObject {
@@ -37,49 +37,61 @@ export function resolveConfidenceMeta(value: unknown): ConfidenceObject | null {
 interface ConfidenceBadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   confidence: unknown;
   showDetails?: boolean;
+  /** Explicitly flag this confidence as heuristic */
+  isHeuristic?: boolean;
 }
 
 const ConfidenceBadge = React.forwardRef<HTMLSpanElement, ConfidenceBadgeProps>(
-  ({ confidence, showDetails = false, className = "", ...rest }, ref) => {
+  ({ confidence, showDetails = false, isHeuristic = false, className = "", ...rest }, ref) => {
     const score = resolveConfidence(confidence);
     const meta = resolveConfidenceMeta(confidence);
     const color = score >= 80 ? "text-success" : score >= 50 ? "text-warning" : "text-destructive";
 
-    if (!showDetails || !meta) {
-      return (
-        <span ref={ref} className={`inline-flex items-center gap-1 text-xs font-semibold ${color} ${className}`} {...rest}>
-          <ShieldCheck className="w-3 h-3" />
-          {Math.round(score)}%
-        </span>
-      );
-    }
+    // Determine if heuristic from cap reason or explicit prop
+    const heuristicFlag = isHeuristic || meta?.confidence_cap_reason?.toLowerCase().includes("heuristic");
+
+    const badge = (
+      <span ref={ref} className={`inline-flex items-center gap-1 text-xs font-semibold ${color} ${showDetails || meta ? "cursor-help" : ""} ${className}`} {...rest}>
+        {heuristicFlag ? <Cpu className="w-3 h-3" /> : <ShieldCheck className="w-3 h-3" />}
+        {Math.round(score)}%
+        {heuristicFlag && <span className="text-[8px] font-bold uppercase text-warning ml-0.5">H</span>}
+      </span>
+    );
+
+    if (!showDetails && !meta) return badge;
 
     return (
       <Tooltip>
-        <TooltipTrigger asChild>
-          <span ref={ref} className={`inline-flex items-center gap-1 text-xs font-semibold ${color} cursor-help ${className}`} {...rest}>
-            <ShieldCheck className="w-3 h-3" />
-            {Math.round(score)}%
-          </span>
-        </TooltipTrigger>
+        <TooltipTrigger asChild>{badge}</TooltipTrigger>
         <TooltipContent side="bottom" className="max-w-xs space-y-1.5 text-xs p-3">
-          {meta.data_sufficiency && (
+          {heuristicFlag && (
+            <div className="flex items-center gap-1.5 text-warning font-semibold">
+              <Cpu className="w-3 h-3" />
+              <span>Heuristic confidence estimate — not model-derived</span>
+            </div>
+          )}
+          {meta?.data_sufficiency && (
             <div className="flex items-center gap-1.5">
               <Database className="w-3 h-3 text-muted-foreground" />
               <span>Data: <strong className="capitalize">{meta.data_sufficiency}</strong></span>
               {meta.sample_size != null && <span className="text-muted-foreground">({meta.sample_size} points)</span>}
             </div>
           )}
-          {meta.variance_score != null && (
+          {meta?.variance_score != null && (
             <div className="flex items-center gap-1.5">
               <AlertTriangle className="w-3 h-3 text-muted-foreground" />
               <span>Variance: {meta.variance_score.toFixed(1)}</span>
             </div>
           )}
-          {meta.confidence_cap_reason && (
+          {meta?.confidence_cap_reason && (
             <div className="flex items-center gap-1.5">
               <Info className="w-3 h-3 text-muted-foreground" />
               <span className="text-muted-foreground">{meta.confidence_cap_reason}</span>
+            </div>
+          )}
+          {!meta && !heuristicFlag && (
+            <div className="text-muted-foreground">
+              No detailed confidence metadata available for this value.
             </div>
           )}
         </TooltipContent>

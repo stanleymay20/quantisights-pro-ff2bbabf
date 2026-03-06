@@ -1,26 +1,28 @@
 /**
- * Contextual AI recommendation generator — EVIDENCE-BACKED.
+ * Contextual AI recommendation generator — EVIDENCE-BACKED + FAIL-CLOSED.
  *
  * Every recommendation MUST carry:
- * - What happened (from real signal/advisory data)
- * - Why it matters (with evidence citations)
- * - Recommended action (specific, not template)
- * - Assumptions (what we're assuming to be true)
- * - Risks if wrong (what happens if the recommendation is incorrect)
+ * - Output classification (OBSERVED_FACT / STATISTICAL_INFERENCE / HEURISTIC_ESTIMATE / AI_RECOMMENDATION)
  * - Evidence basis (traceability)
- * - Confidence basis (justification for confidence level)
+ * - Confidence basis (justification)
+ * - Assumptions + Risks if wrong
+ * - Traceability record
  *
- * If fields cannot be filled with real data, they are explicitly marked
- * as "Insufficient evidence" rather than fabricated.
+ * FAIL-CLOSED: If decision quality is below threshold, recommendedAction is
+ * replaced with an explicit "insufficient evidence" message.
  */
 
 import {
   type EvidenceBlock,
   type ConfidenceBasis,
+  type TraceabilityRecord,
   buildConfidenceBasis,
+  buildTraceability,
   scoreDecisionQuality,
   type DecisionQualityScore,
 } from "./evidence-contract";
+
+import type { OutputClassification } from "@/components/dashboard/OutputClassificationBadge";
 
 export interface RecommendationInput {
   signalType: "signal" | "advisory" | "pending_outcome" | "proactive";
@@ -34,31 +36,39 @@ export interface RecommendationInput {
   message?: string | null;
   priorAdvisoryAction?: string | null;
   category?: string | null;
-  /** Sample size used for confidence basis */
   sampleSize?: number;
-  /** Whether adaptive calibration was applied */
   calibrationApplied?: boolean;
+  /** Source dataset for traceability */
+  datasetId?: string;
+  /** Row count used */
+  dataRowsUsed?: number;
+}
+
+export interface ClassifiedSection {
+  classification: OutputClassification;
+  label: string;
+  content: string;
 }
 
 export interface StructuredRecommendation {
+  /** Classified sections — no mixed unlabeled prose */
+  sections: ClassifiedSection[];
   whatHappened: string;
   whyItMatters: string;
   recommendedAction: string;
   suggestedOwner: string;
   suggestedDeadlineDays: number;
   successMetrics: string[];
-  /** NEW: assumptions underlying this recommendation */
   assumptions: string[];
-  /** NEW: what happens if this recommendation is wrong */
   riskIfWrong: string;
-  /** NEW: evidence basis for traceability */
   evidenceBasis: string[];
-  /** NEW: confidence basis */
   confidenceBasis: ConfidenceBasis;
-  /** NEW: decision quality score */
   qualityScore: DecisionQualityScore;
-  /** NEW: whether this is decision-grade output */
   isDecisionGrade: boolean;
+  /** Traceability record for "Why am I seeing this?" */
+  traceability: TraceabilityRecord;
+  /** If not decision-grade, the original action is suppressed and this contains the gate message */
+  decisionGateMessage: string | null;
 }
 
 const OWNER_MAP: Record<string, string> = {
@@ -75,10 +85,7 @@ const OWNER_MAP: Record<string, string> = {
 };
 
 function inferOwner(category: string | null | undefined, metricType: string | null | undefined): string {
-  const key = [category, metricType]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase();
+  const key = [category, metricType].filter(Boolean).join(" ").toLowerCase();
   for (const [k, v] of Object.entries(OWNER_MAP)) {
     if (key.includes(k)) return v;
   }
@@ -103,7 +110,6 @@ export function generateRecommendation(input: RecommendationInput): StructuredRe
   const deadlineDays = inferDeadlineDays(input.severity, conf);
   const sampleSize = input.sampleSize ?? 0;
 
-  // Build confidence basis
   const confidenceBasis = buildConfidenceBasis({
     sampleSize,
     calibrationApplied: input.calibrationApplied ?? false,
@@ -118,7 +124,10 @@ export function generateRecommendation(input: RecommendationInput): StructuredRe
   if (input.priorAdvisoryAction) evidenceBasis.push(`Prior advisory: ${input.priorAdvisoryAction}`);
   if (conf > 0) evidenceBasis.push(`Confidence: ${conf}% (${confLabel})`);
 
-  // --- What happened ---
+  // --- Classified sections ---
+  const sections: ClassifiedSection[] = [];
+
+  // OBSERVED_FACT: What we directly see in data
   let whatHappened: string;
   if (input.signalType === "advisory" && input.priorAdvisoryAction) {
     whatHappened = input.priorAdvisoryAction;
@@ -129,8 +138,13 @@ export function generateRecommendation(input: RecommendationInput): StructuredRe
     const trendVerb = trend === "up" ? "increasing" : trend === "down" ? "declining" : "shifting";
     whatHappened = `${input.severity === "critical" ? "Critical" : "Notable"} ${trendVerb} signal detected in ${metricLabel} affecting ${segment}.`;
   }
+  sections.push({
+    classification: msg.length > 20 ? "OBSERVED_FACT" : "HEURISTIC_ESTIMATE",
+    label: "What happened",
+    content: whatHappened,
+  });
 
-  // --- Why it matters ---
+  // STATISTICAL_INFERENCE or HEURISTIC: Why it matters
   const whyParts: string[] = [];
   whyParts.push(`Detected at ${confLabel} (${conf}%)`);
   if (sampleSize > 0) whyParts.push(`based on ${sampleSize} data points`);
@@ -139,20 +153,21 @@ export function generateRecommendation(input: RecommendationInput): StructuredRe
   } else if (input.severity === "high") {
     whyParts.push("classified as high severity — material business impact likely");
   }
-  if (input.diagnosticFindings) {
-    whyParts.push(`root cause analysis: ${input.diagnosticFindings}`);
-  }
-  if (input.causalFactors) {
-    whyParts.push(`contributing factors: ${input.causalFactors}`);
-  }
+  if (input.diagnosticFindings) whyParts.push(`root cause analysis: ${input.diagnosticFindings}`);
+  if (input.causalFactors) whyParts.push(`contributing factors: ${input.causalFactors}`);
   if (trend === "down") whyParts.push("negative trajectory compounds exposure over time");
   if (msg.length > 20 && !input.diagnosticFindings) {
     const numMatch = msg.match(/(\d+\.?\d*)\s*%/);
     if (numMatch) whyParts.push(`signal magnitude: ${numMatch[0]}`);
   }
   const whyItMatters = whyParts.join(". ") + ".";
+  sections.push({
+    classification: sampleSize >= 12 ? "STATISTICAL_INFERENCE" : "HEURISTIC_ESTIMATE",
+    label: "Why it matters",
+    content: whyItMatters,
+  });
 
-  // --- Assumptions ---
+  // Assumptions
   const assumptions: string[] = [];
   if (sampleSize < 30) {
     assumptions.push(`Limited sample size (${sampleSize} points) — trends may not be statistically significant`);
@@ -167,7 +182,7 @@ export function generateRecommendation(input: RecommendationInput): StructuredRe
     assumptions.push("Proactive signal — threshold-based detection, not anomaly-confirmed");
   }
 
-  // --- Risk if wrong ---
+  // Risk if wrong
   let riskIfWrong: string;
   if (input.severity === "critical") {
     riskIfWrong = "If this signal is a false positive, acting on it may divert resources unnecessarily. However, the cost of ignoring a true critical signal typically outweighs the cost of investigation.";
@@ -177,7 +192,7 @@ export function generateRecommendation(input: RecommendationInput): StructuredRe
     riskIfWrong = "If the underlying trend reverses naturally, the recommended action may be unnecessary. Monitor the success metrics to detect early and adjust.";
   }
 
-  // --- Action ---
+  // AI_RECOMMENDATION: Action
   let recommendedAction: string;
   if (input.signalType === "pending_outcome") {
     recommendedAction = `Record the actual outcome of this decision to close the feedback loop and improve calibration accuracy. Decision has been pending — outcome data is overdue.`;
@@ -207,8 +222,12 @@ export function generateRecommendation(input: RecommendationInput): StructuredRe
     actionParts.push(`Target resolution within ${deadlineDays}d. Track via success metrics.`);
     recommendedAction = actionParts.join(" ");
   }
+  sections.push({
+    classification: "AI_RECOMMENDATION",
+    label: "Recommended action",
+    content: recommendedAction,
+  });
 
-  // --- Success metrics (kept generic but labeled as suggested, not claimed) ---
   const successMetrics = inferSuccessMetrics(cat, met);
 
   // --- Decision Quality Score ---
@@ -218,19 +237,43 @@ export function generateRecommendation(input: RecommendationInput): StructuredRe
     reasoning: whyItMatters,
     confidenceBasis,
     assumptions,
-    limitations: sampleSize < 12
-      ? ["Limited data — statistical significance not established"]
-      : [],
+    limitations: sampleSize < 12 ? ["Limited data — statistical significance not established"] : [],
     recommendation: recommendedAction,
-    expectedImpact: input.severity === "critical"
-      ? "Immediate risk mitigation"
-      : "Trend correction within action window",
+    expectedImpact: input.severity === "critical" ? "Immediate risk mitigation" : "Trend correction within action window",
     riskIfWrong,
   };
 
   const qualityScore = scoreDecisionQuality(evidenceBlock);
+  const isDecisionGrade = qualityScore.isDecisionGrade;
+
+  // --- FAIL-CLOSED GATE ---
+  let decisionGateMessage: string | null = null;
+  if (!isDecisionGrade) {
+    decisionGateMessage = `Insufficient evidence for decision-grade recommendation (${qualityScore.overall}/100, Grade ${qualityScore.grade}). ${qualityScore.downgradeReason ?? ""}`;
+    // Suppress the strategic recommendation text
+    recommendedAction = "⚠ Not decision-grade — insufficient evidence to generate a reliable recommendation. " + (qualityScore.downgradeReason ?? "");
+    // Update the section
+    sections[sections.length - 1] = {
+      classification: "AI_RECOMMENDATION",
+      label: "Recommendation suppressed",
+      content: recommendedAction,
+    };
+  }
+
+  // --- Traceability ---
+  const metricTypes = [met, cat].filter(Boolean);
+  const traceability = buildTraceability({
+    datasetId: input.datasetId ?? "active-dataset",
+    dataRowsUsed: input.dataRowsUsed ?? sampleSize,
+    metricTypes: metricTypes.length > 0 ? metricTypes : ["unknown"],
+    modelUsed: sampleSize >= 12
+      ? (input.calibrationApplied ? "Calibrated statistical model" : "Statistical inference")
+      : "Heuristic rule-based engine",
+    limitations: sampleSize < 12 ? ["Insufficient data for statistical significance"] : [],
+  });
 
   return {
+    sections,
     whatHappened,
     whyItMatters,
     recommendedAction,
@@ -242,28 +285,27 @@ export function generateRecommendation(input: RecommendationInput): StructuredRe
     evidenceBasis,
     confidenceBasis,
     qualityScore,
-    isDecisionGrade: qualityScore.isDecisionGrade,
+    isDecisionGrade,
+    traceability,
+    decisionGateMessage,
   };
 }
 
 function inferSuccessMetrics(category: string, metricType: string): string[] {
   const key = [category, metricType].filter(Boolean).join(" ").toLowerCase();
-  const metrics: string[] = [];
 
   if (key.includes("churn") || key.includes("retention")) {
-    metrics.push("Monthly churn rate (% change)", "At-risk cohort size reduction", "NPS / CSAT delta");
+    return ["Monthly churn rate (% change)", "At-risk cohort size reduction", "NPS / CSAT delta"];
   } else if (key.includes("revenue")) {
-    metrics.push("MRR / ARR recovery trajectory", "Revenue variance vs. plan", "Pipeline conversion rate");
+    return ["MRR / ARR recovery trajectory", "Revenue variance vs. plan", "Pipeline conversion rate"];
   } else if (key.includes("cost")) {
-    metrics.push("Cost per unit reduction", "Burn rate change", "Gross margin improvement");
+    return ["Cost per unit reduction", "Burn rate change", "Gross margin improvement"];
   } else if (key.includes("margin")) {
-    metrics.push("Gross margin %", "Contribution margin delta", "EBITDA trajectory");
+    return ["Gross margin %", "Contribution margin delta", "EBITDA trajectory"];
   } else if (key.includes("growth")) {
-    metrics.push("Growth rate (MoM)", "New customer acquisition rate", "Expansion revenue %");
+    return ["Growth rate (MoM)", "New customer acquisition rate", "Expansion revenue %"];
   } else if (key.includes("calibration")) {
-    metrics.push("Calibration score improvement", "Brier score reduction", "Pending outcomes closed");
-  } else {
-    metrics.push("KPI trend direction", "Variance from baseline", "Time to resolution");
+    return ["Calibration score improvement", "Brier score reduction", "Pending outcomes closed"];
   }
-  return metrics;
+  return ["KPI trend direction", "Variance from baseline", "Time to resolution"];
 }

@@ -9,6 +9,8 @@ import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { computeCostOfDelay, type CostOfDelayResult, type CostOfDelayInput } from "@/lib/cost-of-delay";
 import { generateRecommendation, type StructuredRecommendation } from "@/lib/decision-recommendation";
 import ModifyDecisionDialog from "./ModifyDecisionDialog";
+import OutputClassificationBadge from "./OutputClassificationBadge";
+import TraceabilityPanel from "./TraceabilityPanel";
 import type { Insight } from "@/hooks/useInsights";
 
 export interface EnrichedDecision {
@@ -24,15 +26,12 @@ export interface EnrichedDecision {
   timeframe?: string;
   riskIfIgnored: "high" | "medium" | "low";
   createdAt?: string;
-  // Structured enrichments
   costOfDelayResult: CostOfDelayResult;
   recommendation: StructuredRecommendation;
-  // Audit fields
   rawConfidence?: number | null;
   cappedConfidence?: number | null;
   confidenceCapReason?: string | null;
   generatedAt: string;
-  /** Sample size backing the confidence value */
   sampleSize?: number;
 }
 
@@ -131,6 +130,11 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
   const focusedDecision = decisions[focusIndex] ?? null;
 
   const handleApprove = useCallback(async (decision: EnrichedDecision) => {
+    // FAIL-CLOSED: Block approval of non-decision-grade items
+    if (!decision.recommendation.isDecisionGrade) {
+      toast({ title: "Cannot approve", description: "This recommendation is not decision-grade. Gather more evidence first.", variant: "destructive" });
+      return;
+    }
     setActingOn(decision.id);
     try {
       if (decision.type === "advisory" && decision.sourceId) {
@@ -217,8 +221,6 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
     criticalInsights.slice(0, 2).forEach(insight => {
       const severity: "critical" | "high" = "critical";
       const age = ageDays(insight.created_at);
-      const cat = insight.category?.toLowerCase() ?? "";
-      const trendDir = (insight.message?.toLowerCase().includes("decline") || insight.message?.toLowerCase().includes("drop")) ? "down" as const : "stable" as const;
 
       const codResult = computeCostOfDelay({
         severity,
@@ -232,7 +234,7 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
       const rec = generateRecommendation({
         signalType: "signal",
         metricType: insight.category,
-        trendDirection: trendDir,
+        trendDirection: (insight.message?.toLowerCase().includes("decline") || insight.message?.toLowerCase().includes("drop")) ? "down" : "stable",
         severity,
         confidence: insight.confidence_score ?? null,
         message: insight.message,
@@ -365,11 +367,10 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
       });
     }
 
-    // 4. Proactive: churn (confidence is heuristic — labeled as such)
+    // 4. Proactive: churn (heuristic — labeled)
     if (churnRate > 5 && queue.length < 5) {
       const sev: CostOfDelayInput["severity"] = churnRate > 12 ? "critical" : churnRate > 8 ? "high" : "medium";
-      // Proactive signals use heuristic confidence — explicitly capped and labeled
-      const heuristicConf = Math.min(60, Math.round(40 + churnRate)); // never exceeds 60% for heuristic
+      const heuristicConf = Math.min(60, Math.round(40 + churnRate));
 
       const codResult = computeCostOfDelay({
         severity: sev,
@@ -443,7 +444,6 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
       });
     }
 
-    // Sort by cost-of-delay score (highest first)
     queue.sort((a, b) => {
       if (b.costOfDelayResult.score !== a.costOfDelayResult.score) {
         return b.costOfDelayResult.score - a.costOfDelayResult.score;
@@ -483,7 +483,7 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
 
   return (
     <div className="space-y-3">
-      {/* Board-Defensible Confirmation Banner */}
+      {/* Confirmation Banner */}
       <AnimatePresence>
         {confirmation && (
           <motion.div
@@ -498,7 +498,7 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-success">
-                  Decision {confirmation.action} — Board defensible
+                  Decision {confirmation.action}
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5 truncate">{confirmation.decisionTitle}</p>
                 <div className="flex items-center gap-3 mt-2.5 flex-wrap">
@@ -558,7 +558,6 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
                 >
                   <div className="flex flex-col sm:flex-row items-start gap-3">
                     <div className="flex items-start gap-3 flex-1 min-w-0">
-                      {/* Icon + Urgency */}
                       <div className="flex flex-col items-center gap-1.5 pt-0.5 shrink-0">
                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${style.badge}`}>
                           <Icon className="w-4 h-4" />
@@ -568,7 +567,6 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
                         </span>
                       </div>
 
-                      {/* Content */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
                           <p className="text-sm font-semibold leading-tight">{decision.title}</p>
@@ -581,7 +579,7 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
                         </div>
                         <p className="text-xs text-muted-foreground leading-relaxed mb-2">{decision.context}</p>
 
-                        {/* Structured Cost of Delay */}
+                        {/* Cost of Delay */}
                         <div className="flex items-start gap-2 mb-2.5 p-2.5 rounded-lg bg-background/80 border border-border/20">
                           <AlertTriangle className={`w-3 h-3 mt-0.5 shrink-0 ${
                             cod.label === "critical" ? "text-destructive" :
@@ -598,6 +596,8 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
                               <span className="text-[10px] font-mono text-muted-foreground">
                                 {cod.score}/100
                               </span>
+                              {/* Classification: CoD is always heuristic */}
+                              <OutputClassificationBadge classification="HEURISTIC_ESTIMATE" compact />
                             </div>
                             <div className="flex items-center gap-3 flex-wrap">
                               <span className="text-xs font-semibold text-foreground">{cod.estimatedDelayCost}</span>
@@ -616,8 +616,11 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
                             {decision.source}
                           </span>
                           {decision.confidence != null && (
-                            <span className="text-[10px] bg-muted/50 text-muted-foreground px-2 py-0.5 rounded flex items-center gap-1">
-                              <ConfidenceBadge confidence={decision.confidence} showDetails /> confidence
+                            <ConfidenceBadge confidence={decision.confidence} showDetails />
+                          )}
+                          {decision.confidenceCapReason && (
+                            <span className="text-[9px] font-bold text-warning bg-warning/10 px-1.5 py-0.5 rounded uppercase">
+                              Heuristic
                             </span>
                           )}
                           {decision.timeframe && (
@@ -632,11 +635,22 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
                           )}
                         </div>
 
-                        {/* Structured Recommendation */}
-                        <div className="p-2.5 rounded-lg bg-background/60 border border-border/30 space-y-1.5">
+                        {/* FAIL-CLOSED GATE: Show gate message if not decision-grade */}
+                        {rec.decisionGateMessage && (
+                          <div className="flex items-start gap-2 p-2.5 rounded-lg bg-destructive/5 border border-destructive/20 mb-2">
+                            <AlertTriangle className="w-3.5 h-3.5 text-destructive shrink-0 mt-0.5" />
+                            <div>
+                              <p className="text-[10px] font-bold text-destructive uppercase tracking-wider mb-0.5">Not Decision-Grade</p>
+                              <p className="text-[10px] text-destructive/80">{rec.decisionGateMessage}</p>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Classified Recommendation Sections */}
+                        <div className="p-2.5 rounded-lg bg-background/60 border border-border/30 space-y-2">
                           <div className="flex items-center justify-between">
                             <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                              AI Recommendation
+                              Structured Intelligence
                             </p>
                             {rec.qualityScore && (
                               <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
@@ -650,30 +664,31 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
                               </span>
                             )}
                           </div>
-                          {rec.qualityScore && !rec.qualityScore.isDecisionGrade && (
-                            <div className="flex items-center gap-1.5 p-1.5 rounded bg-warning/5 border border-warning/20">
-                              <AlertTriangle className="w-3 h-3 text-warning shrink-0" />
-                              <p className="text-[9px] text-warning">
-                                Below decision-grade threshold. {rec.qualityScore.downgradeReason}
-                              </p>
+
+                          {/* Labeled classified sections */}
+                          {rec.sections.map((section, si) => (
+                            <div key={si} className="space-y-0.5">
+                              <div className="flex items-center gap-2">
+                                <OutputClassificationBadge classification={section.classification} compact />
+                                <span className="text-[10px] font-semibold text-foreground">{section.label}</span>
+                              </div>
+                              <p className="text-[10px] text-muted-foreground pl-4 leading-relaxed">{section.content}</p>
                             </div>
+                          ))}
+
+                          {/* Assumptions + Risk */}
+                          {rec.assumptions && rec.assumptions.length > 0 && (
+                            <p className="text-[10px] text-muted-foreground"><span className="font-semibold text-foreground">Assumptions:</span> {rec.assumptions.slice(0, 2).join("; ")}</p>
                           )}
-                          <div className="space-y-1">
-                            <p className="text-[10px] text-muted-foreground"><span className="font-semibold text-foreground">What happened:</span> {rec.whatHappened}</p>
-                            <p className="text-[10px] text-muted-foreground"><span className="font-semibold text-foreground">Why it matters:</span> {rec.whyItMatters}</p>
-                            <p className="text-[10px] text-muted-foreground"><span className="font-semibold text-foreground">Action:</span> {rec.recommendedAction}</p>
-                            {rec.assumptions && rec.assumptions.length > 0 && (
-                              <p className="text-[10px] text-muted-foreground"><span className="font-semibold text-foreground">Assumptions:</span> {rec.assumptions.slice(0, 2).join("; ")}</p>
-                            )}
-                            {rec.riskIfWrong && (
-                              <p className="text-[10px] text-muted-foreground"><span className="font-semibold text-foreground">Risk if wrong:</span> {rec.riskIfWrong}</p>
-                            )}
-                            {rec.confidenceBasis && (
-                              <p className="text-[10px] text-muted-foreground italic">
-                                {rec.confidenceBasis.label}
-                              </p>
-                            )}
-                          </div>
+                          {rec.riskIfWrong && (
+                            <p className="text-[10px] text-muted-foreground"><span className="font-semibold text-foreground">Risk if wrong:</span> {rec.riskIfWrong}</p>
+                          )}
+                          {rec.confidenceBasis && (
+                            <p className="text-[10px] text-muted-foreground italic">
+                              {rec.confidenceBasis.isHeuristic ? "⚠ " : ""}{rec.confidenceBasis.label}
+                            </p>
+                          )}
+
                           <div className="flex items-center gap-4 flex-wrap pt-1 border-t border-border/20">
                             <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                               <User className="w-2.5 h-2.5" /> <span className="font-semibold text-foreground">Owner:</span> {rec.suggestedOwner}
@@ -686,6 +701,13 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
                             </span>
                           </div>
                         </div>
+
+                        {/* Traceability Panel */}
+                        <TraceabilityPanel
+                          traceability={rec.traceability}
+                          confidenceBasis={rec.confidenceBasis}
+                          assumptions={rec.assumptions}
+                        />
                       </div>
                     </div>
 
@@ -693,8 +715,9 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
                     <div className="flex sm:flex-col gap-1.5 shrink-0 w-full sm:w-auto">
                       <button
                         onClick={() => handleApprove(decision)}
-                        disabled={isActing}
-                        className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
+                        disabled={isActing || !rec.isDecisionGrade}
+                        title={!rec.isDecisionGrade ? "Cannot approve: not decision-grade" : "Approve"}
+                        className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {isActing ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
                         Approve
