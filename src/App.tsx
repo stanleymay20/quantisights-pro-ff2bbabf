@@ -69,6 +69,7 @@ const Security = lazy(() => import("./pages/Security"));
 const Portfolio = lazy(() => import("./pages/Portfolio"));
 const SecurityQuestionnaire = lazy(() => import("./pages/SecurityQuestionnaire"));
 const PilotAudit = lazy(() => import("./pages/PilotAudit"));
+const BusinessModel = lazy(() => import("./pages/BusinessModel"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -142,6 +143,7 @@ const App = () => (
               <Route path="/accept-invite" element={<AcceptInvite />} />
               <Route path="/demo" element={<Demo />} />
               <Route path="/pricing" element={<Pricing />} />
+              <Route path="/business-model" element={<BusinessModel />} />
               <Route path="/security" element={<Security />} />
               <Route path="/security-questionnaire" element={<SecurityQuestionnaire />} />
               <Route path="/calibration" element={<CalibrationAssessment />} />
