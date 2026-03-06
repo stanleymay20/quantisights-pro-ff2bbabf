@@ -232,7 +232,7 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ success: true, simulation_id: inserted.id, ...result }),
+      JSON.stringify({ success: true, simulation_id: inserted.id, ...result, ...responseMeta }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (e) {
