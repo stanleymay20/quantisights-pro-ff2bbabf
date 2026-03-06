@@ -965,7 +965,7 @@ const DataUpload = () => {
                           onChange={(e) => setDefaultMetricType(e.target.value)}
                           className="px-3 py-2 rounded-lg bg-secondary border border-border text-foreground text-sm"
                         >
-                          {METRIC_TYPES.map((t) => (
+                          {DEFAULT_METRIC_TYPES.map((t) => (
                             <option key={t} value={t}>{t}</option>
                           ))}
                         </select>
