@@ -219,10 +219,9 @@ const DataUpload = () => {
       });
       return;
     }
-    const hasMappedDate = Object.values(mapping).includes("date");
     const hasMappedValue = Object.values(mapping).includes("value");
-    if (!hasMappedDate || !hasMappedValue) {
-      toast({ title: "Date and Value columns required", description: "Please map at least a date and value column.", variant: "destructive" });
+    if (!hasMappedValue) {
+      toast({ title: "Value column required", description: "Please map at least one value column.", variant: "destructive" });
       return;
     }
     const result = validateData(allRows, headers, mapping, importMode);
@@ -405,20 +404,29 @@ const DataUpload = () => {
         source_id: string;
       }> = [];
 
+      let rowCounter = 0;
       for (const row of allRows) {
         if (row.every(cell => !cell || !cell.trim())) continue;
+        rowCounter++;
 
-        let dateVal = dateIdx >= 0 ? row[dateIdx]?.trim() : undefined;
-        if (!dateVal) continue;
-        if (/^\d{4}$/.test(dateVal)) dateVal = `${dateVal}-01-01`;
-        else if (/^\d{4}[/-]Q[1-4]$/i.test(dateVal)) {
-          const y = dateVal.slice(0, 4);
-          const q = parseInt(dateVal.slice(-1));
-          dateVal = `${y}-${String((q - 1) * 3 + 1).padStart(2, "0")}-01`;
-        } else if (/^\d{4}[/-]\d{2}$/.test(dateVal)) {
-          dateVal = `${dateVal}-01`;
+        let dateVal: string;
+        if (dateIdx >= 0) {
+          const rawDate = row[dateIdx]?.trim();
+          if (!rawDate) { continue; }
+          dateVal = rawDate;
+          if (/^\d{4}$/.test(dateVal)) dateVal = `${dateVal}-01-01`;
+          else if (/^\d{4}[/-]Q[1-4]$/i.test(dateVal)) {
+            const y = dateVal.slice(0, 4);
+            const q = parseInt(dateVal.slice(-1));
+            dateVal = `${y}-${String((q - 1) * 3 + 1).padStart(2, "0")}-01`;
+          } else if (/^\d{4}[/-]\d{2}$/.test(dateVal)) {
+            dateVal = `${dateVal}-01`;
+          }
+          if (isNaN(Date.parse(dateVal))) continue;
+        } else {
+          // No date column: use synthetic date based on row index
+          dateVal = `2024-01-${String(Math.min(rowCounter, 28)).padStart(2, "0")}`;
         }
-        if (isNaN(Date.parse(dateVal))) continue;
 
         const regionVal = regionIdx >= 0 ? (row[regionIdx]?.trim() || "") : "";
         const regionCodeVal = regionCodeIdx >= 0 ? (row[regionCodeIdx]?.trim() || "") : "";
@@ -605,7 +613,7 @@ const DataUpload = () => {
                 <Upload className="w-16 h-16 text-muted-foreground mb-4" />
                 <h2 className="text-xl font-semibold font-display mb-2">Upload CSV File</h2>
                 <p className="text-muted-foreground text-sm mb-4">Drag & drop or click to browse</p>
-                <p className="text-xs text-muted-foreground">Supports: CSV files up to 20MB with date and value columns</p>
+                <p className="text-xs text-muted-foreground">Supports: CSV files up to 20MB — date column optional</p>
                 <input id="csv-input" type="file" accept=".csv" className="hidden" onChange={handleFileSelect} />
                 <UploadTrustBadges />
               </motion.div>
@@ -830,7 +838,7 @@ const DataUpload = () => {
                 <Card>
                   <CardContent className="p-6">
                     <h2 className="text-lg font-semibold font-display mb-1">Adjust Column Mapping</h2>
-                    <p className="text-xs text-muted-foreground mb-4">Fine-tune the auto-detected mapping. Date and Value are required.</p>
+                    <p className="text-xs text-muted-foreground mb-4">Fine-tune the auto-detected mapping. At least one Value column is required. Date is optional.</p>
 
                     {/* Date column warning with auto-fix */}
                     {dateColumnCount > 1 && (
