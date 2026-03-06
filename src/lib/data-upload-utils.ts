@@ -824,11 +824,11 @@ export function classifyDataset(headers: string[], mapping: ColumnMapping): Data
   return bestMatch;
 }
 
-// ---- Confidence badge color ----
+// ---- Confidence badge color (semantic tokens) ----
 export const confidenceColor = (c: number) =>
-  c >= 80 ? "bg-green-500/10 text-green-600 border-green-500/20" :
-  c >= 60 ? "bg-yellow-500/10 text-yellow-600 border-yellow-500/20" :
+  c >= 80 ? "bg-success/10 text-success border-success/20" :
+  c >= 60 ? "bg-warning/10 text-warning border-warning/20" :
   "bg-muted text-muted-foreground border-border";
 
 export const qualityColor = (score: number) =>
-  score >= 80 ? "text-green-500" : score >= 50 ? "text-yellow-500" : "text-red-500";
+  score >= 80 ? "text-success" : score >= 50 ? "text-warning" : "text-destructive";
