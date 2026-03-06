@@ -38,6 +38,12 @@ const CounterfactualExplanation = () => {
   const [entityType, setEntityType] = useState<string>("decision");
   const [entityId, setEntityId] = useState<string>("");
 
+  // Clear selection when dataset changes
+  useEffect(() => {
+    setEntityId("");
+    setResult(null);
+  }, [datasetId]);
+
   // Fetch available entities
   // Decisions are org-scoped (institutional memory), but reset selection on dataset change
   const { data: decisions } = useQuery({
