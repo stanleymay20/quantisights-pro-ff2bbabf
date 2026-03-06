@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, forwardRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +19,7 @@ interface ModifyDecisionDialogProps {
   onSaved: (updated: Partial<EnrichedDecision>) => void;
 }
 
-const ModifyDecisionDialog = ({ decision, organizationId, open, onOpenChange, onSaved }: ModifyDecisionDialogProps) => {
+const ModifyDecisionDialog = forwardRef<HTMLDivElement, ModifyDecisionDialogProps>(({ decision, organizationId, open, onOpenChange, onSaved }, ref) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
@@ -171,6 +171,8 @@ const ModifyDecisionDialog = ({ decision, organizationId, open, onOpenChange, on
       </DialogContent>
     </Dialog>
   );
-};
+});
+
+ModifyDecisionDialog.displayName = "ModifyDecisionDialog";
 
 export default ModifyDecisionDialog;
