@@ -5,7 +5,8 @@ import {
   Database, BarChart3, Shuffle, Users, Building2, Search, Zap, Menu, X,
   BookOpen, Target, Brain, MessageSquare, GitBranch, Globe,
   Sparkles, GitCommitVertical, Crosshair, Bell,
-  Briefcase, ChevronDown,
+  Briefcase, ChevronDown, Shield, Eye, Compass, FlaskConical,
+  ClipboardCheck, AlertOctagon, RotateCcw, Award,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -35,6 +36,7 @@ const navSections: NavSection[] = [
       { icon: Briefcase, label: "Overview", path: "/portfolio" },
       { icon: LayoutDashboard, label: "Command Center", path: "/dashboard" },
       { icon: BarChart3, label: "KPI Builder", path: "/kpis" },
+      { icon: Compass, label: "Executive View", path: "/executive" },
     ],
   },
   {
@@ -48,6 +50,10 @@ const navSections: NavSection[] = [
       { icon: Sparkles, label: "Forecasting", path: "/forecasting" },
       { icon: Target, label: "Benchmarking", path: "/benchmarking" },
       { icon: MessageSquare, label: "Ask Quantivis", path: "/ask" },
+      { icon: FlaskConical, label: "Causal Inference", path: "/causal-inference" },
+      { icon: AlertOctagon, label: "Cognitive Bias", path: "/cognitive-bias" },
+      { icon: RotateCcw, label: "Counterfactual", path: "/counterfactual" },
+      { icon: Award, label: "Calibration", path: "/calibration" },
     ],
   },
   {
@@ -61,6 +67,8 @@ const navSections: NavSection[] = [
       { icon: Bell, label: "Alert Playbooks", path: "/alert-playbooks" },
       { icon: FileText, label: "Reports", path: "/reports" },
       { icon: Crosshair, label: "OKR Alignment", path: "/okrs" },
+      { icon: Shield, label: "Strategy Pack", path: "/strategy-pack" },
+      { icon: Eye, label: "Misses Analysis", path: "/misses" },
     ],
   },
   {
@@ -70,6 +78,7 @@ const navSections: NavSection[] = [
       { icon: Database, label: "Data Sources", path: "/data-sources" },
       { icon: Upload, label: "Data Upload", path: "/data-upload" },
       { icon: GitCommitVertical, label: "Data Lineage", path: "/lineage" },
+      { icon: ClipboardCheck, label: "Pilot Audit", path: "/pilot-audit" },
     ],
   },
   {
