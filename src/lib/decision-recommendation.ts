@@ -83,56 +83,86 @@ export function generateRecommendation(input: RecommendationInput): StructuredRe
   const conf = input.confidence ?? 50;
   const trend = input.trendDirection ?? "down";
   const segment = input.affectedSegment ?? "primary segment";
+  const confLabel = conf >= 70 ? "high confidence" : conf >= 40 ? "moderate confidence" : "early-stage signal";
+  const deadlineDays = inferDeadlineDays(input.severity, conf);
 
-  // --- What happened ---
+  // --- What happened (always prefer the real signal message) ---
   let whatHappened: string;
   if (input.signalType === "advisory" && input.priorAdvisoryAction) {
     whatHappened = input.priorAdvisoryAction;
   } else if (msg.length > 20) {
+    // Use the ACTUAL insight/signal message — this is real AI-generated or data-driven text
     whatHappened = msg.slice(0, 200);
-  } else if (cat.includes("churn") || met.includes("churn")) {
-    whatHappened = `Churn rate anomaly detected with ${trend === "up" ? "upward" : "sustained"} trajectory in ${segment}`;
-  } else if (cat.includes("revenue") || met.includes("revenue")) {
-    whatHappened = `Revenue signal detected: ${trend === "down" ? "below-plan performance" : "variance from forecast"} impacting ${segment}`;
-  } else if (cat.includes("cost") || met.includes("cost")) {
-    whatHappened = `Cost structure deviation identified: ${trend === "up" ? "unexpected increase" : "efficiency anomaly"} in ${segment}`;
   } else {
-    whatHappened = `${input.severity === "critical" ? "Critical" : "Notable"} operational signal detected in ${cat || met || "monitored metrics"}`;
+    // Only fall back to a constructed sentence when no substantive message exists
+    const metricLabel = met || cat || "monitored metric";
+    const trendVerb = trend === "up" ? "increasing" : trend === "down" ? "declining" : "shifting";
+    whatHappened = `${input.severity === "critical" ? "Critical" : "Notable"} ${trendVerb} signal detected in ${metricLabel} affecting ${segment}.`;
   }
 
-  // --- Why it matters ---
-  const confLabel = conf >= 70 ? "high confidence" : conf >= 40 ? "moderate confidence" : "early-stage signal";
+  // --- Why it matters (cite specific evidence, not generic statements) ---
   const whyParts: string[] = [];
   whyParts.push(`Detected at ${confLabel} (${conf}%)`);
-  if (input.severity === "critical" || input.severity === "high") {
-    whyParts.push("severity indicates material business impact");
+  if (input.severity === "critical") {
+    whyParts.push("classified as critical severity — immediate attention required");
+  } else if (input.severity === "high") {
+    whyParts.push("classified as high severity — material business impact likely");
   }
   if (input.diagnosticFindings) {
-    whyParts.push(`diagnostics indicate: ${input.diagnosticFindings}`);
+    whyParts.push(`root cause analysis: ${input.diagnosticFindings}`);
   }
   if (input.causalFactors) {
-    whyParts.push(`causal factors: ${input.causalFactors}`);
+    whyParts.push(`contributing factors: ${input.causalFactors}`);
   }
-  if (trend === "down") whyParts.push("negative trend trajectory compounds exposure");
+  if (trend === "down") whyParts.push("negative trajectory compounds exposure over time");
   if (trend === "up" && (cat.includes("cost") || met.includes("cost"))) {
-    whyParts.push("upward cost trend erodes margin if unchecked");
+    whyParts.push("rising cost trend erodes margin if unchecked");
+  }
+  // Add data-specific context from the message itself
+  if (msg.length > 20 && input.diagnosticFindings == null) {
+    // Extract any percentage or number from the message for specificity
+    const numMatch = msg.match(/(\d+\.?\d*)\s*%/);
+    if (numMatch) {
+      whyParts.push(`signal magnitude: ${numMatch[0]}`);
+    }
   }
   const whyItMatters = whyParts.join(". ") + ".";
 
-  // --- Action ---
+  // --- Action (contextualized with actual signal data, not generic playbooks) ---
   let recommendedAction: string;
   if (input.signalType === "pending_outcome") {
-    recommendedAction = "Record the actual outcome of this decision to close the feedback loop and improve calibration model accuracy";
-  } else if (cat.includes("churn") || met.includes("churn")) {
-    recommendedAction = `Run cohort analysis on ${segment}, identify top-decile risk factors, and activate targeted retention playbook. Escalate to board if churn exceeds 2× baseline.`;
-  } else if (cat.includes("revenue") || met.includes("revenue")) {
-    recommendedAction = `Diagnose revenue variance by segment and channel. Simulate recovery scenarios and approve corrective pricing or pipeline actions within the recommended window.`;
-  } else if (cat.includes("cost") || met.includes("cost")) {
-    recommendedAction = `Initiate cost audit across top 3 drivers. Evaluate optimization scenarios and set quarterly cost targets with accountability owners.`;
-  } else if (cat.includes("growth")) {
-    recommendedAction = `Analyze growth trajectory by acquisition channel. Identify underperforming segments and reallocate resources to highest-ROI vectors.`;
+    recommendedAction = `Record the actual outcome of this decision to close the feedback loop and improve calibration accuracy. Decision has been pending — outcome data is overdue.`;
   } else {
-    recommendedAction = `Investigate root cause via diagnostic engine. Quantify impact, approve corrective action, and set measurement checkpoint at ${inferDeadlineDays(input.severity, conf)}d.`;
+    // Build action from the actual context rather than category templates
+    const actionParts: string[] = [];
+    
+    // Step 1: Always start with investigation grounded in the specific signal
+    if (msg.length > 20) {
+      actionParts.push(`Investigate the specific signal: "${msg.slice(0, 100)}${msg.length > 100 ? "..." : ""}".`);
+    } else {
+      actionParts.push(`Investigate ${met || cat || "this signal"} via the diagnostic engine to identify root cause.`);
+    }
+
+    // Step 2: Quantify — always reference what we know
+    actionParts.push(`Quantify impact using ${conf}% confidence signal (${confLabel}).`);
+
+    // Step 3: Domain-specific next step based on category
+    if (cat.includes("churn") || met.includes("churn")) {
+      actionParts.push(`Run cohort analysis on ${segment} to identify at-risk accounts and activate retention playbook.`);
+    } else if (cat.includes("revenue") || met.includes("revenue")) {
+      actionParts.push(`Diagnose variance by segment/channel and simulate recovery scenarios.`);
+    } else if (cat.includes("cost") || met.includes("cost")) {
+      actionParts.push(`Audit top cost drivers and evaluate optimization scenarios.`);
+    } else if (cat.includes("growth")) {
+      actionParts.push(`Analyze by acquisition channel and reallocate to highest-ROI vectors.`);
+    } else {
+      actionParts.push(`Approve corrective action and set measurement checkpoint.`);
+    }
+
+    // Step 4: Always include deadline
+    actionParts.push(`Target resolution within ${deadlineDays}d.`);
+    
+    recommendedAction = actionParts.join(" ");
   }
 
   return {
@@ -140,7 +170,7 @@ export function generateRecommendation(input: RecommendationInput): StructuredRe
     whyItMatters,
     recommendedAction,
     suggestedOwner: inferOwner(input.category, input.metricType),
-    suggestedDeadlineDays: inferDeadlineDays(input.severity, conf),
+    suggestedDeadlineDays: deadlineDays,
     successMetrics: inferSuccessMetrics(input.category, input.metricType),
   };
 }

@@ -21,6 +21,7 @@ export interface MetricTypeSummary {
   count: number;
   trend: "up" | "down" | "flat" | null;
   previousTotal: number | null;
+  values: number[];
 }
 
 const REALTIME_TIERS: TierKey[] = ["growth", "enterprise"];
@@ -156,7 +157,7 @@ export const useMetrics = (orgId: string | null, datasetId: string | null) => {
           trend = Math.abs(changePct) < 1 ? "flat" : changePct > 0 ? "up" : "down";
         }
 
-        return { metricType, total, latest, count: rows.length, trend, previousTotal };
+        return { metricType, total, latest, count: rows.length, trend, previousTotal, values: sorted.map(r => Number(r.value)) };
       })
       .sort((a, b) => b.count - a.count);
   }, [metrics]);
