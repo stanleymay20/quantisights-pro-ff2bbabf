@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    image: quantivis:latest
+    container_name: quantivis-prod
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${VITE_SUPABASE_PUBLISHABLE_KEY}
+      VITE_SUPABASE_PROJECT_ID: ${VITE_SUPABASE_PROJECT_ID}
+      VITE_STRIPE_KEY: ${VITE_STRIPE_KEY}
+      SENTRY_DSN: ${SENTRY_DSN}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - quantivis-network
+    volumes:
+      - /app/node_modules
+
+  nginx:
+    image: nginx:alpine
+    container_name: quantivis-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.prod.conf:/etc/nginx/nginx.conf:ro
+      - ./certs:/etc/nginx/certs:ro
+    depends_on:
+      - app
+    restart: unless-stopped
+    networks:
+      - quantivis-network
+
+networks:
+  quantivis-network:
+    driver: bridge

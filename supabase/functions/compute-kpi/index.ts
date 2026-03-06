@@ -8,9 +8,9 @@ const corsHeaders = {
 };
 
 const TIER_LIMITS: Record<string, number> = {
-  starter: 3,
-  growth: 25,
-  enterprise: 999999,
+  starter: parseInt(Deno.env.get("TIER_STARTER_KPI_LIMIT") || "3"),
+  growth: parseInt(Deno.env.get("TIER_GROWTH_KPI_LIMIT") || "25"),
+  enterprise: parseInt(Deno.env.get("TIER_ENTERPRISE_KPI_LIMIT") || "999999"),
 };
 
 // Safe formula evaluator — supports +, -, *, / on metric variables

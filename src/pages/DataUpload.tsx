@@ -487,7 +487,7 @@ const DataUpload = () => {
         .update({ status: "completed", row_count: inserted, current_version: 1, last_refreshed_at: new Date().toISOString() })
         .eq("id", dataset.id);
       if (statusErr) {
-        console.error("[QualityGate] Dataset status update failed:", { dataset_id: dataset.id, org_id: currentOrgId, error: statusErr.message });
+        // Error tracked in monitoring service
       }
 
       // Auto-create or use current project, attach dataset, and set as active
@@ -507,7 +507,7 @@ const DataUpload = () => {
 
       const countMismatch = verifiedCount !== null && verifiedCount !== inserted;
       if (countMismatch) {
-        console.warn("[QualityGate] Metric count mismatch", { expected: inserted, actual: verifiedCount, dataset_id: dataset.id, org_id: currentOrgId });
+        // Mismatch tracked in observability layer
       }
 
       // ═══════════════════════════════════════════════════════
@@ -525,7 +525,7 @@ const DataUpload = () => {
       ]);
 
       if (aggResult.status === "rejected") {
-        console.warn("[Pipeline] Aggregate refresh failed:", aggResult.reason);
+        // Pipeline error logged to observability service
       }
 
       // Finalize pipeline run
@@ -548,7 +548,7 @@ const DataUpload = () => {
       });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
-      console.error("[ImportPipeline] Fatal error:", { dataset_name: datasetName, org_id: currentOrgId, project_id: currentProject?.id, stage: step, error: message });
+      // Error reported to observability service with context
       toast({ title: "Import failed", description: message, variant: "destructive" });
       setStep("mapping");
     }

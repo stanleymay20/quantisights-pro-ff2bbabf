@@ -25,11 +25,7 @@ interface UsageData {
   members: number;
 }
 
-const TIER_LIMITS: Record<string, { simulations: number; convergence: number; copilot: number; seats: number }> = {
-  starter: { simulations: 5, convergence: 3, copilot: 10, seats: 2 },
-  growth: { simulations: 50, convergence: 30, copilot: 100, seats: 5 },
-  enterprise: { simulations: -1, convergence: -1, copilot: -1, seats: -1 },
-};
+import { TIER_LIMITS } from "@/lib/tier-config";
 
 const Billing = () => {
   const { user } = useAuth();
