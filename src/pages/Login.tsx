@@ -14,7 +14,9 @@ const Login = forwardRef<HTMLDivElement>((_, ref) => {
   const { signIn } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const redirectTo = searchParams.get("redirect") || "/dashboard";
+  // Validate redirect to prevent open redirect attacks — only allow relative paths
+  const rawRedirect = searchParams.get("redirect") || "/dashboard";
+  const redirectTo = rawRedirect.startsWith("/") && !rawRedirect.startsWith("//") ? rawRedirect : "/dashboard";
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
