@@ -501,12 +501,6 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
                   <span className="text-[10px] flex items-center gap-1 text-muted-foreground">
                     <FileCheck className="w-3 h-3 text-success" /> Audit trail logged
                   </span>
-                  <span className="text-[10px] flex items-center gap-1 text-muted-foreground">
-                    <Crosshair className="w-3 h-3 text-success" /> Owner assigned
-                  </span>
-                  <span className="text-[10px] flex items-center gap-1 text-muted-foreground">
-                    <Bell className="w-3 h-3 text-success" /> Outcome reminder set
-                  </span>
                 </div>
               </div>
             </div>
