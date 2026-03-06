@@ -21,6 +21,7 @@ import { Input } from "@/components/ui/input";
 
 const ProjectSwitcher = () => {
   const { projects, currentProject, switchProject, createProject } = useProject();
+  const { toast } = useToast();
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState("");
   const [creating, setCreating] = useState(false);
