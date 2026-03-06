@@ -276,7 +276,7 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
         confidence: (adv.capped_confidence ?? adv.confidence) as number | null,
         cappedConfidence: adv.capped_confidence as number | null,
         affectedMetricType: adv.category,
-        predictedNetImpact: (adv as any).predicted_net_impact ?? null,
+        predictedNetImpact: null,
         revenue,
         ageDays: age,
         expectedImpact: adv.expected_impact,
