@@ -102,7 +102,7 @@ describe("Decision Intelligence Integrity Tests", () => {
     });
 
     it("calibrated confidence must be labeled", () => {
-      const basis = buildConfidenceBasis({ sampleSize: 50, calibrationApplied: true });
+      const basis = buildConfidenceBasis({ sampleSize: 50, calibrationApplied: true, totalExpectedDimensions: 5, presentDimensions: 4 });
       expect(basis.label).toContain("Calibrated");
       expect(basis.calibrationApplied).toBe(true);
       expect(basis.signalStrength).toBe("strong");
