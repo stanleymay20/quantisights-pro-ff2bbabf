@@ -171,6 +171,8 @@ const ModifyDecisionDialog = forwardRef<HTMLDivElement, ModifyDecisionDialogProp
       </DialogContent>
     </Dialog>
   );
-};
+});
+
+ModifyDecisionDialog.displayName = "ModifyDecisionDialog";
 
 export default ModifyDecisionDialog;
