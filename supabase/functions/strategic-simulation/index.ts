@@ -169,10 +169,27 @@ serve(async (req) => {
       .eq("role_type", role_type)
       .maybeSingle();
 
-    const baselineComponents: RiskComponents = riskData?.components
-      ? (riskData.components as any)
-      : { deviation: 25, trend: 25, volatility: 25, forecast: 25 };
-    const baselineRisk = riskData?.score ?? 25;
+    // If no baseline risk data exists, we cannot simulate — return honest response
+    if (!riskData) {
+      return new Response(JSON.stringify({
+        error: null,
+        message: "No baseline risk index exists for this role. Run the executive risk computation first to establish a baseline before simulating scenarios.",
+        baseline_risk: null,
+        baseline_components: null,
+        projected_risk: null,
+        projected_components: null,
+        risk_delta: null,
+        escalation_triggered: false,
+        kpi_projections: [],
+        ai_board_summary: "Insufficient data: No baseline risk index has been computed for this role. Cannot project scenario impact without an established baseline.",
+        ai_recommended_actions: ["Compute baseline risk index via Executive Command Mode", "Upload sufficient metric data to enable risk modeling"],
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const baselineComponents: RiskComponents = riskData.components as any;
+    const baselineRisk = riskData.score;
 
     // Fetch KPI baselines
     const { data: kpiValues } = await serviceClient
@@ -207,15 +224,20 @@ serve(async (req) => {
     }
 
     const kpiProjections = Object.values(kpiMap).map(kpi => {
-      // Simple directional projection based on revenue/cost changes
+      // Directional projection — labeled as estimates, not predictions.
+      // Uses simple linear sensitivity: revenue change → proportional KPI shift
+      // This is a HEURISTIC MODEL — labeled clearly in the output.
       const revImpact = (params.revenue_change_percent || 0) / 100;
       const costImpact = (params.cost_change_percent || 0) / 100;
+      // Sensitivity coefficients are heuristic assumptions, not calibrated
       const projectedValue = kpi.baseline * (1 + revImpact * 0.7 - costImpact * 0.3);
       return {
         kpi_name: kpi.name,
         baseline_value: Math.round(kpi.baseline * 100) / 100,
         projected_value: Math.round(projectedValue * 100) / 100,
         delta_percent: Math.round((projectedValue / kpi.baseline - 1) * 10000) / 100,
+        model_type: "heuristic_linear_sensitivity",
+        note: "Estimate based on assumed linear sensitivity coefficients (0.7 revenue, 0.3 cost). Not calibrated to historical data.",
       };
     });
 
