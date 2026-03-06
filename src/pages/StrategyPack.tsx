@@ -83,23 +83,23 @@ function confidenceLabel(raw: number | null, capped: number | null, reason: stri
 }
 
 function riskColor(score: number): string {
-  if (score <= 25) return "bg-emerald-500";
-  if (score <= 50) return "bg-sky-500";
-  if (score <= 75) return "bg-amber-500";
+  if (score <= 25) return "bg-success";
+  if (score <= 50) return "bg-primary";
+  if (score <= 75) return "bg-warning";
   return "bg-destructive";
 }
 
 function riskTextColor(score: number): string {
-  if (score <= 25) return "text-emerald-500";
-  if (score <= 50) return "text-sky-500";
-  if (score <= 75) return "text-amber-500";
+  if (score <= 25) return "text-success";
+  if (score <= 50) return "text-primary";
+  if (score <= 75) return "text-warning";
   return "text-destructive";
 }
 
 function governancePosture(maxRisk: number, conflicts: number): { label: string; color: string; bg: string } {
   if (maxRisk > 75 || conflicts > 2) return { label: "RED — Immediate Board Attention", color: "text-destructive", bg: "bg-destructive/10" };
-  if (maxRisk > 50 || conflicts > 0) return { label: "AMBER — Active Monitoring Required", color: "text-amber-500", bg: "bg-amber-500/10" };
-  return { label: "GREEN — Stable Governance Posture", color: "text-emerald-500", bg: "bg-emerald-500/10" };
+  if (maxRisk > 50 || conflicts > 0) return { label: "AMBER — Active Monitoring Required", color: "text-warning", bg: "bg-warning/10" };
+  return { label: "GREEN — Stable Governance Posture", color: "text-success", bg: "bg-success/10" };
 }
 
 const RISK_DIMENSIONS = ["deviation", "trend", "volatility", "forecast"] as const;
@@ -130,7 +130,7 @@ const StrategyPack = () => {
         supabase.from("executive_conflicts").select("*").eq("organization_id", currentOrgId).is("resolved_at", null),
         supabase.from("decision_ledger").select("id, recommended_action, decision_type, decision_status, capped_confidence, predicted_net_impact, predicted_roi_probability, outcome_delta, execution_status, confidence_cap_reason, raw_confidence").eq("organization_id", currentOrgId).order("created_at", { ascending: false }).limit(50),
         supabase.from("simulation_results").select("metric_type, expected_value, p10_value, p90_value, probability_negative, capped_confidence, confidence_cap_reason, raw_confidence, sample_size, data_sufficiency").eq("organization_id", currentOrgId).order("created_at", { ascending: false }).limit(10),
-        supabase.from("advisory_instances").select("title, action, priority, category, capped_confidence, raw_confidence, confidence_cap_reason, rationale, impact_score, source_evidence").eq("organization_id", currentOrgId).eq("status", "open").order("created_at", { ascending: false }).limit(10),
+        supabase.from("advisory_instances").select("title, action, priority, category, capped_confidence, raw_confidence, confidence_cap_reason, rationale, impact_score, source_evidence").eq("organization_id", currentOrgId).in("status", ["open", "in_progress"]).order("created_at", { ascending: false }).limit(10),
       ]);
 
       setOrgName(orgRes.data?.name || "Organization");
@@ -507,9 +507,9 @@ function MiniStat({ label, value, sub }: { label: string; value: string; sub: st
 
 function HeatCell({ value }: { value: number }) {
   const normalized = Math.min(100, Math.max(0, value));
-  const bg = normalized <= 25 ? "bg-emerald-500/20 text-emerald-600" :
-             normalized <= 50 ? "bg-sky-500/20 text-sky-600" :
-             normalized <= 75 ? "bg-amber-500/20 text-amber-600" :
+  const bg = normalized <= 25 ? "bg-success/20 text-success" :
+             normalized <= 50 ? "bg-primary/20 text-primary" :
+             normalized <= 75 ? "bg-warning/20 text-warning" :
              "bg-destructive/20 text-destructive";
   return (
     <span className={`inline-block px-2 py-1 rounded text-xs font-mono font-semibold ${bg}`}>
@@ -525,7 +525,7 @@ function ConfidenceBadge({ raw, capped, reason }: { raw: number | null; capped: 
   return (
     <Tooltip>
       <TooltipTrigger>
-        <Badge variant="outline" className={`text-xs gap-1 ${wasCapped ? "border-amber-500/50 text-amber-600" : ""}`}>
+      <Badge variant="outline" className={`text-xs gap-1 ${wasCapped ? "border-warning/50 text-warning" : ""}`}>
           {wasCapped && <AlertTriangle className="w-3 h-3" />}
           {display}%
         </Badge>

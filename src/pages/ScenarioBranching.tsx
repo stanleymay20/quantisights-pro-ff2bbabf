@@ -211,7 +211,7 @@ const ScenarioBranching = () => {
                       <CardTitle className="text-sm">{branch.name}</CardTitle>
                       <div className="flex items-center gap-1">
                         <Badge variant="outline" className={`text-[10px] ${
-                          branch.status === "simulated" ? "text-emerald-500 border-emerald-500/30" : ""
+                          branch.status === "simulated" ? "text-success border-success/30" : ""
                         }`}>
                           {branch.status}
                         </Badge>
@@ -228,7 +228,7 @@ const ScenarioBranching = () => {
                       {Object.entries(branch.parameters).map(([k, v]) => (
                         <div key={k} className="text-xs">
                           <span className="text-muted-foreground capitalize">{k.replace(/_/g, " ").replace(" percent", "")}: </span>
-                          <span className={`font-medium ${Number(v) > 0 ? "text-emerald-500" : Number(v) < 0 ? "text-destructive" : ""}`}>
+                          <span className={`font-medium ${Number(v) > 0 ? "text-success" : Number(v) < 0 ? "text-destructive" : ""}`}>
                             {Number(v) > 0 ? "+" : ""}{v}%
                           </span>
                         </div>
@@ -242,7 +242,7 @@ const ScenarioBranching = () => {
                           <span className="text-xs text-muted-foreground">Projected Risk</span>
                           <span className={`text-sm font-bold ${
                             (branch.results as any).projected_risk >= 70 ? "text-destructive" :
-                            (branch.results as any).projected_risk >= 40 ? "text-amber-500" : "text-emerald-500"
+                            (branch.results as any).projected_risk >= 40 ? "text-warning" : "text-success"
                           }`}>
                             {(branch.results as any).projected_risk}/100
                           </span>
@@ -327,7 +327,7 @@ const ScenarioBranching = () => {
                             {(b.results as any)?.escalation_triggered ? (
                               <Badge variant="destructive" className="text-[10px]">Yes</Badge>
                             ) : (
-                              <Badge variant="outline" className="text-[10px] text-emerald-500">No</Badge>
+                              <Badge variant="outline" className="text-[10px] text-success">No</Badge>
                             )}
                           </td>
                         ))}

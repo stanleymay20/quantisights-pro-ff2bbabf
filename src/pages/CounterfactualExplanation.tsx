@@ -87,7 +87,7 @@ const CounterfactualExplanation = () => {
   };
 
   const sensitivityColor = (s: string) =>
-    s === "high" ? "text-destructive" : s === "medium" ? "text-warning" : "text-emerald-400";
+    s === "high" ? "text-destructive" : s === "medium" ? "text-warning" : "text-success";
 
   return (
     <DatasetRequired moduleName="Counterfactual Explanations">
@@ -202,7 +202,7 @@ const CounterfactualExplanation = () => {
                         <div
                           className={`h-full rounded-full transition-all ${
                             factor.sensitivity === "high" ? "bg-destructive" :
-                            factor.sensitivity === "medium" ? "bg-warning" : "bg-emerald-500"
+                            factor.sensitivity === "medium" ? "bg-warning" : "bg-success"
                           }`}
                           style={{ width: `${Math.min(factor.change_required_pct, 100)}%` }}
                         />
@@ -222,7 +222,7 @@ const CounterfactualExplanation = () => {
                         Decision Robustness: {" "}
                         <span className={
                           result.factors_to_change.filter(f => f.sensitivity === "high").length === 0
-                            ? "text-emerald-400" : "text-warning"
+                            ? "text-success" : "text-warning"
                         }>
                           {result.factors_to_change.filter(f => f.sensitivity === "high").length === 0
                             ? "Robust"
