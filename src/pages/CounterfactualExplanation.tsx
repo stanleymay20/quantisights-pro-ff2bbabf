@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useOrganization } from "@/hooks/useOrganization";
+import { useActiveDataContext } from "@/hooks/useActiveDataContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
@@ -31,7 +31,7 @@ interface CounterfactualResult {
 }
 
 const CounterfactualExplanation = () => {
-  const { currentOrgId } = useOrganization();
+  const { orgId: currentOrgId, datasetId } = useActiveDataContext();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<CounterfactualResult | null>(null);
@@ -74,7 +74,7 @@ const CounterfactualExplanation = () => {
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("counterfactual-explain", {
-        body: { organization_id: currentOrgId, entity_type: entityType, entity_id: entityId },
+        body: { organization_id: currentOrgId, dataset_id: datasetId, entity_type: entityType, entity_id: entityId },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
