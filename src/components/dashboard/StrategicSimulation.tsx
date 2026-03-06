@@ -299,6 +299,9 @@ const StrategicSimulation = ({ organizationId, roleType, tier }: Props) => {
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-base">KPI Impact Projections</CardTitle>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      ⚠️ Heuristic estimates based on assumed linear sensitivity coefficients. Not calibrated to historical data.
+                    </p>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">

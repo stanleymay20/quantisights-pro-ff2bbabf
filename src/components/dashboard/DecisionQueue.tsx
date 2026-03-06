@@ -32,6 +32,8 @@ export interface EnrichedDecision {
   cappedConfidence?: number | null;
   confidenceCapReason?: string | null;
   generatedAt: string;
+  /** Sample size backing the confidence value */
+  sampleSize?: number;
 }
 
 interface DecisionQueueProps {
@@ -363,13 +365,15 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
       });
     }
 
-    // 4. Proactive: churn
+    // 4. Proactive: churn (confidence is heuristic — labeled as such)
     if (churnRate > 5 && queue.length < 5) {
       const sev: CostOfDelayInput["severity"] = churnRate > 12 ? "critical" : churnRate > 8 ? "high" : "medium";
+      // Proactive signals use heuristic confidence — explicitly capped and labeled
+      const heuristicConf = Math.min(60, Math.round(40 + churnRate)); // never exceeds 60% for heuristic
 
       const codResult = computeCostOfDelay({
         severity: sev,
-        confidence: 75,
+        confidence: heuristicConf,
         affectedMetricType: "churn",
         revenue,
         trendAccelerating: churnRate > 10,
@@ -380,7 +384,7 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
         metricType: "churn",
         trendDirection: "up",
         severity: sev,
-        confidence: 75,
+        confidence: heuristicConf,
         category: "retention",
       });
 
@@ -389,16 +393,16 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
         type: "proactive",
         urgency: sev === "critical" ? "critical" : "high",
         title: `Retention risk: ${churnRate.toFixed(1)}% churn rate ${churnRate > 10 ? "— exceeds critical threshold" : "— above target"}`,
-        context: `Churn at ${churnRate.toFixed(1)}% erodes customer base and compounds revenue loss.`,
+        context: `Churn at ${churnRate.toFixed(1)}% erodes customer base and compounds revenue loss. Confidence is heuristic (threshold-based).`,
         recommendedAction: rec.recommendedAction,
         source: "Proactive Intelligence",
         costOfDelayResult: codResult,
         recommendation: rec,
         riskIfIgnored: "high",
         generatedAt: now,
-        rawConfidence: 75,
+        rawConfidence: heuristicConf,
         cappedConfidence: null,
-        confidenceCapReason: null,
+        confidenceCapReason: "Heuristic confidence: threshold-based proactive signal, not model-derived",
       });
     }
 
@@ -630,13 +634,45 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
 
                         {/* Structured Recommendation */}
                         <div className="p-2.5 rounded-lg bg-background/60 border border-border/30 space-y-1.5">
-                          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                            AI Recommendation
-                          </p>
+                          <div className="flex items-center justify-between">
+                            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                              AI Recommendation
+                            </p>
+                            {rec.qualityScore && (
+                              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
+                                rec.qualityScore.grade === "A" || rec.qualityScore.grade === "B"
+                                  ? "bg-success/10 text-success"
+                                  : rec.qualityScore.grade === "C"
+                                  ? "bg-warning/10 text-warning"
+                                  : "bg-destructive/10 text-destructive"
+                              }`}>
+                                Quality: {rec.qualityScore.grade} ({rec.qualityScore.overall}/100)
+                              </span>
+                            )}
+                          </div>
+                          {rec.qualityScore && !rec.qualityScore.isDecisionGrade && (
+                            <div className="flex items-center gap-1.5 p-1.5 rounded bg-warning/5 border border-warning/20">
+                              <AlertTriangle className="w-3 h-3 text-warning shrink-0" />
+                              <p className="text-[9px] text-warning">
+                                Below decision-grade threshold. {rec.qualityScore.downgradeReason}
+                              </p>
+                            </div>
+                          )}
                           <div className="space-y-1">
                             <p className="text-[10px] text-muted-foreground"><span className="font-semibold text-foreground">What happened:</span> {rec.whatHappened}</p>
                             <p className="text-[10px] text-muted-foreground"><span className="font-semibold text-foreground">Why it matters:</span> {rec.whyItMatters}</p>
                             <p className="text-[10px] text-muted-foreground"><span className="font-semibold text-foreground">Action:</span> {rec.recommendedAction}</p>
+                            {rec.assumptions && rec.assumptions.length > 0 && (
+                              <p className="text-[10px] text-muted-foreground"><span className="font-semibold text-foreground">Assumptions:</span> {rec.assumptions.slice(0, 2).join("; ")}</p>
+                            )}
+                            {rec.riskIfWrong && (
+                              <p className="text-[10px] text-muted-foreground"><span className="font-semibold text-foreground">Risk if wrong:</span> {rec.riskIfWrong}</p>
+                            )}
+                            {rec.confidenceBasis && (
+                              <p className="text-[10px] text-muted-foreground italic">
+                                {rec.confidenceBasis.label}
+                              </p>
+                            )}
                           </div>
                           <div className="flex items-center gap-4 flex-wrap pt-1 border-t border-border/20">
                             <span className="text-[10px] text-muted-foreground flex items-center gap-1">
