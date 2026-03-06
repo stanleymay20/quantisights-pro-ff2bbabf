@@ -39,8 +39,9 @@ const CounterfactualExplanation = () => {
   const [entityId, setEntityId] = useState<string>("");
 
   // Fetch available entities
+  // Decisions are org-scoped (institutional memory), but reset selection on dataset change
   const { data: decisions } = useQuery({
-    queryKey: ["decisions-for-cf", currentOrgId],
+    queryKey: ["decisions-for-cf", currentOrgId, datasetId],
     queryFn: async () => {
       if (!currentOrgId) return [];
       const { data } = await supabase.from("decision_ledger")
@@ -53,18 +54,20 @@ const CounterfactualExplanation = () => {
     enabled: !!currentOrgId && entityType === "decision",
   });
 
+  // Advisories are dataset-scoped — filter by active dataset
   const { data: advisories } = useQuery({
-    queryKey: ["advisories-for-cf", currentOrgId],
+    queryKey: ["advisories-for-cf", currentOrgId, datasetId],
     queryFn: async () => {
-      if (!currentOrgId) return [];
+      if (!currentOrgId || !datasetId) return [];
       const { data } = await supabase.from("advisory_instances")
         .select("id, title, status, capped_confidence")
         .eq("organization_id", currentOrgId)
+        .eq("dataset_id", datasetId)
         .order("created_at", { ascending: false })
         .limit(20);
       return data || [];
     },
-    enabled: !!currentOrgId && entityType === "advisory",
+    enabled: !!currentOrgId && !!datasetId && entityType === "advisory",
   });
 
   const entities = entityType === "decision" ? decisions : advisories;
