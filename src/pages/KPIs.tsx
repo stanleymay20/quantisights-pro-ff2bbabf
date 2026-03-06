@@ -53,6 +53,8 @@ interface AIAnalysis {
 
 const FALLBACK_METRIC_TYPES = ["revenue", "customers", "cost", "churn", "orders", "sessions", "conversions"];
 
+const TIER_KPI_LIMITS: Record<string, number> = { starter: 3, growth: 25, enterprise: 999999 };
+
 const KPIs = () => {
   const { user } = useAuth();
   const { currentOrgId } = useOrganization();
