@@ -513,7 +513,7 @@ const Executive = () => {
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="flex items-center gap-2 text-base">
-                      <AlertTriangle className="w-4 h-4 text-amber-400" />
+                      <AlertTriangle className="w-4 h-4 text-warning" />
                       Active Alerts ({dbAlerts.length})
                     </CardTitle>
                   </CardHeader>
@@ -538,7 +538,7 @@ const Executive = () => {
                       </div>
                     ) : (
                       <div className="flex flex-col items-center py-8 gap-2">
-                        <CheckCircle2 className="w-8 h-8 text-emerald-400" />
+                        <CheckCircle2 className="w-8 h-8 text-success" />
                         <p className="text-sm text-muted-foreground">All systems nominal</p>
                       </div>
                     )}
