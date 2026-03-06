@@ -80,6 +80,8 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
   const switchWorkspace = useCallback((workspaceId: string) => {
     setCurrentWorkspaceId(workspaceId);
     sessionStorage.setItem(STORAGE_KEY, workspaceId);
+    // Force downstream context reset: clear stale project/dataset selections
+    sessionStorage.removeItem("quantivis_project_id");
   }, []);
 
   const createWorkspace = useCallback(async (name: string, description?: string): Promise<Workspace> => {

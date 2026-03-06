@@ -301,7 +301,7 @@ const StrategyPack = () => {
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between mb-3">
                         <h3 className="font-semibold capitalize">{sim.metric_type.replace(/_/g, " ")}</h3>
-                        <ConfidenceBadge raw={sim.raw_confidence} capped={sim.capped_confidence} reason={sim.confidence_cap_reason} />
+                        <ConfidenceBadge confidence={{ raw_confidence: sim.raw_confidence, capped_confidence: sim.capped_confidence, confidence_cap_reason: sim.confidence_cap_reason }} showDetails />
                       </div>
                       <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
                         <div>
@@ -424,7 +424,7 @@ const StrategyPack = () => {
                           <Badge variant={adv.priority === "high" ? "destructive" : adv.priority === "medium" ? "default" : "secondary"} className="text-xs">
                             {adv.priority}
                           </Badge>
-                          <ConfidenceBadge raw={adv.raw_confidence} capped={adv.capped_confidence} reason={adv.confidence_cap_reason} />
+                          <ConfidenceBadge confidence={{ raw_confidence: adv.raw_confidence, capped_confidence: adv.capped_confidence, confidence_cap_reason: adv.confidence_cap_reason }} showDetails />
                         </div>
                       </div>
 
