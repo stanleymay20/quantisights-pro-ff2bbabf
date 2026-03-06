@@ -224,19 +224,64 @@ const DataUpload = () => {
       toast({ title: "Value column required", description: "Please map at least one value column.", variant: "destructive" });
       return;
     }
-    const result = validateData(allRows, headers, mapping, importMode);
-    setValidation(result);
 
-    const intel = generateIntelligence(headers, allRows, mapping, result, importMode);
-    setIntelligence(intel);
+    let result: ValidationResult;
+    try {
+      result = validateData(allRows, headers, mapping, importMode);
+      console.log("[DataUpload] Validation result:", {
+        totalRows: result.totalRows,
+        validRows: result.validRows,
+        validPoints: result.validPoints,
+        totalPoints: result.totalPoints,
+        errorCount: result.errors.length,
+        qualityScore: result.qualityScore,
+      });
+      setValidation(result);
+    } catch (err) {
+      console.error("[DataUpload] validateData threw:", err);
+      toast({ title: "Validation error", description: String(err), variant: "destructive" });
+      return;
+    }
 
-    const diag = computeDiagnostics(allRows, headers, mapping);
-    setDiagnostics(diag);
+    try {
+      const intel = generateIntelligence(headers, allRows, mapping, result, importMode);
+      setIntelligence(intel);
+      console.log("[DataUpload] Intelligence generated:", { recordCount: intel.recordCount });
+    } catch (err) {
+      console.error("[DataUpload] generateIntelligence threw:", err);
+      setIntelligence({
+        recordCount: allRows.length,
+        validPointCount: result.validPoints,
+        columnCount: headers.length,
+        dateSpan: null,
+        regionCount: 0,
+        regions: [],
+        metricTypes: [],
+        signals: [],
+        qualityScore: result.qualityScore,
+        qualityLabel: "Unknown",
+      });
+    }
 
-    const cls = classifyDataset(headers, mapping);
-    setClassification(cls);
+    try {
+      const diag = computeDiagnostics(allRows, headers, mapping);
+      setDiagnostics(diag);
+    } catch (err) {
+      console.error("[DataUpload] computeDiagnostics threw:", err);
+    }
 
-    if (result.errors.length === 0 || result.validRows > 0) {
+    try {
+      const cls = classifyDataset(headers, mapping);
+      setClassification(cls);
+    } catch (err) {
+      console.error("[DataUpload] classifyDataset threw:", err);
+    }
+
+    // Always advance — never leave user stranded
+    const shouldShowIntelligence = result.errors.length === 0 || result.validRows > 0;
+    console.log("[DataUpload] Step transition:", { shouldShowIntelligence, validRows: result.validRows, errorCount: result.errors.length });
+
+    if (shouldShowIntelligence) {
       setStep("intelligence");
     } else {
       setStep("validation");
