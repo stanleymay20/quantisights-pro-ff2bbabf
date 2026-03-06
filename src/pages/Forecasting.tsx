@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { SidebarMobileToggle } from "@/components/layout/ProtectedShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,9 +27,28 @@ const Forecasting = () => {
   const { orgId, datasetId } = useActiveDataContext();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [metricType, setMetricType] = useState("revenue");
+  const [metricType, setMetricType] = useState("");
   const [horizon, setHorizon] = useState(6);
   const [data, setData] = useState<ForecastData | null>(null);
+  const [availableMetrics, setAvailableMetrics] = useState<string[]>([]);
+
+  // Dynamically discover metric types from the active dataset
+  useEffect(() => {
+    if (!orgId || !datasetId) return;
+    const fetchMetricTypes = async () => {
+      const { data: rows } = await supabase
+        .from("metrics")
+        .select("metric_type")
+        .eq("organization_id", orgId)
+        .eq("dataset_id", datasetId);
+      if (rows) {
+        const types = [...new Set(rows.map(r => r.metric_type))];
+        setAvailableMetrics(types);
+        if (types.length > 0 && !metricType) setMetricType(types[0]);
+      }
+    };
+    fetchMetricTypes();
+  }, [orgId, datasetId]);
 
   const runForecast = async () => {
     if (!orgId) return;
@@ -80,7 +99,7 @@ const Forecasting = () => {
                 <Select value={metricType} onValueChange={setMetricType}>
                   <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {METRIC_TYPES.map(m => <SelectItem key={m} value={m} className="capitalize">{m}</SelectItem>)}
+                    {availableMetrics.map(m => <SelectItem key={m} value={m} className="capitalize">{m.replace(/_/g, " ")}</SelectItem>)}
                   </SelectContent>
                 </Select>
                 <Select value={String(horizon)} onValueChange={v => setHorizon(Number(v))}>
