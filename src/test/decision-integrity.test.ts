@@ -42,10 +42,68 @@ describe("Decision Intelligence Integrity Tests", () => {
     it("low-evidence recommendations must be flagged as non-decision-grade", () => {
       const rec = generateRecommendation({
         signalType: "proactive", severity: "low", confidence: 20,
-        // No message, no diagnostics, no causal factors
       });
-      // With minimal evidence, quality should be lower
       expect(rec.qualityScore.grade).not.toBe("A");
+    });
+  });
+
+  describe("Output Classification — Every Section Labeled", () => {
+    it("every recommendation must have classified sections", () => {
+      const rec = generateRecommendation({
+        signalType: "signal", severity: "high", confidence: 65, message: "Revenue dropped 12% month over month",
+      });
+      expect(rec.sections).toBeDefined();
+      expect(rec.sections.length).toBeGreaterThanOrEqual(3);
+      rec.sections.forEach(section => {
+        expect(["OBSERVED_FACT", "STATISTICAL_INFERENCE", "HEURISTIC_ESTIMATE", "AI_RECOMMENDATION"]).toContain(section.classification);
+        expect(section.label).toBeTruthy();
+        expect(section.content).toBeTruthy();
+      });
+    });
+
+    it("sections must separate fact from inference from recommendation", () => {
+      const rec = generateRecommendation({
+        signalType: "signal", severity: "critical", confidence: 80, message: "Critical churn spike detected at 18%",
+      });
+      const classifications = rec.sections.map(s => s.classification);
+      // Must have at least one fact/observed and one AI recommendation
+      expect(classifications).toContain("AI_RECOMMENDATION");
+      expect(classifications.some(c => c === "OBSERVED_FACT" || c === "HEURISTIC_ESTIMATE")).toBe(true);
+    });
+  });
+
+  describe("Traceability — Always Present", () => {
+    it("every recommendation must include a traceability record", () => {
+      const rec = generateRecommendation({
+        signalType: "advisory", severity: "medium", confidence: 55, message: "Cost trend rising steadily over 6 months",
+      });
+      expect(rec.traceability).toBeDefined();
+      expect(rec.traceability.sourceDataset).toBeTruthy();
+      expect(rec.traceability.generatedAt).toBeTruthy();
+      expect(rec.traceability.modelOrHeuristic).toBeTruthy();
+      expect(rec.traceability.metricTransformationPath).toBeTruthy();
+    });
+  });
+
+  describe("Fail-Closed Decision Gate", () => {
+    it("below-threshold recommendations must suppress strategic advice", () => {
+      const rec = generateRecommendation({
+        signalType: "proactive", severity: "low", confidence: 15,
+        // Minimal input — should fail decision gate
+      });
+      if (!rec.isDecisionGrade) {
+        expect(rec.decisionGateMessage).toBeTruthy();
+        expect(rec.recommendedAction).toContain("Not decision-grade");
+      }
+    });
+
+    it("decision gate message must explain what is missing", () => {
+      const rec = generateRecommendation({
+        signalType: "proactive", severity: "low", confidence: 10,
+      });
+      if (rec.decisionGateMessage) {
+        expect(rec.decisionGateMessage).toContain("Insufficient evidence");
+      }
     });
   });
 
@@ -54,7 +112,6 @@ describe("Decision Intelligence Integrity Tests", () => {
       const result = computeCostOfDelay({
         severity: "high", confidence: 70, revenue: 1000000,
       });
-      // Without predictedNetImpact, should show relative score, not €
       expect(result.estimatedDelayCost).toContain("Relative score");
       expect(result.estimatedDelayCost).not.toContain("€");
     });
@@ -106,6 +163,23 @@ describe("Decision Intelligence Integrity Tests", () => {
       expect(basis.label).toContain("Calibrated");
       expect(basis.calibrationApplied).toBe(true);
       expect(basis.signalStrength).toBe("strong");
+    });
+
+    it("heuristic with low sample size must flag weak signal", () => {
+      const basis = buildConfidenceBasis({ sampleSize: 3 });
+      expect(basis.isHeuristic).toBe(true);
+      expect(basis.signalStrength).toBe("weak");
+    });
+  });
+
+  describe("Simulation Integrity", () => {
+    it("recommendation with no sample size produces heuristic basis", () => {
+      const rec = generateRecommendation({
+        signalType: "signal", severity: "high", confidence: 70, message: "Test signal for simulation",
+        sampleSize: 0,
+      });
+      expect(rec.confidenceBasis.isHeuristic).toBe(true);
+      expect(rec.confidenceBasis.label).toContain("Heuristic");
     });
   });
 });

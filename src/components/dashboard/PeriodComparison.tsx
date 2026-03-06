@@ -35,14 +35,14 @@ const PeriodComparison = ({ data }: PeriodComparisonProps) => {
       <div className="h-56">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={comparisonData}>
-            <XAxis dataKey="period" stroke="hsl(215, 20%, 55%)" fontSize={11} />
-            <YAxis stroke="hsl(215, 20%, 55%)" fontSize={11} />
+            <XAxis dataKey="period" stroke="hsl(var(--muted-foreground))" fontSize={11} />
+            <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} />
             <Tooltip
               contentStyle={{
-                backgroundColor: "hsl(216, 45%, 12%)",
-                border: "1px solid hsl(216, 30%, 20%)",
-                borderRadius: "8px",
-                color: "hsl(210, 40%, 95%)",
+                fontSize: 11,
+                background: "hsl(var(--card))",
+                border: "1px solid hsl(var(--border))",
+                borderRadius: 8,
               }}
               formatter={(val: number, name: string) => [`€${val.toLocaleString()}`, name === "previous" ? "Previous" : "Current"]}
             />
@@ -50,8 +50,8 @@ const PeriodComparison = ({ data }: PeriodComparisonProps) => {
               wrapperStyle={{ fontSize: "11px" }}
               formatter={(value) => value === "previous" ? "Previous Period" : "Current Period"}
             />
-            <Bar dataKey="previous" fill="hsl(215, 20%, 40%)" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="current" fill="hsl(199, 89%, 48%)" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="previous" fill="hsl(var(--muted-foreground))" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="current" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
