@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
+import { useProject } from "@/contexts/ProjectContext";
 import { Building2, Plus, ChevronDown } from "lucide-react";
 import {
   DropdownMenu,
@@ -22,6 +23,7 @@ import { toast } from "@/hooks/use-toast";
 
 const WorkspaceSwitcher = () => {
   const { workspaces, currentWorkspace, switchWorkspace, createWorkspace } = useWorkspace();
+  const { createProject } = useProject();
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState("");
   const [creating, setCreating] = useState(false);
@@ -30,8 +32,15 @@ const WorkspaceSwitcher = () => {
     if (!newName.trim()) return;
     setCreating(true);
     try {
-      await createWorkspace(newName.trim());
-      toast({ title: "Workspace created", description: `"${newName.trim()}" is now active.` });
+      const ws = await createWorkspace(newName.trim());
+      // Auto-create a default project so the user never lands on "No project"
+      try {
+        await createProject("Default Project", undefined, ws.id);
+      } catch {
+        // Non-fatal: workspace was created, project creation may fail if context hasn't propagated yet
+        console.warn("Auto-project creation deferred");
+      }
+      toast({ title: "Workspace created", description: `"${newName.trim()}" is now active with a default project.` });
       setShowCreate(false);
       setNewName("");
     } catch (e: any) {

@@ -21,7 +21,7 @@ interface ProjectContextType {
   loading: boolean;
   switchProject: (projectId: string) => void;
   setActiveDataset: (projectId: string, datasetId: string) => Promise<void>;
-  createProject: (name: string, description?: string) => Promise<Project>;
+  createProject: (name: string, description?: string, workspaceIdOverride?: string) => Promise<Project>;
   attachDataset: (projectId: string, datasetId: string) => Promise<void>;
   refreshProjects: () => Promise<void>;
 }
@@ -103,8 +103,9 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
     );
   }, []);
 
-  const createProject = useCallback(async (name: string, description?: string): Promise<Project> => {
+  const createProject = useCallback(async (name: string, description?: string, workspaceIdOverride?: string): Promise<Project> => {
     if (!currentOrgId || !user) throw new Error("No org or user");
+    const wsId = workspaceIdOverride || currentWorkspaceId;
 
     const { data, error } = await supabase
       .from("projects")
@@ -113,7 +114,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
         name,
         description: description || null,
         created_by: user.id,
-        workspace_id: currentWorkspaceId,
+        workspace_id: wsId,
       })
       .select("id, name, description, active_dataset_id, organization_id, created_at")
       .single();
