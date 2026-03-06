@@ -57,7 +57,12 @@ const ProjectSwitcher = () => {
           {projects.map((p) => (
             <DropdownMenuItem
               key={p.id}
-              onClick={() => switchProject(p.id)}
+              onClick={() => {
+                switchProject(p.id);
+                if (p.id !== currentProject?.id) {
+                  toast({ title: `Switched to "${p.name}"` });
+                }
+              }}
               className="flex items-center justify-between"
             >
               <span className="truncate">{p.name}</span>
