@@ -445,7 +445,7 @@ function cleanNumericVal(raw: string | undefined): number {
   return parseFloat(cleaned);
 }
 
-// ---- Validation (supports multi-metric mode, counts validPoints) ----
+// ---- Validation (supports multi-metric mode, counts validPoints, date optional) ----
 export function validateData(
   rows: string[][],
   headers: string[],
@@ -453,6 +453,7 @@ export function validateData(
   importMode: ImportMode = "single",
 ): ValidationResult {
   const dateIdx = findMappedIdx(mapping, "date");
+  const hasDateColumn = dateIdx >= 0;
   const valueIndices = findAllMappedIdx(mapping, "value");
   const primaryValueIdx = valueIndices[0] ?? -1;
 
@@ -474,9 +475,9 @@ export function validateData(
       if (cell && cell.trim()) filledCells++;
     });
 
-    // Date validation
+    // Date validation (only if a date column is mapped)
     let dateValid = true;
-    if (dateIdx >= 0) {
+    if (hasDateColumn) {
       let d = row[dateIdx]?.trim();
       if (d && /^\d{4}$/.test(d)) {
         d = `${d}-01-01`;
@@ -525,8 +526,10 @@ export function validateData(
   const totalPoints = importMode === "multi" ? rows.length * Math.max(1, valueIndices.length) : rows.length;
   const completeness = totalCells > 0 ? Math.round((filledCells / totalCells) * 100) : 0;
   const errorRate = rows.length > 0 ? (errors.length / rows.length) * 100 : 0;
+  // Quality score: date column gives bonus but is NOT required
+  const structureBonus = (primaryValueIdx >= 0 ? 10 : 0) + (hasDateColumn ? 10 : 0);
   const qualityScore = Math.max(0, Math.min(100, Math.round(
-    completeness * 0.4 + (100 - errorRate) * 0.4 + (dateIdx >= 0 && primaryValueIdx >= 0 ? 20 : 0)
+    completeness * 0.4 + (100 - errorRate) * 0.4 + structureBonus
   )));
 
   return {

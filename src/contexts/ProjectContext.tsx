@@ -54,18 +54,13 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
     }
 
     setLoading(true);
-    let query = supabase
+    // Projects are org-scoped (not workspace-scoped) so data is accessible
+    // across all workspaces within the same organization
+    const { data, error } = await supabase
       .from("projects")
       .select("id, name, description, active_dataset_id, organization_id, created_at")
       .eq("organization_id", currentOrgId)
       .order("created_at", { ascending: false });
-
-    // Scope to workspace if available
-    if (currentWorkspaceId) {
-      query = query.eq("workspace_id", currentWorkspaceId);
-    }
-
-    const { data, error } = await query;
 
     if (error || !data) {
       setLoading(false);
