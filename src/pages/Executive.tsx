@@ -102,9 +102,9 @@ const ROLES: { key: RoleType; label: string; icon: typeof Crown; description: st
 ];
 
 const URGENCY_STYLES: Record<string, { bg: string; text: string; label: string }> = {
-  stable: { bg: "bg-emerald-500/10", text: "text-emerald-400", label: "Stable" },
-  monitor: { bg: "bg-sky-500/10", text: "text-sky-400", label: "Monitor" },
-  action_required: { bg: "bg-amber-500/10", text: "text-amber-400", label: "Action Required" },
+  stable: { bg: "bg-success/10", text: "text-success", label: "Stable" },
+  monitor: { bg: "bg-primary/10", text: "text-primary", label: "Monitor" },
+  action_required: { bg: "bg-warning/10", text: "text-warning", label: "Action Required" },
   critical: { bg: "bg-destructive/10", text: "text-destructive", label: "Critical" },
 };
 
@@ -134,9 +134,9 @@ const RiskDial = ({ score, lastUpdated }: { score: number; lastUpdated?: string 
   const progress = (score / 100) * circumference;
 
   const getColor = (s: number) => {
-    if (s <= 25) return "stroke-emerald-400";
-    if (s <= 50) return "stroke-sky-400";
-    if (s <= 75) return "stroke-amber-400";
+    if (s <= 25) return "stroke-success";
+    if (s <= 50) return "stroke-primary";
+    if (s <= 75) return "stroke-warning";
     return "stroke-destructive";
   };
 

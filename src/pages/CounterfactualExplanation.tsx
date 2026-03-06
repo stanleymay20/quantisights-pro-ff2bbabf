@@ -87,7 +87,7 @@ const CounterfactualExplanation = () => {
   };
 
   const sensitivityColor = (s: string) =>
-    s === "high" ? "text-destructive" : s === "medium" ? "text-warning" : "text-emerald-400";
+    s === "high" ? "text-destructive" : s === "medium" ? "text-warning" : "text-success";
 
   return (
     <DatasetRequired moduleName="Counterfactual Explanations">
