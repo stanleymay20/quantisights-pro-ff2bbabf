@@ -35,7 +35,7 @@ const WorkspaceSwitcher = () => {
       const ws = await createWorkspace(newName.trim());
       // Auto-create a default project so the user never lands on "No project"
       try {
-        await createProject("Default Project");
+        await createProject("Default Project", undefined, ws.id);
       } catch {
         // Non-fatal: workspace was created, project creation may fail if context hasn't propagated yet
         console.warn("Auto-project creation deferred");
