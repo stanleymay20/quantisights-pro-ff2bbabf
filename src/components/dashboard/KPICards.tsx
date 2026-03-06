@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, memo, useMemo } from "react";
+import { useEffect, useRef, useState, memo, useMemo, forwardRef } from "react";
 import { DollarSign, Users, CreditCard, UserMinus, TrendingUp, TrendingDown, Minus, BarChart3 } from "lucide-react";
 import type { MetricTypeSummary } from "@/hooks/useMetrics";
 
@@ -47,7 +47,7 @@ const TrendIcon = ({ trend }: { trend: "up" | "down" | "flat" | null }) => {
   return null;
 };
 
-const KPICards = memo(({
+const KPICards = memo(forwardRef<HTMLDivElement, KPICardsProps>(({
   topMetrics,
   revenue,
   customers,
@@ -57,7 +57,7 @@ const KPICards = memo(({
   previousCustomers,
   previousCostRate,
   previousChurnRate,
-}: KPICardsProps) => {
+}, ref) => {
   const cards = useMemo(() => {
     // Prefer dynamic metrics if available
     if (topMetrics && topMetrics.length > 0) {
@@ -101,7 +101,7 @@ const KPICards = memo(({
       ))}
     </div>
   );
-});
+}));
 
 KPICards.displayName = "KPICards";
 

@@ -55,7 +55,12 @@ const WorkspaceSwitcher = () => {
           {workspaces.map((ws) => (
             <DropdownMenuItem
               key={ws.id}
-              onClick={() => switchWorkspace(ws.id)}
+              onClick={() => {
+                switchWorkspace(ws.id);
+                if (ws.id !== currentWorkspace?.id) {
+                  toast({ title: `Switched to "${ws.name}"` });
+                }
+              }}
               className={ws.id === currentWorkspace?.id ? "bg-accent" : ""}
             >
               <Building2 className="h-3.5 w-3.5 mr-2 shrink-0" />

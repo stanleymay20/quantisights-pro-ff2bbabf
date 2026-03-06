@@ -244,7 +244,10 @@ const DataUpload = () => {
   };
 
   const handleImport = async () => {
-    if (!currentOrgId || !user || !file) return;
+    if (!currentOrgId || !user || !file) {
+      toast({ title: "Missing context", description: "Organization, user, or file not available.", variant: "destructive" });
+      return;
+    }
 
     if (tier === "starter") {
       const { count } = await supabase
@@ -256,8 +259,9 @@ const DataUpload = () => {
         return;
       }
     }
-    if (!subscribed) {
-      toast({ title: "Subscription required", description: "Please subscribe to upload datasets.", variant: "destructive" });
+    if (!subscribed && tier !== null) {
+      // Only block if user had a subscription that expired; allow users with no subscription record (demo/new)
+      toast({ title: "Subscription expired", description: "Please renew your subscription to upload datasets.", variant: "destructive" });
       return;
     }
 
