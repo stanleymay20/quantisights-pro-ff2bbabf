@@ -199,13 +199,13 @@ const AlertPlaybooks = () => {
             </Card>
             <Card>
               <CardContent className="p-4 flex items-center gap-3">
-                <AlertTriangle className="w-8 h-8 text-amber-500" />
+                <AlertTriangle className="w-8 h-8 text-warning" />
                 <div><p className="text-xs text-muted-foreground">Total Executions</p><p className="text-2xl font-bold">{executions.length}</p></div>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4 flex items-center gap-3">
-                <CheckCircle2 className="w-8 h-8 text-emerald-500" />
+                <CheckCircle2 className="w-8 h-8 text-success" />
                 <div><p className="text-xs text-muted-foreground">Completed</p><p className="text-2xl font-bold">{executions.filter(e => e.status === "completed").length}</p></div>
               </CardContent>
             </Card>
