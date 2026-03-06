@@ -546,7 +546,7 @@ export function validateData(
       ? { min: dates.sort()[0], max: dates.sort()[dates.length - 1] }
       : null,
     valueRange: values.length > 0
-      ? { min: Math.min(...values), max: Math.max(...values) }
+      ? { min: values.reduce((a, b) => Math.min(a, b), Infinity), max: values.reduce((a, b) => Math.max(a, b), -Infinity) }
       : null,
   };
 }
