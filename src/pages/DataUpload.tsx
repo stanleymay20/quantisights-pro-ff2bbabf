@@ -424,8 +424,13 @@ const DataUpload = () => {
           }
           if (isNaN(Date.parse(dateVal))) continue;
         } else {
-          // No date column: use synthetic date based on row index
-          dateVal = `2024-01-${String(Math.min(rowCounter, 28)).padStart(2, "0")}`;
+          // No date column: spread rows across synthetic dates (year/month/day)
+          // to avoid upsert collision on the date dimension
+          const syntheticYear = 2024 + Math.floor((rowCounter - 1) / 365);
+          const dayOfYear = ((rowCounter - 1) % 365);
+          const syntheticMonth = Math.floor(dayOfYear / 28) % 12 + 1;
+          const syntheticDay = (dayOfYear % 28) + 1;
+          dateVal = `${syntheticYear}-${String(syntheticMonth).padStart(2, "0")}-${String(syntheticDay).padStart(2, "0")}`;
         }
 
         const regionVal = regionIdx >= 0 ? (row[regionIdx]?.trim() || "") : "";
@@ -455,7 +460,11 @@ const DataUpload = () => {
           if (valueIdx === undefined) continue;
           const val = cleanNumeric(row[valueIdx]);
           if (isNaN(val) || !isFinite(val) || Math.abs(val) > 1e12) continue;
-          const mt = metricTypeIdx >= 0 ? (row[metricTypeIdx]?.trim() || defaultMetricType) : defaultMetricType;
+          // Use metric_type column if mapped; otherwise derive from value column header
+          const derivedType = metricTypeIdx >= 0
+            ? (row[metricTypeIdx]?.trim() || defaultMetricType)
+            : (valueColHeaders[0] ? slugifyMetric(valueColHeaders[0]) : defaultMetricType);
+          const mt = derivedType;
           metricsToInsert.push({
             organization_id: currentOrgId,
             workspace_id: currentWorkspaceId || null,

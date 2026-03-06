@@ -11,7 +11,6 @@ import { useToast } from "@/hooks/use-toast";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, ComposedChart } from "recharts";
 import { TrendingUp, TrendingDown, Minus, Loader2, Sparkles, BarChart3, Activity } from "lucide-react";
 
-const METRIC_TYPES = ["revenue", "customers", "cost", "churn"];
 const HORIZONS = [3, 6, 12];
 
 interface ForecastData {
