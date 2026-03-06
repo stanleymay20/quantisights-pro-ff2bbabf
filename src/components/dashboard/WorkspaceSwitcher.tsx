@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
+import { useProject } from "@/contexts/ProjectContext";
 import { Building2, Plus, ChevronDown } from "lucide-react";
 import {
   DropdownMenu,
@@ -22,6 +23,7 @@ import { toast } from "@/hooks/use-toast";
 
 const WorkspaceSwitcher = () => {
   const { workspaces, currentWorkspace, switchWorkspace, createWorkspace } = useWorkspace();
+  const { createProject } = useProject();
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState("");
   const [creating, setCreating] = useState(false);
