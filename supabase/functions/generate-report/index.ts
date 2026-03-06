@@ -200,9 +200,13 @@ serve(async (req) => {
 
     // Store report
     const filePath = `${organization_id}/${Date.now()}_${report_type}_report.html`;
+    const htmlBytes = new TextEncoder().encode(html);
     const { error: uploadError } = await serviceClient.storage
       .from("reports")
-      .upload(filePath, new Blob([html], { type: "text/html" }), { contentType: "text/html" });
+      .upload(filePath, htmlBytes, {
+        contentType: "text/html; charset=utf-8",
+        upsert: false,
+      });
     if (uploadError) throw uploadError;
 
     const { data: report, error: reportError } = await serviceClient
