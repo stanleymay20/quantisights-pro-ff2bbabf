@@ -116,12 +116,19 @@ serve(async (req) => {
       for (const raw of rawBatch) {
         const d = raw.raw_data as Record<string, string>;
         
-        // Extract date
+        // Extract date (optional — dateless datasets get synthetic dates)
         const dateRaw = dateIdx !== undefined ? d[dateIdx] : null;
-        const dateVal = normalizeDate(dateRaw);
+        let dateVal: string | null = null;
+        if (dateRaw) {
+          dateVal = normalizeDate(dateRaw);
+        }
         if (!dateVal) {
-          failedUpdates.push({ id: raw.id, error: `Invalid date: "${dateRaw}"` });
-          continue;
+          // Generate synthetic date spread across months/years to avoid upsert collision
+          const syntheticYear = 2024 + Math.floor(raw.row_index / 365);
+          const dayOfYear = raw.row_index % 365;
+          const syntheticMonth = Math.floor(dayOfYear / 28) % 12 + 1;
+          const syntheticDay = (dayOfYear % 28) + 1;
+          dateVal = `${syntheticYear}-${String(syntheticMonth).padStart(2, "0")}-${String(syntheticDay).padStart(2, "0")}`;
         }
 
         const regionVal = regionIdx !== undefined ? (d[regionIdx]?.trim() || "") : "";
