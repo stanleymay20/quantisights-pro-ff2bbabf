@@ -31,7 +31,7 @@ import {
 
 type Step = "upload" | "autodetect" | "mapping" | "validation" | "intelligence" | "importing" | "done";
 
-const METRIC_TYPES = ["revenue", "cost", "customers", "churn", "headcount", "marketing_spend"] as const;
+const DEFAULT_METRIC_TYPES = ["revenue", "cost", "customers", "churn", "headcount", "marketing_spend"] as const;
 const COLUMN_TARGETS = ["date", "value", "region", "region_code", "segment", "metric_type", "skip"] as const;
 
 const typeIcon = (t: string) => {
@@ -965,7 +965,7 @@ const DataUpload = () => {
                           onChange={(e) => setDefaultMetricType(e.target.value)}
                           className="px-3 py-2 rounded-lg bg-secondary border border-border text-foreground text-sm"
                         >
-                          {METRIC_TYPES.map((t) => (
+                          {DEFAULT_METRIC_TYPES.map((t) => (
                             <option key={t} value={t}>{t}</option>
                           ))}
                         </select>
