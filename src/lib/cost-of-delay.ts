@@ -101,14 +101,11 @@ export function computeCostOfDelay(input: CostOfDelayInput): CostOfDelayResult {
   // --- Estimated cost ---
   let estimatedDelayCost: string;
   if (input.predictedNetImpact != null && input.predictedNetImpact !== 0) {
+    // Only show monetary cost when we have a validated financial impact figure
     const weeklyImpact = Math.abs(input.predictedNetImpact) / 4;
     estimatedDelayCost = formatCurrency(weeklyImpact) + "/week";
-  } else if (input.revenue && input.revenue > 0) {
-    const basePct = input.severity === "critical" ? 8 : input.severity === "high" ? 5 : 3;
-    const adjPct = basePct * (conf / 100) * metricUrgencyMultiplier(input.affectedMetricType);
-    const weeklyExposure = (input.revenue * adjPct) / (100 * 4);
-    estimatedDelayCost = formatCurrency(weeklyExposure) + "/week";
   } else {
+    // No validated monetary basis — use relative score to avoid fake precision
     estimatedDelayCost = `Relative score: ${score}/100`;
   }
 
