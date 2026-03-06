@@ -31,7 +31,7 @@ import {
 
 type Step = "upload" | "autodetect" | "mapping" | "validation" | "intelligence" | "importing" | "done";
 
-const METRIC_TYPES = ["revenue", "cost", "customers", "churn", "headcount", "marketing_spend"] as const;
+const DEFAULT_METRIC_TYPES = ["revenue", "cost", "customers", "churn", "headcount", "marketing_spend"] as const;
 const COLUMN_TARGETS = ["date", "value", "region", "region_code", "segment", "metric_type", "skip"] as const;
 
 const typeIcon = (t: string) => {
@@ -52,7 +52,7 @@ const DataUpload = () => {
   const { currentOrgId } = useOrganization();
   const { currentProject, createProject, attachDataset, setActiveDataset } = useProject();
   const { currentWorkspaceId } = useWorkspace();
-  const { tier, subscribed } = useSubscription();
+  const { subscribed, tier } = useSubscription();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -224,19 +224,64 @@ const DataUpload = () => {
       toast({ title: "Value column required", description: "Please map at least one value column.", variant: "destructive" });
       return;
     }
-    const result = validateData(allRows, headers, mapping, importMode);
-    setValidation(result);
 
-    const intel = generateIntelligence(headers, allRows, mapping, result, importMode);
-    setIntelligence(intel);
+    let result: ValidationResult;
+    try {
+      result = validateData(allRows, headers, mapping, importMode);
+      console.log("[DataUpload] Validation result:", {
+        totalRows: result.totalRows,
+        validRows: result.validRows,
+        validPoints: result.validPoints,
+        totalPoints: result.totalPoints,
+        errorCount: result.errors.length,
+        qualityScore: result.qualityScore,
+      });
+      setValidation(result);
+    } catch (err) {
+      console.error("[DataUpload] validateData threw:", err);
+      toast({ title: "Validation error", description: String(err), variant: "destructive" });
+      return;
+    }
 
-    const diag = computeDiagnostics(allRows, headers, mapping);
-    setDiagnostics(diag);
+    try {
+      const intel = generateIntelligence(headers, allRows, mapping, result, importMode);
+      setIntelligence(intel);
+      console.log("[DataUpload] Intelligence generated:", { recordCount: intel.recordCount });
+    } catch (err) {
+      console.error("[DataUpload] generateIntelligence threw:", err);
+      setIntelligence({
+        recordCount: allRows.length,
+        validPointCount: result.validPoints,
+        columnCount: headers.length,
+        dateSpan: null,
+        regionCount: 0,
+        regions: [],
+        metricTypes: [],
+        signals: [],
+        qualityScore: result.qualityScore,
+        qualityLabel: "Unknown",
+      });
+    }
 
-    const cls = classifyDataset(headers, mapping);
-    setClassification(cls);
+    try {
+      const diag = computeDiagnostics(allRows, headers, mapping);
+      setDiagnostics(diag);
+    } catch (err) {
+      console.error("[DataUpload] computeDiagnostics threw:", err);
+    }
 
-    if (result.errors.length === 0 || result.validRows > 0) {
+    try {
+      const cls = classifyDataset(headers, mapping);
+      setClassification(cls);
+    } catch (err) {
+      console.error("[DataUpload] classifyDataset threw:", err);
+    }
+
+    // Always advance — never leave user stranded
+    const shouldShowIntelligence = result.errors.length === 0 || result.validRows > 0;
+    console.log("[DataUpload] Step transition:", { shouldShowIntelligence, validRows: result.validRows, errorCount: result.errors.length });
+
+    if (shouldShowIntelligence) {
       setStep("intelligence");
     } else {
       setStep("validation");
@@ -244,7 +289,10 @@ const DataUpload = () => {
   };
 
   const handleImport = async () => {
-    if (!currentOrgId || !user || !file) return;
+    if (!currentOrgId || !user || !file) {
+      toast({ title: "Missing context", description: "Organization, user, or file not available.", variant: "destructive" });
+      return;
+    }
 
     if (tier === "starter") {
       const { count } = await supabase
@@ -256,12 +304,15 @@ const DataUpload = () => {
         return;
       }
     }
-    if (!subscribed) {
-      toast({ title: "Subscription required", description: "Please subscribe to upload datasets.", variant: "destructive" });
+    if (!subscribed && tier !== null) {
+      // Only block if user had a subscription that expired; allow users with no subscription record (demo/new)
+      toast({ title: "Subscription expired", description: "Please renew your subscription to upload datasets.", variant: "destructive" });
       return;
     }
 
     setStep("importing");
+    const pipelineStartedAt = Date.now();
+    let pipelineRunId: string | null = null;
 
     try {
       const filePath = `${currentOrgId}/${Date.now()}_${file.name}`;
@@ -311,7 +362,6 @@ const DataUpload = () => {
       // ═══════════════════════════════════════════════════════
 
       // Create pipeline run for observability
-      const pipelineStartedAt = Date.now();
       const { data: pipelineRun } = await supabase.from("pipeline_runs").insert({
         organization_id: currentOrgId,
         workspace_id: currentWorkspaceId || null,
@@ -322,7 +372,7 @@ const DataUpload = () => {
         metadata: { import_mode: importMode, file_name: file.name },
       }).select("id").single();
 
-      const pipelineRunId = pipelineRun?.id;
+      pipelineRunId = pipelineRun?.id ?? null;
 
       // Build raw records from parsed rows
       const rawRecords: Array<{
@@ -424,8 +474,13 @@ const DataUpload = () => {
           }
           if (isNaN(Date.parse(dateVal))) continue;
         } else {
-          // No date column: use synthetic date based on row index
-          dateVal = `2024-01-${String(Math.min(rowCounter, 28)).padStart(2, "0")}`;
+          // No date column: spread rows across synthetic dates (year/month/day)
+          // to avoid upsert collision on the date dimension
+          const syntheticYear = 2024 + Math.floor((rowCounter - 1) / 365);
+          const dayOfYear = ((rowCounter - 1) % 365);
+          const syntheticMonth = Math.floor(dayOfYear / 28) % 12 + 1;
+          const syntheticDay = (dayOfYear % 28) + 1;
+          dateVal = `${syntheticYear}-${String(syntheticMonth).padStart(2, "0")}-${String(syntheticDay).padStart(2, "0")}`;
         }
 
         const regionVal = regionIdx >= 0 ? (row[regionIdx]?.trim() || "") : "";
@@ -455,7 +510,11 @@ const DataUpload = () => {
           if (valueIdx === undefined) continue;
           const val = cleanNumeric(row[valueIdx]);
           if (isNaN(val) || !isFinite(val) || Math.abs(val) > 1e12) continue;
-          const mt = metricTypeIdx >= 0 ? (row[metricTypeIdx]?.trim() || defaultMetricType) : defaultMetricType;
+          // Use metric_type column if mapped; otherwise derive from value column header
+          const derivedType = metricTypeIdx >= 0
+            ? (row[metricTypeIdx]?.trim() || defaultMetricType)
+            : (valueColHeaders[0] ? slugifyMetric(valueColHeaders[0]) : defaultMetricType);
+          const mt = derivedType;
           metricsToInsert.push({
             organization_id: currentOrgId,
             workspace_id: currentWorkspaceId || null,
@@ -470,9 +529,17 @@ const DataUpload = () => {
         }
       }
 
+      // Deduplicate metrics by conflict key before upserting
+      const deduped = new Map<string, typeof metricsToInsert[0]>();
+      for (const m of metricsToInsert) {
+        const key = `${m.organization_id}|${m.metric_type}|${m.date}|${m.region}|${m.segment}|${m.source_id}`;
+        deduped.set(key, m); // last-write-wins
+      }
+      const uniqueMetrics = Array.from(deduped.values());
+
       let inserted = 0;
-      for (let i = 0; i < metricsToInsert.length; i += 500) {
-        const batch = metricsToInsert.slice(i, i + 500);
+      for (let i = 0; i < uniqueMetrics.length; i += 500) {
+        const batch = uniqueMetrics.slice(i, i + 500);
         const { error } = await supabase.from("metrics").upsert(batch, { onConflict: "organization_id,metric_type,date,region,segment,source_id" });
         if (error) throw error;
         inserted += batch.length;
@@ -555,8 +622,21 @@ const DataUpload = () => {
           : `Data processed through raw → clean → analytical pipeline.`,
       });
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
-      // Error reported to observability service with context
+      const message = err instanceof Error
+        ? err.message
+        : (typeof err === "object" && err !== null && "message" in err)
+          ? String((err as Record<string, unknown>).message)
+          : JSON.stringify(err);
+      if (pipelineRunId) {
+        await supabase.from("pipeline_runs").update({
+          status: "failed",
+          stage: "failed",
+          error_message: message,
+          completed_at: new Date().toISOString(),
+          duration_ms: Date.now() - pipelineStartedAt,
+        }).eq("id", pipelineRunId);
+      }
+      console.error("[ImportPipeline] Fatal error:", { dataset_name: datasetName, org_id: currentOrgId, project_id: currentProject?.id, stage: step, error: message });
       toast({ title: "Import failed", description: message, variant: "destructive" });
       setStep("mapping");
     }
@@ -956,7 +1036,7 @@ const DataUpload = () => {
                           onChange={(e) => setDefaultMetricType(e.target.value)}
                           className="px-3 py-2 rounded-lg bg-secondary border border-border text-foreground text-sm"
                         >
-                          {METRIC_TYPES.map((t) => (
+                          {DEFAULT_METRIC_TYPES.map((t) => (
                             <option key={t} value={t}>{t}</option>
                           ))}
                         </select>

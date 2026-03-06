@@ -265,6 +265,51 @@ const Billing = () => {
             </motion.div>
           )}
 
+          {/* Strategic Services & Pilot */}
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }}>
+            <Card className="border-warning/20">
+              <CardContent className="p-8">
+                <div className="flex items-start gap-4 mb-6">
+                  <div className="w-10 h-10 rounded-xl bg-warning/10 flex items-center justify-center shrink-0">
+                    <CreditCard className="w-5 h-5 text-warning" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold font-display">Implementation & Strategic Services</h3>
+                    <p className="text-sm text-muted-foreground">Premium services layered on top of your subscription for enterprise-grade outcomes.</p>
+                  </div>
+                </div>
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {[
+                    { title: "Paid Pilot (4–8 weeks)", desc: "Outcome-driven proof of value with one team and dataset", price: "€5K–€15K" },
+                    { title: "Onboarding & Setup", desc: "Data integration, KPI design, executive reporting config", price: "From €2.5K" },
+                    { title: "Decision Governance", desc: "Framework setup, team training, board reporting standards", price: "Custom" },
+                    { title: "Custom Scenario Models", desc: "Sector-specific templates and simulation configurations", price: "From €5K" },
+                    { title: "Executive Workshops", desc: "Calibration training, bias awareness, decision quality sessions", price: "From €3K" },
+                    { title: "Portfolio Deployment", desc: "Multi-company rollout for PE/VC portfolio operations", price: "Custom" },
+                  ].map((svc) => (
+                    <div key={svc.title} className="p-4 rounded-lg border border-border/50 bg-card/50 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-sm font-semibold">{svc.title}</h4>
+                        <Badge variant="outline" className="text-xs">{svc.price}</Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground">{svc.desc}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-6 flex items-center gap-3">
+                  <Button asChild variant="outline" className="gap-2">
+                    <a href="mailto:hello@quantivis.io">
+                      <ExternalLink className="w-4 h-4" /> Request Pilot or Services
+                    </a>
+                  </Button>
+                  <Button variant="ghost" size="sm" className="gap-1 text-primary" onClick={() => navigate("/business-model")}>
+                    View Business Model Canvas <ArrowUpRight className="w-3 h-3" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
           {/* Plan Comparison */}
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
             <Card>

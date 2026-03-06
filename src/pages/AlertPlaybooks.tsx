@@ -39,7 +39,7 @@ interface Execution {
   completed_at: string | null;
 }
 
-const METRICS = ["revenue", "customers", "cost", "churn"];
+const FALLBACK_METRICS = ["revenue", "customers", "cost", "churn"];
 const CONDITIONS = [
   { value: "exceeds", label: "Exceeds threshold" },
   { value: "drops_below", label: "Drops below threshold" },
@@ -48,8 +48,8 @@ const CONDITIONS = [
 const SEVERITIES = ["info", "warning", "critical"];
 
 const SEVERITY_STYLES: Record<string, string> = {
-  info: "text-blue-500 bg-blue-500/10",
-  warning: "text-amber-500 bg-amber-500/10",
+  info: "text-primary bg-primary/10",
+  warning: "text-warning bg-warning/10",
   critical: "text-destructive bg-destructive/10",
 };
 
@@ -58,6 +58,25 @@ const AlertPlaybooks = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
+  const [availableMetrics, setAvailableMetrics] = useState<string[]>([]);
+
+  // Dynamically discover metric types
+  useEffect(() => {
+    if (!currentOrgId) return;
+    const fetchTypes = async () => {
+      const { data } = await supabase
+        .from("metrics")
+        .select("metric_type")
+        .eq("organization_id", currentOrgId);
+      if (data) {
+        const types = [...new Set(data.map(r => r.metric_type))].sort();
+        setAvailableMetrics(types.length > 0 ? types : FALLBACK_METRICS);
+      }
+    };
+    fetchTypes();
+  }, [currentOrgId]);
+
+  const METRICS = availableMetrics.length > 0 ? availableMetrics : FALLBACK_METRICS;
   const [playbooks, setPlaybooks] = useState<Playbook[]>([]);
   const [executions, setExecutions] = useState<Execution[]>([]);
   const [addOpen, setAddOpen] = useState(false);
@@ -180,13 +199,13 @@ const AlertPlaybooks = () => {
             </Card>
             <Card>
               <CardContent className="p-4 flex items-center gap-3">
-                <AlertTriangle className="w-8 h-8 text-amber-500" />
+                <AlertTriangle className="w-8 h-8 text-warning" />
                 <div><p className="text-xs text-muted-foreground">Total Executions</p><p className="text-2xl font-bold">{executions.length}</p></div>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4 flex items-center gap-3">
-                <CheckCircle2 className="w-8 h-8 text-emerald-500" />
+                <CheckCircle2 className="w-8 h-8 text-success" />
                 <div><p className="text-xs text-muted-foreground">Completed</p><p className="text-2xl font-bold">{executions.filter(e => e.status === "completed").length}</p></div>
               </CardContent>
             </Card>

@@ -275,10 +275,9 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    let metricsUrl = `${supabaseUrl}/rest/v1/metrics?organization_id=eq.${organization_id}&order=date.asc&limit=500`;
-    if (dataset_id) {
-      metricsUrl += `&dataset_id=eq.${dataset_id}`;
-    }
+    if (!dataset_id) throw new Error("dataset_id required by Active Data Contract");
+
+    const metricsUrl = `${supabaseUrl}/rest/v1/metrics?organization_id=eq.${organization_id}&dataset_id=eq.${dataset_id}&order=date.asc&limit=500`;
     const metricsResp = await fetch(metricsUrl, {
       headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` },
     });

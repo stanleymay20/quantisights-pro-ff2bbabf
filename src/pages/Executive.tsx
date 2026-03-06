@@ -102,9 +102,9 @@ const ROLES: { key: RoleType; label: string; icon: typeof Crown; description: st
 ];
 
 const URGENCY_STYLES: Record<string, { bg: string; text: string; label: string }> = {
-  stable: { bg: "bg-emerald-500/10", text: "text-emerald-400", label: "Stable" },
-  monitor: { bg: "bg-sky-500/10", text: "text-sky-400", label: "Monitor" },
-  action_required: { bg: "bg-amber-500/10", text: "text-amber-400", label: "Action Required" },
+  stable: { bg: "bg-success/10", text: "text-success", label: "Stable" },
+  monitor: { bg: "bg-primary/10", text: "text-primary", label: "Monitor" },
+  action_required: { bg: "bg-warning/10", text: "text-warning", label: "Action Required" },
   critical: { bg: "bg-destructive/10", text: "text-destructive", label: "Critical" },
 };
 
@@ -134,9 +134,9 @@ const RiskDial = ({ score, lastUpdated }: { score: number; lastUpdated?: string 
   const progress = (score / 100) * circumference;
 
   const getColor = (s: number) => {
-    if (s <= 25) return "stroke-emerald-400";
-    if (s <= 50) return "stroke-sky-400";
-    if (s <= 75) return "stroke-amber-400";
+    if (s <= 25) return "stroke-success";
+    if (s <= 50) return "stroke-primary";
+    if (s <= 75) return "stroke-warning";
     return "stroke-destructive";
   };
 
@@ -513,7 +513,7 @@ const Executive = () => {
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="flex items-center gap-2 text-base">
-                      <AlertTriangle className="w-4 h-4 text-amber-400" />
+                      <AlertTriangle className="w-4 h-4 text-warning" />
                       Active Alerts ({dbAlerts.length})
                     </CardTitle>
                   </CardHeader>
@@ -538,7 +538,7 @@ const Executive = () => {
                       </div>
                     ) : (
                       <div className="flex flex-col items-center py-8 gap-2">
-                        <CheckCircle2 className="w-8 h-8 text-emerald-400" />
+                        <CheckCircle2 className="w-8 h-8 text-success" />
                         <p className="text-sm text-muted-foreground">All systems nominal</p>
                       </div>
                     )}
@@ -683,7 +683,7 @@ const Executive = () => {
                                 <p className="text-2xl font-bold">{snap.value}</p>
                                 <div className="flex items-center gap-1 mt-1">
                                   {trendUp ? (
-                                    <TrendingUp className="w-4 h-4 text-emerald-400" />
+                                    <TrendingUp className="w-4 h-4 text-success" />
                                   ) : (
                                     <TrendingDown className="w-4 h-4 text-destructive" />
                                   )}

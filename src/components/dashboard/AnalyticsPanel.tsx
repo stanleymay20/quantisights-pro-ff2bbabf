@@ -1,4 +1,4 @@
-import { lazy } from "react";
+import { lazy, useMemo } from "react";
 import type { Insight } from "@/hooks/useInsights";
 
 const RevenueChart = lazy(() => import("./RevenueChart"));
@@ -8,7 +8,6 @@ const AnomalyDetection = lazy(() => import("./AnomalyDetection"));
 const WaterfallChart = lazy(() => import("./WaterfallChart"));
 const FunnelChart = lazy(() => import("./FunnelChart"));
 const PeriodComparison = lazy(() => import("./PeriodComparison"));
-const GaugeChart = lazy(() => import("./GaugeChart"));
 const EBITDABridgeChart = lazy(() => import("./EBITDABridgeChart"));
 const CashRunwayChart = lazy(() => import("./CashRunwayChart"));
 const RevenueVsPlanChart = lazy(() => import("./RevenueVsPlanChart"));
@@ -24,6 +23,16 @@ interface AnalyticsPanelProps {
   latestCost: number;
 }
 
+/**
+ * Analytics Panel — DATA-HONEST.
+ *
+ * Removed:
+ * - GaugeChart: was fed fabricated values (100 - churn*100, 100 - cost*100,
+ *   arbitrary "growth momentum" formula). These are not real gauge metrics.
+ *   Gauges require defined targets and actuals — neither existed.
+ *
+ * Retained: only charts that either use real data or show honest empty states.
+ */
 const AnalyticsPanel = ({ metrics, revenueByMonth, segmentData, insights, latestChurn, latestCost }: AnalyticsPanelProps) => {
   return (
     <div className="space-y-5">
@@ -35,45 +44,27 @@ const AnalyticsPanel = ({ metrics, revenueByMonth, segmentData, insights, latest
         <CustomerSegmentation data={segmentData} />
       </div>
 
-      {/* Row 2: PE-Specific Financial Visuals */}
+      {/* Row 2: Financial Structure (data-honest — shows empty states when data missing) */}
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
         <EBITDABridgeChart metrics={metrics} />
         <RevenueVsPlanChart revenueByMonth={revenueByMonth} />
         <WaterfallChart data={metrics} />
       </div>
 
-      {/* Row 3: Forward-Looking Intelligence */}
+      {/* Row 3: Forward-Looking (data-honest — shows empty states when simulation/cash data missing) */}
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
         <CashRunwayChart revenueByMonth={revenueByMonth} latestCost={latestCost} />
         <ScenarioImpactChart insights={insights} />
         <PortfolioHealthRadar metrics={metrics} latestChurn={latestChurn} latestCost={latestCost} />
       </div>
 
-      {/* Row 4: Operational Health Gauges */}
-      <div className="grid md:grid-cols-3 gap-5">
-        <GaugeChart
-          value={latestChurn > 0 ? Math.max(0, 100 - latestChurn * 100) : 0}
-          label="Retention Health"
-        />
-        <GaugeChart
-          value={latestCost > 0 ? Math.max(0, 100 - latestCost * 100) : 0}
-          label="Cost Efficiency"
-        />
-        <GaugeChart
-          value={revenueByMonth.length >= 2
-            ? Math.min(100, Math.max(0, ((revenueByMonth[revenueByMonth.length - 1]?.revenue ?? 0) / (revenueByMonth[0]?.revenue || 1) - 1) * 100 + 50))
-            : 0}
-          label="Growth Momentum"
-        />
-      </div>
-
-      {/* Row 5: Conversion & Period Analysis */}
+      {/* Row 4: Conversion & Period Analysis */}
       <div className="grid md:grid-cols-2 gap-5">
         <FunnelChart metrics={metrics} />
         <PeriodComparison data={revenueByMonth} />
       </div>
 
-      {/* Row 6: AI Intelligence */}
+      {/* Row 5: AI Intelligence */}
       <div className="grid lg:grid-cols-2 gap-5">
         <AIInsights insights={insights} />
         <AnomalyDetection insights={insights} />

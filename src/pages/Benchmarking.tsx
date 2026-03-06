@@ -27,9 +27,9 @@ interface BenchmarkScore {
 
 const QUARTILE_CONFIG: Record<number, { label: string; color: string; bg: string }> = {
   1: { label: "Bottom Quartile", color: "text-destructive", bg: "bg-destructive/10" },
-  2: { label: "Below Median", color: "text-amber-500", bg: "bg-amber-500/10" },
-  3: { label: "Above Median", color: "text-sky-500", bg: "bg-sky-500/10" },
-  4: { label: "Top Quartile", color: "text-emerald-500", bg: "bg-emerald-500/10" },
+  2: { label: "Below Median", color: "text-warning", bg: "bg-warning/10" },
+  3: { label: "Above Median", color: "text-primary", bg: "bg-primary/10" },
+  4: { label: "Top Quartile", color: "text-success", bg: "bg-success/10" },
 };
 
 const TREND_ICONS: Record<string, typeof TrendingUp> = {
@@ -78,11 +78,36 @@ const BenchmarkingPage = () => {
     if (!currentOrgId) return;
     setComputing(true);
     try {
-      const { error } = await supabase.functions.invoke("compute-kpi", {
-        body: { organization_id: currentOrgId, dataset_id: activeDatasetId },
-      });
-      if (error) throw error;
-      toast({ title: "Benchmarks computed", description: "Scores have been recalculated against industry peers." });
+      // Fetch all active KPIs for the org and compute each one
+      const { data: kpis, error: kpiListErr } = await supabase
+        .from("kpis")
+        .select("id")
+        .eq("organization_id", currentOrgId)
+        .eq("status", "active");
+
+      if (kpiListErr) throw kpiListErr;
+
+      if (!kpis || kpis.length === 0) {
+        toast({ title: "No active KPIs", description: "Define KPIs first before computing benchmarks.", variant: "destructive" });
+        setComputing(false);
+        return;
+      }
+
+      // Compute each KPI
+      const errors: string[] = [];
+      for (const kpi of kpis) {
+        const { data: result, error } = await supabase.functions.invoke("compute-kpi", {
+          body: { kpi_id: kpi.id, dataset_id: activeDatasetId },
+        });
+        if (error) errors.push(error.message);
+        else if (result?.error) errors.push(result.error);
+      }
+
+      if (errors.length > 0 && errors.length === kpis.length) {
+        throw new Error(errors[0]);
+      }
+
+      toast({ title: "Benchmarks computed", description: `Recalculated ${kpis.length - errors.length} of ${kpis.length} KPIs.` });
       // Refresh scores
       const { data } = await supabase
         .from("benchmark_scores")

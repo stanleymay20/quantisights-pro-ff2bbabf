@@ -34,9 +34,14 @@ serve(async (req) => {
       });
     }
 
-    const { organization_id, entity_type, entity_id } = await req.json();
+    const { organization_id, dataset_id, entity_type, entity_id } = await req.json();
     if (!organization_id || !entity_type || !entity_id) {
       return new Response(JSON.stringify({ error: "organization_id, entity_type, entity_id required" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (!dataset_id) {
+      return new Response(JSON.stringify({ error: "dataset_id required by Active Data Contract" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -67,12 +72,22 @@ serve(async (req) => {
       });
     }
 
-    // Fetch metrics for sensitivity analysis
+    // Validate dataset belongs to org
+    const { data: dsCheck } = await svc.from("datasets").select("id")
+      .eq("id", dataset_id).eq("organization_id", organization_id).maybeSingle();
+    if (!dsCheck) {
+      return new Response(JSON.stringify({ error: "dataset_id does not belong to this organization" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Fetch metrics for sensitivity analysis — dataset-scoped
     const { data: metrics } = await svc.from("metrics")
       .select("metric_type, value, date")
       .eq("organization_id", organization_id)
+      .eq("dataset_id", dataset_id)
       .order("date", { ascending: false })
-      .limit(200);
+      .limit(500);
 
     const metricsByType: Record<string, number[]> = {};
     for (const m of (metrics || [])) {

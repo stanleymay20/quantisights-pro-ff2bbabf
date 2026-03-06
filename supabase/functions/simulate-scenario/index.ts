@@ -13,19 +13,82 @@ const TIER_LIMITS: Record<string, number> = {
   enterprise: 999999,
 };
 
+/**
+ * Safe formula evaluator using a recursive descent parser.
+ * Only allows: numbers, +, -, *, /, parentheses, and named variables.
+ * NO eval/Function constructor — prevents code injection.
+ */
 function evaluateFormula(formula: string, variables: Record<string, number>): number {
+  // Replace variable names with their values (longest-first to prevent partial matches)
   let expr = formula;
-  for (const [name, val] of Object.entries(variables)) {
+  const sortedVars = Object.entries(variables).sort(([a], [b]) => b.length - a.length);
+  for (const [name, val] of sortedVars) {
     expr = expr.replaceAll(name, String(val));
   }
-  if (!/^[\d\s+\-*/().]+$/.test(expr)) {
-    throw new Error(`Invalid formula expression`);
+
+  // Validate: only digits, operators, parens, dots, whitespace, minus
+  const sanitized = expr.replace(/\s+/g, "");
+  if (!/^[\d+\-*/().]+$/.test(sanitized)) {
+    throw new Error("Invalid formula expression: contains disallowed characters");
   }
-  const fn = new Function(`"use strict"; return (${expr});`);
-  const result = fn();
-  if (typeof result !== "number" || !isFinite(result)) {
-    throw new Error("Formula produced non-finite result");
+
+  // Recursive descent parser
+  let pos = 0;
+  const peek = () => sanitized[pos];
+  const consume = (ch?: string) => {
+    if (ch && sanitized[pos] !== ch) throw new Error(`Expected '${ch}' at position ${pos}`);
+    return sanitized[pos++];
+  };
+
+  function parseExpr(): number {
+    let result = parseTerm();
+    while (peek() === "+" || peek() === "-") {
+      const op = consume();
+      const right = parseTerm();
+      result = op === "+" ? result + right : result - right;
+    }
+    return result;
   }
+
+  function parseTerm(): number {
+    let result = parseFactor();
+    while (peek() === "*" || peek() === "/") {
+      const op = consume();
+      const right = parseFactor();
+      if (op === "/" && right === 0) throw new Error("Division by zero");
+      result = op === "*" ? result * right : result / right;
+    }
+    return result;
+  }
+
+  function parseFactor(): number {
+    // Handle unary minus
+    if (peek() === "-") {
+      consume("-");
+      return -parseFactor();
+    }
+    if (peek() === "(") {
+      consume("(");
+      const result = parseExpr();
+      consume(")");
+      return result;
+    }
+    // Parse number
+    const start = pos;
+    while (pos < sanitized.length && (/\d/.test(sanitized[pos]) || sanitized[pos] === ".")) {
+      pos++;
+    }
+    if (pos === start) throw new Error(`Unexpected character '${peek()}' at position ${pos}`);
+    const num = parseFloat(sanitized.slice(start, pos));
+    if (!isFinite(num)) throw new Error("Non-finite number in formula");
+    return num;
+  }
+
+  const result = parseExpr();
+  if (pos < sanitized.length) {
+    throw new Error(`Unexpected character '${peek()}' at position ${pos}`);
+  }
+  if (!isFinite(result)) throw new Error("Formula produced non-finite result");
   return result;
 }
 

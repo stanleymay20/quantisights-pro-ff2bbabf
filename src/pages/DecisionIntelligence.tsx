@@ -73,7 +73,7 @@ const CounterfactualPanel = ({ decisions }: { decisions: any[] }) => {
                 </div>
                 <div>
                   <p className="text-[10px] text-muted-foreground">Prediction Accuracy</p>
-                  <p className={`text-sm font-bold font-mono ${accuracyIsGood ? "text-emerald-400" : "text-warning"}`}>
+                  <p className={`text-sm font-bold font-mono ${accuracyIsGood ? "text-success" : "text-warning"}`}>
                     {accuracyPct === "—" ? accuracyPct : `${accuracyPct}%`}
                   </p>
                 </div>
@@ -98,7 +98,7 @@ const DecisionFatiguePanel = ({ decisions }: { decisions: any[] }) => {
 
   const fatigueScore = Math.min(100, pending.length * 15 + stale.length * 25 + inProgress.length * 10);
   const fatigueLevel = fatigueScore >= 70 ? "critical" : fatigueScore >= 40 ? "elevated" : "healthy";
-  const fatigueColor = fatigueScore >= 70 ? "text-destructive" : fatigueScore >= 40 ? "text-warning" : "text-emerald-400";
+  const fatigueColor = fatigueScore >= 70 ? "text-destructive" : fatigueScore >= 40 ? "text-warning" : "text-success";
 
   return (
     <div className="glass-card p-6 rounded-xl">
@@ -188,13 +188,13 @@ const PortfolioSimulation = ({ simulations }: { simulations: any[] }) => {
       <div className="space-y-2">
         <div className="flex justify-between text-xs">
           <span className="text-muted-foreground">P10 (Downside)</span>
-          <span className={`font-mono font-semibold ${portfolio.totalP10 < 0 ? "text-destructive" : "text-emerald-400"}`}>
+          <span className={`font-mono font-semibold ${portfolio.totalP10 < 0 ? "text-destructive" : "text-success"}`}>
             €{portfolio.totalP10.toLocaleString()}
           </span>
         </div>
         <div className="flex justify-between text-xs">
           <span className="text-muted-foreground">P90 (Upside)</span>
-          <span className="font-mono font-semibold text-emerald-400">€{portfolio.totalP90.toLocaleString()}</span>
+          <span className="font-mono font-semibold text-success">€{portfolio.totalP90.toLocaleString()}</span>
         </div>
         <div className="flex justify-between text-xs">
           <span className="text-muted-foreground">Avg. P(Positive ROI)</span>
@@ -242,7 +242,7 @@ const CalibrationPanel = ({ decisions }: { decisions: any[] }) => {
       <div className="grid grid-cols-2 gap-3 mb-4">
         <div className="text-center bg-muted/20 rounded-lg p-3">
           <p className="text-[10px] text-muted-foreground uppercase">Avg Accuracy</p>
-          <p className={`text-2xl font-bold font-display ${avgAccuracy >= 70 ? "text-emerald-400" : "text-warning"}`}>
+          <p className={`text-2xl font-bold font-display ${avgAccuracy >= 70 ? "text-success" : "text-warning"}`}>
             {avgAccuracy.toFixed(0)}%
           </p>
         </div>
@@ -254,7 +254,7 @@ const CalibrationPanel = ({ decisions }: { decisions: any[] }) => {
       <div className="space-y-2">
         {calibrated.slice(0, 4).map(d => (
           <div key={d.id} className="flex items-center gap-2 text-xs">
-            <CheckCircle2 className={`w-3 h-3 shrink-0 ${Number(d.prediction_accuracy_score) >= 70 ? "text-emerald-400" : "text-warning"}`} />
+            <CheckCircle2 className={`w-3 h-3 shrink-0 ${Number(d.prediction_accuracy_score) >= 70 ? "text-success" : "text-warning"}`} />
             <span className="truncate flex-1 text-muted-foreground">{d.recommended_action}</span>
             <span className="font-mono font-semibold">{Number(d.prediction_accuracy_score).toFixed(0)}%</span>
           </div>

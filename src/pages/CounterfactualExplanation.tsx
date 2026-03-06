@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useOrganization } from "@/hooks/useOrganization";
+import { useActiveDataContext } from "@/hooks/useActiveDataContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
@@ -31,16 +31,23 @@ interface CounterfactualResult {
 }
 
 const CounterfactualExplanation = () => {
-  const { currentOrgId } = useOrganization();
+  const { orgId: currentOrgId, datasetId } = useActiveDataContext();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<CounterfactualResult | null>(null);
   const [entityType, setEntityType] = useState<string>("decision");
   const [entityId, setEntityId] = useState<string>("");
 
+  // Clear selection when dataset changes
+  useEffect(() => {
+    setEntityId("");
+    setResult(null);
+  }, [datasetId]);
+
   // Fetch available entities
+  // Decisions are org-scoped (institutional memory), but reset selection on dataset change
   const { data: decisions } = useQuery({
-    queryKey: ["decisions-for-cf", currentOrgId],
+    queryKey: ["decisions-for-cf", currentOrgId, datasetId],
     queryFn: async () => {
       if (!currentOrgId) return [];
       const { data } = await supabase.from("decision_ledger")
@@ -53,18 +60,20 @@ const CounterfactualExplanation = () => {
     enabled: !!currentOrgId && entityType === "decision",
   });
 
+  // Advisories are dataset-scoped — filter by active dataset
   const { data: advisories } = useQuery({
-    queryKey: ["advisories-for-cf", currentOrgId],
+    queryKey: ["advisories-for-cf", currentOrgId, datasetId],
     queryFn: async () => {
-      if (!currentOrgId) return [];
+      if (!currentOrgId || !datasetId) return [];
       const { data } = await supabase.from("advisory_instances")
         .select("id, title, status, capped_confidence")
         .eq("organization_id", currentOrgId)
+        .eq("dataset_id", datasetId)
         .order("created_at", { ascending: false })
         .limit(20);
       return data || [];
     },
-    enabled: !!currentOrgId && entityType === "advisory",
+    enabled: !!currentOrgId && !!datasetId && entityType === "advisory",
   });
 
   const entities = entityType === "decision" ? decisions : advisories;
@@ -74,7 +83,7 @@ const CounterfactualExplanation = () => {
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("counterfactual-explain", {
-        body: { organization_id: currentOrgId, entity_type: entityType, entity_id: entityId },
+        body: { organization_id: currentOrgId, dataset_id: datasetId, entity_type: entityType, entity_id: entityId },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
@@ -87,7 +96,7 @@ const CounterfactualExplanation = () => {
   };
 
   const sensitivityColor = (s: string) =>
-    s === "high" ? "text-destructive" : s === "medium" ? "text-warning" : "text-emerald-400";
+    s === "high" ? "text-destructive" : s === "medium" ? "text-warning" : "text-success";
 
   return (
     <DatasetRequired moduleName="Counterfactual Explanations">
@@ -202,7 +211,7 @@ const CounterfactualExplanation = () => {
                         <div
                           className={`h-full rounded-full transition-all ${
                             factor.sensitivity === "high" ? "bg-destructive" :
-                            factor.sensitivity === "medium" ? "bg-warning" : "bg-emerald-500"
+                            factor.sensitivity === "medium" ? "bg-warning" : "bg-success"
                           }`}
                           style={{ width: `${Math.min(factor.change_required_pct, 100)}%` }}
                         />
@@ -222,7 +231,7 @@ const CounterfactualExplanation = () => {
                         Decision Robustness: {" "}
                         <span className={
                           result.factors_to_change.filter(f => f.sensitivity === "high").length === 0
-                            ? "text-emerald-400" : "text-warning"
+                            ? "text-success" : "text-warning"
                         }>
                           {result.factors_to_change.filter(f => f.sensitivity === "high").length === 0
                             ? "Robust"

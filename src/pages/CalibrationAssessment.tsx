@@ -317,9 +317,14 @@ const CalibrationAssessment = () => {
       <main className="flex-1 overflow-y-auto">
         <div className="p-4 lg:p-8 max-w-4xl mx-auto">
           <div className="flex items-center justify-between mb-6 lg:mb-8">
-            <div>
-              <h1 className="text-2xl lg:text-3xl font-bold text-foreground tracking-tight">Calibration Assessment</h1>
-              <p className="text-sm text-muted-foreground mt-1">Discover your probabilistic reasoning profile</p>
+            <div className="flex items-center gap-3">
+              <Button variant="ghost" size="sm" className="gap-2" onClick={() => navigate(-1)}>
+                <ArrowLeft className="w-4 h-4" /> Back
+              </Button>
+              <div>
+                <h1 className="text-2xl lg:text-3xl font-bold text-foreground tracking-tight">Calibration Assessment</h1>
+                <p className="text-sm text-muted-foreground mt-1">Discover your probabilistic reasoning profile</p>
+              </div>
             </div>
             {!isAuthenticated && step === "intro" && (
               <Button variant="outline" size="sm" className="gap-2" onClick={() => navigate("/login")}>
@@ -639,7 +644,20 @@ const CalibrationAssessment = () => {
                 </Card>
 
                 {/* CTAs */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <Button
+                    variant="outline"
+                    className="gap-2"
+                    onClick={() => {
+                      setStep("intro");
+                      setCurrentIndex(0);
+                      setUserProbability(50);
+                      setResponses([]);
+                      setResults(null);
+                    }}
+                  >
+                    <ArrowLeft className="w-4 h-4" /> Retake Assessment
+                  </Button>
                   {isAuthenticated ? (
                     <Button variant="outline" className="gap-2" onClick={() => navigate("/decisions")}>
                       <BookOpen className="w-4 h-4" /> Log Your Next Decision

@@ -1,11 +1,11 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 
 const COLORS = [
-  "hsl(199, 89%, 48%)",
-  "hsl(142, 71%, 45%)",
-  "hsl(38, 92%, 50%)",
-  "hsl(217, 91%, 60%)",
-  "hsl(0, 72%, 51%)",
+  "hsl(var(--primary))",
+  "hsl(var(--success, 142 71% 45%))",
+  "hsl(var(--warning, 38 92% 50%))",
+  "hsl(var(--accent-foreground))",
+  "hsl(var(--destructive))",
 ];
 
 interface CustomerSegmentationProps {
@@ -36,10 +36,10 @@ const CustomerSegmentation = ({ data }: CustomerSegmentationProps) => {
                 </Pie>
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: "hsl(216, 45%, 12%)",
-                    border: "1px solid hsl(216, 30%, 20%)",
-                    borderRadius: "8px",
-                    color: "hsl(210, 40%, 95%)",
+                    fontSize: 11,
+                    background: "hsl(var(--card))",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: 8,
                   }}
                 />
               </PieChart>

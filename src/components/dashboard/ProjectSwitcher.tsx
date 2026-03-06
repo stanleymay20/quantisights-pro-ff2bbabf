@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useProject } from "@/contexts/ProjectContext";
+import { useToast } from "@/hooks/use-toast";
 import { FolderOpen, Plus, ChevronDown, Check } from "lucide-react";
 import {
   DropdownMenu,
@@ -20,6 +21,7 @@ import { Input } from "@/components/ui/input";
 
 const ProjectSwitcher = () => {
   const { projects, currentProject, switchProject, createProject } = useProject();
+  const { toast } = useToast();
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState("");
   const [creating, setCreating] = useState(false);
@@ -29,8 +31,11 @@ const ProjectSwitcher = () => {
     setCreating(true);
     try {
       await createProject(newName.trim());
+      toast({ title: "Project created", description: `"${newName.trim()}" is now active.` });
       setShowCreate(false);
       setNewName("");
+    } catch (e: any) {
+      toast({ title: "Failed to create project", description: e?.message || "Unknown error", variant: "destructive" });
     } finally {
       setCreating(false);
     }
@@ -52,7 +57,12 @@ const ProjectSwitcher = () => {
           {projects.map((p) => (
             <DropdownMenuItem
               key={p.id}
-              onClick={() => switchProject(p.id)}
+              onClick={() => {
+                switchProject(p.id);
+                if (p.id !== currentProject?.id) {
+                  toast({ title: `Switched to "${p.name}"` });
+                }
+              }}
               className="flex items-center justify-between"
             >
               <span className="truncate">{p.name}</span>
