@@ -189,24 +189,27 @@ serve(async (req) => {
       probability_positive_roi: round2(probPositiveRoi * 100),
       probability_cashflow_stress: round2(probCashStress * 100),
       risk_adjusted_expected_value: round2(riskAdjustedEV),
-      // Standardized adaptive confidence metadata
-      confidence: conf.confidence,
       raw_confidence: conf.raw_confidence,
       capped_confidence: conf.capped_confidence,
       confidence_cap_reason: conf.confidence_cap_reason,
       variance_score: conf.variance_score,
       sample_size: sampleSize,
       data_sufficiency: conf.data_sufficiency,
+      correlation_assumptions: correlations,
+      model_version: 1,
+      simulation_runs: runs,
+      created_by: user.id,
+    };
+
+    // Extended metadata for response only (not stored in DB)
+    const responseMeta = {
+      confidence: conf.confidence,
       adaptive_calibration_applied: conf.adaptive_calibration_applied,
       calibration_model_version: conf.calibration_model_version,
       calibration_band_used: conf.calibration_band_used,
       calibration_correction_applied_pp: conf.calibration_correction_applied_pp,
       calibration_low_sample_band: conf.calibration_low_sample_band,
       confidence_source: conf.confidence_source,
-      correlation_assumptions: correlations,
-      model_version: 1,
-      simulation_runs: runs,
-      created_by: user.id,
     };
 
     const { data: inserted, error: insertErr } = await svc
