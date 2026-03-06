@@ -51,14 +51,32 @@ interface AIAnalysis {
   confidence_score: number;
 }
 
-const METRIC_TYPES = ["revenue", "customers", "cost", "churn", "orders", "sessions", "conversions"];
-
-const TIER_KPI_LIMITS: Record<string, number> = { starter: 3, growth: 25, enterprise: 999999 };
+const FALLBACK_METRIC_TYPES = ["revenue", "customers", "cost", "churn", "orders", "sessions", "conversions"];
 
 const KPIs = () => {
   const { user } = useAuth();
   const { currentOrgId } = useOrganization();
   const { activeDatasetId } = useProject();
+  const [availableMetricTypes, setAvailableMetricTypes] = useState<string[]>([]);
+
+  // Dynamically discover metric types from the active dataset
+  useEffect(() => {
+    if (!currentOrgId || !activeDatasetId) return;
+    const fetchTypes = async () => {
+      const { data } = await supabase
+        .from("metrics")
+        .select("metric_type")
+        .eq("organization_id", currentOrgId)
+        .eq("dataset_id", activeDatasetId);
+      if (data) {
+        const types = [...new Set(data.map(r => r.metric_type))].sort();
+        setAvailableMetricTypes(types.length > 0 ? types : FALLBACK_METRIC_TYPES);
+      }
+    };
+    fetchTypes();
+  }, [currentOrgId, activeDatasetId]);
+
+  const METRIC_TYPES = availableMetricTypes.length > 0 ? availableMetricTypes : FALLBACK_METRIC_TYPES;
   const { tier } = useSubscription();
   const { toast } = useToast();
 

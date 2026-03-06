@@ -27,9 +27,9 @@ interface BenchmarkScore {
 
 const QUARTILE_CONFIG: Record<number, { label: string; color: string; bg: string }> = {
   1: { label: "Bottom Quartile", color: "text-destructive", bg: "bg-destructive/10" },
-  2: { label: "Below Median", color: "text-amber-500", bg: "bg-amber-500/10" },
-  3: { label: "Above Median", color: "text-sky-500", bg: "bg-sky-500/10" },
-  4: { label: "Top Quartile", color: "text-emerald-500", bg: "bg-emerald-500/10" },
+  2: { label: "Below Median", color: "text-warning", bg: "bg-warning/10" },
+  3: { label: "Above Median", color: "text-primary", bg: "bg-primary/10" },
+  4: { label: "Top Quartile", color: "text-success", bg: "bg-success/10" },
 };
 
 const TREND_ICONS: Record<string, typeof TrendingUp> = {

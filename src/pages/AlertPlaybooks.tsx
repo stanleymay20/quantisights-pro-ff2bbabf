@@ -39,7 +39,7 @@ interface Execution {
   completed_at: string | null;
 }
 
-const METRICS = ["revenue", "customers", "cost", "churn"];
+const FALLBACK_METRICS = ["revenue", "customers", "cost", "churn"];
 const CONDITIONS = [
   { value: "exceeds", label: "Exceeds threshold" },
   { value: "drops_below", label: "Drops below threshold" },
@@ -48,8 +48,8 @@ const CONDITIONS = [
 const SEVERITIES = ["info", "warning", "critical"];
 
 const SEVERITY_STYLES: Record<string, string> = {
-  info: "text-blue-500 bg-blue-500/10",
-  warning: "text-amber-500 bg-amber-500/10",
+  info: "text-primary bg-primary/10",
+  warning: "text-warning bg-warning/10",
   critical: "text-destructive bg-destructive/10",
 };
 
@@ -58,6 +58,25 @@ const AlertPlaybooks = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
+  const [availableMetrics, setAvailableMetrics] = useState<string[]>([]);
+
+  // Dynamically discover metric types
+  useEffect(() => {
+    if (!currentOrgId) return;
+    const fetchTypes = async () => {
+      const { data } = await supabase
+        .from("metrics")
+        .select("metric_type")
+        .eq("organization_id", currentOrgId);
+      if (data) {
+        const types = [...new Set(data.map(r => r.metric_type))].sort();
+        setAvailableMetrics(types.length > 0 ? types : FALLBACK_METRICS);
+      }
+    };
+    fetchTypes();
+  }, [currentOrgId]);
+
+  const METRICS = availableMetrics.length > 0 ? availableMetrics : FALLBACK_METRICS;
   const [playbooks, setPlaybooks] = useState<Playbook[]>([]);
   const [executions, setExecutions] = useState<Execution[]>([]);
   const [addOpen, setAddOpen] = useState(false);

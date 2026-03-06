@@ -25,12 +25,12 @@ interface QueryHistory {
 }
 
 const SUGGESTED_QUERIES = [
-  "What drove churn last quarter?",
-  "Which segment has the highest revenue growth?",
-  "How does our cost efficiency compare month-over-month?",
-  "What's our customer acquisition trend?",
-  "Which KPIs are underperforming?",
+  "What are the top performing metrics?",
+  "Which segment has the highest growth?",
+  "Show me month-over-month trends",
+  "Which metrics are underperforming vs targets?",
   "What's the risk outlook for next quarter?",
+  "Which data points have the highest variance?",
 ];
 
 const NaturalLanguageQuery = () => {

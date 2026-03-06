@@ -42,12 +42,31 @@ const ScenarioBranching = () => {
   // Create form
   const [newName, setNewName] = useState("");
   const [newDesc, setNewDesc] = useState("");
-  const [newParams, setNewParams] = useState({
-    revenue_change_percent: 0,
-    cost_change_percent: 0,
-    headcount_change_percent: 0,
-    marketing_spend_change_percent: 0,
-  });
+  const [dynamicMetrics, setDynamicMetrics] = useState<string[]>([]);
+  const [newParams, setNewParams] = useState<Record<string, number>>({});
+
+  // Dynamically discover metric types for branching parameters
+  useEffect(() => {
+    if (!currentOrgId || !activeDatasetId) return;
+    const fetchTypes = async () => {
+      const { data } = await supabase
+        .from("metrics")
+        .select("metric_type")
+        .eq("organization_id", currentOrgId)
+        .eq("dataset_id", activeDatasetId);
+      if (data) {
+        const types = [...new Set(data.map(r => r.metric_type))].sort().slice(0, 6);
+        setDynamicMetrics(types);
+        const defaults: Record<string, number> = {};
+        types.forEach(t => { defaults[`${t}_change_percent`] = 0; });
+        if (Object.keys(defaults).length === 0) {
+          defaults["value_change_percent"] = 0;
+        }
+        setNewParams(defaults);
+      }
+    };
+    fetchTypes();
+  }, [currentOrgId, activeDatasetId]);
 
   const fetchBranches = async () => {
     if (!currentOrgId) return;
@@ -81,7 +100,9 @@ const ScenarioBranching = () => {
       toast({ title: "Branch created" });
       setNewName("");
       setNewDesc("");
-      setNewParams({ revenue_change_percent: 0, cost_change_percent: 0, headcount_change_percent: 0, marketing_spend_change_percent: 0 });
+      const resetParams: Record<string, number> = {};
+      dynamicMetrics.forEach(t => { resetParams[`${t}_change_percent`] = 0; });
+      setNewParams(Object.keys(resetParams).length > 0 ? resetParams : { value_change_percent: 0 });
       fetchBranches();
     }
     setCreating(false);
