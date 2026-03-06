@@ -52,7 +52,7 @@ const DataUpload = () => {
   const { currentOrgId } = useOrganization();
   const { currentProject, createProject, attachDataset, setActiveDataset } = useProject();
   const { currentWorkspaceId } = useWorkspace();
-  const { tier } = useSubscription();
+  const { subscribed, tier } = useSubscription();
   const { toast } = useToast();
   const navigate = useNavigate();
 
