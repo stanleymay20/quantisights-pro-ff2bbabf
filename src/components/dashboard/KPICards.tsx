@@ -43,30 +43,31 @@ function computeChangePct(current: number, previous: number | null): number | nu
   return ((current - previous) / Math.abs(previous)) * 100;
 }
 
-/** Tiny inline sparkline rendered via SVG */
-const MiniSparkline = ({ trend }: { trend: "up" | "down" | "flat" | null }) => {
-  // Generate a simple synthetic sparkline shape based on trend
+/** Tiny inline sparkline rendered from REAL data points via SVG */
+const MiniSparkline = ({ trend, dataPoints }: { trend: "up" | "down" | "flat" | null; dataPoints?: number[] }) => {
   const points = useMemo(() => {
-    if (!trend) return null;
+    if (!dataPoints || dataPoints.length < 2) return null;
     const w = 64;
     const h = 24;
-    const steps = 8;
-    const pts: string[] = [];
+    const pad = 2;
+    const usable = h - pad * 2;
+    const min = Math.min(...dataPoints);
+    const max = Math.max(...dataPoints);
+    const range = max - min || 1; // avoid division by zero
 
-    for (let i = 0; i <= steps; i++) {
-      const x = (i / steps) * w;
-      let y: number;
-      if (trend === "up") {
-        y = h - (i / steps) * h * 0.7 - Math.sin(i * 0.8) * 3;
-      } else if (trend === "down") {
-        y = (i / steps) * h * 0.7 + Math.sin(i * 0.8) * 3;
-      } else {
-        y = h / 2 + Math.sin(i * 1.2) * 4;
-      }
-      pts.push(`${x.toFixed(1)},${Math.max(2, Math.min(h - 2, y)).toFixed(1)}`);
-    }
-    return pts.join(" ");
-  }, [trend]);
+    // Sample down to max 12 points for clean rendering
+    const sampled = dataPoints.length > 12
+      ? Array.from({ length: 12 }, (_, i) => dataPoints[Math.round(i * (dataPoints.length - 1) / 11)])
+      : dataPoints;
+
+    return sampled
+      .map((v, i) => {
+        const x = (i / (sampled.length - 1)) * w;
+        const y = pad + usable - ((v - min) / range) * usable;
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+      })
+      .join(" ");
+  }, [dataPoints]);
 
   if (!points) return null;
 
