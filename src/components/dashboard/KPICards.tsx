@@ -139,14 +139,15 @@ const KPICards = memo(forwardRef<HTMLDivElement, KPICardsProps>(({
         trend: m.trend,
         changePct: computeChangePct(m.total, m.previousTotal),
         count: m.count,
+        dataPoints: m.values,
       }));
     }
 
     return [
-      { label: "Total Revenue", value: formatValue(revenue ?? 0), latest: null, trend: deriveTrend(revenue ?? 0, previousRevenue), changePct: computeChangePct(revenue ?? 0, previousRevenue ?? null), count: null },
-      { label: "Total Customers", value: formatValue(customers ?? 0), latest: null, trend: deriveTrend(customers ?? 0, previousCustomers), changePct: computeChangePct(customers ?? 0, previousCustomers ?? null), count: null },
-      { label: "Cost Rate", value: formatValue(costRate ?? 0), latest: null, trend: deriveTrend(costRate ?? 0, previousCostRate), changePct: computeChangePct(costRate ?? 0, previousCostRate ?? null), count: null },
-      { label: "Churn Rate", value: formatValue(churnRate ?? 0), latest: null, trend: deriveTrend(churnRate ?? 0, previousChurnRate), changePct: computeChangePct(churnRate ?? 0, previousChurnRate ?? null), count: null },
+      { label: "Total Revenue", value: formatValue(revenue ?? 0), latest: null, trend: deriveTrend(revenue ?? 0, previousRevenue), changePct: computeChangePct(revenue ?? 0, previousRevenue ?? null), count: null, dataPoints: undefined },
+      { label: "Total Customers", value: formatValue(customers ?? 0), latest: null, trend: deriveTrend(customers ?? 0, previousCustomers), changePct: computeChangePct(customers ?? 0, previousCustomers ?? null), count: null, dataPoints: undefined },
+      { label: "Cost Rate", value: formatValue(costRate ?? 0), latest: null, trend: deriveTrend(costRate ?? 0, previousCostRate), changePct: computeChangePct(costRate ?? 0, previousCostRate ?? null), count: null, dataPoints: undefined },
+      { label: "Churn Rate", value: formatValue(churnRate ?? 0), latest: null, trend: deriveTrend(churnRate ?? 0, previousChurnRate), changePct: computeChangePct(churnRate ?? 0, previousChurnRate ?? null), count: null, dataPoints: undefined },
     ].filter((c) => c.value !== "0" && c.value !== "0.0");
   }, [topMetrics, revenue, customers, costRate, churnRate, previousRevenue, previousCustomers, previousCostRate, previousChurnRate]);
 
@@ -205,7 +206,7 @@ const KPICards = memo(forwardRef<HTMLDivElement, KPICardsProps>(({
                 </p>
               )}
             </div>
-            <MiniSparkline trend={card.trend} />
+            <MiniSparkline trend={card.trend} dataPoints={card.dataPoints} />
           </div>
         </div>
       ))}
