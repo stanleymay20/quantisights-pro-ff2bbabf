@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Brain, AlertTriangle, TrendingDown, Clock, Sparkles, CheckCircle2, XCircle, Pencil, Loader2, ShieldCheck, FileCheck, Bell, Crosshair, Flame, Zap } from "lucide-react";
+import ConfidenceBadge, { resolveConfidence } from "@/components/ConfidenceBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -141,7 +142,7 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
         decided_by: user?.id,
         decided_at: new Date().toISOString(),
         decision_status: "approved",
-        confidence_at_decision: decision.confidence ?? 65,
+        confidence_at_decision: typeof decision.confidence === "number" ? decision.confidence : resolveConfidence(decision.confidence) || 65,
         decision_type: "strategic",
       });
 
@@ -330,7 +331,7 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
         title: adv.title,
         context: adv.action,
         recommendedAction: adv.action,
-        confidence: adv.capped_confidence ?? adv.confidence ?? undefined,
+        confidence: adv.capped_confidence ?? (typeof adv.confidence === "number" ? adv.confidence : undefined),
         source: `${adv.category} Advisory`,
         sourceId: adv.id,
         timeframe: adv.timeframe ?? undefined,
@@ -589,8 +590,8 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
                             {decision.source}
                           </span>
                           {decision.confidence != null && (
-                            <span className="text-[10px] bg-muted/50 text-muted-foreground px-2 py-0.5 rounded">
-                              {typeof decision.confidence === "object" ? JSON.stringify(decision.confidence) : `${decision.confidence}%`} confidence
+                            <span className="text-[10px] bg-muted/50 text-muted-foreground px-2 py-0.5 rounded flex items-center gap-1">
+                              <ConfidenceBadge confidence={decision.confidence} showDetails /> confidence
                             </span>
                           )}
                           {decision.timeframe && (
