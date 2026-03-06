@@ -327,7 +327,7 @@ const ScenarioBranching = () => {
                             {(b.results as any)?.escalation_triggered ? (
                               <Badge variant="destructive" className="text-[10px]">Yes</Badge>
                             ) : (
-                              <Badge variant="outline" className="text-[10px] text-emerald-500">No</Badge>
+                              <Badge variant="outline" className="text-[10px] text-success">No</Badge>
                             )}
                           </td>
                         ))}

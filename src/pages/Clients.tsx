@@ -238,9 +238,9 @@ const Clients = () => {
                               <p className={`text-xl font-bold ${
                                 org.convergenceScore !== null
                                   ? org.convergenceScore >= 70
-                                    ? "text-emerald-400"
+                                    ? "text-success"
                                     : org.convergenceScore >= 40
-                                    ? "text-amber-400"
+                                    ? "text-warning"
                                     : "text-destructive"
                                   : "text-muted-foreground"
                               }`}>
