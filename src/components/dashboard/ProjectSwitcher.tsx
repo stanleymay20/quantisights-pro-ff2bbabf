@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useProject } from "@/contexts/ProjectContext";
+import { useToast } from "@/hooks/use-toast";
 import { FolderOpen, Plus, ChevronDown, Check } from "lucide-react";
 import {
   DropdownMenu,
@@ -29,8 +30,11 @@ const ProjectSwitcher = () => {
     setCreating(true);
     try {
       await createProject(newName.trim());
+      toast({ title: "Project created", description: `"${newName.trim()}" is now active.` });
       setShowCreate(false);
       setNewName("");
+    } catch (e: any) {
+      toast({ title: "Failed to create project", description: e?.message || "Unknown error", variant: "destructive" });
     } finally {
       setCreating(false);
     }
