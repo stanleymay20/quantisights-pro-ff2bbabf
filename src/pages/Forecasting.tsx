@@ -51,7 +51,10 @@ const Forecasting = () => {
   }, [orgId, datasetId]);
 
   const runForecast = async () => {
-    if (!orgId) return;
+    if (!orgId || !datasetId || !metricType) {
+      toast({ title: "Missing context", description: "Please select a metric type first.", variant: "destructive" });
+      return;
+    }
     setLoading(true);
     try {
       const { data: result, error } = await supabase.functions.invoke("predictive-forecast", {
