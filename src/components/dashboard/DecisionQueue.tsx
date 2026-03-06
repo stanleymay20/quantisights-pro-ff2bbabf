@@ -635,21 +635,24 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
                         </div>
 
                         {/* Structured Recommendation */}
-                        <div className="p-2.5 rounded-lg bg-background/60 border border-border/30 space-y-2">
+                        <div className="p-2.5 rounded-lg bg-background/60 border border-border/30 space-y-1.5">
                           <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                             AI Recommendation
                           </p>
-                          <p className="text-xs font-medium leading-relaxed">{rec.recommendedAction}</p>
-                          <p className="text-[10px] text-muted-foreground leading-relaxed italic">{rec.whyItMatters}</p>
+                          <div className="space-y-1">
+                            <p className="text-[10px] text-muted-foreground"><span className="font-semibold text-foreground">What happened:</span> {rec.whatHappened}</p>
+                            <p className="text-[10px] text-muted-foreground"><span className="font-semibold text-foreground">Why it matters:</span> {rec.whyItMatters}</p>
+                            <p className="text-[10px] text-muted-foreground"><span className="font-semibold text-foreground">Action:</span> {rec.recommendedAction}</p>
+                          </div>
                           <div className="flex items-center gap-4 flex-wrap pt-1 border-t border-border/20">
                             <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                              <User className="w-2.5 h-2.5" /> {rec.suggestedOwner}
+                              <User className="w-2.5 h-2.5" /> <span className="font-semibold text-foreground">Owner:</span> {rec.suggestedOwner}
                             </span>
                             <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                               <CalendarDays className="w-2.5 h-2.5" /> {rec.suggestedDeadlineDays}d deadline
                             </span>
                             <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                              <Target className="w-2.5 h-2.5" /> {rec.successMetrics.length} metric{rec.successMetrics.length !== 1 ? "s" : ""}
+                              <Target className="w-2.5 h-2.5" /> <span className="font-semibold text-foreground">Success:</span> {rec.successMetrics.slice(0, 2).join("; ")}
                             </span>
                           </div>
                         </div>
