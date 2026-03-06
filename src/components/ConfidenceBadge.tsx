@@ -1,3 +1,4 @@
+import * as React from "react";
 import { ShieldCheck, Database, AlertTriangle, Info } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -33,57 +34,60 @@ export function resolveConfidenceMeta(value: unknown): ConfidenceObject | null {
   return null;
 }
 
-interface ConfidenceBadgeProps {
+interface ConfidenceBadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   confidence: unknown;
   showDetails?: boolean;
-  className?: string;
 }
 
-const ConfidenceBadge = ({ confidence, showDetails = false, className = "" }: ConfidenceBadgeProps) => {
-  const score = resolveConfidence(confidence);
-  const meta = resolveConfidenceMeta(confidence);
-  const color = score >= 80 ? "text-success" : score >= 50 ? "text-warning" : "text-destructive";
+const ConfidenceBadge = React.forwardRef<HTMLSpanElement, ConfidenceBadgeProps>(
+  ({ confidence, showDetails = false, className = "", ...rest }, ref) => {
+    const score = resolveConfidence(confidence);
+    const meta = resolveConfidenceMeta(confidence);
+    const color = score >= 80 ? "text-success" : score >= 50 ? "text-warning" : "text-destructive";
 
-  if (!showDetails || !meta) {
-    return (
-      <span className={`inline-flex items-center gap-1 text-xs font-semibold ${color} ${className}`}>
-        <ShieldCheck className="w-3 h-3" />
-        {Math.round(score)}%
-      </span>
-    );
-  }
-
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <span className={`inline-flex items-center gap-1 text-xs font-semibold ${color} cursor-help ${className}`}>
+    if (!showDetails || !meta) {
+      return (
+        <span ref={ref} className={`inline-flex items-center gap-1 text-xs font-semibold ${color} ${className}`} {...rest}>
           <ShieldCheck className="w-3 h-3" />
           {Math.round(score)}%
         </span>
-      </TooltipTrigger>
-      <TooltipContent side="bottom" className="max-w-xs space-y-1.5 text-xs p-3">
-        {meta.data_sufficiency && (
-          <div className="flex items-center gap-1.5">
-            <Database className="w-3 h-3 text-muted-foreground" />
-            <span>Data: <strong className="capitalize">{meta.data_sufficiency}</strong></span>
-            {meta.sample_size != null && <span className="text-muted-foreground">({meta.sample_size} points)</span>}
-          </div>
-        )}
-        {meta.variance_score != null && (
-          <div className="flex items-center gap-1.5">
-            <AlertTriangle className="w-3 h-3 text-muted-foreground" />
-            <span>Variance: {meta.variance_score.toFixed(1)}</span>
-          </div>
-        )}
-        {meta.confidence_cap_reason && (
-          <div className="flex items-center gap-1.5">
-            <Info className="w-3 h-3 text-muted-foreground" />
-            <span className="text-muted-foreground">{meta.confidence_cap_reason}</span>
-          </div>
-        )}
-      </TooltipContent>
-    </Tooltip>
-  );
-};
+      );
+    }
+
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span ref={ref} className={`inline-flex items-center gap-1 text-xs font-semibold ${color} cursor-help ${className}`} {...rest}>
+            <ShieldCheck className="w-3 h-3" />
+            {Math.round(score)}%
+          </span>
+        </TooltipTrigger>
+        <TooltipContent side="bottom" className="max-w-xs space-y-1.5 text-xs p-3">
+          {meta.data_sufficiency && (
+            <div className="flex items-center gap-1.5">
+              <Database className="w-3 h-3 text-muted-foreground" />
+              <span>Data: <strong className="capitalize">{meta.data_sufficiency}</strong></span>
+              {meta.sample_size != null && <span className="text-muted-foreground">({meta.sample_size} points)</span>}
+            </div>
+          )}
+          {meta.variance_score != null && (
+            <div className="flex items-center gap-1.5">
+              <AlertTriangle className="w-3 h-3 text-muted-foreground" />
+              <span>Variance: {meta.variance_score.toFixed(1)}</span>
+            </div>
+          )}
+          {meta.confidence_cap_reason && (
+            <div className="flex items-center gap-1.5">
+              <Info className="w-3 h-3 text-muted-foreground" />
+              <span className="text-muted-foreground">{meta.confidence_cap_reason}</span>
+            </div>
+          )}
+        </TooltipContent>
+      </Tooltip>
+    );
+  },
+);
+
+ConfidenceBadge.displayName = "ConfidenceBadge";
 
 export default ConfidenceBadge;
