@@ -54,13 +54,17 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
     }
 
     setLoading(true);
-    // Projects are org-scoped (not workspace-scoped) so data is accessible
-    // across all workspaces within the same organization
-    const { data, error } = await supabase
+    // Filter by workspace when available to ensure workspace switching cascades
+    let query = supabase
       .from("projects")
       .select("id, name, description, active_dataset_id, organization_id, created_at")
-      .eq("organization_id", currentOrgId)
-      .order("created_at", { ascending: false });
+      .eq("organization_id", currentOrgId);
+
+    if (currentWorkspaceId) {
+      query = query.eq("workspace_id", currentWorkspaceId);
+    }
+
+    const { data, error } = await query.order("created_at", { ascending: false });
 
     if (error || !data) {
       setLoading(false);
@@ -69,14 +73,15 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
 
     setProjects(data);
 
-    // Restore from sessionStorage, but only if it belongs to this org
+    // Restore from sessionStorage, but only if it belongs to this workspace
     const stored = sessionStorage.getItem(STORAGE_KEY);
     const valid = data.find((p) => p.id === stored);
     const nextId = valid ? valid.id : data[0]?.id ?? null;
     setCurrentProjectId(nextId);
     if (nextId) sessionStorage.setItem(STORAGE_KEY, nextId);
+    else sessionStorage.removeItem(STORAGE_KEY);
     setLoading(false);
-  }, [currentOrgId]);
+  }, [currentOrgId, currentWorkspaceId]);
 
   useEffect(() => {
     fetchProjects();
