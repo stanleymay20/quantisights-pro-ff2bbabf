@@ -634,13 +634,45 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
 
                         {/* Structured Recommendation */}
                         <div className="p-2.5 rounded-lg bg-background/60 border border-border/30 space-y-1.5">
-                          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                            AI Recommendation
-                          </p>
+                          <div className="flex items-center justify-between">
+                            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                              AI Recommendation
+                            </p>
+                            {rec.qualityScore && (
+                              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
+                                rec.qualityScore.grade === "A" || rec.qualityScore.grade === "B"
+                                  ? "bg-success/10 text-success"
+                                  : rec.qualityScore.grade === "C"
+                                  ? "bg-warning/10 text-warning"
+                                  : "bg-destructive/10 text-destructive"
+                              }`}>
+                                Quality: {rec.qualityScore.grade} ({rec.qualityScore.overall}/100)
+                              </span>
+                            )}
+                          </div>
+                          {rec.qualityScore && !rec.qualityScore.isDecisionGrade && (
+                            <div className="flex items-center gap-1.5 p-1.5 rounded bg-warning/5 border border-warning/20">
+                              <AlertTriangle className="w-3 h-3 text-warning shrink-0" />
+                              <p className="text-[9px] text-warning">
+                                Below decision-grade threshold. {rec.qualityScore.downgradeReason}
+                              </p>
+                            </div>
+                          )}
                           <div className="space-y-1">
                             <p className="text-[10px] text-muted-foreground"><span className="font-semibold text-foreground">What happened:</span> {rec.whatHappened}</p>
                             <p className="text-[10px] text-muted-foreground"><span className="font-semibold text-foreground">Why it matters:</span> {rec.whyItMatters}</p>
                             <p className="text-[10px] text-muted-foreground"><span className="font-semibold text-foreground">Action:</span> {rec.recommendedAction}</p>
+                            {rec.assumptions && rec.assumptions.length > 0 && (
+                              <p className="text-[10px] text-muted-foreground"><span className="font-semibold text-foreground">Assumptions:</span> {rec.assumptions.slice(0, 2).join("; ")}</p>
+                            )}
+                            {rec.riskIfWrong && (
+                              <p className="text-[10px] text-muted-foreground"><span className="font-semibold text-foreground">Risk if wrong:</span> {rec.riskIfWrong}</p>
+                            )}
+                            {rec.confidenceBasis && (
+                              <p className="text-[10px] text-muted-foreground italic">
+                                {rec.confidenceBasis.label}
+                              </p>
+                            )}
                           </div>
                           <div className="flex items-center gap-4 flex-wrap pt-1 border-t border-border/20">
                             <span className="text-[10px] text-muted-foreground flex items-center gap-1">
