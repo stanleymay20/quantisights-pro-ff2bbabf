@@ -246,18 +246,21 @@ const DataUpload = () => {
     try {
       const intel = generateIntelligence(headers, allRows, mapping, result, importMode);
       setIntelligence(intel);
-      console.log("[DataUpload] Intelligence generated:", { metricsDetected: intel.metricsDetected });
+      console.log("[DataUpload] Intelligence generated:", { recordCount: intel.recordCount });
     } catch (err) {
       console.error("[DataUpload] generateIntelligence threw:", err);
-      // Set a minimal intelligence object so the UI can still render
       setIntelligence({
-        metricsDetected: 0,
-        dateRange: null,
-        granularity: "unknown",
+        recordCount: allRows.length,
+        validPointCount: result.validPoints,
+        columnCount: headers.length,
+        dateSpan: null,
+        regionCount: 0,
+        regions: [],
+        metricTypes: [],
+        signals: [],
         qualityScore: result.qualityScore,
-        completeness: result.completeness,
-        recommendations: ["Intelligence generation failed — review data manually."],
-      } as DatasetIntelligence);
+        qualityLabel: "Unknown",
+      });
     }
 
     try {
