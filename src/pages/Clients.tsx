@@ -26,17 +26,17 @@ interface OrgSummary {
 
 const getRiskColor = (score: number | null) => {
   if (score === null) return "text-muted-foreground";
-  if (score <= 25) return "text-emerald-400";
-  if (score <= 50) return "text-sky-400";
-  if (score <= 75) return "text-amber-400";
+  if (score <= 25) return "text-success";
+  if (score <= 50) return "text-primary";
+  if (score <= 75) return "text-warning";
   return "text-destructive";
 };
 
 const getRiskBg = (score: number | null) => {
   if (score === null) return "bg-muted/30";
-  if (score <= 25) return "bg-emerald-500/10";
-  if (score <= 50) return "bg-sky-500/10";
-  if (score <= 75) return "bg-amber-500/10";
+  if (score <= 25) return "bg-success/10";
+  if (score <= 50) return "bg-primary/10";
+  if (score <= 75) return "bg-warning/10";
   return "bg-destructive/10";
 };
 

@@ -507,9 +507,9 @@ function MiniStat({ label, value, sub }: { label: string; value: string; sub: st
 
 function HeatCell({ value }: { value: number }) {
   const normalized = Math.min(100, Math.max(0, value));
-  const bg = normalized <= 25 ? "bg-emerald-500/20 text-emerald-600" :
-             normalized <= 50 ? "bg-sky-500/20 text-sky-600" :
-             normalized <= 75 ? "bg-amber-500/20 text-amber-600" :
+  const bg = normalized <= 25 ? "bg-success/20 text-success" :
+             normalized <= 50 ? "bg-primary/20 text-primary" :
+             normalized <= 75 ? "bg-warning/20 text-warning" :
              "bg-destructive/20 text-destructive";
   return (
     <span className={`inline-block px-2 py-1 rounded text-xs font-mono font-semibold ${bg}`}>
@@ -525,7 +525,7 @@ function ConfidenceBadge({ raw, capped, reason }: { raw: number | null; capped: 
   return (
     <Tooltip>
       <TooltipTrigger>
-        <Badge variant="outline" className={`text-xs gap-1 ${wasCapped ? "border-amber-500/50 text-amber-600" : ""}`}>
+      <Badge variant="outline" className={`text-xs gap-1 ${wasCapped ? "border-warning/50 text-warning" : ""}`}>
           {wasCapped && <AlertTriangle className="w-3 h-3" />}
           {display}%
         </Badge>

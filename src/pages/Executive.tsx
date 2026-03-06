@@ -683,7 +683,7 @@ const Executive = () => {
                                 <p className="text-2xl font-bold">{snap.value}</p>
                                 <div className="flex items-center gap-1 mt-1">
                                   {trendUp ? (
-                                    <TrendingUp className="w-4 h-4 text-emerald-400" />
+                                    <TrendingUp className="w-4 h-4 text-success" />
                                   ) : (
                                     <TrendingDown className="w-4 h-4 text-destructive" />
                                   )}
