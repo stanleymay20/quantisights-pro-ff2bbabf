@@ -76,7 +76,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
     setCurrentProjectId(nextId);
     if (nextId) sessionStorage.setItem(STORAGE_KEY, nextId);
     setLoading(false);
-  }, [currentOrgId, currentWorkspaceId]);
+  }, [currentOrgId]);
 
   useEffect(() => {
     fetchProjects();
