@@ -132,13 +132,32 @@ serve(async (req) => {
     const startDate = date_from || new Date(Date.now() - 90 * 86400000).toISOString().split("T")[0];
 
     // Fetch metrics for dependencies
-    const deps: string[] = Array.isArray(kpi.metric_dependencies)
-      ? kpi.metric_dependencies
+    let deps: string[] = Array.isArray(kpi.metric_dependencies)
+      ? kpi.metric_dependencies.filter((d: unknown) => typeof d === "string" && d.length > 0)
       : [];
+
+    // Auto-detect metric names from formula if deps are empty
+    if (deps.length === 0 && kpi.formula) {
+      // Fetch all known metric types for this org to match against formula
+      const { data: knownMetrics } = await serviceClient
+        .from("metrics")
+        .select("metric_type")
+        .eq("organization_id", kpi.organization_id);
+      const uniqueTypes = [...new Set((knownMetrics || []).map((m: any) => m.metric_type))];
+      deps = uniqueTypes.filter((t: string) => kpi.formula.includes(t));
+
+      // Persist discovered deps back to KPI for future runs
+      if (deps.length > 0) {
+        await serviceClient.from("kpis").update({ metric_dependencies: deps }).eq("id", kpi_id);
+      }
+    }
 
     if (deps.length === 0) {
       return new Response(
-        JSON.stringify({ error: "No metric dependencies defined for this KPI" }),
+        JSON.stringify({
+          error: "No metric dependencies found. Define metric_dependencies on the KPI or ensure the formula references metric types present in your data.",
+          hint: "Upload data first, then create a KPI whose formula references the metric type names from your dataset."
+        }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
