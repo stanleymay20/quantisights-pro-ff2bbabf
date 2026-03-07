@@ -8,9 +8,9 @@ const corsHeaders = {
 };
 
 const TIER_LIMITS: Record<string, number> = {
-  starter: 0,
-  growth: 10,
-  enterprise: 999999,
+  starter: parseInt(Deno.env.get("TIER_STARTER_CONVERGENCE_LIMIT") || "0"),
+  growth: parseInt(Deno.env.get("TIER_GROWTH_CONVERGENCE_LIMIT") || "10"),
+  enterprise: parseInt(Deno.env.get("TIER_ENTERPRISE_CONVERGENCE_LIMIT") || "999999"),
 };
 
 interface RiskComponents {

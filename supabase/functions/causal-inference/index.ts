@@ -93,7 +93,8 @@ serve(async (req) => {
         const baCorr = laggedCorrelation(b.slice(0, minLen), a.slice(0, minLen), 1);
 
         const strength = Math.max(Math.abs(abCorr), Math.abs(baCorr));
-        if (strength > 0.3) {
+        const CAUSAL_THRESHOLD = parseFloat(Deno.env.get("CAUSAL_SIGNIFICANCE_THRESHOLD") || "0.3");
+        if (strength > CAUSAL_THRESHOLD) {
           const causalDir = Math.abs(abCorr) > Math.abs(baCorr) ? "forward" : "reverse";
           edges.push({
             from: causalDir === "forward" ? types[i] : types[j],
