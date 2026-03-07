@@ -186,7 +186,12 @@ const KPIs = () => {
         body: { kpi_id: kpiId, dataset_id: activeDatasetId },
       });
       if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+      if (data?.error) {
+        const hint = data?.hint || data?.available_metric_types
+          ? `\n\nAvailable metrics: ${(data.available_metric_types || []).join(", ")}\n${data.hint || ""}`
+          : "";
+        throw new Error(data.error + hint);
+      }
       toast({ title: `Computed ${data.count} data points` });
       fetchKpiData(kpiId);
     } catch (e: any) {
