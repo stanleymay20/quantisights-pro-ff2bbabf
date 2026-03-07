@@ -68,9 +68,15 @@ serve(async (req) => {
       });
     }
 
-    const { kpi_id, date_from, date_to } = await req.json();
+    const { kpi_id, dataset_id, date_from, date_to } = await req.json();
     if (!kpi_id) {
       return new Response(JSON.stringify({ error: "kpi_id required" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (!dataset_id) {
+      return new Response(JSON.stringify({ error: "dataset_id required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -146,7 +152,8 @@ serve(async (req) => {
       const { data: knownMetrics } = await serviceClient
         .from("metrics")
         .select("metric_type")
-        .eq("organization_id", kpi.organization_id);
+        .eq("organization_id", kpi.organization_id)
+        .eq("dataset_id", dataset_id);
       const knownTypes = new Set((knownMetrics || []).map((m: any) => m.metric_type));
 
       // Match formula tokens against known metric types
@@ -171,6 +178,7 @@ serve(async (req) => {
         .from("metrics")
         .select("metric_type")
         .eq("organization_id", kpi.organization_id)
+        .eq("dataset_id", dataset_id)
         .limit(100);
       const available = [...new Set((availableMetrics || []).map((m: any) => m.metric_type))].slice(0, 20);
 
@@ -189,6 +197,7 @@ serve(async (req) => {
       .from("metrics")
       .select("metric_type, date, value")
       .eq("organization_id", kpi.organization_id)
+      .eq("dataset_id", dataset_id)
       .in("metric_type", deps)
       .gte("date", startDate)
       .lte("date", endDate)
