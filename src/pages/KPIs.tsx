@@ -454,12 +454,14 @@ const KPIs = () => {
                           size="sm"
                           variant={canUseAI ? "default" : "outline"}
                           onClick={() => handleAnalyze(selectedKpiObj.id)}
-                          disabled={analyzing || !canUseAI}
+                          disabled={analyzing || !canUseAI || kpiValues.length < 2}
                           className="gap-2"
+                          title={kpiValues.length < 2 ? "Compute KPI values first (need at least 2 data points)" : ""}
                         >
                           {analyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                           AI Analysis
                           {!canUseAI && <span className="text-[10px] ml-1 opacity-60">Growth+</span>}
+                          {canUseAI && kpiValues.length < 2 && <span className="text-[10px] ml-1 opacity-60">Need data</span>}
                         </Button>
                       </div>
                     </div>
