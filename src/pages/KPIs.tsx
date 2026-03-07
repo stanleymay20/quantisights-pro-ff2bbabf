@@ -212,7 +212,14 @@ const KPIs = () => {
         body: { kpi_id: kpiId, dataset_id: activeDatasetId },
       });
       if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+      if (data?.error) {
+        if (data.error.includes("minimum 2 data points")) {
+          toast({ title: "Not enough data", description: "Compute KPI values first (need at least 2 data points) before running AI analysis.", variant: "destructive" });
+        } else {
+          throw new Error(data.error);
+        }
+        return;
+      }
       setAnalysis(data.analysis);
     } catch (e: any) {
       toast({ title: "Analysis failed", description: e.message, variant: "destructive" });
