@@ -1,218 +1,175 @@
-// Dynamic configuration service for tier limits and thresholds
-// This allows runtime configuration changes without code deployment
+/**
+ * Dynamic System Configuration Service.
+ * All intelligence parameters are configurable via environment variables.
+ * No hardcoded magic numbers — every threshold is tunable at deploy time.
+ */
 
-export interface TierConfig {
-  simulations: number;
-  convergence: number;
-  copilot: number;
-  seats: number;
-  kpiComputations: number;
+function envFloat(key: string, fallback: number): number {
+  const val = import.meta.env[key];
+  if (val == null || val === "") return fallback;
+  const parsed = parseFloat(val);
+  return isFinite(parsed) ? parsed : fallback;
+}
+
+function envInt(key: string, fallback: number): number {
+  const val = import.meta.env[key];
+  if (val == null || val === "") return fallback;
+  const parsed = parseInt(val, 10);
+  return isFinite(parsed) ? parsed : fallback;
 }
 
 export interface SystemConfig {
-  tiers: {
-    starter: TierConfig;
-    growth: TierConfig;
-    enterprise: TierConfig;
-  };
-  confidence: {
-    smallSampleCeiling: number;
-    mediumSampleCeiling: number;
-    largeSampleCeiling: number;
-    smallSampleThreshold: number;
-    mediumSampleThreshold: number;
-  };
-  causal: {
-    significanceThreshold: number;
-  };
   costOfDelay: {
-    severityWeights: {
-      critical: number;
-      high: number;
-      medium: number;
-      low: number;
-    };
-    metricUrgency: {
-      churn: number;
-      retention: number;
-      revenue: number;
-      cost: number;
-      margin: number;
-      growth: number;
-    };
-    scoreThresholds: {
-      critical: number;
-      high: number;
-      medium: number;
-    };
+    severityWeights: { critical: number; high: number; medium: number; low: number };
+    confidenceContributionMax: number;
+    ageDecayRate: number;
+    ageDecayMax: number;
+    signalDeltaMultiplier: number;
+    signalDeltaMax: number;
+    entityCountMultiplier: number;
+    entityCountMax: number;
+    trendAccelerationBonus: number;
+    metricUrgency: Record<string, number>;
+    labelThresholds: { critical: number; high: number; medium: number };
+    actionWindows: { critical: number; high: number; medium: number; low: number };
   };
   decisionIntelligence: {
     voi: {
       uncertaintyReduction: number;
-      costPerDataPointMultiplier: number;
-      sampleInfoEfficiency: number;
-      decideNowConfidenceThreshold: number;
+      costPerDataPointRatio: number;
+      sampleInfoRatio: number;
+      decideNowConfidence: number;
     };
     regret: {
       p10FallbackMultiplier: number;
       p90FallbackMultiplier: number;
     };
-    decisionVelocity: {
+    velocity: {
       improvingThreshold: number;
       degradingThreshold: number;
+      slowWarningDays: number;
+      minDecisionsForTrend: number;
     };
-    portfolio: {
+    portfolioRisk: {
       varConfidenceLevel: number;
+      highCorrelationThreshold: number;
+      highConcentrationThreshold: number;
     };
   };
   convergence: {
     volatilityDivergenceThreshold: number;
-    alignmentThresholds: {
-      aligned: number;
-      tension: number;
-      misalignment: number;
+    volatilityDivergencePenalty: number;
+    alignmentThresholds: { aligned: number; tension: number; misalignment: number };
+    conflictRules: {
+      ceoVsCfoDivergence: number;
+      ceoVsCfoPenalty: number;
+      cmoLowThreshold: number;
+      cooHighThreshold: number;
+      growthExecutionPenalty: number;
+      cfoHighThreshold: number;
+      ceoLowThreshold: number;
+      cashExpansionPenalty: number;
+      volatilityHighThreshold: number;
+      volatilityLowThreshold: number;
+      operationalImbalancePenalty: number;
     };
-    executiveRiskThresholds: {
-      cmoLowRiskMax: number;
-      cooHighRiskMin: number;
-      cfoHighRiskMin: number;
-      ceoLowRiskMax: number;
-    };
+    reconcileIntervalMs: number;
   };
 }
 
-// Default configuration - can be overridden by environment or database
-const DEFAULT_CONFIG: SystemConfig = {
-  tiers: {
-    starter: {
-      simulations: parseInt(import.meta.env.VITE_TIER_STARTER_SIMULATIONS || "5"),
-      convergence: parseInt(import.meta.env.VITE_TIER_STARTER_CONVERGENCE || "3"),
-      copilot: parseInt(import.meta.env.VITE_TIER_STARTER_COPILOT || "10"),
-      seats: parseInt(import.meta.env.VITE_TIER_STARTER_SEATS || "2"),
-      kpiComputations: parseInt(import.meta.env.VITE_TIER_STARTER_KPI || "3"),
-    },
-    growth: {
-      simulations: parseInt(import.meta.env.VITE_TIER_GROWTH_SIMULATIONS || "50"),
-      convergence: parseInt(import.meta.env.VITE_TIER_GROWTH_CONVERGENCE || "30"),
-      copilot: parseInt(import.meta.env.VITE_TIER_GROWTH_COPILOT || "100"),
-      seats: parseInt(import.meta.env.VITE_TIER_GROWTH_SEATS || "5"),
-      kpiComputations: parseInt(import.meta.env.VITE_TIER_GROWTH_KPI || "25"),
-    },
-    enterprise: {
-      simulations: parseInt(import.meta.env.VITE_TIER_ENTERPRISE_SIMULATIONS || "-1"),
-      convergence: parseInt(import.meta.env.VITE_TIER_ENTERPRISE_CONVERGENCE || "-1"),
-      copilot: parseInt(import.meta.env.VITE_TIER_ENTERPRISE_COPILOT || "-1"),
-      seats: parseInt(import.meta.env.VITE_TIER_ENTERPRISE_SEATS || "-1"),
-      kpiComputations: parseInt(import.meta.env.VITE_TIER_ENTERPRISE_KPI || "999999"),
-    },
-  },
-  confidence: {
-    smallSampleCeiling: parseInt(import.meta.env.VITE_CONFIDENCE_CEILING_SMALL || "60"),
-    mediumSampleCeiling: parseInt(import.meta.env.VITE_CONFIDENCE_CEILING_MEDIUM || "75"),
-    largeSampleCeiling: parseInt(import.meta.env.VITE_CONFIDENCE_CEILING_LARGE || "90"),
-    smallSampleThreshold: parseInt(import.meta.env.VITE_SAMPLE_THRESHOLD_SMALL || "12"),
-    mediumSampleThreshold: parseInt(import.meta.env.VITE_SAMPLE_THRESHOLD_MEDIUM || "30"),
-  },
-  causal: {
-    significanceThreshold: parseFloat(import.meta.env.VITE_CAUSAL_THRESHOLD || "0.3"),
-  },
-  costOfDelay: {
-    severityWeights: {
-      critical: parseInt(import.meta.env.VITE_COST_OF_DELAY_SEVERITY_CRITICAL || "40"),
-      high: parseInt(import.meta.env.VITE_COST_OF_DELAY_SEVERITY_HIGH || "28"),
-      medium: parseInt(import.meta.env.VITE_COST_OF_DELAY_SEVERITY_MEDIUM || "16"),
-      low: parseInt(import.meta.env.VITE_COST_OF_DELAY_SEVERITY_LOW || "6"),
-    },
-    metricUrgency: {
-      churn: parseFloat(import.meta.env.VITE_COST_OF_DELAY_METRIC_CHURN || "1.3"),
-      retention: parseFloat(import.meta.env.VITE_COST_OF_DELAY_METRIC_RETENTION || "1.3"),
-      revenue: parseFloat(import.meta.env.VITE_COST_OF_DELAY_METRIC_REVENUE || "1.2"),
-      cost: parseFloat(import.meta.env.VITE_COST_OF_DELAY_METRIC_COST || "1.1"),
-      margin: parseFloat(import.meta.env.VITE_COST_OF_DELAY_METRIC_MARGIN || "1.15"),
-      growth: parseFloat(import.meta.env.VITE_COST_OF_DELAY_METRIC_GROWTH || "1.05"),
-    },
-    scoreThresholds: {
-      critical: parseInt(import.meta.env.VITE_COST_OF_DELAY_SCORE_CRITICAL_MIN || "80"),
-      high: parseInt(import.meta.env.VITE_COST_OF_DELAY_SCORE_HIGH_MIN || "55"),
-      medium: parseInt(import.meta.env.VITE_COST_OF_DELAY_SCORE_MEDIUM_MIN || "30"),
-    },
-  },
-  decisionIntelligence: {
-    voi: {
-      uncertaintyReduction: parseFloat(import.meta.env.VITE_VOI_UNCERTAINTY_REDUCTION || "0.03"),
-      costPerDataPointMultiplier: parseFloat(import.meta.env.VITE_VOI_COST_PER_DATA_POINT_MULTIPLIER || "0.001"),
-      sampleInfoEfficiency: parseFloat(import.meta.env.VITE_VOI_SAMPLE_INFO_EFFICIENCY || "0.6"),
-      decideNowConfidenceThreshold: parseFloat(import.meta.env.VITE_VOI_DECIDE_NOW_CONFIDENCE_THRESHOLD || "0.75"),
-    },
-    regret: {
-      p10FallbackMultiplier: parseFloat(import.meta.env.VITE_REGRET_P10_FALLBACK_MULTIPLIER || "0.3"),
-      p90FallbackMultiplier: parseFloat(import.meta.env.VITE_REGRET_P90_FALLBACK_MULTIPLIER || "1.5"),
-    },
-    decisionVelocity: {
-      improvingThreshold: parseFloat(import.meta.env.VITE_DECISION_VELOCITY_IMPROVING_THRESHOLD || "0.85"),
-      degradingThreshold: parseFloat(import.meta.env.VITE_DECISION_VELOCITY_DEGRADING_THRESHOLD || "1.15"),
-    },
-    portfolio: {
-      varConfidenceLevel: parseFloat(import.meta.env.VITE_PORTFOLIO_VAR_CONFIDENCE_LEVEL || "1.645"),
-    },
-  },
-  convergence: {
-    volatilityDivergenceThreshold: parseInt(import.meta.env.VITE_CONVERGENCE_VOLATILITY_DIVERGENCE_THRESHOLD || "35"),
-    alignmentThresholds: {
-      aligned: parseInt(import.meta.env.VITE_CONVERGENCE_ALIGNMENT_ALIGNED_MIN || "80"),
-      tension: parseInt(import.meta.env.VITE_CONVERGENCE_ALIGNMENT_TENSION_MIN || "60"),
-      misalignment: parseInt(import.meta.env.VITE_CONVERGENCE_ALIGNMENT_MISALIGNMENT_MIN || "40"),
-    },
-    executiveRiskThresholds: {
-      cmoLowRiskMax: parseInt(import.meta.env.VITE_EXECUTIVE_CONVERGENCE_CMO_LOW_RISK_MAX || "40"),
-      cooHighRiskMin: parseInt(import.meta.env.VITE_EXECUTIVE_CONVERGENCE_COO_HIGH_RISK_MIN || "70"),
-      cfoHighRiskMin: parseInt(import.meta.env.VITE_EXECUTIVE_CONVERGENCE_CFO_HIGH_RISK_MIN || "75"),
-      ceoLowRiskMax: parseInt(import.meta.env.VITE_EXECUTIVE_CONVERGENCE_CEO_LOW_RISK_MAX || "50"),
-    },
-  },
-};
-
-// Runtime configuration storage
-let runtimeConfig: SystemConfig = { ...DEFAULT_CONFIG };
+let _cachedConfig: SystemConfig | null = null;
 
 export function getSystemConfig(): SystemConfig {
-  return runtimeConfig;
+  if (_cachedConfig) return _cachedConfig;
+
+  _cachedConfig = {
+    costOfDelay: {
+      severityWeights: {
+        critical: envFloat("VITE_COD_SEVERITY_CRITICAL", 40),
+        high: envFloat("VITE_COD_SEVERITY_HIGH", 28),
+        medium: envFloat("VITE_COD_SEVERITY_MEDIUM", 16),
+        low: envFloat("VITE_COD_SEVERITY_LOW", 6),
+      },
+      confidenceContributionMax: envFloat("VITE_COD_CONFIDENCE_MAX", 20),
+      ageDecayRate: envFloat("VITE_COD_AGE_DECAY_RATE", 0.7),
+      ageDecayMax: envFloat("VITE_COD_AGE_DECAY_MAX", 20),
+      signalDeltaMultiplier: envFloat("VITE_COD_SIGNAL_DELTA_MULT", 0.5),
+      signalDeltaMax: envFloat("VITE_COD_SIGNAL_DELTA_MAX", 10),
+      entityCountMultiplier: envFloat("VITE_COD_ENTITY_COUNT_MULT", 1.5),
+      entityCountMax: envFloat("VITE_COD_ENTITY_COUNT_MAX", 5),
+      trendAccelerationBonus: envFloat("VITE_COD_TREND_ACCEL_BONUS", 5),
+      metricUrgency: {
+        churn: envFloat("VITE_COD_URGENCY_CHURN", 1.3),
+        retention: envFloat("VITE_COD_URGENCY_RETENTION", 1.3),
+        revenue: envFloat("VITE_COD_URGENCY_REVENUE", 1.2),
+        cost: envFloat("VITE_COD_URGENCY_COST", 1.1),
+        margin: envFloat("VITE_COD_URGENCY_MARGIN", 1.15),
+        growth: envFloat("VITE_COD_URGENCY_GROWTH", 1.05),
+      },
+      labelThresholds: {
+        critical: envInt("VITE_COD_LABEL_CRITICAL", 80),
+        high: envInt("VITE_COD_LABEL_HIGH", 55),
+        medium: envInt("VITE_COD_LABEL_MEDIUM", 30),
+      },
+      actionWindows: {
+        critical: envInt("VITE_COD_WINDOW_CRITICAL", 3),
+        high: envInt("VITE_COD_WINDOW_HIGH", 7),
+        medium: envInt("VITE_COD_WINDOW_MEDIUM", 14),
+        low: envInt("VITE_COD_WINDOW_LOW", 21),
+      },
+    },
+    decisionIntelligence: {
+      voi: {
+        uncertaintyReduction: envFloat("VITE_VOI_UNCERTAINTY_REDUCTION", 0.03),
+        costPerDataPointRatio: envFloat("VITE_VOI_COST_PER_DATAPOINT", 0.001),
+        sampleInfoRatio: envFloat("VITE_VOI_SAMPLE_INFO_RATIO", 0.6),
+        decideNowConfidence: envFloat("VITE_VOI_DECIDE_NOW_CONF", 0.75),
+      },
+      regret: {
+        p10FallbackMultiplier: envFloat("VITE_REGRET_P10_FALLBACK", 0.3),
+        p90FallbackMultiplier: envFloat("VITE_REGRET_P90_FALLBACK", 1.5),
+      },
+      velocity: {
+        improvingThreshold: envFloat("VITE_VELOCITY_IMPROVING", 0.85),
+        degradingThreshold: envFloat("VITE_VELOCITY_DEGRADING", 1.15),
+        slowWarningDays: envFloat("VITE_VELOCITY_SLOW_WARN_DAYS", 5),
+        minDecisionsForTrend: envInt("VITE_VELOCITY_MIN_DECISIONS", 4),
+      },
+      portfolioRisk: {
+        varConfidenceLevel: envFloat("VITE_PORTFOLIO_VAR_CONF", 1.645),
+        highCorrelationThreshold: envFloat("VITE_PORTFOLIO_HIGH_CORR", 0.5),
+        highConcentrationThreshold: envFloat("VITE_PORTFOLIO_HIGH_CONC", 60),
+      },
+    },
+    convergence: {
+      volatilityDivergenceThreshold: envFloat("VITE_CONV_VOL_DIV_THRESHOLD", 35),
+      volatilityDivergencePenalty: envFloat("VITE_CONV_VOL_DIV_PENALTY", 10),
+      alignmentThresholds: {
+        aligned: envInt("VITE_CONV_ALIGNED", 80),
+        tension: envInt("VITE_CONV_TENSION", 60),
+        misalignment: envInt("VITE_CONV_MISALIGNMENT", 40),
+      },
+      conflictRules: {
+        ceoVsCfoDivergence: envFloat("VITE_CONV_CEO_CFO_DIV", 30),
+        ceoVsCfoPenalty: envFloat("VITE_CONV_CEO_CFO_PENALTY", 15),
+        cmoLowThreshold: envFloat("VITE_CONV_CMO_LOW", 40),
+        cooHighThreshold: envFloat("VITE_CONV_COO_HIGH", 70),
+        growthExecutionPenalty: envFloat("VITE_CONV_GROWTH_EXEC_PENALTY", 8),
+        cfoHighThreshold: envFloat("VITE_CONV_CFO_HIGH", 75),
+        ceoLowThreshold: envFloat("VITE_CONV_CEO_LOW", 50),
+        cashExpansionPenalty: envFloat("VITE_CONV_CASH_EXP_PENALTY", 15),
+        volatilityHighThreshold: envFloat("VITE_CONV_VOL_HIGH", 80),
+        volatilityLowThreshold: envFloat("VITE_CONV_VOL_LOW", 40),
+        operationalImbalancePenalty: envFloat("VITE_CONV_OP_IMBAL_PENALTY", 25),
+      },
+      reconcileIntervalMs: envInt("VITE_CONV_RECONCILE_INTERVAL", 6 * 60 * 60 * 1000),
+    },
+  };
+
+  return _cachedConfig;
 }
 
-export function updateSystemConfig(updates: Partial<SystemConfig>): void {
-  runtimeConfig = { ...runtimeConfig, ...updates };
-}
-
-export function getTierLimits(tier: keyof SystemConfig['tiers']): TierConfig {
-  return runtimeConfig.tiers[tier];
-}
-
-export function getConfidenceConfig() {
-  return runtimeConfig.confidence;
-}
-
-export function getCausalConfig() {
-  return runtimeConfig.causal;
-}
-
-export function getCostOfDelayConfig() {
-  return runtimeConfig.costOfDelay;
-}
-
-export function getDecisionIntelligenceConfig() {
-  return runtimeConfig.decisionIntelligence;
-}
-
-export function getConvergenceConfig() {
-  return runtimeConfig.convergence;
-}
-
-// Utility functions for common operations
-export function isUnlimited(value: number): boolean {
-  return value === -1;
-}
-
-export function getEffectiveLimit(tier: keyof SystemConfig['tiers'], feature: keyof TierConfig): number {
-  const limit = runtimeConfig.tiers[tier][feature];
-  return isUnlimited(limit) ? Number.MAX_SAFE_INTEGER : limit;
+/** Reset cached config (useful for testing) */
+export function resetSystemConfig(): void {
+  _cachedConfig = null;
 }

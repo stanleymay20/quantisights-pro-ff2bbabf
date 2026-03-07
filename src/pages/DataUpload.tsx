@@ -562,7 +562,7 @@ const DataUpload = () => {
         .update({ status: "completed", row_count: inserted, current_version: 1, last_refreshed_at: new Date().toISOString() })
         .eq("id", dataset.id);
       if (statusErr) {
-        // Error tracked in monitoring service
+        console.error("[QualityGate] Dataset status update failed:", { dataset_id: dataset.id, org_id: currentOrgId, error: statusErr.message });
       }
 
       // Auto-create or use current project, attach dataset, and set as active
@@ -582,7 +582,7 @@ const DataUpload = () => {
 
       const countMismatch = verifiedCount !== null && verifiedCount !== inserted;
       if (countMismatch) {
-        // Mismatch tracked in observability layer
+        console.warn("[QualityGate] Metric count mismatch", { expected: inserted, actual: verifiedCount, dataset_id: dataset.id, org_id: currentOrgId });
       }
 
       // ═══════════════════════════════════════════════════════
@@ -600,7 +600,7 @@ const DataUpload = () => {
       ]);
 
       if (aggResult.status === "rejected") {
-        // Pipeline error logged to observability service
+        console.warn("[Pipeline] Aggregate refresh failed:", aggResult.reason);
       }
 
       // Finalize pipeline run

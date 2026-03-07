@@ -10,9 +10,9 @@ const corsHeaders = {
 };
 
 const TIER_LIMITS: Record<string, number> = {
-  starter: parseInt(Deno.env.get("TIER_STARTER_COPILOT_LIMIT") || "20"),
-  growth: parseInt(Deno.env.get("TIER_GROWTH_COPILOT_LIMIT") || "100"),
-  enterprise: parseInt(Deno.env.get("TIER_ENTERPRISE_COPILOT_LIMIT") || "999999"),
+  starter: 20,
+  growth: 100,
+  enterprise: 999999,
 };
 
 const SYSTEM_PROMPT = `You are Quantivis Executive Intelligence.

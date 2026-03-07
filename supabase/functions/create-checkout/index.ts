@@ -10,9 +10,9 @@ const corsHeaders = {
 const ALLOWED_ORIGINS = [
   "https://quantisights-pro.lovable.app",
   "https://id-preview--28b43e06-9231-4c54-bc18-a49be01a6516.lovable.app",
-  Deno.env.get("ALLOWED_ORIGINS")?.split(",") || [],
-  Deno.env.get("NODE_ENV") === "development" ? ["http://localhost:5173", "http://localhost:3000"] : [],
-].flat();
+  "http://localhost:5173",
+  "http://localhost:3000",
+];
 
 function getAllowedOrigin(req: Request): string {
   const origin = req.headers.get("origin") || "";

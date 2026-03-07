@@ -9,9 +9,9 @@ const corsHeaders = {
 };
 
 const TIER_LIMITS: Record<string, number> = {
-  starter: parseInt(Deno.env.get("TIER_STARTER_SIMULATION_LIMIT") || "5"),
-  growth: parseInt(Deno.env.get("TIER_GROWTH_SIMULATION_LIMIT") || "20"),
-  enterprise: parseInt(Deno.env.get("TIER_ENTERPRISE_SIMULATION_LIMIT") || "999999"),
+  starter: 5,
+  growth: 20,
+  enterprise: 999999,
 };
 
 interface SimulationInput {

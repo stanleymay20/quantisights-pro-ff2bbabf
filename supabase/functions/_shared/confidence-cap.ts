@@ -34,24 +34,18 @@ export function capConfidence(
   variance?: number,
   calibrationModel?: CalibrationModel | null
 ): ConfidenceResult {
-  const SMALL_SAMPLE_THRESHOLD = parseInt(Deno.env.get("SAMPLE_SIZE_THRESHOLD_SMALL") || "12");
-  const MEDIUM_SAMPLE_THRESHOLD = parseInt(Deno.env.get("SAMPLE_SIZE_THRESHOLD_MEDIUM") || "30");
-  const SMALL_SAMPLE_CEILING = parseInt(Deno.env.get("CONFIDENCE_CEILING_SMALL_SAMPLE") || "60");
-  const MEDIUM_SAMPLE_CEILING = parseInt(Deno.env.get("CONFIDENCE_CEILING_MEDIUM_SAMPLE") || "75");
-  const LARGE_SAMPLE_CEILING = parseInt(Deno.env.get("CONFIDENCE_CEILING_LARGE_SAMPLE") || "90");
-
   let ceiling: number;
   let reason: string;
 
-  if (sampleSize < SMALL_SAMPLE_THRESHOLD) {
-    ceiling = SMALL_SAMPLE_CEILING;
-    reason = `Sample size ${sampleSize} < ${SMALL_SAMPLE_THRESHOLD}: ceiling ${SMALL_SAMPLE_CEILING}%`;
-  } else if (sampleSize < MEDIUM_SAMPLE_THRESHOLD) {
-    ceiling = MEDIUM_SAMPLE_CEILING;
-    reason = `Sample size ${sampleSize} < ${MEDIUM_SAMPLE_THRESHOLD}: ceiling ${MEDIUM_SAMPLE_CEILING}%`;
+  if (sampleSize < 12) {
+    ceiling = 60;
+    reason = `Sample size ${sampleSize} < 12: ceiling 60%`;
+  } else if (sampleSize < 30) {
+    ceiling = 75;
+    reason = `Sample size ${sampleSize} < 30: ceiling 75%`;
   } else {
-    ceiling = LARGE_SAMPLE_CEILING;
-    reason = `Sample size ${sampleSize} ≥ ${MEDIUM_SAMPLE_THRESHOLD}: ceiling ${LARGE_SAMPLE_CEILING}%`;
+    ceiling = 90;
+    reason = `Sample size ${sampleSize} ≥ 30: ceiling 90%`;
   }
 
   const capped = Math.min(rawConfidence, ceiling);

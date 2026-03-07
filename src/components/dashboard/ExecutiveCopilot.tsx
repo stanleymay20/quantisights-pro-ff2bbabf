@@ -153,7 +153,7 @@ const ExecutiveCopilot = ({ organizationId, roleType, riskScore, tier }: Props) 
         }
       }
     } catch (e: any) {
-      // Error reported to observability service
+      console.error("Copilot error:", e);
       setError(e.message);
       if (!assistantSoFar) {
         setMessages(prev => prev.slice(0, -1));

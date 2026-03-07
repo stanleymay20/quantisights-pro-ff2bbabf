@@ -9,7 +9,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Network, Loader2, ArrowRight, AlertTriangle, CheckCircle } from "lucide-react";
 import DatasetRequired from "@/components/layout/DatasetRequired";
-import { getCausalConfig } from "@/lib/system-config";
 
 interface CausalNode {
   id: string;
@@ -195,7 +194,7 @@ const CausalInference = () => {
                     ))}
                     {result.dag.edges.length === 0 && (
                       <p className="text-sm text-muted-foreground text-center py-4">
-                        No statistically significant causal relationships detected (threshold: r &gt; {getCausalConfig().significanceThreshold})
+                        No statistically significant causal relationships detected (threshold: r &gt; 0.3)
                       </p>
                     )}
                   </div>

@@ -37,7 +37,7 @@ serve(async (req) => {
 
     const portalSession = await stripe.billingPortal.sessions.create({
       customer: customers.data[0].id,
-      return_url: `${req.headers.get("origin") || Deno.env.get("DEFAULT_RETURN_URL") || "https://quantivis.io/dashboard"}/dashboard`,
+      return_url: `${req.headers.get("origin") || "http://localhost:3000"}/dashboard`,
     });
 
     return new Response(JSON.stringify({ url: portalSession.url }), {

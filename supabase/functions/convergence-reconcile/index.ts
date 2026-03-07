@@ -7,26 +7,45 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-interface RiskComponents {
-  deviation: number;
-  trend: number;
-  volatility: number;
-  forecast: number;
+// --- Configurable thresholds via env vars ---
+function envFloat(key: string, fallback: number): number {
+  const v = Deno.env.get(key);
+  if (!v) return fallback;
+  const p = parseFloat(v);
+  return isFinite(p) ? p : fallback;
+}
+function envInt(key: string, fallback: number): number {
+  const v = Deno.env.get(key);
+  if (!v) return fallback;
+  const p = parseInt(v, 10);
+  return isFinite(p) ? p : fallback;
 }
 
-interface RoleRisk {
-  role_type: string;
-  score: number;
-  components: RiskComponents;
+function getConvergenceConfig() {
+  return {
+    ceoVsCfoDivergence: envFloat("CONV_CEO_CFO_DIVERGENCE", 30),
+    ceoVsCfoPenalty: envFloat("CONV_CEO_CFO_PENALTY", 15),
+    cmoLowThreshold: envFloat("CONV_CMO_LOW_THRESHOLD", 40),
+    cooHighThreshold: envFloat("CONV_COO_HIGH_THRESHOLD", 70),
+    growthExecutionPenalty: envFloat("CONV_GROWTH_EXEC_PENALTY", 8),
+    cfoHighThreshold: envFloat("CONV_CFO_HIGH_THRESHOLD", 75),
+    ceoLowThreshold: envFloat("CONV_CEO_LOW_THRESHOLD", 50),
+    cashExpansionPenalty: envFloat("CONV_CASH_EXP_PENALTY", 15),
+    volatilityHighThreshold: envFloat("CONV_VOL_HIGH_THRESHOLD", 80),
+    volatilityLowThreshold: envFloat("CONV_VOL_LOW_THRESHOLD", 40),
+    operationalImbalancePenalty: envFloat("CONV_OP_IMBAL_PENALTY", 25),
+    volatilityDivergenceThreshold: envFloat("CONV_VOL_DIV_THRESHOLD", 35),
+    volatilityDivergencePenalty: envFloat("CONV_VOL_DIV_PENALTY", 10),
+    alignedThreshold: envInt("CONV_ALIGNED_THRESHOLD", 80),
+    tensionThreshold: envInt("CONV_TENSION_THRESHOLD", 60),
+    misalignmentThreshold: envInt("CONV_MISALIGNMENT_THRESHOLD", 40),
+    reconcileIntervalMs: envInt("CONV_RECONCILE_INTERVAL_MS", 6 * 60 * 60 * 1000),
+  };
 }
 
-interface Conflict {
-  rule_triggered: string;
-  severity: string;
-  role_1: string;
-  role_2: string;
-  description: string;
-}
+interface RiskComponents { deviation: number; trend: number; volatility: number; forecast: number; }
+interface RoleRisk { role_type: string; score: number; components: RiskComponents; }
+interface Conflict { rule_triggered: string; severity: string; role_1: string; role_2: string; description: string; }
 
 function stddev(values: number[]): number {
   if (values.length < 2) return 0;
@@ -41,6 +60,7 @@ function clamp(v: number, min: number, max: number): number {
 
 function computeConvergence(roles: RoleRisk[]) {
   if (roles.length < 2) return null;
+  const cfg = getConvergenceConfig();
 
   const scores = roles.map(r => r.score);
   const dispersion = Math.round(stddev(scores) * 100) / 100;
@@ -51,51 +71,48 @@ function computeConvergence(roles: RoleRisk[]) {
   const roleMap: Record<string, RoleRisk> = {};
   for (const r of roles) roleMap[r.role_type] = r;
 
-  if (roleMap.ceo && roleMap.cfo && Math.abs(roleMap.ceo.score - roleMap.cfo.score) > 30) {
+  if (roleMap.ceo && roleMap.cfo && Math.abs(roleMap.ceo.score - roleMap.cfo.score) > cfg.ceoVsCfoDivergence) {
     conflicts.push({ rule_triggered: "strategic_financial_divergence", severity: "high", role_1: "ceo", role_2: "cfo",
       description: `CEO risk (${roleMap.ceo.score}) and CFO risk (${roleMap.cfo.score}) diverge by ${Math.abs(roleMap.ceo.score - roleMap.cfo.score)} points` });
-    conflictPenalty += 15;
+    conflictPenalty += cfg.ceoVsCfoPenalty;
   }
 
-  if (roleMap.cmo && roleMap.coo && roleMap.cmo.score < 40 && roleMap.coo.score > 70) {
+  if (roleMap.cmo && roleMap.coo && roleMap.cmo.score < cfg.cmoLowThreshold && roleMap.coo.score > cfg.cooHighThreshold) {
     conflicts.push({ rule_triggered: "growth_execution_strain", severity: "medium", role_1: "cmo", role_2: "coo",
       description: `CMO low risk (${roleMap.cmo.score}) while COO elevated (${roleMap.coo.score}) — growth vs execution strain` });
-    conflictPenalty += 8;
+    conflictPenalty += cfg.growthExecutionPenalty;
   }
 
-  if (roleMap.cfo && roleMap.ceo && roleMap.cfo.score > 75 && roleMap.ceo.score < 50) {
+  if (roleMap.cfo && roleMap.ceo && roleMap.cfo.score > cfg.cfoHighThreshold && roleMap.ceo.score < cfg.ceoLowThreshold) {
     conflicts.push({ rule_triggered: "cash_expansion_mismatch", severity: "high", role_1: "cfo", role_2: "ceo",
       description: `CFO cash risk (${roleMap.cfo.score}) while CEO pursues expansion (${roleMap.ceo.score})` });
-    conflictPenalty += 15;
+    conflictPenalty += cfg.cashExpansionPenalty;
   }
 
   for (const r of roles) {
     const vol = (r.components as any)?.volatility ?? 0;
-    if (vol > 80) {
-      const othersLow = roles.filter(o => o.role_type !== r.role_type).every(o => ((o.components as any)?.volatility ?? 0) < 40);
+    if (vol > cfg.volatilityHighThreshold) {
+      const othersLow = roles.filter(o => o.role_type !== r.role_type).every(o => ((o.components as any)?.volatility ?? 0) < cfg.volatilityLowThreshold);
       if (othersLow) {
         conflicts.push({ rule_triggered: "operational_imbalance", severity: "critical", role_1: r.role_type, role_2: "all_others",
           description: `${r.role_type.toUpperCase()} volatility (${vol}) vastly exceeds others` });
-        conflictPenalty += 25;
+        conflictPenalty += cfg.operationalImbalancePenalty;
       }
     }
   }
 
   const volatilities = roles.map(r => (r.components as any)?.volatility ?? 0);
-  const volatilityDivergenceThreshold = parseInt(Deno.env.get("CONVERGENCE_VOLATILITY_DIVERGENCE_THRESHOLD") || "35");
   let volatilityDivergence = 0;
-  if (Math.max(...volatilities) - Math.min(...volatilities) > volatilityDivergenceThreshold) volatilityDivergence = 10;
+  if (Math.max(...volatilities) - Math.min(...volatilities) > cfg.volatilityDivergenceThreshold) {
+    volatilityDivergence = cfg.volatilityDivergencePenalty;
+  }
 
   const score = clamp(Math.round(100 - (dispersion + conflictPenalty + volatilityDivergence)), 0, 100);
 
-  const alignedMin = parseInt(Deno.env.get("CONVERGENCE_ALIGNMENT_ALIGNED_MIN") || "80");
-  const tensionMin = parseInt(Deno.env.get("CONVERGENCE_ALIGNMENT_TENSION_MIN") || "60");
-  const misalignmentMin = parseInt(Deno.env.get("CONVERGENCE_ALIGNMENT_MISALIGNMENT_MIN") || "40");
-
   let alignmentStatus = "aligned";
-  if (score >= alignedMin) alignmentStatus = "aligned";
-  else if (score >= tensionMin) alignmentStatus = "tension";
-  else if (score >= misalignmentMin) alignmentStatus = "misalignment";
+  if (score >= cfg.alignedThreshold) alignmentStatus = "aligned";
+  else if (score >= cfg.tensionThreshold) alignmentStatus = "tension";
+  else if (score >= cfg.misalignmentThreshold) alignmentStatus = "misalignment";
   else alignmentStatus = "structural_conflict";
 
   return { score, dispersion, conflict_penalty: conflictPenalty, volatility_divergence: volatilityDivergence, alignment_status: alignmentStatus, conflicts };
@@ -107,6 +124,7 @@ serve(async (req) => {
   }
 
   const startTime = Date.now();
+  const cfg = getConvergenceConfig();
 
   try {
     const serviceClient = createClient(
@@ -114,7 +132,6 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Fetch all orgs with active growth/enterprise subscriptions
     const { data: subs } = await serviceClient
       .from("subscriptions")
       .select("organization_id, tier")
@@ -127,18 +144,15 @@ serve(async (req) => {
       });
     }
 
-    const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
     let processed = 0;
     let skipped = 0;
     let errors = 0;
 
-    // Process in batches of 5
     for (let i = 0; i < subs.length; i += 10) {
       const batch = subs.slice(i, i + 10);
       await Promise.all(batch.map(async (sub) => {
         const orgId = sub.organization_id;
         try {
-          // Check if last convergence is recent enough
           const { data: latest } = await serviceClient
             .from("executive_convergence_index")
             .select("score, created_at")
@@ -147,36 +161,28 @@ serve(async (req) => {
             .limit(1)
             .maybeSingle();
 
-          // Fetch role risk indices
           const { data: riskRows } = await serviceClient
             .from("executive_risk_index")
             .select("role_type, score, components")
             .eq("organization_id", orgId);
 
           const roles: RoleRisk[] = (riskRows || []).map((r: any) => ({
-            role_type: r.role_type,
-            score: r.score,
-            components: r.components,
+            role_type: r.role_type, score: r.score, components: r.components,
           }));
 
-          if (roles.length < 2) {
-            skipped++;
-            return;
-          }
+          if (roles.length < 2) { skipped++; return; }
 
           const result = computeConvergence(roles);
           if (!result) { skipped++; return; }
 
-          // Skip if score unchanged and last update < 6h
           if (latest) {
             const lastAge = Date.now() - new Date(latest.created_at).getTime();
-            if (latest.score === result.score && lastAge < SIX_HOURS_MS) {
+            if (latest.score === result.score && lastAge < cfg.reconcileIntervalMs) {
               skipped++;
               return;
             }
           }
 
-          // Store convergence
           await serviceClient.from("executive_convergence_index").insert({
             organization_id: orgId,
             score: result.score,
@@ -186,7 +192,6 @@ serve(async (req) => {
             alignment_status: result.alignment_status,
           });
 
-          // Resolve old conflicts, insert new
           await serviceClient.from("executive_conflicts")
             .update({ resolved_at: new Date().toISOString() })
             .eq("organization_id", orgId)
@@ -219,9 +224,7 @@ serve(async (req) => {
     const summary = {
       event: "convergence_reconcile_batch",
       total_eligible: subs.length,
-      processed,
-      skipped,
-      errors,
+      processed, skipped, errors,
       duration_ms: duration,
       avg_per_org_ms: processed > 0 ? Math.round(duration / processed) : 0,
     };
@@ -239,12 +242,3 @@ serve(async (req) => {
     );
   }
 });
-C O N V E R G E N C E _ V O L A T I L I T Y _ D I V E R G E N C E _ T H R E S H O L D = 3 5 
- 
- C O N V E R G E N C E _ A L I G N M E N T _ A L I G N E D _ M I N = 8 0 
- 
- C O N V E R G E N C E _ A L I G N M E N T _ T E N S I O N _ M I N = 6 0 
- 
- C O N V E R G E N C E _ A L I G N M E N T _ M I S A L I G N M E N T _ M I N = 4 0 
- 
- 

@@ -1,7 +1,10 @@
 /**
  * Dynamic Cost of Delay computation engine.
  * Produces structured, data-driven delay cost assessments — never hardcoded labels.
+ * All parameters are configurable via system-config.ts.
  */
+
+import { getSystemConfig } from "./system-config";
 
 export interface CostOfDelayInput {
   severity: "critical" | "high" | "medium" | "low";
@@ -25,60 +28,44 @@ export interface CostOfDelayResult {
   reason: string;
 }
 
-import { getCostOfDelayConfig } from './system-config';
-
-const SEVERITY_WEIGHT: Record<string, number> = {
-  critical: getCostOfDelayConfig().severityWeights.critical,
-  high: getCostOfDelayConfig().severityWeights.high,
-  medium: getCostOfDelayConfig().severityWeights.medium,
-  low: getCostOfDelayConfig().severityWeights.low,
-};
-
-const METRIC_URGENCY: Record<string, number> = {
-  churn: getCostOfDelayConfig().metricUrgency.churn,
-  retention: getCostOfDelayConfig().metricUrgency.retention,
-  revenue: getCostOfDelayConfig().metricUrgency.revenue,
-  cost: getCostOfDelayConfig().metricUrgency.cost,
-  margin: getCostOfDelayConfig().metricUrgency.margin,
-  growth: getCostOfDelayConfig().metricUrgency.growth,
-};
-
 function metricUrgencyMultiplier(metricType: string | null | undefined): number {
   if (!metricType) return 1;
-  const key = Object.keys(METRIC_URGENCY).find(k => metricType.toLowerCase().includes(k));
-  return key ? METRIC_URGENCY[key] : 1;
+  const cfg = getSystemConfig().costOfDelay.metricUrgency;
+  const key = Object.keys(cfg).find(k => metricType.toLowerCase().includes(k));
+  return key ? cfg[key] : 1;
 }
 
 export function computeCostOfDelay(input: CostOfDelayInput): CostOfDelayResult {
+  const cfg = getSystemConfig().costOfDelay;
   const conf = input.confidence ?? input.cappedConfidence ?? 50;
   const ageDays = input.ageDays ?? 0;
 
   // --- Score components ---
   let score = 0;
 
-  // 1. Severity base (0-40)
-  score += SEVERITY_WEIGHT[input.severity] ?? 16;
+  // 1. Severity base
+  score += cfg.severityWeights[input.severity] ?? cfg.severityWeights.medium;
 
-  // 2. Confidence contribution (0-20) — higher confidence = more certain downside
-  score += (conf / 100) * 20;
+  // 2. Confidence contribution — higher confidence = more certain downside
+  score += (conf / 100) * cfg.confidenceContributionMax;
 
-  // 3. Age decay pressure (0-20) — older unresolved signals get more urgent
-  const ageScore = Math.min(20, ageDays * 0.7);
+  // 3. Age decay pressure — older unresolved signals get more urgent
+  const ageScore = Math.min(cfg.ageDecayMax, ageDays * cfg.ageDecayRate);
   score += ageScore;
 
-  // 4. Signal magnitude (0-10)
+  // 4. Signal magnitude
   if (input.signalDelta != null) {
-    score += Math.min(10, Math.abs(input.signalDelta) * 0.5);
+    score += Math.min(cfg.signalDeltaMax, Math.abs(input.signalDelta) * cfg.signalDeltaMultiplier);
   }
 
-  // 5. Entity count breadth (0-5)
+  // 5. Entity count breadth
   if (input.affectedEntityCount != null && input.affectedEntityCount > 1) {
-    score += Math.min(5, Math.log2(input.affectedEntityCount) * 1.5);
+    score += Math.min(cfg.entityCountMax, Math.log2(input.affectedEntityCount) * cfg.entityCountMultiplier);
   }
 
-  // 6. Trend acceleration bonus (0-5)
+  // 6. Trend acceleration bonus
   if (input.trendAccelerating) {
-    score += 5;
+    score += cfg.trendAccelerationBonus;
   }
 
   // Apply metric urgency multiplier
@@ -88,27 +75,24 @@ export function computeCostOfDelay(input: CostOfDelayInput): CostOfDelayResult {
   score = Math.min(100, Math.max(0, Math.round(score)));
 
   // --- Label ---
-  const thresholds = getCostOfDelayConfig().scoreThresholds;
   const label: CostOfDelayResult["label"] =
-    score >= thresholds.critical ? "critical" :
-    score >= thresholds.high ? "high" :
-    score >= thresholds.medium ? "medium" : "low";
+    score >= cfg.labelThresholds.critical ? "critical" :
+    score >= cfg.labelThresholds.high ? "high" :
+    score >= cfg.labelThresholds.medium ? "medium" : "low";
 
   // --- Action window ---
   const recommendedActionWindowDays =
-    label === "critical" ? Math.max(1, 3 - Math.floor(ageDays / 7)) :
-    label === "high" ? Math.max(3, 7 - Math.floor(ageDays / 5)) :
-    label === "medium" ? Math.max(7, 14 - Math.floor(ageDays / 3)) :
-    21;
+    label === "critical" ? Math.max(1, cfg.actionWindows.critical - Math.floor(ageDays / 7)) :
+    label === "high" ? Math.max(3, cfg.actionWindows.high - Math.floor(ageDays / 5)) :
+    label === "medium" ? Math.max(7, cfg.actionWindows.medium - Math.floor(ageDays / 3)) :
+    cfg.actionWindows.low;
 
   // --- Estimated cost ---
   let estimatedDelayCost: string;
   if (input.predictedNetImpact != null && input.predictedNetImpact !== 0) {
-    // Only show monetary cost when we have a validated financial impact figure
     const weeklyImpact = Math.abs(input.predictedNetImpact) / 4;
     estimatedDelayCost = formatCurrency(weeklyImpact) + "/week";
   } else {
-    // No validated monetary basis — use relative score to avoid fake precision
     estimatedDelayCost = `Relative score: ${score}/100`;
   }
 
