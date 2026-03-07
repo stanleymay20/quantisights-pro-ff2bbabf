@@ -82,15 +82,20 @@ function computeConvergence(roles: RoleRisk[]) {
   }
 
   const volatilities = roles.map(r => (r.components as any)?.volatility ?? 0);
+  const volatilityDivergenceThreshold = parseInt(Deno.env.get("CONVERGENCE_VOLATILITY_DIVERGENCE_THRESHOLD") || "35");
   let volatilityDivergence = 0;
-  if (Math.max(...volatilities) - Math.min(...volatilities) > 35) volatilityDivergence = 10;
+  if (Math.max(...volatilities) - Math.min(...volatilities) > volatilityDivergenceThreshold) volatilityDivergence = 10;
 
   const score = clamp(Math.round(100 - (dispersion + conflictPenalty + volatilityDivergence)), 0, 100);
 
+  const alignedMin = parseInt(Deno.env.get("CONVERGENCE_ALIGNMENT_ALIGNED_MIN") || "80");
+  const tensionMin = parseInt(Deno.env.get("CONVERGENCE_ALIGNMENT_TENSION_MIN") || "60");
+  const misalignmentMin = parseInt(Deno.env.get("CONVERGENCE_ALIGNMENT_MISALIGNMENT_MIN") || "40");
+
   let alignmentStatus = "aligned";
-  if (score >= 80) alignmentStatus = "aligned";
-  else if (score >= 60) alignmentStatus = "tension";
-  else if (score >= 40) alignmentStatus = "misalignment";
+  if (score >= alignedMin) alignmentStatus = "aligned";
+  else if (score >= tensionMin) alignmentStatus = "tension";
+  else if (score >= misalignmentMin) alignmentStatus = "misalignment";
   else alignmentStatus = "structural_conflict";
 
   return { score, dispersion, conflict_penalty: conflictPenalty, volatility_divergence: volatilityDivergence, alignment_status: alignmentStatus, conflicts };
@@ -234,3 +239,12 @@ serve(async (req) => {
     );
   }
 });
+C O N V E R G E N C E _ V O L A T I L I T Y _ D I V E R G E N C E _ T H R E S H O L D = 3 5 
+ 
+ C O N V E R G E N C E _ A L I G N M E N T _ A L I G N E D _ M I N = 8 0 
+ 
+ C O N V E R G E N C E _ A L I G N M E N T _ T E N S I O N _ M I N = 6 0 
+ 
+ C O N V E R G E N C E _ A L I G N M E N T _ M I S A L I G N M E N T _ M I N = 4 0 
+ 
+ 

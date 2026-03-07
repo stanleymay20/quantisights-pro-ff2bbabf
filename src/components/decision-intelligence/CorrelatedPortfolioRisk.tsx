@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { Network, AlertTriangle } from "lucide-react";
+import { getDecisionIntelligenceConfig } from "@/lib/system-config";
 
 interface Simulation {
   id: string;
@@ -88,8 +89,9 @@ const CorrelatedPortfolioRisk = ({
     const correlatedSigma = Math.sqrt(Math.max(0, correlatedVariance));
 
     // Portfolio VaR (95%) = EV - 1.645 × σ
-    const naiveVaR = naiveEV - 1.645 * naiveSigma;
-    const correlatedVaR = naiveEV - 1.645 * correlatedSigma;
+    const varConfidenceLevel = getDecisionIntelligenceConfig().portfolio.varConfidenceLevel;
+    const naiveVaR = naiveEV - varConfidenceLevel * naiveSigma;
+    const correlatedVaR = naiveEV - varConfidenceLevel * correlatedSigma;
 
     // Diversification benefit
     const diversificationRatio =

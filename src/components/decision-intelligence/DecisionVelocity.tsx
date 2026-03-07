@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { Timer, TrendingDown, TrendingUp, Minus } from "lucide-react";
+import { getDecisionIntelligenceConfig } from "@/lib/system-config";
 
 interface Decision {
   id: string;
@@ -60,8 +61,9 @@ const DecisionVelocity = ({ decisions }: { decisions: Decision[] }) => {
       const firstHalf = ttdValues.slice(0, mid).reduce((s, v) => s + v, 0) / mid;
       const secondHalf =
         ttdValues.slice(mid).reduce((s, v) => s + v, 0) / (ttdValues.length - mid);
-      if (secondHalf < firstHalf * 0.85) trend = "improving";
-      else if (secondHalf > firstHalf * 1.15) trend = "degrading";
+      const config = getDecisionIntelligenceConfig().decisionVelocity;
+      if (secondHalf < firstHalf * config.improvingThreshold) trend = "improving";
+      else if (secondHalf > firstHalf * config.degradingThreshold) trend = "degrading";
     }
 
     // Pending decisions aging

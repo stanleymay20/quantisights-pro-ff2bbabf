@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { Scale, ArrowRight, AlertTriangle } from "lucide-react";
+import { getDecisionIntelligenceConfig } from "@/lib/system-config";
 
 interface Decision {
   id: string;
@@ -32,6 +33,8 @@ const ValueOfInformation = ({ decisions }: { decisions: Decision[] }) => {
       const impact = Number(d.predicted_net_impact) || 0;
       const probSuccess = Number(d.probability_of_success) / 100 || confidence;
 
+      const config = getDecisionIntelligenceConfig().voi;
+
       // Expected value with current information
       const evCurrent = impact * probSuccess;
 
@@ -43,17 +46,17 @@ const ValueOfInformation = ({ decisions }: { decisions: Decision[] }) => {
 
       // Expected Value of Sample Information (diminishing returns approximation)
       // Assumes each additional data point reduces uncertainty by ~3%
-      const uncertaintyReduction = 0.03;
+      const uncertaintyReduction = config.uncertaintyReduction;
       const dataPointsNeeded = Math.ceil((1 - confidence) / uncertaintyReduction);
-      const costPerDataPoint = Math.abs(impact) * 0.001; // ~0.1% of impact per data point
-      const evsi = evpi * 0.6; // Sample info is ~60% as valuable as perfect info
+      const costPerDataPoint = Math.abs(impact) * config.costPerDataPointMultiplier; // ~0.1% of impact per data point
+      const evsi = evpi * config.sampleInfoEfficiency; // Sample info is ~60% as valuable as perfect info
 
       // Net value of gathering more data
       const dataCost = dataPointsNeeded * costPerDataPoint;
       const netVoI = evsi - dataCost;
 
       // Recommendation
-      const recommendation = confidence >= 0.75
+      const recommendation = confidence >= config.decideNowConfidenceThreshold
         ? "decide_now"
         : netVoI > 0
         ? "gather_data"

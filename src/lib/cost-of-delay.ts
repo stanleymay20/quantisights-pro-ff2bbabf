@@ -25,20 +25,22 @@ export interface CostOfDelayResult {
   reason: string;
 }
 
+import { getCostOfDelayConfig } from './system-config';
+
 const SEVERITY_WEIGHT: Record<string, number> = {
-  critical: 40,
-  high: 28,
-  medium: 16,
-  low: 6,
+  critical: getCostOfDelayConfig().severityWeights.critical,
+  high: getCostOfDelayConfig().severityWeights.high,
+  medium: getCostOfDelayConfig().severityWeights.medium,
+  low: getCostOfDelayConfig().severityWeights.low,
 };
 
 const METRIC_URGENCY: Record<string, number> = {
-  churn: 1.3,
-  retention: 1.3,
-  revenue: 1.2,
-  cost: 1.1,
-  margin: 1.15,
-  growth: 1.05,
+  churn: getCostOfDelayConfig().metricUrgency.churn,
+  retention: getCostOfDelayConfig().metricUrgency.retention,
+  revenue: getCostOfDelayConfig().metricUrgency.revenue,
+  cost: getCostOfDelayConfig().metricUrgency.cost,
+  margin: getCostOfDelayConfig().metricUrgency.margin,
+  growth: getCostOfDelayConfig().metricUrgency.growth,
 };
 
 function metricUrgencyMultiplier(metricType: string | null | undefined): number {
@@ -86,10 +88,11 @@ export function computeCostOfDelay(input: CostOfDelayInput): CostOfDelayResult {
   score = Math.min(100, Math.max(0, Math.round(score)));
 
   // --- Label ---
+  const thresholds = getCostOfDelayConfig().scoreThresholds;
   const label: CostOfDelayResult["label"] =
-    score >= 80 ? "critical" :
-    score >= 55 ? "high" :
-    score >= 30 ? "medium" : "low";
+    score >= thresholds.critical ? "critical" :
+    score >= thresholds.high ? "high" :
+    score >= thresholds.medium ? "medium" : "low";
 
   // --- Action window ---
   const recommendedActionWindowDays =

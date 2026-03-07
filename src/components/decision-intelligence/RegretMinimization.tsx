@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { ShieldAlert, ArrowRight } from "lucide-react";
+import { getDecisionIntelligenceConfig } from "@/lib/system-config";
 
 interface Decision {
   id: string;
@@ -43,8 +44,9 @@ const RegretMinimization = ({
     const items = pending.slice(0, 6).map((d) => {
       const sim = simulations.find((s) => s.decision_id === d.id);
       const ev = Number(d.predicted_net_impact) || 0;
-      const p10 = sim ? Number(sim.p10_impact) || ev * 0.3 : ev * 0.3;
-      const p90 = sim ? Number(sim.p90_impact) || ev * 1.5 : ev * 1.5;
+      const config = getDecisionIntelligenceConfig().regret;
+      const p10 = sim ? Number(sim.p10_impact) || ev * config.p10FallbackMultiplier : ev * config.p10FallbackMultiplier;
+      const p90 = sim ? Number(sim.p90_impact) || ev * config.p90FallbackMultiplier : ev * config.p90FallbackMultiplier;
       const probSuccess =
         Number(d.probability_of_success) / 100 ||
         Number(d.capped_confidence) / 100 ||

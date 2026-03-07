@@ -80,7 +80,9 @@ function computeConvergence(roles: RoleRisk[]): {
   }
 
   // Rule 2: CMO low risk + COO high risk
-  if (roleMap.cmo && roleMap.coo && roleMap.cmo.score < 40 && roleMap.coo.score > 70) {
+  const cmoLowRiskMax = parseInt(Deno.env.get("EXECUTIVE_CONVERGENCE_CMO_LOW_RISK_MAX") || "40");
+  const cooHighRiskMin = parseInt(Deno.env.get("EXECUTIVE_CONVERGENCE_COO_HIGH_RISK_MIN") || "70");
+  if (roleMap.cmo && roleMap.coo && roleMap.cmo.score < cmoLowRiskMax && roleMap.coo.score > cooHighRiskMin) {
     conflicts.push({
       rule_triggered: "growth_execution_strain",
       severity: "medium",
@@ -92,7 +94,9 @@ function computeConvergence(roles: RoleRisk[]): {
   }
 
   // Rule 3: CFO high risk + CEO low risk
-  if (roleMap.cfo && roleMap.ceo && roleMap.cfo.score > 75 && roleMap.ceo.score < 50) {
+  const cfoHighRiskMin = parseInt(Deno.env.get("EXECUTIVE_CONVERGENCE_CFO_HIGH_RISK_MIN") || "75");
+  const ceoLowRiskMax = parseInt(Deno.env.get("EXECUTIVE_CONVERGENCE_CEO_LOW_RISK_MAX") || "50");
+  if (roleMap.cfo && roleMap.ceo && roleMap.cfo.score > cfoHighRiskMin && roleMap.ceo.score < ceoLowRiskMax) {
     conflicts.push({
       rule_triggered: "cash_expansion_mismatch",
       severity: "high",
@@ -125,8 +129,9 @@ function computeConvergence(roles: RoleRisk[]): {
   const volatilities = roles.map(r => (r.components as any)?.volatility ?? 0);
   const volMax = Math.max(...volatilities);
   const volMin = Math.min(...volatilities);
+  const volatilityDivergenceThreshold = parseInt(Deno.env.get("CONVERGENCE_VOLATILITY_DIVERGENCE_THRESHOLD") || "35");
   let volatilityDivergence = 0;
-  if (volMax - volMin > 35) {
+  if (volMax - volMin > volatilityDivergenceThreshold) {
     volatilityDivergence = 10;
   }
 
@@ -135,10 +140,14 @@ function computeConvergence(roles: RoleRisk[]): {
   const score = clamp(Math.round(rawScore), 0, 100);
 
   // Alignment status
+  const alignedMin = parseInt(Deno.env.get("CONVERGENCE_ALIGNMENT_ALIGNED_MIN") || "80");
+  const tensionMin = parseInt(Deno.env.get("CONVERGENCE_ALIGNMENT_TENSION_MIN") || "60");
+  const misalignmentMin = parseInt(Deno.env.get("CONVERGENCE_ALIGNMENT_MISALIGNMENT_MIN") || "40");
+
   let alignmentStatus = "aligned";
-  if (score >= 80) alignmentStatus = "aligned";
-  else if (score >= 60) alignmentStatus = "tension";
-  else if (score >= 40) alignmentStatus = "misalignment";
+  if (score >= alignedMin) alignmentStatus = "aligned";
+  else if (score >= tensionMin) alignmentStatus = "tension";
+  else if (score >= misalignmentMin) alignmentStatus = "misalignment";
   else alignmentStatus = "structural_conflict";
 
   return { score, dispersion, conflict_penalty: conflictPenalty, volatility_divergence: volatilityDivergence, alignment_status: alignmentStatus, conflicts };
