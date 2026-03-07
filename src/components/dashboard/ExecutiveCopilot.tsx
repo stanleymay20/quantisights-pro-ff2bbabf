@@ -8,6 +8,7 @@ import {
   Brain, Send, Loader2, Sparkles, RotateCcw, Activity,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import { supabase } from "@/integrations/supabase/client";
 
 interface CopilotMessage {
   role: "user" | "assistant";
