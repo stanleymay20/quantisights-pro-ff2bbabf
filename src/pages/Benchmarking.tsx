@@ -81,7 +81,7 @@ const BenchmarkingPage = () => {
       // Fetch all active KPIs for the org and compute each one
       const { data: kpis, error: kpiListErr } = await supabase
         .from("kpis")
-        .select("id")
+        .select("id, name")
         .eq("organization_id", currentOrgId)
         .eq("status", "active");
 
