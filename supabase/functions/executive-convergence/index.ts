@@ -13,26 +13,44 @@ const TIER_LIMITS: Record<string, number> = {
   enterprise: 999999,
 };
 
-interface RiskComponents {
-  deviation: number;
-  trend: number;
-  volatility: number;
-  forecast: number;
+// --- Configurable thresholds via env vars ---
+function envFloat(key: string, fallback: number): number {
+  const v = Deno.env.get(key);
+  if (!v) return fallback;
+  const p = parseFloat(v);
+  return isFinite(p) ? p : fallback;
+}
+function envInt(key: string, fallback: number): number {
+  const v = Deno.env.get(key);
+  if (!v) return fallback;
+  const p = parseInt(v, 10);
+  return isFinite(p) ? p : fallback;
 }
 
-interface RoleRisk {
-  role_type: string;
-  score: number;
-  components: RiskComponents;
+function getConvergenceConfig() {
+  return {
+    ceoVsCfoDivergence: envFloat("CONV_CEO_CFO_DIVERGENCE", 30),
+    ceoVsCfoPenalty: envFloat("CONV_CEO_CFO_PENALTY", 15),
+    cmoLowThreshold: envFloat("CONV_CMO_LOW_THRESHOLD", 40),
+    cooHighThreshold: envFloat("CONV_COO_HIGH_THRESHOLD", 70),
+    growthExecutionPenalty: envFloat("CONV_GROWTH_EXEC_PENALTY", 8),
+    cfoHighThreshold: envFloat("CONV_CFO_HIGH_THRESHOLD", 75),
+    ceoLowThreshold: envFloat("CONV_CEO_LOW_THRESHOLD", 50),
+    cashExpansionPenalty: envFloat("CONV_CASH_EXP_PENALTY", 15),
+    volatilityHighThreshold: envFloat("CONV_VOL_HIGH_THRESHOLD", 80),
+    volatilityLowThreshold: envFloat("CONV_VOL_LOW_THRESHOLD", 40),
+    operationalImbalancePenalty: envFloat("CONV_OP_IMBAL_PENALTY", 25),
+    volatilityDivergenceThreshold: envFloat("CONV_VOL_DIV_THRESHOLD", 35),
+    volatilityDivergencePenalty: envFloat("CONV_VOL_DIV_PENALTY", 10),
+    alignedThreshold: envInt("CONV_ALIGNED_THRESHOLD", 80),
+    tensionThreshold: envInt("CONV_TENSION_THRESHOLD", 60),
+    misalignmentThreshold: envInt("CONV_MISALIGNMENT_THRESHOLD", 40),
+  };
 }
 
-interface Conflict {
-  rule_triggered: string;
-  severity: string;
-  role_1: string;
-  role_2: string;
-  description: string;
-}
+interface RiskComponents { deviation: number; trend: number; volatility: number; forecast: number; }
+interface RoleRisk { role_type: string; score: number; components: RiskComponents; }
+interface Conflict { rule_triggered: string; severity: string; role_1: string; role_2: string; description: string; }
 
 function stddev(values: number[]): number {
   if (values.length < 2) return 0;
@@ -57,18 +75,18 @@ function computeConvergence(roles: RoleRisk[]): {
     return { score: 0, dispersion: 0, conflict_penalty: 0, volatility_divergence: 0, alignment_status: "aligned", conflicts: [] };
   }
 
+  const cfg = getConvergenceConfig();
   const scores = roles.map(r => r.score);
   const dispersion = Math.round(stddev(scores) * 100) / 100;
 
-  // Conflict rule engine
   const conflicts: Conflict[] = [];
   let conflictPenalty = 0;
 
   const roleMap: Record<string, RoleRisk> = {};
   for (const r of roles) roleMap[r.role_type] = r;
 
-  // Rule 1: CEO vs CFO divergence > 30
-  if (roleMap.ceo && roleMap.cfo && Math.abs(roleMap.ceo.score - roleMap.cfo.score) > 30) {
+  // Rule 1: CEO vs CFO divergence
+  if (roleMap.ceo && roleMap.cfo && Math.abs(roleMap.ceo.score - roleMap.cfo.score) > cfg.ceoVsCfoDivergence) {
     conflicts.push({
       rule_triggered: "strategic_financial_divergence",
       severity: "high",
@@ -76,11 +94,11 @@ function computeConvergence(roles: RoleRisk[]): {
       role_2: "cfo",
       description: `CEO risk (${roleMap.ceo.score}) and CFO risk (${roleMap.cfo.score}) diverge by ${Math.abs(roleMap.ceo.score - roleMap.cfo.score)} points — strategic vs financial misalignment`,
     });
-    conflictPenalty += 15;
+    conflictPenalty += cfg.ceoVsCfoPenalty;
   }
 
   // Rule 2: CMO low risk + COO high risk
-  if (roleMap.cmo && roleMap.coo && roleMap.cmo.score < 40 && roleMap.coo.score > 70) {
+  if (roleMap.cmo && roleMap.coo && roleMap.cmo.score < cfg.cmoLowThreshold && roleMap.coo.score > cfg.cooHighThreshold) {
     conflicts.push({
       rule_triggered: "growth_execution_strain",
       severity: "medium",
@@ -88,11 +106,11 @@ function computeConvergence(roles: RoleRisk[]): {
       role_2: "coo",
       description: `CMO sees low risk (${roleMap.cmo.score}) while COO faces elevated operational pressure (${roleMap.coo.score}) — growth vs execution strain`,
     });
-    conflictPenalty += 8;
+    conflictPenalty += cfg.growthExecutionPenalty;
   }
 
   // Rule 3: CFO high risk + CEO low risk
-  if (roleMap.cfo && roleMap.ceo && roleMap.cfo.score > 75 && roleMap.ceo.score < 50) {
+  if (roleMap.cfo && roleMap.ceo && roleMap.cfo.score > cfg.cfoHighThreshold && roleMap.ceo.score < cfg.ceoLowThreshold) {
     conflicts.push({
       rule_triggered: "cash_expansion_mismatch",
       severity: "high",
@@ -100,14 +118,14 @@ function computeConvergence(roles: RoleRisk[]): {
       role_2: "ceo",
       description: `CFO flags cash risk (${roleMap.cfo.score}) while CEO pursues expansion (${roleMap.ceo.score}) — cash protection vs expansion mismatch`,
     });
-    conflictPenalty += 15;
+    conflictPenalty += cfg.cashExpansionPenalty;
   }
 
-  // Rule 4: One role volatility > 80 while others < 40
+  // Rule 4: One role volatility high while others low
   for (const r of roles) {
     const vol = (r.components as any)?.volatility ?? 0;
-    if (vol > 80) {
-      const othersLow = roles.filter(o => o.role_type !== r.role_type).every(o => ((o.components as any)?.volatility ?? 0) < 40);
+    if (vol > cfg.volatilityHighThreshold) {
+      const othersLow = roles.filter(o => o.role_type !== r.role_type).every(o => ((o.components as any)?.volatility ?? 0) < cfg.volatilityLowThreshold);
       if (othersLow) {
         conflicts.push({
           rule_triggered: "operational_imbalance",
@@ -116,7 +134,7 @@ function computeConvergence(roles: RoleRisk[]): {
           role_2: "all_others",
           description: `${r.role_type.toUpperCase()} volatility (${vol}) vastly exceeds other roles — operational imbalance detected`,
         });
-        conflictPenalty += 25;
+        conflictPenalty += cfg.operationalImbalancePenalty;
       }
     }
   }
@@ -126,8 +144,8 @@ function computeConvergence(roles: RoleRisk[]): {
   const volMax = Math.max(...volatilities);
   const volMin = Math.min(...volatilities);
   let volatilityDivergence = 0;
-  if (volMax - volMin > 35) {
-    volatilityDivergence = 10;
+  if (volMax - volMin > cfg.volatilityDivergenceThreshold) {
+    volatilityDivergence = cfg.volatilityDivergencePenalty;
   }
 
   // Final score
@@ -136,9 +154,9 @@ function computeConvergence(roles: RoleRisk[]): {
 
   // Alignment status
   let alignmentStatus = "aligned";
-  if (score >= 80) alignmentStatus = "aligned";
-  else if (score >= 60) alignmentStatus = "tension";
-  else if (score >= 40) alignmentStatus = "misalignment";
+  if (score >= cfg.alignedThreshold) alignmentStatus = "aligned";
+  else if (score >= cfg.tensionThreshold) alignmentStatus = "tension";
+  else if (score >= cfg.misalignmentThreshold) alignmentStatus = "misalignment";
   else alignmentStatus = "structural_conflict";
 
   return { score, dispersion, conflict_penalty: conflictPenalty, volatility_divergence: volatilityDivergence, alignment_status: alignmentStatus, conflicts };
