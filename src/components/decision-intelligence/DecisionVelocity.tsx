@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { Timer, TrendingDown, TrendingUp, Minus } from "lucide-react";
+import { getSystemConfig } from "@/lib/system-config";
 
 interface Decision {
   id: string;
@@ -12,14 +13,11 @@ interface Decision {
 
 /**
  * Decision Velocity Tracker.
- * Measures organizational decision-making speed:
- * - Time to Decision (recommendation → approval)
- * - Time to Execution (approval → completion)
- * - Total Cycle Time
- * - Velocity Trend (improving or degrading)
+ * All trend thresholds configurable via system-config.
  */
 const DecisionVelocity = ({ decisions }: { decisions: Decision[] }) => {
   const metrics = useMemo(() => {
+    const cfg = getSystemConfig().decisionIntelligence.velocity;
     const decided = decisions.filter(
       (d) => d.decided_at && d.decision_status !== "pending"
     );
@@ -29,11 +27,9 @@ const DecisionVelocity = ({ decisions }: { decisions: Decision[] }) => {
     const calcDays = (start: string, end: string) =>
       (new Date(end).getTime() - new Date(start).getTime()) / (1000 * 60 * 60 * 24);
 
-    // Time to Decision
     const ttdValues = decided.map((d) => calcDays(d.created_at, d.decided_at!));
     const avgTTD = ttdValues.reduce((s, v) => s + v, 0) / ttdValues.length;
 
-    // Time to Execution
     const executed = decided.filter(
       (d) => d.execution_completed_at && d.execution_started_at
     );
@@ -44,7 +40,6 @@ const DecisionVelocity = ({ decisions }: { decisions: Decision[] }) => {
       ? tteValues.reduce((s, v) => s + v, 0) / tteValues.length
       : null;
 
-    // Total Cycle Time
     const completed = decided.filter((d) => d.execution_completed_at);
     const cycleValues = completed.map((d) =>
       calcDays(d.created_at, d.execution_completed_at!)
@@ -53,18 +48,16 @@ const DecisionVelocity = ({ decisions }: { decisions: Decision[] }) => {
       ? cycleValues.reduce((s, v) => s + v, 0) / cycleValues.length
       : null;
 
-    // Velocity Trend: compare first half vs second half
     let trend: "improving" | "stable" | "degrading" = "stable";
-    if (ttdValues.length >= 4) {
+    if (ttdValues.length >= cfg.minDecisionsForTrend) {
       const mid = Math.floor(ttdValues.length / 2);
       const firstHalf = ttdValues.slice(0, mid).reduce((s, v) => s + v, 0) / mid;
       const secondHalf =
         ttdValues.slice(mid).reduce((s, v) => s + v, 0) / (ttdValues.length - mid);
-      if (secondHalf < firstHalf * 0.85) trend = "improving";
-      else if (secondHalf > firstHalf * 1.15) trend = "degrading";
+      if (secondHalf < firstHalf * cfg.improvingThreshold) trend = "improving";
+      else if (secondHalf > firstHalf * cfg.degradingThreshold) trend = "degrading";
     }
 
-    // Pending decisions aging
     const pending = decisions.filter((d) => d.decision_status === "pending");
     const pendingAges = pending.map((d) =>
       calcDays(d.created_at, new Date().toISOString())
@@ -81,6 +74,7 @@ const DecisionVelocity = ({ decisions }: { decisions: Decision[] }) => {
       totalDecided: decided.length,
       avgPendingAge,
       pendingCount: pending.length,
+      slowWarningDays: cfg.slowWarningDays,
     };
   }, [decisions]);
 
@@ -104,12 +98,6 @@ const DecisionVelocity = ({ decisions }: { decisions: Decision[] }) => {
       : metrics.trend === "degrading"
       ? TrendingUp
       : Minus;
-  const trendColor =
-    metrics.trend === "improving"
-      ? "text-emerald-400"
-      : metrics.trend === "degrading"
-      ? "text-destructive"
-      : "text-muted-foreground";
   const trendLabel =
     metrics.trend === "improving"
       ? "Accelerating"
@@ -189,9 +177,9 @@ const DecisionVelocity = ({ decisions }: { decisions: Decision[] }) => {
         )}
       </div>
 
-      {metrics.avgTTD > 5 && (
+      {metrics.avgTTD > metrics.slowWarningDays && (
         <div className="mt-3 p-2.5 rounded-lg bg-warning/10 text-warning text-xs font-medium">
-          ⚠ Average decision time exceeds 5 days — consider streamlining approval workflows
+          ⚠ Average decision time exceeds {metrics.slowWarningDays} days — consider streamlining approval workflows
         </div>
       )}
     </div>

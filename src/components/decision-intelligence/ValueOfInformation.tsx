@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { Scale, ArrowRight, AlertTriangle } from "lucide-react";
+import { getSystemConfig } from "@/lib/system-config";
 
 interface Decision {
   id: string;
@@ -12,13 +13,11 @@ interface Decision {
 
 /**
  * Value of Information (VoI) analysis.
- * Calculates whether gathering more data before deciding is worth the cost/delay.
- * 
- * VoI = E[Value with perfect info] - E[Value with current info]
- * EVPI = P(wrong) × Cost(wrong decision)
+ * All parameters configurable via system-config.
  */
 const ValueOfInformation = ({ decisions }: { decisions: Decision[] }) => {
   const analysis = useMemo(() => {
+    const cfg = getSystemConfig().decisionIntelligence.voi;
     const pending = decisions.filter(
       d => d.decision_status === "pending" &&
            d.capped_confidence != null &&
@@ -32,28 +31,18 @@ const ValueOfInformation = ({ decisions }: { decisions: Decision[] }) => {
       const impact = Number(d.predicted_net_impact) || 0;
       const probSuccess = Number(d.probability_of_success) / 100 || confidence;
 
-      // Expected value with current information
       const evCurrent = impact * probSuccess;
-
-      // Expected value with perfect information (you'd always make the right call)
-      const evPerfect = Math.max(impact, 0); // Perfect info means you only proceed when beneficial
-
-      // Value of Perfect Information
+      const evPerfect = Math.max(impact, 0);
       const evpi = evPerfect - evCurrent;
 
-      // Expected Value of Sample Information (diminishing returns approximation)
-      // Assumes each additional data point reduces uncertainty by ~3%
-      const uncertaintyReduction = 0.03;
-      const dataPointsNeeded = Math.ceil((1 - confidence) / uncertaintyReduction);
-      const costPerDataPoint = Math.abs(impact) * 0.001; // ~0.1% of impact per data point
-      const evsi = evpi * 0.6; // Sample info is ~60% as valuable as perfect info
+      const dataPointsNeeded = Math.ceil((1 - confidence) / cfg.uncertaintyReduction);
+      const costPerDataPoint = Math.abs(impact) * cfg.costPerDataPointRatio;
+      const evsi = evpi * cfg.sampleInfoRatio;
 
-      // Net value of gathering more data
       const dataCost = dataPointsNeeded * costPerDataPoint;
       const netVoI = evsi - dataCost;
 
-      // Recommendation
-      const recommendation = confidence >= 0.75
+      const recommendation = confidence >= cfg.decideNowConfidence
         ? "decide_now"
         : netVoI > 0
         ? "gather_data"

@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { ShieldAlert, ArrowRight } from "lucide-react";
+import { getSystemConfig } from "@/lib/system-config";
 
 interface Decision {
   id: string;
@@ -20,10 +21,7 @@ interface Simulation {
 
 /**
  * Regret Minimization Framework.
- * Instead of maximizing EV, this identifies the action that minimizes
- * the worst-case regret: max(best_possible_outcome − chosen_outcome).
- *
- * Minimax Regret = min over actions { max over states { regret(action, state) } }
+ * P10/P90 fallback multipliers are configurable via system-config.
  */
 const RegretMinimization = ({
   decisions,
@@ -33,18 +31,17 @@ const RegretMinimization = ({
   simulations: Simulation[];
 }) => {
   const analysis = useMemo(() => {
+    const cfg = getSystemConfig().decisionIntelligence.regret;
     const pending = decisions.filter(
-      (d) =>
-        d.decision_status === "pending" && d.predicted_net_impact != null
+      (d) => d.decision_status === "pending" && d.predicted_net_impact != null
     );
     if (pending.length < 2) return null;
 
-    // For each pending decision, compute regret under optimistic & pessimistic states
     const items = pending.slice(0, 6).map((d) => {
       const sim = simulations.find((s) => s.decision_id === d.id);
       const ev = Number(d.predicted_net_impact) || 0;
-      const p10 = sim ? Number(sim.p10_impact) || ev * 0.3 : ev * 0.3;
-      const p90 = sim ? Number(sim.p90_impact) || ev * 1.5 : ev * 1.5;
+      const p10 = sim ? Number(sim.p10_impact) || ev * cfg.p10FallbackMultiplier : ev * cfg.p10FallbackMultiplier;
+      const p90 = sim ? Number(sim.p90_impact) || ev * cfg.p90FallbackMultiplier : ev * cfg.p90FallbackMultiplier;
       const probSuccess =
         Number(d.probability_of_success) / 100 ||
         Number(d.capped_confidence) / 100 ||
@@ -53,19 +50,15 @@ const RegretMinimization = ({
       return { id: d.id, action: d.recommended_action, ev, p10, p90, probSuccess };
     });
 
-    // Best possible outcome across all decisions in each state
     const bestOptimistic = Math.max(...items.map((i) => i.p90));
     const bestPessimistic = Math.max(...items.map((i) => i.p10));
     const bestExpected = Math.max(...items.map((i) => i.ev));
 
     return items
       .map((item) => {
-        // Regret in each state = best_in_state − this_action_in_state
         const regretOptimistic = bestOptimistic - item.p90;
         const regretPessimistic = bestPessimistic - item.p10;
         const regretExpected = bestExpected - item.ev;
-
-        // Minimax regret = worst-case regret across states
         const maxRegret = Math.max(regretOptimistic, regretPessimistic, regretExpected);
 
         return {
@@ -76,7 +69,7 @@ const RegretMinimization = ({
           maxRegret: Math.round(maxRegret),
         };
       })
-      .sort((a, b) => a.maxRegret - b.maxRegret); // lowest max regret first
+      .sort((a, b) => a.maxRegret - b.maxRegret);
   }, [decisions, simulations]);
 
   if (!analysis || analysis.length < 2) {

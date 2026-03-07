@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { Network, AlertTriangle } from "lucide-react";
+import { getSystemConfig } from "@/lib/system-config";
 
 interface Simulation {
   id: string;
@@ -17,11 +18,7 @@ interface Simulation {
 
 /**
  * Correlation-Adjusted Portfolio Risk.
- * Instead of summing individual risks, this accounts for inter-decision
- * correlations to produce a more realistic aggregate risk profile.
- *
- * Uses pairwise input-variable similarity to estimate correlation,
- * then adjusts portfolio variance: σ²_portfolio = Σσ²_i + 2·Σ(ρ_ij·σ_i·σ_j)
+ * VaR confidence level and alert thresholds configurable via system-config.
  */
 const CorrelatedPortfolioRisk = ({
   simulations,
@@ -29,17 +26,17 @@ const CorrelatedPortfolioRisk = ({
   simulations: Simulation[];
 }) => {
   const analysis = useMemo(() => {
+    const cfg = getSystemConfig().decisionIntelligence.portfolioRisk;
     const valid = simulations.filter(
       (s) => s.expected_net_impact != null && s.p10_impact != null && s.p90_impact != null
     );
     if (valid.length < 2) return null;
 
-    // Individual volatilities (proxy: half the P10-P90 range)
     const items = valid.map((s) => {
       const ev = Number(s.expected_net_impact) || 0;
       const p10 = Number(s.p10_impact) || 0;
       const p90 = Number(s.p90_impact) || 0;
-      const sigma = (p90 - p10) / 2; // ~1.28σ approximation
+      const sigma = (p90 - p10) / 2;
       const revDelta = Number(s.revenue_delta_pct) || 0;
       const costDelta = Number(s.cost_delta_pct) || 0;
       const churnDelta = Number(s.churn_change_pct) || 0;
@@ -47,12 +44,10 @@ const CorrelatedPortfolioRisk = ({
       return { id: s.id, ev, p10, p90, sigma, revDelta, costDelta, churnDelta };
     });
 
-    // Naive (uncorrelated) portfolio
     const naiveEV = items.reduce((s, i) => s + i.ev, 0);
     const naiveVariance = items.reduce((s, i) => s + i.sigma ** 2, 0);
     const naiveSigma = Math.sqrt(naiveVariance);
 
-    // Estimate pairwise correlations from input similarity
     let covarianceSum = 0;
     let pairCount = 0;
     let avgCorrelation = 0;
@@ -61,20 +56,13 @@ const CorrelatedPortfolioRisk = ({
       for (let j = i + 1; j < items.length; j++) {
         const a = items[i];
         const b = items[j];
-
-        // Cosine similarity of input vectors as correlation proxy
         const dotProduct =
           a.revDelta * b.revDelta +
           a.costDelta * b.costDelta +
           a.churnDelta * b.churnDelta;
-        const magA = Math.sqrt(
-          a.revDelta ** 2 + a.costDelta ** 2 + a.churnDelta ** 2
-        ) || 1;
-        const magB = Math.sqrt(
-          b.revDelta ** 2 + b.costDelta ** 2 + b.churnDelta ** 2
-        ) || 1;
+        const magA = Math.sqrt(a.revDelta ** 2 + a.costDelta ** 2 + a.churnDelta ** 2) || 1;
+        const magB = Math.sqrt(b.revDelta ** 2 + b.costDelta ** 2 + b.churnDelta ** 2) || 1;
         const rho = Math.max(-1, Math.min(1, dotProduct / (magA * magB)));
-
         covarianceSum += rho * a.sigma * b.sigma;
         avgCorrelation += rho;
         pairCount++;
@@ -83,19 +71,15 @@ const CorrelatedPortfolioRisk = ({
 
     avgCorrelation = pairCount > 0 ? avgCorrelation / pairCount : 0;
 
-    // Correlated portfolio variance
     const correlatedVariance = naiveVariance + 2 * covarianceSum;
     const correlatedSigma = Math.sqrt(Math.max(0, correlatedVariance));
 
-    // Portfolio VaR (95%) = EV - 1.645 × σ
-    const naiveVaR = naiveEV - 1.645 * naiveSigma;
-    const correlatedVaR = naiveEV - 1.645 * correlatedSigma;
+    const naiveVaR = naiveEV - cfg.varConfidenceLevel * naiveSigma;
+    const correlatedVaR = naiveEV - cfg.varConfidenceLevel * correlatedSigma;
 
-    // Diversification benefit
     const diversificationRatio =
       naiveSigma > 0 ? (1 - correlatedSigma / (naiveSigma * Math.sqrt(items.length))) * 100 : 0;
 
-    // Concentration risk: largest single position as % of total EV
     const maxEV = Math.max(...items.map((i) => Math.abs(i.ev)));
     const concentrationRisk =
       naiveEV !== 0 ? (maxEV / Math.abs(naiveEV)) * 100 : 0;
@@ -114,6 +98,8 @@ const CorrelatedPortfolioRisk = ({
         naiveSigma > 0
           ? Number((((correlatedSigma - naiveSigma) / naiveSigma) * 100).toFixed(0))
           : 0,
+      highCorrelationThreshold: cfg.highCorrelationThreshold,
+      highConcentrationThreshold: cfg.highConcentrationThreshold,
     };
   }, [simulations]);
 
@@ -172,7 +158,7 @@ const CorrelatedPortfolioRisk = ({
           <span className="text-muted-foreground">Avg. Pairwise Correlation</span>
           <span
             className={`font-mono font-semibold ${
-              analysis.avgCorrelation > 0.5
+              analysis.avgCorrelation > analysis.highCorrelationThreshold
                 ? "text-warning"
                 : analysis.avgCorrelation > 0.3
                 ? "text-foreground"
@@ -183,9 +169,7 @@ const CorrelatedPortfolioRisk = ({
           </span>
         </div>
         <div className="flex justify-between">
-          <span className="text-muted-foreground">
-            Risk Adj. vs Naive
-          </span>
+          <span className="text-muted-foreground">Risk Adj. vs Naive</span>
           <span
             className={`font-mono font-semibold ${
               analysis.riskIncrease > 0 ? "text-warning" : "text-emerald-400"
@@ -199,7 +183,7 @@ const CorrelatedPortfolioRisk = ({
           <span className="text-muted-foreground">Concentration Risk</span>
           <span
             className={`font-mono font-semibold ${
-              analysis.concentrationRisk > 50 ? "text-warning" : ""
+              analysis.concentrationRisk > analysis.highConcentrationThreshold ? "text-warning" : ""
             }`}
           >
             {analysis.concentrationRisk}%
@@ -213,14 +197,14 @@ const CorrelatedPortfolioRisk = ({
         </div>
       </div>
 
-      {analysis.avgCorrelation > 0.5 && (
+      {analysis.avgCorrelation > analysis.highCorrelationThreshold && (
         <div className="mt-3 p-2.5 rounded-lg bg-warning/10 text-warning flex items-center gap-2 text-xs font-medium">
           <AlertTriangle className="w-3 h-3 shrink-0" />
           High inter-decision correlation ({analysis.avgCorrelation}) — portfolio risk is significantly underestimated by naive methods
         </div>
       )}
 
-      {analysis.concentrationRisk > 60 && (
+      {analysis.concentrationRisk > analysis.highConcentrationThreshold && (
         <div className="mt-2 p-2.5 rounded-lg bg-destructive/10 text-destructive flex items-center gap-2 text-xs font-medium">
           <AlertTriangle className="w-3 h-3 shrink-0" />
           Single decision represents {analysis.concentrationRisk}% of portfolio EV — high concentration risk
