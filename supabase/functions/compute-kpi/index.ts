@@ -138,13 +138,26 @@ serve(async (req) => {
 
     // Auto-detect metric names from formula if deps are empty
     if (deps.length === 0 && kpi.formula) {
-      // Fetch all known metric types for this org to match against formula
+      // Extract all variable-like tokens from the formula (alphanumeric + underscores)
+      const formulaTokens = kpi.formula.match(/[a-zA-Z_][a-zA-Z0-9_]*/g) || [];
+      const uniqueTokens = [...new Set(formulaTokens)];
+
+      // Fetch all known metric types for this org
       const { data: knownMetrics } = await serviceClient
         .from("metrics")
         .select("metric_type")
         .eq("organization_id", kpi.organization_id);
-      const uniqueTypes = [...new Set((knownMetrics || []).map((m: any) => m.metric_type))];
-      deps = uniqueTypes.filter((t: string) => kpi.formula.includes(t));
+      const knownTypes = new Set((knownMetrics || []).map((m: any) => m.metric_type));
+
+      // Match formula tokens against known metric types
+      deps = uniqueTokens.filter((t: string) => knownTypes.has(t));
+
+      // If no exact match, try substring matching (e.g., formula has "revenue" and metric is "revenue")
+      if (deps.length === 0) {
+        deps = [...knownTypes].filter((mt: string) =>
+          uniqueTokens.some((t: string) => mt.includes(t) || t.includes(mt))
+        );
+      }
 
       // Persist discovered deps back to KPI for future runs
       if (deps.length > 0) {
@@ -153,10 +166,20 @@ serve(async (req) => {
     }
 
     if (deps.length === 0) {
+      // Return a helpful response with available metric types instead of a hard error
+      const { data: availableMetrics } = await serviceClient
+        .from("metrics")
+        .select("metric_type")
+        .eq("organization_id", kpi.organization_id)
+        .limit(100);
+      const available = [...new Set((availableMetrics || []).map((m: any) => m.metric_type))].slice(0, 20);
+
       return new Response(
         JSON.stringify({
-          error: "No metric dependencies found. Define metric_dependencies on the KPI or ensure the formula references metric types present in your data.",
-          hint: "Upload data first, then create a KPI whose formula references the metric type names from your dataset."
+          error: "Could not match formula variables to any metric types in your data.",
+          formula: kpi.formula,
+          available_metric_types: available,
+          hint: "Update the KPI formula to use these metric type names, or set metric_dependencies manually."
         }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
