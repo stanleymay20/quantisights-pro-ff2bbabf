@@ -81,7 +81,7 @@ const BenchmarkingPage = () => {
       // Fetch all active KPIs for the org and compute each one
       const { data: kpis, error: kpiListErr } = await supabase
         .from("kpis")
-        .select("id")
+        .select("id, name")
         .eq("organization_id", currentOrgId)
         .eq("status", "active");
 
@@ -93,18 +93,26 @@ const BenchmarkingPage = () => {
         return;
       }
 
-      // Compute each KPI
+      // Compute each KPI — skip ones that fail due to missing dependencies
       const errors: string[] = [];
+      let successCount = 0;
       for (const kpi of kpis) {
         const { data: result, error } = await supabase.functions.invoke("compute-kpi", {
           body: { kpi_id: kpi.id, dataset_id: activeDatasetId },
         });
-        if (error) errors.push(error.message);
-        else if (result?.error) errors.push(result.error);
+        if (error) {
+          errors.push(`${kpi.name}: ${error.message}`);
+        } else if (result?.error) {
+          // Don't treat missing-dependency errors as fatal
+          console.warn(`KPI "${kpi.name}" skipped: ${result.error}`);
+          errors.push(`${kpi.name}: skipped (formula variables not in data)`);
+        } else {
+          successCount++;
+        }
       }
 
-      if (errors.length > 0 && errors.length === kpis.length) {
-        throw new Error(errors[0]);
+      if (successCount === 0 && errors.length > 0) {
+        throw new Error(`No KPIs could be computed. Ensure KPI formulas reference metric types from your uploaded data. Details: ${errors[0]}`);
       }
 
       toast({ title: "Benchmarks computed", description: `Recalculated ${kpis.length - errors.length} of ${kpis.length} KPIs.` });
