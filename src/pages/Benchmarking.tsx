@@ -38,6 +38,11 @@ const TREND_ICONS: Record<string, typeof TrendingUp> = {
   stable: Minus,
 };
 
+const extractFormulaVariables = (formula: string): string[] => {
+  const tokens = formula.match(/[a-zA-Z_][a-zA-Z0-9_]*/g) || [];
+  return [...new Set(tokens.map((t) => t.trim()).filter(Boolean))];
+};
+
 const BenchmarkingPage = () => {
   const { currentOrgId } = useOrganization();
   const { activeDatasetId } = useProject();
@@ -75,13 +80,14 @@ const BenchmarkingPage = () => {
   }, [currentOrgId]);
 
   const handleCompute = async () => {
-    if (!currentOrgId) return;
+    if (!currentOrgId || !activeDatasetId) return;
     setComputing(true);
+
     try {
-      // Fetch all active KPIs for the org and compute each one
+      // Fetch all active KPIs for the org
       const { data: kpis, error: kpiListErr } = await supabase
         .from("kpis")
-        .select("id, name")
+        .select("id, name, formula, metric_dependencies")
         .eq("organization_id", currentOrgId)
         .eq("status", "active");
 
@@ -89,33 +95,75 @@ const BenchmarkingPage = () => {
 
       if (!kpis || kpis.length === 0) {
         toast({ title: "No active KPIs", description: "Define KPIs first before computing benchmarks.", variant: "destructive" });
-        setComputing(false);
         return;
       }
 
-      // Compute each KPI — skip ones that fail due to missing dependencies
-      const errors: string[] = [];
+      // Discover metric types from active dataset
+      const { data: metricRows, error: metricErr } = await supabase
+        .from("metrics")
+        .select("metric_type")
+        .eq("organization_id", currentOrgId)
+        .eq("dataset_id", activeDatasetId);
+
+      if (metricErr) throw metricErr;
+
+      const metricTypeSet = new Set((metricRows || []).map((m) => m.metric_type));
+
+      // Pre-validate KPIs so we don't call compute-kpi on incompatible formulas
+      const compatibleKpis = kpis.filter((kpi) => {
+        const explicitDeps = Array.isArray(kpi.metric_dependencies)
+          ? kpi.metric_dependencies.filter((d): d is string => typeof d === "string" && d.length > 0)
+          : [];
+
+        const inferredDeps = explicitDeps.length > 0
+          ? explicitDeps
+          : extractFormulaVariables(kpi.formula || "");
+
+        return inferredDeps.length > 0 && inferredDeps.every((dep) => metricTypeSet.has(dep));
+      });
+
+      const preSkipped = kpis.filter((kpi) => !compatibleKpis.some((c) => c.id === kpi.id));
+
+      if (compatibleKpis.length === 0) {
+        toast({
+          title: "No computable KPIs for this dataset",
+          description: "Your KPI formulas don't match metric types in the active dataset. Edit KPI formulas/dependencies to match dataset metric names.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Compute only compatible KPIs
+      const runtimeSkipped: string[] = [];
       let successCount = 0;
-      for (const kpi of kpis) {
+
+      for (const kpi of compatibleKpis) {
         const { data: result, error } = await supabase.functions.invoke("compute-kpi", {
           body: { kpi_id: kpi.id, dataset_id: activeDatasetId },
         });
-        if (error) {
-          errors.push(`${kpi.name}: ${error.message}`);
-        } else if (result?.error) {
-          // Don't treat missing-dependency errors as fatal
-          console.warn(`KPI "${kpi.name}" skipped: ${result.error}`);
-          errors.push(`${kpi.name}: skipped (formula variables not in data)`);
+
+        if (error || result?.error) {
+          runtimeSkipped.push(kpi.name);
         } else {
           successCount++;
         }
       }
 
-      if (successCount === 0 && errors.length > 0) {
-        throw new Error(`No KPIs could be computed. Ensure KPI formulas reference metric types from your uploaded data. Details: ${errors[0]}`);
+      if (successCount === 0) {
+        toast({
+          title: "No KPIs computed",
+          description: "All selected KPIs were skipped. Check KPI formulas and dependencies against active dataset metric types.",
+          variant: "destructive",
+        });
+        return;
       }
 
-      toast({ title: "Benchmarks computed", description: `Recalculated ${kpis.length - errors.length} of ${kpis.length} KPIs.` });
+      const totalSkipped = preSkipped.length + runtimeSkipped.length;
+      toast({
+        title: "Benchmarks computed",
+        description: `Recalculated ${successCount} KPI(s)${totalSkipped > 0 ? `, skipped ${totalSkipped}` : ""}.`,
+      });
+
       // Refresh scores
       const { data } = await supabase
         .from("benchmark_scores")
@@ -123,6 +171,7 @@ const BenchmarkingPage = () => {
         .eq("organization_id", currentOrgId)
         .order("computed_at", { ascending: false })
         .limit(50);
+
       if (data) setScores(data as unknown as BenchmarkScore[]);
     } catch (err: any) {
       toast({ title: "Computation failed", description: err.message, variant: "destructive" });
