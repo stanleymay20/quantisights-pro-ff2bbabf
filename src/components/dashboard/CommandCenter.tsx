@@ -6,7 +6,7 @@ import QuickDecisionLog from "./QuickDecisionLog";
 import CalibrationProgress from "./CalibrationProgress";
 import KPICards from "./KPICards";
 import AnalystInsights from "./AnalystInsights";
-import DecisionPerformanceDashboard from "./DecisionPerformanceDashboard";
+import ExecutiveIntelligencePanel from "./ExecutiveIntelligencePanel";
 import type { Insight } from "@/hooks/useInsights";
 import type { MetricTypeSummary } from "@/hooks/useMetrics";
 
