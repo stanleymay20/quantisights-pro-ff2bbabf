@@ -6,7 +6,7 @@ import {
   BookOpen, Target, Brain, MessageSquare, GitBranch, Globe,
   Sparkles, GitCommitVertical, Crosshair, Bell, Cable,
   Briefcase, ChevronDown, Shield, Eye, Compass, FlaskConical,
-  ClipboardCheck, AlertOctagon, RotateCcw, Award,
+  ClipboardCheck, AlertOctagon, RotateCcw, Award, Layers,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";

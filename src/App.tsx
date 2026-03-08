@@ -189,6 +189,7 @@ const App = () => (
               <Route path="/misses" element={<P><Misses /></P>} />
               <Route path="/portfolio" element={<P><Portfolio /></P>} />
               <Route path="/pilot-audit" element={<P><PilotAudit /></P>} />
+              <Route path="/dataset-explorer" element={<P><DatasetExplorer /></P>} />
             </Routes>
             </Suspense>
           </AuthProvider>
