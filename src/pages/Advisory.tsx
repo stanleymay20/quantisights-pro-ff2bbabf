@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import IntelligenceDisclaimer from "@/components/IntelligenceDisclaimer";
 import ConfidenceBadge, { resolveConfidence } from "@/components/ConfidenceBadge";
+import { useDecisionContexts } from "@/hooks/useDecisionContexts";
 
 interface Advisory {
   id: string;
