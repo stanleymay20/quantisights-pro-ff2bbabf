@@ -90,10 +90,11 @@ const DiagnosticCard = ({ diagnostic: d, index, isExpanded, onToggle }: Diagnost
               className="mt-6 pt-6 border-t border-border space-y-5"
             >
               <div>
-                <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                <div className="flex items-center gap-2 mb-2">
                   <Search className="w-4 h-4 text-primary" />
-                  Root Cause Analysis
-                </h4>
+                  <h4 className="text-sm font-semibold">Root Cause Analysis</h4>
+                  <OutputClassificationBadge classification="AI_RECOMMENDATION" compact />
+                </div>
                 <p className="text-sm text-muted-foreground leading-relaxed">{d.root_cause}</p>
               </div>
 
