@@ -80,6 +80,7 @@ const navSections: NavSection[] = [
       { icon: Layers, label: "Dataset Explorer", path: "/dataset-explorer" },
       { icon: Upload, label: "CSV Upload", path: "/data-upload" },
       { icon: GitCommitVertical, label: "Data Lineage", path: "/lineage" },
+      { icon: BookOpen, label: "API Reference", path: "/api-docs" },
       { icon: ClipboardCheck, label: "Pilot Audit", path: "/pilot-audit" },
     ],
   },

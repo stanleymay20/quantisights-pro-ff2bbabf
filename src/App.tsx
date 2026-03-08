@@ -195,6 +195,7 @@ const App = () => (
               <Route path="/dataset-explorer" element={<P><DatasetExplorer /></P>} />
               <Route path="/compliance" element={<P><Compliance /></P>} />
               <Route path="/sso" element={<P><SSOConfig /></P>} />
+              <Route path="/api-docs" element={<P><APIDocs /></P>} />
             </Routes>
             </Suspense>
           </AuthProvider>
