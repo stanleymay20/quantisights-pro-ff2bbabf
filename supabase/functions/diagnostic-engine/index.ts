@@ -233,9 +233,9 @@ For EACH metric, generate a diagnostic assessment. Return ONLY a JSON array:
 Rules:
 - Be domain-agnostic. These metrics could be economic, financial, SaaS, industrial, or any domain.
 - Reference ACTUAL values, percentages, and data point counts from the statistics.
-- severity "critical": period_change_pct < -10% OR volatility > 40% OR clear structural decline
-- severity "warning": moderate decline (5-10%), emerging instability, threshold approaches
-- severity "info": stable/improving metrics, healthy patterns
+- severity "critical": |period_change_pct| > 10% OR volatility > 40% OR clear structural instability (applies to both spikes AND drops)
+- severity "warning": |period_change_pct| between 5-10%, emerging instability, threshold approaches
+- severity "info": stable metrics with |period_change_pct| < 5% and volatility < 25%
 - causal_factors MUST reference specific statistical evidence (segment shifts, volatility levels, trend slopes)
 - recommendation MUST be concrete and actionable, referencing the specific metric and its diagnosed issue
 - raw_confidence should reflect data_points count: <12 pts = max 60, <30 pts = max 75, 30+ pts = max 90 (aligned with platform epistemic standard)
