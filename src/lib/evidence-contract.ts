@@ -166,9 +166,18 @@ export function buildConfidenceBasis(opts: {
   calibrationApplied?: boolean;
   isHeuristic?: boolean;
 }): ConfidenceBasis {
-  const coverage = opts.totalExpectedDimensions && opts.presentDimensions
-    ? Math.round((opts.presentDimensions / opts.totalExpectedDimensions) * 100)
-    : 0;
+  // When explicit dimensions aren't provided, infer coverage from sample size
+  // to avoid a silent 0% that penalizes the score
+  let coverage: number;
+  if (opts.totalExpectedDimensions && opts.presentDimensions) {
+    coverage = Math.round((opts.presentDimensions / opts.totalExpectedDimensions) * 100);
+  } else if (opts.sampleSize >= 30) {
+    coverage = 80; // robust data implies reasonable coverage
+  } else if (opts.sampleSize >= 12) {
+    coverage = 50; // moderate
+  } else {
+    coverage = 20; // limited
+  }
 
   const signalStrength: ConfidenceBasis["signalStrength"] =
     opts.sampleSize >= 30 && coverage >= 70 ? "strong" :
