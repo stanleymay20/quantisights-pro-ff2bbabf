@@ -62,6 +62,11 @@ const Login = forwardRef<HTMLDivElement>((_, ref) => {
       toast({ title: "SSO Required", description: "Your organization requires SSO login. Use the SSO button below.", variant: "destructive" });
       return;
     }
+    const { allowed, waitSeconds } = throttle.check();
+    if (!allowed) {
+      toast({ title: "Too many attempts", description: `Please wait ${waitSeconds}s before trying again.`, variant: "destructive" });
+      return;
+    }
     setIsLoading(true);
     try {
       await signIn(email, password);

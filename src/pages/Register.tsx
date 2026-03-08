@@ -36,6 +36,11 @@ const Register = forwardRef<HTMLDivElement>((_, ref) => {
       toast({ title: "Password too weak", description: "Please meet all password requirements", variant: "destructive" });
       return;
     }
+    const { allowed, waitSeconds } = throttle.check();
+    if (!allowed) {
+      toast({ title: "Too many attempts", description: `Please wait ${waitSeconds}s before trying again.`, variant: "destructive" });
+      return;
+    }
     setIsLoading(true);
     try {
       await signUp(email, password, fullName);
