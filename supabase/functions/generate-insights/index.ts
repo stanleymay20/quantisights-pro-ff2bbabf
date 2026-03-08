@@ -333,7 +333,7 @@ Rules:
       }
     }
 
-    // Apply confidence capping
+    // Apply confidence capping + human review flagging
     const insightRows = aiInsights.map((i: any) => {
       const rawConf = i.raw_confidence || 70;
       const sampleSize = metrics.length;
@@ -341,11 +341,16 @@ Rules:
         rawConfidence: rawConf, sampleSize, calibrationModel: calModel,
       });
 
+      // Flag high-severity insights for human review before C-suite surfacing
+      const requiresHumanReview = i.severity === "high" && meta.capped_confidence < 70;
+
       return {
         organization_id,
         dataset_id,
         decision_context_id: decision_context_id || null,
-        message: i.message,
+        message: requiresHumanReview
+          ? `[REVIEW REQUIRED] ${i.message}`
+          : i.message,
         severity: i.severity || "info",
         category: i.category || "general",
         confidence_score: meta.confidence,
@@ -355,6 +360,7 @@ Rules:
         sample_size: meta.sample_size,
         variance_score: meta.variance_score,
         data_quality_index: 100,
+        generation_model: modelUsed || "rule_based_fallback",
       };
     });
 
