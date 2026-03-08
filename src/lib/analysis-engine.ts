@@ -7,6 +7,18 @@
  */
 
 import type { MetricRow } from "@/hooks/useMetrics";
+import {
+  profileDistribution,
+  detectSeasonality,
+  exponentialSmoothing,
+  oneWayAnova,
+  detectChangepoints,
+  mannWhitneyU,
+  type DistributionProfile,
+  type SeasonalityResult,
+  type Changepoint,
+  type AnovaResult,
+} from "@/lib/advanced-statistics";
 
 // ═══════════════════════════════════════════════════════
 // TYPES
