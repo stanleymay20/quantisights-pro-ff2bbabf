@@ -401,6 +401,14 @@ IMPORTANT: Frame all diagnoses through this decision context. Explain how each f
     // Step 3: Fallback to data-driven rule engine if AI unavailable
     if (aiResults.length === 0) {
       aiResults = fallbackDiagnostics(stats);
+    } else {
+      // Reconcile: backfill any metrics the AI omitted with fallback diagnostics
+      const aiMetricTypes = new Set(aiResults.map((r: any) => r.metric_type));
+      const missingStats = stats.filter(s => !aiMetricTypes.has(s.metric_type));
+      if (missingStats.length > 0) {
+        const backfilled = fallbackDiagnostics(missingStats);
+        aiResults.push(...backfilled);
+      }
     }
 
     // Step 4: Apply epistemic confidence capping + adaptive calibration (parallelized)
