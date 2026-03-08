@@ -89,7 +89,7 @@ const PortfolioRiskHeatmap = ({ companies, onSelect, selectedId }: Props) => {
             </div>
             <div className="flex items-center gap-3 flex-wrap">
               {statusBadge(company.health_status)}
-              <span className="text-xs text-muted-foreground">{fmt(company.revenue_ltm)} rev</span>
+              <span className="text-xs text-muted-foreground">{fmtCurrency(company.revenue_ltm)} rev</span>
               <span className="text-xs text-muted-foreground">{company.ebitda_margin_pct.toFixed(1)}% EBITDA</span>
               <span className={`text-xs ${company.revenue_growth_pct > 0 ? "text-[hsl(var(--severity-success))]" : company.revenue_growth_pct < 0 ? "text-destructive" : "text-muted-foreground"}`}>
                 {company.revenue_growth_pct > 0 ? "+" : ""}{company.revenue_growth_pct.toFixed(0)}% growth
