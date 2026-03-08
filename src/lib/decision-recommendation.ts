@@ -40,6 +40,8 @@ export interface RecommendationInput {
   calibrationApplied?: boolean;
   /** Source dataset for traceability */
   datasetId?: string;
+  /** Human-readable dataset name */
+  datasetName?: string;
   /** Row count used */
   dataRowsUsed?: number;
 }
@@ -264,6 +266,7 @@ export function generateRecommendation(input: RecommendationInput): StructuredRe
   const metricTypes = [met, cat].filter(Boolean);
   const traceability = buildTraceability({
     datasetId: input.datasetId ?? "active-dataset",
+    datasetName: input.datasetName,
     dataRowsUsed: input.dataRowsUsed ?? sampleSize,
     metricTypes: metricTypes.length > 0 ? metricTypes : ["unknown"],
     modelUsed: sampleSize >= 12
@@ -307,5 +310,12 @@ function inferSuccessMetrics(category: string, metricType: string): string[] {
   } else if (key.includes("calibration")) {
     return ["Calibration score improvement", "Brier score reduction", "Pending outcomes closed"];
   }
-  return ["KPI trend direction", "Variance from baseline", "Time to resolution"];
+
+  // Domain-agnostic fallback: derive from the metric type itself
+  const metricLabel = metricType?.replace(/_/g, " ") || category?.replace(/_/g, " ") || "primary metric";
+  return [
+    `${metricLabel} trend direction (period-over-period)`,
+    `${metricLabel} variance from computed baseline`,
+    `Volatility reduction (coefficient of variation)`,
+  ];
 }

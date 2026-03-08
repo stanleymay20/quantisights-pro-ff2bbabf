@@ -109,9 +109,12 @@ export function scoreDecisionQuality(evidence: Partial<EvidenceBlock>): Decision
   if (evidence.limitations && evidence.limitations.length > 0) actionability += 5;
 
   // Monitoring Clarity (0-10)
-  // This is inferred from whether success metrics exist in the recommendation
-  if (evidence.recommendation && /metric|KPI|measure|monitor|track/i.test(evidence.recommendation)) {
+  // Structural check: successMetrics array presence (from StructuredRecommendation),
+  // plus keyword fallback for standalone evidence blocks
+  if ((evidence as any).successMetrics && Array.isArray((evidence as any).successMetrics) && (evidence as any).successMetrics.length > 0) {
     monitoringClarity += 10;
+  } else if (evidence.recommendation && /metric|KPI|measure|monitor|track|baseline|target|threshold|delta|rate|score/i.test(evidence.recommendation)) {
+    monitoringClarity += 7;
   } else if (evidence.recommendation) {
     monitoringClarity += 3;
   }
@@ -163,9 +166,18 @@ export function buildConfidenceBasis(opts: {
   calibrationApplied?: boolean;
   isHeuristic?: boolean;
 }): ConfidenceBasis {
-  const coverage = opts.totalExpectedDimensions && opts.presentDimensions
-    ? Math.round((opts.presentDimensions / opts.totalExpectedDimensions) * 100)
-    : 0;
+  // When explicit dimensions aren't provided, infer coverage from sample size
+  // to avoid a silent 0% that penalizes the score
+  let coverage: number;
+  if (opts.totalExpectedDimensions && opts.presentDimensions) {
+    coverage = Math.round((opts.presentDimensions / opts.totalExpectedDimensions) * 100);
+  } else if (opts.sampleSize >= 30) {
+    coverage = 80; // robust data implies reasonable coverage
+  } else if (opts.sampleSize >= 12) {
+    coverage = 50; // moderate
+  } else {
+    coverage = 20; // limited
+  }
 
   const signalStrength: ConfidenceBasis["signalStrength"] =
     opts.sampleSize >= 30 && coverage >= 70 ? "strong" :
@@ -207,13 +219,15 @@ export interface TraceabilityRecord {
 
 export function buildTraceability(opts: {
   datasetId: string;
+  /** Human-readable dataset name for executive-facing surfaces */
+  datasetName?: string;
   dataRowsUsed: number;
   metricTypes: string[];
   modelUsed: string;
   limitations?: string[];
 }): TraceabilityRecord {
   return {
-    sourceDataset: opts.datasetId,
+    sourceDataset: opts.datasetName || opts.datasetId,
     dataRowsUsed: opts.dataRowsUsed,
     metricTransformationPath: `raw → ${opts.metricTypes.join(", ")} → statistical summary → AI analysis`,
     modelOrHeuristic: opts.modelUsed,

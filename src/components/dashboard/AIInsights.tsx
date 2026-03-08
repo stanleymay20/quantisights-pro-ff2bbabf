@@ -2,6 +2,7 @@ import { Lightbulb, Target, TrendingDown, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { Insight } from "@/hooks/useInsights";
 import ConfidenceBadge from "@/components/ConfidenceBadge";
+import OutputClassificationBadge from "@/components/dashboard/OutputClassificationBadge";
 
 const ICONS = [Target, Lightbulb, TrendingDown];
 
@@ -40,6 +41,7 @@ const AIInsights = ({ insights }: AIInsightsProps) => {
                 <div className="flex-1 min-w-0">
                   <p className="text-[13px] text-foreground/75 leading-relaxed">{insight.message}</p>
                   <div className="flex items-center gap-2 mt-1">
+                    <OutputClassificationBadge classification="AI_RECOMMENDATION" compact />
                     {insight.confidence_score && <ConfidenceBadge confidence={insight.confidence_score} />}
                     {insight.generation_model && (
                       <span className="text-[10px] text-muted-foreground/60 uppercase tracking-wider">{insight.generation_model}</span>

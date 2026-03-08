@@ -80,14 +80,15 @@ describe("PHASE 3 — Confidence Hardening", () => {
 });
 
 describe("PHASE 4 — Cost of Delay Reform", () => {
-  it("MUST NOT show currency without predictedNetImpact", () => {
+  it("MUST show derived currency when revenue is provided (exposure model)", () => {
     const result = computeCostOfDelay({
       severity: "high",
       confidence: 70,
       revenue: 5_000_000,
     });
-    expect(result.estimatedDelayCost).toContain("Relative score");
-    expect(result.estimatedDelayCost).not.toContain("€");
+    // Revenue exposure model now derives financial estimate from revenue
+    expect(result.estimatedDelayCost).toContain("€");
+    expect(result.estimatedDelayCost).toContain("/week");
   });
 
   it("MUST show currency ONLY with validated predictedNetImpact", () => {
@@ -162,17 +163,26 @@ describe("PHASE 5 — Command Center / Executive Verdict Integrity", () => {
 describe("PHASE 7 — Visualization Honesty (Code-Level)", () => {
   // These tests verify the data pipeline contracts, not the DOM
 
-  it("Cost of Delay MUST NOT produce fabricated currency", () => {
-    // No predictedNetImpact → relative score only
+  it("Cost of Delay MUST NOT produce fabricated currency without revenue OR predictedNetImpact", () => {
+    // No revenue AND no predictedNetImpact → relative score only
     for (const sev of ["critical", "high", "medium", "low"] as const) {
       const result = computeCostOfDelay({
         severity: sev,
         confidence: 80,
-        revenue: 10_000_000,
-        // NO predictedNetImpact
+        // NO revenue, NO predictedNetImpact
       });
       expect(result.estimatedDelayCost).not.toContain("€");
     }
+  });
+
+  it("Cost of Delay MUST show derived currency when revenue is provided", () => {
+    const result = computeCostOfDelay({
+      severity: "high",
+      confidence: 80,
+      revenue: 10_000_000,
+    });
+    // Revenue exposure model derives a financial estimate
+    expect(result.estimatedDelayCost).toContain("€");
   });
 });
 
@@ -254,12 +264,11 @@ describe("PHASE 9 — Decision Quality Score", () => {
 });
 
 describe("PHASE 10 — Fail-Closed Acceptance Tests", () => {
-  it("FAIL: financial impact shown without financial model", () => {
+  it("FAIL: financial impact shown without ANY financial basis", () => {
     const result = computeCostOfDelay({
       severity: "critical",
       confidence: 90,
-      revenue: 10_000_000,
-      // predictedNetImpact is ABSENT
+      // NO revenue AND NO predictedNetImpact
     });
     // MUST NOT contain currency symbols
     expect(result.estimatedDelayCost).not.toMatch(/[€$£¥]/);

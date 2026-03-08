@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import ConfidenceBadge from "@/components/ConfidenceBadge";
+import OutputClassificationBadge from "@/components/dashboard/OutputClassificationBadge";
 import {
   Activity, AlertTriangle, TrendingUp, TrendingDown, Minus, Zap,
   Search, ChevronRight,
@@ -89,15 +90,19 @@ const DiagnosticCard = ({ diagnostic: d, index, isExpanded, onToggle }: Diagnost
               className="mt-6 pt-6 border-t border-border space-y-5"
             >
               <div>
-                <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                <div className="flex items-center gap-2 mb-2">
                   <Search className="w-4 h-4 text-primary" />
-                  Root Cause Analysis
-                </h4>
+                  <h4 className="text-sm font-semibold">Root Cause Analysis</h4>
+                  <OutputClassificationBadge classification="AI_RECOMMENDATION" compact />
+                </div>
                 <p className="text-sm text-muted-foreground leading-relaxed">{d.root_cause}</p>
               </div>
 
               <div>
-                <h4 className="text-sm font-semibold mb-2">Causal Factors</h4>
+                <div className="flex items-center gap-2 mb-2">
+                  <h4 className="text-sm font-semibold">Causal Factors</h4>
+                  <OutputClassificationBadge classification="STATISTICAL_INFERENCE" compact />
+                </div>
                 <div className="flex flex-wrap gap-2">
                   {d.causal_factors.map((f, j) => (
                     <Badge key={j} variant="outline" className="text-xs">{f}</Badge>
@@ -107,10 +112,11 @@ const DiagnosticCard = ({ diagnostic: d, index, isExpanded, onToggle }: Diagnost
 
               {d.recommendation && (
                 <div>
-                  <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                  <div className="flex items-center gap-2 mb-2">
                     <Zap className="w-4 h-4 text-primary" />
-                    Recommended Action
-                  </h4>
+                    <h4 className="text-sm font-semibold">Recommended Action</h4>
+                    <OutputClassificationBadge classification="AI_RECOMMENDATION" compact />
+                  </div>
                   <p className="text-sm text-muted-foreground leading-relaxed">{d.recommendation}</p>
                 </div>
               )}
