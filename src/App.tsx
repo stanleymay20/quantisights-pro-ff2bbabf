@@ -79,6 +79,7 @@ const PipelineObservability = lazy(() => import("./pages/PipelineObservability")
 const DataCatalog = lazy(() => import("./pages/DataCatalog"));
 const EmbedDashboard = lazy(() => import("./pages/EmbedDashboard"));
 const FounderHandbook = lazy(() => import("./pages/FounderHandbook"));
+const PrivacyDashboard = lazy(() => import("./pages/PrivacyDashboard"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
