@@ -21,7 +21,8 @@ const CustomerSegmentation = ({ data }: CustomerSegmentationProps) => {
 
   return (
     <div className="glass-card p-6 rounded-xl">
-      <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">Customer Segmentation</h3>
+      <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Data Segments</h3>
+      <p className="text-[10px] text-muted-foreground mb-3">Distribution by mapped segment dimension</p>
       {entries.length === 0 ? (
         <div className="h-56 flex items-center justify-center text-muted-foreground text-sm">No segment data</div>
       ) : (

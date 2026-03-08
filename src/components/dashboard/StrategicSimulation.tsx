@@ -297,11 +297,14 @@ const StrategicSimulation = ({ organizationId, roleType, tier }: Props) => {
               {/* KPI Projections */}
               {result.kpi_projections.length > 0 && (
                 <Card>
-                  <CardHeader className="pb-2">
+                <CardHeader className="pb-2">
                     <CardTitle className="text-base">KPI Impact Projections</CardTitle>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      ⚠️ Heuristic estimates based on assumed linear sensitivity coefficients. Not calibrated to historical data.
-                    </p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-[9px] font-bold uppercase tracking-wider text-warning bg-warning/10 px-1.5 py-0.5 rounded">Heuristic</span>
+                      <p className="text-xs text-muted-foreground">
+                        Estimates based on assumed linear sensitivity coefficients (0.7 revenue, 0.3 cost). Not calibrated to historical data.
+                      </p>
+                    </div>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
