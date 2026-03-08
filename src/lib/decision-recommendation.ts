@@ -114,8 +114,8 @@ export function generateRecommendation(input: RecommendationInput): StructuredRe
   const trend = input.trendDirection ?? "stable";
   const segment = input.affectedSegment ?? "primary segment";
   const confLabel = conf >= 70 ? "high confidence" : conf >= 40 ? "moderate confidence" : "low confidence";
-  const deadlineDays = inferDeadlineDays(input.severity, conf, sampleSize);
   const sampleSize = input.sampleSize ?? 0;
+  const deadlineDays = inferDeadlineDays(input.severity, conf, sampleSize);
 
   const confidenceBasis = buildConfidenceBasis({
     sampleSize,
