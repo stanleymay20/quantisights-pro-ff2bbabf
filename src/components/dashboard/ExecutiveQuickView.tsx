@@ -35,8 +35,8 @@ const ExecutiveQuickView = memo(({
   const risk = riskConfig[riskLevel];
   const RiskIcon = risk.icon;
 
-  // Top 4 metrics for the quick cards
   const quickMetrics = (topMetrics ?? []).slice(0, 4);
+  const metricTypesList = quickMetrics.map(m => m.metricType);
 
   // Top 3 insights
   const topInsights = insights
