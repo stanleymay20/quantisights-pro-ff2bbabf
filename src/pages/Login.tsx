@@ -5,7 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import MFAChallenge from "@/components/auth/MFAChallenge";
 import logo from "@/assets/quantivis-logo.png";
-import { Shield } from "lucide-react";
+import { Shield, AlertTriangle } from "lucide-react";
 
 const Login = forwardRef<HTMLDivElement>((_, ref) => {
   const [email, setEmail] = useState("");
@@ -75,6 +75,23 @@ const Login = forwardRef<HTMLDivElement>((_, ref) => {
           return;
         }
       }
+
+      // Check for login anomalies (fire-and-forget)
+      supabase.functions.invoke("login-anomaly-detect", {
+        body: {
+          ip_address: null, // Server-side detection
+          user_agent: navigator.userAgent,
+        },
+      }).then(({ data }) => {
+        if (data?.is_anomalous) {
+          toast({
+            title: "Security Notice",
+            description: data.message + ". If this wasn't you, change your password immediately.",
+            variant: "destructive",
+            duration: 10000,
+          });
+        }
+      }).catch(() => {}); // Non-blocking
 
       navigate(redirectTo);
     } catch (err: any) {
