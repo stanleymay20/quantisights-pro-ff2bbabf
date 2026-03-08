@@ -257,6 +257,7 @@ const DashboardSidebar = () => {
           <BookOpen className="w-[15px] h-[15px] text-muted-foreground" />
           Docs
         </Link>
+        <KeyboardShortcutsModal />
         <button
           onClick={handleSignOut}
           className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[12px] font-medium text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors w-full"
