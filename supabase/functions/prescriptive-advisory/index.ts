@@ -25,15 +25,27 @@ serve(async (req) => {
       });
     }
 
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const headers = { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` };
+
+    // Dataset contract: verify dataset belongs to org
+    const dsCheckResp = await fetch(
+      `${supabaseUrl}/rest/v1/datasets?id=eq.${dataset_id}&organization_id=eq.${organization_id}&select=id`,
+      { headers }
+    );
+    const dsCheck = await dsCheckResp.json();
+    if (!dsCheck || dsCheck.length === 0) {
+      return new Response(JSON.stringify({ error: "dataset_id does not belong to this organization" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     if (dry_run) {
       return new Response(JSON.stringify({ dry_run: true, status: "PASS", dataset_id, organization_id }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const headers = { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` };
 
     const metricsUrl = `${supabaseUrl}/rest/v1/metrics?organization_id=eq.${organization_id}&dataset_id=eq.${dataset_id}&order=date.asc&limit=1000`;
     const insightsUrl = `${supabaseUrl}/rest/v1/insights?organization_id=eq.${organization_id}&dataset_id=eq.${dataset_id}&severity=in.(high,medium)&order=created_at.desc&limit=20`;
@@ -284,9 +296,17 @@ Rules:
     const priorityOrder: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
     advisories.sort((a: any, b: any) => (priorityOrder[a.priority] ?? 3) - (priorityOrder[b.priority] ?? 3));
 
-    // Store advisories in advisory_instances
-    const supabaseServiceUrl = Deno.env.get("SUPABASE_URL")!;
+    // Deduplication: close existing open advisories for this dataset before inserting new ones
     const serviceHeaders = { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, "Content-Type": "application/json", Prefer: "return=minimal" };
+
+    await fetch(
+      `${supabaseUrl}/rest/v1/advisory_instances?organization_id=eq.${organization_id}&dataset_id=eq.${dataset_id}&advisory_type=eq.prescriptive&status=in.(open)`,
+      {
+        method: "PATCH",
+        headers: serviceHeaders,
+        body: JSON.stringify({ status: "dismissed", resolution_summary: "Superseded by newer analysis run" }),
+      }
+    );
 
     if (advisories.length > 0) {
       const rows = advisories.map((a: any) => ({
@@ -307,7 +327,7 @@ Rules:
         status: "open",
       }));
 
-      await fetch(`${supabaseServiceUrl}/rest/v1/advisory_instances`, {
+      await fetch(`${supabaseUrl}/rest/v1/advisory_instances`, {
         method: "POST",
         headers: serviceHeaders,
         body: JSON.stringify(rows),

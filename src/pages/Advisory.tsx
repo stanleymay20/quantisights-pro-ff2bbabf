@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { SidebarMobileToggle } from "@/components/layout/ProtectedShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import IntelligenceDisclaimer from "@/components/IntelligenceDisclaimer";
 import ConfidenceBadge, { resolveConfidence } from "@/components/ConfidenceBadge";
+import { useDecisionContexts } from "@/hooks/useDecisionContexts";
 
 interface Advisory {
   id: string;
@@ -80,6 +81,7 @@ const STATUS_CONFIG: Record<string, { icon: typeof PlayCircle; color: string; la
 
 const AdvisoryPage = () => {
   const { orgId: currentOrgId, datasetId: activeDatasetId } = useActiveDataContext();
+  const { activeContext } = useDecisionContexts(currentOrgId);
   const { toast } = useToast();
   const [advisories, setAdvisories] = useState<Advisory[]>([]);
   const [instances, setInstances] = useState<AdvisoryInstance[]>([]);
@@ -92,12 +94,16 @@ const AdvisoryPage = () => {
   const [impactScore, setImpactScore] = useState("");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-  const fetchAdvisories = async () => {
+  const fetchAdvisories = useCallback(async () => {
     if (!currentOrgId || !activeDatasetId) return;
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("prescriptive-advisory", {
-        body: { organization_id: currentOrgId, dataset_id: activeDatasetId },
+        body: {
+          organization_id: currentOrgId,
+          dataset_id: activeDatasetId,
+          ...(activeContext?.id ? { decision_context_id: activeContext.id } : {}),
+        },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
@@ -110,9 +116,9 @@ const AdvisoryPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentOrgId, activeDatasetId, activeContext?.id, toast]);
 
-  const fetchInstances = async () => {
+  const fetchInstances = useCallback(async () => {
     if (!currentOrgId || !activeDatasetId) return;
     const { data, error } = await supabase
       .from("advisory_instances")
@@ -122,14 +128,14 @@ const AdvisoryPage = () => {
       .order("created_at", { ascending: false })
       .limit(100);
     if (!error && data) setInstances(data as AdvisoryInstance[]);
-  };
+  }, [currentOrgId, activeDatasetId]);
 
   useEffect(() => {
     if (currentOrgId && activeDatasetId) {
       fetchAdvisories();
       fetchInstances();
     }
-  }, [currentOrgId, activeDatasetId]);
+  }, [fetchAdvisories, fetchInstances]);
 
   const updateInstanceStatus = async (id: string, status: string, extras?: Record<string, any>) => {
     setUpdatingId(id);
