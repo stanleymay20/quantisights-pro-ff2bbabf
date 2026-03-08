@@ -109,18 +109,21 @@ const KPIs = () => {
   const canUseAI = currentTier !== "starter";
 
   const fetchKpis = useCallback(async () => {
-    if (!currentOrgId) return;
+    if (!currentOrgId || !activeDatasetId) return;
     setLoading(true);
+    // Fetch KPIs scoped to the active dataset via their metric dependencies
+    // KPIs are org-level but we filter to show only those relevant to current dataset
     const { data, error } = await supabase
       .from("kpis")
       .select("*")
       .eq("organization_id", currentOrgId)
+      .eq("dataset_id", activeDatasetId)
       .eq("status", "active")
       .order("created_at", { ascending: false });
 
     if (!error && data) setKpis(data as unknown as KPI[]);
     setLoading(false);
-  }, [currentOrgId]);
+  }, [currentOrgId, activeDatasetId]);
 
   useEffect(() => { fetchKpis(); }, [fetchKpis]);
 

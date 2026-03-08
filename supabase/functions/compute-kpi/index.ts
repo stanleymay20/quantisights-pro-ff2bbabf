@@ -13,28 +13,82 @@ const TIER_LIMITS: Record<string, number> = {
   enterprise: 999999,
 };
 
-// Safe formula evaluator — supports +, -, *, / on metric variables
-function evaluateFormula(
-  formula: string,
-  variables: Record<string, number>
-): number {
-  // Replace variable names with values
+/**
+ * Safe formula evaluator using a recursive descent parser.
+ * Only allows: numbers, +, -, *, /, parentheses, and named variables.
+ * NO eval/Function constructor — prevents code injection.
+ */
+function evaluateFormula(formula: string, variables: Record<string, number>): number {
+  // Replace variable names with their values (longest-first to prevent partial matches)
   let expr = formula;
-  for (const [name, val] of Object.entries(variables)) {
+  const sortedVars = Object.entries(variables).sort(([a], [b]) => b.length - a.length);
+  for (const [name, val] of sortedVars) {
     expr = expr.replaceAll(name, String(val));
   }
 
-  // Validate: only digits, operators, whitespace, decimal points, parens
-  if (!/^[\d\s+\-*/().]+$/.test(expr)) {
-    throw new Error(`Invalid formula expression: ${expr}`);
+  // Validate: only digits, operators, parens, dots, whitespace, minus
+  const sanitized = expr.replace(/\s+/g, "");
+  if (!/^[\d+\-*/().]+$/.test(sanitized)) {
+    throw new Error("Invalid formula expression: contains disallowed characters");
   }
 
-  // Use Function for safe math eval (no access to globals)
-  const fn = new Function(`"use strict"; return (${expr});`);
-  const result = fn();
-  if (typeof result !== "number" || !isFinite(result)) {
-    throw new Error("Formula produced non-finite result");
+  // Recursive descent parser
+  let pos = 0;
+  const peek = () => sanitized[pos];
+  const consume = (ch?: string) => {
+    if (ch && sanitized[pos] !== ch) throw new Error(`Expected '${ch}' at position ${pos}`);
+    return sanitized[pos++];
+  };
+
+  function parseExpr(): number {
+    let result = parseTerm();
+    while (peek() === "+" || peek() === "-") {
+      const op = consume();
+      const right = parseTerm();
+      result = op === "+" ? result + right : result - right;
+    }
+    return result;
   }
+
+  function parseTerm(): number {
+    let result = parseFactor();
+    while (peek() === "*" || peek() === "/") {
+      const op = consume();
+      const right = parseFactor();
+      if (op === "/" && right === 0) throw new Error("Division by zero");
+      result = op === "*" ? result * right : result / right;
+    }
+    return result;
+  }
+
+  function parseFactor(): number {
+    // Handle unary minus
+    if (peek() === "-") {
+      consume("-");
+      return -parseFactor();
+    }
+    if (peek() === "(") {
+      consume("(");
+      const result = parseExpr();
+      consume(")");
+      return result;
+    }
+    // Parse number
+    const start = pos;
+    while (pos < sanitized.length && (/\d/.test(sanitized[pos]) || sanitized[pos] === ".")) {
+      pos++;
+    }
+    if (pos === start) throw new Error(`Unexpected character '${peek()}' at position ${pos}`);
+    const num = parseFloat(sanitized.slice(start, pos));
+    if (!isFinite(num)) throw new Error("Non-finite number in formula");
+    return num;
+  }
+
+  const result = parseExpr();
+  if (pos < sanitized.length) {
+    throw new Error(`Unexpected character '${peek()}' at position ${pos}`);
+  }
+  if (!isFinite(result)) throw new Error("Formula produced non-finite result");
   return result;
 }
 
@@ -144,11 +198,9 @@ serve(async (req) => {
 
     // Auto-detect metric names from formula if deps are empty
     if (deps.length === 0 && kpi.formula) {
-      // Extract all variable-like tokens from the formula (alphanumeric + underscores)
       const formulaTokens = kpi.formula.match(/[a-zA-Z_][a-zA-Z0-9_]*/g) || [];
       const uniqueTokens = [...new Set(formulaTokens)];
 
-      // Fetch all known metric types for this org
       const { data: knownMetrics } = await serviceClient
         .from("metrics")
         .select("metric_type")
@@ -156,24 +208,20 @@ serve(async (req) => {
         .eq("dataset_id", dataset_id);
       const knownTypes = new Set((knownMetrics || []).map((m: any) => m.metric_type));
 
-      // Match formula tokens against known metric types
       deps = uniqueTokens.filter((t: string) => knownTypes.has(t));
 
-      // If no exact match, try substring matching (e.g., formula has "revenue" and metric is "revenue")
       if (deps.length === 0) {
         deps = [...knownTypes].filter((mt: string) =>
           uniqueTokens.some((t: string) => mt.includes(t) || t.includes(mt))
         );
       }
 
-      // Persist discovered deps back to KPI for future runs
       if (deps.length > 0) {
         await serviceClient.from("kpis").update({ metric_dependencies: deps }).eq("id", kpi_id);
       }
     }
 
     if (deps.length === 0) {
-      // Return a helpful response with available metric types instead of a hard error
       const { data: availableMetrics } = await serviceClient
         .from("metrics")
         .select("metric_type")
@@ -220,7 +268,6 @@ serve(async (req) => {
       for (const dep of deps) {
         const vals = typeMap[dep] || [];
         if (vals.length === 0) continue;
-        // Aggregate based on type
         if (kpi.aggregation_type === "avg") {
           variables[dep] = vals.reduce((a: number, b: number) => a + b, 0) / vals.length;
         } else {
@@ -228,7 +275,6 @@ serve(async (req) => {
         }
       }
 
-      // Only compute if all deps have values
       if (Object.keys(variables).length < deps.length) continue;
 
       try {
@@ -241,7 +287,6 @@ serve(async (req) => {
 
     // Upsert kpi_values
     if (results.length > 0) {
-      // Delete existing values in range
       await serviceClient
         .from("kpi_values")
         .delete()
@@ -267,6 +312,7 @@ serve(async (req) => {
     console.log(JSON.stringify({
       event: "kpi_computed",
       kpi_id,
+      dataset_id,
       organization_id: kpi.organization_id,
       results_count: results.length,
       date_range: { from: startDate, to: endDate },
