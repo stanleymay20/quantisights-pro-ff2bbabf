@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PortfolioCompany } from "@/hooks/usePortfolioCompanies";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { X, TrendingUp, DollarSign, Users, Calendar, Target, Pencil, Trash2, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { fmtCurrency } from "@/lib/format-utils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,20 +28,22 @@ interface Props {
   onDelete: () => Promise<void>;
 }
 
-const fmt = (n: number | null) => {
-  if (n === null) return "—";
-  if (Math.abs(n) >= 1e9) return `$${(n / 1e9).toFixed(1)}B`;
-  if (Math.abs(n) >= 1e6) return `$${(n / 1e6).toFixed(1)}M`;
-  if (Math.abs(n) >= 1e3) return `$${(n / 1e3).toFixed(0)}K`;
-  return `$${n.toFixed(0)}`;
-};
-
 const riskLabel = (score: number) => {
   if (score <= 25) return { text: "Low", className: "bg-[hsl(var(--severity-success))]/10 text-[hsl(var(--severity-success))]" };
   if (score <= 50) return { text: "Moderate", className: "bg-[hsl(var(--severity-info))]/10 text-[hsl(var(--severity-info))]" };
   if (score <= 75) return { text: "Elevated", className: "bg-[hsl(var(--severity-warning))]/10 text-[hsl(var(--severity-warning))]" };
   return { text: "Critical", className: "bg-destructive/10 text-destructive" };
 };
+
+const buildForm = (company: PortfolioCompany) => ({
+  revenue_ltm: company.revenue_ltm.toString(),
+  ebitda_ltm: company.ebitda_ltm.toString(),
+  revenue_growth_pct: company.revenue_growth_pct.toString(),
+  ebitda_margin_pct: company.ebitda_margin_pct.toString(),
+  current_valuation: company.current_valuation?.toString() ?? "",
+  headcount: company.headcount?.toString() ?? "",
+  risk_score: company.risk_score.toString(),
+});
 
 const PortfolioCompanyDetail = ({ company, onClose, onUpdate, onDelete }: Props) => {
   const navigate = useNavigate();
@@ -50,15 +53,13 @@ const PortfolioCompanyDetail = ({ company, onClose, onUpdate, onDelete }: Props)
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [form, setForm] = useState({
-    revenue_ltm: company.revenue_ltm.toString(),
-    ebitda_ltm: company.ebitda_ltm.toString(),
-    revenue_growth_pct: company.revenue_growth_pct.toString(),
-    ebitda_margin_pct: company.ebitda_margin_pct.toString(),
-    current_valuation: company.current_valuation?.toString() ?? "",
-    headcount: company.headcount?.toString() ?? "",
-    risk_score: company.risk_score.toString(),
-  });
+  const [form, setForm] = useState(buildForm(company));
+
+  // Reset form and exit edit mode when company changes
+  useEffect(() => {
+    setForm(buildForm(company));
+    setEditing(false);
+  }, [company.id]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -94,14 +95,14 @@ const PortfolioCompanyDetail = ({ company, onClose, onUpdate, onDelete }: Props)
   };
 
   const metrics = [
-    { label: "Revenue LTM", value: fmt(company.revenue_ltm), icon: DollarSign, key: "revenue_ltm" },
-    { label: "EBITDA LTM", value: fmt(company.ebitda_ltm), icon: DollarSign, key: "ebitda_ltm" },
-    { label: "Revenue Growth", value: `${company.revenue_growth_pct > 0 ? "+" : ""}${company.revenue_growth_pct.toFixed(1)}%`, icon: TrendingUp, key: "revenue_growth_pct" },
-    { label: "EBITDA Margin", value: `${company.ebitda_margin_pct.toFixed(1)}%`, icon: Target, key: "ebitda_margin_pct" },
-    { label: "Valuation", value: fmt(company.current_valuation), icon: DollarSign, key: "current_valuation" },
-    { label: "Headcount", value: company.headcount?.toString() ?? "—", icon: Users, key: "headcount" },
-    { label: "Ownership", value: company.ownership_pct ? `${company.ownership_pct}%` : "—", icon: Target, key: "" },
-    { label: "Cash Runway", value: company.cash_runway_months ? `${company.cash_runway_months} mo` : "—", icon: Calendar, key: "" },
+    { label: "Revenue LTM", value: fmtCurrency(company.revenue_ltm), icon: DollarSign },
+    { label: "EBITDA LTM", value: fmtCurrency(company.ebitda_ltm), icon: DollarSign },
+    { label: "Revenue Growth", value: `${company.revenue_growth_pct > 0 ? "+" : ""}${company.revenue_growth_pct.toFixed(1)}%`, icon: TrendingUp },
+    { label: "EBITDA Margin", value: `${company.ebitda_margin_pct.toFixed(1)}%`, icon: Target },
+    { label: "Valuation", value: fmtCurrency(company.current_valuation), icon: DollarSign },
+    { label: "Headcount", value: company.headcount?.toString() ?? "—", icon: Users },
+    { label: "Ownership", value: company.ownership_pct ? `${company.ownership_pct}%` : "—", icon: Target },
+    { label: "Cash Runway", value: company.cash_runway_months ? `${company.cash_runway_months} mo` : "—", icon: Calendar },
   ];
 
   return (
@@ -175,7 +176,7 @@ const PortfolioCompanyDetail = ({ company, onClose, onUpdate, onDelete }: Props)
                 {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                 Save Changes
               </Button>
-              <Button size="sm" variant="outline" onClick={() => setEditing(false)}>Cancel</Button>
+              <Button size="sm" variant="outline" onClick={() => { setEditing(false); setForm(buildForm(company)); }}>Cancel</Button>
             </div>
           </div>
         ) : (

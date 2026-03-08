@@ -1,7 +1,7 @@
 import { PortfolioCompany } from "@/hooks/usePortfolioCompanies";
 import { TrendingUp, TrendingDown, Minus, AlertTriangle, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-
+import { fmtCurrency } from "@/lib/format-utils";
 interface Props {
   companies: PortfolioCompany[];
   onSelect: (company: PortfolioCompany) => void;

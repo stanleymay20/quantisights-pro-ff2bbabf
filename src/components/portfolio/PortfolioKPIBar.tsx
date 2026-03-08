@@ -1,4 +1,5 @@
 import { Building2, DollarSign, TrendingUp, AlertTriangle, BarChart3 } from "lucide-react";
+import { fmtCurrency } from "@/lib/format-utils";
 
 interface Props {
   companyCount: number;
@@ -9,18 +10,11 @@ interface Props {
   avgEbitdaMargin: number;
 }
 
-const fmt = (n: number) => {
-  if (n >= 1e9) return `$${(n / 1e9).toFixed(1)}B`;
-  if (n >= 1e6) return `$${(n / 1e6).toFixed(1)}M`;
-  if (n >= 1e3) return `$${(n / 1e3).toFixed(0)}K`;
-  return `$${n.toFixed(0)}`;
-};
-
 const PortfolioKPIBar = ({ companyCount, totalAUM, totalRevenue, avgRisk, atRiskCount, avgEbitdaMargin }: Props) => {
   const cards = [
     { label: "Portfolio Companies", value: companyCount.toString(), icon: Building2, color: "text-primary" },
-    { label: "Total AUM", value: fmt(totalAUM), icon: DollarSign, color: "text-[hsl(var(--kpi-revenue))]" },
-    { label: "Combined Revenue", value: fmt(totalRevenue), icon: TrendingUp, color: "text-[hsl(var(--kpi-customers))]" },
+    { label: "Total AUM", value: fmtCurrency(totalAUM), icon: DollarSign, color: "text-[hsl(var(--kpi-revenue))]" },
+    { label: "Combined Revenue", value: fmtCurrency(totalRevenue), icon: TrendingUp, color: "text-[hsl(var(--kpi-customers))]" },
     { label: "Avg Risk Score", value: avgRisk.toString(), icon: BarChart3, color: avgRisk >= 60 ? "text-destructive" : avgRisk >= 40 ? "text-[hsl(var(--kpi-costs))]" : "text-[hsl(var(--kpi-revenue))]" },
     { label: "At-Risk Portcos", value: atRiskCount.toString(), icon: AlertTriangle, color: atRiskCount > 0 ? "text-destructive" : "text-[hsl(var(--kpi-revenue))]" },
     { label: "Avg EBITDA Margin", value: `${avgEbitdaMargin.toFixed(1)}%`, icon: BarChart3, color: "text-primary" },
