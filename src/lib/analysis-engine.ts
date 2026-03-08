@@ -756,12 +756,152 @@ export function runFullAnalysis(
     });
   }
 
+  // ── SEASONALITY DETECTION ──
+  byType.forEach((rows, type) => {
+    const sorted = [...rows].sort((a, b) => a.date.localeCompare(b.date));
+    const vals = sorted.map(r => Number(r.value));
+    if (vals.length < 12) return;
+
+    const seasonality = detectSeasonality(vals);
+    if (!seasonality.detected || !seasonality.period) return;
+
+    // Also run exponential smoothing forecast
+    const esResult = exponentialSmoothing(vals, 3, seasonality.period);
+
+    results.push({
+      type: "trend",
+      title: `${type.replace(/_/g, " ")} seasonal pattern (period=${seasonality.period})`,
+      observation: `Seasonal cycle detected in ${type.replace(/_/g, " ")} with period ${seasonality.period} and strength ${(seasonality.strength * 100).toFixed(0)}%. Seasonal indices: [${seasonality.seasonalIndices.slice(0, 6).map(v => v.toFixed(2)).join(", ")}${seasonality.seasonalIndices.length > 6 ? "…" : ""}].`,
+      inference: esResult
+        ? `Holt-Winters forecast: next ${esResult.forecast.length} periods = [${esResult.forecast.map(v => v.toFixed(1)).join(", ")}]. MAPE: ${esResult.mape.toFixed(1)}%.`
+        : `Deseasonalized trend available for bias-free analysis.`,
+      recommendation: `Account for seasonality in forecasts and targets. Comparing same-period YoY is more reliable than sequential periods.`,
+      decisionRelevance: `Ignoring seasonality leads to systematically wrong conclusions — up to ${(seasonality.strength * 100).toFixed(0)}% of apparent "changes" may be seasonal.`,
+      severity: seasonality.strength > 0.5 ? "high" : "medium",
+      confidence: evidenceConfidence(vals.length, null),
+      pValue: null,
+      metricRef: type,
+      explain: {
+        datasetId,
+        variables: [type],
+        sampleSize: vals.length,
+        method: seasonality.method + (esResult ? ` + ${esResult.method}` : ""),
+        assumptions: ["Consistent periodicity", "Multiplicative seasonality model"],
+        limitations: ["Requires ≥2 complete cycles for reliable detection", "Does not handle evolving seasonal patterns"],
+      },
+    });
+  });
+
+  // ── CHANGEPOINT DETECTION (CUSUM) ──
+  byType.forEach((rows, type) => {
+    const sorted = [...rows].sort((a, b) => a.date.localeCompare(b.date));
+    const vals = sorted.map(r => Number(r.value));
+    const dates = sorted.map(r => r.date);
+    if (vals.length < 12) return;
+
+    const changepoints = detectChangepoints(vals, dates);
+    if (changepoints.length === 0) return;
+
+    const cp = changepoints[0]; // Most significant
+    results.push({
+      type: "anomaly",
+      title: `${type.replace(/_/g, " ")} structural break detected`,
+      observation: `Regime change at ${cp.date || `index ${cp.index}`}: mean shifted from ${cp.meanBefore.toFixed(2)} to ${cp.meanAfter.toFixed(2)} (${cp.magnitude > 0 ? "+" : ""}${cp.magnitude.toFixed(1)}%).${changepoints.length > 1 ? ` ${changepoints.length - 1} additional breakpoint(s) detected.` : ""}`,
+      inference: `CUSUM significance: ${(cp.significance * 100).toFixed(0)}%. This is a structural shift, not noise or seasonal variation.`,
+      recommendation: `Investigate what caused this regime change. Split analysis into pre/post periods for more accurate assessment.`,
+      decisionRelevance: `Trend analysis spanning this breakpoint produces misleading results. Forecasts should use post-break data only.`,
+      severity: Math.abs(cp.magnitude) > 25 ? "high" : "medium",
+      confidence: evidenceConfidence(vals.length, null),
+      pValue: null,
+      metricRef: type,
+      explain: {
+        datasetId,
+        variables: [type],
+        sampleSize: vals.length,
+        method: "CUSUM binary segmentation changepoint detection",
+        assumptions: ["Piecewise stationary time series", "Gaussian distribution within segments"],
+        limitations: ["Maximum 3 changepoints detected", "Minimum segment size of 5 observations"],
+      },
+    });
+  });
+
+  // ── ONE-WAY ANOVA (multi-segment comparison) ──
+  byType.forEach((rows, type) => {
+    const segMap = new Map<string, number[]>();
+    rows.forEach(r => {
+      if (!r.segment) return;
+      const list = segMap.get(r.segment) || [];
+      list.push(Number(r.value));
+      segMap.set(r.segment, list);
+    });
+    if (segMap.size < 3) return; // Need 3+ groups for ANOVA
+
+    const anova = oneWayAnova(segMap);
+    if (!anova) return;
+
+    const sigPairs = anova.postHoc?.filter(p => p.significant) || [];
+    results.push({
+      type: "hypothesis",
+      title: `${type.replace(/_/g, " ")} ANOVA: ${segMap.size} segments`,
+      observation: `One-way ANOVA: F(${anova.dfBetween}, ${anova.dfWithin}) = ${anova.fStatistic.toFixed(2)}, p = ${anova.pValue.toFixed(4)}. η² = ${anova.etaSquared.toFixed(3)} (${anova.etaSquared > 0.14 ? "large" : anova.etaSquared > 0.06 ? "medium" : "small"} effect).`,
+      inference: `${anova.significant ? "Statistically significant" : "No significant"} difference across ${segMap.size} segments. ${sigPairs.length > 0 ? `Post-hoc: ${sigPairs.slice(0, 3).map(p => `"${p.groupA}" vs "${p.groupB}" (Δ=${p.meanDiff.toFixed(1)})`).join("; ")}.` : ""}`,
+      recommendation: anova.significant
+        ? `Segment-level strategies are justified — performance genuinely differs across groups.`
+        : `Uniform strategy may be appropriate — no statistically significant segment differences.`,
+      decisionRelevance: `ANOVA provides stronger evidence than pairwise comparisons for multi-segment decisions. Controls Type I error across all comparisons.`,
+      severity: anova.significant && anova.etaSquared > 0.06 ? "high" : "medium",
+      confidence: evidenceConfidence(anova.dfBetween + anova.dfWithin + segMap.size, anova.pValue),
+      pValue: anova.pValue,
+      metricRef: type,
+      explain: {
+        datasetId,
+        variables: [type, "segment"],
+        sampleSize: anova.dfBetween + anova.dfWithin + segMap.size,
+        method: "one-way ANOVA with Bonferroni-corrected post-hoc comparisons",
+        assumptions: ["Independence of observations", "Homogeneity of variance (Levene's not tested)", "Approximate normality within groups"],
+        limitations: ["Assumes equal variance across groups", "Bonferroni correction is conservative"],
+      },
+    });
+  });
+
+  // ── DISTRIBUTION PROFILING ──
+  byType.forEach((rows, type) => {
+    const vals = rows.map(r => Number(r.value));
+    if (vals.length < 8) return;
+
+    const profile = profileDistribution(vals);
+    if (profile.type === "normal" || profile.type === "unknown") return; // Only flag non-normal
+
+    results.push({
+      type: "anomaly",
+      title: `${type.replace(/_/g, " ")} distribution: ${profile.type.replace(/_/g, " ")}`,
+      observation: `${type.replace(/_/g, " ")} is ${profile.type.replace(/_/g, "-")} distributed (skewness=${profile.skewness}, kurtosis=${profile.kurtosis}). Normality p≈${profile.shapiroWilkApprox.toFixed(3)}.`,
+      inference: profile.recommendation,
+      recommendation: profile.type === "bimodal"
+        ? `Split data into sub-populations before analysis. Aggregate statistics are misleading for bimodal data.`
+        : `Use non-parametric methods (median, IQR, Spearman) for this metric. Mean-based analysis may be distorted.`,
+      decisionRelevance: `Using wrong statistical methods on non-normal data leads to incorrect conclusions and overconfident decisions.`,
+      severity: profile.type === "bimodal" || profile.type === "heavy_tailed" ? "high" : "info",
+      confidence: evidenceConfidence(vals.length, null),
+      pValue: null,
+      metricRef: type,
+      explain: {
+        datasetId,
+        variables: [type],
+        sampleSize: vals.length,
+        method: "Jarque-Bera normality test + histogram peak detection",
+        assumptions: ["IID observations"],
+        limitations: ["Approximate normality test", "Bimodality detection uses simple histogram binning"],
+      },
+    });
+  });
+
   return results
     .sort((a, b) => {
       const sev = { high: 0, medium: 1, info: 2 };
       return (sev[a.severity] ?? 2) - (sev[b.severity] ?? 2);
     })
-    .slice(0, 10);
+    .slice(0, 15);
 }
 
 // ═══════════════════════════════════════════════════════
