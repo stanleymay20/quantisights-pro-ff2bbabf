@@ -342,7 +342,7 @@ const Security = () => {
           <div className="max-w-3xl mx-auto text-center mb-12">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-medium mb-6">
               <Shield className="w-3.5 h-3.5" />
-              Enterprise Security Architecture
+              Trust Center
             </div>
             <h1 className="text-4xl md:text-5xl font-bold font-display mb-4 tracking-tight">
               Security Built for<br />
@@ -353,9 +353,25 @@ const Security = () => {
               and database-level data isolation. Every forecast is auditable. Every decision is traceable.
               No data leaves your organization without consent.
             </p>
+            <div className="flex items-center justify-center gap-3 mt-6">
+              <button
+                onClick={downloadWhitepaper}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:brightness-110 transition-all"
+              >
+                <Download className="w-4 h-4" />
+                Download Security Whitepaper
+              </button>
+              <Link
+                to="/security-questionnaire"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border border-border text-sm font-medium hover:bg-muted/50 transition-colors"
+              >
+                <FileText className="w-4 h-4" />
+                Security Questionnaire
+              </Link>
+            </div>
             <div className="flex items-center justify-center gap-2 mt-4 text-xs text-muted-foreground">
               <Clock className="w-3.5 h-3.5" />
-              Last reviewed: March 3, 2026
+              Last reviewed: March 8, 2026
             </div>
           </div>
 
