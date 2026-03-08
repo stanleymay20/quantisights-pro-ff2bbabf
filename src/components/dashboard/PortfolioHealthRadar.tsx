@@ -161,13 +161,29 @@ const PortfolioHealthRadar = ({ metrics, latestChurn, latestCost }: Props) => {
             <PolarRadiusAxis angle={90} domain={[0, 100]} tick={false} />
             <Tooltip
               contentStyle={{ fontSize: 11, background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }}
-              formatter={(v: number) => [`${v}/100`, "Score"]}
+              formatter={(v: number, _: any, entry: any) => {
+                const dim = data.find(d => d.score === v);
+                return [`${v}/100`, dim?.method ? `${dim.dimension} — ${dim.method}` : "Score"];
+              }}
             />
             <Radar dataKey="score" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.15} strokeWidth={2} />
           </RadarChart>
         </ResponsiveContainer>
       </div>
-    </div>
+
+      {/* Scoring methodology disclosure */}
+      {scoringMethodology.length > 0 && (
+        <details className="mt-2 text-[10px] text-muted-foreground">
+          <summary className="cursor-pointer font-semibold hover:text-foreground transition-colors">
+            Scoring methodology (heuristic proxies)
+          </summary>
+          <ul className="mt-1 space-y-0.5 pl-3">
+            {scoringMethodology.map((m, i) => (
+              <li key={i}>• {m}</li>
+            ))}
+          </ul>
+        </details>
+      )}
   );
 };
 

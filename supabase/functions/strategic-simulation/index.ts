@@ -358,6 +358,19 @@ No markdown, no code fences, no text outside JSON.`,
       ai_board_summary: aiBoardSummary,
       ai_recommended_actions: aiRecommendedActions,
       scenario_parameters: params,
+      // Model disclosure — mandatory for decision-grade integrity
+      model_disclosure: {
+        risk_model: "Deterministic sensitivity model with hardcoded multipliers (revenue: 1.5/0.8, cost: 0.6/0.3, headcount: 1.2/0.5, marketing: 0.6/0.3). Not calibrated to historical data.",
+        kpi_model: "Heuristic linear sensitivity (revenue coeff: 0.7, cost coeff: 0.3). Assumed, not calibrated.",
+        risk_weighting: "Composite: 40% deviation + 20% volatility + 20% trend + 20% forecast. Weights are assumed, not optimized.",
+        classification: "HEURISTIC_ESTIMATE",
+        limitations: [
+          "Sensitivity coefficients are not calibrated to historical org data",
+          "Linear model does not capture non-linear interactions",
+          "Component weights are assumed equal (except deviation at 40%)",
+          "KPI projections assume independent linear responses",
+        ],
+      },
       // Standardized adaptive calibration metadata
       adaptive_calibration_applied: !!calModel,
       calibration_model_version: calModel?.model_version ?? null,
