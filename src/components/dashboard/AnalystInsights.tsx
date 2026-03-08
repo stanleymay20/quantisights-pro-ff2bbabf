@@ -98,6 +98,39 @@ const AnalystInsights = ({ insights, metrics, topMetrics, datasetName, datasetId
   const findings = useMemo(() => runFullAnalysis(metrics, datasetId), [metrics, datasetId]);
   const analystNote = useMemo(() => generateAnalystNote(findings), [findings]);
 
+  // Advanced statistical profiling summary
+  const dataHealth = useMemo(() => {
+    const byType = new Map<string, number[]>();
+    metrics.forEach(m => {
+      const list = byType.get(m.metric_type) || [];
+      list.push(Number(m.value));
+      byType.set(m.metric_type, list);
+    });
+
+    let seasonalCount = 0;
+    let nonNormalCount = 0;
+    let changepointCount = 0;
+    const totalTypes = byType.size;
+
+    byType.forEach((vals) => {
+      if (vals.length >= 12) {
+        const s = detectSeasonality(vals);
+        if (s.detected) seasonalCount++;
+      }
+      if (vals.length >= 8) {
+        const d = profileDistribution(vals);
+        if (!d.isNormal) nonNormalCount++;
+      }
+      if (vals.length >= 10) {
+        const sorted = [...vals]; // already numeric
+        const cp = detectChangepoints(sorted);
+        if (cp.length > 0) changepointCount++;
+      }
+    });
+
+    return { seasonalCount, nonNormalCount, changepointCount, totalTypes };
+  }, [metrics]);
+
   // Anti-hallucination: validate AI insights against source data
   const sourceContext = useMemo(() => buildSourceContext(
     metrics.map(m => ({ metric_type: m.metric_type, date: m.date, value: Number(m.value), region: m.region, segment: m.segment })),
