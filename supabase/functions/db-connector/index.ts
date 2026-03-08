@@ -884,7 +884,7 @@ serve(async (req) => {
         switch (connectorType) {
           case "postgresql": schema = await discoverPostgres(pgConfig); break;
           case "snowflake": schema = await discoverSnowflake(body); break;
-          case "bigquery": schema = await discoverBigQuery(body); break;
+          case "bigquery": schema = await discoverBigQueryFull(body); break;
           case "powerbi": schema = await discoverPowerBI(body); break;
           case "mysql":
           case "sqlserver":
