@@ -172,8 +172,8 @@ const Compliance = () => {
 
   const statusIcon = (status: string) => {
     switch (status) {
-      case "compliant": return <CheckCircle2 className="w-4 h-4 text-emerald-500" />;
-      case "partial": return <AlertTriangle className="w-4 h-4 text-amber-500" />;
+      case "compliant": return <CheckCircle2 className="w-4 h-4 text-primary" />;
+      case "partial": return <AlertTriangle className="w-4 h-4 text-accent-foreground" />;
       case "non_compliant": return <XCircle className="w-4 h-4 text-destructive" />;
       default: return <Clock className="w-4 h-4 text-muted-foreground" />;
     }
