@@ -206,11 +206,11 @@ const DataQualityScorecard = () => {
 
       {/* Stale Dataset Alerts */}
       {staleCount > 0 && (
-        <Card className="border-border border-yellow-500/30 bg-yellow-500/5">
+        <Card className="border-border border-destructive/30 bg-destructive/5">
           <CardContent className="pt-4">
             <div className="flex items-center gap-2 mb-2">
-              <AlertTriangle className="w-4 h-4 text-yellow-500" />
-              <span className="text-sm font-semibold text-yellow-600 dark:text-yellow-400">Stale Data Warning</span>
+              <AlertTriangle className="w-4 h-4 text-destructive" />
+              <span className="text-sm font-semibold text-destructive">Stale Data Warning</span>
             </div>
             <div className="space-y-1">
               {activeDatasets.filter(d => d.is_stale).map(d => (
