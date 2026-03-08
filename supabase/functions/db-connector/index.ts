@@ -1070,10 +1070,9 @@ serve(async (req) => {
           case "snowflake": schema = await discoverSnowflake(body); break;
           case "bigquery": schema = await discoverBigQueryFull(body); break;
           case "powerbi": schema = await discoverPowerBI(body); break;
+          case "redshift": schema = await discoverRedshift(body); break;
           case "mysql":
           case "sqlserver":
-            // MySQL/SQL Server schema discovery requires protocol-level drivers
-            // Return informational response
             schema = {
               tables: [],
               message: `${connectorType} schema discovery requires a native protocol driver. TCP connectivity was verified during test. Contact support for enterprise activation with full schema discovery.`,
