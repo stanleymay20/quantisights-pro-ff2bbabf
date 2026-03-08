@@ -136,7 +136,15 @@ serve(async (req) => {
       };
     });
 
-    // Use AI to generate domain-agnostic insights
+    // Fetch dataset name for contextual insights
+    const { data: dsInfo } = await serviceSupabase
+      .from("datasets")
+      .select("name")
+      .eq("id", dataset_id)
+      .maybeSingle();
+    const datasetName = dsInfo?.name || "dataset";
+
+    // Use AI to generate contextual, analyst-grade insights
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
     let aiInsights: any[] = [];
@@ -155,28 +163,35 @@ serve(async (req) => {
           model: "google/gemini-2.5-flash",
           messages: [{
             role: "user",
-            content: `You are an enterprise data intelligence engine. Analyze the following dataset metrics and generate strategic insights.
+            content: `You are an enterprise data intelligence engine producing analyst-grade insights. The dataset is called "${datasetName}".
 
 METRIC SUMMARIES:
 ${JSON.stringify(metricSummaries, null, 2)}
 
-Generate 5-10 insights. Return ONLY a JSON array:
+Generate 5-10 CONTEXTUAL insights. Each insight MUST reference:
+- The dataset name ("${datasetName}")
+- Specific metric names from the data
+- Actual values, percentages, and date ranges
+- Segment or region names when available
+
+Return ONLY a JSON array:
 [
   {
-    "message": "Clear, actionable insight (1-2 sentences referencing specific metrics and values)",
+    "message": "In ${datasetName}, [metric_name] [specific observation with values]. [Statistical inference]. [Actionable recommendation].",
     "severity": "high" | "medium" | "info",
-    "category": "trend" | "anomaly" | "risk" | "opportunity" | "regional" | "general",
+    "category": "trend" | "anomaly" | "risk" | "opportunity" | "segmentation" | "correlation" | "driver",
     "raw_confidence": 60-90
   }
 ]
 
 Rules:
-- Be domain-agnostic — these could be economic, financial, SaaS, or industrial metrics
-- Reference actual metric names, values, and percentage changes
-- High severity: significant declines (>10%), extreme volatility (>50%), or critical thresholds
-- Medium severity: moderate changes (5-10%), emerging trends, notable patterns
-- Info: positive trends, stable metrics, opportunities
-- At least 1 high severity if any metric shows >10% decline or >40% volatility
+- NEVER produce generic insights like "all metrics stable" — always reference specific metrics
+- Include segment/region analysis when segment or region data exists
+- Cross-reference metrics: note correlations or divergences between metric types
+- High severity: declines >10%, volatility >50%, or cross-metric divergence
+- Medium: 5-10% changes, emerging patterns, segment disparities
+- Info: positive trends, stable-but-notable patterns
+- At least 2 insights must reference specific segments or regions if present
 - Return ONLY the JSON array`,
           }],
         }),
