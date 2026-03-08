@@ -117,6 +117,7 @@ const navSections: NavSection[] = [
       { icon: CreditCard, label: "Billing", path: "/billing" },
       { icon: Shield, label: "Compliance", path: "/compliance" },
       { icon: Shield, label: "SSO / SAML", path: "/sso" },
+      { icon: Eye, label: "Privacy", path: "/privacy-dashboard" },
       { icon: Settings, label: "Settings", path: "/settings" },
     ],
   },
