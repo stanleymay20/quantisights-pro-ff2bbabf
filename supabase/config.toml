@@ -137,3 +137,6 @@ verify_jwt = false
 
 [functions.create-demo-session]
 verify_jwt = false
+
+[functions.login-anomaly-detect]
+verify_jwt = false
