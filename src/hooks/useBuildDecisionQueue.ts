@@ -71,23 +71,19 @@ export function useBuildDecisionQueue({
     // Track advisory source signal IDs for deduplication
     const advisorySourceSignalIds = new Set<string>();
 
-    // 1. Open advisories (fetch first to build dedup set)
-    let advisoryQuery = supabase
-      .from("advisory_instances")
-      .select("id, title, action, priority, confidence, capped_confidence, confidence_cap_reason, category, timeframe, expected_impact, created_at, raw_confidence, impact_score, dataset_id")
-      .eq("organization_id", organizationId)
-      .in("status", ["open", "in_progress"])
-      .order("created_at", { ascending: false })
-      .limit(3);
-
+    // 1. Open advisories (dataset-scoped — skip if no dataset to prevent cross-workspace leakage)
+    let advisories: any[] | null = null;
     if (datasetId) {
-      advisoryQuery = advisoryQuery.eq("dataset_id", datasetId);
-    } else {
-      // No dataset — skip advisory fetch to prevent cross-workspace leakage
-      // Continue to other queue sources
+      const { data } = await supabase
+        .from("advisory_instances")
+        .select("id, title, action, priority, confidence, capped_confidence, confidence_cap_reason, category, timeframe, expected_impact, created_at, raw_confidence, impact_score, dataset_id")
+        .eq("organization_id", organizationId)
+        .eq("dataset_id", datasetId)
+        .in("status", ["open", "in_progress"])
+        .order("created_at", { ascending: false })
+        .limit(3);
+      advisories = data;
     }
-
-    const { data: advisories } = await advisoryQuery;
 
     advisories?.forEach(adv => {
       // Track for dedup (advisory IDs could match signal IDs if spawned from them)
