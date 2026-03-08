@@ -362,12 +362,12 @@ const AdvisoryPage = () => {
                             <div className="flex flex-col gap-3 pt-4 border-t border-border">
                               <Textarea
                                 placeholder="Resolution summary (what was done, outcome)..."
-                                value={resolutionText}
-                                onChange={e => setResolutionText(e.target.value)}
+                                value={resolutionText[inst.id] || ""}
+                                onChange={e => setResolutionText(prev => ({ ...prev, [inst.id]: e.target.value }))}
                                 rows={2}
                               />
                               <div className="flex items-center gap-3">
-                                <Select value={impactScore} onValueChange={setImpactScore}>
+                                <Select value={impactScore[inst.id] || ""} onValueChange={v => setImpactScore(prev => ({ ...prev, [inst.id]: v }))}>
                                   <SelectTrigger className="w-40"><SelectValue placeholder="Impact score" /></SelectTrigger>
                                   <SelectContent>
                                     {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
@@ -378,8 +378,8 @@ const AdvisoryPage = () => {
                                 <Button
                                   size="sm"
                                   onClick={() => updateInstanceStatus(inst.id, "resolved", {
-                                    resolution_summary: resolutionText || null,
-                                    impact_score: impactScore ? Number(impactScore) : null,
+                                    resolution_summary: resolutionText[inst.id] || null,
+                                    impact_score: impactScore[inst.id] ? Number(impactScore[inst.id]) : null,
                                   })}
                                   disabled={updatingId === inst.id}
                                   className="gap-1"
