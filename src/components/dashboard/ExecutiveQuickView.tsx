@@ -1,0 +1,182 @@
+import { memo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Shield, TrendingUp, AlertTriangle, Target,
+  ChevronRight, BarChart3, Expand, Minimize2,
+} from "lucide-react";
+import type { Insight } from "@/hooks/useInsights";
+import type { MetricTypeSummary } from "@/hooks/useMetrics";
+
+interface ExecutiveQuickViewProps {
+  organizationId: string;
+  pendingDecisions: number;
+  calibrationScore: number | null;
+  criticalSignals: number;
+  topMetrics?: MetricTypeSummary[];
+  insights: Insight[];
+  onExpandToFull: () => void;
+}
+
+const ExecutiveQuickView = memo(({
+  organizationId,
+  pendingDecisions,
+  calibrationScore,
+  criticalSignals,
+  topMetrics,
+  insights,
+  onExpandToFull,
+}: ExecutiveQuickViewProps) => {
+  const riskLevel = criticalSignals > 3 ? "high" : criticalSignals > 0 ? "medium" : "low";
+  const riskConfig = {
+    high: { label: "Exposed", color: "text-destructive", bg: "bg-destructive/10", border: "border-destructive/30", icon: AlertTriangle },
+    medium: { label: "Watch", color: "text-amber-500", bg: "bg-amber-500/10", border: "border-amber-500/30", icon: AlertTriangle },
+    low: { label: "Covered", color: "text-emerald-500", bg: "bg-emerald-500/10", border: "border-emerald-500/30", icon: Shield },
+  };
+  const risk = riskConfig[riskLevel];
+  const RiskIcon = risk.icon;
+
+  // Top 4 metrics for the quick cards
+  const quickMetrics = (topMetrics ?? []).slice(0, 4);
+
+  // Top 3 insights
+  const topInsights = insights
+    .filter(i => i.severity === "high" || i.severity === "medium")
+    .slice(0, 3);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="max-w-[1200px] space-y-6"
+    >
+      {/* Executive Summary Strip */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Risk Status */}
+        <div className={`rounded-xl border ${risk.border} ${risk.bg} p-5`}>
+          <div className="flex items-center gap-2 mb-2">
+            <RiskIcon className={`w-4 h-4 ${risk.color}`} />
+            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Risk Posture</span>
+          </div>
+          <p className={`text-2xl font-bold ${risk.color}`}>{risk.label}</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            {criticalSignals} signal{criticalSignals !== 1 ? "s" : ""} requiring attention
+          </p>
+        </div>
+
+        {/* Pending Decisions */}
+        <div className="rounded-xl border border-border/50 bg-card/50 p-5">
+          <div className="flex items-center gap-2 mb-2">
+            <Target className="w-4 h-4 text-primary" />
+            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Decisions</span>
+          </div>
+          <p className="text-2xl font-bold text-foreground">{pendingDecisions}</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            {pendingDecisions === 0 ? "All decisions resolved" : "awaiting executive action"}
+          </p>
+        </div>
+
+        {/* Calibration Score */}
+        <div className="rounded-xl border border-border/50 bg-card/50 p-5">
+          <div className="flex items-center gap-2 mb-2">
+            <TrendingUp className="w-4 h-4 text-primary" />
+            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Calibration</span>
+          </div>
+          <p className="text-2xl font-bold text-foreground">
+            {calibrationScore != null ? `${calibrationScore}%` : "—"}
+          </p>
+          <p className="text-xs text-muted-foreground mt-1">
+            {calibrationScore != null
+              ? calibrationScore >= 70 ? "Well-calibrated" : "Needs improvement"
+              : "Needs more decisions"
+            }
+          </p>
+        </div>
+
+        {/* Data Points */}
+        <div className="rounded-xl border border-border/50 bg-card/50 p-5">
+          <div className="flex items-center gap-2 mb-2">
+            <BarChart3 className="w-4 h-4 text-primary" />
+            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Metrics</span>
+          </div>
+          <p className="text-2xl font-bold text-foreground">{quickMetrics.length}</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            {quickMetrics.length > 0
+              ? quickMetrics.map(m => m.metric_type).join(", ")
+              : "No metrics detected"
+            }
+          </p>
+        </div>
+      </div>
+
+      {/* Top KPIs */}
+      {quickMetrics.length > 0 && (
+        <div className="rounded-xl border border-border/50 bg-card/50 p-5">
+          <h3 className="text-sm font-semibold mb-4">Key Performance Indicators</h3>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {quickMetrics.map((m) => {
+              const changeColor = m.change_pct == null ? "text-muted-foreground"
+                : m.change_pct >= 0 ? "text-emerald-500" : "text-destructive";
+              return (
+                <div key={m.metric_type} className="space-y-1">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider truncate">{m.metric_type}</p>
+                  <p className="text-xl font-bold">
+                    {typeof m.latest_value === "number" ? m.latest_value.toLocaleString(undefined, { maximumFractionDigits: 1 }) : "—"}
+                  </p>
+                  {m.change_pct != null && (
+                    <p className={`text-xs font-medium ${changeColor}`}>
+                      {m.change_pct >= 0 ? "▲" : "▼"} {Math.abs(m.change_pct).toFixed(1)}%
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Critical Signals */}
+      {topInsights.length > 0 && (
+        <div className="rounded-xl border border-border/50 bg-card/50 p-5">
+          <h3 className="text-sm font-semibold mb-3">Priority Signals</h3>
+          <div className="space-y-2">
+            {topInsights.map((insight) => (
+              <div
+                key={insight.id}
+                className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 border border-border/30"
+              >
+                <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${
+                  insight.severity === "high" ? "bg-destructive" : "bg-amber-500"
+                }`} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{insight.title}</p>
+                  <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{insight.summary}</p>
+                </div>
+                {insight.confidence != null && (
+                  <span className="text-[10px] font-mono text-muted-foreground shrink-0">
+                    {Math.round(insight.confidence * 100)}%
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Expand Button */}
+      <div className="flex items-center justify-center pt-2">
+        <button
+          onClick={onExpandToFull}
+          className="flex items-center gap-2 px-5 py-2.5 rounded-lg border border-primary/30 bg-primary/5 text-sm font-medium text-primary hover:bg-primary/10 transition-all group"
+        >
+          <Expand className="w-4 h-4" />
+          Expand to Full Command Center
+          <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+        </button>
+      </div>
+    </motion.div>
+  );
+});
+
+ExecutiveQuickView.displayName = "ExecutiveQuickView";
+
+export default ExecutiveQuickView;
