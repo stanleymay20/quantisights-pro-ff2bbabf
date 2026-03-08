@@ -8,9 +8,11 @@ import { useToast } from "@/hooks/use-toast";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { computeCostOfDelay, type CostOfDelayResult, type CostOfDelayInput } from "@/lib/cost-of-delay";
 import { generateRecommendation, type StructuredRecommendation } from "@/lib/decision-recommendation";
+import DecisionResponsibilityDialog from "@/components/DecisionResponsibilityDialog";
 import ModifyDecisionDialog from "./ModifyDecisionDialog";
 import OutputClassificationBadge from "./OutputClassificationBadge";
 import TraceabilityPanel from "./TraceabilityPanel";
+import DismissReasonDialog from "./DismissReasonDialog";
 import type { Insight } from "@/hooks/useInsights";
 
 export interface EnrichedDecision {
@@ -127,14 +129,25 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
   const [focusIndex, setFocusIndex] = useState(0);
   const [modifyTarget, setModifyTarget] = useState<EnrichedDecision | null>(null);
 
+  // Responsibility dialog state for approve flow
+  const [approveTarget, setApproveTarget] = useState<EnrichedDecision | null>(null);
+
+  // Dismiss reason dialog state
+  const [dismissTarget, setDismissTarget] = useState<EnrichedDecision | null>(null);
+
   const focusedDecision = decisions[focusIndex] ?? null;
 
-  const handleApprove = useCallback(async (decision: EnrichedDecision) => {
-    // FAIL-CLOSED: Block approval of non-decision-grade items
+  // Stage 1: Open responsibility dialog before approve
+  const initiateApprove = useCallback((decision: EnrichedDecision) => {
     if (!decision.recommendation.isDecisionGrade) {
       toast({ title: "Cannot approve", description: "This recommendation is not decision-grade. Gather more evidence first.", variant: "destructive" });
       return;
     }
+    setApproveTarget(decision);
+  }, [toast]);
+
+  // Stage 2: After responsibility acknowledgment, persist
+  const executeApprove = useCallback(async (decision: EnrichedDecision) => {
     setActingOn(decision.id);
     try {
       if (decision.type === "advisory" && decision.sourceId) {
@@ -166,7 +179,13 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
     }
   }, [organizationId, user?.id, toast]);
 
-  const handleDismiss = useCallback(async (decision: EnrichedDecision) => {
+  // Stage 1: Open dismiss reason dialog
+  const initiateDismiss = useCallback((decision: EnrichedDecision) => {
+    setDismissTarget(decision);
+  }, []);
+
+  // Stage 2: After reason provided, persist dismissal to ledger
+  const executeDismiss = useCallback(async (decision: EnrichedDecision, reason: string) => {
     setActingOn(decision.id);
     try {
       if (decision.type === "advisory" && decision.sourceId) {
@@ -175,6 +194,21 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
       if (decision.type === "signal" && decision.sourceId) {
         await supabase.from("insights").update({ is_read: true }).eq("id", decision.sourceId);
       }
+      // Persist dismissal to decision ledger for governance audit trail
+      await supabase.from("decision_ledger").insert({
+        organization_id: organizationId,
+        recommended_action: decision.recommendation.recommendedAction,
+        chosen_action: "Dismissed",
+        decided_by: user?.id,
+        decided_at: new Date().toISOString(),
+        decision_status: "dismissed",
+        confidence_at_decision: decision.confidence ?? 50,
+        raw_confidence: decision.rawConfidence,
+        capped_confidence: decision.cappedConfidence,
+        confidence_cap_reason: decision.confidenceCapReason,
+        decision_type: "strategic",
+        notes: reason ? `Dismiss reason: ${reason}` : "Dismissed without reason",
+      });
       setDecisions(prev => prev.filter(d => d.id !== decision.id));
       setConfirmation({ decisionTitle: decision.title, action: "dismissed" });
     } catch {
@@ -182,18 +216,19 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
     } finally {
       setActingOn(null);
     }
-  }, [toast]);
+  }, [organizationId, user?.id, toast]);
 
   const handleModifySaved = useCallback((updated: Partial<EnrichedDecision>) => {
     setDecisions(prev => prev.filter(d => d.id !== updated.id));
     setConfirmation({ decisionTitle: updated.title ?? "Decision", action: "modified" });
   }, []);
 
+  // Keyboard shortcuts now go through the dialog gates
   useKeyboardShortcuts({
     onNext: () => setFocusIndex(i => Math.min(i + 1, decisions.length - 1)),
     onPrev: () => setFocusIndex(i => Math.max(i - 1, 0)),
-    onApprove: () => { if (focusedDecision && !actingOn) handleApprove(focusedDecision); },
-    onDismiss: () => { if (focusedDecision && !actingOn) handleDismiss(focusedDecision); },
+    onApprove: () => { if (focusedDecision && !actingOn) initiateApprove(focusedDecision); },
+    onDismiss: () => { if (focusedDecision && !actingOn) initiateDismiss(focusedDecision); },
   }, decisions.length > 0);
 
   useEffect(() => {
@@ -714,7 +749,7 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
                     {/* Action Buttons */}
                     <div className="flex sm:flex-col gap-1.5 shrink-0 w-full sm:w-auto">
                       <button
-                        onClick={() => handleApprove(decision)}
+                        onClick={() => initiateApprove(decision)}
                         disabled={isActing || !rec.isDecisionGrade}
                         title={!rec.isDecisionGrade ? "Cannot approve: not decision-grade" : "Approve"}
                         className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -723,7 +758,7 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
                         Approve
                       </button>
                       <button
-                        onClick={() => handleDismiss(decision)}
+                        onClick={() => initiateDismiss(decision)}
                         disabled={isActing}
                         className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-border/50 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors disabled:opacity-50"
                       >
@@ -746,6 +781,32 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
           </AnimatePresence>
         </>
       )}
+
+      {/* Responsibility acknowledgment gate for approvals */}
+      <DecisionResponsibilityDialog
+        open={!!approveTarget}
+        onOpenChange={(open) => { if (!open) setApproveTarget(null); }}
+        actionLabel={approveTarget?.recommendation.recommendedAction ?? ""}
+        onConfirm={() => {
+          if (approveTarget) {
+            executeApprove(approveTarget);
+            setApproveTarget(null);
+          }
+        }}
+      />
+
+      {/* Dismiss reason dialog */}
+      <DismissReasonDialog
+        open={!!dismissTarget}
+        onOpenChange={(open) => { if (!open) setDismissTarget(null); }}
+        decisionTitle={dismissTarget?.title ?? ""}
+        onConfirm={(reason) => {
+          if (dismissTarget) {
+            executeDismiss(dismissTarget, reason);
+            setDismissTarget(null);
+          }
+        }}
+      />
 
       <ModifyDecisionDialog
         decision={modifyTarget}

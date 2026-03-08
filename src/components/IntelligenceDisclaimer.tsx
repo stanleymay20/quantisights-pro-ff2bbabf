@@ -4,6 +4,8 @@ import { useState } from "react";
 interface IntelligenceDisclaimerProps {
   variant?: "banner" | "inline" | "footer";
   context?: "advisory" | "simulation" | "report" | "executive" | "general";
+  /** When true, the banner cannot be dismissed (use on strategic surfaces for legal protection) */
+  persistent?: boolean;
 }
 
 const CONTEXT_TEXT: Record<string, string> = {
@@ -19,10 +21,18 @@ const CONTEXT_TEXT: Record<string, string> = {
     "Quantivis is a decision-support platform. All outputs are probabilistic estimates subject to data quality and model limitations. They do not constitute financial or professional advice.",
 };
 
-const IntelligenceDisclaimer = ({ variant = "banner", context = "general" }: IntelligenceDisclaimerProps) => {
+/** Strategic surfaces where the disclaimer must not be dismissible */
+const PERSISTENT_CONTEXTS = new Set(["advisory", "simulation", "report", "executive"]);
+
+const IntelligenceDisclaimer = ({ variant = "banner", context = "general", persistent }: IntelligenceDisclaimerProps) => {
   const [dismissed, setDismissed] = useState(false);
 
-  if (dismissed && variant === "banner") return null;
+  // Determine if dismissal is allowed: explicit prop takes priority, otherwise infer from context
+  const isDismissible = persistent === undefined
+    ? !PERSISTENT_CONTEXTS.has(context)
+    : !persistent;
+
+  if (dismissed && isDismissible && variant === "banner") return null;
 
   const text = CONTEXT_TEXT[context] || CONTEXT_TEXT.general;
 
@@ -51,12 +61,14 @@ const IntelligenceDisclaimer = ({ variant = "banner", context = "general" }: Int
     <div className="flex items-center gap-3 px-4 py-2.5 bg-muted/30 border-b border-border/20 text-xs text-muted-foreground">
       <Shield className="w-3.5 h-3.5 shrink-0 text-muted-foreground/60" />
       <p className="flex-1 leading-relaxed">{text}</p>
-      <button
-        onClick={() => setDismissed(true)}
-        className="text-[10px] font-medium text-muted-foreground/50 hover:text-muted-foreground transition-colors shrink-0"
-      >
-        Dismiss
-      </button>
+      {isDismissible && (
+        <button
+          onClick={() => setDismissed(true)}
+          className="text-[10px] font-medium text-muted-foreground/50 hover:text-muted-foreground transition-colors shrink-0"
+        >
+          Dismiss
+        </button>
+      )}
     </div>
   );
 };

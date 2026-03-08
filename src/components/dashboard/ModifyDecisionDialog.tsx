@@ -50,7 +50,7 @@ const ModifyDecisionDialog = forwardRef<HTMLDivElement, ModifyDecisionDialogProp
     if (!decision) return;
     setSaving(true);
     try {
-      // Persist to decision_ledger as a modified decision
+      // Persist to decision_ledger as a modified decision — including full confidence lineage
       const { error } = await supabase.from("decision_ledger").insert({
         organization_id: organizationId,
         recommended_action: recommendation,
@@ -60,6 +60,9 @@ const ModifyDecisionDialog = forwardRef<HTMLDivElement, ModifyDecisionDialogProp
         decision_status: "approved",
         decision_type: "strategic",
         confidence_at_decision: decision.confidence ?? 50,
+        raw_confidence: decision.rawConfidence ?? null,
+        capped_confidence: decision.cappedConfidence ?? null,
+        confidence_cap_reason: decision.confidenceCapReason ?? null,
         notes: [
           rationale ? `Rationale: ${rationale}` : null,
           `Owner: ${owner}`,
