@@ -264,12 +264,11 @@ describe("PHASE 9 — Decision Quality Score", () => {
 });
 
 describe("PHASE 10 — Fail-Closed Acceptance Tests", () => {
-  it("FAIL: financial impact shown without financial model", () => {
+  it("FAIL: financial impact shown without ANY financial basis", () => {
     const result = computeCostOfDelay({
       severity: "critical",
       confidence: 90,
-      revenue: 10_000_000,
-      // predictedNetImpact is ABSENT
+      // NO revenue AND NO predictedNetImpact
     });
     // MUST NOT contain currency symbols
     expect(result.estimatedDelayCost).not.toMatch(/[€$£¥]/);

@@ -108,12 +108,13 @@ describe("Decision Intelligence Integrity Tests", () => {
   });
 
   describe("Cost of Delay — No Fabricated Currency", () => {
-    it("must NOT show currency without predictedNetImpact", () => {
+    it("must show derived currency when revenue is provided (exposure model)", () => {
       const result = computeCostOfDelay({
         severity: "high", confidence: 70, revenue: 1000000,
       });
-      expect(result.estimatedDelayCost).toContain("Relative score");
-      expect(result.estimatedDelayCost).not.toContain("€");
+      // Revenue exposure model now derives financial estimate
+      expect(result.estimatedDelayCost).toContain("€");
+      expect(result.estimatedDelayCost).toContain("/week");
     });
 
     it("must show currency ONLY with validated predictedNetImpact", () => {
