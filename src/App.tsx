@@ -72,6 +72,8 @@ const SecurityQuestionnaire = lazy(() => import("./pages/SecurityQuestionnaire")
 const PilotAudit = lazy(() => import("./pages/PilotAudit"));
 const BusinessModel = lazy(() => import("./pages/BusinessModel"));
 const DatasetExplorer = lazy(() => import("./pages/DatasetExplorer"));
+const Compliance = lazy(() => import("./pages/Compliance"));
+const SSOConfig = lazy(() => import("./pages/SSOConfig"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
