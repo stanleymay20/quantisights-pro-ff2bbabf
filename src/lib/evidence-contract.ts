@@ -109,9 +109,12 @@ export function scoreDecisionQuality(evidence: Partial<EvidenceBlock>): Decision
   if (evidence.limitations && evidence.limitations.length > 0) actionability += 5;
 
   // Monitoring Clarity (0-10)
-  // This is inferred from whether success metrics exist in the recommendation
-  if (evidence.recommendation && /metric|KPI|measure|monitor|track/i.test(evidence.recommendation)) {
+  // Structural check: successMetrics array presence (from StructuredRecommendation),
+  // plus keyword fallback for standalone evidence blocks
+  if ((evidence as any).successMetrics && Array.isArray((evidence as any).successMetrics) && (evidence as any).successMetrics.length > 0) {
     monitoringClarity += 10;
+  } else if (evidence.recommendation && /metric|KPI|measure|monitor|track|baseline|target|threshold|delta|rate|score/i.test(evidence.recommendation)) {
+    monitoringClarity += 7;
   } else if (evidence.recommendation) {
     monitoringClarity += 3;
   }
