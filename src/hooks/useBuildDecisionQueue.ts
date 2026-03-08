@@ -296,6 +296,7 @@ export function useBuildDecisionQueue({
         severity: sev,
         confidence: calibrationScore,
         message: `Calibration at ${calibrationScore}% — ${65 - calibrationScore}pp below governance threshold`,
+        sampleSize: 0,
       });
 
       queue.push({

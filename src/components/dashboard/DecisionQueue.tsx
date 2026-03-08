@@ -163,7 +163,7 @@ const DecisionQueue = memo(({
         decision_type: "strategic",
         decision_context_id: activeContextId ?? null,
         notes: `Owner: ${decision.recommendation.suggestedOwner} | Due: ${decision.costOfDelayResult.recommendedActionWindowDays}d | Metrics: ${decision.recommendation.successMetrics.join(", ")}`,
-      });
+      } as any);
       setDecisions(prev => prev.filter(d => d.id !== decision.id));
       setConfirmation({ decisionTitle: decision.title, action: "approved" });
     } catch {
