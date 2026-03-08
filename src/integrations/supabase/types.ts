@@ -2572,6 +2572,7 @@ export type Database = {
           aggregation_type: string
           created_at: string
           created_by: string
+          dataset_id: string | null
           description: string | null
           formula: string
           id: string
@@ -2585,6 +2586,7 @@ export type Database = {
           aggregation_type?: string
           created_at?: string
           created_by: string
+          dataset_id?: string | null
           description?: string | null
           formula: string
           id?: string
@@ -2598,6 +2600,7 @@ export type Database = {
           aggregation_type?: string
           created_at?: string
           created_by?: string
+          dataset_id?: string | null
           description?: string | null
           formula?: string
           id?: string
@@ -2608,6 +2611,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "kpis_dataset_id_fkey"
+            columns: ["dataset_id"]
+            isOneToOne: false
+            referencedRelation: "datasets"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "kpis_organization_id_fkey"
             columns: ["organization_id"]
