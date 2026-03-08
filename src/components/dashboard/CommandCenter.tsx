@@ -6,7 +6,7 @@ import QuickDecisionLog from "./QuickDecisionLog";
 import CalibrationProgress from "./CalibrationProgress";
 import KPICards from "./KPICards";
 import AnalystInsights from "./AnalystInsights";
-import DecisionPerformanceDashboard from "./DecisionPerformanceDashboard";
+import ExecutiveIntelligencePanel from "./ExecutiveIntelligencePanel";
 import type { Insight } from "@/hooks/useInsights";
 import type { MetricTypeSummary } from "@/hooks/useMetrics";
 
@@ -85,6 +85,14 @@ const CommandCenter = memo(({
 
       <KPICards topMetrics={topMetrics} />
 
+      <ExecutiveIntelligencePanel
+        metrics={metrics}
+        insights={insights}
+        topMetrics={topMetrics ?? []}
+        pendingDecisions={pendingDecisions}
+        datasetName={datasetName}
+      />
+
       <AnalystInsights
         insights={insights}
         metrics={metrics}
@@ -92,8 +100,6 @@ const CommandCenter = memo(({
         datasetId={datasetId}
         datasetName={datasetName}
       />
-
-      <DecisionPerformanceDashboard />
 
       <div className="flex items-center justify-center">
         <button
