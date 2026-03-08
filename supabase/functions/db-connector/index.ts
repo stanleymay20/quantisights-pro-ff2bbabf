@@ -491,6 +491,308 @@ async function discoverPowerBI(body: ConnectorRequest) {
   }
 }
 
+// ─── Snowflake Sync (REST API) ───
+async function syncSnowflake(
+  body: ConnectorRequest,
+  mappings: any[],
+  organizationId: string,
+  dataSourceId: string,
+  serviceClient: any,
+) {
+  const account = (body.account || "").replace(".snowflakecomputing.com", "");
+  const url = `https://${account}.snowflakecomputing.com/api/v2/statements`;
+  const errors: string[] = [];
+  const metrics: any[] = [];
+
+  for (const mapping of mappings) {
+    try {
+      const safeTable = mapping.source_table.replace(/[^a-zA-Z0-9_]/g, "");
+      const safeCol = mapping.source_column.replace(/[^a-zA-Z0-9_]/g, "");
+      const safeDateCol = mapping.date_column.replace(/[^a-zA-Z0-9_]/g, "");
+      const allowedAgg = ["SUM", "AVG", "COUNT", "MIN", "MAX"];
+      const safeAgg = allowedAgg.includes((mapping.aggregation || "SUM").toUpperCase()) ? (mapping.aggregation || "SUM").toUpperCase() : "SUM";
+
+      const statement = `
+        SELECT DATE_TRUNC('MONTH', "${safeDateCol}"::TIMESTAMP)::DATE AS period,
+               ${safeAgg}("${safeCol}"::NUMBER) AS value
+        FROM "${(body.schema_name || "PUBLIC").replace(/[^a-zA-Z0-9_]/g, "")}"."${safeTable}"
+        WHERE "${safeDateCol}" IS NOT NULL AND "${safeCol}" IS NOT NULL
+        GROUP BY DATE_TRUNC('MONTH', "${safeDateCol}"::TIMESTAMP)
+        ORDER BY period LIMIT 10000
+      `;
+
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Basic ${btoa(`${body.username}:${body.password}`)}`,
+        },
+        body: JSON.stringify({
+          statement,
+          timeout: 60,
+          database: body.database_name,
+          schema: body.schema_name || "PUBLIC",
+          warehouse: body.warehouse || "COMPUTE_WH",
+          role: body.role || "PUBLIC",
+        }),
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        errors.push(`${mapping.source_table}.${mapping.source_column}: Snowflake error (${res.status}): ${errText.slice(0, 200)}`);
+        continue;
+      }
+
+      const data = await res.json();
+      for (const row of data?.data || []) {
+        const [period, value] = row;
+        if (period && value != null) {
+          metrics.push({
+            organization_id: organizationId,
+            metric_type: mapping.metric_type,
+            value: Number(value),
+            date: String(period).split("T")[0],
+            source_type: "connector",
+            source_id: dataSourceId,
+            quality_score: 90,
+          });
+        }
+      }
+    } catch (err: unknown) {
+      errors.push(`${mapping.source_table}.${mapping.source_column}: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+
+  if (metrics.length > 0) {
+    for (let i = 0; i < metrics.length; i += 500) {
+      const batch = metrics.slice(i, i + 500);
+      const { error } = await serviceClient.from("metrics").upsert(batch, {
+        onConflict: "organization_id,metric_type,date,source_id", ignoreDuplicates: false,
+      });
+      if (error) errors.push(`DB upsert batch ${i}: ${error.message}`);
+    }
+  }
+
+  if (dataSourceId) {
+    await serviceClient.from("data_sources").update({ last_synced_at: new Date().toISOString() }).eq("id", dataSourceId);
+  }
+
+  return { records: metrics.length, errors };
+}
+
+// ─── BigQuery Sync (REST API with JWT) ───
+async function getBigQueryAccessToken(serviceAccountJson: string): Promise<string> {
+  const sa = JSON.parse(serviceAccountJson);
+  const now = Math.floor(Date.now() / 1000);
+
+  const header = btoa(JSON.stringify({ alg: "RS256", typ: "JWT" }));
+  const claim = btoa(JSON.stringify({
+    iss: sa.client_email,
+    scope: "https://www.googleapis.com/auth/bigquery.readonly",
+    aud: "https://oauth2.googleapis.com/token",
+    iat: now,
+    exp: now + 3600,
+  }));
+
+  const pemContent = sa.private_key
+    .replace(/-----BEGIN PRIVATE KEY-----/g, "")
+    .replace(/-----END PRIVATE KEY-----/g, "")
+    .replace(/\n/g, "");
+  const binaryKey = Uint8Array.from(atob(pemContent), (c) => c.charCodeAt(0));
+
+  const key = await crypto.subtle.importKey(
+    "pkcs8", binaryKey,
+    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+    false, ["sign"],
+  );
+
+  const signatureInput = new TextEncoder().encode(`${header}.${claim}`);
+  const signature = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", key, signatureInput);
+  const sig = btoa(String.fromCharCode(...new Uint8Array(signature)));
+  const jwt = `${header}.${claim}.${sig}`;
+
+  const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: `grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=${jwt}`,
+  });
+
+  if (!tokenRes.ok) {
+    const body = await tokenRes.text();
+    throw new Error(`Google token exchange failed [${tokenRes.status}]: ${body.substring(0, 300)}`);
+  }
+
+  return (await tokenRes.json()).access_token;
+}
+
+async function syncBigQuery(
+  body: ConnectorRequest,
+  mappings: any[],
+  organizationId: string,
+  dataSourceId: string,
+  serviceClient: any,
+) {
+  const errors: string[] = [];
+  const metrics: any[] = [];
+
+  let sa: any;
+  try { sa = JSON.parse(body.service_account_json || "{}"); } catch {
+    return { records: 0, errors: ["Invalid service account JSON"] };
+  }
+
+  const projectId = body.project_id || sa.project_id;
+  const datasetId = body.dataset_id;
+  if (!projectId || !datasetId) {
+    return { records: 0, errors: ["Project ID and Dataset ID are required for BigQuery sync"] };
+  }
+
+  let accessToken: string;
+  try {
+    accessToken = await getBigQueryAccessToken(body.service_account_json || "{}");
+  } catch (err: unknown) {
+    return { records: 0, errors: [`BigQuery auth failed: ${err instanceof Error ? err.message : String(err)}`] };
+  }
+
+  for (const mapping of mappings) {
+    try {
+      const safeTable = mapping.source_table.replace(/[^a-zA-Z0-9_]/g, "");
+      const safeCol = mapping.source_column.replace(/[^a-zA-Z0-9_]/g, "");
+      const safeDateCol = mapping.date_column.replace(/[^a-zA-Z0-9_]/g, "");
+      const allowedAgg = ["SUM", "AVG", "COUNT", "MIN", "MAX"];
+      const safeAgg = allowedAgg.includes((mapping.aggregation || "SUM").toUpperCase()) ? (mapping.aggregation || "SUM").toUpperCase() : "SUM";
+
+      const query = `
+        SELECT DATE_TRUNC(CAST(\`${safeDateCol}\` AS TIMESTAMP), MONTH) AS period,
+               ${safeAgg}(\`${safeCol}\`) AS value
+        FROM \`${projectId}.${datasetId}.${safeTable}\`
+        WHERE \`${safeDateCol}\` IS NOT NULL AND \`${safeCol}\` IS NOT NULL
+        GROUP BY period ORDER BY period LIMIT 10000
+      `;
+
+      const res = await fetch(
+        `https://bigquery.googleapis.com/bigquery/v2/projects/${projectId}/queries`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ query, useLegacySql: false, maxResults: 10000, timeoutMs: 60000 }),
+        },
+      );
+
+      if (!res.ok) {
+        const errText = await res.text();
+        errors.push(`${mapping.source_table}.${mapping.source_column}: BigQuery error (${res.status}): ${errText.slice(0, 200)}`);
+        continue;
+      }
+
+      const data = await res.json();
+      for (const row of data?.rows || []) {
+        const period = row.f?.[0]?.v;
+        const value = row.f?.[1]?.v;
+        if (period && value != null) {
+          const dateStr = typeof period === "number"
+            ? new Date(period / 1000).toISOString().split("T")[0]
+            : String(period).split("T")[0];
+          metrics.push({
+            organization_id: organizationId,
+            metric_type: mapping.metric_type,
+            value: Number(value),
+            date: dateStr,
+            source_type: "connector",
+            source_id: dataSourceId,
+            quality_score: 92,
+          });
+        }
+      }
+    } catch (err: unknown) {
+      errors.push(`${mapping.source_table}.${mapping.source_column}: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+
+  if (metrics.length > 0) {
+    for (let i = 0; i < metrics.length; i += 500) {
+      const batch = metrics.slice(i, i + 500);
+      const { error } = await serviceClient.from("metrics").upsert(batch, {
+        onConflict: "organization_id,metric_type,date,source_id", ignoreDuplicates: false,
+      });
+      if (error) errors.push(`DB upsert batch ${i}: ${error.message}`);
+    }
+  }
+
+  if (dataSourceId) {
+    await serviceClient.from("data_sources").update({ last_synced_at: new Date().toISOString() }).eq("id", dataSourceId);
+  }
+
+  return { records: metrics.length, errors };
+}
+
+// ─── BigQuery Schema Discovery (Full) ───
+async function discoverBigQueryFull(body: ConnectorRequest) {
+  try {
+    let sa: any;
+    try { sa = JSON.parse(body.service_account_json || "{}"); } catch {
+      return { tables: [], error: "Invalid service account JSON" };
+    }
+
+    const projectId = body.project_id || sa.project_id;
+    const datasetId = body.dataset_id;
+    if (!projectId || !datasetId) {
+      return { tables: [], error: "Project ID and Dataset ID are required" };
+    }
+
+    let accessToken: string;
+    try {
+      accessToken = await getBigQueryAccessToken(body.service_account_json || "{}");
+    } catch (err: unknown) {
+      return { tables: [], error: `Auth failed: ${err instanceof Error ? err.message : String(err)}` };
+    }
+
+    // List tables
+    const tablesRes = await fetch(
+      `https://bigquery.googleapis.com/bigquery/v2/projects/${projectId}/datasets/${datasetId}/tables?maxResults=100`,
+      { headers: { Authorization: `Bearer ${accessToken}` } },
+    );
+
+    if (!tablesRes.ok) {
+      const errText = await tablesRes.text();
+      return { tables: [], error: `BigQuery tables list failed (${tablesRes.status}): ${errText.slice(0, 200)}` };
+    }
+
+    const tablesData = await tablesRes.json();
+    const result: any[] = [];
+
+    for (const t of tablesData.tables || []) {
+      const tableId = t.tableReference?.tableId;
+      if (!tableId) continue;
+
+      // Get table schema
+      const schemaRes = await fetch(
+        `https://bigquery.googleapis.com/bigquery/v2/projects/${projectId}/datasets/${datasetId}/tables/${tableId}`,
+        { headers: { Authorization: `Bearer ${accessToken}` } },
+      );
+
+      if (schemaRes.ok) {
+        const schemaData = await schemaRes.json();
+        result.push({
+          table_name: tableId,
+          columns: (schemaData.schema?.fields || []).map((f: any) => ({
+            column_name: f.name,
+            data_type: f.type?.toLowerCase() || "string",
+            is_nullable: f.mode === "NULLABLE" ? "YES" : "NO",
+          })),
+          row_count: Number(schemaData.numRows || 0),
+        });
+      }
+    }
+
+    return { tables: result };
+  } catch (err: unknown) {
+    return { tables: [], error: `BigQuery discovery error: ${err instanceof Error ? err.message : String(err)}` };
+  }
+}
+
 // ─── Router ───
 function resolveConnectorType(body: ConnectorRequest): string {
   if (body.connector_type) return body.connector_type;
@@ -582,7 +884,7 @@ serve(async (req) => {
         switch (connectorType) {
           case "postgresql": schema = await discoverPostgres(pgConfig); break;
           case "snowflake": schema = await discoverSnowflake(body); break;
-          case "bigquery": schema = await discoverBigQuery(body); break;
+          case "bigquery": schema = await discoverBigQueryFull(body); break;
           case "powerbi": schema = await discoverPowerBI(body); break;
           case "mysql":
           case "sqlserver":
@@ -640,10 +942,16 @@ serve(async (req) => {
           case "postgresql":
             result = await syncPostgres(pgConfig, body.metric_mappings, organization_id, body.data_source_id, serviceClient);
             break;
+          case "snowflake":
+            result = await syncSnowflake(body, body.metric_mappings, organization_id, body.data_source_id, serviceClient);
+            break;
+          case "bigquery":
+            result = await syncBigQuery(body, body.metric_mappings, organization_id, body.data_source_id, serviceClient);
+            break;
           default:
             result = {
               records: 0,
-              errors: [`Full sync for ${connectorType} requires enterprise driver activation. PostgreSQL sync is fully operational.`],
+              errors: [`Full sync for ${connectorType} requires enterprise driver activation. PostgreSQL, Snowflake, and BigQuery sync are fully operational.`],
             };
         }
 

@@ -90,6 +90,8 @@ const navSections: NavSection[] = [
       { icon: Users, label: "Team", path: "/team" },
       { icon: Building2, label: "Clients", path: "/clients" },
       { icon: CreditCard, label: "Billing", path: "/billing" },
+      { icon: Shield, label: "Compliance", path: "/compliance" },
+      { icon: Shield, label: "SSO / SAML", path: "/sso" },
       { icon: Settings, label: "Settings", path: "/settings" },
     ],
   },

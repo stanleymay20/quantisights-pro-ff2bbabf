@@ -72,6 +72,8 @@ const SecurityQuestionnaire = lazy(() => import("./pages/SecurityQuestionnaire")
 const PilotAudit = lazy(() => import("./pages/PilotAudit"));
 const BusinessModel = lazy(() => import("./pages/BusinessModel"));
 const DatasetExplorer = lazy(() => import("./pages/DatasetExplorer"));
+const Compliance = lazy(() => import("./pages/Compliance"));
+const SSOConfig = lazy(() => import("./pages/SSOConfig"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -190,6 +192,8 @@ const App = () => (
               <Route path="/portfolio" element={<P><Portfolio /></P>} />
               <Route path="/pilot-audit" element={<P><PilotAudit /></P>} />
               <Route path="/dataset-explorer" element={<P><DatasetExplorer /></P>} />
+              <Route path="/compliance" element={<P><Compliance /></P>} />
+              <Route path="/sso" element={<P><SSOConfig /></P>} />
             </Routes>
             </Suspense>
           </AuthProvider>
