@@ -7,8 +7,8 @@ import { useDecisionPerformance } from "@/hooks/useDecisionPerformance";
 import { useOrganization } from "@/hooks/useOrganization";
 
 const DecisionPerformanceDashboard = () => {
-  const { organizationId } = useOrganization();
-  const { performance, loading, refresh } = useDecisionPerformance(organizationId);
+  const { currentOrgId } = useOrganization();
+  const { performance, loading, refresh } = useDecisionPerformance(currentOrgId);
 
   if (!performance && !loading) {
     return (
