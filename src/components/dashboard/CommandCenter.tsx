@@ -7,6 +7,7 @@ import CalibrationProgress from "./CalibrationProgress";
 import KPICards from "./KPICards";
 import AnalystInsights from "./AnalystInsights";
 import ExecutiveIntelligencePanel from "./ExecutiveIntelligencePanel";
+import CrossContextAnalytics from "./CrossContextAnalytics";
 import DecisionContextPanel from "./DecisionContextPanel";
 import { useDecisionContexts, type DecisionContext } from "@/hooks/useDecisionContexts";
 import type { Insight } from "@/hooks/useInsights";
@@ -119,6 +120,8 @@ const CommandCenter = memo(({
         datasetId={datasetId}
         datasetName={datasetName}
       />
+
+      <CrossContextAnalytics organizationId={organizationId} />
 
       <div className="flex items-center justify-center">
         <button
