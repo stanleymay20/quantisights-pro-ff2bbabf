@@ -73,7 +73,21 @@ serve(async (req) => {
       });
     }
 
-    // Fetch historical metrics for volatility estimation
+    // Validate dataset belongs to org
+    const { data: dsCheck } = await svc
+      .from("datasets")
+      .select("id")
+      .eq("id", dataset_id)
+      .eq("organization_id", organization_id)
+      .maybeSingle();
+    if (!dsCheck) {
+      return new Response(
+        JSON.stringify({ error: "dataset_id does not belong to this organization" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Fetch historical metrics scoped to dataset
     const metricTypes = ["revenue", "cost", "churn_rate"];
     const metricData: Record<string, number[]> = {};
 
@@ -82,6 +96,7 @@ serve(async (req) => {
         .from("metrics")
         .select("value")
         .eq("organization_id", organization_id)
+        .eq("dataset_id", dataset_id)
         .eq("metric_type", mt)
         .order("date", { ascending: true });
       metricData[mt] = (data || []).map((m) => Number(m.value));
@@ -91,22 +106,42 @@ serve(async (req) => {
     const costValues = metricData.cost;
     const churnValues = metricData.churn_rate;
 
-    const sampleSize = Math.max(
-      3,
-      Math.min(
-        revenueValues.length || 3,
-        costValues.length || 3,
-        churnValues.length || 3
-      )
+    // ENTERPRISE INTEGRITY: Refuse to simulate without real baseline data
+    const hasRevenue = revenueValues.length >= 3;
+    const hasCost = costValues.length >= 3;
+    const hasChurn = churnValues.length >= 3;
+
+    if (!hasRevenue && !hasCost && !hasChurn) {
+      return new Response(
+        JSON.stringify({
+          error: null,
+          simulation_refused: true,
+          reason: "Simulation unavailable: insufficient baseline metrics in dataset. At least 3 data points required for revenue, cost, or churn_rate metrics.",
+          missing_metrics: {
+            revenue: { available: revenueValues.length, required: 3 },
+            cost: { available: costValues.length, required: 3 },
+            churn_rate: { available: churnValues.length, required: 3 },
+          },
+          recommendation: "Upload time-series data with revenue, cost, or churn_rate metrics to enable Monte Carlo simulation.",
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Use only metrics with sufficient data; refuse to fabricate missing baselines
+    const baseRevenue = hasRevenue ? revenueValues[revenueValues.length - 1] : null;
+    const baseCost = hasCost ? costValues[costValues.length - 1] : null;
+    const baseChurn = hasChurn ? churnValues[churnValues.length - 1] : null;
+
+    const sampleSize = Math.min(
+      hasRevenue ? revenueValues.length : Infinity,
+      hasCost ? costValues.length : Infinity,
+      hasChurn ? churnValues.length : Infinity
     );
 
-    const revenueVol = computeLogVolatility(revenueValues);
-    const costVol = computeLogVolatility(costValues);
-    const churnVol = computeLogVolatility(churnValues);
-
-    const baseRevenue = revenueValues.length > 0 ? revenueValues[revenueValues.length - 1] : 100000;
-    const baseCost = costValues.length > 0 ? costValues[costValues.length - 1] : 50000;
-    const baseChurn = churnValues.length > 0 ? churnValues[churnValues.length - 1] : 5;
+    const revenueVol = hasRevenue ? computeLogVolatility(revenueValues) : 0;
+    const costVol = hasCost ? computeLogVolatility(costValues) : 0;
+    const churnVol = hasChurn ? computeLogVolatility(churnValues) : 0;
 
     const runs = Math.min(simulation_runs, 50000);
     const steps = time_to_impact_months;
