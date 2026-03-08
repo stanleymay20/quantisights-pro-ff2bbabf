@@ -105,7 +105,7 @@ serve(async (req) => {
       if (m.segment) metricsByType[m.metric_type].segments.add(m.segment);
     }
 
-    // Build statistical summaries for AI
+    // Build statistical summaries for AI with advanced profiling
     const metricSummaries = Object.entries(metricsByType).map(([type, data]) => {
       const vals = data.values;
       const n = vals.length;
@@ -118,6 +118,65 @@ serve(async (req) => {
       const earlyAvg = vals.slice(0, half).length > 0 ? vals.slice(0, half).reduce((s, v) => s + v, 0) / vals.slice(0, half).length : recentAvg;
       const trendPct = earlyAvg !== 0 ? ((recentAvg - earlyAvg) / Math.abs(earlyAvg)) * 100 : 0;
       const volatility = mean !== 0 ? (Math.sqrt(vals.reduce((s, v) => s + (v - mean) ** 2, 0) / n) / Math.abs(mean)) * 100 : 0;
+
+      // Distribution profiling
+      let skewness = 0;
+      const std = Math.sqrt(vals.reduce((s, v) => s + (v - mean) ** 2, 0) / n);
+      if (n >= 3 && std > 0) {
+        let skewSum = 0;
+        for (let i = 0; i < n; i++) skewSum += ((vals[i] - mean) / std) ** 3;
+        skewness = (skewSum * n) / ((n - 1) * (n - 2));
+      }
+      const isNormal = Math.abs(skewness) < 1;
+
+      // Seasonality detection via autocorrelation
+      let seasonalPeriod: number | null = null;
+      let seasonalStrength = 0;
+      if (n >= 24) {
+        for (const period of [4, 7, 12]) {
+          if (n < period * 2) continue;
+          let num = 0, den = 0;
+          for (let i = 0; i < n; i++) {
+            den += (vals[i] - mean) ** 2;
+            if (i + period < n) num += (vals[i] - mean) * (vals[i + period] - mean);
+          }
+          const acf = den !== 0 ? num / den : 0;
+          if (acf > 0.3 && acf > seasonalStrength) {
+            seasonalStrength = acf;
+            seasonalPeriod = period;
+          }
+        }
+      }
+
+      // Changepoint detection (simplified CUSUM for edge function)
+      let changepointIdx: number | null = null;
+      let changepointMagnitude = 0;
+      if (n >= 10) {
+        let bestStat = 0;
+        const globalStd = std > 0 ? std : 1;
+        for (let i = 5; i <= n - 5; i++) {
+          const leftMean = vals.slice(0, i).reduce((s, v) => s + v, 0) / i;
+          const rightMean = vals.slice(i).reduce((s, v) => s + v, 0) / (n - i);
+          const stat = Math.abs(leftMean - rightMean) / globalStd * Math.sqrt((i * (n - i)) / n);
+          if (stat > bestStat) {
+            bestStat = stat;
+            changepointIdx = i;
+            changepointMagnitude = leftMean !== 0 ? ((rightMean - leftMean) / Math.abs(leftMean)) * 100 : 0;
+          }
+        }
+        const threshold = 1.5 + 0.5 * Math.log(n);
+        if (bestStat < threshold) {
+          changepointIdx = null;
+          changepointMagnitude = 0;
+        }
+      }
+
+      // IQR for outlier context
+      const sorted = [...vals].sort((a, b) => a - b);
+      const q1 = sorted[Math.floor(n * 0.25)];
+      const q3 = sorted[Math.floor(n * 0.75)];
+      const iqr = q3 - q1;
+      const outlierCount = iqr > 0 ? vals.filter(v => v < q1 - 1.5 * iqr || v > q3 + 1.5 * iqr).length : 0;
 
       return {
         metric_type: type,
@@ -133,6 +192,18 @@ serve(async (req) => {
         volatility_pct: Number(volatility.toFixed(2)),
         regions: [...data.regions],
         segments: [...data.segments],
+        // Advanced profiling
+        distribution: isNormal ? "normal" : (skewness > 1 ? "right-skewed" : skewness < -1 ? "left-skewed" : "approximately normal"),
+        skewness: Number(skewness.toFixed(3)),
+        outlier_count: outlierCount,
+        q1: Number(q1.toFixed(4)),
+        q3: Number(q3.toFixed(4)),
+        seasonality: seasonalPeriod ? { period: seasonalPeriod, strength: Number(seasonalStrength.toFixed(3)) } : null,
+        structural_break: changepointIdx ? {
+          at_index: changepointIdx,
+          at_date: data.dates[changepointIdx] || null,
+          magnitude_pct: Number(changepointMagnitude.toFixed(1)),
+        } : null,
       };
     });
 
