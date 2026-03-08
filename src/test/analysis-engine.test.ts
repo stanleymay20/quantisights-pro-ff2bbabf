@@ -119,7 +119,8 @@ describe("Hypothesis testing (t-test)", () => {
 
 describe("Anomaly detection", () => {
   it("detects z-score outliers", () => {
-    const vals = [10, 11, 10, 12, 11, 50, 10, 11];
+    // Need >10 data points so 1 outlier is <10%
+    const vals = [10, 11, 10, 12, 11, 10, 11, 10, 12, 11, 10, 50];
     const anomalies = detectAnomalies(vals, 2);
     expect(anomalies.length).toBeGreaterThan(0);
     expect(anomalies[0].value).toBe(50);
