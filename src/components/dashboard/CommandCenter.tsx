@@ -28,6 +28,8 @@ interface CommandCenterProps {
   onDecisionLogged: () => void;
   /** Dynamic metric summaries — domain-agnostic */
   topMetrics?: MetricTypeSummary[];
+  datasetId?: string;
+  datasetName?: string | null;
 }
 
 const CommandCenter = memo(({
