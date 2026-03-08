@@ -90,8 +90,8 @@ const AdvisoryPage = () => {
   const [dataSufficiency, setDataSufficiency] = useState<string | null>(null);
   const [sampleSize, setSampleSize] = useState<number>(0);
   const [expanded, setExpanded] = useState<string | null>(null);
-  const [resolutionText, setResolutionText] = useState("");
-  const [impactScore, setImpactScore] = useState("");
+  const [resolutionText, setResolutionText] = useState<Record<string, string>>({});
+  const [impactScore, setImpactScore] = useState<Record<string, string>>({});
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   const fetchInstances = useCallback(async () => {
