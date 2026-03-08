@@ -12,7 +12,29 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import logo from "@/assets/quantivis-logo.png";
 import WorkspaceSwitcher from "@/components/dashboard/WorkspaceSwitcher";
+import KeyboardShortcutsModal from "@/components/dashboard/KeyboardShortcutsModal";
+import HelpTooltip from "@/components/ui/help-tooltip";
 import { cn } from "@/lib/utils";
+
+/** Plain-English explanations for sidebar items that use jargon */
+const ITEM_HELP: Record<string, string> = {
+  "Causal Inference": "Discover what actually caused a change — not just correlations, but real cause-and-effect relationships.",
+  "Cognitive Bias": "Detect mental shortcuts that lead to bad decisions — like anchoring, confirmation bias, or overconfidence.",
+  "Counterfactual": "Ask 'what if we had done X instead?' — explore alternate outcomes to learn from past decisions.",
+  "Calibration": "Measure how well your confidence predictions match reality. Great calibration = trustworthy judgment.",
+  "Benchmarking": "Compare your metrics against industry peers to see where you lead and where you lag.",
+  "Decision Intelligence": "A unified view of pending decisions, their expected impact, and recommended actions.",
+  "Decision Ledger": "Permanent record of every strategic decision — who made it, why, and what happened.",
+  "What-If Branching": "Create alternate future scenarios and compare outcomes side by side.",
+  "Simulations": "Run Monte Carlo simulations — thousands of random scenarios to stress-test your strategy.",
+  "Strategy Pack": "Pre-built strategic frameworks and templates for common business decisions.",
+  "Misses Analysis": "Review decisions where outcomes missed predictions — learn what went wrong and why.",
+  "Data Lineage": "Trace every number back to its source — full transparency on where your data comes from.",
+  "Pipeline Monitor": "Real-time status of data ingestion, processing, and quality checks.",
+  "OKR Alignment": "Link your Objectives & Key Results to the data — track progress with live metrics.",
+  "Alert Playbooks": "Automated response plans that trigger when specific metric thresholds are breached.",
+  "Pilot Audit": "Pre-launch checklist ensuring your data and configuration are production-ready.",
+};
 
 interface NavItem {
   icon: React.ElementType;
