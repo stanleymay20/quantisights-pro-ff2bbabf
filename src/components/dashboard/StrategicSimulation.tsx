@@ -99,12 +99,18 @@ const StrategicSimulation = ({ organizationId, datasetId, roleType, tier }: Prop
   const isWarRoom = result?.escalation_triggered === true;
 
   const runSimulation = async () => {
+    if (!datasetId) {
+      toast({ title: "Simulation Error", description: "Select an active dataset before running simulation.", variant: "destructive" });
+      return;
+    }
+
     setLoading(true);
     setResult(null);
     try {
       const { data, error } = await supabase.functions.invoke("strategic-simulation", {
         body: {
           organization_id: organizationId,
+          dataset_id: datasetId,
           role_type: roleType,
           scenario_parameters: {
             revenue_change_percent: revenueChange,
