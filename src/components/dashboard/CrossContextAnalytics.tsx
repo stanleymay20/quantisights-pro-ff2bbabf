@@ -1,5 +1,5 @@
 import { useState, useEffect, memo } from "react";
-import { GitCompare, TrendingUp, Target, BarChart3, AlertTriangle } from "lucide-react";
+import { GitCompare, TrendingUp, Target, AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -22,41 +22,52 @@ interface CrossContextAnalyticsProps {
 const CrossContextAnalytics = memo(({ organizationId }: CrossContextAnalyticsProps) => {
   const [data, setData] = useState<ContextPerformance[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!organizationId) return;
 
-    const fetch = async () => {
+    const fetchData = async () => {
       setLoading(true);
+      setError(null);
 
-      // Fetch decision contexts
-      const { data: contexts } = await supabase
-        .from("decision_contexts")
-        .select("id, name, decision_type")
-        .eq("organization_id", organizationId)
-        .eq("status", "active") as any;
+      const [contextsRes, decisionsRes, outcomesRes] = await Promise.all([
+        supabase
+          .from("decision_contexts")
+          .select("id, name, decision_type")
+          .eq("organization_id", organizationId)
+          .eq("status", "active"),
+        supabase
+          .from("decision_ledger")
+          .select("id, decision_context_id, decision_status")
+          .eq("organization_id", organizationId)
+          .not("decision_context_id", "is", null),
+        supabase
+          .from("decision_outcomes")
+          .select("decision_id, outcome_status, accuracy_score")
+          .eq("organization_id", organizationId),
+      ]);
 
-      if (!contexts || contexts.length === 0) {
+      if (contextsRes.error || decisionsRes.error || outcomesRes.error) {
+        const msg = contextsRes.error?.message || decisionsRes.error?.message || outcomesRes.error?.message || "Fetch failed";
+        console.error("CrossContextAnalytics error:", msg);
+        setError(msg);
+        setLoading(false);
+        return;
+      }
+
+      const contexts = contextsRes.data ?? [];
+      const decisions = decisionsRes.data ?? [];
+      const outcomes = outcomesRes.data ?? [];
+
+      if (contexts.length === 0) {
         setData([]);
         setLoading(false);
         return;
       }
 
-      // Fetch decisions with context
-      const { data: decisions } = await supabase
-        .from("decision_ledger")
-        .select("id, decision_context_id, decision_status")
-        .eq("organization_id", organizationId)
-        .not("decision_context_id", "is", null) as any;
-
-      // Fetch outcomes
-      const { data: outcomes } = await supabase
-        .from("decision_outcomes")
-        .select("decision_id, outcome_status, accuracy_score")
-        .eq("organization_id", organizationId) as any;
-
-      const outcomeByDecision = new Map<string, any>();
-      (outcomes || []).forEach((o: any) => outcomeByDecision.set(o.decision_id, o));
+      const outcomeByDecision = new Map<string, { outcome_status: string; accuracy_score: number | null }>();
+      outcomes.forEach((o) => outcomeByDecision.set(o.decision_id, o));
 
       const perfMap = new Map<string, ContextPerformance>();
 
@@ -72,7 +83,8 @@ const CrossContextAnalytics = memo(({ organizationId }: CrossContextAnalyticsPro
         });
       }
 
-      for (const d of (decisions || [])) {
+      for (const d of decisions) {
+        if (!d.decision_context_id) continue;
         const perf = perfMap.get(d.decision_context_id);
         if (!perf) continue;
         perf.totalDecisions++;
@@ -109,7 +121,7 @@ const CrossContextAnalytics = memo(({ organizationId }: CrossContextAnalyticsPro
       setLoading(false);
     };
 
-    fetch();
+    fetchData();
   }, [organizationId]);
 
   if (loading) {
@@ -117,6 +129,17 @@ const CrossContextAnalytics = memo(({ organizationId }: CrossContextAnalyticsPro
       <Card className="border-border/50">
         <CardContent className="p-6">
           <div className="h-24 rounded bg-muted/30 animate-pulse" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="border-border/50">
+        <CardContent className="p-6 text-center">
+          <AlertTriangle className="w-6 h-6 text-destructive/60 mx-auto mb-2" />
+          <p className="text-xs text-muted-foreground">Failed to load cross-context analytics</p>
         </CardContent>
       </Card>
     );

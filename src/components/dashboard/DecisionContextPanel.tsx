@@ -1,14 +1,25 @@
 import { useState, memo } from "react";
-import { Crosshair, Plus, ChevronDown, Target, FileText, BarChart3, Archive } from "lucide-react";
+import { Crosshair, Plus, Target, Archive } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import {
-  useDecisionContexts,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   DECISION_TYPES,
   type DecisionContext,
   type CreateDecisionContextInput,
@@ -16,19 +27,17 @@ import {
 import { useToast } from "@/hooks/use-toast";
 
 interface DecisionContextPanelProps {
-  organizationId: string;
   activeContext: DecisionContext | null;
   onContextChange: (ctx: DecisionContext | null) => void;
   contexts: DecisionContext[];
   onCreateContext: (input: CreateDecisionContextInput) => Promise<DecisionContext | null>;
-  onArchiveContext: (id: string) => Promise<boolean>;
+  onArchiveContext: (id: string) => Promise<void>;
 }
 
 const typeLabel = (type: string) =>
   DECISION_TYPES.find(t => t.value === type)?.label ?? type.replace(/_/g, " ");
 
 const DecisionContextPanel = memo(({
-  organizationId,
   activeContext,
   onContextChange,
   contexts,
@@ -52,15 +61,24 @@ const DecisionContextPanel = memo(({
       return;
     }
     setCreating(true);
-    const ctx = await onCreateContext(form);
-    if (ctx) {
-      onContextChange(ctx);
-      setShowCreate(false);
-      setForm({ name: "", decision_type: "general", description: "", objective: "", industry: "" });
-      toast({ title: "Decision context created" });
+    try {
+      const ctx = await onCreateContext(form);
+      if (ctx) {
+        onContextChange(ctx);
+        setShowCreate(false);
+        setForm({ name: "", decision_type: "general", description: "", objective: "", industry: "" });
+        toast({ title: "Decision context created" });
+      }
+    } catch (err: any) {
+      toast({ title: "Failed to create context", description: err.message, variant: "destructive" });
+    } finally {
+      setCreating(false);
     }
-    setCreating(false);
   };
+
+  const targetMetrics = Array.isArray(activeContext?.target_metrics)
+    ? (activeContext.target_metrics as string[])
+    : [];
 
   return (
     <Card className="border-primary/20 bg-primary/[0.02]">
@@ -84,7 +102,7 @@ const DecisionContextPanel = memo(({
               {activeContext.industry && (
                 <Badge variant="secondary" className="text-[9px]">{activeContext.industry}</Badge>
               )}
-              {(activeContext.target_metrics as string[] || []).slice(0, 3).map(m => (
+              {targetMetrics.slice(0, 3).map(m => (
                 <Badge key={m} variant="outline" className="text-[9px]">
                   <Target className="w-2.5 h-2.5 mr-0.5" />{m}
                 </Badge>
@@ -122,7 +140,7 @@ const DecisionContextPanel = memo(({
 
           <Dialog open={showCreate} onOpenChange={setShowCreate}>
             <DialogTrigger asChild>
-              <Button variant="outline" size="sm" className="h-8 px-2">
+              <Button variant="outline" size="sm" className="h-8 px-2" aria-label="Create decision context">
                 <Plus className="w-3.5 h-3.5" />
               </Button>
             </DialogTrigger>
@@ -132,7 +150,7 @@ const DecisionContextPanel = memo(({
               </DialogHeader>
               <div className="space-y-3">
                 <div>
-                  <label className="text-[10px] uppercase tracking-wider text-muted-foreground">Name *</label>
+                  <Label className="text-[10px] uppercase tracking-wider">Name *</Label>
                   <Input
                     value={form.name}
                     onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
@@ -141,7 +159,7 @@ const DecisionContextPanel = memo(({
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] uppercase tracking-wider text-muted-foreground">Decision Type</label>
+                  <Label className="text-[10px] uppercase tracking-wider">Decision Type</Label>
                   <Select value={form.decision_type} onValueChange={v => setForm(f => ({ ...f, decision_type: v }))}>
                     <SelectTrigger className="h-8 text-xs">
                       <SelectValue />
@@ -154,7 +172,7 @@ const DecisionContextPanel = memo(({
                   </Select>
                 </div>
                 <div>
-                  <label className="text-[10px] uppercase tracking-wider text-muted-foreground">Objective</label>
+                  <Label className="text-[10px] uppercase tracking-wider">Objective</Label>
                   <Textarea
                     value={form.objective}
                     onChange={e => setForm(f => ({ ...f, objective: e.target.value }))}
@@ -163,7 +181,7 @@ const DecisionContextPanel = memo(({
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] uppercase tracking-wider text-muted-foreground">Industry</label>
+                  <Label className="text-[10px] uppercase tracking-wider">Industry</Label>
                   <Input
                     value={form.industry}
                     onChange={e => setForm(f => ({ ...f, industry: e.target.value }))}
@@ -186,20 +204,41 @@ const DecisionContextPanel = memo(({
 
         {/* Archive action for active context */}
         {activeContext && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full h-7 text-[10px] text-muted-foreground hover:text-destructive"
-            onClick={async () => {
-              const ok = await onArchiveContext(activeContext.id);
-              if (ok) {
-                onContextChange(null);
-                toast({ title: "Context archived" });
-              }
-            }}
-          >
-            <Archive className="w-3 h-3 mr-1" /> Archive this context
-          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full h-7 text-[10px] text-muted-foreground hover:text-destructive"
+              >
+                <Archive className="w-3 h-3 mr-1" /> Archive this context
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Archive "{activeContext.name}"?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This context will be archived and removed from active analysis. Decisions already linked to it will retain their association for audit purposes.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={async () => {
+                    try {
+                      await onArchiveContext(activeContext.id);
+                      onContextChange(null);
+                      toast({ title: "Context archived" });
+                    } catch (err: any) {
+                      toast({ title: "Archive failed", description: err.message, variant: "destructive" });
+                    }
+                  }}
+                >
+                  Archive
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         )}
       </CardContent>
     </Card>
