@@ -14,7 +14,7 @@ serve(async (req) => {
   if (auth.response) return auth.response;
 
   try {
-    const { organization_id, dataset_id, role_type, dry_run } = await req.json();
+    const { organization_id, dataset_id, role_type, decision_context_id, dry_run } = await req.json();
     if (!organization_id) throw new Error("organization_id required");
     if (!dataset_id) throw new Error("dataset_id required by Active Data Contract");
 
