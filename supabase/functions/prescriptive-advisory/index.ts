@@ -90,8 +90,8 @@ serve(async (req) => {
       const recentAvg = recentHalf.reduce((s, v) => s + v, 0) / recentHalf.length;
       const earlyAvg = earlyHalf.length > 0 ? earlyHalf.reduce((s, v) => s + v, 0) / earlyHalf.length : recentAvg;
       const trendPct = earlyAvg !== 0 ? ((recentAvg - earlyAvg) / Math.abs(earlyAvg)) * 100 : 0;
-      const max = Math.max(...vals);
-      const min = Math.min(...vals);
+      const max = vals.reduce((a, b) => a > b ? a : b, vals[0]);
+      const min = vals.reduce((a, b) => a < b ? a : b, vals[0]);
       const volatility = mean !== 0 ? (Math.sqrt(vals.reduce((s, v) => s + (v - mean) ** 2, 0) / n) / Math.abs(mean)) * 100 : 0;
 
       return {

@@ -149,8 +149,8 @@ function computeStats(metrics: MetricRow[]): MetricStats[] {
       volatility_pct: Number(volatility.toFixed(2)),
       slope_normalized_pct: Number(slopeNorm.toFixed(2)),
       trend_direction,
-      min: Number(Math.min(...values).toFixed(4)),
-      max: Number(Math.max(...values).toFixed(4)),
+      min: Number(values.reduce((a, b) => a < b ? a : b, values[0]).toFixed(4)),
+      max: Number(values.reduce((a, b) => a > b ? a : b, values[0]).toFixed(4)),
       date_range: `${sorted[0].date} to ${sorted[n - 1].date}`,
       segment_shifts: segmentShifts,
     });
