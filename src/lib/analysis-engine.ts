@@ -19,6 +19,7 @@ import {
   type Changepoint,
   type AnovaResult,
 } from "@/lib/advanced-statistics";
+import { detectIndustry, generateRootCauseHypotheses, type IndustryProfile } from "@/lib/industry-detection";
 
 // ═══════════════════════════════════════════════════════
 // TYPES
@@ -470,7 +471,8 @@ export function evidenceConfidence(sampleSize: number, pValue: number | null, va
 
 export function runFullAnalysis(
   metrics: MetricRow[],
-  datasetId?: string
+  datasetId?: string,
+  datasetName?: string
 ): AnalystFinding[] {
   if (metrics.length === 0) return [];
   const results: AnalystFinding[] = [];
@@ -482,6 +484,12 @@ export function runFullAnalysis(
     list.push(m);
     byType.set(m.metric_type, list);
   });
+
+  // ── INDUSTRY DETECTION ──
+  const metricTypes = [...byType.keys()];
+  const allSegments = [...new Set(metrics.map(m => m.segment).filter(Boolean))] as string[];
+  const allRegions = [...new Set(metrics.map(m => m.region).filter(Boolean))] as string[];
+  const industry = detectIndustry(metricTypes, allSegments, allRegions, datasetName);
 
   // ── TREND DETECTION ──
   byType.forEach((rows, type) => {
@@ -576,12 +584,17 @@ export function runFullAnalysis(
       const totalAnomalies = Math.max(anomalies.length, iqrOutliers.length);
       const methodsAgreed = consensusCount > 0 ? "z-score + IQR consensus" : anomalies.length > 0 ? "z-score" : "IQR";
 
+      // Generate industry-specific root-cause hypotheses
+      const latestAnomaly = anomalies.length > 0 ? anomalies[anomalies.length - 1] : null;
+      const anomalyDirection = latestAnomaly && latestAnomaly.zScore > 0 ? "spike" as const : "drop" as const;
+      const rootCauses = generateRootCauseHypotheses(type, anomalyDirection, industry.industry);
+
       results.push({
         type: "anomaly",
         title: `${type.replace(/_/g, " ")} anomalies detected`,
         observation: `${totalAnomalies} outlier${totalAnomalies > 1 ? "s" : ""} in ${type.replace(/_/g, " ")} (${methodsAgreed}). ${consensusCount > 0 ? `${consensusCount} confirmed by multiple methods. ` : ""}Top values: ${anomalies.slice(0, 3).map(a => `${a.value.toFixed(2)} (z=${a.zScore.toFixed(1)})`).join(", ")}.`,
-        inference: `Distribution: mean=${m.toFixed(2)}, σ=${s.toFixed(2)}, IQR=[${q1.toFixed(2)}, ${q3.toFixed(2)}]. ${consensusCount > 0 ? "Multi-method consensus increases confidence." : "Single-method detection — validate with domain expertise."}`,
-        recommendation: `Validate anomalous ${type.replace(/_/g, " ")} values. ${consensusCount > 0 ? "High-confidence outliers — likely genuine exceptional events or data quality issues." : "Check for data quality issues before drawing conclusions."}`,
+        inference: `Distribution: mean=${m.toFixed(2)}, σ=${s.toFixed(2)}, IQR=[${q1.toFixed(2)}, ${q3.toFixed(2)}]. ${consensusCount > 0 ? "Multi-method consensus increases confidence." : "Single-method detection — validate with domain expertise."}\n\n**${industry.industry} Root-Cause Hypotheses:**\n${rootCauses.map((h, i) => `${i + 1}. ${h}`).join("\n")}`,
+        recommendation: `Validate anomalous ${type.replace(/_/g, " ")} values. ${consensusCount > 0 ? "High-confidence outliers — likely genuine exceptional events or data quality issues." : "Check for data quality issues before drawing conclusions."} Prioritize investigating: ${rootCauses[0] || "data quality"}.`,
         decisionRelevance: `Anomalous data points can distort aggregate metrics and lead to incorrect strategic conclusions if not investigated.`,
         severity: consensusCount > 0 ? "high" : "medium",
         confidence: evidenceConfidence(vals.length, null),
@@ -591,9 +604,9 @@ export function runFullAnalysis(
           datasetId,
           variables: [type],
           sampleSize: vals.length,
-          method: `ensemble anomaly detection (z-score σ>2 + IQR Tukey k=1.5${consensusCount > 0 ? " + multi-method consensus" : ""})`,
+          method: `ensemble anomaly detection (z-score σ>2 + IQR Tukey k=1.5${consensusCount > 0 ? " + multi-method consensus" : ""}) + ${industry.industry} root-cause analysis`,
           assumptions: ["Approximately normal distribution for z-score", "No known seasonal patterns", "IQR is robust to non-normal distributions"],
-          limitations: ["Does not decompose seasonal vs. structural anomalies", "Grubbs test requires separate parametric assumption"],
+          limitations: ["Does not decompose seasonal vs. structural anomalies", "Root-cause hypotheses are industry heuristics, not causal"],
         },
       });
     } catch {

@@ -8,6 +8,7 @@ import { runFullAnalysis, generateAnalystNote, type AnalystFinding } from "@/lib
 import { exportAndDownload } from "@/lib/executive-export";
 import { buildSourceContext, validateAIOutput } from "@/lib/anti-hallucination";
 import { profileDistribution, detectSeasonality, detectChangepoints } from "@/lib/advanced-statistics";
+import { detectIndustry } from "@/lib/industry-detection";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
@@ -95,8 +96,16 @@ const FindingCard = ({ finding }: { finding: AnalystFinding }) => {
 };
 
 const AnalystInsights = ({ insights, metrics, topMetrics, datasetName, datasetId }: AnalystInsightsProps) => {
-  const findings = useMemo(() => runFullAnalysis(metrics, datasetId), [metrics, datasetId]);
+  const findings = useMemo(() => runFullAnalysis(metrics, datasetId, datasetName || undefined), [metrics, datasetId, datasetName]);
   const analystNote = useMemo(() => generateAnalystNote(findings), [findings]);
+
+  // Industry detection
+  const industryProfile = useMemo(() => {
+    const metricTypes = [...new Set(metrics.map(m => m.metric_type))];
+    const segments = [...new Set(metrics.map(m => m.segment).filter(Boolean))] as string[];
+    const regions = [...new Set(metrics.map(m => m.region).filter(Boolean))] as string[];
+    return detectIndustry(metricTypes, segments, regions, datasetName || undefined);
+  }, [metrics, datasetName]);
 
   // Advanced statistical profiling summary
   const dataHealth = useMemo(() => {
@@ -178,6 +187,11 @@ const AnalystInsights = ({ insights, metrics, topMetrics, datasetName, datasetId
           <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary">
             {findings.length} findings
           </span>
+          {industryProfile.confidence > 40 && (
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent text-accent-foreground font-medium">
+              {industryProfile.industry}{industryProfile.subIndustry ? ` · ${industryProfile.subIndustry}` : ""}
+            </span>
+          )}
           {dataHealth.seasonalCount > 0 && (
             <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent/50 text-accent-foreground flex items-center gap-0.5">
               <Waves className="w-2.5 h-2.5" /> {dataHealth.seasonalCount} seasonal

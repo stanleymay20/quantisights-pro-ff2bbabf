@@ -2,6 +2,101 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { applyAdaptiveConfidence, fetchCalibrationModel } from "../_shared/adaptive-confidence.ts";
 
+// ── Inline industry detection for Edge Function ──
+function detectIndustryFromMetrics(metricTypes: string[], segments: string[], regions: string[], datasetName: string) {
+  const signals: Array<{ industry: string; subIndustry?: string; patterns: RegExp[]; weight: number }> = [
+    { industry: "SaaS", patterns: [/mrr/i, /arr/i, /churn.?rate/i, /ltv/i, /cac/i, /nrr/i, /net.?revenue.?retention/i, /arpu/i, /dau/i, /mau/i, /activation/i, /trial/i, /conversion.?rate/i], weight: 3 },
+    { industry: "SaaS", subIndustry: "PLG", patterns: [/product.?qualified/i, /pql/i, /free.?to.?paid/i, /viral/i], weight: 4 },
+    { industry: "E-Commerce", patterns: [/gmv/i, /aov/i, /average.?order/i, /cart.?abandon/i, /repeat.?purchase/i, /basket/i, /sku/i, /inventory.?turnover/i, /return.?rate/i], weight: 3 },
+    { industry: "Financial Services", patterns: [/aum/i, /assets.?under/i, /nim/i, /net.?interest/i, /loan/i, /deposit/i, /npl/i, /non.?performing/i, /capital.?ratio/i, /tier.?1/i], weight: 3 },
+    { industry: "Healthcare", patterns: [/patient/i, /readmission/i, /bed.?occupancy/i, /length.?of.?stay/i, /clinical/i, /mortality/i, /infection.?rate/i], weight: 3 },
+    { industry: "Manufacturing", patterns: [/oee/i, /overall.?equipment/i, /yield/i, /defect.?rate/i, /cycle.?time/i, /throughput/i, /scrap/i, /downtime/i, /capacity.?utilization/i], weight: 3 },
+    { industry: "Media", patterns: [/cpm/i, /cpc/i, /ctr/i, /impression/i, /reach/i, /engagement.?rate/i, /viewability/i, /roas/i, /ad.?spend/i, /subscriber/i, /watch.?time/i], weight: 3 },
+    { industry: "Energy", patterns: [/kwh/i, /mwh/i, /generation/i, /capacity.?factor/i, /emission/i, /carbon/i, /renewable/i], weight: 3 },
+    { industry: "Education", patterns: [/enrollment/i, /graduation/i, /student/i, /completion.?rate/i, /course/i, /attendance/i], weight: 3 },
+    { industry: "Real Estate", patterns: [/occupancy/i, /rent/i, /noi/i, /cap.?rate/i, /lease/i, /vacancy/i], weight: 3 },
+    { industry: "Logistics", patterns: [/on.?time.?delivery/i, /otd/i, /freight/i, /shipment/i, /fill.?rate/i, /transit.?time/i], weight: 3 },
+    { industry: "General Business", patterns: [/revenue/i, /cost/i, /profit/i, /margin/i, /expense/i, /ebitda/i, /growth/i], weight: 1 },
+  ];
+
+  const scores = new Map<string, { score: number; signals: string[]; subIndustry?: string }>();
+  for (const sig of signals) {
+    for (const p of sig.patterns) {
+      for (const m of metricTypes) {
+        if (p.test(m)) {
+          const key = sig.subIndustry || sig.industry;
+          const ex = scores.get(key) || { score: 0, signals: [], subIndustry: sig.subIndustry };
+          ex.score += sig.weight;
+          ex.signals.push(m);
+          scores.set(key, ex);
+        }
+      }
+    }
+  }
+  // Check dataset name
+  for (const sig of signals) {
+    for (const p of sig.patterns) {
+      if (p.test(datasetName)) {
+        const key = sig.subIndustry || sig.industry;
+        const ex = scores.get(key) || { score: 0, signals: [] };
+        ex.score += 1;
+        scores.set(key, ex);
+      }
+    }
+  }
+
+  let best = "General Business", bestScore = 0, bestSignals: string[] = [], bestSub: string | undefined;
+  scores.forEach((d, k) => { if (d.score > bestScore) { bestScore = d.score; best = k; bestSignals = [...new Set(d.signals)]; bestSub = d.subIndustry; } });
+  const parent = bestSub ? (signals.find(s => s.subIndustry === best)?.industry || best) : best;
+  const confidence = Math.min(95, 30 + bestScore * 10);
+
+  const kpiFrameworks: Record<string, Array<{ metric: string; importance: string; context: string }>> = {
+    "SaaS": [
+      { metric: "Net Revenue Retention", importance: "critical", context: "NRR >120% = strong expansion; <100% = contraction" },
+      { metric: "CAC Payback", importance: "critical", context: "Target <18 months" },
+      { metric: "LTV/CAC", importance: "critical", context: "Healthy: 3-5x" },
+      { metric: "Gross Margin", importance: "high", context: "Best-in-class SaaS: >80%" },
+      { metric: "Monthly Churn", importance: "critical", context: "Enterprise: <1%/month" },
+    ],
+    "E-Commerce": [
+      { metric: "AOV", importance: "critical", context: "Growth through cross-sell is more capital-efficient" },
+      { metric: "Cart Abandonment", importance: "high", context: "Industry avg: 70%; optimize below 65%" },
+      { metric: "Repeat Purchase Rate", importance: "critical", context: "Target >30%" },
+    ],
+    "Financial Services": [
+      { metric: "Net Interest Margin", importance: "critical", context: "Compressed NIM = rate environment pressure" },
+      { metric: "Cost-to-Income", importance: "critical", context: "Best: <50%; above 65% = inefficiency" },
+      { metric: "NPL Ratio", importance: "critical", context: "Above 3% requires enhanced risk mgmt" },
+    ],
+    "Healthcare": [
+      { metric: "Readmission Rate", importance: "critical", context: "30-day >15% triggers CMS penalties" },
+      { metric: "Bed Occupancy", importance: "high", context: "Optimal: 80-85%; >90% = safety risk" },
+    ],
+    "Manufacturing": [
+      { metric: "OEE", importance: "critical", context: "World-class: >85%; <60% = major opportunity" },
+      { metric: "First Pass Yield", importance: "critical", context: "Target >95%" },
+    ],
+  };
+
+  const analysisFrameworks: Record<string, string> = {
+    "SaaS": "ANALYZE USING SaaS FRAMEWORK: Unit Economics (LTV/CAC, payback), Growth Quality (NRR, organic vs paid), Efficiency (Rule of 40, burn multiple), Cohort Retention, Red Flags (rising CAC + flat NRR)",
+    "E-Commerce": "ANALYZE USING E-COMMERCE FRAMEWORK: Customer Economics (CAC, AOV, LTV by channel), Funnel (traffic→purchase), Inventory (turnover, sell-through), Channel Mix, Seasonality (compare YoY not sequential)",
+    "Financial Services": "ANALYZE USING FINANCIAL FRAMEWORK: Profitability (NIM, fee diversification, cost-to-income), Risk (NPL, provision coverage), Capital (CET1 trajectory), Growth (loan book vs GDP)",
+    "Healthcare": "ANALYZE USING HEALTHCARE FRAMEWORK: Clinical Quality (readmission, infection rates), Operational (bed turnover, OR utilization), Financial (revenue per adjusted patient day), Volume trending",
+    "Manufacturing": "ANALYZE USING MANUFACTURING FRAMEWORK: Productivity (OEE decomposition), Quality (defect rate, first pass yield), Efficiency (cycle time, capacity utilization), Supply Chain (lead time variability)",
+    "General Business": "ANALYZE USING GENERAL FRAMEWORK: Financial Health (revenue growth, margin trend), Efficiency (cost structure, revenue per employee), Growth (concentration risk), Risk (volatility, anomaly root causes)",
+  };
+
+  return {
+    industry: parent,
+    subIndustry: bestSub,
+    confidence,
+    matchedSignals: bestSignals,
+    kpiFramework: kpiFrameworks[parent] || kpiFrameworks["General Business"] || [],
+    analysisFramework: analysisFrameworks[parent] || analysisFrameworks["General Business"],
+  };
+}
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -238,6 +333,13 @@ IMPORTANT: Frame ALL insights through this decision context. Every insight must 
       }
     }
 
+    // ── INDUSTRY DETECTION ──
+    const allMetricTypes = Object.keys(metricsByType);
+    const allRegions = [...new Set(metrics.flatMap((m: any) => m.region ? [m.region] : []))];
+    const allSegments = [...new Set(metrics.flatMap((m: any) => m.segment ? [m.segment] : []))];
+    
+    const industryProfile = detectIndustryFromMetrics(allMetricTypes, allSegments, allRegions, datasetName);
+
     // Use AI with multi-model failover chain to generate contextual insights
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
@@ -251,8 +353,16 @@ IMPORTANT: Frame ALL insights through this decision context. Every insight must 
       "google/gemini-2.5-flash-lite",
     ];
 
-    const insightPrompt = `You are an enterprise data intelligence engine producing analyst-grade insights. The dataset is called "${datasetName}".
+    const insightPrompt = `You are an enterprise data intelligence engine producing analyst-grade insights for the ${industryProfile.industry}${industryProfile.subIndustry ? ` (${industryProfile.subIndustry})` : ""} industry. The dataset is called "${datasetName}".
+
+DETECTED INDUSTRY: ${industryProfile.industry} (confidence: ${industryProfile.confidence}%, matched signals: ${industryProfile.matchedSignals.join(", ")})
 ${contextBlock}
+
+${industryProfile.analysisFramework}
+
+INDUSTRY KPI BENCHMARKS:
+${industryProfile.kpiFramework.map(k => `- ${k.metric} [${k.importance}]: ${k.context}`).join("\n")}
+
 METRIC SUMMARIES (with advanced statistical profiling):
 ${JSON.stringify(metricSummaries, null, 2)}
 
@@ -263,39 +373,43 @@ STATISTICAL CONTEXT:
 - IQR-based outlier counts quantify data quality concerns.
 
 Generate 8-12 CONTEXTUAL insights following these tiers:
-1. CRITICAL FINDINGS (2-3): Structural breaks, regime changes, high-severity anomalies
-2. TREND INTELLIGENCE (2-3): Growth/decline with seasonality adjustment, momentum shifts
+1. CRITICAL FINDINGS (2-3): Structural breaks, regime changes, high-severity anomalies with ROOT-CAUSE HYPOTHESES specific to ${industryProfile.industry}
+2. TREND INTELLIGENCE (2-3): Growth/decline with seasonality adjustment, momentum shifts. Compare against industry benchmarks where applicable.
 3. SEGMENT/REGION ANALYSIS (2-3): Cross-segment disparities, geographic patterns
 4. STATISTICAL WARNINGS (1-2): Distribution issues, outlier concentrations, data quality
-5. ACTIONABLE OPPORTUNITIES (1-2): Correlations to exploit, underperforming segments to fix
+5. ACTIONABLE OPPORTUNITIES (1-2): Industry-specific recommendations with success metrics
 
-Each insight MUST reference:
-- The dataset name ("${datasetName}")
-- Specific metric names and their actual values
-- Date ranges and sample sizes
-- Statistical evidence (p-values, effect sizes, confidence intervals where applicable)
-${decision_context_id ? "- The decision context and how the finding impacts the stated objective" : ""}
+Each insight MUST:
+- Reference the dataset name ("${datasetName}")
+- Reference specific metric names and their actual values
+- Include date ranges and sample sizes
+- Include statistical evidence (p-values, effect sizes, confidence intervals where applicable)
+- For anomalies: provide 2-3 industry-specific root-cause hypotheses
+- For benchmarking: compare against ${industryProfile.industry} industry standards
+${decision_context_id ? "- Reference the decision context and how the finding impacts the stated objective" : ""}
 
 Return ONLY a JSON array:
 [
   {
-    "message": "In ${datasetName}, [metric_name] [specific observation with values]. [Statistical evidence]. [${decision_context_id ? "Decision relevance. " : ""}Actionable recommendation with success metric].",
+    "message": "In ${datasetName}, [metric_name] [specific observation with values]. [Statistical evidence]. [Industry context: how this compares to ${industryProfile.industry} benchmarks]. [Root-cause hypotheses if anomaly]. [Actionable recommendation with success metric].",
     "severity": "high" | "medium" | "info",
-    "category": "trend" | "anomaly" | "risk" | "opportunity" | "segmentation" | "correlation" | "driver" | "seasonality" | "changepoint" | "distribution",
+    "category": "trend" | "anomaly" | "risk" | "opportunity" | "segmentation" | "correlation" | "driver" | "seasonality" | "changepoint" | "distribution" | "benchmark",
     "raw_confidence": 55-92
   }
 ]
 
 Rules:
-- NEVER produce generic insights like "all metrics stable" — always reference specific metrics and values
+- NEVER produce generic insights — every sentence must contain a specific number, metric name, or date
+- For EVERY anomaly, include 2-3 ${industryProfile.industry}-specific root-cause hypotheses
+- Compare metrics against industry benchmarks when data allows
 - Include segment/region analysis when segment or region data exists
 - Cross-reference metrics: note correlations or divergences between metric types
 - If seasonality is detected, warn that sequential period comparison may be misleading
 - If structural breaks exist, specify pre/post period statistics separately
 - If distribution is non-normal, flag which statistical methods are unreliable
-- High severity: declines >10%, volatility >50%, structural breaks >25%, bimodal distributions
+- High severity: declines >10%, volatility >50%, structural breaks >25%, below p25 benchmark
 - Medium: 5-10% changes, emerging patterns, segment disparities, seasonality warnings
-- Info: positive trends, data quality confirmations, stable patterns
+- Info: positive trends, above p75 benchmark, data quality confirmations
 - At least 2 insights must reference specific segments or regions if present
 - Confidence should reflect data quality: lower for small samples, skewed data, or single-method signals
 - Return ONLY the JSON array`;
