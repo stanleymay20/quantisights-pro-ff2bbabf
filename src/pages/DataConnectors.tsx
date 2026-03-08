@@ -337,7 +337,7 @@ const DataConnectors = () => {
         is_active: true,
       }));
       if (mappingInserts.length > 0) {
-        await supabase.from("metric_mappings").insert(mappingInserts);
+        await (supabase.from("metric_mappings") as any).insert(mappingInserts);
       }
 
       // 4. Create sync schedule
