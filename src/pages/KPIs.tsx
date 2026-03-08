@@ -112,13 +112,15 @@ const KPIs = () => {
     if (!currentOrgId || !activeDatasetId) return;
     setLoading(true);
     // Fetch KPIs scoped to the active dataset
-    const { data, error } = await supabase
+    const query = supabase
       .from("kpis")
       .select("*")
       .eq("organization_id", currentOrgId)
-      .eq("dataset_id" as any, activeDatasetId)
       .eq("status", "active")
       .order("created_at", { ascending: false });
+    // dataset_id filter (column added via migration, not yet in generated types)
+    (query as any).eq("dataset_id", activeDatasetId);
+    const { data, error } = await query;
 
     if (!error && data) setKpis(data as unknown as KPI[]);
     setLoading(false);
