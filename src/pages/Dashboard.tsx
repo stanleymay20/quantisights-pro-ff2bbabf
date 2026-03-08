@@ -305,6 +305,8 @@ const Dashboard = () => {
                 segmentData={segmentData}
                 onDecisionLogged={() => setPendingDecisions(p => p + 1)}
                 topMetrics={topMetrics}
+                datasetId={activeDatasetId ?? undefined}
+                datasetName={currentProject?.name}
               />
             </>
           )}

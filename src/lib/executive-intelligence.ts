@@ -10,6 +10,7 @@ import {
   mean, stdDev, detectTrend, driverAnalysis, evidenceConfidence,
   type TrendResult, type DriverResult,
 } from "@/lib/analysis-engine";
+import { exponentialSmoothing, detectSeasonality } from "@/lib/advanced-statistics";
 import type { MetricRow } from "@/hooks/useMetrics";
 
 // ═══════════════════════════════════════════════════════
@@ -183,7 +184,22 @@ export function generateForecast(
 ): ForecastResult | null {
   if (vals.length < 6) return null;
 
-  // Simple linear regression
+  // Try exponential smoothing first (superior to linear regression)
+  const seasonality = vals.length >= 12 ? detectSeasonality(vals) : null;
+  const esResult = exponentialSmoothing(vals, periodsAhead, seasonality?.detected ? seasonality.period ?? undefined : undefined);
+
+  if (esResult && esResult.mape < 50) {
+    return {
+      metric: metricType,
+      baseline: { label: `Baseline (${esResult.method})`, values: esResult.forecast, periods: esResult.forecast.map((_, i) => `T+${i + 1}`) },
+      upside: { label: "Upside (80% PI)", values: esResult.confidence80.upper, periods: esResult.forecast.map((_, i) => `T+${i + 1}`) },
+      downside: { label: "Downside (80% PI)", values: esResult.confidence80.lower, periods: esResult.forecast.map((_, i) => `T+${i + 1}`) },
+      confidence: evidenceConfidence(vals.length, null),
+      sampleSize: vals.length,
+    };
+  }
+
+  // Fallback: simple linear regression
   const n = vals.length;
   let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
   for (let i = 0; i < n; i++) {
@@ -194,7 +210,6 @@ export function generateForecast(
   const slope = (n * sumXY - sumX * sumY) / den;
   const intercept = (sumY - slope * sumX) / n;
 
-  // Residual standard error for prediction interval
   let ssRes = 0;
   for (let i = 0; i < n; i++) {
     const predicted = intercept + slope * i;
@@ -211,14 +226,14 @@ export function generateForecast(
     const x = n - 1 + p;
     const predicted = intercept + slope * x;
     baseline.push(Math.round(predicted * 100) / 100);
-    upside.push(Math.round((predicted + 1.28 * rse) * 100) / 100); // 80% PI
+    upside.push(Math.round((predicted + 1.28 * rse) * 100) / 100);
     downside.push(Math.round((predicted - 1.28 * rse) * 100) / 100);
     periods.push(`T+${p}`);
   }
 
   return {
     metric: metricType,
-    baseline: { label: "Baseline", values: baseline, periods },
+    baseline: { label: "Baseline (linear regression)", values: baseline, periods },
     upside: { label: "Upside (80% PI)", values: upside, periods },
     downside: { label: "Downside (80% PI)", values: downside, periods },
     confidence: evidenceConfidence(n, null),
