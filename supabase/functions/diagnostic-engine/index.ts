@@ -180,7 +180,7 @@ async function generateAIDiagnostics(stats: MetricStats[], contextBlock: string 
         messages: [{
           role: "user",
           content: `You are an enterprise diagnostic intelligence engine performing root cause analysis on organizational metrics.
-
+${contextBlock}
 METRIC STATISTICS (computed from real data):
 ${JSON.stringify(stats, null, 2)}
 
