@@ -181,8 +181,8 @@ const Compliance = () => {
 
   const statusBadge = (status: string) => {
     const variants: Record<string, string> = {
-      compliant: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
-      partial: "bg-amber-500/10 text-amber-500 border-amber-500/20",
+      compliant: "bg-primary/10 text-primary border-primary/20",
+      partial: "bg-accent/20 text-accent-foreground border-accent/30",
       non_compliant: "bg-destructive/10 text-destructive border-destructive/20",
     };
     return (

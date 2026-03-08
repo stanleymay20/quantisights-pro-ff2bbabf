@@ -95,7 +95,7 @@ const SSOConfig = () => {
             Enterprise Single Sign-On for your organization
           </p>
         </div>
-        <Badge variant="outline" className="ml-auto bg-amber-500/10 text-amber-600 border-amber-500/20">
+        <Badge variant="outline" className="ml-auto bg-accent/10 text-accent-foreground border-accent/20">
           Enterprise Feature
         </Badge>
       </div>
