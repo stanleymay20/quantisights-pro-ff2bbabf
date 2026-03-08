@@ -109,18 +109,22 @@ const KPIs = () => {
   const canUseAI = currentTier !== "starter";
 
   const fetchKpis = useCallback(async () => {
-    if (!currentOrgId) return;
+    if (!currentOrgId || !activeDatasetId) return;
     setLoading(true);
-    const { data, error } = await supabase
+    // Fetch KPIs scoped to the active dataset
+    const query = supabase
       .from("kpis")
       .select("*")
       .eq("organization_id", currentOrgId)
       .eq("status", "active")
       .order("created_at", { ascending: false });
+    // dataset_id filter (column added via migration, not yet in generated types)
+    (query as any).eq("dataset_id", activeDatasetId);
+    const { data, error } = await query;
 
     if (!error && data) setKpis(data as unknown as KPI[]);
     setLoading(false);
-  }, [currentOrgId]);
+  }, [currentOrgId, activeDatasetId]);
 
   useEffect(() => { fetchKpis(); }, [fetchKpis]);
 
@@ -161,13 +165,14 @@ const KPIs = () => {
 
     const { error } = await supabase.from("kpis").insert({
       organization_id: currentOrgId,
+      dataset_id: activeDatasetId,
       name: newName,
       description: newDesc || null,
       formula: newFormula,
       metric_dependencies: newDeps,
       aggregation_type: newAggType,
       created_by: user.id,
-    });
+    } as any);
 
     if (error) {
       toast({ title: "Failed to create KPI", description: error.message, variant: "destructive" });

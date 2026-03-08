@@ -14,6 +14,24 @@ interface KPICardsProps {
   previousChurnRate?: number;
 }
 
+/** Metrics where "up" is bad — used for trend color inversion */
+const INVERSE_METRICS = new Set([
+  "cost", "costs", "churn", "churn_rate", "attrition", "turnover",
+  "expense", "expenses", "burn", "burn_rate", "debt", "risk",
+  "error", "errors", "defects", "incidents", "downtime",
+  "cost_rate", "cost_of_revenue", "operating_cost",
+]);
+
+function isInverseMetric(slug: string): boolean {
+  const lower = slug.toLowerCase();
+  if (INVERSE_METRICS.has(lower)) return true;
+  // Check if any inverse keyword is a substring (e.g., "monthly_churn" → inverse)
+  for (const inv of INVERSE_METRICS) {
+    if (lower.includes(inv)) return true;
+  }
+  return false;
+}
+
 function deriveTrend(current: number, previous: number | undefined | null): "up" | "down" | "flat" | null {
   if (previous == null || previous === 0) return null;
   const changePct = ((current - previous) / Math.abs(previous)) * 100;
@@ -44,7 +62,7 @@ function computeChangePct(current: number, previous: number | null): number | nu
 }
 
 /** Tiny inline sparkline rendered from REAL data points via SVG */
-const MiniSparkline = ({ trend, dataPoints }: { trend: "up" | "down" | "flat" | null; dataPoints?: number[] }) => {
+const MiniSparkline = ({ trend, dataPoints, inverse }: { trend: "up" | "down" | "flat" | null; dataPoints?: number[]; inverse?: boolean }) => {
   const points = useMemo(() => {
     if (!dataPoints || dataPoints.length < 2) return null;
     const w = 64;
@@ -56,9 +74,8 @@ const MiniSparkline = ({ trend, dataPoints }: { trend: "up" | "down" | "flat" | 
       if (dataPoints[i] < min) min = dataPoints[i];
       if (dataPoints[i] > max) max = dataPoints[i];
     }
-    const range = max - min || 1; // avoid division by zero
+    const range = max - min || 1;
 
-    // Sample down to max 12 points for clean rendering
     const sampled = dataPoints.length > 12
       ? Array.from({ length: 12 }, (_, i) => dataPoints[Math.round(i * (dataPoints.length - 1) / 11)])
       : dataPoints;
@@ -74,9 +91,14 @@ const MiniSparkline = ({ trend, dataPoints }: { trend: "up" | "down" | "flat" | 
 
   if (!points) return null;
 
-  const color = trend === "up"
+  // For inverse metrics, flip the color: up = bad (red), down = good (green)
+  const effectiveSentiment = inverse
+    ? (trend === "up" ? "negative" : trend === "down" ? "positive" : "neutral")
+    : (trend === "up" ? "positive" : trend === "down" ? "negative" : "neutral");
+
+  const color = effectiveSentiment === "positive"
     ? "hsl(var(--success, 142 71% 45%))"
-    : trend === "down"
+    : effectiveSentiment === "negative"
     ? "hsl(var(--destructive))"
     : "hsl(var(--muted-foreground))";
 
@@ -94,25 +116,27 @@ const MiniSparkline = ({ trend, dataPoints }: { trend: "up" | "down" | "flat" | 
   );
 };
 
-const TrendBadge = ({ trend, changePct }: { trend: "up" | "down" | "flat" | null; changePct: number | null }) => {
+const TrendBadge = ({ trend, changePct, inverse }: { trend: "up" | "down" | "flat" | null; changePct: number | null; inverse?: boolean }) => {
   if (!trend || changePct == null) return null;
 
-  const isPositive = trend === "up";
-  const isNegative = trend === "down";
+  // For inverse metrics, flip sentiment: up = bad, down = good
+  const sentiment = inverse
+    ? (trend === "up" ? "negative" : trend === "down" ? "positive" : "neutral")
+    : (trend === "up" ? "positive" : trend === "down" ? "negative" : "neutral");
 
   return (
     <span
       className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-semibold leading-none ${
-        isPositive
+        sentiment === "positive"
           ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-          : isNegative
+          : sentiment === "negative"
           ? "bg-destructive/10 text-destructive"
           : "bg-muted text-muted-foreground"
       }`}
     >
-      {isPositive ? (
+      {trend === "up" ? (
         <TrendingUp className="w-2.5 h-2.5" />
-      ) : isNegative ? (
+      ) : trend === "down" ? (
         <TrendingDown className="w-2.5 h-2.5" />
       ) : (
         <Minus className="w-2.5 h-2.5" />
@@ -137,22 +161,21 @@ const KPICards = memo(forwardRef<HTMLDivElement, KPICardsProps>(({
     if (topMetrics && topMetrics.length > 0) {
       return topMetrics.slice(0, 4).map((m) => ({
         label: formatMetricName(m.metricType),
+        slug: m.metricType,
         value: formatValue(m.total),
         latest: formatValue(m.latest),
         trend: m.trend,
         changePct: computeChangePct(m.total, m.previousTotal),
         count: m.count,
         dataPoints: m.values,
+        inverse: isInverseMetric(m.metricType),
       }));
     }
 
-    return [
-      { label: "Total Revenue", value: formatValue(revenue ?? 0), latest: null, trend: deriveTrend(revenue ?? 0, previousRevenue), changePct: computeChangePct(revenue ?? 0, previousRevenue ?? null), count: null, dataPoints: undefined },
-      { label: "Total Customers", value: formatValue(customers ?? 0), latest: null, trend: deriveTrend(customers ?? 0, previousCustomers), changePct: computeChangePct(customers ?? 0, previousCustomers ?? null), count: null, dataPoints: undefined },
-      { label: "Cost Rate", value: formatValue(costRate ?? 0), latest: null, trend: deriveTrend(costRate ?? 0, previousCostRate), changePct: computeChangePct(costRate ?? 0, previousCostRate ?? null), count: null, dataPoints: undefined },
-      { label: "Churn Rate", value: formatValue(churnRate ?? 0), latest: null, trend: deriveTrend(churnRate ?? 0, previousChurnRate), changePct: computeChangePct(churnRate ?? 0, previousChurnRate ?? null), count: null, dataPoints: undefined },
-    ].filter((c) => c.value !== "0" && c.value !== "0.0");
-  }, [topMetrics, revenue, customers, costRate, churnRate, previousRevenue, previousCustomers, previousCostRate, previousChurnRate]);
+    // Legacy fallback — still uses dynamic metric names from the data
+    // (only shown if topMetrics is empty, which means useMetrics found no data)
+    return [];
+  }, [topMetrics]);
 
   if (cards.length === 0) return null;
 
@@ -169,50 +192,56 @@ const KPICards = memo(forwardRef<HTMLDivElement, KPICardsProps>(({
           : "grid-cols-1"
       }`}
     >
-      {cards.map((card, i) => (
-        <div
-          key={card.label}
-          className="group relative overflow-hidden rounded-xl border border-border/40 bg-card/70 backdrop-blur-sm p-4 transition-all duration-200 hover:border-primary/20 hover:shadow-md hover:shadow-primary/5"
-        >
-          {/* Subtle gradient accent top bar */}
+      {cards.map((card, i) => {
+        const trendGradient = card.inverse
+          ? (card.trend === "up"
+            ? "bg-gradient-to-r from-destructive/60 to-destructive/20"
+            : card.trend === "down"
+            ? "bg-gradient-to-r from-emerald-500/60 to-emerald-400/20"
+            : "bg-gradient-to-r from-primary/30 to-primary/5")
+          : (card.trend === "up"
+            ? "bg-gradient-to-r from-emerald-500/60 to-emerald-400/20"
+            : card.trend === "down"
+            ? "bg-gradient-to-r from-destructive/60 to-destructive/20"
+            : "bg-gradient-to-r from-primary/30 to-primary/5");
+
+        return (
           <div
-            className={`absolute top-0 left-0 right-0 h-[2px] ${
-              card.trend === "up"
-                ? "bg-gradient-to-r from-emerald-500/60 to-emerald-400/20"
-                : card.trend === "down"
-                ? "bg-gradient-to-r from-destructive/60 to-destructive/20"
-                : "bg-gradient-to-r from-primary/30 to-primary/5"
-            }`}
-          />
+            key={card.label}
+            className="group relative overflow-hidden rounded-xl border border-border/40 bg-card/70 backdrop-blur-sm p-4 transition-all duration-200 hover:border-primary/20 hover:shadow-md hover:shadow-primary/5"
+          >
+            {/* Subtle gradient accent top bar — polarity-aware */}
+            <div className={`absolute top-0 left-0 right-0 h-[2px] ${trendGradient}`} />
 
-          <div className="flex items-start justify-between mb-2">
-            <span className="text-xs text-muted-foreground font-medium truncate max-w-[70%]">
-              {card.label}
-            </span>
-            <TrendBadge trend={card.trend} changePct={card.changePct} />
-          </div>
-
-          <div className="flex items-end justify-between gap-2">
-            <div className="min-w-0">
-              <p className="text-2xl font-bold tracking-tight leading-none mb-1">
-                {card.value}
-              </p>
-              {card.latest && (
-                <p className="text-[10px] text-muted-foreground mt-1">
-                  Latest: <span className="font-medium text-foreground/70">{card.latest}</span>
-                </p>
-              )}
-              {card.count != null && (
-                <p className="text-[10px] text-muted-foreground flex items-center gap-1 mt-0.5">
-                  <Activity className="w-2.5 h-2.5" />
-                  {card.count.toLocaleString()} points
-                </p>
-              )}
+            <div className="flex items-start justify-between mb-2">
+              <span className="text-xs text-muted-foreground font-medium truncate max-w-[70%]">
+                {card.label}
+              </span>
+              <TrendBadge trend={card.trend} changePct={card.changePct} inverse={card.inverse} />
             </div>
-            <MiniSparkline trend={card.trend} dataPoints={card.dataPoints} />
+
+            <div className="flex items-end justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-2xl font-bold tracking-tight leading-none mb-1">
+                  {card.value}
+                </p>
+                {card.latest && (
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    Latest: <span className="font-medium text-foreground/70">{card.latest}</span>
+                  </p>
+                )}
+                {card.count != null && (
+                  <p className="text-[10px] text-muted-foreground flex items-center gap-1 mt-0.5">
+                    <Activity className="w-2.5 h-2.5" />
+                    {card.count.toLocaleString()} points
+                  </p>
+                )}
+              </div>
+              <MiniSparkline trend={card.trend} dataPoints={card.dataPoints} inverse={card.inverse} />
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }));
