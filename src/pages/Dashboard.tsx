@@ -148,6 +148,14 @@ const Dashboard = () => {
             {hasData && (
               <>
                 <button
+                  onClick={() => toggleView(dashboardView === "executive" ? "full" : "executive")}
+                  className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-all"
+                  title={dashboardView === "executive" ? "Switch to Full Command Center" : "Switch to Executive View"}
+                >
+                  {dashboardView === "executive" ? <Maximize2 className="w-3 h-3" /> : <Minimize2 className="w-3 h-3" />}
+                  {dashboardView === "executive" ? "Full View" : "Quick View"}
+                </button>
+                <button
                   onClick={handleRecalculate}
                   disabled={recalculating}
                   className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-all disabled:opacity-50"
