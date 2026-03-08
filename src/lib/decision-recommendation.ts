@@ -40,6 +40,8 @@ export interface RecommendationInput {
   calibrationApplied?: boolean;
   /** Source dataset for traceability */
   datasetId?: string;
+  /** Human-readable dataset name */
+  datasetName?: string;
   /** Row count used */
   dataRowsUsed?: number;
 }
