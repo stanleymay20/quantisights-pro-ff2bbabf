@@ -471,7 +471,8 @@ export function evidenceConfidence(sampleSize: number, pValue: number | null, va
 
 export function runFullAnalysis(
   metrics: MetricRow[],
-  datasetId?: string
+  datasetId?: string,
+  datasetName?: string
 ): AnalystFinding[] {
   if (metrics.length === 0) return [];
   const results: AnalystFinding[] = [];
@@ -483,6 +484,12 @@ export function runFullAnalysis(
     list.push(m);
     byType.set(m.metric_type, list);
   });
+
+  // ── INDUSTRY DETECTION ──
+  const metricTypes = [...byType.keys()];
+  const allSegments = [...new Set(metrics.map(m => m.segment).filter(Boolean))] as string[];
+  const allRegions = [...new Set(metrics.map(m => m.region).filter(Boolean))] as string[];
+  const industry = detectIndustry(metricTypes, allSegments, allRegions, datasetName);
 
   // ── TREND DETECTION ──
   byType.forEach((rows, type) => {
