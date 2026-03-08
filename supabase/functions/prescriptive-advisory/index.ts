@@ -309,23 +309,31 @@ Rules:
     );
 
     if (advisories.length > 0) {
-      const rows = advisories.map((a: any) => ({
-        organization_id,
-        dataset_id,
-        title: a.title,
-        action: a.action,
-        advisory_type: "prescriptive",
-        category: a.category,
-        priority: a.priority,
-        confidence: a.confidence,
-        capped_confidence: a.confidence,
-        rationale: a.rationale,
-        expected_impact: a.expected_impact,
-        timeframe: a.timeframe,
-        kpi_affected: a.kpi_affected,
-        playbook_steps: a.playbook_steps,
-        status: "open",
-      }));
+      const rows = advisories.map((a: any) => {
+        // Extract numeric values from ConfidenceResult objects
+        const rawConf = typeof a.confidence === "object" ? a.confidence?.raw_confidence : a.confidence;
+        const cappedConf = typeof a.confidence === "object" ? a.confidence?.capped_confidence : a.confidence;
+
+        return {
+          organization_id,
+          dataset_id,
+          title: a.title,
+          action: a.action,
+          advisory_type: "prescriptive",
+          category: a.category,
+          priority: a.priority,
+          confidence: cappedConf ?? null,
+          capped_confidence: cappedConf ?? null,
+          raw_confidence: rawConf ?? null,
+          confidence_cap_reason: typeof a.confidence === "object" ? a.confidence?.confidence_cap_reason : null,
+          rationale: a.rationale,
+          expected_impact: a.expected_impact,
+          timeframe: a.timeframe,
+          kpi_affected: a.kpi_affected,
+          playbook_steps: a.playbook_steps,
+          status: "open",
+        };
+      });
 
       await fetch(`${supabaseUrl}/rest/v1/advisory_instances`, {
         method: "POST",
