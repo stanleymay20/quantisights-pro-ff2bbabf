@@ -432,9 +432,8 @@ IMPORTANT: Frame all diagnoses through this decision context. Explain how each f
         supabaseUrl, serviceKey, organization_id,
       );
 
-      const normalizedChangePct = typeof ai.change_pct === "number"
-        ? Number(ai.change_pct.toFixed(1))
-        : Number((matchingStat?.period_change_pct || 0).toFixed(1));
+      // Always use the authoritative computed stat value, not the AI's approximation
+      const normalizedChangePct = Number((matchingStat?.period_change_pct ?? ai.change_pct ?? 0).toFixed(1));
 
       return {
         metric_type: ai.metric_type,
