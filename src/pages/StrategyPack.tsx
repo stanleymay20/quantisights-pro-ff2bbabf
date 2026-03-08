@@ -108,6 +108,7 @@ const ROLES = ["ceo", "cfo", "cmo", "coo"];
 
 const StrategyPack = () => {
   const { currentOrgId } = useOrganization();
+  const { datasetId: activeDatasetId } = useActiveDataContext();
   const [loading, setLoading] = useState(true);
   const [orgName, setOrgName] = useState("");
 
