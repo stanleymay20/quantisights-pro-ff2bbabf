@@ -78,6 +78,7 @@ const APIDocs = lazy(() => import("./pages/APIDocs"));
 const PipelineObservability = lazy(() => import("./pages/PipelineObservability"));
 const DataCatalog = lazy(() => import("./pages/DataCatalog"));
 const EmbedDashboard = lazy(() => import("./pages/EmbedDashboard"));
+const FounderHandbook = lazy(() => import("./pages/FounderHandbook"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -155,6 +156,7 @@ const App = () => (
               <Route path="/security" element={<Security />} />
               <Route path="/security-questionnaire" element={<SecurityQuestionnaire />} />
               <Route path="/calibration" element={<CalibrationAssessment />} />
+              <Route path="/handbook" element={<FounderHandbook />} />
               <Route path="*" element={<NotFound />} />
 
               {/* Standalone protected routes (no sidebar shell) */}
