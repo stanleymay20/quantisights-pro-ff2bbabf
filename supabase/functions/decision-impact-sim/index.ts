@@ -38,30 +38,20 @@ serve(async (req) => {
       });
     }
 
-    const {
-      organization_id,
-      dataset_id,
-      decision_id,
-      revenue_delta_pct = 0,
-      cost_delta_pct = 0,
-      churn_change_pct = 0,
-      implementation_cost = 0,
-      time_to_impact_months = 3,
-      simulation_runs = 10000,
-    } = await req.json();
+    const body = await req.json();
+    const datasetContract = await enforceDatasetContract(body, svc);
+    if (datasetContract.response) return datasetContract.response;
 
-    if (!organization_id) {
-      return new Response(
-        JSON.stringify({ error: "organization_id required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-    if (!dataset_id) {
-      return new Response(
-        JSON.stringify({ error: "dataset_id required by Active Data Contract. Simulations cannot run without explicit dataset scoping." }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    const organization_id = datasetContract.organization_id;
+    const dataset_id = datasetContract.dataset_id;
+
+    const decision_id = typeof body.decision_id === "string" ? body.decision_id : null;
+    const revenue_delta_pct = toBoundedNumber(body.revenue_delta_pct, 0, -95, 300);
+    const cost_delta_pct = toBoundedNumber(body.cost_delta_pct, 0, -95, 300);
+    const churn_change_pct = toBoundedNumber(body.churn_change_pct, 0, -95, 300);
+    const implementation_cost = toBoundedNumber(body.implementation_cost, 0, 0, 1_000_000_000);
+    const time_to_impact_months = Math.max(1, Math.min(60, Math.round(toBoundedNumber(body.time_to_impact_months, 3, 1, 60))));
+    const simulation_runs = Math.max(100, Math.min(50000, Math.round(toBoundedNumber(body.simulation_runs, 10000, 100, 50000))));
 
     const { data: isMember } = await svc.rpc("is_org_member", {
       _user_id: user.id,
@@ -72,20 +62,6 @@ serve(async (req) => {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
-    }
-
-    // Validate dataset belongs to org
-    const { data: dsCheck } = await svc
-      .from("datasets")
-      .select("id")
-      .eq("id", dataset_id)
-      .eq("organization_id", organization_id)
-      .maybeSingle();
-    if (!dsCheck) {
-      return new Response(
-        JSON.stringify({ error: "dataset_id does not belong to this organization" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
     }
 
     // Fetch historical metrics scoped to dataset
