@@ -1,12 +1,197 @@
 import { Link } from "react-router-dom";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import {
   Shield, Lock, Eye, Database, FileCheck, Users, Server,
   KeyRound, ScrollText, Globe, AlertTriangle, CheckCircle2,
   ArrowRight, Fingerprint, Network, ShieldCheck, ChevronDown,
-  Terminal, HardDrive, Clock
+  Terminal, HardDrive, Clock, Download, FileText, ExternalLink
 } from "lucide-react";
 import logo from "@/assets/quantivis-logo.png";
+
+const generateWhitepaperContent = (): string => {
+  const date = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+  return `
+QUANTIVIS SECURITY WHITEPAPER
+Decision Governance Platform — Security Architecture Overview
+Generated: ${date}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. EXECUTIVE SUMMARY
+────────────────────
+Quantivis is a Decision Governance platform that processes sensitive strategic 
+and financial data for executive leadership teams. This whitepaper documents 
+the security architecture, data protection mechanisms, and compliance posture 
+that protect your organization's most critical intelligence.
+
+Our security model is built on four foundational principles:
+  • Defense in Depth — Multiple independent security layers
+  • Least Privilege — Minimum access required for each role
+  • Zero Trust — Every request is authenticated and authorized
+  • Transparency — All AI outputs are auditable and explainable
+
+
+2. INFRASTRUCTURE SECURITY
+──────────────────────────
+Hosting & Encryption:
+  • All data encrypted at rest using AES-256
+  • All data encrypted in transit using TLS 1.3
+  • Hosted on SOC 2 Type II and ISO 27001 certified infrastructure
+  • Automated encrypted backups with point-in-time recovery
+  • DDoS protection and network-level firewalling
+  • Infrastructure hosted in EU-compliant data centers
+
+Secret Management:
+  • Service role keys stored exclusively in encrypted Edge Function secrets
+  • Client-side code only receives the anonymous (anon) key
+  • API keys rotated on a regular schedule
+  • Environment variables never committed to source control
+
+
+3. AUTHENTICATION & ACCESS CONTROL
+───────────────────────────────────
+Authentication:
+  • Multi-factor authentication (MFA) enforced at route level (AAL2)
+  • TOTP-based authenticator apps supported (Google Authenticator, Authy)
+  • JWT-based session management with automatic token refresh
+  • Secure password reset flow with expiring, single-use tokens
+
+Role-Based Access Control (RBAC):
+  ┌─────────────┬───────────┬──────────┬───────────┬──────────┬──────────┐
+  │ Role        │ Strategic │ Metrics  │ Config    │ Audit    │ Team     │
+  ├─────────────┼───────────┼──────────┼───────────┼──────────┼──────────┤
+  │ Owner       │    ✓      │    ✓     │    ✓      │    ✓     │    ✓     │
+  │ Admin       │    ✓      │    ✓     │    ✓      │    ✓     │    ✓     │
+  │ Executive   │    ✓      │    ✓     │    ✗      │    ✗     │    ✗     │
+  │ Analyst     │    ✗      │    ✓     │    ✗      │    ✗     │    ✗     │
+  │ Viewer      │    ✗      │    ✗     │    ✗      │    ✗     │    ✗     │
+  └─────────────┴───────────┴──────────┴───────────┴──────────┴──────────┘
+
+  Strategic data (Decision Ledger, Advisory, Simulations) is restricted
+  to Owner, Admin, and Executive roles at the database policy layer.
+
+Permission System:
+  • 14 granular permissions (dashboard.view, decisions.approve, data.upload, etc.)
+  • Permissions enforced via SECURITY DEFINER database functions
+  • Role defaults with explicit per-organization overrides
+  • Permission checks occur at both UI and database layers
+
+
+4. MULTI-TENANT DATA ISOLATION
+──────────────────────────────
+  • Row-Level Security (RLS) policies enforced on 100% of public tables
+  • All queries scoped to organization_id at the PostgreSQL layer
+  • Cross-organization data access is architecturally impossible
+  • Organization membership verified on every API request
+  • Edge Functions validate JWT + org membership before processing
+
+  This isolation is enforced at the DATABASE level, not the application level.
+  Even if application code contained a bug, RLS policies would prevent 
+  unauthorized data access.
+
+
+5. IMMUTABLE AUDIT TRAIL
+────────────────────────
+  • Comprehensive audit_log recording: actor, action, resource, payload, IP
+  • No UPDATE or DELETE policies on audit tables — immutable by design
+  • Decision Ledger tracks full lifecycle: predict → decide → execute → measure
+  • Calibration history preserves AI confidence evolution over time
+  • Intelligence audit trail records all AI-generated outputs with provenance
+  • Full data export available for compliance (GDPR Art. 20)
+
+
+6. AI DATA GOVERNANCE
+─────────────────────
+Data Processing:
+  • Client data is NOT used to train or fine-tune Quantivis models
+  • Third-party AI inference is stateless and per-request
+  • No data is retained by AI providers after processing
+  • No cross-organization learning without explicit opt-in
+
+PII Redaction:
+  • Automatic PII detection and redaction before AI processing
+  • Patterns detected: emails, phone numbers, IBANs, credit cards, SSNs, UUIDs
+  • AI Data Boundary toggle (disabled by default) controls raw text exposure
+  • Organizations can audit exactly what data was sent to AI models
+
+Anti-Hallucination Framework:
+  • 5-layer epistemic integrity system
+  • Confidence capping at 90% maximum
+  • Evidence classification (OBSERVED_FACT vs AI_RECOMMENDATION)
+  • All AI outputs include confidence scores and attribution
+  • Counterfactual analysis provides reasoning transparency
+
+
+7. COMPLIANCE FRAMEWORK
+───────────────────────
+GDPR Compliance:
+  • Data Processing Agreement (DPA) available for all customers
+  • Account deletion purges data across 25+ tables
+  • Configurable data retention policies per organization
+  • Automated data export for Subject Access Requests (SAR)
+  • Cookie policy limited to essential session cookies — no tracking
+
+Sub-processor Transparency:
+  • Full sub-processor list publicly available
+  • Contractual data protection obligations with all sub-processors
+  • Customer notification for sub-processor changes
+
+Incident Response:
+  • Affected customers notified within 72 hours (per GDPR Art. 33)
+  • Documented incident response procedure
+  • Post-incident review and remediation tracking
+
+
+8. SECURITY POSTURE SCORING
+───────────────────────────
+Quantivis maintains a real-time Security Posture Dashboard scoring (0-100):
+  • RLS coverage across all tables
+  • Encryption status (at rest and in transit)
+  • AI Data Boundary configuration
+  • Audit trail integrity verification
+  • MFA enrollment rate across team members
+  • Rate limiting configuration
+
+Organizations can view their current score and recommendations for
+improvement directly within their settings dashboard.
+
+
+9. RESPONSIBLE DISCLOSURE
+─────────────────────────
+We maintain a public security.txt policy for vulnerability reporting.
+Security researchers can report issues to: security@quantivis.io
+
+We commit to:
+  • Acknowledging reports within 48 hours
+  • Providing status updates every 5 business days
+  • Not pursuing legal action against good-faith researchers
+
+
+10. CONTACT
+───────────
+Security Team: security@quantivis.io
+Trust Center: https://quantivis.io/security
+Privacy Policy: https://quantivis.io/privacy
+Terms of Service: https://quantivis.io/terms
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+© ${new Date().getFullYear()} Quantivis Global. All rights reserved.
+This document is confidential and intended for security review purposes.
+`.trim();
+};
+
+const downloadWhitepaper = () => {
+  const content = generateWhitepaperContent();
+  const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "Quantivis_Security_Whitepaper.txt";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
 
 const HERO_STATS = [
   { value: "AES-256", label: "Encryption at Rest" },
