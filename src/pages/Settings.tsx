@@ -86,18 +86,14 @@ const Settings = () => {
 
   const canManageOrg = orgRole === "owner" || orgRole === "admin";
 
+  // Initialize profile name from cached AuthContext profile
   useEffect(() => {
-    if (!user) return;
-    const load = async () => {
-      const { data: profile } = await supabase.from("profiles").select("full_name").eq("user_id", user.id).maybeSingle();
-      if (profile) {
-        const name = profile.full_name || "";
-        setFullName(name);
-        savedProfile.current = name;
-      }
-    };
-    load();
-  }, [user]);
+    if (profile) {
+      const name = profile.full_name || "";
+      setFullName(name);
+      savedProfile.current = name;
+    }
+  }, [profile]);
 
   useEffect(() => {
     if (!currentOrgId) return;
