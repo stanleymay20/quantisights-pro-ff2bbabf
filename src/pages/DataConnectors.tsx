@@ -627,9 +627,9 @@ const DataConnectors = () => {
             {/* ═══ STEP: Test Success → Discover ═══ */}
             {step === "testing" && (
               <div className="max-w-2xl">
-                <div className="p-6 rounded-xl border border-green-500/30 bg-green-500/5 mb-6">
+                <div className="p-6 rounded-xl border border-primary/30 bg-primary/5 mb-6">
                   <div className="flex items-center gap-3 mb-2">
-                    <CheckCircle2 className="w-6 h-6 text-green-500" />
+                    <CheckCircle2 className="w-6 h-6 text-primary" />
                     <h2 className="text-xl font-bold font-display">Connection Successful</h2>
                   </div>
                   <p className="text-sm text-muted-foreground">{testResult?.version}</p>
