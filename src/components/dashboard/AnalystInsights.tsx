@@ -178,6 +178,21 @@ const AnalystInsights = ({ insights, metrics, topMetrics, datasetName, datasetId
           <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary">
             {findings.length} findings
           </span>
+          {dataHealth.seasonalCount > 0 && (
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent/50 text-accent-foreground flex items-center gap-0.5">
+              <Waves className="w-2.5 h-2.5" /> {dataHealth.seasonalCount} seasonal
+            </span>
+          )}
+          {dataHealth.changepointCount > 0 && (
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-destructive/10 text-destructive flex items-center gap-0.5">
+              <GitBranch className="w-2.5 h-2.5" /> {dataHealth.changepointCount} regime shift{dataHealth.changepointCount > 1 ? "s" : ""}
+            </span>
+          )}
+          {dataHealth.nonNormalCount > 0 && (
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-secondary text-muted-foreground flex items-center gap-0.5">
+              <BarChart className="w-2.5 h-2.5" /> {dataHealth.nonNormalCount} non-normal
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <DropdownMenu>
