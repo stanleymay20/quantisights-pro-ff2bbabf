@@ -309,24 +309,36 @@ const Dashboard = () => {
                 </p>
               </motion.div>
 
-              <CommandCenter
-                organizationId={currentOrgId!}
-                insights={insights}
-                hasData={hasData}
-                churnRate={latestChurn}
-                revenue={totalRevenue}
-                totalCustomers={totalCustomers}
-                latestCost={latestCost}
-                pendingDecisions={pendingDecisions}
-                calibrationScore={calibrationScore}
-                metrics={metrics}
-                revenueByMonth={revenueByMonth}
-                segmentData={segmentData}
-                onDecisionLogged={() => setPendingDecisions(p => p + 1)}
-                topMetrics={topMetrics}
-                datasetId={activeDatasetId ?? undefined}
-                datasetName={currentProject?.name}
-              />
+              {dashboardView === "executive" ? (
+                <ExecutiveQuickView
+                  organizationId={currentOrgId!}
+                  pendingDecisions={pendingDecisions}
+                  calibrationScore={calibrationScore}
+                  criticalSignals={criticalInsights.length}
+                  topMetrics={topMetrics}
+                  insights={insights}
+                  onExpandToFull={() => toggleView("full")}
+                />
+              ) : (
+                <CommandCenter
+                  organizationId={currentOrgId!}
+                  insights={insights}
+                  hasData={hasData}
+                  churnRate={latestChurn}
+                  revenue={totalRevenue}
+                  totalCustomers={totalCustomers}
+                  latestCost={latestCost}
+                  pendingDecisions={pendingDecisions}
+                  calibrationScore={calibrationScore}
+                  metrics={metrics}
+                  revenueByMonth={revenueByMonth}
+                  segmentData={segmentData}
+                  onDecisionLogged={() => setPendingDecisions(p => p + 1)}
+                  topMetrics={topMetrics}
+                  datasetId={activeDatasetId ?? undefined}
+                  datasetName={currentProject?.name}
+                />
+              )}
             </>
           )}
         </main>
