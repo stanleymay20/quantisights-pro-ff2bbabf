@@ -272,7 +272,7 @@ Rules:
 function fallbackDiagnostics(stats: MetricStats[]): any[] {
   return stats.map(s => {
     let severity: "critical" | "warning" | "info" = "info";
-    if (s.period_change_pct < -10 || s.volatility_pct > 40) severity = "critical";
+    if (Math.abs(s.period_change_pct) > 10 || s.volatility_pct > 40) severity = "critical";
     else if (Math.abs(s.period_change_pct) > 5 || s.volatility_pct > 25) severity = "warning";
 
     const factors = [
