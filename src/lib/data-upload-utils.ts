@@ -832,3 +832,92 @@ export const confidenceColor = (c: number) =>
 
 export const qualityColor = (score: number) =>
   score >= 80 ? "text-success" : score >= 50 ? "text-warning" : "text-destructive";
+
+// ═══════════════════════════════════════════════════════
+// CHUNKED LARGE-FILE INGESTION ENGINE
+// ═══════════════════════════════════════════════════════
+
+export const CHUNK_SIZE = 5000; // rows per chunk
+export const MAX_TOTAL_ROWS = 500000; // 500K row limit
+
+export interface ChunkProgress {
+  totalRows: number;
+  processedRows: number;
+  currentChunk: number;
+  totalChunks: number;
+  status: "idle" | "processing" | "complete" | "error";
+  errorMessage?: string;
+}
+
+/**
+ * Splits parsed rows into processing chunks for progressive ingestion.
+ * Handles datasets up to 500K rows by batching into CHUNK_SIZE groups.
+ */
+export function createChunks(rows: string[][], chunkSize: number = CHUNK_SIZE): string[][][] {
+  if (rows.length <= chunkSize) return [rows];
+  const chunks: string[][][] = [];
+  for (let i = 0; i < rows.length; i += chunkSize) {
+    chunks.push(rows.slice(i, i + chunkSize));
+  }
+  return chunks;
+}
+
+/**
+ * Progressive chunk processor with callback for progress updates.
+ * Each chunk is independently validated and inserted, preventing
+ * a single bad row from blocking the entire import.
+ */
+export async function processChunkedUpload(
+  allRows: string[][],
+  headers: string[],
+  mapping: ColumnMapping,
+  importMode: ImportMode,
+  onProgress: (progress: ChunkProgress) => void,
+  insertChunk: (rows: string[][], chunkIndex: number) => Promise<{ inserted: number; errors: number }>,
+): Promise<{ totalInserted: number; totalErrors: number; totalChunks: number }> {
+  if (allRows.length > MAX_TOTAL_ROWS) {
+    onProgress({
+      totalRows: allRows.length,
+      processedRows: 0,
+      currentChunk: 0,
+      totalChunks: 0,
+      status: "error",
+      errorMessage: `Dataset exceeds maximum of ${MAX_TOTAL_ROWS.toLocaleString()} rows. Split into smaller files.`,
+    });
+    return { totalInserted: 0, totalErrors: 0, totalChunks: 0 };
+  }
+
+  const chunks = createChunks(allRows);
+  let totalInserted = 0;
+  let totalErrors = 0;
+
+  onProgress({
+    totalRows: allRows.length,
+    processedRows: 0,
+    currentChunk: 0,
+    totalChunks: chunks.length,
+    status: "processing",
+  });
+
+  for (let i = 0; i < chunks.length; i++) {
+    try {
+      const result = await insertChunk(chunks[i], i);
+      totalInserted += result.inserted;
+      totalErrors += result.errors;
+
+      onProgress({
+        totalRows: allRows.length,
+        processedRows: Math.min((i + 1) * CHUNK_SIZE, allRows.length),
+        currentChunk: i + 1,
+        totalChunks: chunks.length,
+        status: i === chunks.length - 1 ? "complete" : "processing",
+      });
+    } catch (err) {
+      totalErrors += chunks[i].length;
+      console.error(`Chunk ${i + 1}/${chunks.length} failed:`, err);
+      // Continue processing remaining chunks — don't block on one failure
+    }
+  }
+
+  return { totalInserted, totalErrors, totalChunks: chunks.length };
+}

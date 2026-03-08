@@ -167,26 +167,20 @@ IMPORTANT: Frame ALL insights through this decision context. Every insight must 
       }
     }
 
-    // Use AI to generate contextual, analyst-grade insights
+    // Use AI with multi-model failover chain to generate contextual insights
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
     let aiInsights: any[] = [];
+    let modelUsed: string | null = null;
 
-    if (LOVABLE_API_KEY) {
-      const aiController = new AbortController();
-      const aiTimeout = setTimeout(() => aiController.abort(), 30000);
-      const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        signal: aiController.signal,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
-          messages: [{
-            role: "user",
-            content: `You are an enterprise data intelligence engine producing analyst-grade insights. The dataset is called "${datasetName}".
+    // Model failover chain: primary → secondary → tertiary
+    const MODEL_CHAIN = [
+      "google/gemini-2.5-flash",
+      "openai/gpt-5-mini",
+      "google/gemini-2.5-flash-lite",
+    ];
+
+    const insightPrompt = `You are an enterprise data intelligence engine producing analyst-grade insights. The dataset is called "${datasetName}".
 ${contextBlock}
 METRIC SUMMARIES:
 ${JSON.stringify(metricSummaries, null, 2)}
@@ -216,54 +210,79 @@ Rules:
 - Medium: 5-10% changes, emerging patterns, segment disparities
 - Info: positive trends, stable-but-notable patterns
 - At least 2 insights must reference specific segments or regions if present
-- Return ONLY the JSON array`,
-          }],
-        }),
-      });
+- Return ONLY the JSON array`;
 
-      clearTimeout(aiTimeout);
+    if (LOVABLE_API_KEY) {
+      // Try each model in the chain until one succeeds
+      for (const model of MODEL_CHAIN) {
+        try {
+          const aiController = new AbortController();
+          const aiTimeout = setTimeout(() => aiController.abort(), 30000);
+          const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+            method: "POST",
+            signal: aiController.signal,
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${LOVABLE_API_KEY}`,
+            },
+            body: JSON.stringify({
+              model,
+              messages: [{ role: "user", content: insightPrompt }],
+            }),
+          });
 
-      if (aiRes.ok) {
-        const aiData = await aiRes.json();
-        const content = aiData.choices?.[0]?.message?.content || "";
-        const jsonMatch = content.match(/\[[\s\S]*\]/);
-        if (jsonMatch) {
-          try {
-            const rawInsights = JSON.parse(jsonMatch[0]);
-            // POST-GENERATION VALIDATION: reject hallucinated insights
-            const knownMetrics = new Set(Object.keys(metricsByType));
-            const knownRegions = new Set<string>();
-            const knownSegments = new Set<string>();
-            Object.values(metricsByType).forEach(d => {
-              d.regions.forEach(r => knownRegions.add(r.toLowerCase()));
-              d.segments.forEach(s => knownSegments.add(s.toLowerCase()));
-            });
+          clearTimeout(aiTimeout);
 
-            for (const insight of rawInsights) {
-              const msg = (insight.message || "").toLowerCase();
-              // Validation 1: Must reference dataset name
-              const refsDataset = msg.includes(datasetName.toLowerCase());
-              // Validation 2: Must reference at least one known metric
-              const refsMetric = [...knownMetrics].some(m => msg.includes(m.replace(/_/g, " ").toLowerCase()) || msg.includes(m.toLowerCase()));
-              // Validation 3: Check for fabricated numbers — extract percentages and verify plausibility
-              // We allow the insight if it references dataset AND metric
-              if (refsDataset && refsMetric) {
-                insight._validated = true;
-                aiInsights.push(insight);
-              } else {
-                console.warn("Rejected hallucinated insight:", insight.message?.substring(0, 100));
-                // Attempt salvage: if it references a metric but not dataset, prepend dataset context
-                if (refsMetric && !refsDataset) {
-                  insight.message = `In ${datasetName}, ${insight.message}`;
-                  insight._validated = true;
-                  insight._salvaged = true;
-                  aiInsights.push(insight);
+          if (aiRes.ok) {
+            const aiData = await aiRes.json();
+            const content = aiData.choices?.[0]?.message?.content || "";
+            const jsonMatch = content.match(/\[[\s\S]*\]/);
+            if (jsonMatch) {
+              try {
+                const rawInsights = JSON.parse(jsonMatch[0]);
+                // POST-GENERATION VALIDATION: reject hallucinated insights
+                const knownMetrics = new Set(Object.keys(metricsByType));
+                const knownRegions = new Set<string>();
+                const knownSegments = new Set<string>();
+                Object.values(metricsByType).forEach(d => {
+                  d.regions.forEach(r => knownRegions.add(r.toLowerCase()));
+                  d.segments.forEach(s => knownSegments.add(s.toLowerCase()));
+                });
+
+                for (const insight of rawInsights) {
+                  const msg = (insight.message || "").toLowerCase();
+                  const refsDataset = msg.includes(datasetName.toLowerCase());
+                  const refsMetric = [...knownMetrics].some(m => msg.includes(m.replace(/_/g, " ").toLowerCase()) || msg.includes(m.toLowerCase()));
+                  
+                  if (refsDataset && refsMetric) {
+                    insight._validated = true;
+                    aiInsights.push(insight);
+                  } else if (refsMetric && !refsDataset) {
+                    insight.message = `In ${datasetName}, ${insight.message}`;
+                    insight._validated = true;
+                    insight._salvaged = true;
+                    aiInsights.push(insight);
+                  } else {
+                    console.warn(`Rejected hallucinated insight (model=${model}):`, insight.message?.substring(0, 100));
+                  }
                 }
+
+                if (aiInsights.length > 0) {
+                  modelUsed = model;
+                  console.log(`AI insights generated via ${model}: ${aiInsights.length} validated`);
+                  break; // Success — exit failover chain
+                }
+              } catch {
+                console.error(`Failed to parse AI insights JSON from ${model}`);
               }
             }
-          } catch {
-            console.error("Failed to parse AI insights JSON");
+          } else {
+            console.warn(`Model ${model} returned ${aiRes.status}, trying next...`);
+            await aiRes.text(); // consume body
           }
+        } catch (err) {
+          console.warn(`Model ${model} failed:`, err instanceof Error ? err.message : "unknown");
+          // Continue to next model
         }
       }
     }
@@ -314,7 +333,7 @@ Rules:
       }
     }
 
-    // Apply confidence capping
+    // Apply confidence capping + human review flagging
     const insightRows = aiInsights.map((i: any) => {
       const rawConf = i.raw_confidence || 70;
       const sampleSize = metrics.length;
@@ -322,11 +341,16 @@ Rules:
         rawConfidence: rawConf, sampleSize, calibrationModel: calModel,
       });
 
+      // Flag high-severity insights for human review before C-suite surfacing
+      const requiresHumanReview = i.severity === "high" && meta.capped_confidence < 70;
+
       return {
         organization_id,
         dataset_id,
         decision_context_id: decision_context_id || null,
-        message: i.message,
+        message: requiresHumanReview
+          ? `[REVIEW REQUIRED] ${i.message}`
+          : i.message,
         severity: i.severity || "info",
         category: i.category || "general",
         confidence_score: meta.confidence,
@@ -336,6 +360,7 @@ Rules:
         sample_size: meta.sample_size,
         variance_score: meta.variance_score,
         data_quality_index: 100,
+        generation_model: modelUsed || "rule_based_fallback",
       };
     });
 
