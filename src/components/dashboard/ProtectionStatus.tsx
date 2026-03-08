@@ -66,13 +66,25 @@ const ProtectionStatus = memo(({ organizationId, calibrationScore, pendingDecisi
   useEffect(() => {
     if (!organizationId) return;
     const fetchDrivers = async () => {
-      const { data: models } = await supabase
-        .from("calibration_models")
-        .select("mean_absolute_error, overall_bias_direction")
-        .eq("organization_id", organizationId)
-        .order("computed_at", { ascending: false })
-        .limit(2);
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
+      const [modelsRes, unclosedRes] = await Promise.all([
+        supabase
+          .from("calibration_models")
+          .select("mean_absolute_error, overall_bias_direction")
+          .eq("organization_id", organizationId)
+          .order("computed_at", { ascending: false })
+          .limit(2),
+        supabase
+          .from("decision_ledger")
+          .select("*", { count: "exact", head: true })
+          .eq("organization_id", organizationId)
+          .eq("execution_status", "not_started")
+          .lt("created_at", thirtyDaysAgo.toISOString()),
+      ]);
+
+      const models = modelsRes.data;
       if (models && models.length >= 2) {
         const maeDelta = (models[0].mean_absolute_error ?? 0) - (models[1].mean_absolute_error ?? 0);
         const biasSame = models[0].overall_bias_direction === models[1].overall_bias_direction;
@@ -81,15 +93,7 @@ const ProtectionStatus = memo(({ organizationId, calibrationScore, pendingDecisi
         else setDriftStatus("stable");
       }
 
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      const { count } = await supabase
-        .from("decision_ledger")
-        .select("*", { count: "exact", head: true })
-        .eq("organization_id", organizationId)
-        .eq("execution_status", "not_started")
-        .lt("created_at", thirtyDaysAgo.toISOString());
-      setUnclosedOutcomes(count ?? 0);
+      setUnclosedOutcomes(unclosedRes.count ?? 0);
     };
     fetchDrivers();
   }, [organizationId]);

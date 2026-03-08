@@ -162,7 +162,7 @@ export function useBuildDecisionQueue({
           confidence: insight.confidence_score ?? null,
           message: insight.message,
           category: insight.category,
-          sampleSize: (insight as any).sample_size ?? undefined,
+           sampleSize: undefined,
           datasetId: datasetId,
         });
 
@@ -184,7 +184,7 @@ export function useBuildDecisionQueue({
           cappedConfidence: null,
           confidenceCapReason: null,
           generatedAt: now,
-          sampleSize: (insight as any).sample_size ?? undefined,
+          sampleSize: undefined,
           sourceDatasetId: datasetId ?? null,
         });
       });

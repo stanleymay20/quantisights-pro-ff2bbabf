@@ -1,4 +1,4 @@
-import { useState, forwardRef } from "react";
+import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +19,7 @@ interface ModifyDecisionDialogProps {
   onSaved: (updated: Partial<EnrichedDecision>) => void;
 }
 
-const ModifyDecisionDialog = forwardRef<HTMLDivElement, ModifyDecisionDialogProps>(({ decision, organizationId, open, onOpenChange, onSaved }, ref) => {
+const ModifyDecisionDialog = ({ decision, organizationId, open, onOpenChange, onSaved }: ModifyDecisionDialogProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
@@ -83,14 +83,16 @@ const ModifyDecisionDialog = forwardRef<HTMLDivElement, ModifyDecisionDialogProp
             assigned_to: user?.id,
             action: recommendation,
           })
-          .eq("id", decision.sourceId);
+          .eq("id", decision.sourceId)
+          .eq("organization_id", organizationId);
       }
 
       if (decision.type === "signal" && decision.sourceId) {
         await supabase
           .from("insights")
           .update({ is_read: true })
-          .eq("id", decision.sourceId);
+          .eq("id", decision.sourceId)
+          .eq("organization_id", organizationId);
       }
 
       onSaved({
@@ -174,8 +176,6 @@ const ModifyDecisionDialog = forwardRef<HTMLDivElement, ModifyDecisionDialogProp
       </DialogContent>
     </Dialog>
   );
-});
-
-ModifyDecisionDialog.displayName = "ModifyDecisionDialog";
+};
 
 export default ModifyDecisionDialog;

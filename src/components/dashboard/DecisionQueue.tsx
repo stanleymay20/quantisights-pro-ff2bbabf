@@ -144,26 +144,26 @@ const DecisionQueue = memo(({
     setActingOn(decision.id);
     try {
       if (decision.type === "advisory" && decision.sourceId) {
-        await supabase.from("advisory_instances").update({ status: "in_progress", assigned_to: user?.id }).eq("id", decision.sourceId);
+        await supabase.from("advisory_instances").update({ status: "in_progress", assigned_to: user?.id }).eq("id", decision.sourceId).eq("organization_id", organizationId);
       }
       if (decision.type === "signal" && decision.sourceId) {
-        await supabase.from("insights").update({ is_read: true }).eq("id", decision.sourceId);
+        await supabase.from("insights").update({ is_read: true }).eq("id", decision.sourceId).eq("organization_id", organizationId);
       }
       await supabase.from("decision_ledger").insert({
         organization_id: organizationId,
         recommended_action: decision.recommendation.recommendedAction,
         chosen_action: decision.recommendation.recommendedAction,
-        decided_by: user?.id,
+        decided_by: user?.id ?? null,
         decided_at: new Date().toISOString(),
         decision_status: "approved",
         confidence_at_decision: decision.confidence ?? 50,
-        raw_confidence: decision.rawConfidence,
-        capped_confidence: decision.cappedConfidence,
-        confidence_cap_reason: decision.confidenceCapReason,
+        raw_confidence: decision.rawConfidence ?? null,
+        capped_confidence: decision.cappedConfidence ?? null,
+        confidence_cap_reason: decision.confidenceCapReason ?? null,
         decision_type: "strategic",
         decision_context_id: activeContextId ?? null,
         notes: `Owner: ${decision.recommendation.suggestedOwner} | Due: ${decision.costOfDelayResult.recommendedActionWindowDays}d | Metrics: ${decision.recommendation.successMetrics.join(", ")}`,
-      } as any);
+      });
       setDecisions(prev => prev.filter(d => d.id !== decision.id));
       setConfirmation({ decisionTitle: decision.title, action: "approved" });
     } catch {
@@ -183,10 +183,10 @@ const DecisionQueue = memo(({
     setActingOn(decision.id);
     try {
       if (decision.type === "advisory" && decision.sourceId) {
-        await supabase.from("advisory_instances").update({ status: "dismissed" }).eq("id", decision.sourceId);
+        await supabase.from("advisory_instances").update({ status: "dismissed" }).eq("id", decision.sourceId).eq("organization_id", organizationId);
       }
       if (decision.type === "signal" && decision.sourceId) {
-        await supabase.from("insights").update({ is_read: true }).eq("id", decision.sourceId);
+        await supabase.from("insights").update({ is_read: true }).eq("id", decision.sourceId).eq("organization_id", organizationId);
       }
       await supabase.from("decision_ledger").insert({
         organization_id: organizationId,
