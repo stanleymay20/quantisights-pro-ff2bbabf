@@ -4,7 +4,7 @@ import {
   Crown, Shuffle, Search, Upload, CreditCard, Settings, Building2,
   TrendingUp, Radio, Webhook, Globe, Key, Brain, GitBranch, Lock,
   Eye, AlertTriangle, Cpu, BarChart, LineChart, PieChart, Workflow,
-  ServerCrash, Fingerprint, type LucideIcon,
+  ServerCrash, Fingerprint, Code2, Palette, Languages, Presentation, type LucideIcon,
 } from "lucide-react";
 
 export interface DocSection {
