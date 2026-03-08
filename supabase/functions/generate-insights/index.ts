@@ -2,6 +2,101 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { applyAdaptiveConfidence, fetchCalibrationModel } from "../_shared/adaptive-confidence.ts";
 
+// ── Inline industry detection for Edge Function ──
+function detectIndustryFromMetrics(metricTypes: string[], segments: string[], regions: string[], datasetName: string) {
+  const signals: Array<{ industry: string; subIndustry?: string; patterns: RegExp[]; weight: number }> = [
+    { industry: "SaaS", patterns: [/mrr/i, /arr/i, /churn.?rate/i, /ltv/i, /cac/i, /nrr/i, /net.?revenue.?retention/i, /arpu/i, /dau/i, /mau/i, /activation/i, /trial/i, /conversion.?rate/i], weight: 3 },
+    { industry: "SaaS", subIndustry: "PLG", patterns: [/product.?qualified/i, /pql/i, /free.?to.?paid/i, /viral/i], weight: 4 },
+    { industry: "E-Commerce", patterns: [/gmv/i, /aov/i, /average.?order/i, /cart.?abandon/i, /repeat.?purchase/i, /basket/i, /sku/i, /inventory.?turnover/i, /return.?rate/i], weight: 3 },
+    { industry: "Financial Services", patterns: [/aum/i, /assets.?under/i, /nim/i, /net.?interest/i, /loan/i, /deposit/i, /npl/i, /non.?performing/i, /capital.?ratio/i, /tier.?1/i], weight: 3 },
+    { industry: "Healthcare", patterns: [/patient/i, /readmission/i, /bed.?occupancy/i, /length.?of.?stay/i, /clinical/i, /mortality/i, /infection.?rate/i], weight: 3 },
+    { industry: "Manufacturing", patterns: [/oee/i, /overall.?equipment/i, /yield/i, /defect.?rate/i, /cycle.?time/i, /throughput/i, /scrap/i, /downtime/i, /capacity.?utilization/i], weight: 3 },
+    { industry: "Media", patterns: [/cpm/i, /cpc/i, /ctr/i, /impression/i, /reach/i, /engagement.?rate/i, /viewability/i, /roas/i, /ad.?spend/i, /subscriber/i, /watch.?time/i], weight: 3 },
+    { industry: "Energy", patterns: [/kwh/i, /mwh/i, /generation/i, /capacity.?factor/i, /emission/i, /carbon/i, /renewable/i], weight: 3 },
+    { industry: "Education", patterns: [/enrollment/i, /graduation/i, /student/i, /completion.?rate/i, /course/i, /attendance/i], weight: 3 },
+    { industry: "Real Estate", patterns: [/occupancy/i, /rent/i, /noi/i, /cap.?rate/i, /lease/i, /vacancy/i], weight: 3 },
+    { industry: "Logistics", patterns: [/on.?time.?delivery/i, /otd/i, /freight/i, /shipment/i, /fill.?rate/i, /transit.?time/i], weight: 3 },
+    { industry: "General Business", patterns: [/revenue/i, /cost/i, /profit/i, /margin/i, /expense/i, /ebitda/i, /growth/i], weight: 1 },
+  ];
+
+  const scores = new Map<string, { score: number; signals: string[]; subIndustry?: string }>();
+  for (const sig of signals) {
+    for (const p of sig.patterns) {
+      for (const m of metricTypes) {
+        if (p.test(m)) {
+          const key = sig.subIndustry || sig.industry;
+          const ex = scores.get(key) || { score: 0, signals: [], subIndustry: sig.subIndustry };
+          ex.score += sig.weight;
+          ex.signals.push(m);
+          scores.set(key, ex);
+        }
+      }
+    }
+  }
+  // Check dataset name
+  for (const sig of signals) {
+    for (const p of sig.patterns) {
+      if (p.test(datasetName)) {
+        const key = sig.subIndustry || sig.industry;
+        const ex = scores.get(key) || { score: 0, signals: [] };
+        ex.score += 1;
+        scores.set(key, ex);
+      }
+    }
+  }
+
+  let best = "General Business", bestScore = 0, bestSignals: string[] = [], bestSub: string | undefined;
+  scores.forEach((d, k) => { if (d.score > bestScore) { bestScore = d.score; best = k; bestSignals = [...new Set(d.signals)]; bestSub = d.subIndustry; } });
+  const parent = bestSub ? (signals.find(s => s.subIndustry === best)?.industry || best) : best;
+  const confidence = Math.min(95, 30 + bestScore * 10);
+
+  const kpiFrameworks: Record<string, Array<{ metric: string; importance: string; context: string }>> = {
+    "SaaS": [
+      { metric: "Net Revenue Retention", importance: "critical", context: "NRR >120% = strong expansion; <100% = contraction" },
+      { metric: "CAC Payback", importance: "critical", context: "Target <18 months" },
+      { metric: "LTV/CAC", importance: "critical", context: "Healthy: 3-5x" },
+      { metric: "Gross Margin", importance: "high", context: "Best-in-class SaaS: >80%" },
+      { metric: "Monthly Churn", importance: "critical", context: "Enterprise: <1%/month" },
+    ],
+    "E-Commerce": [
+      { metric: "AOV", importance: "critical", context: "Growth through cross-sell is more capital-efficient" },
+      { metric: "Cart Abandonment", importance: "high", context: "Industry avg: 70%; optimize below 65%" },
+      { metric: "Repeat Purchase Rate", importance: "critical", context: "Target >30%" },
+    ],
+    "Financial Services": [
+      { metric: "Net Interest Margin", importance: "critical", context: "Compressed NIM = rate environment pressure" },
+      { metric: "Cost-to-Income", importance: "critical", context: "Best: <50%; above 65% = inefficiency" },
+      { metric: "NPL Ratio", importance: "critical", context: "Above 3% requires enhanced risk mgmt" },
+    ],
+    "Healthcare": [
+      { metric: "Readmission Rate", importance: "critical", context: "30-day >15% triggers CMS penalties" },
+      { metric: "Bed Occupancy", importance: "high", context: "Optimal: 80-85%; >90% = safety risk" },
+    ],
+    "Manufacturing": [
+      { metric: "OEE", importance: "critical", context: "World-class: >85%; <60% = major opportunity" },
+      { metric: "First Pass Yield", importance: "critical", context: "Target >95%" },
+    ],
+  };
+
+  const analysisFrameworks: Record<string, string> = {
+    "SaaS": "ANALYZE USING SaaS FRAMEWORK: Unit Economics (LTV/CAC, payback), Growth Quality (NRR, organic vs paid), Efficiency (Rule of 40, burn multiple), Cohort Retention, Red Flags (rising CAC + flat NRR)",
+    "E-Commerce": "ANALYZE USING E-COMMERCE FRAMEWORK: Customer Economics (CAC, AOV, LTV by channel), Funnel (traffic→purchase), Inventory (turnover, sell-through), Channel Mix, Seasonality (compare YoY not sequential)",
+    "Financial Services": "ANALYZE USING FINANCIAL FRAMEWORK: Profitability (NIM, fee diversification, cost-to-income), Risk (NPL, provision coverage), Capital (CET1 trajectory), Growth (loan book vs GDP)",
+    "Healthcare": "ANALYZE USING HEALTHCARE FRAMEWORK: Clinical Quality (readmission, infection rates), Operational (bed turnover, OR utilization), Financial (revenue per adjusted patient day), Volume trending",
+    "Manufacturing": "ANALYZE USING MANUFACTURING FRAMEWORK: Productivity (OEE decomposition), Quality (defect rate, first pass yield), Efficiency (cycle time, capacity utilization), Supply Chain (lead time variability)",
+    "General Business": "ANALYZE USING GENERAL FRAMEWORK: Financial Health (revenue growth, margin trend), Efficiency (cost structure, revenue per employee), Growth (concentration risk), Risk (volatility, anomaly root causes)",
+  };
+
+  return {
+    industry: parent,
+    subIndustry: bestSub,
+    confidence,
+    matchedSignals: bestSignals,
+    kpiFramework: kpiFrameworks[parent] || kpiFrameworks["General Business"] || [],
+    analysisFramework: analysisFrameworks[parent] || analysisFrameworks["General Business"],
+  };
+}
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
