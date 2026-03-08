@@ -134,6 +134,7 @@ export function useBuildDecisionQueue({
         cappedConfidence: adv.capped_confidence as number | null,
         confidenceCapReason: adv.confidence_cap_reason,
         generatedAt: now,
+        sourceDatasetId: adv.dataset_id ?? datasetId ?? null,
       });
     });
 
