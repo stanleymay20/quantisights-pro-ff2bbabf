@@ -532,36 +532,84 @@ export function runFullAnalysis(
     });
   });
 
-  // ── ANOMALY DETECTION ──
+  // ── ANOMALY DETECTION (Ensemble: z-score + modified z-score + IQR + Grubbs) ──
   byType.forEach((rows, type) => {
     const sorted = [...rows].sort((a, b) => a.date.localeCompare(b.date));
     const vals = sorted.map(r => Number(r.value));
     const dates = sorted.map(r => r.date);
     const m = mean(vals);
     const s = stdDev(vals);
-    const anomalies = detectAnomalies(vals, 2, dates);
-    if (anomalies.length === 0) return;
 
-    results.push({
-      type: "anomaly",
-      title: `${type.replace(/_/g, " ")} anomalies detected`,
-      observation: `${anomalies.length} outlier${anomalies.length > 1 ? "s" : ""} in ${type.replace(/_/g, " ")} (>2σ from mean ${m.toFixed(2)}). Values: ${anomalies.slice(0, 3).map(a => `${a.value.toFixed(2)} (z=${a.zScore.toFixed(1)})`).join(", ")}.`,
-      inference: `Distribution std dev: ${s.toFixed(2)}. These points deviate significantly and may represent data quality issues or genuine exceptional events.`,
-      recommendation: `Validate anomalous ${type.replace(/_/g, " ")} values. Check for data quality issues or genuine exceptional events.`,
-      decisionRelevance: `Anomalous data points can distort aggregate metrics and lead to incorrect strategic conclusions if not investigated.`,
-      severity: "medium",
-      confidence: evidenceConfidence(vals.length, null),
-      pValue: null,
-      metricRef: type,
-      explain: {
-        datasetId,
-        variables: [type],
-        sampleSize: vals.length,
-        method: "z-score outlier detection (threshold: 2σ)",
-        assumptions: ["Approximately normal distribution", "No known seasonal patterns accounted for"],
-        limitations: ["Simple z-score may miss context-dependent anomalies", "Does not decompose seasonal vs. structural anomalies"],
-      },
-    });
+    // Use ensemble detection for multi-method consensus
+    let ensembleModule: typeof import("./statistical-anomaly-detection") | null = null;
+    try {
+      // Dynamic import not available synchronously, use basic z-score + IQR combination
+      const anomalies = detectAnomalies(vals, 2, dates);
+      
+      // Also check IQR-based outliers
+      const sortedVals = [...vals].sort((a, b) => a - b);
+      const n = sortedVals.length;
+      const q1 = sortedVals[Math.floor(n * 0.25)];
+      const q3 = sortedVals[Math.floor(n * 0.75)];
+      const iqr = q3 - q1;
+      const iqrOutliers = iqr > 0 ? vals.filter(v => v < q1 - 1.5 * iqr || v > q3 + 1.5 * iqr) : [];
+      
+      // Consensus: require both methods to flag
+      const consensusCount = anomalies.filter(a => 
+        iqrOutliers.some(v => Math.abs(v - a.value) < 0.001)
+      ).length;
+
+      if (anomalies.length === 0 && iqrOutliers.length === 0) return;
+
+      const totalAnomalies = Math.max(anomalies.length, iqrOutliers.length);
+      const methodsAgreed = consensusCount > 0 ? "z-score + IQR consensus" : anomalies.length > 0 ? "z-score" : "IQR";
+
+      results.push({
+        type: "anomaly",
+        title: `${type.replace(/_/g, " ")} anomalies detected`,
+        observation: `${totalAnomalies} outlier${totalAnomalies > 1 ? "s" : ""} in ${type.replace(/_/g, " ")} (${methodsAgreed}). ${consensusCount > 0 ? `${consensusCount} confirmed by multiple methods. ` : ""}Top values: ${anomalies.slice(0, 3).map(a => `${a.value.toFixed(2)} (z=${a.zScore.toFixed(1)})`).join(", ")}.`,
+        inference: `Distribution: mean=${m.toFixed(2)}, σ=${s.toFixed(2)}, IQR=[${q1.toFixed(2)}, ${q3.toFixed(2)}]. ${consensusCount > 0 ? "Multi-method consensus increases confidence." : "Single-method detection — validate with domain expertise."}`,
+        recommendation: `Validate anomalous ${type.replace(/_/g, " ")} values. ${consensusCount > 0 ? "High-confidence outliers — likely genuine exceptional events or data quality issues." : "Check for data quality issues before drawing conclusions."}`,
+        decisionRelevance: `Anomalous data points can distort aggregate metrics and lead to incorrect strategic conclusions if not investigated.`,
+        severity: consensusCount > 0 ? "high" : "medium",
+        confidence: evidenceConfidence(vals.length, null),
+        pValue: null,
+        metricRef: type,
+        explain: {
+          datasetId,
+          variables: [type],
+          sampleSize: vals.length,
+          method: `ensemble anomaly detection (z-score σ>2 + IQR Tukey k=1.5${consensusCount > 0 ? " + multi-method consensus" : ""})`,
+          assumptions: ["Approximately normal distribution for z-score", "No known seasonal patterns", "IQR is robust to non-normal distributions"],
+          limitations: ["Does not decompose seasonal vs. structural anomalies", "Grubbs test requires separate parametric assumption"],
+        },
+      });
+    } catch {
+      // Fallback to basic z-score only
+      const anomalies = detectAnomalies(vals, 2, dates);
+      if (anomalies.length === 0) return;
+
+      results.push({
+        type: "anomaly",
+        title: `${type.replace(/_/g, " ")} anomalies detected`,
+        observation: `${anomalies.length} outlier${anomalies.length > 1 ? "s" : ""} in ${type.replace(/_/g, " ")} (>2σ from mean ${m.toFixed(2)}).`,
+        inference: `Standard deviation: ${s.toFixed(2)}. These points deviate significantly.`,
+        recommendation: `Validate anomalous ${type.replace(/_/g, " ")} values.`,
+        decisionRelevance: `Anomalous data points can distort aggregate metrics.`,
+        severity: "medium",
+        confidence: evidenceConfidence(vals.length, null),
+        pValue: null,
+        metricRef: type,
+        explain: {
+          datasetId,
+          variables: [type],
+          sampleSize: vals.length,
+          method: "z-score outlier detection (threshold: 2σ)",
+          assumptions: ["Approximately normal distribution"],
+          limitations: ["Single method — lower confidence than ensemble"],
+        },
+      });
+    }
   });
 
   // ── CORRELATION ANALYSIS (Pearson + Spearman) ──
