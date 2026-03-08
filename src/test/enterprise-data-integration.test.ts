@@ -294,3 +294,137 @@ describe("Enterprise Data Flow Architecture", () => {
     expect(Object.values(securityChecklist).every(Boolean)).toBe(true);
   });
 });
+
+// ═══════════════════════════════════════════════════════
+// DECISION CONTEXT ENGINE TESTS
+// ═══════════════════════════════════════════════════════
+
+import {
+  validateAnalysisScope,
+  validateSimulationBaselines,
+  formatContextualInsight,
+  scopedQueryParams,
+  type SimulationBaseline,
+} from "@/lib/decision-context-engine";
+
+const mockDecisionContext = {
+  id: "ctx-123",
+  organization_id: "org-1",
+  name: "Market Expansion – West Africa",
+  description: null,
+  industry: "Fintech",
+  decision_type: "market_expansion",
+  objective: "Evaluate investment risk and market potential",
+  target_metrics: ["gdp_growth", "trade_volume"],
+  datasets: ["ds-1"],
+  status: "active",
+  created_by: null,
+  created_at: "2026-01-01",
+  updated_at: "2026-01-01",
+};
+
+describe("Decision Context – Analysis Scope Enforcement", () => {
+  it("rejects missing organization_id", () => {
+    const r = validateAnalysisScope(null, "ds-1", "ctx-1");
+    expect(r.valid).toBe(false);
+  });
+
+  it("rejects missing dataset_id", () => {
+    const r = validateAnalysisScope("org-1", null, "ctx-1");
+    expect(r.valid).toBe(false);
+  });
+
+  it("rejects missing decision_context_id", () => {
+    const r = validateAnalysisScope("org-1", "ds-1", null);
+    expect(r.valid).toBe(false);
+  });
+
+  it("passes with all scoping present", () => {
+    const r = validateAnalysisScope("org-1", "ds-1", "ctx-1");
+    expect(r.valid).toBe(true);
+    expect(r.errors).toHaveLength(0);
+  });
+
+  it("accumulates all errors", () => {
+    const r = validateAnalysisScope(null, null, null);
+    expect(r.errors.length).toBe(3);
+  });
+});
+
+describe("Decision Context – Simulation Baseline Guard", () => {
+  it("rejects empty baselines", () => {
+    const r = validateSimulationBaselines([]);
+    expect(r.valid).toBe(false);
+    expect(r.errors[0]).toContain("baseline metrics missing");
+  });
+
+  it("rejects NaN values", () => {
+    const b: SimulationBaseline[] = [
+      { metric: "revenue", value: NaN, source: "dataset", datasetId: "ds-1" },
+    ];
+    expect(validateSimulationBaselines(b).valid).toBe(false);
+  });
+
+  it("rejects baselines without dataset reference", () => {
+    const b: SimulationBaseline[] = [
+      { metric: "churn", value: 5, source: "dataset", datasetId: "" },
+    ];
+    expect(validateSimulationBaselines(b).valid).toBe(false);
+  });
+
+  it("passes valid baselines", () => {
+    const b: SimulationBaseline[] = [
+      { metric: "revenue", value: 100000, source: "dataset", datasetId: "ds-1" },
+    ];
+    expect(validateSimulationBaselines(b).valid).toBe(true);
+  });
+});
+
+describe("Decision Context – Contextual Insight Formatting", () => {
+  it("includes decision context in traceability", () => {
+    const insight = formatContextualInsight(
+      "GDP growth declined 3.2%",
+      "Significant decline (p < 0.05)",
+      mockDecisionContext,
+      "ds-1",
+      { sampleSize: 48, method: "linear regression", pValue: 0.03, variablesUsed: ["gdp_growth"] }
+    );
+    expect(insight.traceability.decisionContextId).toBe("ctx-123");
+    expect(insight.traceability.decisionType).toBe("market_expansion");
+    expect(insight.traceability.datasetId).toBe("ds-1");
+  });
+
+  it("derives decision relevance from type", () => {
+    const insight = formatContextualInsight(
+      "Trade volume dropped 14%",
+      "Negative trend",
+      mockDecisionContext,
+      "ds-1",
+      { sampleSize: 24, method: "trend", variablesUsed: ["trade_volume"] }
+    );
+    expect(insight.decisionRelevance).toContain("market opportunity");
+  });
+
+  it("handles unknown decision types", () => {
+    const insight = formatContextualInsight(
+      "Revenue flat",
+      "No trend",
+      { ...mockDecisionContext, decision_type: "unknown" },
+      "ds-1",
+      { sampleSize: 10, method: "trend", variablesUsed: ["revenue"] }
+    );
+    expect(insight.decisionRelevance).toContain("strategic evaluation");
+  });
+});
+
+describe("Decision Context – Scoped Query Params", () => {
+  it("includes context_id when present", () => {
+    const p = scopedQueryParams("org-1", "ds-1", "ctx-1");
+    expect(p.decision_context_id).toBe("ctx-1");
+  });
+
+  it("excludes context_id when null", () => {
+    const p = scopedQueryParams("org-1", "ds-1", null);
+    expect("decision_context_id" in p).toBe(false);
+  });
+});

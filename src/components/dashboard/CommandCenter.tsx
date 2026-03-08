@@ -7,6 +7,8 @@ import CalibrationProgress from "./CalibrationProgress";
 import KPICards from "./KPICards";
 import AnalystInsights from "./AnalystInsights";
 import ExecutiveIntelligencePanel from "./ExecutiveIntelligencePanel";
+import DecisionContextPanel from "./DecisionContextPanel";
+import { useDecisionContexts, type DecisionContext } from "@/hooks/useDecisionContexts";
 import type { Insight } from "@/hooks/useInsights";
 import type { MetricTypeSummary } from "@/hooks/useMetrics";
 
