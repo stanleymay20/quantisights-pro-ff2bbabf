@@ -80,14 +80,15 @@ describe("PHASE 3 — Confidence Hardening", () => {
 });
 
 describe("PHASE 4 — Cost of Delay Reform", () => {
-  it("MUST NOT show currency without predictedNetImpact", () => {
+  it("MUST show derived currency when revenue is provided (exposure model)", () => {
     const result = computeCostOfDelay({
       severity: "high",
       confidence: 70,
       revenue: 5_000_000,
     });
-    expect(result.estimatedDelayCost).toContain("Relative score");
-    expect(result.estimatedDelayCost).not.toContain("€");
+    // Revenue exposure model now derives financial estimate from revenue
+    expect(result.estimatedDelayCost).toContain("€");
+    expect(result.estimatedDelayCost).toContain("/week");
   });
 
   it("MUST show currency ONLY with validated predictedNetImpact", () => {
