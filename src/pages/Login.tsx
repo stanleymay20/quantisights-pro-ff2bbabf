@@ -22,6 +22,7 @@ const Login = forwardRef<HTMLDivElement>((_, ref) => {
   const rawRedirect = searchParams.get("redirect") || "/dashboard";
   const redirectTo = rawRedirect.startsWith("/") && !rawRedirect.startsWith("//") ? rawRedirect : "/dashboard";
   const { toast } = useToast();
+  const throttle = useAuthThrottle(5, 60_000);
 
   // Check SSO for email domain
   const checkSSODomain = async (emailValue: string) => {
