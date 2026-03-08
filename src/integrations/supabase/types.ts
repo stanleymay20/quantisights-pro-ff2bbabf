@@ -241,6 +241,69 @@ export type Database = {
           },
         ]
       }
+      analytics_compute_jobs: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          dataset_id: string | null
+          error_message: string | null
+          id: string
+          job_type: string
+          organization_id: string
+          parameters: Json | null
+          priority: number
+          result: Json | null
+          started_at: string | null
+          status: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          dataset_id?: string | null
+          error_message?: string | null
+          id?: string
+          job_type: string
+          organization_id: string
+          parameters?: Json | null
+          priority?: number
+          result?: Json | null
+          started_at?: string | null
+          status?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          dataset_id?: string | null
+          error_message?: string | null
+          id?: string
+          job_type?: string
+          organization_id?: string
+          parameters?: Json | null
+          priority?: number
+          result?: Json | null
+          started_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analytics_compute_jobs_dataset_id_fkey"
+            columns: ["dataset_id"]
+            isOneToOne: false
+            referencedRelation: "datasets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "analytics_compute_jobs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_log: {
         Row: {
           action_type: string
@@ -2586,6 +2649,69 @@ export type Database = {
           },
         ]
       }
+      metric_latest: {
+        Row: {
+          computed_at: string
+          dataset_id: string
+          latest_date: string
+          latest_value: number
+          max_value: number | null
+          mean_value: number | null
+          metric_type: string
+          min_value: number | null
+          organization_id: string
+          stddev_value: number | null
+          total_count: number
+          total_sum: number
+          trend_slope: number | null
+        }
+        Insert: {
+          computed_at?: string
+          dataset_id: string
+          latest_date: string
+          latest_value: number
+          max_value?: number | null
+          mean_value?: number | null
+          metric_type: string
+          min_value?: number | null
+          organization_id: string
+          stddev_value?: number | null
+          total_count?: number
+          total_sum?: number
+          trend_slope?: number | null
+        }
+        Update: {
+          computed_at?: string
+          dataset_id?: string
+          latest_date?: string
+          latest_value?: number
+          max_value?: number | null
+          mean_value?: number | null
+          metric_type?: string
+          min_value?: number | null
+          organization_id?: string
+          stddev_value?: number | null
+          total_count?: number
+          total_sum?: number
+          trend_slope?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "metric_latest_dataset_id_fkey"
+            columns: ["dataset_id"]
+            isOneToOne: false
+            referencedRelation: "datasets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "metric_latest_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       metric_mappings: {
         Row: {
           aggregation: string | null
@@ -2645,6 +2771,78 @@ export type Database = {
           },
           {
             foreignKeyName: "metric_mappings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      metric_rollups: {
+        Row: {
+          computed_at: string
+          dataset_id: string
+          id: string
+          metric_type: string
+          organization_id: string
+          period_start: string
+          period_type: string
+          region: string | null
+          segment: string | null
+          val_avg: number | null
+          val_count: number
+          val_max: number | null
+          val_min: number | null
+          val_p50: number | null
+          val_stddev: number | null
+          val_sum: number
+        }
+        Insert: {
+          computed_at?: string
+          dataset_id: string
+          id?: string
+          metric_type: string
+          organization_id: string
+          period_start: string
+          period_type: string
+          region?: string | null
+          segment?: string | null
+          val_avg?: number | null
+          val_count?: number
+          val_max?: number | null
+          val_min?: number | null
+          val_p50?: number | null
+          val_stddev?: number | null
+          val_sum?: number
+        }
+        Update: {
+          computed_at?: string
+          dataset_id?: string
+          id?: string
+          metric_type?: string
+          organization_id?: string
+          period_start?: string
+          period_type?: string
+          region?: string | null
+          segment?: string | null
+          val_avg?: number | null
+          val_count?: number
+          val_max?: number | null
+          val_min?: number | null
+          val_p50?: number | null
+          val_stddev?: number | null
+          val_sum?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "metric_rollups_dataset_id_fkey"
+            columns: ["dataset_id"]
+            isOneToOne: false
+            referencedRelation: "datasets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "metric_rollups_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -3853,6 +4051,68 @@ export type Database = {
           },
         ]
       }
+      sso_configs: {
+        Row: {
+          allowed_domains: string[] | null
+          attribute_mapping: Json | null
+          auto_provision: boolean
+          created_at: string
+          deactivate_on_removal: boolean
+          enforce_sso: boolean
+          id: string
+          idp_certificate: string | null
+          idp_entity_id: string | null
+          idp_metadata_url: string | null
+          idp_sso_url: string | null
+          is_active: boolean
+          organization_id: string
+          provider_type: string
+          updated_at: string
+        }
+        Insert: {
+          allowed_domains?: string[] | null
+          attribute_mapping?: Json | null
+          auto_provision?: boolean
+          created_at?: string
+          deactivate_on_removal?: boolean
+          enforce_sso?: boolean
+          id?: string
+          idp_certificate?: string | null
+          idp_entity_id?: string | null
+          idp_metadata_url?: string | null
+          idp_sso_url?: string | null
+          is_active?: boolean
+          organization_id: string
+          provider_type?: string
+          updated_at?: string
+        }
+        Update: {
+          allowed_domains?: string[] | null
+          attribute_mapping?: Json | null
+          auto_provision?: boolean
+          created_at?: string
+          deactivate_on_removal?: boolean
+          enforce_sso?: boolean
+          id?: string
+          idp_certificate?: string | null
+          idp_entity_id?: string | null
+          idp_metadata_url?: string | null
+          idp_sso_url?: string | null
+          is_active?: boolean
+          organization_id?: string
+          provider_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sso_configs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscriptions: {
         Row: {
           cancel_at_period_end: boolean
@@ -4249,6 +4509,15 @@ export type Database = {
       is_workspace_member: {
         Args: { _user_id: string; _workspace_id: string }
         Returns: boolean
+      }
+      resolve_sso_for_email: {
+        Args: { _email: string }
+        Returns: {
+          enforce_sso: boolean
+          idp_sso_url: string
+          organization_id: string
+          provider_type: string
+        }[]
       }
       update_dataset_staleness: { Args: never; Returns: undefined }
     }
