@@ -28,6 +28,12 @@ export interface PortfolioCompany {
   updated_at: string;
 }
 
+export type NewPortfolioCompany = Omit<PortfolioCompany, "id" | "created_at" | "updated_at" | "risk_trend" | "health_status"> & {
+  organization_id: string;
+  dataset_id: string;
+  name: string;
+};
+
 /**
  * Hook to fetch portfolio companies — REQUIRES dataset_id (Active Data Contract).
  */
@@ -60,7 +66,6 @@ export const usePortfolioCompanies = (orgId: string | null, datasetId: string | 
   useEffect(() => { fetchCompanies(); }, [fetchCompanies]);
 
   const addCompany = async (company: Partial<PortfolioCompany> & { name: string; organization_id: string }) => {
-    // Active Data Contract: dataset_id is mandatory
     if (!company.dataset_id) {
       throw new Error("dataset_id is required by Active Data Contract");
     }
@@ -70,18 +75,27 @@ export const usePortfolioCompanies = (orgId: string | null, datasetId: string | 
   };
 
   const updateCompany = async (id: string, updates: Partial<PortfolioCompany>) => {
-    const { error } = await supabase.from("portfolio_companies").update({ ...updates, updated_at: new Date().toISOString() }).eq("id", id);
+    if (!orgId) throw new Error("Organization context required");
+    const { error } = await supabase
+      .from("portfolio_companies")
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq("id", id)
+      .eq("organization_id", orgId);
     if (!error) await fetchCompanies();
     else throw error;
   };
 
   const deleteCompany = async (id: string) => {
-    const { error } = await supabase.from("portfolio_companies").delete().eq("id", id);
+    if (!orgId) throw new Error("Organization context required");
+    const { error } = await supabase
+      .from("portfolio_companies")
+      .delete()
+      .eq("id", id)
+      .eq("organization_id", orgId);
     if (!error) await fetchCompanies();
     else throw error;
   };
 
-  // Aggregate metrics
   const totalAUM = companies.reduce((s, c) => s + (c.current_valuation ?? 0), 0);
   const totalRevenue = companies.reduce((s, c) => s + c.revenue_ltm, 0);
   const avgRisk = companies.length ? Math.round(companies.reduce((s, c) => s + c.risk_score, 0) / companies.length) : 0;

@@ -1,7 +1,7 @@
 import { PortfolioCompany } from "@/hooks/usePortfolioCompanies";
 import { TrendingUp, TrendingDown, Minus, AlertTriangle, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-
+import { fmtCurrency } from "@/lib/format-utils";
 interface Props {
   companies: PortfolioCompany[];
   onSelect: (company: PortfolioCompany) => void;
@@ -39,11 +39,6 @@ const statusBadge = (status: string) => {
   return <Badge className={config.className}>{config.label}</Badge>;
 };
 
-const fmt = (n: number) => {
-  if (Math.abs(n) >= 1e6) return `$${(n / 1e6).toFixed(1)}M`;
-  if (Math.abs(n) >= 1e3) return `$${(n / 1e3).toFixed(0)}K`;
-  return `$${n.toFixed(0)}`;
-};
 
 const PortfolioRiskHeatmap = ({ companies, onSelect, selectedId }: Props) => {
   if (companies.length === 0) {
@@ -94,7 +89,7 @@ const PortfolioRiskHeatmap = ({ companies, onSelect, selectedId }: Props) => {
             </div>
             <div className="flex items-center gap-3 flex-wrap">
               {statusBadge(company.health_status)}
-              <span className="text-xs text-muted-foreground">{fmt(company.revenue_ltm)} rev</span>
+              <span className="text-xs text-muted-foreground">{fmtCurrency(company.revenue_ltm)} rev</span>
               <span className="text-xs text-muted-foreground">{company.ebitda_margin_pct.toFixed(1)}% EBITDA</span>
               <span className={`text-xs ${company.revenue_growth_pct > 0 ? "text-[hsl(var(--severity-success))]" : company.revenue_growth_pct < 0 ? "text-destructive" : "text-muted-foreground"}`}>
                 {company.revenue_growth_pct > 0 ? "+" : ""}{company.revenue_growth_pct.toFixed(0)}% growth
@@ -118,7 +113,7 @@ const PortfolioRiskHeatmap = ({ companies, onSelect, selectedId }: Props) => {
               {statusBadge(company.health_status)}
             </div>
             <div className="col-span-2 text-right">
-              <span className="text-sm font-medium">{fmt(company.revenue_ltm)}</span>
+              <span className="text-sm font-medium">{fmtCurrency(company.revenue_ltm)}</span>
             </div>
             <div className="col-span-2 text-right">
               <span className={`text-sm font-medium ${company.ebitda_margin_pct < 0 ? "text-destructive" : ""}`}>

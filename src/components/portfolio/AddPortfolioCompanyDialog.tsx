@@ -6,10 +6,11 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import type { PortfolioCompany } from "@/hooks/usePortfolioCompanies";
 
 interface Props {
   organizationId: string;
-  onAdd: (company: any) => Promise<any>;
+  onAdd: (company: Partial<PortfolioCompany> & { organization_id: string; name: string }) => Promise<PortfolioCompany | undefined>;
 }
 
 const SECTORS = ["technology", "healthcare", "fintech", "saas", "e-commerce", "manufacturing", "energy", "consumer", "logistics", "other"];
@@ -34,6 +35,12 @@ const AddPortfolioCompanyDialog = ({ organizationId, onAdd }: Props) => {
 
   const update = (key: string, value: string) => setForm(p => ({ ...p, [key]: value }));
 
+  const resetForm = () => setForm({
+    name: "", sector: "technology", fund_name: "", investment_amount: "",
+    ownership_pct: "", current_valuation: "", revenue_ltm: "", ebitda_ltm: "",
+    revenue_growth_pct: "", ebitda_margin_pct: "", headcount: "",
+  });
+
   const handleSubmit = async () => {
     if (!form.name.trim()) { toast({ title: "Company name required", variant: "destructive" }); return; }
     setLoading(true);
@@ -54,7 +61,7 @@ const AddPortfolioCompanyDialog = ({ organizationId, onAdd }: Props) => {
       });
       toast({ title: "Portfolio company added" });
       setOpen(false);
-      setForm({ name: "", sector: "technology", fund_name: "", investment_amount: "", ownership_pct: "", current_valuation: "", revenue_ltm: "", ebitda_ltm: "", revenue_growth_pct: "", ebitda_margin_pct: "", headcount: "" });
+      resetForm();
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
