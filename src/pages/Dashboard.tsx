@@ -4,6 +4,7 @@ import OrgSwitcher from "@/components/dashboard/OrgSwitcher";
 import ProjectSwitcher from "@/components/dashboard/ProjectSwitcher";
 import IntelligenceStatusBar from "@/components/dashboard/IntelligenceStatusBar";
 import CommandCenter from "@/components/dashboard/CommandCenter";
+import ExecutiveQuickView from "@/components/dashboard/ExecutiveQuickView";
 import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
 
 import { useAuth } from "@/contexts/AuthContext";
@@ -11,12 +12,14 @@ import { useOrganization } from "@/hooks/useOrganization";
 import { useProject } from "@/contexts/ProjectContext";
 import { useMetrics } from "@/hooks/useMetrics";
 import { useInsights } from "@/hooks/useInsights";
-import { Bell, User, RefreshCw, Shield, Upload, Zap, TrendingUp, ArrowRight } from "lucide-react";
+import { Bell, User, RefreshCw, Shield, Upload, Zap, TrendingUp, ArrowRight, Minimize2, Maximize2 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import GuidedTour from "@/components/dashboard/GuidedTour";
+
+const VIEW_STORAGE_KEY = "quantivis_dashboard_view";
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -36,6 +39,14 @@ const Dashboard = () => {
   const [openAdvisoryCount, setOpenAdvisoryCount] = useState(0);
   const [pendingDecisions, setPendingDecisions] = useState(0);
   const [calibrationScore, setCalibrationScore] = useState<number | null>(null);
+  const [dashboardView, setDashboardView] = useState<"executive" | "full">(() => {
+    return (localStorage.getItem(VIEW_STORAGE_KEY) as "executive" | "full") || "executive";
+  });
+
+  const toggleView = (view: "executive" | "full") => {
+    setDashboardView(view);
+    localStorage.setItem(VIEW_STORAGE_KEY, view);
+  };
 
   useEffect(() => {
     if (orgLoading || !currentOrgId) return;
@@ -136,6 +147,14 @@ const Dashboard = () => {
           <div className="flex items-center gap-1 md:gap-1.5">
             {hasData && (
               <>
+                <button
+                  onClick={() => toggleView(dashboardView === "executive" ? "full" : "executive")}
+                  className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-all"
+                  title={dashboardView === "executive" ? "Switch to Full Command Center" : "Switch to Executive View"}
+                >
+                  {dashboardView === "executive" ? <Maximize2 className="w-3 h-3" /> : <Minimize2 className="w-3 h-3" />}
+                  {dashboardView === "executive" ? "Full View" : "Quick View"}
+                </button>
                 <button
                   onClick={handleRecalculate}
                   disabled={recalculating}
@@ -290,24 +309,36 @@ const Dashboard = () => {
                 </p>
               </motion.div>
 
-              <CommandCenter
-                organizationId={currentOrgId!}
-                insights={insights}
-                hasData={hasData}
-                churnRate={latestChurn}
-                revenue={totalRevenue}
-                totalCustomers={totalCustomers}
-                latestCost={latestCost}
-                pendingDecisions={pendingDecisions}
-                calibrationScore={calibrationScore}
-                metrics={metrics}
-                revenueByMonth={revenueByMonth}
-                segmentData={segmentData}
-                onDecisionLogged={() => setPendingDecisions(p => p + 1)}
-                topMetrics={topMetrics}
-                datasetId={activeDatasetId ?? undefined}
-                datasetName={currentProject?.name}
-              />
+              {dashboardView === "executive" ? (
+                <ExecutiveQuickView
+                  organizationId={currentOrgId!}
+                  pendingDecisions={pendingDecisions}
+                  calibrationScore={calibrationScore}
+                  criticalSignals={criticalInsights.length}
+                  topMetrics={topMetrics}
+                  insights={insights}
+                  onExpandToFull={() => toggleView("full")}
+                />
+              ) : (
+                <CommandCenter
+                  organizationId={currentOrgId!}
+                  insights={insights}
+                  hasData={hasData}
+                  churnRate={latestChurn}
+                  revenue={totalRevenue}
+                  totalCustomers={totalCustomers}
+                  latestCost={latestCost}
+                  pendingDecisions={pendingDecisions}
+                  calibrationScore={calibrationScore}
+                  metrics={metrics}
+                  revenueByMonth={revenueByMonth}
+                  segmentData={segmentData}
+                  onDecisionLogged={() => setPendingDecisions(p => p + 1)}
+                  topMetrics={topMetrics}
+                  datasetId={activeDatasetId ?? undefined}
+                  datasetName={currentProject?.name}
+                />
+              )}
             </>
           )}
         </main>
