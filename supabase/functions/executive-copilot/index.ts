@@ -226,7 +226,7 @@ serve(async (req) => {
           .eq("organization_id", organization_id)
           .eq("dataset_id", dataset_id)
           .order("date", { ascending: true })
-          .limit(1000)
+          .limit(10000)
       );
     }
 

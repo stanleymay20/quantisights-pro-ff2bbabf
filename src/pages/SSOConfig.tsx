@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { SidebarMobileToggle } from "@/components/layout/ProtectedShell";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,21 +8,17 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useOrganization } from "@/hooks/useOrganization";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  Shield, Key, Building2, CheckCircle2, AlertTriangle,
-  Copy, ExternalLink, Lock, Users, FileText, Info,
+  Shield, Key, FileText, Lock, Info, Copy, CheckCircle2, AlertTriangle,
 } from "lucide-react";
-import { motion } from "framer-motion";
 
 const SSOConfig = () => {
-  const { currentOrgId, currentOrg } = useOrganization();
+  const { currentOrgId } = useOrganization();
   const { toast } = useToast();
   
-  // SAML Config State
   const [samlEnabled, setSamlEnabled] = useState(false);
   const [idpEntityId, setIdpEntityId] = useState("");
   const [idpSsoUrl, setIdpSsoUrl] = useState("");
@@ -36,40 +32,90 @@ const SSOConfig = () => {
   });
   const [enforceSSO, setEnforceSSO] = useState(false);
   const [allowedDomains, setAllowedDomains] = useState("");
+  const [autoProvision, setAutoProvision] = useState(true);
+  const [deactivateOnRemoval, setDeactivateOnRemoval] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [existingConfig, setExistingConfig] = useState<any>(null);
 
-  // SP Metadata (for the customer to configure in their IdP)
   const spEntityId = `${window.location.origin}/auth/saml/${currentOrgId}`;
   const spAcsUrl = `${window.location.origin}/auth/saml/callback`;
   const spMetadataUrl = `${window.location.origin}/auth/saml/metadata/${currentOrgId}`;
+
+  // Load existing SSO config
+  useEffect(() => {
+    if (!currentOrgId) return;
+    const load = async () => {
+      setLoading(true);
+      const { data } = await supabase
+        .from("sso_configs" as any)
+        .select("*")
+        .eq("organization_id", currentOrgId)
+        .eq("provider_type", "saml")
+        .maybeSingle();
+      
+      if (data) {
+        const d = data as any;
+        setExistingConfig(d);
+        setSamlEnabled(d.is_active);
+        setIdpEntityId(d.idp_entity_id || "");
+        setIdpSsoUrl(d.idp_sso_url || "");
+        setIdpCertificate(d.idp_certificate || "");
+        setIdpMetadataUrl(d.idp_metadata_url || "");
+        setEnforceSSO(d.enforce_sso);
+        setAutoProvision(d.auto_provision);
+        setDeactivateOnRemoval(d.deactivate_on_removal);
+        setAllowedDomains((d.allowed_domains || []).join(", "));
+        if (d.attribute_mapping) setAttributeMapping(d.attribute_mapping);
+      }
+      setLoading(false);
+    };
+    load();
+  }, [currentOrgId]);
 
   const handleSave = async () => {
     if (!currentOrgId) return;
     setSaving(true);
     try {
-      // Store SSO config in org settings (using audit_log for now since we don't have a dedicated SSO table)
+      const payload = {
+        organization_id: currentOrgId,
+        provider_type: "saml",
+        idp_entity_id: idpEntityId || null,
+        idp_sso_url: idpSsoUrl || null,
+        idp_certificate: idpCertificate || null,
+        idp_metadata_url: idpMetadataUrl || null,
+        attribute_mapping: attributeMapping,
+        enforce_sso: enforceSSO,
+        allowed_domains: allowedDomains.split(",").map(d => d.trim()).filter(Boolean),
+        auto_provision: autoProvision,
+        deactivate_on_removal: deactivateOnRemoval,
+        is_active: samlEnabled,
+      };
+
+      if (existingConfig) {
+        const { error } = await supabase
+          .from("sso_configs" as any)
+          .update(payload)
+          .eq("id", existingConfig.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("sso_configs" as any)
+          .insert(payload);
+        if (error) throw error;
+      }
+
+      // Audit trail
       await supabase.from("audit_log").insert({
         organization_id: currentOrgId,
         actor_type: "user",
         action_type: "sso_config_updated",
-        resource_type: "organization",
+        resource_type: "sso_config",
         resource_id: currentOrgId,
-        payload: {
-          saml_enabled: samlEnabled,
-          idp_entity_id: idpEntityId,
-          idp_sso_url: idpSsoUrl,
-          idp_metadata_url: idpMetadataUrl,
-          enforce_sso: enforceSSO,
-          allowed_domains: allowedDomains.split(",").map(d => d.trim()).filter(Boolean),
-          attribute_mapping: attributeMapping,
-          configured_at: new Date().toISOString(),
-        },
+        payload: { saml_enabled: samlEnabled, enforce_sso: enforceSSO },
       });
 
-      toast({
-        title: "SSO Configuration Saved",
-        description: "SAML settings have been saved. Contact support to activate enterprise SSO.",
-      });
+      toast({ title: "SSO Configuration Saved", description: samlEnabled ? "SAML SSO is now active." : "Configuration saved (SSO inactive)." });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
@@ -81,6 +127,14 @@ const SSOConfig = () => {
     navigator.clipboard.writeText(text);
     toast({ title: `${label} copied to clipboard` });
   };
+
+  if (loading) {
+    return (
+      <div className="p-6 flex items-center justify-center min-h-[400px]">
+        <div className="animate-pulse text-muted-foreground">Loading SSO configuration...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 md:p-6 space-y-6 max-w-5xl mx-auto">
@@ -101,14 +155,22 @@ const SSOConfig = () => {
       </div>
 
       {/* Status Banner */}
-      <Card className="border-primary/20 bg-primary/5">
+      <Card className={samlEnabled ? "border-green-500/30 bg-green-500/5" : "border-primary/20 bg-primary/5"}>
         <CardContent className="p-4 flex items-start gap-3">
-          <Info className="w-5 h-5 text-primary mt-0.5 shrink-0" />
+          {samlEnabled ? (
+            <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 shrink-0" />
+          ) : (
+            <Info className="w-5 h-5 text-primary mt-0.5 shrink-0" />
+          )}
           <div>
-            <p className="text-sm font-medium">Enterprise SSO Readiness</p>
+            <p className="text-sm font-medium">
+              {samlEnabled ? "SSO Active" : "SSO Not Configured"}
+            </p>
             <p className="text-xs text-muted-foreground mt-1">
-              Configure your SAML 2.0 identity provider below. Once saved, contact your account manager 
-              to activate SSO for your organization. Supported providers: Okta, Azure AD, OneLogin, Google Workspace, PingIdentity.
+              {samlEnabled 
+                ? `SAML SSO is active for domains: ${allowedDomains || "none configured"}. ${enforceSSO ? "Password login is disabled." : "Password login remains available as fallback."}`
+                : "Configure your SAML 2.0 identity provider below. Supported: Okta, Azure AD, OneLogin, Google Workspace, PingIdentity."
+              }
             </p>
           </div>
         </CardContent>
@@ -285,7 +347,7 @@ const SSOConfig = () => {
                     Automatically create accounts for new SSO users from allowed domains.
                   </p>
                 </div>
-                <Switch defaultChecked />
+                <Switch checked={autoProvision} onCheckedChange={setAutoProvision} />
               </div>
 
               <div className="flex items-center justify-between p-3 rounded-lg border">
@@ -295,7 +357,7 @@ const SSOConfig = () => {
                     Automatically deactivate user accounts when removed from the identity provider.
                   </p>
                 </div>
-                <Switch defaultChecked />
+                <Switch checked={deactivateOnRemoval} onCheckedChange={setDeactivateOnRemoval} />
               </div>
 
               <Button onClick={handleSave} disabled={saving} className="w-full">
