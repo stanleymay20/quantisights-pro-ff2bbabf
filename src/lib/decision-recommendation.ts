@@ -142,6 +142,7 @@ export function generateRecommendation(input: RecommendationInput): StructuredRe
     whatHappenedClassification = "AI_RECOMMENDATION";
   } else if (msg.length > 20) {
     whatHappened = msg.slice(0, 200);
+    whatHappenedClassification = "OBSERVED_FACT";
   } else {
     const metricLabel = met || cat || "monitored metric";
     const trendVerb = trend === "up" ? "increasing" : trend === "down" ? "declining" : "shifting";
