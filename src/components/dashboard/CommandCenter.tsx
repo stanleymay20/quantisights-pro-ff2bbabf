@@ -47,6 +47,8 @@ const CommandCenter = memo(({
   segmentData,
   onDecisionLogged,
   topMetrics,
+  datasetId,
+  datasetName,
 }: CommandCenterProps) => {
   const [showAnalytics, setShowAnalytics] = useState(false);
 
