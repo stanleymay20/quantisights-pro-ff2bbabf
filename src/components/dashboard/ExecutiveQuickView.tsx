@@ -151,12 +151,11 @@ const ExecutiveQuickView = memo(({
                   insight.severity === "high" ? "bg-destructive" : "bg-amber-500"
                 }`} />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{insight.title}</p>
-                  <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{insight.summary}</p>
+                  <p className="text-sm font-medium line-clamp-2">{insight.message}</p>
                 </div>
-                {insight.confidence != null && (
+                {insight.confidence_score != null && (
                   <span className="text-[10px] font-mono text-muted-foreground shrink-0">
-                    {Math.round(insight.confidence * 100)}%
+                    {Math.round(insight.confidence_score * 100)}%
                   </span>
                 )}
               </div>
