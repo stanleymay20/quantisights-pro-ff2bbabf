@@ -197,7 +197,7 @@ const DataQualityScorecard = () => {
               <span>Type: {latestDbt.check_type?.replace("dbt_", "")}</span>
               <span>Score: {latestDbt.score}%</span>
               {latestDbt.records_failed ? (
-                <span className="text-red-500">{latestDbt.records_failed} failures</span>
+                <span className="text-destructive">{latestDbt.records_failed} failures</span>
               ) : null}
             </div>
           </CardContent>
