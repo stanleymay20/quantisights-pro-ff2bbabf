@@ -310,5 +310,12 @@ function inferSuccessMetrics(category: string, metricType: string): string[] {
   } else if (key.includes("calibration")) {
     return ["Calibration score improvement", "Brier score reduction", "Pending outcomes closed"];
   }
-  return ["KPI trend direction", "Variance from baseline", "Time to resolution"];
+
+  // Domain-agnostic fallback: derive from the metric type itself
+  const metricLabel = metricType?.replace(/_/g, " ") || category?.replace(/_/g, " ") || "primary metric";
+  return [
+    `${metricLabel} trend direction (period-over-period)`,
+    `${metricLabel} variance from computed baseline`,
+    `Volatility reduction (coefficient of variation)`,
+  ];
 }

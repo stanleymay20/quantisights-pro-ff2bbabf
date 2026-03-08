@@ -219,13 +219,15 @@ export interface TraceabilityRecord {
 
 export function buildTraceability(opts: {
   datasetId: string;
+  /** Human-readable dataset name for executive-facing surfaces */
+  datasetName?: string;
   dataRowsUsed: number;
   metricTypes: string[];
   modelUsed: string;
   limitations?: string[];
 }): TraceabilityRecord {
   return {
-    sourceDataset: opts.datasetId,
+    sourceDataset: opts.datasetName || opts.datasetId,
     dataRowsUsed: opts.dataRowsUsed,
     metricTransformationPath: `raw → ${opts.metricTypes.join(", ")} → statistical summary → AI analysis`,
     modelOrHeuristic: opts.modelUsed,
