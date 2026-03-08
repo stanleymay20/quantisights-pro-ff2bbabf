@@ -312,9 +312,15 @@ const StrategicSimulation = ({ organizationId, datasetId, roleType, tier }: Prop
                 <CardHeader className="pb-2">
                     <CardTitle className="text-base">KPI Impact Projections</CardTitle>
                     <div className="flex items-center gap-2 mt-1">
-                      <span className="text-[9px] font-bold uppercase tracking-wider text-warning bg-warning/10 px-1.5 py-0.5 rounded">Heuristic</span>
+                      <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${
+                        result.model_disclosure?.classification === "CALIBRATED_MODEL"
+                          ? "text-success bg-success/10"
+                          : "text-warning bg-warning/10"
+                      }`}>
+                        {result.model_disclosure?.classification === "CALIBRATED_MODEL" ? "Calibrated" : "Estimate"}
+                      </span>
                       <p className="text-xs text-muted-foreground">
-                        Estimates based on assumed linear sensitivity coefficients (0.7 revenue, 0.3 cost). Not calibrated to historical data.
+                        {result.model_disclosure?.kpi_model || "KPI projections based on scenario deltas and historical sensitivity."}
                       </p>
                     </div>
                   </CardHeader>
