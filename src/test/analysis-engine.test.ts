@@ -139,7 +139,8 @@ describe("Anomaly detection", () => {
   });
 
   it("rolling deviation detects contextual anomalies", () => {
-    const vals = [10, 10, 10, 10, 10, 10, 10, 10, 10, 50];
+    // Need variance in the window so stdDev > 0
+    const vals = [10, 11, 10, 12, 11, 10, 11, 10, 12, 11, 50];
     const anomalies = rollingDeviationAnomalies(vals, 7, 2);
     expect(anomalies.length).toBeGreaterThan(0);
   });
