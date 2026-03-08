@@ -18,6 +18,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import GuidedTour from "@/components/dashboard/GuidedTour";
+import WelcomeFlow from "@/components/dashboard/WelcomeFlow";
 
 const VIEW_STORAGE_KEY = "quantivis_dashboard_view";
 
