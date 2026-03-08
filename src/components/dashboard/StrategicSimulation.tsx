@@ -19,13 +19,19 @@ interface SimulationResult {
   projected_components: { deviation: number; trend: number; volatility: number; forecast: number };
   risk_delta: number;
   escalation_triggered: boolean;
-  kpi_projections: { kpi_name: string; baseline_value: number; projected_value: number; delta_percent: number }[];
+  kpi_projections: { kpi_name: string; baseline_value: number; projected_value: number; delta_percent: number; model_type?: string; note?: string }[];
   ai_board_summary: string;
   ai_recommended_actions: string[];
+  model_disclosure?: {
+    classification?: string;
+    kpi_model?: string;
+    risk_model?: string;
+  };
 }
 
 interface Props {
   organizationId: string;
+  datasetId: string;
   roleType: string;
   tier: string | null;
 }
@@ -79,7 +85,7 @@ const RiskDial = ({ score, label, size = "lg" }: { score: number; label: string;
   );
 };
 
-const StrategicSimulation = ({ organizationId, roleType, tier }: Props) => {
+const StrategicSimulation = ({ organizationId, datasetId, roleType, tier }: Props) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<SimulationResult | null>(null);
@@ -93,12 +99,18 @@ const StrategicSimulation = ({ organizationId, roleType, tier }: Props) => {
   const isWarRoom = result?.escalation_triggered === true;
 
   const runSimulation = async () => {
+    if (!datasetId) {
+      toast({ title: "Simulation Error", description: "Select an active dataset before running simulation.", variant: "destructive" });
+      return;
+    }
+
     setLoading(true);
     setResult(null);
     try {
       const { data, error } = await supabase.functions.invoke("strategic-simulation", {
         body: {
           organization_id: organizationId,
+          dataset_id: datasetId,
           role_type: roleType,
           scenario_parameters: {
             revenue_change_percent: revenueChange,
@@ -300,9 +312,15 @@ const StrategicSimulation = ({ organizationId, roleType, tier }: Props) => {
                 <CardHeader className="pb-2">
                     <CardTitle className="text-base">KPI Impact Projections</CardTitle>
                     <div className="flex items-center gap-2 mt-1">
-                      <span className="text-[9px] font-bold uppercase tracking-wider text-warning bg-warning/10 px-1.5 py-0.5 rounded">Heuristic</span>
+                      <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${
+                        result.model_disclosure?.classification === "CALIBRATED_MODEL"
+                          ? "text-success bg-success/10"
+                          : "text-warning bg-warning/10"
+                      }`}>
+                        {result.model_disclosure?.classification === "CALIBRATED_MODEL" ? "Calibrated" : "Estimate"}
+                      </span>
                       <p className="text-xs text-muted-foreground">
-                        Estimates based on assumed linear sensitivity coefficients (0.7 revenue, 0.3 cost). Not calibrated to historical data.
+                        {result.model_disclosure?.kpi_model || "KPI projections based on scenario deltas and historical sensitivity."}
                       </p>
                     </div>
                   </CardHeader>

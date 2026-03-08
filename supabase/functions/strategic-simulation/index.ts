@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { fetchCalibrationModel } from "../_shared/adaptive-confidence.ts";
+import { enforceDatasetContract } from "../_shared/dataset-contract.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -15,11 +16,12 @@ const TIER_LIMITS: Record<string, number> = {
 };
 
 interface SimulationInput {
-  revenue_change_percent: number | null;
-  cost_change_percent: number | null;
-  headcount_change_percent: number | null;
-  marketing_spend_change_percent: number | null;
+  revenue_change_percent: number;
+  cost_change_percent: number;
+  headcount_change_percent: number;
+  marketing_spend_change_percent: number;
   custom_notes: string | null;
+  metric_changes: Record<string, number>;
 }
 
 interface RiskComponents {
@@ -27,6 +29,12 @@ interface RiskComponents {
   trend: number;
   volatility: number;
   forecast: number;
+}
+
+interface MetricBaseline {
+  metric: string;
+  normalizedMetric: string;
+  baseline: number;
 }
 
 interface CalibratedCoefficients {
@@ -41,143 +49,287 @@ interface CalibratedCoefficients {
   marketing_to_forecast: number;
   kpi_revenue_sensitivity: number;
   kpi_cost_sensitivity: number;
-  calibration_source: "historical_regression" | "heuristic_default";
+  calibration_source: "historical_regression";
   data_points_used: number;
   r_squared: number | null;
+  calibration_basis: {
+    primary_metric: string;
+    secondary_metric: string;
+  };
 }
 
-// Default heuristic coefficients — used ONLY when historical data is insufficient
-const HEURISTIC_DEFAULTS: CalibratedCoefficients = {
-  revenue_to_deviation: 1.5,
-  revenue_to_volatility: 0.8,
-  revenue_to_forecast: 1.0,
-  cost_to_trend: 0.6,
-  cost_to_deviation: 0.4,
-  headcount_to_volatility: 1.2,
-  headcount_to_trend: 0.8,
-  headcount_to_forecast: 0.5,
-  marketing_to_forecast: 0.6,
-  kpi_revenue_sensitivity: 0.7,
-  kpi_cost_sensitivity: 0.3,
-  calibration_source: "heuristic_default",
-  data_points_used: 0,
-  r_squared: null,
-};
+type CalibrationResult =
+  | { ok: true; coefficients: CalibratedCoefficients }
+  | {
+      ok: false;
+      reason: string;
+      required: { min_metrics: number; min_points_per_metric: number };
+      available: { metrics_with_enough_points: number; total_rows: number };
+    };
 
-/**
- * Calibrate coefficients from historical metric data using OLS regression.
- * Requires ≥12 data points. Falls back to heuristics if insufficient.
- */
+function normalizeMetricKey(value: string): string {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[%()]/g, "")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
+function toFiniteNumber(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return null;
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
+function average(values: number[]): number {
+  if (values.length === 0) return 0;
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
+function inferMetricChange(
+  metricChanges: Record<string, number>,
+  keywords: string[],
+): number {
+  const hits = Object.entries(metricChanges)
+    .filter(([metric]) => keywords.some((keyword) => metric.includes(keyword)))
+    .map(([, change]) => change);
+  return hits.length > 0 ? average(hits) : 0;
+}
+
+function parseScenarioParameters(raw: unknown): SimulationInput {
+  const input = (raw && typeof raw === "object") ? raw as Record<string, unknown> : {};
+
+  const metric_changes: Record<string, number> = {};
+  for (const [key, value] of Object.entries(input)) {
+    if (!key.endsWith("_change_percent")) continue;
+    const metricKey = normalizeMetricKey(key.slice(0, -"_change_percent".length));
+    if (!metricKey) continue;
+    const parsed = toFiniteNumber(value);
+    if (parsed === null) continue;
+    metric_changes[metricKey] = clamp(parsed, -95, 300);
+  }
+
+  const explicitRevenue = toFiniteNumber(input.revenue_change_percent);
+  const explicitCost = toFiniteNumber(input.cost_change_percent);
+  const explicitHeadcount = toFiniteNumber(input.headcount_change_percent);
+  const explicitMarketing = toFiniteNumber(input.marketing_spend_change_percent);
+
+  const inferredRevenue = inferMetricChange(metric_changes, ["revenue", "sales", "arr", "mrr", "gmv"]);
+  const inferredCost = inferMetricChange(metric_changes, ["cost", "expense", "opex", "cac"]);
+  const inferredHeadcount = inferMetricChange(metric_changes, ["headcount", "fte", "staff", "employee"]);
+  const inferredMarketing = inferMetricChange(metric_changes, ["marketing", "ad", "acquisition", "campaign"]);
+
+  return {
+    revenue_change_percent: clamp(explicitRevenue ?? inferredRevenue, -95, 300),
+    cost_change_percent: clamp(explicitCost ?? inferredCost, -95, 300),
+    headcount_change_percent: clamp(explicitHeadcount ?? inferredHeadcount, -95, 300),
+    marketing_spend_change_percent: clamp(explicitMarketing ?? inferredMarketing, -95, 300),
+    custom_notes: typeof input.custom_notes === "string" && input.custom_notes.trim().length > 0
+      ? input.custom_notes.trim().slice(0, 1000)
+      : null,
+    metric_changes,
+  };
+}
+
+function computeVolatility(logReturns: number[]): number {
+  if (logReturns.length < 2) return 0;
+  const mean = average(logReturns);
+  const variance = logReturns.reduce((sum, value) => sum + (value - mean) ** 2, 0) / (logReturns.length - 1);
+  return Math.sqrt(Math.max(variance, 0));
+}
+
+function toLogReturns(values: number[]): number[] {
+  const returns: number[] = [];
+  for (let i = 1; i < values.length; i++) {
+    if (values[i - 1] > 0 && values[i] > 0) {
+      returns.push(Math.log(values[i] / values[i - 1]));
+    }
+  }
+  return returns;
+}
+
+function computeRsquared(series: number[]): number | null {
+  if (series.length < 8) return null;
+  const x = series.slice(0, -1);
+  const y = series.slice(1);
+  const xMean = average(x);
+  const yMean = average(y);
+
+  let numerator = 0;
+  let denominator = 0;
+  for (let i = 0; i < x.length; i++) {
+    numerator += (x[i] - xMean) * (y[i] - yMean);
+    denominator += (x[i] - xMean) ** 2;
+  }
+
+  if (denominator === 0) return null;
+  const slope = numerator / denominator;
+  const intercept = yMean - slope * xMean;
+
+  let ssResidual = 0;
+  let ssTotal = 0;
+  for (let i = 0; i < x.length; i++) {
+    const predicted = intercept + slope * x[i];
+    ssResidual += (y[i] - predicted) ** 2;
+    ssTotal += (y[i] - yMean) ** 2;
+  }
+
+  if (ssTotal === 0) return null;
+  const rSquared = 1 - ssResidual / ssTotal;
+  return Math.round(clamp(rSquared, 0, 1) * 1000) / 1000;
+}
+
 async function calibrateFromHistory(
   serviceClient: any,
   organizationId: string,
-  datasetId?: string
-): Promise<CalibratedCoefficients> {
-  // Fetch historical metric pairs for regression
-  const query = serviceClient
+  datasetId: string,
+): Promise<CalibrationResult> {
+  const { data: rows, error } = await serviceClient
     .from("metrics")
     .select("metric_type, value, date")
     .eq("organization_id", organizationId)
-    .order("date", { ascending: true });
+    .eq("dataset_id", datasetId)
+    .order("date", { ascending: true })
+    .limit(20000);
 
-  if (datasetId) query.eq("dataset_id", datasetId);
-
-  const { data: allMetrics } = await query;
-
-  if (!allMetrics || allMetrics.length < 24) {
-    return { ...HEURISTIC_DEFAULTS };
+  if (error) {
+    return {
+      ok: false,
+      reason: "Unable to fetch historical metrics for model calibration.",
+      required: { min_metrics: 2, min_points_per_metric: 8 },
+      available: { metrics_with_enough_points: 0, total_rows: 0 },
+    };
   }
 
-  // Group by metric type
-  const byType = new Map<string, { value: number; date: string }[]>();
-  for (const m of allMetrics) {
-    const list = byType.get(m.metric_type) || [];
-    list.push({ value: Number(m.value), date: m.date });
-    byType.set(m.metric_type, list);
-  }
+  const seriesByMetric = new Map<string, { label: string; values: number[] }>();
+  for (const row of rows || []) {
+    const metric = normalizeMetricKey(String(row.metric_type || ""));
+    const value = toFiniteNumber(row.value);
+    if (!metric || value === null) continue;
 
-  // Simple OLS: compute sensitivity of KPI changes to revenue/cost changes
-  const revenueData = byType.get("revenue") || [];
-  const costData = byType.get("cost") || [];
-  const totalDataPoints = revenueData.length + costData.length;
-
-  if (totalDataPoints < 12) {
-    return { ...HEURISTIC_DEFAULTS };
-  }
-
-  // Compute log-returns for available series
-  const logReturns = (data: { value: number }[]): number[] => {
-    const returns: number[] = [];
-    for (let i = 1; i < data.length; i++) {
-      if (data[i - 1].value > 0 && data[i].value > 0) {
-        returns.push(Math.log(data[i].value / data[i - 1].value));
-      }
+    if (!seriesByMetric.has(metric)) {
+      seriesByMetric.set(metric, { label: String(row.metric_type), values: [] });
     }
-    return returns;
-  };
-
-  const revReturns = logReturns(revenueData);
-  const costReturns = logReturns(costData);
-
-  // Compute volatility-based sensitivity scaling
-  const computeVol = (returns: number[]): number => {
-    if (returns.length < 2) return 0.2; // default
-    const m = returns.reduce((s, v) => s + v, 0) / returns.length;
-    const v = returns.reduce((s, r) => s + (r - m) ** 2, 0) / (returns.length - 1);
-    return Math.sqrt(v);
-  };
-
-  const revVol = computeVol(revReturns);
-  const costVol = computeVol(costReturns);
-
-  // Scale coefficients based on observed volatility relative to heuristic assumptions
-  // Higher volatility → higher sensitivity coefficients
-  const revScale = Math.min(3, Math.max(0.3, revVol / 0.1));
-  const costScale = Math.min(3, Math.max(0.3, costVol / 0.08));
-
-  // Compute R² for the revenue series as a model quality indicator
-  let rSquared: number | null = null;
-  if (revReturns.length >= 6) {
-    const mean = revReturns.reduce((s, v) => s + v, 0) / revReturns.length;
-    const ssTot = revReturns.reduce((s, v) => s + (v - mean) ** 2, 0);
-    // Simple linear model: predict return[i] from return[i-1]
-    let ssRes = 0;
-    for (let i = 1; i < revReturns.length; i++) {
-      const predicted = mean; // baseline model
-      ssRes += (revReturns[i] - predicted) ** 2;
-    }
-    rSquared = ssTot > 0 ? Math.round((1 - ssRes / ssTot) * 1000) / 1000 : 0;
+    seriesByMetric.get(metric)!.values.push(value);
   }
 
-  return {
-    revenue_to_deviation: Math.round(HEURISTIC_DEFAULTS.revenue_to_deviation * revScale * 100) / 100,
-    revenue_to_volatility: Math.round(HEURISTIC_DEFAULTS.revenue_to_volatility * revScale * 100) / 100,
-    revenue_to_forecast: Math.round(HEURISTIC_DEFAULTS.revenue_to_forecast * revScale * 100) / 100,
-    cost_to_trend: Math.round(HEURISTIC_DEFAULTS.cost_to_trend * costScale * 100) / 100,
-    cost_to_deviation: Math.round(HEURISTIC_DEFAULTS.cost_to_deviation * costScale * 100) / 100,
-    headcount_to_volatility: HEURISTIC_DEFAULTS.headcount_to_volatility,
-    headcount_to_trend: HEURISTIC_DEFAULTS.headcount_to_trend,
-    headcount_to_forecast: HEURISTIC_DEFAULTS.headcount_to_forecast,
-    marketing_to_forecast: HEURISTIC_DEFAULTS.marketing_to_forecast,
-    kpi_revenue_sensitivity: Math.round(Math.min(0.95, revScale * 0.5) * 100) / 100,
-    kpi_cost_sensitivity: Math.round(Math.min(0.6, costScale * 0.25) * 100) / 100,
+  const candidates = Array.from(seriesByMetric.entries())
+    .map(([metricKey, payload]) => ({
+      metricKey,
+      label: payload.label,
+      values: payload.values,
+      returns: toLogReturns(payload.values),
+    }))
+    .filter((series) => series.values.length >= 8 && series.returns.length >= 6)
+    .sort((a, b) => b.values.length - a.values.length);
+
+  if (candidates.length < 2) {
+    return {
+      ok: false,
+      reason: "Simulation refused: insufficient historical depth for calibration. Need at least two metric series with 8+ observations each.",
+      required: { min_metrics: 2, min_points_per_metric: 8 },
+      available: {
+        metrics_with_enough_points: candidates.length,
+        total_rows: rows?.length ?? 0,
+      },
+    };
+  }
+
+  const primary = candidates[0];
+  const secondary = candidates[1];
+
+  const primaryVol = computeVolatility(primary.returns);
+  const secondaryVol = computeVolatility(secondary.returns);
+  if (primaryVol === 0 || secondaryVol === 0) {
+    return {
+      ok: false,
+      reason: "Simulation refused: historical variance is too low to estimate meaningful sensitivity coefficients.",
+      required: { min_metrics: 2, min_points_per_metric: 8 },
+      available: {
+        metrics_with_enough_points: candidates.length,
+        total_rows: rows?.length ?? 0,
+      },
+    };
+  }
+
+  const primaryScale = clamp(primaryVol / 0.1, 0.3, 3);
+  const secondaryScale = clamp(secondaryVol / 0.08, 0.3, 3);
+
+  const coefficients: CalibratedCoefficients = {
+    revenue_to_deviation: Math.round(1.5 * primaryScale * 100) / 100,
+    revenue_to_volatility: Math.round(0.8 * primaryScale * 100) / 100,
+    revenue_to_forecast: Math.round(1.0 * primaryScale * 100) / 100,
+    cost_to_trend: Math.round(0.6 * secondaryScale * 100) / 100,
+    cost_to_deviation: Math.round(0.4 * secondaryScale * 100) / 100,
+    headcount_to_volatility: Math.round((0.8 + primaryScale * 0.4) * 100) / 100,
+    headcount_to_trend: Math.round((0.5 + secondaryScale * 0.3) * 100) / 100,
+    headcount_to_forecast: Math.round((0.4 + primaryScale * 0.2) * 100) / 100,
+    marketing_to_forecast: Math.round((0.4 + primaryScale * 0.2) * 100) / 100,
+    kpi_revenue_sensitivity: Math.round(clamp(primaryScale * 0.5, 0.1, 0.95) * 100) / 100,
+    kpi_cost_sensitivity: Math.round(clamp(secondaryScale * 0.25, 0.05, 0.6) * 100) / 100,
     calibration_source: "historical_regression",
-    data_points_used: totalDataPoints,
-    r_squared: rSquared,
+    data_points_used: primary.values.length + secondary.values.length,
+    r_squared: computeRsquared(primary.returns),
+    calibration_basis: {
+      primary_metric: primary.label,
+      secondary_metric: secondary.label,
+    },
   };
+
+  return { ok: true, coefficients };
+}
+
+async function fetchMetricBaselines(
+  serviceClient: any,
+  organizationId: string,
+  datasetId: string,
+): Promise<MetricBaseline[]> {
+  const { data } = await serviceClient
+    .from("metrics")
+    .select("metric_type, value, date")
+    .eq("organization_id", organizationId)
+    .eq("dataset_id", datasetId)
+    .order("date", { ascending: false })
+    .limit(5000);
+
+  const baselineMap = new Map<string, MetricBaseline>();
+
+  for (const row of data || []) {
+    const value = toFiniteNumber(row.value);
+    if (value === null) continue;
+
+    const normalizedMetric = normalizeMetricKey(String(row.metric_type || ""));
+    if (!normalizedMetric || baselineMap.has(normalizedMetric)) continue;
+
+    baselineMap.set(normalizedMetric, {
+      metric: String(row.metric_type),
+      normalizedMetric,
+      baseline: value,
+    });
+  }
+
+  return Array.from(baselineMap.values());
 }
 
 function computeProjectedRisk(
   baseline: RiskComponents,
   params: SimulationInput,
-  coeffs: CalibratedCoefficients
+  coeffs: CalibratedCoefficients,
 ): { components: RiskComponents; score: number } {
   let { deviation, trend, volatility, forecast } = { ...baseline };
 
-  const revChange = params.revenue_change_percent || 0;
-  const costChange = params.cost_change_percent || 0;
-  const headcountChange = params.headcount_change_percent || 0;
-  const marketingChange = params.marketing_spend_change_percent || 0;
+  const revChange = params.revenue_change_percent;
+  const costChange = params.cost_change_percent;
+  const headcountChange = params.headcount_change_percent;
+  const marketingChange = params.marketing_spend_change_percent;
 
   if (revChange < 0) {
     deviation = Math.min(100, deviation + Math.abs(revChange) * coeffs.revenue_to_deviation);
@@ -212,16 +364,17 @@ function computeProjectedRisk(
     forecast = Math.max(0, forecast - marketingChange * (coeffs.marketing_to_forecast * 0.5));
   }
 
-  deviation = Math.round(Math.max(0, Math.min(100, deviation)));
-  trend = Math.round(Math.max(0, Math.min(100, trend)));
-  volatility = Math.round(Math.max(0, Math.min(100, volatility)));
-  forecast = Math.round(Math.max(0, Math.min(100, forecast)));
+  deviation = Math.round(clamp(deviation, 0, 100));
+  trend = Math.round(clamp(trend, 0, 100));
+  volatility = Math.round(clamp(volatility, 0, 100));
+  forecast = Math.round(clamp(forecast, 0, 100));
 
-  const score = Math.round(
-    0.4 * deviation + 0.2 * volatility + 0.2 * trend + 0.2 * forecast
-  );
+  const score = Math.round(0.4 * deviation + 0.2 * volatility + 0.2 * trend + 0.2 * forecast);
 
-  return { components: { deviation, trend, volatility, forecast }, score };
+  return {
+    components: { deviation, trend, volatility, forecast },
+    score,
+  };
 }
 
 serve(async (req) => {
@@ -233,7 +386,8 @@ serve(async (req) => {
     const authHeader = req.headers.get("authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -249,51 +403,63 @@ serve(async (req) => {
     const { data: { user }, error: userError } = await userClient.auth.getUser();
     if (userError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const { organization_id, role_type, scenario_parameters, dataset_id } = await req.json();
+    const body = await req.json();
+    const datasetContract = await enforceDatasetContract(body, serviceClient);
+    if (datasetContract.response) return datasetContract.response;
 
-    if (!organization_id || !role_type || !scenario_parameters) {
-      return new Response(JSON.stringify({ error: "organization_id, role_type, scenario_parameters required" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    const organization_id = datasetContract.organization_id;
+    const dataset_id = datasetContract.dataset_id;
+    const role_type = typeof body.role_type === "string" ? body.role_type : "";
+
+    if (!role_type || typeof body.scenario_parameters !== "object" || body.scenario_parameters === null) {
+      return new Response(JSON.stringify({ error: "role_type and scenario_parameters required" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Verify membership
     const { data: isMember } = await serviceClient.rpc("is_org_member", {
-      _user_id: user.id, _org_id: organization_id,
+      _user_id: user.id,
+      _org_id: organization_id,
     });
+
     if (!isMember) {
       return new Response(JSON.stringify({ error: "Forbidden" }), {
-        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Check tier
     const { data: sub } = await serviceClient
-      .from("subscriptions").select("tier")
-      .eq("organization_id", organization_id).eq("status", "active").maybeSingle();
-    const tier = sub?.tier || "starter";
-    const dailyLimit = TIER_LIMITS[tier] || 5;
+      .from("subscriptions")
+      .select("tier")
+      .eq("organization_id", organization_id)
+      .eq("status", "active")
+      .maybeSingle();
 
-    // Check usage
+    const tier = sub?.tier || "starter";
+    const dailyLimit = TIER_LIMITS[tier] || TIER_LIMITS.starter;
+
     const today = new Date().toISOString().split("T")[0];
     const { data: usage } = await serviceClient
-      .from("simulation_usage").select("call_count")
-      .eq("organization_id", organization_id).eq("date", today).maybeSingle();
+      .from("simulation_usage")
+      .select("call_count")
+      .eq("organization_id", organization_id)
+      .eq("date", today)
+      .maybeSingle();
+
     if ((usage?.call_count || 0) >= dailyLimit) {
       return new Response(
         JSON.stringify({ error: `Daily simulation limit reached (${dailyLimit} for ${tier} tier)` }),
-        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    // Increment usage
-    await serviceClient.rpc("increment_simulation_usage" as any, { _org_id: organization_id });
-
-    // Fetch baseline risk index
     const { data: riskData } = await serviceClient
       .from("executive_risk_index")
       .select("score, components")
@@ -301,106 +467,112 @@ serve(async (req) => {
       .eq("role_type", role_type)
       .maybeSingle();
 
-    // If no baseline risk data exists, we cannot simulate — return honest response
     if (!riskData) {
       return new Response(JSON.stringify({
-        error: null,
-        message: "No baseline risk index exists for this role. Run the executive risk computation first to establish a baseline before simulating scenarios.",
-        baseline_risk: null,
-        baseline_components: null,
-        projected_risk: null,
-        projected_components: null,
-        risk_delta: null,
-        escalation_triggered: false,
-        kpi_projections: [],
-        ai_board_summary: "Insufficient data: No baseline risk index has been computed for this role. Cannot project scenario impact without an established baseline.",
-        ai_recommended_actions: ["Compute baseline risk index via Executive Command Mode", "Upload sufficient metric data to enable risk modeling"],
+        error: "Simulation unavailable: no baseline executive risk index exists for this role.",
+        recommendation: "Run Executive Command Mode first to compute baseline risk before scenario simulation.",
       }), {
+        status: 422,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const baselineComponents: RiskComponents = riskData.components as any;
-    const baselineRisk = riskData.score;
+    const metricBaselines = await fetchMetricBaselines(serviceClient, organization_id, dataset_id);
+    if (metricBaselines.length === 0) {
+      return new Response(JSON.stringify({
+        error: "Simulation unavailable: this dataset has no numeric metric baselines.",
+        recommendation: "Upload valid metric rows (metric_type, date, value) to run strategic simulation.",
+      }), {
+        status: 422,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
-    // Fetch KPI baselines
-    const { data: kpiValues } = await serviceClient
-      .from("kpi_values")
-      .select("kpi_id, value, date, kpis(name)")
-      .eq("organization_id", organization_id)
-      .order("date", { ascending: false })
-      .limit(50);
+    const calibration = await calibrateFromHistory(serviceClient, organization_id, dataset_id);
+    if (!calibration.ok) {
+      return new Response(JSON.stringify({
+        error: calibration.reason,
+        details: {
+          required: calibration.required,
+          available: calibration.available,
+          recommendation: "Provide deeper time-series history to enable calibrated simulation.",
+        },
+      }), {
+        status: 422,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
-    // Calibrate coefficients from historical data
-    const coefficients = await calibrateFromHistory(serviceClient, organization_id, dataset_id);
+    await serviceClient.rpc("increment_simulation_usage" as never, { _org_id: organization_id });
 
-    // Compute deterministic projection
-    const params: SimulationInput = {
-      revenue_change_percent: scenario_parameters.revenue_change_percent ?? null,
-      cost_change_percent: scenario_parameters.cost_change_percent ?? null,
-      headcount_change_percent: scenario_parameters.headcount_change_percent ?? null,
-      marketing_spend_change_percent: scenario_parameters.marketing_spend_change_percent ?? null,
-      custom_notes: scenario_parameters.custom_notes ?? null,
-    };
+    const coefficients = calibration.coefficients;
+    const params = parseScenarioParameters(body.scenario_parameters);
+
+    const baselineComponents: RiskComponents = riskData.components as RiskComponents;
+    const baselineRisk = Number(riskData.score);
 
     const projected = computeProjectedRisk(baselineComponents, params, coefficients);
     const riskDelta = projected.score - baselineRisk;
     const escalationTriggered = projected.score >= 80;
 
-    // Build KPI projections using calibrated coefficients
-    const kpiMap: Record<string, { name: string; baseline: number }> = {};
-    if (kpiValues) {
-      for (const kv of kpiValues as any[]) {
-        const name = kv.kpis?.name || kv.kpi_id;
-        if (!kpiMap[name]) {
-          kpiMap[name] = { name, baseline: Number(kv.value) };
-        }
-      }
-    }
+    const revImpact = params.revenue_change_percent / 100;
+    const costImpact = params.cost_change_percent / 100;
 
-    const kpiProjections = Object.values(kpiMap).map(kpi => {
-      const revImpact = (params.revenue_change_percent || 0) / 100;
-      const costImpact = (params.cost_change_percent || 0) / 100;
-      const projectedValue = kpi.baseline * (1 + revImpact * coefficients.kpi_revenue_sensitivity - costImpact * coefficients.kpi_cost_sensitivity);
-      const isCalibrated = coefficients.calibration_source === "historical_regression";
-      return {
-        kpi_name: kpi.name,
-        baseline_value: Math.round(kpi.baseline * 100) / 100,
-        projected_value: Math.round(projectedValue * 100) / 100,
-        delta_percent: Math.round((projectedValue / kpi.baseline - 1) * 10000) / 100,
-        model_type: isCalibrated ? "calibrated_sensitivity" : "heuristic_linear_sensitivity",
-        note: isCalibrated
-          ? `Coefficients calibrated from ${coefficients.data_points_used} historical data points (R²=${coefficients.r_squared ?? "N/A"}).`
-          : "Heuristic estimate — insufficient historical data for calibration.",
-      };
-    });
+    const kpiProjections = metricBaselines
+      .map((metric) => {
+        const directDelta = params.metric_changes[metric.normalizedMetric];
+        const projectedValue = typeof directDelta === "number"
+          ? metric.baseline * (1 + directDelta / 100)
+          : metric.baseline * (1 + revImpact * coefficients.kpi_revenue_sensitivity - costImpact * coefficients.kpi_cost_sensitivity);
 
-    // Log deterministic results
+        const deltaPercent = metric.baseline === 0
+          ? 0
+          : ((projectedValue / metric.baseline) - 1) * 100;
+
+        return {
+          kpi_name: metric.metric,
+          baseline_value: Math.round(metric.baseline * 100) / 100,
+          projected_value: Math.round(projectedValue * 100) / 100,
+          delta_percent: Math.round(deltaPercent * 100) / 100,
+          model_type: typeof directDelta === "number" ? "dataset_metric_shift" : "calibrated_sensitivity",
+          note: typeof directDelta === "number"
+            ? `Scenario input includes direct ${metric.metric} change (${directDelta > 0 ? "+" : ""}${Math.round(directDelta * 100) / 100}%).`
+            : `Projected via calibrated sensitivity model (revenue=${coefficients.kpi_revenue_sensitivity}, cost=${coefficients.kpi_cost_sensitivity}).`,
+        };
+      })
+      .sort((a, b) => Math.abs(b.delta_percent) - Math.abs(a.delta_percent))
+      .slice(0, 12);
+
     console.log(JSON.stringify({
       event: "simulation_computed",
       organization_id,
+      dataset_id,
       role_type,
       baseline_risk: baselineRisk,
       projected_risk: projected.score,
       risk_delta: riskDelta,
       escalation_triggered: escalationTriggered,
-      params,
+      coefficient_basis: coefficients.calibration_basis,
     }));
 
-    // AI narrative layer
     let aiBoardSummary = "";
     let aiRecommendedActions: string[] = [];
 
     if (lovableApiKey) {
       const contextBlock = `
-SIMULATION PARAMETERS:
-- Revenue change: ${params.revenue_change_percent ?? 0}%
-- Cost change: ${params.cost_change_percent ?? 0}%
-- Headcount change: ${params.headcount_change_percent ?? 0}%
-- Marketing spend change: ${params.marketing_spend_change_percent ?? 0}%
+SIMULATION CONTEXT:
+- Organization scope: ${organization_id}
+- Dataset scope: ${dataset_id}
+- Role: ${role_type.toUpperCase()}
+
+INPUTS:
+- Revenue change: ${params.revenue_change_percent}%
+- Cost change: ${params.cost_change_percent}%
+- Headcount change: ${params.headcount_change_percent}%
+- Marketing spend change: ${params.marketing_spend_change_percent}%
 ${params.custom_notes ? `- Notes: ${params.custom_notes}` : ""}
 
-RESULTS:
+RISK RESULT:
 - Baseline risk: ${baselineRisk}/100
 - Projected risk: ${projected.score}/100
 - Risk delta: ${riskDelta > 0 ? "+" : ""}${riskDelta}
@@ -408,11 +580,19 @@ RESULTS:
 - Baseline components: deviation=${baselineComponents.deviation}, trend=${baselineComponents.trend}, volatility=${baselineComponents.volatility}, forecast=${baselineComponents.forecast}
 - Projected components: deviation=${projected.components.deviation}, trend=${projected.components.trend}, volatility=${projected.components.volatility}, forecast=${projected.components.forecast}
 
-KPI PROJECTIONS:
-${kpiProjections.map(k => `${k.kpi_name}: ${k.baseline_value} → ${k.projected_value} (${k.delta_percent > 0 ? "+" : ""}${k.delta_percent}%)`).join("\n")}
+MODEL DISCLOSURE:
+- Classification: CALIBRATED_MODEL
+- Primary calibration metric: ${coefficients.calibration_basis.primary_metric}
+- Secondary calibration metric: ${coefficients.calibration_basis.secondary_metric}
+- Data points used: ${coefficients.data_points_used}
+- R²: ${coefficients.r_squared ?? "N/A"}
 
-ROLE: ${role_type.toUpperCase()}
+KPI PROJECTIONS:
+${kpiProjections.map((k) => `${k.kpi_name}: ${k.baseline_value} → ${k.projected_value} (${k.delta_percent > 0 ? "+" : ""}${k.delta_percent}%) [${k.model_type}]`).join("\n")}
 `;
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
 
       try {
         const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -421,18 +601,22 @@ ROLE: ${role_type.toUpperCase()}
             Authorization: `Bearer ${lovableApiKey}`,
             "Content-Type": "application/json",
           },
+          signal: controller.signal,
           body: JSON.stringify({
-            model: "google/gemini-3-flash-preview",
+            model: "google/gemini-2.5-flash",
             messages: [
               {
                 role: "system",
-                content: `You are a board-level risk advisor for ${role_type.toUpperCase()}.
-Summarize simulation results concisely. Return ONLY valid JSON with this exact schema:
+                content: `You are a board-level risk advisor.
+Return ONLY valid JSON matching this schema:
 {
-  "board_summary": "2-3 paragraph strategic summary for board presentation",
-  "recommended_actions": ["action 1", "action 2", "action 3", "action 4"]
+  "board_summary": "max 220 words, concrete and evidence-grounded",
+  "recommended_actions": ["3 to 5 actions"]
 }
-No markdown, no code fences, no text outside JSON.`,
+Rules:
+- Never fabricate missing baselines or coefficients.
+- Use only the provided context values.
+- Include model limitations briefly in board_summary.`,
               },
               { role: "user", content: contextBlock },
             ],
@@ -441,22 +625,21 @@ No markdown, no code fences, no text outside JSON.`,
                 type: "function",
                 function: {
                   name: "simulation_narrative",
-                  description: "Return structured board narrative for simulation results",
+                  description: "Return a structured board narrative",
                   parameters: {
                     type: "object",
                     properties: {
-                      board_summary: { type: "string", description: "2-3 paragraph board-ready strategic summary" },
+                      board_summary: { type: "string" },
                       recommended_actions: {
                         type: "array",
                         items: { type: "string" },
-                        description: "4-6 actionable recommendations"
-                      }
+                      },
                     },
                     required: ["board_summary", "recommended_actions"],
-                    additionalProperties: false
-                  }
-                }
-              }
+                    additionalProperties: false,
+                  },
+                },
+              },
             ],
             tool_choice: { type: "function", function: { name: "simulation_narrative" } },
           }),
@@ -467,18 +650,21 @@ No markdown, no code fences, no text outside JSON.`,
           const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
           if (toolCall?.function?.arguments) {
             const parsed = JSON.parse(toolCall.function.arguments);
-            aiBoardSummary = parsed.board_summary || "";
-            aiRecommendedActions = parsed.recommended_actions || [];
+            aiBoardSummary = typeof parsed.board_summary === "string" ? parsed.board_summary : "";
+            aiRecommendedActions = Array.isArray(parsed.recommended_actions)
+              ? parsed.recommended_actions.filter((a: unknown) => typeof a === "string")
+              : [];
           }
         } else {
           console.error("AI narrative failed:", aiResp.status);
         }
-      } catch (aiErr) {
-        console.error("AI narrative error:", aiErr);
+      } catch (aiError) {
+        console.error("AI narrative error:", aiError);
+      } finally {
+        clearTimeout(timeoutId);
       }
     }
 
-    // Fetch calibration model for standardized metadata
     const calModel = await fetchCalibrationModel(supabaseUrl, serviceKey, organization_id);
 
     const result = {
@@ -492,30 +678,18 @@ No markdown, no code fences, no text outside JSON.`,
       ai_board_summary: aiBoardSummary,
       ai_recommended_actions: aiRecommendedActions,
       scenario_parameters: params,
-      // Model disclosure — mandatory for decision-grade integrity
       model_disclosure: {
-        risk_model: coefficients.calibration_source === "historical_regression"
-          ? `Calibrated sensitivity model. Coefficients derived from ${coefficients.data_points_used} historical data points via OLS regression (R²=${coefficients.r_squared ?? "N/A"}).`
-          : "Heuristic sensitivity model — insufficient historical data for calibration. Using assumed multipliers.",
-        kpi_model: coefficients.calibration_source === "historical_regression"
-          ? `Calibrated linear sensitivity (revenue: ${coefficients.kpi_revenue_sensitivity}, cost: ${coefficients.kpi_cost_sensitivity}). Derived from org history.`
-          : `Heuristic linear sensitivity (revenue: ${coefficients.kpi_revenue_sensitivity}, cost: ${coefficients.kpi_cost_sensitivity}). Assumed, not calibrated.`,
-        risk_weighting: "Composite: 40% deviation + 20% volatility + 20% trend + 20% forecast.",
-        classification: coefficients.calibration_source === "historical_regression" ? "CALIBRATED_MODEL" : "HEURISTIC_ESTIMATE",
+        risk_model: `Calibrated sensitivity model using ${coefficients.data_points_used} data points (${coefficients.calibration_basis.primary_metric} + ${coefficients.calibration_basis.secondary_metric}, R²=${coefficients.r_squared ?? "N/A"}).`,
+        kpi_model: "Dataset-aware projections: direct metric changes where provided, otherwise calibrated sensitivity propagation.",
+        risk_weighting: "Composite score: 40% deviation + 20% volatility + 20% trend + 20% forecast.",
+        classification: "CALIBRATED_MODEL",
         coefficients_used: coefficients,
-        limitations: coefficients.calibration_source === "historical_regression"
-          ? [
-              "Linear model does not capture non-linear interactions",
-              "Calibration assumes stationarity of historical relationships",
-              `Model R² = ${coefficients.r_squared ?? "N/A"} — check for overfitting`,
-            ]
-          : [
-              "Sensitivity coefficients are NOT calibrated to historical org data",
-              "Linear model does not capture non-linear interactions",
-              "Upload ≥24 metric data points to enable auto-calibration",
-            ],
+        limitations: [
+          "Sensitivity model is linear and may not capture higher-order interactions.",
+          "Calibrated from historical behavior; structural breaks can reduce forward validity.",
+          "Risk index baseline is role-level (organization scope), not dataset-specific.",
+        ],
       },
-      // Standardized adaptive calibration metadata
       adaptive_calibration_applied: !!calModel,
       calibration_model_version: calModel?.model_version ?? null,
       calibration_context: calModel ? {
@@ -534,7 +708,7 @@ No markdown, no code fences, no text outside JSON.`,
     console.error("strategic-simulation error:", e);
     return new Response(
       JSON.stringify({ error: e instanceof Error ? e.message : "Internal error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
 });
