@@ -94,6 +94,8 @@ const CommandCenter = memo(({
         revenue={revenue}
         pendingDecisions={pendingDecisions}
         calibrationScore={calibrationScore}
+        datasetId={datasetId}
+        activeContextId={activeContext?.id ?? null}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
