@@ -1,41 +1,20 @@
-import { useState, useEffect, useMemo, useCallback, memo } from "react";
+import { useState, useEffect, useCallback, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Brain, AlertTriangle, TrendingDown, Clock, Sparkles, CheckCircle2, XCircle, Pencil, Loader2, ShieldCheck, FileCheck, Bell, Crosshair, Flame, Zap, User, CalendarDays, Target } from "lucide-react";
-import ConfidenceBadge, { resolveConfidence } from "@/components/ConfidenceBadge";
+import { Brain, AlertTriangle, TrendingDown, Clock, Sparkles, CheckCircle2, XCircle, Pencil, Loader2, ShieldCheck, FileCheck, Crosshair, Flame, Zap, User, CalendarDays, Target } from "lucide-react";
+import ConfidenceBadge from "@/components/ConfidenceBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
-import { computeCostOfDelay, type CostOfDelayResult, type CostOfDelayInput } from "@/lib/cost-of-delay";
-import { generateRecommendation, type StructuredRecommendation } from "@/lib/decision-recommendation";
 import DecisionResponsibilityDialog from "@/components/DecisionResponsibilityDialog";
 import ModifyDecisionDialog from "./ModifyDecisionDialog";
 import OutputClassificationBadge from "./OutputClassificationBadge";
 import TraceabilityPanel from "./TraceabilityPanel";
 import DismissReasonDialog from "./DismissReasonDialog";
+import { useBuildDecisionQueue, type EnrichedDecision } from "@/hooks/useBuildDecisionQueue";
 import type { Insight } from "@/hooks/useInsights";
 
-export interface EnrichedDecision {
-  id: string;
-  type: "signal" | "advisory" | "pending_outcome" | "proactive";
-  urgency: "critical" | "high" | "medium";
-  title: string;
-  context: string;
-  recommendedAction: string;
-  confidence?: number;
-  source: string;
-  sourceId?: string;
-  timeframe?: string;
-  riskIfIgnored: "high" | "medium" | "low";
-  createdAt?: string;
-  costOfDelayResult: CostOfDelayResult;
-  recommendation: StructuredRecommendation;
-  rawConfidence?: number | null;
-  cappedConfidence?: number | null;
-  confidenceCapReason?: string | null;
-  generatedAt: string;
-  sampleSize?: number;
-}
+export type { EnrichedDecision };
 
 interface DecisionQueueProps {
   organizationId: string;
@@ -44,6 +23,8 @@ interface DecisionQueueProps {
   revenue: number;
   pendingDecisions: number;
   calibrationScore: number | null;
+  datasetId?: string;
+  activeContextId?: string | null;
 }
 
 const URGENCY_STYLES = {
@@ -110,21 +91,33 @@ function formatAge(createdAt: string | undefined): string {
   return `${Math.floor(hours / 24)}d ago`;
 }
 
-function ageDays(createdAt: string): number {
-  return Math.floor((Date.now() - new Date(createdAt).getTime()) / 86_400_000);
-}
-
 interface Confirmation {
   decisionTitle: string;
   action: "approved" | "dismissed" | "modified";
 }
 
-const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pendingDecisions, calibrationScore }: DecisionQueueProps) => {
+const DecisionQueue = memo(({
+  organizationId,
+  insights,
+  churnRate,
+  revenue,
+  pendingDecisions,
+  calibrationScore,
+  datasetId,
+  activeContextId,
+}: DecisionQueueProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [decisions, setDecisions] = useState<EnrichedDecision[]>([]);
+  const { decisions, setDecisions, loading } = useBuildDecisionQueue({
+    organizationId,
+    insights,
+    churnRate,
+    revenue,
+    pendingDecisions,
+    calibrationScore,
+    datasetId,
+  });
   const [actingOn, setActingOn] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
   const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
   const [focusIndex, setFocusIndex] = useState(0);
   const [modifyTarget, setModifyTarget] = useState<EnrichedDecision | null>(null);
@@ -168,6 +161,7 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
         capped_confidence: decision.cappedConfidence,
         confidence_cap_reason: decision.confidenceCapReason,
         decision_type: "strategic",
+        decision_context_id: activeContextId ?? null,
         notes: `Owner: ${decision.recommendation.suggestedOwner} | Due: ${decision.costOfDelayResult.recommendedActionWindowDays}d | Metrics: ${decision.recommendation.successMetrics.join(", ")}`,
       });
       setDecisions(prev => prev.filter(d => d.id !== decision.id));
@@ -177,7 +171,7 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
     } finally {
       setActingOn(null);
     }
-  }, [organizationId, user?.id, toast]);
+  }, [organizationId, user?.id, toast, activeContextId, setDecisions]);
 
   // Stage 1: Open dismiss reason dialog
   const initiateDismiss = useCallback((decision: EnrichedDecision) => {
@@ -194,7 +188,6 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
       if (decision.type === "signal" && decision.sourceId) {
         await supabase.from("insights").update({ is_read: true }).eq("id", decision.sourceId);
       }
-      // Persist dismissal to decision ledger for governance audit trail
       await supabase.from("decision_ledger").insert({
         organization_id: organizationId,
         recommended_action: decision.recommendation.recommendedAction,
@@ -207,6 +200,7 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
         capped_confidence: decision.cappedConfidence,
         confidence_cap_reason: decision.confidenceCapReason,
         decision_type: "strategic",
+        decision_context_id: activeContextId ?? null,
         notes: reason ? `Dismiss reason: ${reason}` : "Dismissed without reason",
       });
       setDecisions(prev => prev.filter(d => d.id !== decision.id));
@@ -216,12 +210,12 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
     } finally {
       setActingOn(null);
     }
-  }, [organizationId, user?.id, toast]);
+  }, [organizationId, user?.id, toast, activeContextId, setDecisions]);
 
   const handleModifySaved = useCallback((updated: Partial<EnrichedDecision>) => {
     setDecisions(prev => prev.filter(d => d.id !== updated.id));
     setConfirmation({ decisionTitle: updated.title ?? "Decision", action: "modified" });
-  }, []);
+  }, [setDecisions]);
 
   // Keyboard shortcuts now go through the dialog gates
   useKeyboardShortcuts({
@@ -231,266 +225,16 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
     onDismiss: () => { if (focusedDecision && !actingOn) initiateDismiss(focusedDecision); },
   }, decisions.length > 0);
 
+  // Reset focus when decisions change
   useEffect(() => {
-    if (!organizationId) return;
-    buildQueue();
-  }, [organizationId, insights, churnRate, revenue, pendingDecisions, calibrationScore]);
+    setFocusIndex(0);
+  }, [decisions.length]);
 
   useEffect(() => {
     if (!confirmation) return;
     const timer = setTimeout(() => setConfirmation(null), 4000);
     return () => clearTimeout(timer);
   }, [confirmation]);
-
-  const criticalInsights = useMemo(
-    () => insights.filter(i => i.severity === "high"),
-    [insights]
-  );
-
-  const buildQueue = async () => {
-    setLoading(true);
-    const queue: EnrichedDecision[] = [];
-    const now = new Date().toISOString();
-
-    // 1. Critical signals
-    criticalInsights.slice(0, 2).forEach(insight => {
-      const severity: "critical" | "high" = "critical";
-      const age = ageDays(insight.created_at);
-
-      const codResult = computeCostOfDelay({
-        severity,
-        confidence: insight.confidence_score ?? null,
-        affectedMetricType: insight.category,
-        revenue,
-        ageDays: age,
-        trendAccelerating: insight.message?.toLowerCase().includes("accelerat") ?? false,
-      });
-
-      const rec = generateRecommendation({
-        signalType: "signal",
-        metricType: insight.category,
-        trendDirection: (insight.message?.toLowerCase().includes("decline") || insight.message?.toLowerCase().includes("drop")) ? "down" : "stable",
-        severity,
-        confidence: insight.confidence_score ?? null,
-        message: insight.message,
-        category: insight.category,
-      });
-
-      queue.push({
-        id: `signal-${insight.id}`,
-        type: "signal",
-        urgency: codResult.label === "critical" ? "critical" : "high",
-        title: rec.whatHappened,
-        context: insight.message?.slice(0, 160) || "Critical signal detected",
-        recommendedAction: rec.recommendedAction,
-        confidence: insight.confidence_score,
-        source: insight.category ? `${insight.category} Diagnostics` : "Diagnostic Engine",
-        sourceId: insight.id,
-        costOfDelayResult: codResult,
-        recommendation: rec,
-        riskIfIgnored: codResult.label === "critical" || codResult.label === "high" ? "high" : "medium",
-        createdAt: insight.created_at,
-        rawConfidence: insight.confidence_score ?? null,
-        cappedConfidence: null,
-        confidenceCapReason: null,
-        generatedAt: now,
-      });
-    });
-
-    // 2. Open advisories
-    const { data: advisories } = await supabase
-      .from("advisory_instances")
-      .select("id, title, action, priority, confidence, capped_confidence, confidence_cap_reason, category, timeframe, expected_impact, created_at, raw_confidence, impact_score")
-      .eq("organization_id", organizationId)
-      .in("status", ["open", "in_progress"])
-      .order("created_at", { ascending: false })
-      .limit(3);
-
-    advisories?.forEach(adv => {
-      const sev = adv.priority === "critical" ? "critical" : adv.priority === "high" ? "high" : "medium";
-      const age = ageDays(adv.created_at);
-
-      const codResult = computeCostOfDelay({
-        severity: sev as CostOfDelayInput["severity"],
-        confidence: (adv.capped_confidence ?? adv.confidence) as number | null,
-        cappedConfidence: adv.capped_confidence as number | null,
-        affectedMetricType: adv.category,
-        predictedNetImpact: null,
-        revenue,
-        ageDays: age,
-        expectedImpact: adv.expected_impact,
-      });
-
-      const rec = generateRecommendation({
-        signalType: "advisory",
-        category: adv.category,
-        severity: sev,
-        confidence: (adv.capped_confidence ?? adv.confidence) as number | null,
-        priorAdvisoryAction: adv.action,
-        message: adv.title,
-      });
-
-      queue.push({
-        id: `advisory-${adv.id}`,
-        type: "advisory",
-        urgency: sev === "critical" ? "critical" : sev === "high" ? "high" : "medium",
-        title: adv.title,
-        context: adv.action,
-        recommendedAction: rec.recommendedAction,
-        confidence: (adv.capped_confidence ?? adv.confidence) as number | undefined,
-        source: `${adv.category} Advisory`,
-        sourceId: adv.id,
-        timeframe: adv.timeframe ?? undefined,
-        costOfDelayResult: codResult,
-        recommendation: rec,
-        riskIfIgnored: codResult.label === "critical" || codResult.label === "high" ? "high" : "medium",
-        createdAt: adv.created_at,
-        rawConfidence: (adv.raw_confidence ?? adv.confidence) as number | null,
-        cappedConfidence: adv.capped_confidence as number | null,
-        confidenceCapReason: adv.confidence_cap_reason,
-        generatedAt: now,
-      });
-    });
-
-    // 3. Pending outcomes
-    if (pendingDecisions > 0) {
-      const { data: pending } = await supabase
-        .from("decision_ledger")
-        .select("id, recommended_action, confidence_at_decision, raw_confidence, capped_confidence, confidence_cap_reason, created_at, decision_type")
-        .eq("organization_id", organizationId)
-        .eq("execution_status", "not_started")
-        .order("created_at", { ascending: false })
-        .limit(2);
-
-      pending?.forEach(dec => {
-        const days = ageDays(dec.created_at);
-        const sev: CostOfDelayInput["severity"] = days > 45 ? "high" : days > 21 ? "medium" : "low";
-
-        const codResult = computeCostOfDelay({
-          severity: sev,
-          confidence: dec.confidence_at_decision,
-          ageDays: days,
-          revenue,
-        });
-
-        const rec = generateRecommendation({
-          signalType: "pending_outcome",
-          severity: sev,
-          confidence: dec.confidence_at_decision,
-          message: dec.recommended_action,
-          category: dec.decision_type,
-        });
-
-        queue.push({
-          id: `pending-${dec.id}`,
-          type: "pending_outcome",
-          urgency: days > 30 ? "high" : "medium",
-          title: dec.recommended_action?.slice(0, 80) || "Decision awaiting outcome",
-          context: `Logged ${days}d ago · ${dec.decision_type} · ${dec.confidence_at_decision ?? "?"}% confidence at decision time`,
-          recommendedAction: rec.recommendedAction,
-          source: "Decision Ledger",
-          sourceId: dec.id,
-          costOfDelayResult: codResult,
-          recommendation: rec,
-          riskIfIgnored: days > 45 ? "high" : days > 21 ? "medium" : "low",
-          createdAt: dec.created_at,
-          rawConfidence: dec.raw_confidence,
-          cappedConfidence: dec.capped_confidence,
-          confidenceCapReason: dec.confidence_cap_reason,
-          generatedAt: now,
-        });
-      });
-    }
-
-    // 4. Proactive: churn (heuristic — labeled)
-    if (churnRate > 5 && queue.length < 5) {
-      const sev: CostOfDelayInput["severity"] = churnRate > 12 ? "critical" : churnRate > 8 ? "high" : "medium";
-      const heuristicConf = Math.min(60, Math.round(40 + churnRate));
-
-      const codResult = computeCostOfDelay({
-        severity: sev,
-        confidence: heuristicConf,
-        affectedMetricType: "churn",
-        revenue,
-        trendAccelerating: churnRate > 10,
-      });
-
-      const rec = generateRecommendation({
-        signalType: "proactive",
-        metricType: "churn",
-        trendDirection: "up",
-        severity: sev,
-        confidence: heuristicConf,
-        category: "retention",
-      });
-
-      queue.push({
-        id: "proactive-churn",
-        type: "proactive",
-        urgency: sev === "critical" ? "critical" : "high",
-        title: `Retention risk: ${churnRate.toFixed(1)}% churn rate ${churnRate > 10 ? "— exceeds critical threshold" : "— above target"}`,
-        context: `Churn at ${churnRate.toFixed(1)}% erodes customer base and compounds revenue loss. Confidence is heuristic (threshold-based).`,
-        recommendedAction: rec.recommendedAction,
-        source: "Proactive Intelligence",
-        costOfDelayResult: codResult,
-        recommendation: rec,
-        riskIfIgnored: "high",
-        generatedAt: now,
-        rawConfidence: heuristicConf,
-        cappedConfidence: null,
-        confidenceCapReason: "Heuristic confidence: threshold-based proactive signal, not model-derived",
-      });
-    }
-
-    // 5. Proactive: calibration
-    if (calibrationScore != null && calibrationScore < 65 && queue.length < 5) {
-      const sev: CostOfDelayInput["severity"] = calibrationScore < 40 ? "high" : "medium";
-
-      const codResult = computeCostOfDelay({
-        severity: sev,
-        confidence: calibrationScore,
-        ageDays: 0,
-        revenue,
-      });
-
-      const rec = generateRecommendation({
-        signalType: "proactive",
-        category: "calibration",
-        severity: sev,
-        confidence: calibrationScore,
-        message: `Calibration at ${calibrationScore}% — ${65 - calibrationScore}pp below governance threshold`,
-      });
-
-      queue.push({
-        id: "proactive-calibration",
-        type: "proactive",
-        urgency: sev === "high" ? "high" : "medium",
-        title: `Decision calibration at ${calibrationScore}% — ${65 - calibrationScore}pp below threshold`,
-        context: `Team calibration score is ${calibrationScore}% (target: ≥65%). ${pendingDecisions > 0 ? `${pendingDecisions} outcomes awaiting closure.` : ""}`,
-        recommendedAction: rec.recommendedAction,
-        source: "Calibration Engine",
-        costOfDelayResult: codResult,
-        recommendation: rec,
-        riskIfIgnored: sev === "high" ? "high" : "medium",
-        generatedAt: now,
-        rawConfidence: calibrationScore,
-        cappedConfidence: null,
-        confidenceCapReason: null,
-      });
-    }
-
-    queue.sort((a, b) => {
-      if (b.costOfDelayResult.score !== a.costOfDelayResult.score) {
-        return b.costOfDelayResult.score - a.costOfDelayResult.score;
-      }
-      const urgencyOrder = { critical: 0, high: 1, medium: 2 };
-      return urgencyOrder[a.urgency] - urgencyOrder[b.urgency];
-    });
-
-    setDecisions(queue.slice(0, 5));
-    setFocusIndex(0);
-    setLoading(false);
-  };
 
   if (loading) {
     return (
@@ -631,7 +375,6 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
                               <span className="text-[10px] font-mono text-muted-foreground">
                                 {cod.score}/100
                               </span>
-                              {/* Classification: CoD is always heuristic */}
                               <OutputClassificationBadge classification="HEURISTIC_ESTIMATE" compact />
                             </div>
                             <div className="flex items-center gap-3 flex-wrap">
@@ -700,7 +443,6 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
                             )}
                           </div>
 
-                          {/* Labeled classified sections */}
                           {rec.sections.map((section, si) => (
                             <div key={si} className="space-y-0.5">
                               <div className="flex items-center gap-2">
@@ -711,7 +453,6 @@ const DecisionQueue = memo(({ organizationId, insights, churnRate, revenue, pend
                             </div>
                           ))}
 
-                          {/* Assumptions + Risk */}
                           {rec.assumptions && rec.assumptions.length > 0 && (
                             <p className="text-[10px] text-muted-foreground"><span className="font-semibold text-foreground">Assumptions:</span> {rec.assumptions.slice(0, 2).join("; ")}</p>
                           )}
