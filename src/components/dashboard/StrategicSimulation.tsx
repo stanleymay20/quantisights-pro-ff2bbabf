@@ -19,13 +19,19 @@ interface SimulationResult {
   projected_components: { deviation: number; trend: number; volatility: number; forecast: number };
   risk_delta: number;
   escalation_triggered: boolean;
-  kpi_projections: { kpi_name: string; baseline_value: number; projected_value: number; delta_percent: number }[];
+  kpi_projections: { kpi_name: string; baseline_value: number; projected_value: number; delta_percent: number; model_type?: string; note?: string }[];
   ai_board_summary: string;
   ai_recommended_actions: string[];
+  model_disclosure?: {
+    classification?: string;
+    kpi_model?: string;
+    risk_model?: string;
+  };
 }
 
 interface Props {
   organizationId: string;
+  datasetId: string;
   roleType: string;
   tier: string | null;
 }
