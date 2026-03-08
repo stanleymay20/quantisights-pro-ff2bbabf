@@ -238,7 +238,7 @@ Rules:
 - severity "info": stable/improving metrics, healthy patterns
 - causal_factors MUST reference specific statistical evidence (segment shifts, volatility levels, trend slopes)
 - recommendation MUST be concrete and actionable, referencing the specific metric and its diagnosed issue
-- raw_confidence should reflect data_points count: <12 pts = max 65, <20 pts = max 75, 20+ pts = max 85
+- raw_confidence should reflect data_points count: <12 pts = max 60, <30 pts = max 75, 30+ pts = max 90 (aligned with platform epistemic standard)
 - Do NOT invent data not present in the statistics
 - Every diagnosis MUST reference the dataset name "${datasetName}" and specific metric values
 - Return ONLY the JSON array`,
