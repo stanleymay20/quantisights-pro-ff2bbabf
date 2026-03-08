@@ -300,3 +300,9 @@ function computeLogVolatility(values: number[]): number {
 function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }
+
+function toBoundedNumber(value: unknown, fallback: number, min: number, max: number): number {
+  const parsed = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.min(max, Math.max(min, parsed));
+}
