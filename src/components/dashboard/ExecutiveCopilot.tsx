@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  Brain, Send, Loader2, Sparkles, RotateCcw, Activity,
+  Brain, Send, Loader2, Sparkles, RotateCcw, Activity, Database,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,6 +20,8 @@ interface Props {
   roleType: string;
   riskScore?: number;
   tier: string | null;
+  datasetId?: string;
+  datasetName?: string | null;
 }
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/executive-copilot`;
@@ -39,7 +41,7 @@ function getRiskBadge(score: number): { className: string; label: string } {
   return { className: "bg-destructive/10 text-destructive border-none", label: "High" };
 }
 
-const ExecutiveCopilot = ({ organizationId, roleType, riskScore, tier }: Props) => {
+const ExecutiveCopilot = ({ organizationId, roleType, riskScore, tier, datasetId, datasetName }: Props) => {
   const [messages, setMessages] = useState<CopilotMessage[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -81,6 +83,8 @@ const ExecutiveCopilot = ({ organizationId, roleType, riskScore, tier }: Props) 
           session_id: sessionId,
           role_type: roleType,
           organization_id: organizationId,
+          dataset_id: datasetId || null,
+          dataset_name: datasetName || null,
         }),
       });
 
@@ -166,7 +170,7 @@ const ExecutiveCopilot = ({ organizationId, roleType, riskScore, tier }: Props) 
     } finally {
       setIsLoading(false);
     }
-  }, [isLoading, sessionId, roleType, organizationId]);
+  }, [isLoading, sessionId, roleType, organizationId, datasetId, datasetName]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -199,6 +203,14 @@ const ExecutiveCopilot = ({ organizationId, roleType, riskScore, tier }: Props) 
         </div>
       )}
 
+      {/* Dataset Context Badge */}
+      {datasetName && (
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted/40 border border-border/30 text-xs text-muted-foreground">
+          <Database className="w-3.5 h-3.5" />
+          <span>Grounded in: <strong className="text-foreground">{datasetName}</strong></span>
+        </div>
+      )}
+
       {/* Chat Card */}
       <Card className="flex flex-col" style={{ height: "calc(100vh - 420px)", minHeight: "400px" }}>
         <CardHeader className="pb-3 flex-none">
@@ -228,7 +240,10 @@ const ExecutiveCopilot = ({ organizationId, roleType, riskScore, tier }: Props) 
                 <div className="text-center space-y-2">
                   <h3 className="font-semibold text-lg">Ask Quantivis</h3>
                   <p className="text-sm text-muted-foreground max-w-sm">
-                    Ask strategic questions about your organization's performance, risk posture, and growth opportunities.
+                    {datasetName
+                      ? `Ask strategic questions grounded in "${datasetName}" — all answers reference your actual data.`
+                      : "Select a dataset first for data-grounded intelligence. Without a dataset, responses will be limited to organizational signals only."
+                    }
                   </p>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-lg">
