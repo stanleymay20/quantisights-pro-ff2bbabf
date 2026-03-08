@@ -603,9 +603,9 @@ const DataConnectors = () => {
                 </div>
 
                 {testResult && (
-                  <div className={`mt-4 p-3 rounded-lg border ${testResult.success ? "border-green-500/30 bg-green-500/10" : "border-destructive/30 bg-destructive/10"}`}>
+                  <div className={`mt-4 p-3 rounded-lg border ${testResult.success ? "border-primary/30 bg-primary/10" : "border-destructive/30 bg-destructive/10"}`}>
                     <div className="flex items-center gap-2">
-                      {testResult.success ? <CheckCircle2 className="w-4 h-4 text-green-500" /> : <AlertCircle className="w-4 h-4 text-destructive" />}
+                      {testResult.success ? <CheckCircle2 className="w-4 h-4 text-primary" /> : <AlertCircle className="w-4 h-4 text-destructive" />}
                       <span className="text-sm font-medium">{testResult.message}</span>
                     </div>
                     {testResult.version && <p className="text-xs text-muted-foreground mt-1 truncate">{testResult.version}</p>}
