@@ -9,6 +9,7 @@ import AnalystInsights from "./AnalystInsights";
 import ExecutiveIntelligencePanel from "./ExecutiveIntelligencePanel";
 import CrossContextAnalytics from "./CrossContextAnalytics";
 import DecisionContextPanel from "./DecisionContextPanel";
+import DataQualityScorecard from "./DataQualityScorecard";
 import { useDecisionContexts, type DecisionContext } from "@/hooks/useDecisionContexts";
 import type { Insight } from "@/hooks/useInsights";
 import type { MetricTypeSummary } from "@/hooks/useMetrics";
