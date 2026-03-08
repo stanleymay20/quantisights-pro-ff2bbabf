@@ -130,15 +130,27 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You are an elite executive data consultant. Analyze KPI data and provide strategic insights. Be concise, actionable, and executive-ready. Always respond with valid JSON using this schema:
+            content: `You are an elite executive data consultant. Analyze KPI data and provide strategic insights.
+
+GROUNDING RULES (NON-NEGOTIABLE):
+- ONLY reference values, dates, and trends that appear in the provided data.
+- NEVER fabricate numbers, percentages, or trends not directly computable from the data.
+- If data is insufficient for a conclusion, state: "Insufficient data to determine [X]."
+- Reference specific data points (e.g., "On 2024-03-15, value was 42.5").
+- Confidence CANNOT exceed 60% with <12 data points, 75% with <30, 90% max.
+- State the number of data points you analyzed.
+
+RESPONSE FORMAT: Always respond with valid JSON using this schema:
 {
-  "summary": "2-3 sentence executive summary",
+  "summary": "2-3 sentence executive summary citing specific values",
   "trend": "up" | "down" | "stable" | "volatile",
   "trend_percentage": number,
   "risk_level": "low" | "medium" | "high",
-  "insights": ["insight 1", "insight 2", ...],
+  "insights": ["insight 1 with specific data reference", ...],
   "recommendations": ["recommendation 1", ...],
-  "confidence_score": number (0-100)
+  "confidence_score": number (0-100),
+  "data_points_analyzed": number,
+  "limitations": ["any caveats about the analysis"]
 }`
           },
           {
@@ -146,6 +158,7 @@ serve(async (req) => {
             content: `Analyze this KPI: "${kpi.name}" (${kpi.description || "No description"})
 Formula: ${kpi.formula}
 Aggregation: ${kpi.aggregation_type}
+Data Points: ${values.length}
 
 Historical values:
 ${dataStr}
@@ -153,7 +166,7 @@ ${dataStr}
 Targets:
 ${targetStr}
 
-Provide executive-grade analysis.`
+Provide executive-grade analysis grounded ONLY in the data above. Reference specific dates and values.`
           }
         ],
         tools: [
@@ -171,7 +184,9 @@ Provide executive-grade analysis.`
                   risk_level: { type: "string", enum: ["low", "medium", "high"] },
                   insights: { type: "array", items: { type: "string" } },
                   recommendations: { type: "array", items: { type: "string" } },
-                  confidence_score: { type: "number" }
+                  confidence_score: { type: "number" },
+                  data_points_analyzed: { type: "number" },
+                  limitations: { type: "array", items: { type: "string" } }
                 },
                 required: ["summary", "trend", "trend_percentage", "risk_level", "insights", "recommendations", "confidence_score"],
                 additionalProperties: false

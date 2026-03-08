@@ -5,22 +5,61 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import MFAChallenge from "@/components/auth/MFAChallenge";
 import logo from "@/assets/quantivis-logo.png";
+import { Shield } from "lucide-react";
 
 const Login = forwardRef<HTMLDivElement>((_, ref) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showMFA, setShowMFA] = useState(false);
+  const [ssoRedirect, setSsoRedirect] = useState<string | null>(null);
+  const [ssoChecking, setSsoChecking] = useState(false);
+  const [ssoEnforced, setSsoEnforced] = useState(false);
   const { signIn } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  // Validate redirect to prevent open redirect attacks — only allow relative paths
   const rawRedirect = searchParams.get("redirect") || "/dashboard";
   const redirectTo = rawRedirect.startsWith("/") && !rawRedirect.startsWith("//") ? rawRedirect : "/dashboard";
   const { toast } = useToast();
 
+  // Check SSO for email domain
+  const checkSSODomain = async (emailValue: string) => {
+    if (!emailValue.includes("@")) {
+      setSsoRedirect(null);
+      setSsoEnforced(false);
+      return;
+    }
+    setSsoChecking(true);
+    try {
+      const { data } = await supabase.rpc("resolve_sso_for_email" as any, { _email: emailValue });
+      if (data && Array.isArray(data) && data.length > 0) {
+        const ssoConfig = data[0];
+        setSsoRedirect(ssoConfig.idp_sso_url);
+        setSsoEnforced(ssoConfig.enforce_sso);
+      } else {
+        setSsoRedirect(null);
+        setSsoEnforced(false);
+      }
+    } catch {
+      setSsoRedirect(null);
+      setSsoEnforced(false);
+    } finally {
+      setSsoChecking(false);
+    }
+  };
+
+  const handleSSOLogin = () => {
+    if (ssoRedirect) {
+      window.location.href = ssoRedirect;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (ssoEnforced) {
+      toast({ title: "SSO Required", description: "Your organization requires SSO login. Use the SSO button below.", variant: "destructive" });
+      return;
+    }
     setIsLoading(true);
     try {
       await signIn(email, password);
@@ -72,30 +111,61 @@ const Login = forwardRef<HTMLDivElement>((_, ref) => {
                 <input
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    checkSSODomain(e.target.value);
+                  }}
                   required
                   className="w-full px-4 py-3 rounded-lg bg-secondary border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
                   placeholder="you@company.com"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium mb-1.5">Password</label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="w-full px-4 py-3 rounded-lg bg-secondary border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
-                  placeholder="••••••••"
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full py-3 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:brightness-110 transition-all disabled:opacity-50"
-              >
-                {isLoading ? "Signing in..." : "Sign In"}
-              </button>
+
+              {/* SSO Detection Banner */}
+              {ssoRedirect && (
+                <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 space-y-2">
+                  <div className="flex items-center gap-2 text-sm font-medium text-primary">
+                    <Shield className="w-4 h-4" />
+                    SSO detected for your domain
+                  </div>
+                  {ssoEnforced && (
+                    <p className="text-xs text-muted-foreground">
+                      Your organization requires SSO login. Password authentication is disabled.
+                    </p>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleSSOLogin}
+                    className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:brightness-110 transition-all flex items-center justify-center gap-2"
+                  >
+                    <Shield className="w-4 h-4" />
+                    Sign in with SSO
+                  </button>
+                </div>
+              )}
+
+              {!ssoEnforced && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium mb-1.5">Password</label>
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required={!ssoRedirect}
+                      className="w-full px-4 py-3 rounded-lg bg-secondary border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                      placeholder="••••••••"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full py-3 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:brightness-110 transition-all disabled:opacity-50"
+                  >
+                    {isLoading ? "Signing in..." : "Sign In"}
+                  </button>
+                </>
+              )}
             </form>
 
             <div className="text-center mt-6 space-y-2">
