@@ -152,8 +152,8 @@ const AdvisoryPage = () => {
       if (error) throw error;
       toast({ title: `Advisory marked as ${status}` });
       fetchInstances();
-      setResolutionText("");
-      setImpactScore("");
+      setResolutionText(prev => { const next = { ...prev }; delete next[id]; return next; });
+      setImpactScore(prev => { const next = { ...prev }; delete next[id]; return next; });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
