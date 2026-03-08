@@ -184,6 +184,7 @@ const PortfolioHealthRadar = ({ metrics, latestChurn, latestCost }: Props) => {
           </ul>
         </details>
       )}
+    </div>
   );
 };
 
