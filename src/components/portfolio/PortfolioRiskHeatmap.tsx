@@ -113,7 +113,7 @@ const PortfolioRiskHeatmap = ({ companies, onSelect, selectedId }: Props) => {
               {statusBadge(company.health_status)}
             </div>
             <div className="col-span-2 text-right">
-              <span className="text-sm font-medium">{fmt(company.revenue_ltm)}</span>
+              <span className="text-sm font-medium">{fmtCurrency(company.revenue_ltm)}</span>
             </div>
             <div className="col-span-2 text-right">
               <span className={`text-sm font-medium ${company.ebitda_margin_pct < 0 ? "text-destructive" : ""}`}>
