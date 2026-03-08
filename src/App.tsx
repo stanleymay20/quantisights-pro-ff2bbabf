@@ -158,6 +158,7 @@ const App = () => (
               <Route path="/dashboard" element={<P><Dashboard /></P>} />
               <Route path="/data-upload" element={<P><DataUpload /></P>} />
               <Route path="/data-sources" element={<P><DataSources /></P>} />
+              <Route path="/data-connectors" element={<P><DataConnectors /></P>} />
               <Route path="/kpis" element={<P><KPIs /></P>} />
               <Route path="/diagnostics" element={<P><Diagnostics /></P>} />
               <Route path="/advisory" element={<P><Advisory /></P>} />

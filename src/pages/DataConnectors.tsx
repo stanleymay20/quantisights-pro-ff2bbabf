@@ -905,7 +905,7 @@ const DataConnectors = () => {
               <div className="max-w-lg mx-auto text-center py-12">
                 {syncResult && syncResult.records > 0 ? (
                   <>
-                    <CheckCircle2 className="w-12 h-12 text-green-500 mx-auto mb-4" />
+                    <CheckCircle2 className="w-12 h-12 text-primary mx-auto mb-4" />
                     <h2 className="text-xl font-bold font-display mb-2">Data Connected!</h2>
                     <p className="text-sm text-muted-foreground mb-2">
                       Successfully synced <span className="font-semibold text-foreground">{syncResult.records}</span> metric data points.
