@@ -85,7 +85,7 @@ const RiskDial = ({ score, label, size = "lg" }: { score: number; label: string;
   );
 };
 
-const StrategicSimulation = ({ organizationId, roleType, tier }: Props) => {
+const StrategicSimulation = ({ organizationId, datasetId, roleType, tier }: Props) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<SimulationResult | null>(null);
