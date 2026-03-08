@@ -96,8 +96,16 @@ const FindingCard = ({ finding }: { finding: AnalystFinding }) => {
 };
 
 const AnalystInsights = ({ insights, metrics, topMetrics, datasetName, datasetId }: AnalystInsightsProps) => {
-  const findings = useMemo(() => runFullAnalysis(metrics, datasetId), [metrics, datasetId]);
+  const findings = useMemo(() => runFullAnalysis(metrics, datasetId, datasetName || undefined), [metrics, datasetId, datasetName]);
   const analystNote = useMemo(() => generateAnalystNote(findings), [findings]);
+
+  // Industry detection
+  const industryProfile = useMemo(() => {
+    const metricTypes = [...new Set(metrics.map(m => m.metric_type))];
+    const segments = [...new Set(metrics.map(m => m.segment).filter(Boolean))] as string[];
+    const regions = [...new Set(metrics.map(m => m.region).filter(Boolean))] as string[];
+    return detectIndustry(metricTypes, segments, regions, datasetName || undefined);
+  }, [metrics, datasetName]);
 
   // Advanced statistical profiling summary
   const dataHealth = useMemo(() => {
