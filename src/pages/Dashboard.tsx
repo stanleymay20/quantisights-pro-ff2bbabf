@@ -39,6 +39,14 @@ const Dashboard = () => {
   const [openAdvisoryCount, setOpenAdvisoryCount] = useState(0);
   const [pendingDecisions, setPendingDecisions] = useState(0);
   const [calibrationScore, setCalibrationScore] = useState<number | null>(null);
+  const [dashboardView, setDashboardView] = useState<"executive" | "full">(() => {
+    return (localStorage.getItem(VIEW_STORAGE_KEY) as "executive" | "full") || "executive";
+  });
+
+  const toggleView = (view: "executive" | "full") => {
+    setDashboardView(view);
+    localStorage.setItem(VIEW_STORAGE_KEY, view);
+  };
 
   useEffect(() => {
     if (orgLoading || !currentOrgId) return;
