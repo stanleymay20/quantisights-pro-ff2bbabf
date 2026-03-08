@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, ShieldCheck } from "lucide-react";
 
@@ -6,15 +6,29 @@ interface MFAChallengeProps {
   onVerified: () => void;
 }
 
+const MAX_MFA_ATTEMPTS = 5;
+
 const MFAChallenge = ({ onVerified }: MFAChallengeProps) => {
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [locked, setLocked] = useState(false);
+  const attempts = useRef(0);
 
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (locked) return;
     setError("");
     setLoading(true);
+
+    attempts.current += 1;
+    if (attempts.current > MAX_MFA_ATTEMPTS) {
+      setLocked(true);
+      setError("Too many failed attempts. Please sign in again.");
+      setLoading(false);
+      return;
+    }
+
     try {
       const { data: factorsData } = await supabase.auth.mfa.listFactors();
       const totpFactor = factorsData?.totp?.[0];
@@ -70,10 +84,10 @@ const MFAChallenge = ({ onVerified }: MFAChallengeProps) => {
         {error && <p className="text-sm text-destructive text-center">{error}</p>}
         <button
           type="submit"
-          disabled={loading || code.length !== 6}
+          disabled={loading || code.length !== 6 || locked}
           className="w-full py-3 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:brightness-110 transition-all disabled:opacity-50"
         >
-          {loading ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : "Verify"}
+          {locked ? "Locked — sign in again" : loading ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : "Verify"}
         </button>
       </form>
     </div>

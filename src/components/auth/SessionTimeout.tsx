@@ -9,7 +9,7 @@ import { Clock } from "lucide-react";
 const INACTIVITY_LIMIT_MS = 30 * 60 * 1000; // 30 minutes
 const WARNING_BEFORE_MS = 2 * 60 * 1000; // warn 2 min before
 
-const ACTIVITY_EVENTS = ["mousedown", "keydown", "scroll", "touchstart", "mousemove"] as const;
+const ACTIVITY_EVENTS = ["mousedown", "keydown", "scroll", "touchstart"] as const;
 
 const SessionTimeout = () => {
   const { user, signOut } = useAuth();

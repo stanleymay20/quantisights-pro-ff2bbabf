@@ -2,6 +2,7 @@ import { useState, useMemo, forwardRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useAuthThrottle } from "@/hooks/useAuthThrottle";
 import { Check, X } from "lucide-react";
 import logo from "@/assets/quantivis-logo.png";
 
@@ -21,6 +22,7 @@ const Register = forwardRef<HTMLDivElement>((_, ref) => {
   const { signUp } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const throttle = useAuthThrottle(3, 120_000);
 
   const passedRules = useMemo(() => PASSWORD_RULES.map(r => r.test(password)), [password]);
   const allPassed = passedRules.every(Boolean);
@@ -32,6 +34,11 @@ const Register = forwardRef<HTMLDivElement>((_, ref) => {
     e.preventDefault();
     if (!allPassed) {
       toast({ title: "Password too weak", description: "Please meet all password requirements", variant: "destructive" });
+      return;
+    }
+    const { allowed, waitSeconds } = throttle.check();
+    if (!allowed) {
+      toast({ title: "Too many attempts", description: `Please wait ${waitSeconds}s before trying again.`, variant: "destructive" });
       return;
     }
     setIsLoading(true);

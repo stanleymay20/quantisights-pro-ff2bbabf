@@ -2,6 +2,7 @@ import { useState, forwardRef } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useAuthThrottle } from "@/hooks/useAuthThrottle";
 import { supabase } from "@/integrations/supabase/client";
 import MFAChallenge from "@/components/auth/MFAChallenge";
 import logo from "@/assets/quantivis-logo.png";
@@ -21,6 +22,7 @@ const Login = forwardRef<HTMLDivElement>((_, ref) => {
   const rawRedirect = searchParams.get("redirect") || "/dashboard";
   const redirectTo = rawRedirect.startsWith("/") && !rawRedirect.startsWith("//") ? rawRedirect : "/dashboard";
   const { toast } = useToast();
+  const throttle = useAuthThrottle(5, 60_000);
 
   // Check SSO for email domain
   const checkSSODomain = async (emailValue: string) => {
@@ -58,6 +60,11 @@ const Login = forwardRef<HTMLDivElement>((_, ref) => {
     e.preventDefault();
     if (ssoEnforced) {
       toast({ title: "SSO Required", description: "Your organization requires SSO login. Use the SSO button below.", variant: "destructive" });
+      return;
+    }
+    const { allowed, waitSeconds } = throttle.check();
+    if (!allowed) {
+      toast({ title: "Too many attempts", description: `Please wait ${waitSeconds}s before trying again.`, variant: "destructive" });
       return;
     }
     setIsLoading(true);
