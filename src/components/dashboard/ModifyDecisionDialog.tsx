@@ -83,14 +83,16 @@ const ModifyDecisionDialog = ({ decision, organizationId, open, onOpenChange, on
             assigned_to: user?.id,
             action: recommendation,
           })
-          .eq("id", decision.sourceId);
+          .eq("id", decision.sourceId)
+          .eq("organization_id", organizationId);
       }
 
       if (decision.type === "signal" && decision.sourceId) {
         await supabase
           .from("insights")
           .update({ is_read: true })
-          .eq("id", decision.sourceId);
+          .eq("id", decision.sourceId)
+          .eq("organization_id", organizationId);
       }
 
       onSaved({
