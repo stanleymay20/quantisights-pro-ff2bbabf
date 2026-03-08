@@ -146,9 +146,10 @@ export function generateRecommendation(input: RecommendationInput): StructuredRe
     const metricLabel = met || cat || "monitored metric";
     const trendVerb = trend === "up" ? "increasing" : trend === "down" ? "declining" : "shifting";
     whatHappened = `${input.severity === "critical" ? "Critical" : "Notable"} ${trendVerb} signal detected in ${metricLabel} affecting ${segment}.`;
+    whatHappenedClassification = "HEURISTIC_ESTIMATE";
   }
   sections.push({
-    classification: msg.length > 20 ? "OBSERVED_FACT" : "HEURISTIC_ESTIMATE",
+    classification: whatHappenedClassification!,
     label: "What happened",
     content: whatHappened,
   });
