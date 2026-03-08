@@ -160,6 +160,7 @@ const Settings = () => {
       if (error) throw error;
       savedProfile.current = trimmed;
       setFullName(trimmed);
+      await refreshProfile();
       toast({ title: "Profile updated" });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
