@@ -27,6 +27,7 @@ export type Database = {
           data_quality_index: number | null
           data_snapshot_date: string | null
           dataset_id: string | null
+          decision_context_id: string | null
           expected_impact: string | null
           generation_version: number | null
           id: string
@@ -58,6 +59,7 @@ export type Database = {
           data_quality_index?: number | null
           data_snapshot_date?: string | null
           dataset_id?: string | null
+          decision_context_id?: string | null
           expected_impact?: string | null
           generation_version?: number | null
           id?: string
@@ -89,6 +91,7 @@ export type Database = {
           data_quality_index?: number | null
           data_snapshot_date?: string | null
           dataset_id?: string | null
+          decision_context_id?: string | null
           expected_impact?: string | null
           generation_version?: number | null
           id?: string
@@ -114,6 +117,13 @@ export type Database = {
             columns: ["dataset_id"]
             isOneToOne: false
             referencedRelation: "datasets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "advisory_instances_decision_context_id_fkey"
+            columns: ["decision_context_id"]
+            isOneToOne: false
+            referencedRelation: "decision_contexts"
             referencedColumns: ["id"]
           },
           {
@@ -1262,6 +1272,62 @@ export type Database = {
           },
         ]
       }
+      decision_contexts: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          datasets: Json | null
+          decision_type: string
+          description: string | null
+          id: string
+          industry: string | null
+          name: string
+          objective: string | null
+          organization_id: string
+          status: string
+          target_metrics: Json | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          datasets?: Json | null
+          decision_type?: string
+          description?: string | null
+          id?: string
+          industry?: string | null
+          name: string
+          objective?: string | null
+          organization_id: string
+          status?: string
+          target_metrics?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          datasets?: Json | null
+          decision_type?: string
+          description?: string | null
+          id?: string
+          industry?: string | null
+          name?: string
+          objective?: string | null
+          organization_id?: string
+          status?: string
+          target_metrics?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "decision_contexts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       decision_ledger: {
         Row: {
           actual_value: number | null
@@ -1276,6 +1342,7 @@ export type Database = {
           created_at: string
           decided_at: string | null
           decided_by: string | null
+          decision_context_id: string | null
           decision_simulation_id: string | null
           decision_status: string
           decision_type: string
@@ -1312,6 +1379,7 @@ export type Database = {
           created_at?: string
           decided_at?: string | null
           decided_by?: string | null
+          decision_context_id?: string | null
           decision_simulation_id?: string | null
           decision_status?: string
           decision_type?: string
@@ -1348,6 +1416,7 @@ export type Database = {
           created_at?: string
           decided_at?: string | null
           decided_by?: string | null
+          decision_context_id?: string | null
           decision_simulation_id?: string | null
           decision_status?: string
           decision_type?: string
@@ -1377,6 +1446,13 @@ export type Database = {
             columns: ["advisory_instance_id"]
             isOneToOne: false
             referencedRelation: "advisory_instances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "decision_ledger_decision_context_id_fkey"
+            columns: ["decision_context_id"]
+            isOneToOne: false
+            referencedRelation: "decision_contexts"
             referencedColumns: ["id"]
           },
           {
@@ -2062,6 +2138,7 @@ export type Database = {
           created_at: string
           data_quality_index: number | null
           dataset_id: string | null
+          decision_context_id: string | null
           generation_model: string | null
           id: string
           is_read: boolean
@@ -2082,6 +2159,7 @@ export type Database = {
           created_at?: string
           data_quality_index?: number | null
           dataset_id?: string | null
+          decision_context_id?: string | null
           generation_model?: string | null
           id?: string
           is_read?: boolean
@@ -2102,6 +2180,7 @@ export type Database = {
           created_at?: string
           data_quality_index?: number | null
           dataset_id?: string | null
+          decision_context_id?: string | null
           generation_model?: string | null
           id?: string
           is_read?: boolean
@@ -2120,6 +2199,13 @@ export type Database = {
             columns: ["dataset_id"]
             isOneToOne: false
             referencedRelation: "datasets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "insights_decision_context_id_fkey"
+            columns: ["decision_context_id"]
+            isOneToOne: false
+            referencedRelation: "decision_contexts"
             referencedColumns: ["id"]
           },
           {

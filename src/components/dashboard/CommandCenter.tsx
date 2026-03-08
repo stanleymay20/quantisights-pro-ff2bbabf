@@ -7,6 +7,8 @@ import CalibrationProgress from "./CalibrationProgress";
 import KPICards from "./KPICards";
 import AnalystInsights from "./AnalystInsights";
 import ExecutiveIntelligencePanel from "./ExecutiveIntelligencePanel";
+import DecisionContextPanel from "./DecisionContextPanel";
+import { useDecisionContexts, type DecisionContext } from "@/hooks/useDecisionContexts";
 import type { Insight } from "@/hooks/useInsights";
 import type { MetricTypeSummary } from "@/hooks/useMetrics";
 
@@ -52,6 +54,14 @@ const CommandCenter = memo(({
 }: CommandCenterProps) => {
   const [showAnalytics, setShowAnalytics] = useState(false);
 
+  const {
+    contexts,
+    activeContext,
+    setActiveContext,
+    createContext,
+    archiveContext,
+  } = useDecisionContexts(organizationId);
+
   const criticalInsights = useMemo(
     () => insights.filter(i => i.severity === "high" || i.severity === "medium"),
     [insights]
@@ -59,6 +69,15 @@ const CommandCenter = memo(({
 
   return (
     <div className="space-y-6 max-w-[1400px]">
+      <DecisionContextPanel
+        organizationId={organizationId}
+        activeContext={activeContext}
+        onContextChange={setActiveContext}
+        contexts={contexts}
+        onCreateContext={createContext}
+        onArchiveContext={archiveContext}
+      />
+
       <ProtectionStatus
         organizationId={organizationId}
         calibrationScore={calibrationScore}
