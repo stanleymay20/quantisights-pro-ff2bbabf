@@ -16,12 +16,50 @@ const SEVERITY_CONFIG = {
   info: { bg: "bg-primary/10", border: "border-primary/30", text: "text-primary", icon: Activity, label: "Healthy" },
 };
 
-const TREND_ICONS = {
-  improving: { icon: TrendingUp, color: "text-success" },
-  declining: { icon: TrendingDown, color: "text-destructive" },
-  stable: { icon: Minus, color: "text-muted-foreground" },
-  volatile: { icon: Zap, color: "text-warning" },
-};
+/** Metrics where "declining" is actually positive (lower is better) */
+const INVERSE_METRICS = new Set([
+  "cost", "costs", "churn", "churn_rate", "attrition", "turnover",
+  "expense", "expenses", "burn", "burn_rate", "debt", "risk",
+  "error", "errors", "defects", "incidents", "downtime",
+  "cost_rate", "cost_of_revenue", "operating_cost",
+]);
+
+function isInverseMetric(slug: string): boolean {
+  const lower = slug.toLowerCase();
+  if (INVERSE_METRICS.has(lower)) return true;
+  for (const inv of INVERSE_METRICS) {
+    if (lower.includes(inv)) return true;
+  }
+  return false;
+}
+
+function getTrendConfig(direction: string, metricType: string) {
+  const inverse = isInverseMetric(metricType);
+
+  const baseIcons = {
+    improving: { icon: TrendingUp, direction: "improving" as const },
+    declining: { icon: TrendingDown, direction: "declining" as const },
+    stable: { icon: Minus, direction: "stable" as const },
+    volatile: { icon: Zap, direction: "volatile" as const },
+  };
+
+  const entry = baseIcons[direction as keyof typeof baseIcons] || baseIcons.stable;
+
+  // For inverse metrics, flip the sentiment color (but keep the directional icon)
+  let color: string;
+  if (direction === "volatile") {
+    color = "text-warning";
+  } else if (direction === "stable") {
+    color = "text-muted-foreground";
+  } else if (inverse) {
+    // Inverse: improving (going down) = green, declining (going up in bad metric) = red
+    color = direction === "improving" ? "text-success" : "text-destructive";
+  } else {
+    color = direction === "improving" ? "text-success" : "text-destructive";
+  }
+
+  return { icon: entry.icon, color };
+}
 
 interface DiagnosticCardProps {
   diagnostic: DiagnosticResult;
@@ -32,9 +70,14 @@ interface DiagnosticCardProps {
 
 const DiagnosticCard = ({ diagnostic: d, index, isExpanded, onToggle }: DiagnosticCardProps) => {
   const config = SEVERITY_CONFIG[d.severity];
-  const trend = TREND_ICONS[d.trend_direction];
+  const trend = getTrendConfig(d.trend_direction, d.metric_type);
   const TrendIcon = trend.icon;
   const SevIcon = config.icon;
+
+  // Normalize change_pct to 1 decimal place
+  const formattedChange = typeof d.change_pct === "number"
+    ? `${d.change_pct > 0 ? "+" : ""}${d.change_pct.toFixed(1)}%`
+    : "0.0%";
 
   return (
     <motion.div
@@ -54,14 +97,14 @@ const DiagnosticCard = ({ diagnostic: d, index, isExpanded, onToggle }: Diagnost
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-3 mb-1 flex-wrap">
-                  <h3 className="font-semibold text-base capitalize">{d.metric_type}</h3>
+                  <h3 className="font-semibold text-base capitalize">{d.metric_type.replace(/_/g, " ")}</h3>
                   <Badge className={`${config.bg} ${config.text} border-none text-xs`}>
                     {config.label}
                   </Badge>
                   <div className="flex items-center gap-1">
                     <TrendIcon className={`w-4 h-4 ${trend.color}`} />
                     <span className={`text-xs font-medium ${trend.color}`}>
-                      {d.change_pct > 0 ? "+" : ""}{d.change_pct}%
+                      {formattedChange}
                     </span>
                   </div>
                 </div>

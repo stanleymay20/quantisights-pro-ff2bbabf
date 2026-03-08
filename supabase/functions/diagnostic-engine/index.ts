@@ -83,7 +83,7 @@ function applyMeta(meta: AdaptiveConfidenceMeta): Pick<DiagnosticResult,
 }
 
 /** Compute pure statistics for each metric type — no hardcoded interpretations. */
-function computeStats(metrics: MetricRow[]): MetricStats[] {
+function computeStats(metrics: MetricRow[]): { stats: MetricStats[]; skippedMetrics: string[] } {
   const grouped: Record<string, MetricRow[]> = {};
   for (const m of metrics) {
     if (!grouped[m.metric_type]) grouped[m.metric_type] = [];
@@ -91,9 +91,13 @@ function computeStats(metrics: MetricRow[]): MetricStats[] {
   }
 
   const results: MetricStats[] = [];
+  const skippedMetrics: string[] = [];
 
   for (const [type, rows] of Object.entries(grouped)) {
-    if (rows.length < 2) continue;
+    if (rows.length < 2) {
+      skippedMetrics.push(type);
+      continue;
+    }
 
     const sorted = rows.sort((a, b) => a.date.localeCompare(b.date));
     const values = sorted.map(r => Number(r.value));
@@ -157,7 +161,7 @@ function computeStats(metrics: MetricRow[]): MetricStats[] {
     });
   }
 
-  return results;
+  return { stats: results, skippedMetrics };
 }
 
 /**
@@ -234,7 +238,7 @@ Rules:
 - severity "info": stable/improving metrics, healthy patterns
 - causal_factors MUST reference specific statistical evidence (segment shifts, volatility levels, trend slopes)
 - recommendation MUST be concrete and actionable, referencing the specific metric and its diagnosed issue
-- raw_confidence should reflect data_points count: <12 pts = max 65, <20 pts = max 75, 20+ pts = max 85
+- raw_confidence should reflect data_points count: <12 pts = max 60, <30 pts = max 75, 30+ pts = max 90 (aligned with platform epistemic standard)
 - Do NOT invent data not present in the statistics
 - Every diagnosis MUST reference the dataset name "${datasetName}" and specific metric values
 - Return ONLY the JSON array`,
@@ -367,7 +371,7 @@ serve(async (req) => {
     }
 
     // Step 1: Compute pure statistics from real data
-    const stats = computeStats(metrics);
+    const { stats, skippedMetrics } = computeStats(metrics);
 
     // Fetch decision context if provided (no duplicate serviceKey declaration)
     let contextBlock = "";
@@ -419,7 +423,7 @@ IMPORTANT: Frame all diagnoses through this decision context. Explain how each f
           root_cause: "Data depth insufficient for statistical validity.",
           causal_factors: [`Only ${sampleSize} data points available`],
           trend_direction: matchingStat?.trend_direction as DiagnosticResult["trend_direction"] || "stable",
-          change_pct: matchingStat?.period_change_pct || 0,
+          change_pct: Number((matchingStat?.period_change_pct || 0).toFixed(1)),
           recommendation: "Collect more historical data to enable diagnostic intelligence.",
           ...applyMeta(meta),
         });
@@ -431,6 +435,11 @@ IMPORTANT: Frame all diagnoses through this decision context. Explain how each f
         supabaseUrl, serviceKey, organization_id,
       );
 
+      // Normalize change_pct to 1 decimal place regardless of source (AI or stats)
+      const normalizedChangePct = typeof ai.change_pct === "number"
+        ? Number(ai.change_pct.toFixed(1))
+        : Number((matchingStat?.period_change_pct || 0).toFixed(1));
+
       diagnostics.push({
         metric_type: ai.metric_type,
         diagnosis: ai.diagnosis || "",
@@ -438,7 +447,7 @@ IMPORTANT: Frame all diagnoses through this decision context. Explain how each f
         root_cause: ai.root_cause || "",
         causal_factors: Array.isArray(ai.causal_factors) ? ai.causal_factors : [],
         trend_direction: ai.trend_direction || matchingStat?.trend_direction || "stable",
-        change_pct: typeof ai.change_pct === "number" ? ai.change_pct : (matchingStat?.period_change_pct || 0),
+        change_pct: normalizedChangePct,
         recommendation: ai.recommendation || "",
         ...applyMeta(meta),
       });
@@ -454,6 +463,7 @@ IMPORTANT: Frame all diagnoses through this decision context. Explain how each f
       diagnostics,
       analyzed_metrics: metrics.length,
       metric_types_analyzed: stats.map(s => s.metric_type),
+      skipped_metrics: skippedMetrics,
       adaptive_calibration_applied: diagnostics.some(d => d.adaptive_calibration_applied),
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
