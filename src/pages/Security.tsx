@@ -627,10 +627,17 @@ const Security = () => {
                 </div>
               ))}
             </div>
-            <div className="mt-6">
+            <div className="mt-6 flex flex-wrap gap-3">
+              <button
+                onClick={downloadWhitepaper}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:brightness-110 transition-all"
+              >
+                <Download className="w-4 h-4" />
+                Download Security Whitepaper
+              </button>
               <Link
                 to="/security-questionnaire"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:brightness-110 transition-all"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border border-border text-sm font-medium hover:bg-muted/50 transition-colors"
               >
                 View Security Questionnaire <ArrowRight className="w-4 h-4" />
               </Link>
