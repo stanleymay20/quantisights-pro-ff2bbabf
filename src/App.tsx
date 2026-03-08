@@ -156,6 +156,7 @@ const App = () => (
               <Route path="/security" element={<Security />} />
               <Route path="/security-questionnaire" element={<SecurityQuestionnaire />} />
               <Route path="/calibration" element={<CalibrationAssessment />} />
+              <Route path="/handbook" element={<FounderHandbook />} />
               <Route path="*" element={<NotFound />} />
 
               {/* Standalone protected routes (no sidebar shell) */}
