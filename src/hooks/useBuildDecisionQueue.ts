@@ -213,6 +213,7 @@ export function useBuildDecisionQueue({
           confidence: dec.confidence_at_decision,
           message: dec.recommended_action,
           category: dec.decision_type,
+          sampleSize: 0,
         });
 
         queue.push({
