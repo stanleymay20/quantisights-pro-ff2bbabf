@@ -24,6 +24,8 @@ export interface EnrichedDecision {
   confidenceCapReason?: string | null;
   generatedAt: string;
   sampleSize?: number;
+  /** Dataset this decision originated from (for ledger provenance) */
+  sourceDatasetId?: string | null;
 }
 
 interface UseBuildDecisionQueueArgs {
@@ -109,6 +111,8 @@ export function useBuildDecisionQueue({
         confidence: (adv.capped_confidence ?? adv.confidence) as number | null,
         priorAdvisoryAction: adv.action,
         message: adv.title,
+        sampleSize: undefined, // advisories don't carry sample_size directly
+        datasetId: adv.dataset_id ?? datasetId,
       });
 
       queue.push({
@@ -130,6 +134,7 @@ export function useBuildDecisionQueue({
         cappedConfidence: adv.capped_confidence as number | null,
         confidenceCapReason: adv.confidence_cap_reason,
         generatedAt: now,
+        sourceDatasetId: adv.dataset_id ?? datasetId ?? null,
       });
     });
 
@@ -158,6 +163,8 @@ export function useBuildDecisionQueue({
           confidence: insight.confidence_score ?? null,
           message: insight.message,
           category: insight.category,
+          sampleSize: (insight as any).sample_size ?? undefined,
+          datasetId: datasetId,
         });
 
         queue.push({
@@ -179,6 +186,7 @@ export function useBuildDecisionQueue({
           confidenceCapReason: null,
           generatedAt: now,
           sampleSize: (insight as any).sample_size ?? undefined,
+          sourceDatasetId: datasetId ?? null,
         });
       });
 
@@ -209,6 +217,7 @@ export function useBuildDecisionQueue({
           confidence: dec.confidence_at_decision,
           message: dec.recommended_action,
           category: dec.decision_type,
+          sampleSize: 0,
         });
 
         queue.push({
@@ -252,6 +261,7 @@ export function useBuildDecisionQueue({
         severity: sev,
         confidence: heuristicConf,
         category: "retention",
+        sampleSize: 0,
       });
 
       queue.push({
@@ -290,6 +300,7 @@ export function useBuildDecisionQueue({
         severity: sev,
         confidence: calibrationScore,
         message: `Calibration at ${calibrationScore}% — ${65 - calibrationScore}pp below governance threshold`,
+        sampleSize: 0,
       });
 
       queue.push({

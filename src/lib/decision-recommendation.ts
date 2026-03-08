@@ -73,32 +73,37 @@ export interface StructuredRecommendation {
   decisionGateMessage: string | null;
 }
 
-const OWNER_MAP: Record<string, string> = {
-  revenue: "VP Revenue / CRO",
-  churn: "VP Customer Success",
-  retention: "VP Customer Success",
-  cost: "VP Finance / CFO",
-  margin: "CFO / VP Finance",
-  growth: "VP Growth / CGO",
-  operational: "COO / VP Operations",
-  financial: "CFO / VP Finance",
-  strategic: "CEO / Strategy Lead",
-  calibration: "Decision Governance Lead",
-};
+// Ordered longest-first to prevent partial matches (e.g. "cost_of_revenue" matching "cost" before "revenue")
+const OWNER_MAP: [string, string][] = [
+  ["cost_of_revenue", "VP Revenue / CRO"],
+  ["calibration", "Decision Governance Lead"],
+  ["operational", "COO / VP Operations"],
+  ["strategic", "CEO / Strategy Lead"],
+  ["retention", "VP Customer Success"],
+  ["financial", "CFO / VP Finance"],
+  ["revenue", "VP Revenue / CRO"],
+  ["growth", "VP Growth / CGO"],
+  ["margin", "CFO / VP Finance"],
+  ["churn", "VP Customer Success"],
+  ["cost", "VP Finance / CFO"],
+];
 
 function inferOwner(category: string | null | undefined, metricType: string | null | undefined): string {
   const key = [category, metricType].filter(Boolean).join(" ").toLowerCase();
-  for (const [k, v] of Object.entries(OWNER_MAP)) {
+  for (const [k, v] of OWNER_MAP) {
     if (key.includes(k)) return v;
   }
   return "Decision Owner (assign)";
 }
 
-function inferDeadlineDays(severity: string, confidence: number | null): number {
+function inferDeadlineDays(severity: string, confidence: number | null, sampleSize?: number): number {
   const conf = confidence ?? 50;
-  if (severity === "critical") return conf > 70 ? 3 : 5;
-  if (severity === "high") return conf > 70 ? 7 : 10;
-  return conf > 70 ? 14 : 21;
+  // Low sample sizes warrant extra time to collect data before acting
+  const dataBuffer = (sampleSize != null && sampleSize < 12) ? 3 : 0;
+  if (severity === "critical") return (conf > 70 ? 3 : 5) + dataBuffer;
+  if (severity === "high") return (conf > 70 ? 7 : 10) + dataBuffer;
+  if (severity === "medium") return (conf > 70 ? 14 : 21) + dataBuffer;
+  return (conf > 70 ? 21 : 30) + dataBuffer;
 }
 
 export function generateRecommendation(input: RecommendationInput): StructuredRecommendation {
@@ -109,8 +114,8 @@ export function generateRecommendation(input: RecommendationInput): StructuredRe
   const trend = input.trendDirection ?? "stable";
   const segment = input.affectedSegment ?? "primary segment";
   const confLabel = conf >= 70 ? "high confidence" : conf >= 40 ? "moderate confidence" : "low confidence";
-  const deadlineDays = inferDeadlineDays(input.severity, conf);
   const sampleSize = input.sampleSize ?? 0;
+  const deadlineDays = inferDeadlineDays(input.severity, conf, sampleSize);
 
   const confidenceBasis = buildConfidenceBasis({
     sampleSize,
@@ -129,19 +134,23 @@ export function generateRecommendation(input: RecommendationInput): StructuredRe
   // --- Classified sections ---
   const sections: ClassifiedSection[] = [];
 
-  // OBSERVED_FACT: What we directly see in data
+  // What happened — advisory prior actions are AI_RECOMMENDATION, not OBSERVED_FACT
   let whatHappened: string;
+  let whatHappenedClassification: OutputClassification;
   if (input.signalType === "advisory" && input.priorAdvisoryAction) {
     whatHappened = input.priorAdvisoryAction;
+    whatHappenedClassification = "AI_RECOMMENDATION";
   } else if (msg.length > 20) {
     whatHappened = msg.slice(0, 200);
+    whatHappenedClassification = "OBSERVED_FACT";
   } else {
     const metricLabel = met || cat || "monitored metric";
     const trendVerb = trend === "up" ? "increasing" : trend === "down" ? "declining" : "shifting";
     whatHappened = `${input.severity === "critical" ? "Critical" : "Notable"} ${trendVerb} signal detected in ${metricLabel} affecting ${segment}.`;
+    whatHappenedClassification = "HEURISTIC_ESTIMATE";
   }
   sections.push({
-    classification: msg.length > 20 ? "OBSERVED_FACT" : "HEURISTIC_ESTIMATE",
+    classification: whatHappenedClassification!,
     label: "What happened",
     content: whatHappened,
   });
@@ -184,14 +193,15 @@ export function generateRecommendation(input: RecommendationInput): StructuredRe
     assumptions.push("Proactive signal — threshold-based detection, not anomaly-confirmed");
   }
 
-  // Risk if wrong
+  // Risk if wrong — contextualized with metric/category exposure
+  const riskMetricRef = met || cat || "the monitored metric";
   let riskIfWrong: string;
   if (input.severity === "critical") {
-    riskIfWrong = "If this signal is a false positive, acting on it may divert resources unnecessarily. However, the cost of ignoring a true critical signal typically outweighs the cost of investigation.";
+    riskIfWrong = `If this ${riskMetricRef} signal is a false positive, acting on it may divert resources from other priorities. However, the cost of ignoring a true critical ${riskMetricRef} degradation typically outweighs the cost of investigation.`;
   } else if (conf < 40) {
-    riskIfWrong = `Low confidence (${conf}%) means this signal has a high probability of being noise. Recommend investigation before committing resources.`;
+    riskIfWrong = `Low confidence (${conf}%) on ${riskMetricRef} means this signal has a high probability of being noise. Recommend investigation before committing resources.`;
   } else {
-    riskIfWrong = "If the underlying trend reverses naturally, the recommended action may be unnecessary. Monitor the success metrics to detect early and adjust.";
+    riskIfWrong = `If the underlying ${riskMetricRef} trend reverses naturally, the recommended action may be unnecessary. Monitor the success metrics to detect early and adjust.`;
   }
 
   // AI_RECOMMENDATION: Action

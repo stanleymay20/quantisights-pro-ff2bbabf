@@ -163,7 +163,7 @@ const DecisionQueue = memo(({
         decision_type: "strategic",
         decision_context_id: activeContextId ?? null,
         notes: `Owner: ${decision.recommendation.suggestedOwner} | Due: ${decision.costOfDelayResult.recommendedActionWindowDays}d | Metrics: ${decision.recommendation.successMetrics.join(", ")}`,
-      });
+      } as any);
       setDecisions(prev => prev.filter(d => d.id !== decision.id));
       setConfirmation({ decisionTitle: decision.title, action: "approved" });
     } catch {
@@ -396,7 +396,7 @@ const DecisionQueue = memo(({
                           {decision.confidence != null && (
                             <ConfidenceBadge confidence={decision.confidence} showDetails />
                           )}
-                          {decision.confidenceCapReason && (
+                          {decision.confidenceCapReason && /heuristic/i.test(decision.confidenceCapReason) && (
                             <span className="text-[9px] font-bold text-warning bg-warning/10 px-1.5 py-0.5 rounded uppercase">
                               Heuristic
                             </span>
