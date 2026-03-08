@@ -1,0 +1,88 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "data_upload": "Data Upload",
+    "kpis": "KPIs",
+    "decisions": "Decisions",
+    "scenarios": "Scenarios",
+    "simulations": "Simulations",
+    "reports": "Reports",
+    "advisory": "Advisory",
+    "executive": "Executive",
+    "team": "Team",
+    "settings": "Settings",
+    "billing": "Billing",
+    "docs": "Documentation",
+    "logout": "Log Out"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "success": "Success",
+    "confirm": "Confirm",
+    "search": "Search",
+    "filter": "Filter",
+    "export": "Export",
+    "download": "Download",
+    "upload": "Upload",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "close": "Close",
+    "noData": "No data available",
+    "viewAll": "View All"
+  },
+  "auth": {
+    "login": "Sign In",
+    "register": "Create Account",
+    "logout": "Log Out",
+    "email": "Email",
+    "password": "Password",
+    "forgotPassword": "Forgot Password?",
+    "resetPassword": "Reset Password",
+    "fullName": "Full Name",
+    "createAccount": "Create your account",
+    "alreadyHaveAccount": "Already have an account?",
+    "dontHaveAccount": "Don't have an account?"
+  },
+  "dashboard": {
+    "title": "Decision Intelligence Dashboard",
+    "kpiCards": "KPI Overview",
+    "revenueChart": "Revenue Trends",
+    "insights": "AI Insights",
+    "anomalies": "Anomaly Detection",
+    "decisionQueue": "Decision Queue",
+    "noDataset": "Upload a dataset to get started"
+  },
+  "decisions": {
+    "title": "Decision Ledger",
+    "newDecision": "New Decision",
+    "status": "Status",
+    "confidence": "Confidence",
+    "impact": "Impact",
+    "pending": "Pending",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "executed": "Executed"
+  },
+  "reports": {
+    "title": "Reports",
+    "generate": "Generate Report",
+    "boardReport": "Board Report",
+    "exportPdf": "Export PDF",
+    "exportPptx": "Export PowerPoint"
+  },
+  "settings": {
+    "title": "Settings",
+    "general": "General",
+    "branding": "Branding",
+    "permissions": "Permissions",
+    "language": "Language",
+    "theme": "Theme"
+  }
+}

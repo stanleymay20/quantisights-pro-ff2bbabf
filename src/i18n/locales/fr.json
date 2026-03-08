@@ -1,0 +1,88 @@
+{
+  "nav": {
+    "dashboard": "Tableau de bord",
+    "data_upload": "Télécharger des données",
+    "kpis": "KPIs",
+    "decisions": "Décisions",
+    "scenarios": "Scénarios",
+    "simulations": "Simulations",
+    "reports": "Rapports",
+    "advisory": "Conseil",
+    "executive": "Exécutif",
+    "team": "Équipe",
+    "settings": "Paramètres",
+    "billing": "Facturation",
+    "docs": "Documentation",
+    "logout": "Déconnexion"
+  },
+  "common": {
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "create": "Créer",
+    "loading": "Chargement...",
+    "error": "Une erreur s'est produite",
+    "success": "Succès",
+    "confirm": "Confirmer",
+    "search": "Rechercher",
+    "filter": "Filtrer",
+    "export": "Exporter",
+    "download": "Télécharger",
+    "upload": "Téléverser",
+    "back": "Retour",
+    "next": "Suivant",
+    "previous": "Précédent",
+    "close": "Fermer",
+    "noData": "Aucune donnée disponible",
+    "viewAll": "Tout voir"
+  },
+  "auth": {
+    "login": "Se connecter",
+    "register": "Créer un compte",
+    "logout": "Se déconnecter",
+    "email": "E-mail",
+    "password": "Mot de passe",
+    "forgotPassword": "Mot de passe oublié ?",
+    "resetPassword": "Réinitialiser le mot de passe",
+    "fullName": "Nom complet",
+    "createAccount": "Créez votre compte",
+    "alreadyHaveAccount": "Vous avez déjà un compte ?",
+    "dontHaveAccount": "Vous n'avez pas de compte ?"
+  },
+  "dashboard": {
+    "title": "Tableau de bord d'intelligence décisionnelle",
+    "kpiCards": "Aperçu des KPIs",
+    "revenueChart": "Tendances des revenus",
+    "insights": "Insights IA",
+    "anomalies": "Détection d'anomalies",
+    "decisionQueue": "File d'attente des décisions",
+    "noDataset": "Téléchargez un jeu de données pour commencer"
+  },
+  "decisions": {
+    "title": "Registre des décisions",
+    "newDecision": "Nouvelle décision",
+    "status": "Statut",
+    "confidence": "Confiance",
+    "impact": "Impact",
+    "pending": "En attente",
+    "approved": "Approuvé",
+    "rejected": "Rejeté",
+    "executed": "Exécuté"
+  },
+  "reports": {
+    "title": "Rapports",
+    "generate": "Générer un rapport",
+    "boardReport": "Rapport du conseil",
+    "exportPdf": "Exporter en PDF",
+    "exportPptx": "Exporter en PowerPoint"
+  },
+  "settings": {
+    "title": "Paramètres",
+    "general": "Général",
+    "branding": "Image de marque",
+    "permissions": "Permissions",
+    "language": "Langue",
+    "theme": "Thème"
+  }
+}
