@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { SidebarMobileToggle } from "@/components/layout/ProtectedShell";
 import { Button } from "@/components/ui/button";
 import { useActiveDataContext } from "@/hooks/useActiveDataContext";
+import { useDecisionContexts } from "@/hooks/useDecisionContexts";
 import DatasetRequired from "@/components/layout/DatasetRequired";
 import IntelligenceDisclaimer from "@/components/IntelligenceDisclaimer";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,6 +12,7 @@ import { Loader2, RefreshCw } from "lucide-react";
 import DiagnosticSummaryCards from "@/components/diagnostics/DiagnosticSummaryCards";
 import DiagnosticCard from "@/components/diagnostics/DiagnosticCard";
 import DiagnosticEmptyState from "@/components/diagnostics/DiagnosticEmptyState";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 export interface DiagnosticResult {
   metric_type: string;
@@ -38,6 +40,7 @@ export interface DiagnosticResult {
 
 const Diagnostics = () => {
   const { orgId, datasetId } = useActiveDataContext();
+  const { activeContext } = useDecisionContexts(orgId);
   const { toast } = useToast();
   const [diagnostics, setDiagnostics] = useState<DiagnosticResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -46,12 +49,16 @@ const Diagnostics = () => {
   const [skippedMetrics, setSkippedMetrics] = useState<string[]>([]);
   const [expanded, setExpanded] = useState<string | null>(null);
 
-  const runDiagnostics = async () => {
-    if (!orgId) return;
+  const runDiagnostics = useCallback(async () => {
+    if (!orgId || !datasetId) return;
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("diagnostic-engine", {
-        body: { organization_id: orgId, dataset_id: datasetId },
+        body: {
+          organization_id: orgId,
+          dataset_id: datasetId,
+          ...(activeContext?.id ? { decision_context_id: activeContext.id } : {}),
+        },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
@@ -67,18 +74,18 @@ const Diagnostics = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [orgId, datasetId, activeContext?.id, toast]);
 
   useEffect(() => {
     if (orgId && datasetId) runDiagnostics();
-  }, [orgId, datasetId]);
+  }, [runDiagnostics]);
 
   const criticalCount = diagnostics.filter(d => d.severity === "critical").length;
   const warningCount = diagnostics.filter(d => d.severity === "warning").length;
 
   return (
     <DatasetRequired moduleName="Diagnostics">
-      <>
+      <ErrorBoundary>
         <IntelligenceDisclaimer variant="banner" context="advisory" persistent />
 
         <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
@@ -111,11 +118,11 @@ const Diagnostics = () => {
             <div className="space-y-4">
               {diagnostics.map((d, i) => (
                 <DiagnosticCard
-                  key={d.metric_type}
+                  key={`${d.metric_type}-${i}`}
                   diagnostic={d}
                   index={i}
-                  isExpanded={expanded === d.metric_type}
-                  onToggle={() => setExpanded(expanded === d.metric_type ? null : d.metric_type)}
+                  isExpanded={expanded === `${d.metric_type}-${i}`}
+                  onToggle={() => setExpanded(expanded === `${d.metric_type}-${i}` ? null : `${d.metric_type}-${i}`)}
                 />
               ))}
             </div>
@@ -123,7 +130,7 @@ const Diagnostics = () => {
 
           <IntelligenceDisclaimer variant="footer" context="advisory" />
         </main>
-      </>
+      </ErrorBoundary>
     </DatasetRequired>
   );
 };

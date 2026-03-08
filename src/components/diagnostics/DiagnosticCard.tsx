@@ -16,43 +16,41 @@ const SEVERITY_CONFIG = {
   info: { bg: "bg-primary/10", border: "border-primary/30", text: "text-primary", icon: Activity, label: "Healthy" },
 };
 
-/** Metrics where "declining" is actually positive (lower is better) */
-const INVERSE_METRICS = new Set([
+/** Exact tokens where "declining" is positive (lower = better). Uses word-boundary matching. */
+const INVERSE_TOKENS = [
   "cost", "costs", "churn", "churn_rate", "attrition", "turnover",
   "expense", "expenses", "burn", "burn_rate", "debt", "risk",
   "error", "errors", "defects", "incidents", "downtime",
   "cost_rate", "cost_of_revenue", "operating_cost",
-]);
+];
 
+/** Word-boundary-safe inverse metric detection. Prevents false positives like "discount" matching "cost". */
 function isInverseMetric(slug: string): boolean {
   const lower = slug.toLowerCase();
-  if (INVERSE_METRICS.has(lower)) return true;
-  for (const inv of INVERSE_METRICS) {
-    if (lower.includes(inv)) return true;
-  }
-  return false;
+  // Split by common separators to get discrete tokens
+  const tokens = lower.split(/[\s_\-./]+/);
+  return tokens.some(token => INVERSE_TOKENS.includes(token));
 }
 
 function getTrendConfig(direction: string, metricType: string) {
   const inverse = isInverseMetric(metricType);
 
   const baseIcons = {
-    improving: { icon: TrendingUp, direction: "improving" as const },
-    declining: { icon: TrendingDown, direction: "declining" as const },
-    stable: { icon: Minus, direction: "stable" as const },
-    volatile: { icon: Zap, direction: "volatile" as const },
+    improving: { icon: TrendingUp },
+    declining: { icon: TrendingDown },
+    stable: { icon: Minus },
+    volatile: { icon: Zap },
   };
 
   const entry = baseIcons[direction as keyof typeof baseIcons] || baseIcons.stable;
 
-  // For inverse metrics, flip the sentiment color (but keep the directional icon)
   let color: string;
   if (direction === "volatile") {
     color = "text-warning";
   } else if (direction === "stable") {
     color = "text-muted-foreground";
   } else if (inverse) {
-    // Inverse: improving (going down) = green, declining (going up in bad metric) = red
+    // Inverse: "improving" means the bad metric went down = green; "declining" means it went up = red
     color = direction === "improving" ? "text-success" : "text-destructive";
   } else {
     color = direction === "improving" ? "text-success" : "text-destructive";
@@ -74,10 +72,11 @@ const DiagnosticCard = ({ diagnostic: d, index, isExpanded, onToggle }: Diagnost
   const TrendIcon = trend.icon;
   const SevIcon = config.icon;
 
-  // Normalize change_pct to 1 decimal place
   const formattedChange = typeof d.change_pct === "number"
     ? `${d.change_pct > 0 ? "+" : ""}${d.change_pct.toFixed(1)}%`
     : "0.0%";
+
+  const causalFactors = Array.isArray(d.causal_factors) ? d.causal_factors : [];
 
   return (
     <motion.div
@@ -141,17 +140,19 @@ const DiagnosticCard = ({ diagnostic: d, index, isExpanded, onToggle }: Diagnost
                 <p className="text-sm text-muted-foreground leading-relaxed">{d.root_cause}</p>
               </div>
 
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <h4 className="text-sm font-semibold">Causal Factors</h4>
-                  <OutputClassificationBadge classification="STATISTICAL_INFERENCE" compact />
+              {causalFactors.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <h4 className="text-sm font-semibold">Causal Factors</h4>
+                    <OutputClassificationBadge classification="STATISTICAL_INFERENCE" compact />
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {causalFactors.map((f, j) => (
+                      <Badge key={j} variant="outline" className="text-xs">{f}</Badge>
+                    ))}
+                  </div>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  {d.causal_factors.map((f, j) => (
-                    <Badge key={j} variant="outline" className="text-xs">{f}</Badge>
-                  ))}
-                </div>
-              </div>
+              )}
 
               {d.recommendation && (
                 <div>
@@ -175,7 +176,7 @@ const DiagnosticCard = ({ diagnostic: d, index, isExpanded, onToggle }: Diagnost
                   <span>Sufficiency: {d.data_sufficiency}</span>
                   <span>Cap: {d.confidence_cap_reason}</span>
                   {d.adaptive_calibration_applied && (
-                    <span>Calibration: v{d.calibration_model_version} ({d.calibration_correction_applied_pp! > 0 ? "+" : ""}{d.calibration_correction_applied_pp}pp)</span>
+                    <span>Calibration: v{d.calibration_model_version} ({(d.calibration_correction_applied_pp ?? 0) > 0 ? "+" : ""}{d.calibration_correction_applied_pp}pp)</span>
                   )}
                 </div>
               </div>
