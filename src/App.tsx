@@ -75,7 +75,8 @@ const DatasetExplorer = lazy(() => import("./pages/DatasetExplorer"));
 const Compliance = lazy(() => import("./pages/Compliance"));
 const SSOConfig = lazy(() => import("./pages/SSOConfig"));
 const APIDocs = lazy(() => import("./pages/APIDocs"));
-
+const PipelineObservability = lazy(() => import("./pages/PipelineObservability"));
+const DataCatalog = lazy(() => import("./pages/DataCatalog"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
