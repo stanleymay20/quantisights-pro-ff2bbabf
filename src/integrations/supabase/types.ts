@@ -4638,6 +4638,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      is_dataset_workspace_member: {
+        Args: { _dataset_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_org_member: {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean
