@@ -155,10 +155,10 @@ const SSOConfig = () => {
       </div>
 
       {/* Status Banner */}
-      <Card className={samlEnabled ? "border-green-500/30 bg-green-500/5" : "border-primary/20 bg-primary/5"}>
+      <Card className={samlEnabled ? "border-accent/30 bg-accent/5" : "border-primary/20 bg-primary/5"}>
         <CardContent className="p-4 flex items-start gap-3">
           {samlEnabled ? (
-            <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 shrink-0" />
+            <CheckCircle2 className="w-5 h-5 text-accent mt-0.5 shrink-0" />
           ) : (
             <Info className="w-5 h-5 text-primary mt-0.5 shrink-0" />
           )}
