@@ -59,6 +59,10 @@ const FindingCard = ({ finding }: { finding: AnalystFinding }) => {
             {finding.pValue !== null && ` · p=${finding.pValue.toFixed(4)}`}
           </span>
         </div>
+        <OutputClassificationBadge
+          classification={finding.type === "anomaly" || finding.type === "trend" ? "STATISTICAL_INFERENCE" : "HEURISTIC_ESTIMATE"}
+          compact
+        />
         <ConfidenceBadge confidence={finding.confidence} />
       </div>
       <div className="space-y-1.5 ml-9">
