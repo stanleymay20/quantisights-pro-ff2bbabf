@@ -184,7 +184,9 @@ Provide executive-grade analysis grounded ONLY in the data above. Reference spec
                   risk_level: { type: "string", enum: ["low", "medium", "high"] },
                   insights: { type: "array", items: { type: "string" } },
                   recommendations: { type: "array", items: { type: "string" } },
-                  confidence_score: { type: "number" }
+                  confidence_score: { type: "number" },
+                  data_points_analyzed: { type: "number" },
+                  limitations: { type: "array", items: { type: "string" } }
                 },
                 required: ["summary", "trend", "trend_percentage", "risk_level", "insights", "recommendations", "confidence_score"],
                 additionalProperties: false
