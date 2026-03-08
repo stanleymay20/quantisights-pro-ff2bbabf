@@ -74,6 +74,11 @@ const Dashboard = () => {
         .in("status", ["open", "in_progress"]);
       if (activeDatasetId) {
         advisoryQuery = advisoryQuery.eq("dataset_id", activeDatasetId);
+      } else {
+        // No dataset selected — don't leak cross-workspace data
+        setOpenAdvisoryCount(0);
+        setPendingDecisions(0);
+        return;
       }
 
       const decisionQuery = supabase

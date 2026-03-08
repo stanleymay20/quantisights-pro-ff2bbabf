@@ -82,6 +82,9 @@ export function useBuildDecisionQueue({
 
     if (datasetId) {
       advisoryQuery = advisoryQuery.eq("dataset_id", datasetId);
+    } else {
+      // No dataset — skip advisory fetch to prevent cross-workspace leakage
+      // Continue to other queue sources
     }
 
     const { data: advisories } = await advisoryQuery;
