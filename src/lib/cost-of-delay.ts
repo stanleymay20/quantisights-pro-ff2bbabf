@@ -18,6 +18,7 @@ export interface CostOfDelayInput {
   revenue?: number;                  // total org revenue for exposure calc
   ageDays?: number;                  // how old the signal is
   expectedImpact?: string | null;    // text from advisory
+  currency?: string;                 // org currency symbol, defaults to €
 }
 
 export interface CostOfDelayResult {
@@ -31,14 +32,48 @@ export interface CostOfDelayResult {
 function metricUrgencyMultiplier(metricType: string | null | undefined): number {
   if (!metricType) return 1;
   const cfg = getSystemConfig().costOfDelay.metricUrgency;
-  const key = Object.keys(cfg).find(k => metricType.toLowerCase().includes(k));
-  return key ? cfg[key] : 1;
+  const lower = metricType.toLowerCase();
+
+  // Use the FIRST match only — prevent order-dependent stacking
+  let bestMultiplier = 1;
+  let bestLength = 0;
+  for (const [key, value] of Object.entries(cfg)) {
+    if (lower.includes(key) && key.length > bestLength) {
+      bestMultiplier = value;
+      bestLength = key.length;
+    }
+  }
+  return bestMultiplier;
+}
+
+/**
+ * Parse expectedImpact text for severity hints.
+ * Returns a bonus score (0-10) based on keyword analysis.
+ */
+function parseExpectedImpactBonus(expectedImpact: string | null | undefined): number {
+  if (!expectedImpact) return 0;
+  const lower = expectedImpact.toLowerCase();
+  let bonus = 0;
+
+  // High-impact keywords
+  if (lower.includes("severe") || lower.includes("critical") || lower.includes("catastroph")) bonus += 8;
+  else if (lower.includes("significant") || lower.includes("major") || lower.includes("substantial")) bonus += 5;
+  else if (lower.includes("moderate") || lower.includes("notable")) bonus += 3;
+  else if (lower.includes("minor") || lower.includes("low") || lower.includes("negligible")) bonus += 1;
+
+  // Multiplier keywords
+  if (lower.includes("revenue") || lower.includes("margin") || lower.includes("profit")) bonus += 2;
+  if (lower.includes("compounding") || lower.includes("accelerat") || lower.includes("exponential")) bonus += 2;
+
+  return Math.min(10, bonus);
 }
 
 export function computeCostOfDelay(input: CostOfDelayInput): CostOfDelayResult {
   const cfg = getSystemConfig().costOfDelay;
-  const conf = input.confidence ?? input.cappedConfidence ?? 50;
+  // #6 FIX: Prefer capped (governance-adjusted) over raw confidence
+  const conf = input.cappedConfidence ?? input.confidence ?? 50;
   const ageDays = input.ageDays ?? 0;
+  const currencySymbol = input.currency || "€";
 
   // --- Score components ---
   let score = 0;
@@ -68,7 +103,10 @@ export function computeCostOfDelay(input: CostOfDelayInput): CostOfDelayResult {
     score += cfg.trendAccelerationBonus;
   }
 
-  // Apply metric urgency multiplier
+  // 7. #2 FIX: expectedImpact text contribution
+  score += parseExpectedImpactBonus(input.expectedImpact);
+
+  // Apply metric urgency multiplier (#4 FIX: longest-match, no stacking)
   score *= metricUrgencyMultiplier(input.affectedMetricType);
 
   // Clamp to 0-100
@@ -80,18 +118,32 @@ export function computeCostOfDelay(input: CostOfDelayInput): CostOfDelayResult {
     score >= cfg.labelThresholds.high ? "high" :
     score >= cfg.labelThresholds.medium ? "medium" : "low";
 
-  // --- Action window ---
-  const recommendedActionWindowDays =
-    label === "critical" ? Math.max(1, cfg.actionWindows.critical - Math.floor(ageDays / 7)) :
-    label === "high" ? Math.max(3, cfg.actionWindows.high - Math.floor(ageDays / 5)) :
-    label === "medium" ? Math.max(7, cfg.actionWindows.medium - Math.floor(ageDays / 3)) :
-    cfg.actionWindows.low;
+  // --- Action window --- (#3 FIX: continuous decay with per-tier floors)
+  const actionWindowFloors = { critical: 1, high: 2, medium: 5, low: cfg.actionWindows.low };
+  const actionWindowDecayRates = { critical: 7, high: 5, medium: 4, low: 1 };
 
-  // --- Estimated cost ---
+  const baseWindow = cfg.actionWindows[label] ?? cfg.actionWindows.low;
+  const floor = actionWindowFloors[label];
+  const decayRate = actionWindowDecayRates[label];
+  const recommendedActionWindowDays = Math.max(floor, baseWindow - Math.floor(ageDays / decayRate));
+
+  // --- Estimated cost --- (#1 FIX: use revenue for exposure estimate)
   let estimatedDelayCost: string;
   if (input.predictedNetImpact != null && input.predictedNetImpact !== 0) {
+    // Validated financial basis — show weekly monetary cost
     const weeklyImpact = Math.abs(input.predictedNetImpact) / 4;
-    estimatedDelayCost = formatCurrency(weeklyImpact) + "/week";
+    estimatedDelayCost = formatCurrency(weeklyImpact, currencySymbol) + "/week";
+  } else if (input.revenue && input.revenue > 0 && score >= cfg.labelThresholds.medium) {
+    // Revenue-derived exposure estimate — only for medium+ severity
+    // Base exposure rate by metric type (churn=8%, revenue=7%, default=5%)
+    const metricLower = (input.affectedMetricType ?? "").toLowerCase();
+    const baseRate = metricLower.includes("churn") || metricLower.includes("retention")
+      ? 0.08
+      : metricLower.includes("revenue") || metricLower.includes("margin")
+      ? 0.07
+      : 0.05;
+    const weeklyExposure = (input.revenue * baseRate * (score / 100)) / 52;
+    estimatedDelayCost = `~${formatCurrency(weeklyExposure, currencySymbol)}/week exposure`;
   } else {
     estimatedDelayCost = `Relative score: ${score}/100`;
   }
@@ -110,14 +162,19 @@ export function computeCostOfDelay(input: CostOfDelayInput): CostOfDelayResult {
   if (input.affectedMetricType) {
     reasonParts.push(`${input.affectedMetricType} exposure`);
   }
+  if (input.expectedImpact) {
+    // Surface a truncated advisory impact note
+    const impactSnippet = input.expectedImpact.slice(0, 60);
+    reasonParts.push(`advisory: "${impactSnippet}${input.expectedImpact.length > 60 ? "…" : ""}"`);
+  }
 
   const reason = reasonParts.join(" · ");
 
   return { score, label, estimatedDelayCost, recommendedActionWindowDays, reason };
 }
 
-function formatCurrency(val: number): string {
-  if (val >= 1_000_000) return `€${(val / 1_000_000).toFixed(1)}M`;
-  if (val >= 1_000) return `€${(val / 1_000).toFixed(1)}K`;
-  return `€${Math.round(val)}`;
+function formatCurrency(val: number, symbol: string = "€"): string {
+  if (val >= 1_000_000) return `${symbol}${(val / 1_000_000).toFixed(1)}M`;
+  if (val >= 1_000) return `${symbol}${(val / 1_000).toFixed(1)}K`;
+  return `${symbol}${Math.round(val)}`;
 }
