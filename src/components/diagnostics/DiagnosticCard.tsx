@@ -112,10 +112,11 @@ const DiagnosticCard = ({ diagnostic: d, index, isExpanded, onToggle }: Diagnost
 
               {d.recommendation && (
                 <div>
-                  <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                  <div className="flex items-center gap-2 mb-2">
                     <Zap className="w-4 h-4 text-primary" />
-                    Recommended Action
-                  </h4>
+                    <h4 className="text-sm font-semibold">Recommended Action</h4>
+                    <OutputClassificationBadge classification="AI_RECOMMENDATION" compact />
+                  </div>
                   <p className="text-sm text-muted-foreground leading-relaxed">{d.recommendation}</p>
                 </div>
               )}
