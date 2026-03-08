@@ -309,8 +309,8 @@ const DataConnectors = () => {
       if (dsErr) throw dsErr;
       setDataSourceId(ds.id);
 
-      // 2. Create connector config
-      const { data: cc, error: ccErr } = await supabase.from("connector_configs").insert({
+      // 2. Create connector config (cast needed until types regenerate)
+      const { data: cc, error: ccErr } = await (supabase.from("connector_configs") as any).insert({
         organization_id: currentOrgId,
         data_source_id: ds.id,
         connector_type: selectedType || "postgresql",
