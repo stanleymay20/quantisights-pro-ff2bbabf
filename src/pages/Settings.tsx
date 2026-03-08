@@ -36,7 +36,7 @@ interface AuditEntry {
 }
 
 const Settings = () => {
-  const { user, signOut } = useAuth();
+  const { user, profile, refreshProfile, signOut } = useAuth();
   const { currentOrgId, currentOrg } = useOrganization();
   const { hasPermission, orgRole } = usePermissions();
   const { toast } = useToast();
