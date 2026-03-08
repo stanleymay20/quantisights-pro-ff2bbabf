@@ -403,31 +403,28 @@ IMPORTANT: Frame all diagnoses through this decision context. Explain how each f
       aiResults = fallbackDiagnostics(stats);
     }
 
-    // Step 4: Apply epistemic confidence capping + adaptive calibration
-    const diagnostics: DiagnosticResult[] = [];
-    for (const ai of aiResults) {
+    // Step 4: Apply epistemic confidence capping + adaptive calibration (parallelized)
+    const diagnosticPromises = aiResults.map(async (ai) => {
       const matchingStat = stats.find(s => s.metric_type === ai.metric_type);
       const sampleSize = matchingStat?.data_points || 2;
       const volatility = matchingStat?.volatility_pct || 0;
 
-      // Insufficient data gets a transparent "insufficient" result, not a fake diagnosis
       if (sampleSize < 8) {
         const meta = await applyAdaptiveConfidenceWithFetch(
           { rawConfidence: 0, sampleSize },
           supabaseUrl, serviceKey, organization_id,
         );
-        diagnostics.push({
+        return {
           metric_type: ai.metric_type,
           diagnosis: `Insufficient data (${sampleSize} points). Minimum 8 required for credible analysis.`,
-          severity: "info",
+          severity: "info" as const,
           root_cause: "Data depth insufficient for statistical validity.",
           causal_factors: [`Only ${sampleSize} data points available`],
-          trend_direction: matchingStat?.trend_direction as DiagnosticResult["trend_direction"] || "stable",
+          trend_direction: (matchingStat?.trend_direction as DiagnosticResult["trend_direction"]) || "stable",
           change_pct: Number((matchingStat?.period_change_pct || 0).toFixed(1)),
           recommendation: "Collect more historical data to enable diagnostic intelligence.",
           ...applyMeta(meta),
-        });
-        continue;
+        } as DiagnosticResult;
       }
 
       const meta = await applyAdaptiveConfidenceWithFetch(
@@ -435,12 +432,11 @@ IMPORTANT: Frame all diagnoses through this decision context. Explain how each f
         supabaseUrl, serviceKey, organization_id,
       );
 
-      // Normalize change_pct to 1 decimal place regardless of source (AI or stats)
       const normalizedChangePct = typeof ai.change_pct === "number"
         ? Number(ai.change_pct.toFixed(1))
         : Number((matchingStat?.period_change_pct || 0).toFixed(1));
 
-      diagnostics.push({
+      return {
         metric_type: ai.metric_type,
         diagnosis: ai.diagnosis || "",
         severity: ai.severity || "info",
@@ -450,8 +446,10 @@ IMPORTANT: Frame all diagnoses through this decision context. Explain how each f
         change_pct: normalizedChangePct,
         recommendation: ai.recommendation || "",
         ...applyMeta(meta),
-      });
-    }
+      } as DiagnosticResult;
+    });
+
+    const diagnostics = await Promise.all(diagnosticPromises);
 
     // Sort: critical first, then warning, then info
     diagnostics.sort((a, b) => {
