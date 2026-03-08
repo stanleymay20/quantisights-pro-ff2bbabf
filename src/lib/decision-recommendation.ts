@@ -96,11 +96,14 @@ function inferOwner(category: string | null | undefined, metricType: string | nu
   return "Decision Owner (assign)";
 }
 
-function inferDeadlineDays(severity: string, confidence: number | null): number {
+function inferDeadlineDays(severity: string, confidence: number | null, sampleSize?: number): number {
   const conf = confidence ?? 50;
-  if (severity === "critical") return conf > 70 ? 3 : 5;
-  if (severity === "high") return conf > 70 ? 7 : 10;
-  return conf > 70 ? 14 : 21;
+  // Low sample sizes warrant extra time to collect data before acting
+  const dataBuffer = (sampleSize != null && sampleSize < 12) ? 3 : 0;
+  if (severity === "critical") return (conf > 70 ? 3 : 5) + dataBuffer;
+  if (severity === "high") return (conf > 70 ? 7 : 10) + dataBuffer;
+  if (severity === "medium") return (conf > 70 ? 14 : 21) + dataBuffer;
+  return (conf > 70 ? 21 : 30) + dataBuffer;
 }
 
 export function generateRecommendation(input: RecommendationInput): StructuredRecommendation {
