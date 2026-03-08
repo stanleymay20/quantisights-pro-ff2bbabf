@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import type { Insight } from "@/hooks/useInsights";
 import type { MetricTypeSummary } from "@/hooks/useMetrics";
+import CrossWorkspaceIntelligence from "./CrossWorkspaceIntelligence";
 
 interface ExecutiveQuickViewProps {
   organizationId: string;
@@ -163,6 +164,9 @@ const ExecutiveQuickView = memo(({
           </div>
         </div>
       )}
+
+      {/* Cross-Workspace Intelligence (only renders for multi-workspace orgs) */}
+      <CrossWorkspaceIntelligence organizationId={organizationId} />
 
       {/* Expand Button */}
       <div className="flex items-center justify-center pt-2">
