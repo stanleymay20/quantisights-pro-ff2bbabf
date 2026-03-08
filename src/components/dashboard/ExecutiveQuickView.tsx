@@ -100,8 +100,8 @@ const ExecutiveQuickView = memo(({
           </div>
           <p className="text-2xl font-bold text-foreground">{quickMetrics.length}</p>
           <p className="text-xs text-muted-foreground mt-1">
-            {quickMetrics.length > 0
-              ? quickMetrics.map(m => m.metric_type).join(", ")
+            {metricTypesList.length > 0
+              ? metricTypesList.join(", ")
               : "No metrics detected"
             }
           </p>
