@@ -80,6 +80,12 @@ const CommandCenter = memo(({
 
       <KPICards topMetrics={topMetrics} />
 
+      <AnalystInsights
+        insights={insights}
+        metrics={metrics}
+        topMetrics={topMetrics ?? []}
+      />
+
       <div className="flex items-center justify-center">
         <button
           onClick={() => setShowAnalytics(!showAnalytics)}
