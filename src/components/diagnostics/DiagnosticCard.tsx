@@ -69,12 +69,14 @@ const DiagnosticCard = ({ diagnostic: d, index, isExpanded, onToggle }: Diagnost
             </div>
             <div className="flex items-center gap-3 shrink-0">
               <ConfidenceBadge
-                confidence={d.confidence}
-                rawConfidence={d.raw_confidence}
-                cappedConfidence={d.capped_confidence}
-                sampleSize={d.sample_size}
-                dataSufficiency={d.data_sufficiency}
-                varianceScore={d.variance_score}
+                confidence={{
+                  raw_confidence: d.raw_confidence,
+                  capped_confidence: d.capped_confidence,
+                  confidence_cap_reason: d.confidence_cap_reason,
+                  sample_size: d.sample_size,
+                  data_sufficiency: d.data_sufficiency,
+                  variance_score: d.variance_score,
+                }}
               />
               <ChevronRight className={`w-5 h-5 text-muted-foreground transition-transform ${isExpanded ? "rotate-90" : ""}`} />
             </div>
