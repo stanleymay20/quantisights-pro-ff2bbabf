@@ -39,6 +39,7 @@ serve(async (req) => {
 
     const {
       organization_id,
+      dataset_id,
       decision_id,
       revenue_delta_pct = 0,
       cost_delta_pct = 0,
@@ -51,6 +52,12 @@ serve(async (req) => {
     if (!organization_id) {
       return new Response(
         JSON.stringify({ error: "organization_id required" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    if (!dataset_id) {
+      return new Response(
+        JSON.stringify({ error: "dataset_id required by Active Data Contract. Simulations cannot run without explicit dataset scoping." }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
