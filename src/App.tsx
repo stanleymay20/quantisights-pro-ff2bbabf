@@ -14,6 +14,7 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import ProtectedLayout, { MinimalProtectedLayout } from "@/components/layout/ProtectedLayout";
 import CookieConsent from "@/components/CookieConsent";
+import SessionTimeout from "@/components/auth/SessionTimeout";
 
 // Eager: landing page (critical path)
 import Index from "./pages/Index";
