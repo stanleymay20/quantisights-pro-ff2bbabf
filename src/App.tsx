@@ -75,7 +75,8 @@ const DatasetExplorer = lazy(() => import("./pages/DatasetExplorer"));
 const Compliance = lazy(() => import("./pages/Compliance"));
 const SSOConfig = lazy(() => import("./pages/SSOConfig"));
 const APIDocs = lazy(() => import("./pages/APIDocs"));
-
+const PipelineObservability = lazy(() => import("./pages/PipelineObservability"));
+const DataCatalog = lazy(() => import("./pages/DataCatalog"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -196,6 +197,8 @@ const App = () => (
               <Route path="/compliance" element={<P><Compliance /></P>} />
               <Route path="/sso" element={<P><SSOConfig /></P>} />
               <Route path="/api-docs" element={<P><APIDocs /></P>} />
+              <Route path="/pipeline" element={<P><PipelineObservability /></P>} />
+              <Route path="/data-catalog" element={<P><DataCatalog /></P>} />
             </Routes>
             </Suspense>
           </AuthProvider>
