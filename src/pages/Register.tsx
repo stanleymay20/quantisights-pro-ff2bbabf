@@ -22,6 +22,7 @@ const Register = forwardRef<HTMLDivElement>((_, ref) => {
   const { signUp } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const throttle = useAuthThrottle(3, 120_000);
 
   const passedRules = useMemo(() => PASSWORD_RULES.map(r => r.test(password)), [password]);
   const allPassed = passedRules.every(Boolean);
