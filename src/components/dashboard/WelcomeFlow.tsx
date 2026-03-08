@@ -166,7 +166,7 @@ const WelcomeFlow = ({ hasData, displayName }: WelcomeFlowProps) => {
                 <div className="space-y-2 mb-5">
                   {current.bullets.map((b) => (
                     <div key={b} className="flex items-start gap-2.5">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                      <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                       <span className="text-sm text-foreground/80">{b}</span>
                     </div>
                   ))}
