@@ -71,6 +71,7 @@ const Portfolio = lazy(() => import("./pages/Portfolio"));
 const SecurityQuestionnaire = lazy(() => import("./pages/SecurityQuestionnaire"));
 const PilotAudit = lazy(() => import("./pages/PilotAudit"));
 const BusinessModel = lazy(() => import("./pages/BusinessModel"));
+const DatasetExplorer = lazy(() => import("./pages/DatasetExplorer"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -188,6 +189,7 @@ const App = () => (
               <Route path="/misses" element={<P><Misses /></P>} />
               <Route path="/portfolio" element={<P><Portfolio /></P>} />
               <Route path="/pilot-audit" element={<P><PilotAudit /></P>} />
+              <Route path="/dataset-explorer" element={<P><DatasetExplorer /></P>} />
             </Routes>
             </Suspense>
           </AuthProvider>

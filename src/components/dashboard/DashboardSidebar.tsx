@@ -6,7 +6,7 @@ import {
   BookOpen, Target, Brain, MessageSquare, GitBranch, Globe,
   Sparkles, GitCommitVertical, Crosshair, Bell, Cable,
   Briefcase, ChevronDown, Shield, Eye, Compass, FlaskConical,
-  ClipboardCheck, AlertOctagon, RotateCcw, Award,
+  ClipboardCheck, AlertOctagon, RotateCcw, Award, Layers,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -77,6 +77,7 @@ const navSections: NavSection[] = [
     items: [
       { icon: Cable, label: "Data Connectors", path: "/data-connectors" },
       { icon: Database, label: "Data Sources", path: "/data-sources" },
+      { icon: Layers, label: "Dataset Explorer", path: "/dataset-explorer" },
       { icon: Upload, label: "CSV Upload", path: "/data-upload" },
       { icon: GitCommitVertical, label: "Data Lineage", path: "/lineage" },
       { icon: ClipboardCheck, label: "Pilot Audit", path: "/pilot-audit" },

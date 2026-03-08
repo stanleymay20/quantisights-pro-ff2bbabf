@@ -5,6 +5,7 @@ import DecisionQueue from "./DecisionQueue";
 import QuickDecisionLog from "./QuickDecisionLog";
 import CalibrationProgress from "./CalibrationProgress";
 import KPICards from "./KPICards";
+import AnalystInsights from "./AnalystInsights";
 import type { Insight } from "@/hooks/useInsights";
 import type { MetricTypeSummary } from "@/hooks/useMetrics";
 
@@ -78,6 +79,12 @@ const CommandCenter = memo(({
       </div>
 
       <KPICards topMetrics={topMetrics} />
+
+      <AnalystInsights
+        insights={insights}
+        metrics={metrics}
+        topMetrics={topMetrics ?? []}
+      />
 
       <div className="flex items-center justify-center">
         <button
