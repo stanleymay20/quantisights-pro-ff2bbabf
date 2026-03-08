@@ -89,7 +89,11 @@ const CommandCenter = memo(({
         insights={insights}
         metrics={metrics}
         topMetrics={topMetrics ?? []}
+        datasetId={datasetId}
+        datasetName={datasetName}
       />
+
+      <DecisionPerformanceDashboard />
 
       <div className="flex items-center justify-center">
         <button
