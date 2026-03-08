@@ -371,7 +371,7 @@ serve(async (req) => {
     }
 
     // Step 1: Compute pure statistics from real data
-    const stats = computeStats(metrics);
+    const { stats, skippedMetrics } = computeStats(metrics);
 
     // Fetch decision context if provided (no duplicate serviceKey declaration)
     let contextBlock = "";
@@ -423,7 +423,7 @@ IMPORTANT: Frame all diagnoses through this decision context. Explain how each f
           root_cause: "Data depth insufficient for statistical validity.",
           causal_factors: [`Only ${sampleSize} data points available`],
           trend_direction: matchingStat?.trend_direction as DiagnosticResult["trend_direction"] || "stable",
-          change_pct: matchingStat?.period_change_pct || 0,
+          change_pct: Number((matchingStat?.period_change_pct || 0).toFixed(1)),
           recommendation: "Collect more historical data to enable diagnostic intelligence.",
           ...applyMeta(meta),
         });
@@ -435,6 +435,11 @@ IMPORTANT: Frame all diagnoses through this decision context. Explain how each f
         supabaseUrl, serviceKey, organization_id,
       );
 
+      // Normalize change_pct to 1 decimal place regardless of source (AI or stats)
+      const normalizedChangePct = typeof ai.change_pct === "number"
+        ? Number(ai.change_pct.toFixed(1))
+        : Number((matchingStat?.period_change_pct || 0).toFixed(1));
+
       diagnostics.push({
         metric_type: ai.metric_type,
         diagnosis: ai.diagnosis || "",
@@ -442,7 +447,7 @@ IMPORTANT: Frame all diagnoses through this decision context. Explain how each f
         root_cause: ai.root_cause || "",
         causal_factors: Array.isArray(ai.causal_factors) ? ai.causal_factors : [],
         trend_direction: ai.trend_direction || matchingStat?.trend_direction || "stable",
-        change_pct: typeof ai.change_pct === "number" ? ai.change_pct : (matchingStat?.period_change_pct || 0),
+        change_pct: normalizedChangePct,
         recommendation: ai.recommendation || "",
         ...applyMeta(meta),
       });
@@ -458,6 +463,7 @@ IMPORTANT: Frame all diagnoses through this decision context. Explain how each f
       diagnostics,
       analyzed_metrics: metrics.length,
       metric_types_analyzed: stats.map(s => s.metric_type),
+      skipped_metrics: skippedMetrics,
       adaptive_calibration_applied: diagnostics.some(d => d.adaptive_calibration_applied),
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
