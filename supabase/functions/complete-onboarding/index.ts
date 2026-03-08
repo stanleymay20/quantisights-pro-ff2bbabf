@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
+import { verifyOrgMembership } from "../_shared/auth-guard.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -65,6 +66,15 @@ serve(async (req) => {
 
     const { organization_id, roles, kpi_template_id } = await req.json();
     if (!organization_id) throw new Error("organization_id required");
+
+    // Verify caller is a member of the target organization
+    const isMember = await verifyOrgMembership(user.id, organization_id);
+    if (!isMember) {
+      return new Response(
+        JSON.stringify({ error: "Forbidden: not a member of this organization" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // Fetch org profile for industry-weighted scoring
     const { data: org } = await supabase

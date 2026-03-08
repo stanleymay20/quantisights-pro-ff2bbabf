@@ -36,7 +36,7 @@ interface AuditEntry {
 }
 
 const Settings = () => {
-  const { user, signOut } = useAuth();
+  const { user, profile, refreshProfile, signOut } = useAuth();
   const { currentOrgId, currentOrg } = useOrganization();
   const { hasPermission, orgRole } = usePermissions();
   const { toast } = useToast();
@@ -86,18 +86,14 @@ const Settings = () => {
 
   const canManageOrg = orgRole === "owner" || orgRole === "admin";
 
+  // Initialize profile name from cached AuthContext profile
   useEffect(() => {
-    if (!user) return;
-    const load = async () => {
-      const { data: profile } = await supabase.from("profiles").select("full_name").eq("user_id", user.id).maybeSingle();
-      if (profile) {
-        const name = profile.full_name || "";
-        setFullName(name);
-        savedProfile.current = name;
-      }
-    };
-    load();
-  }, [user]);
+    if (profile) {
+      const name = profile.full_name || "";
+      setFullName(name);
+      savedProfile.current = name;
+    }
+  }, [profile]);
 
   useEffect(() => {
     if (!currentOrgId) return;
@@ -164,6 +160,7 @@ const Settings = () => {
       if (error) throw error;
       savedProfile.current = trimmed;
       setFullName(trimmed);
+      await refreshProfile();
       toast({ title: "Profile updated" });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
