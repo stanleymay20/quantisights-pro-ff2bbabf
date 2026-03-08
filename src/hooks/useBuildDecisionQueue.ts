@@ -257,6 +257,7 @@ export function useBuildDecisionQueue({
         severity: sev,
         confidence: heuristicConf,
         category: "retention",
+        sampleSize: 0,
       });
 
       queue.push({
