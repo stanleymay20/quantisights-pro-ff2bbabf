@@ -253,34 +253,51 @@ IMPORTANT: Frame ALL insights through this decision context. Every insight must 
 
     const insightPrompt = `You are an enterprise data intelligence engine producing analyst-grade insights. The dataset is called "${datasetName}".
 ${contextBlock}
-METRIC SUMMARIES:
+METRIC SUMMARIES (with advanced statistical profiling):
 ${JSON.stringify(metricSummaries, null, 2)}
 
-Generate 5-10 CONTEXTUAL insights. Each insight MUST reference:
+STATISTICAL CONTEXT:
+- Distribution profiles include skewness and outlier counts. Flag non-normal distributions.
+- Seasonality fields show detected periodic patterns. Reference these to avoid false trend conclusions.
+- Structural breaks (changepoints) indicate regime changes. Split analysis into pre/post periods.
+- IQR-based outlier counts quantify data quality concerns.
+
+Generate 8-12 CONTEXTUAL insights following these tiers:
+1. CRITICAL FINDINGS (2-3): Structural breaks, regime changes, high-severity anomalies
+2. TREND INTELLIGENCE (2-3): Growth/decline with seasonality adjustment, momentum shifts
+3. SEGMENT/REGION ANALYSIS (2-3): Cross-segment disparities, geographic patterns
+4. STATISTICAL WARNINGS (1-2): Distribution issues, outlier concentrations, data quality
+5. ACTIONABLE OPPORTUNITIES (1-2): Correlations to exploit, underperforming segments to fix
+
+Each insight MUST reference:
 - The dataset name ("${datasetName}")
-- Specific metric names from the data
-- Actual values, percentages, and date ranges
-- Segment or region names when available
+- Specific metric names and their actual values
+- Date ranges and sample sizes
+- Statistical evidence (p-values, effect sizes, confidence intervals where applicable)
 ${decision_context_id ? "- The decision context and how the finding impacts the stated objective" : ""}
 
 Return ONLY a JSON array:
 [
   {
-    "message": "In ${datasetName}, [metric_name] [specific observation with values]. [Statistical inference]. [${decision_context_id ? "Decision relevance. " : ""}Actionable recommendation].",
+    "message": "In ${datasetName}, [metric_name] [specific observation with values]. [Statistical evidence]. [${decision_context_id ? "Decision relevance. " : ""}Actionable recommendation with success metric].",
     "severity": "high" | "medium" | "info",
-    "category": "trend" | "anomaly" | "risk" | "opportunity" | "segmentation" | "correlation" | "driver",
-    "raw_confidence": 60-90
+    "category": "trend" | "anomaly" | "risk" | "opportunity" | "segmentation" | "correlation" | "driver" | "seasonality" | "changepoint" | "distribution",
+    "raw_confidence": 55-92
   }
 ]
 
 Rules:
-- NEVER produce generic insights like "all metrics stable" — always reference specific metrics
+- NEVER produce generic insights like "all metrics stable" — always reference specific metrics and values
 - Include segment/region analysis when segment or region data exists
 - Cross-reference metrics: note correlations or divergences between metric types
-- High severity: declines >10%, volatility >50%, or cross-metric divergence
-- Medium: 5-10% changes, emerging patterns, segment disparities
-- Info: positive trends, stable-but-notable patterns
+- If seasonality is detected, warn that sequential period comparison may be misleading
+- If structural breaks exist, specify pre/post period statistics separately
+- If distribution is non-normal, flag which statistical methods are unreliable
+- High severity: declines >10%, volatility >50%, structural breaks >25%, bimodal distributions
+- Medium: 5-10% changes, emerging patterns, segment disparities, seasonality warnings
+- Info: positive trends, data quality confirmations, stable patterns
 - At least 2 insights must reference specific segments or regions if present
+- Confidence should reflect data quality: lower for small samples, skewed data, or single-method signals
 - Return ONLY the JSON array`;
 
     if (LOVABLE_API_KEY) {
