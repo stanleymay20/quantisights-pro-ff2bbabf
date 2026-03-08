@@ -170,26 +170,49 @@ const AnalystInsights = ({ insights, metrics, topMetrics, datasetName, datasetId
         </div>
       </div>
 
-      {/* AI-generated contextual insights */}
-      {insights.length > 0 && (
+      {/* AI-generated contextual insights with anti-hallucination validation */}
+      {validatedInsights.length > 0 && (
         <div className="glass-card p-4 rounded-xl border border-primary/10">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-primary mb-3">AI Intelligence</p>
+          <div className="flex items-center gap-2 mb-3">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-primary">AI Intelligence</p>
+            <Badge variant="outline" className="text-[9px] h-4">
+              Validated against source data
+            </Badge>
+          </div>
           <div className="space-y-2">
-            {insights.slice(0, 3).map(insight => (
-              <div key={insight.id} className="flex items-start gap-3">
-                <div className={`w-1.5 h-1.5 rounded-full mt-2 shrink-0 ${
-                  insight.severity === "high" ? "bg-destructive" : insight.severity === "medium" ? "bg-yellow-500" : "bg-primary"
-                }`} />
-                <div className="flex-1">
-                  <p className="text-[13px] text-foreground/80 leading-relaxed">{insight.message}</p>
-                  {insight.confidence_score && (
-                    <div className="mt-1">
-                      <ConfidenceBadge confidence={insight.confidence_score} />
+            {validatedInsights.slice(0, 3).map(insight => {
+              const v = (insight as any)._validation;
+              const criticalFlags = v?.flags?.filter((f: any) => f.severity === "critical").length || 0;
+              
+              // Skip insights with critical hallucination flags
+              if (criticalFlags > 0) return null;
+              
+              return (
+                <div key={insight.id} className="flex items-start gap-3">
+                  <div className={`w-1.5 h-1.5 rounded-full mt-2 shrink-0 ${
+                    insight.severity === "high" ? "bg-destructive" : insight.severity === "medium" ? "bg-yellow-500" : "bg-primary"
+                  }`} />
+                  <div className="flex-1">
+                    <p className="text-[13px] text-foreground/80 leading-relaxed">
+                      {v?.sanitized || insight.message}
+                    </p>
+                    <div className="flex items-center gap-2 mt-1">
+                      {insight.confidence_score && <ConfidenceBadge confidence={insight.confidence_score} />}
+                      {v && v.score < 80 && (
+                        <Badge variant="outline" className="text-[9px] h-4 text-yellow-600 border-yellow-500/30">
+                          {v.flags.length} validation note{v.flags.length !== 1 ? "s" : ""}
+                        </Badge>
+                      )}
+                      {v && v.score >= 80 && (
+                        <Badge variant="outline" className="text-[9px] h-4 text-green-600 border-green-500/30">
+                          ✓ Verified
+                        </Badge>
+                      )}
                     </div>
-                  )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
