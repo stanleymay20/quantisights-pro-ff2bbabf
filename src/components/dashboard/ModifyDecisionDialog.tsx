@@ -19,7 +19,7 @@ interface ModifyDecisionDialogProps {
   onSaved: (updated: Partial<EnrichedDecision>) => void;
 }
 
-const ModifyDecisionDialog = forwardRef<HTMLDivElement, ModifyDecisionDialogProps>(({ decision, organizationId, open, onOpenChange, onSaved }, ref) => {
+const ModifyDecisionDialog = ({ decision, organizationId, open, onOpenChange, onSaved }: ModifyDecisionDialogProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
