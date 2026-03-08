@@ -66,7 +66,12 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
 
     const { data, error } = await query.order("created_at", { ascending: false });
 
-    if (error || !data) {
+    if (error) {
+      console.error("[ProjectContext] Failed to fetch projects:", error.message);
+      setLoading(false);
+      return;
+    }
+    if (!data) {
       setLoading(false);
       return;
     }

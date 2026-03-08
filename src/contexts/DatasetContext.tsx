@@ -43,13 +43,19 @@ export const DatasetProvider = ({ children }: { children: ReactNode }) => {
     }
 
     setLoading(true);
-    // Fetch datasets linked to this project
     const { data: links, error: linkErr } = await supabase
       .from("project_datasets")
       .select("dataset_id")
       .eq("project_id", currentProjectId);
 
-    if (linkErr || !links || links.length === 0) {
+    if (linkErr) {
+      console.error("[DatasetContext] Failed to fetch project_datasets:", linkErr.message);
+      setDatasets([]);
+      setLoading(false);
+      return;
+    }
+
+    if (!links || links.length === 0) {
       setDatasets([]);
       setLoading(false);
       return;
@@ -62,6 +68,9 @@ export const DatasetProvider = ({ children }: { children: ReactNode }) => {
       .in("id", dsIds)
       .order("created_at", { ascending: false });
 
+    if (error) {
+      console.error("[DatasetContext] Failed to fetch datasets:", error.message);
+    }
     if (!error && data) {
       setDatasets(data);
     }
