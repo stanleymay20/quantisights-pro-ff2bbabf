@@ -35,7 +35,7 @@ serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const headers = { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` };
 
-    const metricsUrl = `${supabaseUrl}/rest/v1/metrics?organization_id=eq.${organization_id}&dataset_id=eq.${dataset_id}&order=date.asc&limit=500`;
+    const metricsUrl = `${supabaseUrl}/rest/v1/metrics?organization_id=eq.${organization_id}&dataset_id=eq.${dataset_id}&order=date.asc&limit=1000`;
     const insightsUrl = `${supabaseUrl}/rest/v1/insights?organization_id=eq.${organization_id}&dataset_id=eq.${dataset_id}&severity=in.(high,medium)&order=created_at.desc&limit=20`;
 
     const [metricsResp, riskResp, insightsResp, calibrationModel] = await Promise.all([
