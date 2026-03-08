@@ -32,6 +32,14 @@ interface ConnectorRequest {
   client_id?: string;
   client_secret?: string;
   workspace_id?: string;
+  // Redshift
+  cluster_id?: string;
+  redshift_database?: string;
+  redshift_schema?: string;
+  redshift_user?: string;
+  redshift_password?: string;
+  redshift_host?: string;
+  redshift_port?: number;
   // Sync
   data_source_id?: string;
   selected_tables?: string[];
