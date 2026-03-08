@@ -573,6 +573,81 @@ export type Database = {
           },
         ]
       }
+      connector_configs: {
+        Row: {
+          connection_status: string | null
+          connector_type: string
+          created_at: string
+          credential_vault_key: string | null
+          data_source_id: string | null
+          database_name: string | null
+          discovered_schema: Json | null
+          host: string | null
+          id: string
+          last_tested_at: string | null
+          organization_id: string
+          port: number | null
+          schema_name: string | null
+          selected_tables: Json | null
+          ssl_mode: string | null
+          updated_at: string
+          username: string | null
+        }
+        Insert: {
+          connection_status?: string | null
+          connector_type?: string
+          created_at?: string
+          credential_vault_key?: string | null
+          data_source_id?: string | null
+          database_name?: string | null
+          discovered_schema?: Json | null
+          host?: string | null
+          id?: string
+          last_tested_at?: string | null
+          organization_id: string
+          port?: number | null
+          schema_name?: string | null
+          selected_tables?: Json | null
+          ssl_mode?: string | null
+          updated_at?: string
+          username?: string | null
+        }
+        Update: {
+          connection_status?: string | null
+          connector_type?: string
+          created_at?: string
+          credential_vault_key?: string | null
+          data_source_id?: string | null
+          database_name?: string | null
+          discovered_schema?: Json | null
+          host?: string | null
+          id?: string
+          last_tested_at?: string | null
+          organization_id?: string
+          port?: number | null
+          schema_name?: string | null
+          selected_tables?: Json | null
+          ssl_mode?: string | null
+          updated_at?: string
+          username?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "connector_configs_data_source_id_fkey"
+            columns: ["data_source_id"]
+            isOneToOne: false
+            referencedRelation: "data_sources"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "connector_configs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       convergence_usage: {
         Row: {
           call_count: number
@@ -2343,6 +2418,72 @@ export type Database = {
           },
         ]
       }
+      metric_mappings: {
+        Row: {
+          aggregation: string | null
+          created_at: string
+          data_source_id: string
+          date_column: string | null
+          id: string
+          is_active: boolean | null
+          metric_type: string
+          organization_id: string
+          region_column: string | null
+          segment_column: string | null
+          source_column: string
+          source_table: string
+          transform_expression: string | null
+          updated_at: string
+        }
+        Insert: {
+          aggregation?: string | null
+          created_at?: string
+          data_source_id: string
+          date_column?: string | null
+          id?: string
+          is_active?: boolean | null
+          metric_type: string
+          organization_id: string
+          region_column?: string | null
+          segment_column?: string | null
+          source_column: string
+          source_table: string
+          transform_expression?: string | null
+          updated_at?: string
+        }
+        Update: {
+          aggregation?: string | null
+          created_at?: string
+          data_source_id?: string
+          date_column?: string | null
+          id?: string
+          is_active?: boolean | null
+          metric_type?: string
+          organization_id?: string
+          region_column?: string | null
+          segment_column?: string | null
+          source_column?: string
+          source_table?: string
+          transform_expression?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "metric_mappings_data_source_id_fkey"
+            columns: ["data_source_id"]
+            isOneToOne: false
+            referencedRelation: "data_sources"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "metric_mappings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       metrics: {
         Row: {
           created_at: string
@@ -3593,6 +3734,63 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "subscriptions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sync_schedules: {
+        Row: {
+          created_at: string
+          data_source_id: string
+          frequency: string
+          id: string
+          is_active: boolean | null
+          last_error: string | null
+          last_run_at: string | null
+          next_run_at: string | null
+          organization_id: string
+          run_count: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          data_source_id: string
+          frequency?: string
+          id?: string
+          is_active?: boolean | null
+          last_error?: string | null
+          last_run_at?: string | null
+          next_run_at?: string | null
+          organization_id: string
+          run_count?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          data_source_id?: string
+          frequency?: string
+          id?: string
+          is_active?: boolean | null
+          last_error?: string | null
+          last_run_at?: string | null
+          next_run_at?: string | null
+          organization_id?: string
+          run_count?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sync_schedules_data_source_id_fkey"
+            columns: ["data_source_id"]
+            isOneToOne: true
+            referencedRelation: "data_sources"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sync_schedules_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
