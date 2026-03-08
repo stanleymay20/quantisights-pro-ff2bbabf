@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 
 export interface DecisionContext {
   id: string;
@@ -9,8 +10,8 @@ export interface DecisionContext {
   industry: string | null;
   decision_type: string;
   objective: string | null;
-  target_metrics: string[];
-  datasets: string[];
+  target_metrics: Json | null;
+  datasets: Json | null;
   status: string;
   created_by: string | null;
   created_at: string;
@@ -42,11 +43,13 @@ export const DECISION_TYPES = [
 
 /**
  * Hook to manage Decision Contexts — scoping all analysis to a strategic decision.
+ * Decision Contexts are org-scoped (institutional memory).
  */
 export const useDecisionContexts = (organizationId: string | null) => {
   const [contexts, setContexts] = useState<DecisionContext[]>([]);
   const [activeContext, setActiveContext] = useState<DecisionContext | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchContexts = useCallback(async () => {
     if (!organizationId) {
@@ -54,15 +57,20 @@ export const useDecisionContexts = (organizationId: string | null) => {
       return;
     }
     setLoading(true);
-    const { data, error } = await supabase
+    setError(null);
+    const { data, error: fetchError } = await supabase
       .from("decision_contexts")
       .select("*")
       .eq("organization_id", organizationId)
       .eq("status", "active")
       .order("updated_at", { ascending: false });
 
-    if (!error && data) {
-      setContexts(data as unknown as DecisionContext[]);
+    if (fetchError) {
+      console.error("Decision contexts fetch error:", fetchError);
+      setError(fetchError.message);
+      setContexts([]);
+    } else {
+      setContexts((data ?? []) as DecisionContext[]);
     }
     setLoading(false);
   }, [organizationId]);
@@ -71,11 +79,11 @@ export const useDecisionContexts = (organizationId: string | null) => {
     fetchContexts();
   }, [fetchContexts]);
 
-  const createContext = useCallback(async (input: CreateDecisionContextInput) => {
-    if (!organizationId) return null;
+  const createContext = useCallback(async (input: CreateDecisionContextInput): Promise<DecisionContext | null> => {
+    if (!organizationId) throw new Error("Organization context required");
     const { data: userData } = await supabase.auth.getUser();
 
-    const { data, error } = await supabase
+    const { data, error: insertError } = await supabase
       .from("decision_contexts")
       .insert({
         organization_id: organizationId,
@@ -84,51 +92,73 @@ export const useDecisionContexts = (organizationId: string | null) => {
         industry: input.industry || null,
         decision_type: input.decision_type,
         objective: input.objective || null,
-        target_metrics: input.target_metrics || [],
-        datasets: input.datasets || [],
+        target_metrics: (input.target_metrics || []) as unknown as Json,
+        datasets: (input.datasets || []) as unknown as Json,
         created_by: userData?.user?.id || null,
-      } as any)
+      })
       .select()
       .single();
 
-    if (!error && data) {
-      const ctx = data as unknown as DecisionContext;
-      setContexts(prev => [ctx, ...prev]);
-      return ctx;
+    if (insertError) {
+      console.error("Create context error:", insertError);
+      throw new Error(insertError.message);
     }
-    return null;
+
+    const ctx = data as DecisionContext;
+    setContexts(prev => [ctx, ...prev]);
+    return ctx;
   }, [organizationId]);
 
   const updateContext = useCallback(async (id: string, updates: Partial<CreateDecisionContextInput>) => {
-    const { error } = await supabase
-      .from("decision_contexts")
-      .update(updates as any)
-      .eq("id", id);
+    if (!organizationId) throw new Error("Organization context required");
 
-    if (!error) {
-      await fetchContexts();
+    const dbUpdates: Record<string, unknown> = {};
+    if (updates.name !== undefined) dbUpdates.name = updates.name;
+    if (updates.description !== undefined) dbUpdates.description = updates.description || null;
+    if (updates.industry !== undefined) dbUpdates.industry = updates.industry || null;
+    if (updates.decision_type !== undefined) dbUpdates.decision_type = updates.decision_type;
+    if (updates.objective !== undefined) dbUpdates.objective = updates.objective || null;
+    if (updates.target_metrics !== undefined) dbUpdates.target_metrics = updates.target_metrics as unknown as Json;
+    if (updates.datasets !== undefined) dbUpdates.datasets = updates.datasets as unknown as Json;
+
+    const { error: updateError } = await supabase
+      .from("decision_contexts")
+      .update(dbUpdates)
+      .eq("id", id)
+      .eq("organization_id", organizationId);
+
+    if (updateError) {
+      console.error("Update context error:", updateError);
+      throw new Error(updateError.message);
     }
-    return !error;
-  }, [fetchContexts]);
+
+    await fetchContexts();
+  }, [organizationId, fetchContexts]);
 
   const archiveContext = useCallback(async (id: string) => {
-    const { error } = await supabase
-      .from("decision_contexts")
-      .update({ status: "archived" } as any)
-      .eq("id", id);
+    if (!organizationId) throw new Error("Organization context required");
 
-    if (!error) {
-      if (activeContext?.id === id) setActiveContext(null);
-      await fetchContexts();
+    const { error: archiveError } = await supabase
+      .from("decision_contexts")
+      .update({ status: "archived" })
+      .eq("id", id)
+      .eq("organization_id", organizationId);
+
+    if (archiveError) {
+      console.error("Archive context error:", archiveError);
+      throw new Error(archiveError.message);
     }
-    return !error;
-  }, [activeContext, fetchContexts]);
+
+    if (activeContext?.id === id) setActiveContext(null);
+    await fetchContexts();
+  }, [organizationId, activeContext, fetchContexts]);
 
   return {
     contexts,
     activeContext,
     setActiveContext,
     loading,
+    error,
     createContext,
     updateContext,
     archiveContext,

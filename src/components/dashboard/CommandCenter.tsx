@@ -72,7 +72,6 @@ const CommandCenter = memo(({
   return (
     <div className="space-y-6 max-w-[1400px]">
       <DecisionContextPanel
-        organizationId={organizationId}
         activeContext={activeContext}
         onContextChange={setActiveContext}
         contexts={contexts}
