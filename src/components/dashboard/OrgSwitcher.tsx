@@ -1,5 +1,11 @@
-import { ChevronDown, Building2 } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { ChevronDown, Building2, Check } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 
 interface OrgSwitcherProps {
   organizations: { id: string; name: string; role: string }[];
@@ -8,17 +14,6 @@ interface OrgSwitcherProps {
 }
 
 const OrgSwitcher = ({ organizations, currentOrg, onSwitch }: OrgSwitcherProps) => {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
   if (organizations.length <= 1) {
     return (
       <div className="flex items-center gap-2 text-sm">
@@ -29,32 +24,30 @@ const OrgSwitcher = ({ organizations, currentOrg, onSwitch }: OrgSwitcherProps) 
   }
 
   return (
-    <div ref={ref} className="relative">
-      <button
-        onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-secondary transition-colors text-sm"
-      >
-        <Building2 className="w-4 h-4 text-muted-foreground" />
-        <span className="font-medium truncate max-w-[160px]">{currentOrg?.name}</span>
-        <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
-      </button>
-      {open && (
-        <div className="absolute top-full left-0 mt-1 w-56 glass-card rounded-lg border border-border p-1 z-50 shadow-xl">
-          {organizations.map((org) => (
-            <button
-              key={org.id}
-              onClick={() => { onSwitch(org.id); setOpen(false); }}
-              className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
-                org.id === currentOrg?.id ? "bg-primary/10 text-primary" : "hover:bg-secondary text-foreground"
-              }`}
-            >
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="sm" className="gap-2 text-sm font-medium max-w-[200px]">
+          <Building2 className="w-4 h-4 shrink-0 text-muted-foreground" />
+          <span className="truncate">{currentOrg?.name}</span>
+          <ChevronDown className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-56">
+        {organizations.map((org) => (
+          <DropdownMenuItem
+            key={org.id}
+            onClick={() => onSwitch(org.id)}
+            className="flex items-center justify-between"
+          >
+            <div className="min-w-0">
               <div className="font-medium truncate">{org.name}</div>
               <div className="text-xs text-muted-foreground capitalize">{org.role}</div>
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
+            </div>
+            {org.id === currentOrg?.id && <Check className="w-3.5 h-3.5 text-primary shrink-0" />}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 };
 

@@ -43,7 +43,7 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   const fetchWorkspaces = useCallback(async () => {
-    if (!currentOrgId) {
+    if (!currentOrgId || !user) {
       setWorkspaces([]);
       setCurrentWorkspaceId(null);
       sessionStorage.removeItem(STORAGE_KEY);
@@ -52,10 +52,28 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
     }
 
     setLoading(true);
+
+    // Fetch only workspaces the user is a member of (respects workspace-level isolation)
+    const { data: memberships, error: memErr } = await supabase
+      .from("workspace_members")
+      .select("workspace_id")
+      .eq("user_id", user.id);
+
+    if (memErr || !memberships || memberships.length === 0) {
+      setWorkspaces([]);
+      setCurrentWorkspaceId(null);
+      sessionStorage.removeItem(STORAGE_KEY);
+      setLoading(false);
+      return;
+    }
+
+    const memberWsIds = memberships.map((m) => m.workspace_id);
+
     const { data, error } = await supabase
       .from("workspaces")
       .select("id, name, slug, description, organization_id, created_at")
       .eq("organization_id", currentOrgId)
+      .in("id", memberWsIds)
       .order("created_at", { ascending: true });
 
     if (error) {
@@ -76,7 +94,7 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
     setCurrentWorkspaceId(nextId);
     if (nextId) sessionStorage.setItem(STORAGE_KEY, nextId);
     setLoading(false);
-  }, [currentOrgId]);
+  }, [currentOrgId, user]);
 
   useEffect(() => {
     fetchWorkspaces();
@@ -92,14 +110,17 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
   const createWorkspace = useCallback(async (name: string, description?: string): Promise<Workspace> => {
     if (!currentOrgId || !user) throw new Error("No org or user");
 
-    const slug = toSlug(name);
+    const trimmed = name.trim().slice(0, 100);
+    if (!trimmed) throw new Error("Workspace name is required");
+
+    const slug = toSlug(trimmed);
     const { data, error } = await supabase
       .from("workspaces")
       .insert({
         organization_id: currentOrgId,
-        name,
+        name: trimmed,
         slug,
-        description: description || null,
+        description: description?.trim().slice(0, 500) || null,
         created_by: user.id,
       })
       .select("id, name, slug, description, organization_id, created_at")
