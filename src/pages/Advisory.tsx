@@ -94,6 +94,18 @@ const AdvisoryPage = () => {
   const [impactScore, setImpactScore] = useState("");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
+  const fetchInstances = useCallback(async () => {
+    if (!currentOrgId || !activeDatasetId) return;
+    const { data, error } = await supabase
+      .from("advisory_instances")
+      .select("*")
+      .eq("organization_id", currentOrgId)
+      .eq("dataset_id", activeDatasetId)
+      .order("created_at", { ascending: false })
+      .limit(100);
+    if (!error && data) setInstances(data as AdvisoryInstance[]);
+  }, [currentOrgId, activeDatasetId]);
+
   const fetchAdvisories = useCallback(async () => {
     if (!currentOrgId || !activeDatasetId) return;
     setLoading(true);
@@ -111,31 +123,23 @@ const AdvisoryPage = () => {
       setCriticalCount(data.critical_count || 0);
       setDataSufficiency(data.data_sufficiency || null);
       setSampleSize(data.sample_size || 0);
+      // Refetch instances since the edge function inserts new ones
+      fetchInstances();
     } catch (err: any) {
       toast({ title: "Failed to load advisories", description: err.message, variant: "destructive" });
     } finally {
       setLoading(false);
     }
-  }, [currentOrgId, activeDatasetId, activeContext?.id, toast]);
+  }, [currentOrgId, activeDatasetId, activeContext?.id, toast, fetchInstances]);
 
-  const fetchInstances = useCallback(async () => {
-    if (!currentOrgId || !activeDatasetId) return;
-    const { data, error } = await supabase
-      .from("advisory_instances")
-      .select("*")
-      .eq("organization_id", currentOrgId)
-      .eq("dataset_id", activeDatasetId)
-      .order("created_at", { ascending: false })
-      .limit(100);
-    if (!error && data) setInstances(data as AdvisoryInstance[]);
-  }, [currentOrgId, activeDatasetId]);
-
+  // Only auto-fetch on org/dataset change (not on context change to avoid double-fire)
   useEffect(() => {
     if (currentOrgId && activeDatasetId) {
       fetchAdvisories();
       fetchInstances();
     }
-  }, [fetchAdvisories, fetchInstances]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentOrgId, activeDatasetId]);
 
   const updateInstanceStatus = async (id: string, status: string, extras?: Record<string, any>) => {
     setUpdatingId(id);
