@@ -207,6 +207,7 @@ Rules:
 - causal_factors MUST reference specific statistical evidence (segment shifts, volatility levels, trend slopes)
 - raw_confidence should reflect data_points count: <12 pts = max 65, <20 pts = max 75, 20+ pts = max 85
 - Do NOT invent data not present in the statistics
+- Every diagnosis MUST reference the dataset name "${datasetName}" and specific metric values
 - Return ONLY the JSON array`,
         }],
       }),
