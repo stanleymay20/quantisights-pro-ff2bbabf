@@ -11,11 +11,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Database, Server, Cloud, FileSpreadsheet, Plus, Check, X,
   RefreshCw, ArrowRight, ArrowLeft, Eye, Loader2, Shield,
   Table2, Columns3, Zap, Clock, AlertCircle, CheckCircle2,
-  Cable, Plug, TestTube, Layers, Link2,
+  Cable, Plug, TestTube, Layers, Link2, BarChart3,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -28,8 +29,8 @@ interface ConnectorDef {
   label: string;
   icon: React.ElementType;
   description: string;
-  available: boolean;
-  tier?: string;
+  category: "database" | "warehouse" | "bi" | "file";
+  defaultPort?: string;
 }
 
 interface DiscoveredTable {
@@ -47,13 +48,13 @@ interface MetricMapping {
 }
 
 const CONNECTORS: ConnectorDef[] = [
-  { type: "postgresql", label: "PostgreSQL", icon: Database, description: "Connect to any PostgreSQL database", available: true },
-  { type: "mysql", label: "MySQL", icon: Database, description: "Connect to MySQL databases", available: false, tier: "enterprise" },
-  { type: "sqlserver", label: "SQL Server", icon: Server, description: "Microsoft SQL Server connection", available: false, tier: "enterprise" },
-  { type: "snowflake", label: "Snowflake", icon: Cloud, description: "Cloud data warehouse", available: false, tier: "enterprise" },
-  { type: "bigquery", label: "BigQuery", icon: Cloud, description: "Google BigQuery datasets", available: false, tier: "enterprise" },
-  { type: "powerbi", label: "Power BI", icon: Layers, description: "Microsoft Power BI datasets", available: false, tier: "enterprise" },
-  { type: "csv", label: "CSV Upload", icon: FileSpreadsheet, description: "Upload CSV files (demo/testing)", available: true },
+  { type: "postgresql", label: "PostgreSQL", icon: Database, description: "Connect to any PostgreSQL database", category: "database", defaultPort: "5432" },
+  { type: "mysql", label: "MySQL", icon: Database, description: "Connect to MySQL / MariaDB databases", category: "database", defaultPort: "3306" },
+  { type: "sqlserver", label: "SQL Server", icon: Server, description: "Microsoft SQL Server connection", category: "database", defaultPort: "1433" },
+  { type: "snowflake", label: "Snowflake", icon: Cloud, description: "Snowflake cloud data warehouse", category: "warehouse" },
+  { type: "bigquery", label: "BigQuery", icon: Cloud, description: "Google BigQuery datasets", category: "warehouse" },
+  { type: "powerbi", label: "Power BI", icon: BarChart3, description: "Microsoft Power BI datasets", category: "bi" },
+  { type: "csv", label: "CSV Upload", icon: FileSpreadsheet, description: "Upload CSV files (demo/testing)", category: "file" },
 ];
 
 const METRIC_TYPES = [
@@ -64,6 +65,39 @@ const METRIC_TYPES = [
 
 const AGGREGATIONS = ["sum", "avg", "count", "min", "max"];
 
+// ─── Connector-specific credential fields ───
+interface ConnectorCredentials {
+  // Common DB fields
+  host: string;
+  port: string;
+  dbName: string;
+  schemaName: string;
+  username: string;
+  password: string;
+  sslMode: string;
+  // Snowflake
+  account: string;
+  warehouse: string;
+  role: string;
+  // BigQuery
+  projectId: string;
+  datasetId: string;
+  serviceAccountJson: string;
+  // Power BI
+  tenantId: string;
+  clientId: string;
+  clientSecret: string;
+  workspaceId: string;
+}
+
+const defaultCredentials: ConnectorCredentials = {
+  host: "", port: "5432", dbName: "", schemaName: "public",
+  username: "", password: "", sslMode: "require",
+  account: "", warehouse: "COMPUTE_WH", role: "PUBLIC",
+  projectId: "", datasetId: "", serviceAccountJson: "",
+  tenantId: "", clientId: "", clientSecret: "", workspaceId: "",
+};
+
 // ─── Component ───
 const DataConnectors = () => {
   const { user } = useAuth();
@@ -72,48 +106,26 @@ const DataConnectors = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Wizard state
   const [step, setStep] = useState<WizardStep>("select");
   const [selectedType, setSelectedType] = useState<ConnectorType | null>(null);
   const [sourceName, setSourceName] = useState("");
+  const [creds, setCreds] = useState<ConnectorCredentials>({ ...defaultCredentials });
 
-  // Credentials
-  const [host, setHost] = useState("");
-  const [port, setPort] = useState("5432");
-  const [dbName, setDbName] = useState("");
-  const [schemaName, setSchemaName] = useState("public");
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [sslMode, setSslMode] = useState("require");
-
-  // Testing
   const [testResult, setTestResult] = useState<{ success: boolean; message: string; version?: string } | null>(null);
   const [testing, setTesting] = useState(false);
 
-  // Schema discovery
   const [tables, setTables] = useState<DiscoveredTable[]>([]);
   const [discovering, setDiscovering] = useState(false);
-
-  // Table selection
   const [selectedTables, setSelectedTables] = useState<string[]>([]);
   const [previewData, setPreviewData] = useState<{ rows: any[]; count: number } | null>(null);
   const [previewTable, setPreviewTable] = useState<string | null>(null);
 
-  // Metric mapping
   const [mappings, setMappings] = useState<MetricMapping[]>([]);
-
-  // Schedule
   const [syncFrequency, setSyncFrequency] = useState("daily");
-
-  // Sync
   const [syncing, setSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<{ records: number; errors: string[] } | null>(null);
 
-  // Created IDs
   const [dataSourceId, setDataSourceId] = useState<string | null>(null);
-  const [connectorConfigId, setConnectorConfigId] = useState<string | null>(null);
-
-  // Existing connectors
   const [existingConnectors, setExistingConnectors] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -141,17 +153,59 @@ const DataConnectors = () => {
     };
   };
 
+  const updateCred = (field: keyof ConnectorCredentials, value: string) => {
+    setCreds(prev => ({ ...prev, [field]: value }));
+  };
+
+  const buildConnectorPayload = () => {
+    const base: any = {
+      organization_id: currentOrgId,
+      connector_type: selectedType,
+    };
+
+    switch (selectedType) {
+      case "postgresql":
+      case "mysql":
+      case "sqlserver":
+        return {
+          ...base,
+          host: creds.host, port: parseInt(creds.port),
+          database_name: creds.dbName, schema_name: creds.schemaName,
+          username: creds.username, password: creds.password, ssl_mode: creds.sslMode,
+        };
+      case "snowflake":
+        return {
+          ...base,
+          account: creds.account, warehouse: creds.warehouse,
+          database_name: creds.dbName, schema_name: creds.schemaName,
+          username: creds.username, password: creds.password, role: creds.role,
+        };
+      case "bigquery":
+        return {
+          ...base,
+          project_id: creds.projectId, dataset_id: creds.datasetId,
+          service_account_json: creds.serviceAccountJson,
+        };
+      case "powerbi":
+        return {
+          ...base,
+          tenant_id: creds.tenantId, client_id: creds.clientId,
+          client_secret: creds.clientSecret, workspace_id: creds.workspaceId,
+        };
+      default:
+        return base;
+    }
+  };
+
   const handleSelectConnector = (type: ConnectorType) => {
     if (type === "csv") {
       navigate("/data-upload");
       return;
     }
-    if (!CONNECTORS.find(c => c.type === type)?.available) {
-      toast({ title: "Coming soon", description: `${type} connector is under development.` });
-      return;
-    }
     setSelectedType(type);
-    setSourceName(`${CONNECTORS.find(c => c.type === type)?.label} Connection`);
+    const def = CONNECTORS.find(c => c.type === type)!;
+    setSourceName(`${def.label} Connection`);
+    setCreds({ ...defaultCredentials, port: def.defaultPort || "5432" });
     setStep("credentials");
   };
 
@@ -162,22 +216,11 @@ const DataConnectors = () => {
       const headers = await getAuthHeaders();
       const res = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/db-connector`,
-        {
-          method: "POST",
-          headers,
-          body: JSON.stringify({
-            action: "test",
-            organization_id: currentOrgId,
-            host, port: parseInt(port), database_name: dbName,
-            schema_name: schemaName, username, password, ssl_mode: sslMode,
-          }),
-        }
+        { method: "POST", headers, body: JSON.stringify({ action: "test", ...buildConnectorPayload() }) }
       );
       const data = await res.json();
       setTestResult(data);
-      if (data.success) {
-        setStep("testing");
-      }
+      if (data.success) setStep("testing");
     } catch (err: any) {
       setTestResult({ success: false, message: err.message });
     } finally {
@@ -191,16 +234,7 @@ const DataConnectors = () => {
       const headers = await getAuthHeaders();
       const res = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/db-connector`,
-        {
-          method: "POST",
-          headers,
-          body: JSON.stringify({
-            action: "discover",
-            organization_id: currentOrgId,
-            host, port: parseInt(port), database_name: dbName,
-            schema_name: schemaName, username, password, ssl_mode: sslMode,
-          }),
-        }
+        { method: "POST", headers, body: JSON.stringify({ action: "discover", ...buildConnectorPayload() }) }
       );
       const data = await res.json();
       setTables(data.tables || []);
@@ -219,17 +253,7 @@ const DataConnectors = () => {
       const headers = await getAuthHeaders();
       const res = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/db-connector`,
-        {
-          method: "POST",
-          headers,
-          body: JSON.stringify({
-            action: "preview",
-            organization_id: currentOrgId,
-            host, port: parseInt(port), database_name: dbName,
-            schema_name: schemaName, username, password, ssl_mode: sslMode,
-            selected_tables: [tableName],
-          }),
-        }
+        { method: "POST", headers, body: JSON.stringify({ action: "preview", ...buildConnectorPayload(), selected_tables: [tableName] }) }
       );
       const data = await res.json();
       setPreviewData(data);
@@ -243,25 +267,21 @@ const DataConnectors = () => {
       toast({ title: "Select at least one table", variant: "destructive" });
       return;
     }
-    // Auto-generate initial mappings
     const autoMappings: MetricMapping[] = [];
     for (const tableName of selectedTables) {
       const table = tables.find(t => t.table_name === tableName);
       if (!table) continue;
       const numericCols = table.columns.filter(c =>
-        ["integer", "bigint", "numeric", "double precision", "real", "decimal", "money"].includes(c.data_type)
+        ["integer", "bigint", "numeric", "double precision", "real", "decimal", "money", "float64", "int64", "number"].includes(c.data_type.toLowerCase())
       );
       const dateCols = table.columns.filter(c =>
-        ["date", "timestamp without time zone", "timestamp with time zone", "timestamptz"].includes(c.data_type)
+        ["date", "timestamp without time zone", "timestamp with time zone", "timestamptz", "datetime", "timestamp", "date"].includes(c.data_type.toLowerCase())
       );
       const dateCol = dateCols[0]?.column_name || "";
       for (const col of numericCols) {
         autoMappings.push({
-          source_table: tableName,
-          source_column: col.column_name,
-          metric_type: guessMetricType(col.column_name),
-          date_column: dateCol,
-          aggregation: "sum",
+          source_table: tableName, source_column: col.column_name,
+          metric_type: guessMetricType(col.column_name), date_column: dateCol, aggregation: "sum",
         });
       }
     }
@@ -277,7 +297,10 @@ const DataConnectors = () => {
     if (lower.includes("churn")) return "churn";
     if (lower.includes("order") || lower.includes("transaction")) return "orders";
     if (lower.includes("margin") || lower.includes("profit")) return "margin";
-    if (lower.includes("count") || lower.includes("total") || lower.includes("amount")) return "revenue";
+    if (lower.includes("retention")) return "retention";
+    if (lower.includes("conversion")) return "conversion_rate";
+    if (lower.includes("mrr")) return "mrr";
+    if (lower.includes("arr")) return "arr";
     return "custom";
   };
 
@@ -296,44 +319,34 @@ const DataConnectors = () => {
     setStep("syncing");
 
     try {
+      const connPayload = buildConnectorPayload();
       // 1. Create data source
       const { data: ds, error: dsErr } = await supabase.from("data_sources").insert({
-        organization_id: currentOrgId,
-        name: sourceName,
-        source_type: "database",
-        created_by: user.id,
-        config: { connector_type: selectedType, host, database: dbName, schema: schemaName },
-        status: "active",
+        organization_id: currentOrgId, name: sourceName, source_type: "database",
+        created_by: user.id, status: "active",
+        config: { connector_type: selectedType, ...connPayload },
       }).select("id").single();
       if (dsErr) throw dsErr;
       setDataSourceId(ds.id);
 
-      // 2. Create connector config (cast needed until types regenerate)
-      const { data: cc, error: ccErr } = await (supabase.from("connector_configs") as any).insert({
-        organization_id: currentOrgId,
-        data_source_id: ds.id,
+      // 2. Create connector config
+      const { error: ccErr } = await (supabase.from("connector_configs") as any).insert({
+        organization_id: currentOrgId, data_source_id: ds.id,
         connector_type: selectedType || "postgresql",
-        host, port: parseInt(port), database_name: dbName,
-        schema_name: schemaName, username,
-        ssl_mode: sslMode,
-        selected_tables: selectedTables,
-        discovered_schema: { tables },
-        connection_status: "connected",
-        last_tested_at: new Date().toISOString(),
+        host: creds.host || null, port: creds.port ? parseInt(creds.port) : null,
+        database_name: creds.dbName || null, schema_name: creds.schemaName || null,
+        username: creds.username || null, ssl_mode: creds.sslMode || null,
+        selected_tables: selectedTables, discovered_schema: { tables },
+        connection_status: "connected", last_tested_at: new Date().toISOString(),
       }).select("id").single();
       if (ccErr) throw ccErr;
-      setConnectorConfigId(cc.id);
 
       // 3. Save metric mappings
       const mappingInserts = mappings.filter(m => m.date_column && m.metric_type).map(m => ({
-        organization_id: currentOrgId,
-        data_source_id: ds.id,
-        source_table: m.source_table,
-        source_column: m.source_column,
-        metric_type: m.metric_type,
-        date_column: m.date_column,
-        aggregation: m.aggregation,
-        is_active: true,
+        organization_id: currentOrgId, data_source_id: ds.id,
+        source_table: m.source_table, source_column: m.source_column,
+        metric_type: m.metric_type, date_column: m.date_column,
+        aggregation: m.aggregation, is_active: true,
       }));
       if (mappingInserts.length > 0) {
         await (supabase.from("metric_mappings") as any).insert(mappingInserts);
@@ -347,11 +360,8 @@ const DataConnectors = () => {
       else nextRun.setDate(nextRun.getDate() + 7);
 
       await (supabase.from("sync_schedules") as any).insert({
-        organization_id: currentOrgId,
-        data_source_id: ds.id,
-        frequency: syncFrequency,
-        is_active: true,
-        next_run_at: nextRun.toISOString(),
+        organization_id: currentOrgId, data_source_id: ds.id,
+        frequency: syncFrequency, is_active: true, next_run_at: nextRun.toISOString(),
       });
 
       // 5. Run initial sync
@@ -359,14 +369,9 @@ const DataConnectors = () => {
       const res = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/db-connector`,
         {
-          method: "POST",
-          headers: authHeaders,
+          method: "POST", headers: authHeaders,
           body: JSON.stringify({
-            action: "sync",
-            organization_id: currentOrgId,
-            data_source_id: ds.id,
-            host, port: parseInt(port), database_name: dbName,
-            schema_name: schemaName, username, password, ssl_mode: sslMode,
+            action: "sync", ...connPayload, data_source_id: ds.id,
             metric_mappings: mappings.filter(m => m.date_column && m.metric_type),
           }),
         }
@@ -387,12 +392,27 @@ const DataConnectors = () => {
     setStep("select");
     setSelectedType(null);
     setSourceName("");
-    setHost(""); setPort("5432"); setDbName(""); setSchemaName("public");
-    setUsername(""); setPassword(""); setSslMode("require");
+    setCreds({ ...defaultCredentials });
     setTestResult(null); setTables([]); setSelectedTables([]);
-    setMappings([]); setSyncResult(null);
-    setDataSourceId(null); setConnectorConfigId(null);
+    setMappings([]); setSyncResult(null); setDataSourceId(null);
     setPreviewData(null); setPreviewTable(null);
+  };
+
+  const isCredentialsValid = (): boolean => {
+    switch (selectedType) {
+      case "postgresql":
+      case "mysql":
+      case "sqlserver":
+        return !!(creds.host && creds.dbName && creds.username);
+      case "snowflake":
+        return !!(creds.account && creds.dbName && creds.username && creds.warehouse);
+      case "bigquery":
+        return !!(creds.projectId && creds.datasetId && creds.serviceAccountJson);
+      case "powerbi":
+        return !!(creds.tenantId && creds.clientId && creds.clientSecret);
+      default:
+        return false;
+    }
   };
 
   // ─── Render ───
@@ -410,6 +430,176 @@ const DataConnectors = () => {
 
   const stepOrder: WizardStep[] = ["select", "credentials", "testing", "schema", "tables", "mapping", "schedule", "syncing", "done"];
   const currentIdx = stepOrder.indexOf(step);
+
+  const renderCredentialForm = () => {
+    switch (selectedType) {
+      case "postgresql":
+      case "mysql":
+      case "sqlserver":
+        return (
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Connection Name</label>
+              <Input value={sourceName} onChange={e => setSourceName(e.target.value)} placeholder={`My ${CONNECTORS.find(c => c.type === selectedType)?.label} DB`} />
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="col-span-2">
+                <label className="text-sm font-medium mb-1.5 block">Host</label>
+                <Input value={creds.host} onChange={e => updateCred("host", e.target.value)} placeholder="db.example.com" />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Port</label>
+                <Input value={creds.port} onChange={e => updateCred("port", e.target.value)} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Database</label>
+                <Input value={creds.dbName} onChange={e => updateCred("dbName", e.target.value)} placeholder="mydb" />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Schema</label>
+                <Input value={creds.schemaName} onChange={e => updateCred("schemaName", e.target.value)} placeholder={selectedType === "sqlserver" ? "dbo" : "public"} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Username</label>
+                <Input value={creds.username} onChange={e => updateCred("username", e.target.value)} placeholder="readonly_user" />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Password</label>
+                <Input type="password" value={creds.password} onChange={e => updateCred("password", e.target.value)} placeholder="••••••••" />
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">SSL Mode</label>
+              <Select value={creds.sslMode} onValueChange={v => updateCred("sslMode", v)}>
+                <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="require">Require (recommended)</SelectItem>
+                  <SelectItem value="prefer">Prefer</SelectItem>
+                  <SelectItem value="disable">Disable</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        );
+
+      case "snowflake":
+        return (
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Connection Name</label>
+              <Input value={sourceName} onChange={e => setSourceName(e.target.value)} placeholder="Snowflake Production" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Account Identifier</label>
+                <Input value={creds.account} onChange={e => updateCred("account", e.target.value)} placeholder="xy12345.us-east-1" />
+                <p className="text-[10px] text-muted-foreground mt-1">e.g. xy12345.us-east-1 or xy12345.snowflakecomputing.com</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Warehouse</label>
+                <Input value={creds.warehouse} onChange={e => updateCred("warehouse", e.target.value)} placeholder="COMPUTE_WH" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Database</label>
+                <Input value={creds.dbName} onChange={e => updateCred("dbName", e.target.value)} placeholder="ANALYTICS_DB" />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Schema</label>
+                <Input value={creds.schemaName} onChange={e => updateCred("schemaName", e.target.value)} placeholder="PUBLIC" />
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Username</label>
+                <Input value={creds.username} onChange={e => updateCred("username", e.target.value)} placeholder="QUANTIVIS_READER" />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Password</label>
+                <Input type="password" value={creds.password} onChange={e => updateCred("password", e.target.value)} placeholder="••••••••" />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Role</label>
+                <Input value={creds.role} onChange={e => updateCred("role", e.target.value)} placeholder="PUBLIC" />
+              </div>
+            </div>
+          </div>
+        );
+
+      case "bigquery":
+        return (
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Connection Name</label>
+              <Input value={sourceName} onChange={e => setSourceName(e.target.value)} placeholder="BigQuery Analytics" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">GCP Project ID</label>
+                <Input value={creds.projectId} onChange={e => updateCred("projectId", e.target.value)} placeholder="my-gcp-project-123" />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Dataset ID</label>
+                <Input value={creds.datasetId} onChange={e => updateCred("datasetId", e.target.value)} placeholder="analytics_dataset" />
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Service Account JSON Key</label>
+              <Textarea
+                value={creds.serviceAccountJson}
+                onChange={e => updateCred("serviceAccountJson", e.target.value)}
+                placeholder='Paste your service account JSON key here...'
+                className="font-mono text-xs min-h-[120px]"
+              />
+              <p className="text-[10px] text-muted-foreground mt-1">
+                Create a service account with BigQuery Data Viewer role in your GCP console.
+              </p>
+            </div>
+          </div>
+        );
+
+      case "powerbi":
+        return (
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Connection Name</label>
+              <Input value={sourceName} onChange={e => setSourceName(e.target.value)} placeholder="Power BI Finance" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Azure Tenant ID</label>
+                <Input value={creds.tenantId} onChange={e => updateCred("tenantId", e.target.value)} placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Client ID (App Registration)</label>
+                <Input value={creds.clientId} onChange={e => updateCred("clientId", e.target.value)} placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Client Secret</label>
+                <Input type="password" value={creds.clientSecret} onChange={e => updateCred("clientSecret", e.target.value)} placeholder="••••••••" />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Workspace ID (optional)</label>
+                <Input value={creds.workspaceId} onChange={e => updateCred("workspaceId", e.target.value)} placeholder="Power BI workspace GUID" />
+              </div>
+            </div>
+            <p className="text-[10px] text-muted-foreground">
+              Register an app in Azure AD with Power BI API permissions (Dataset.Read.All).
+            </p>
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
 
   return (
     <>
@@ -485,7 +675,7 @@ const DataConnectors = () => {
                                 </Badge>
                               </div>
                               <p className="text-xs text-muted-foreground">
-                                {cc.host}:{cc.port} / {cc.database_name}
+                                {cc.host ? `${cc.host}:${cc.port} / ${cc.database_name}` : cc.connector_type}
                               </p>
                               {cc.data_sources?.last_synced_at && (
                                 <p className="text-xs text-muted-foreground mt-1">
@@ -500,36 +690,43 @@ const DataConnectors = () => {
                   </div>
                 )}
 
-                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Add New Connection</h3>
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {CONNECTORS.map((conn) => {
-                    const Icon = conn.icon;
-                    return (
-                      <Card
-                        key={conn.type}
-                        className={`cursor-pointer transition-all hover:border-primary/50 hover:shadow-md ${
-                          !conn.available ? "opacity-60" : ""
-                        }`}
-                        onClick={() => handleSelectConnector(conn.type)}
-                      >
-                        <CardContent className="p-5">
-                          <div className="flex items-center gap-3 mb-3">
-                            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                              <Icon className="w-5 h-5 text-primary" />
-                            </div>
-                            <div>
-                              <p className="font-semibold text-sm">{conn.label}</p>
-                              {!conn.available && (
-                                <Badge variant="outline" className="text-[10px]">Coming Soon</Badge>
-                              )}
-                            </div>
-                          </div>
-                          <p className="text-xs text-muted-foreground">{conn.description}</p>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
+                {/* Grouped connector cards */}
+                {(["database", "warehouse", "bi", "file"] as const).map(category => {
+                  const group = CONNECTORS.filter(c => c.category === category);
+                  const categoryLabels = { database: "Connect Database", warehouse: "Connect Data Warehouse", bi: "Connect BI Tool", file: "Upload File (Demo)" };
+                  return (
+                    <div key={category} className="mb-6">
+                      <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">{categoryLabels[category]}</h3>
+                      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {group.map((conn) => {
+                          const Icon = conn.icon;
+                          return (
+                            <Card
+                              key={conn.type}
+                              className="cursor-pointer transition-all hover:border-primary/50 hover:shadow-md"
+                              onClick={() => handleSelectConnector(conn.type)}
+                            >
+                              <CardContent className="p-5">
+                                <div className="flex items-center gap-3 mb-3">
+                                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                                    <Icon className="w-5 h-5 text-primary" />
+                                  </div>
+                                  <div>
+                                    <p className="font-semibold text-sm">{conn.label}</p>
+                                    {conn.category === "file" && (
+                                      <Badge variant="outline" className="text-[10px]">Demo / Testing</Badge>
+                                    )}
+                                  </div>
+                                </div>
+                                <p className="text-xs text-muted-foreground">{conn.description}</p>
+                              </CardContent>
+                            </Card>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
 
                 <div className="mt-8 p-4 rounded-xl bg-secondary/50 border border-border/50">
                   <div className="flex items-center gap-2 mb-2">
@@ -552,55 +749,9 @@ const DataConnectors = () => {
                 <h2 className="text-xl font-bold font-display mb-1">
                   {CONNECTORS.find(c => c.type === selectedType)?.label} Connection
                 </h2>
-                <p className="text-sm text-muted-foreground mb-6">Enter your database credentials. We use read-only access only.</p>
+                <p className="text-sm text-muted-foreground mb-6">Enter your credentials. We use read-only access only.</p>
 
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium mb-1.5 block">Connection Name</label>
-                    <Input value={sourceName} onChange={e => setSourceName(e.target.value)} placeholder="My Production DB" />
-                  </div>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="col-span-2">
-                      <label className="text-sm font-medium mb-1.5 block">Host</label>
-                      <Input value={host} onChange={e => setHost(e.target.value)} placeholder="db.example.com" />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium mb-1.5 block">Port</label>
-                      <Input value={port} onChange={e => setPort(e.target.value)} placeholder="5432" />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm font-medium mb-1.5 block">Database</label>
-                      <Input value={dbName} onChange={e => setDbName(e.target.value)} placeholder="mydb" />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium mb-1.5 block">Schema</label>
-                      <Input value={schemaName} onChange={e => setSchemaName(e.target.value)} placeholder="public" />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm font-medium mb-1.5 block">Username</label>
-                      <Input value={username} onChange={e => setUsername(e.target.value)} placeholder="readonly_user" />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium mb-1.5 block">Password</label>
-                      <Input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium mb-1.5 block">SSL Mode</label>
-                    <Select value={sslMode} onValueChange={setSslMode}>
-                      <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="require">Require (recommended)</SelectItem>
-                        <SelectItem value="prefer">Prefer</SelectItem>
-                        <SelectItem value="disable">Disable</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
+                {renderCredentialForm()}
 
                 {testResult && (
                   <div className={`mt-4 p-3 rounded-lg border ${testResult.success ? "border-primary/30 bg-primary/10" : "border-destructive/30 bg-destructive/10"}`}>
@@ -616,7 +767,7 @@ const DataConnectors = () => {
                   <Button variant="outline" onClick={() => setStep("select")}>
                     <ArrowLeft className="w-4 h-4 mr-1.5" /> Back
                   </Button>
-                  <Button onClick={handleTestConnection} disabled={testing || !host || !dbName || !username}>
+                  <Button onClick={handleTestConnection} disabled={testing || !isCredentialsValid()}>
                     {testing ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <TestTube className="w-4 h-4 mr-1.5" />}
                     Test Connection
                   </Button>
@@ -624,7 +775,7 @@ const DataConnectors = () => {
               </div>
             )}
 
-            {/* ═══ STEP: Test Success → Discover ═══ */}
+            {/* ═══ STEP: Test Success ═══ */}
             {step === "testing" && (
               <div className="max-w-2xl">
                 <div className="p-6 rounded-xl border border-primary/30 bg-primary/5 mb-6">
@@ -632,9 +783,9 @@ const DataConnectors = () => {
                     <CheckCircle2 className="w-6 h-6 text-primary" />
                     <h2 className="text-xl font-bold font-display">Connection Successful</h2>
                   </div>
-                  <p className="text-sm text-muted-foreground">{testResult?.version}</p>
+                  <p className="text-sm text-muted-foreground">{testResult?.version || testResult?.message}</p>
                 </div>
-                <p className="text-sm text-muted-foreground mb-4">Ready to discover your database schema and select tables to sync.</p>
+                <p className="text-sm text-muted-foreground mb-4">Ready to discover your schema and select tables to sync.</p>
                 <div className="flex gap-3">
                   <Button variant="outline" onClick={() => setStep("credentials")}>
                     <ArrowLeft className="w-4 h-4 mr-1.5" /> Back
@@ -652,7 +803,7 @@ const DataConnectors = () => {
               <div>
                 <h2 className="text-xl font-bold font-display mb-1">Database Schema</h2>
                 <p className="text-sm text-muted-foreground mb-6">
-                  Found {tables.length} tables in <code className="px-1.5 py-0.5 rounded bg-secondary text-xs">{schemaName}</code>. Select the tables you want to sync.
+                  Found {tables.length} tables. Select the tables you want to sync.
                 </p>
 
                 <div className="grid md:grid-cols-2 gap-4 mb-6">
@@ -706,7 +857,6 @@ const DataConnectors = () => {
                   ))}
                 </div>
 
-                {/* Table preview */}
                 {previewTable && previewData && (
                   <Card className="mb-6">
                     <CardHeader className="pb-2">
@@ -752,7 +902,7 @@ const DataConnectors = () => {
               <div>
                 <h2 className="text-xl font-bold font-display mb-1">Map Metrics</h2>
                 <p className="text-sm text-muted-foreground mb-6">
-                  Define how database columns map to standardized metrics for decision intelligence.
+                  Define how columns map to standardized metrics for decision intelligence.
                 </p>
 
                 <div className="space-y-3 mb-6">
@@ -786,7 +936,7 @@ const DataConnectors = () => {
                                 <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                                 <SelectContent>
                                   {table?.columns.filter(c =>
-                                    ["date", "timestamp without time zone", "timestamp with time zone", "timestamptz"].includes(c.data_type)
+                                    ["date", "timestamp without time zone", "timestamp with time zone", "timestamptz", "datetime", "timestamp"].includes(c.data_type.toLowerCase())
                                   ).map(c => <SelectItem key={c.column_name} value={c.column_name}>{c.column_name}</SelectItem>)}
                                 </SelectContent>
                               </Select>
@@ -829,7 +979,7 @@ const DataConnectors = () => {
             {step === "schedule" && (
               <div className="max-w-2xl">
                 <h2 className="text-xl font-bold font-display mb-1">Sync Schedule</h2>
-                <p className="text-sm text-muted-foreground mb-6">Choose how often to pull new data from your database.</p>
+                <p className="text-sm text-muted-foreground mb-6">Choose how often to pull new data.</p>
 
                 <div className="grid grid-cols-3 gap-4 mb-8">
                   {[
@@ -865,6 +1015,10 @@ const DataConnectors = () => {
                         <span className="font-medium">{sourceName}</span>
                       </div>
                       <div className="flex justify-between">
+                        <span className="text-muted-foreground">Connector</span>
+                        <span className="font-medium">{CONNECTORS.find(c => c.type === selectedType)?.label}</span>
+                      </div>
+                      <div className="flex justify-between">
                         <span className="text-muted-foreground">Tables</span>
                         <span className="font-medium">{selectedTables.length} selected</span>
                       </div>
@@ -896,7 +1050,7 @@ const DataConnectors = () => {
               <div className="max-w-lg mx-auto text-center py-12">
                 <Loader2 className="w-12 h-12 text-primary mx-auto mb-4 animate-spin" />
                 <h2 className="text-xl font-bold font-display mb-2">Syncing Your Data</h2>
-                <p className="text-sm text-muted-foreground">Connecting to database, pulling data, and creating metrics...</p>
+                <p className="text-sm text-muted-foreground">Connecting to {CONNECTORS.find(c => c.type === selectedType)?.label}, pulling data, and creating metrics...</p>
               </div>
             )}
 
@@ -911,7 +1065,7 @@ const DataConnectors = () => {
                       Successfully synced <span className="font-semibold text-foreground">{syncResult.records}</span> metric data points.
                     </p>
                     {syncResult.errors.length > 0 && (
-                      <p className="text-xs text-warning mb-4">{syncResult.errors.length} warning(s): {syncResult.errors[0]}</p>
+                      <p className="text-xs text-muted-foreground mb-4">{syncResult.errors.length} warning(s): {syncResult.errors[0]}</p>
                     )}
                   </>
                 ) : (
