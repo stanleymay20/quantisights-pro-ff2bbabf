@@ -74,6 +74,7 @@ const BusinessModel = lazy(() => import("./pages/BusinessModel"));
 const DatasetExplorer = lazy(() => import("./pages/DatasetExplorer"));
 const Compliance = lazy(() => import("./pages/Compliance"));
 const SSOConfig = lazy(() => import("./pages/SSOConfig"));
+const APIDocs = lazy(() => import("./pages/APIDocs"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
