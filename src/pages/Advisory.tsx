@@ -136,7 +136,6 @@ const AdvisoryPage = () => {
   useEffect(() => {
     if (currentOrgId && activeDatasetId) {
       fetchAdvisories();
-      fetchInstances();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentOrgId, activeDatasetId]);
