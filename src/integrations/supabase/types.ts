@@ -1744,6 +1744,50 @@ export type Database = {
           },
         ]
       }
+      embed_tokens: {
+        Row: {
+          allowed_metrics: Json | null
+          created_at: string | null
+          created_by: string
+          dashboard_type: string
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          organization_id: string
+          token: string
+        }
+        Insert: {
+          allowed_metrics?: Json | null
+          created_at?: string | null
+          created_by: string
+          dashboard_type?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          organization_id: string
+          token?: string
+        }
+        Update: {
+          allowed_metrics?: Json | null
+          created_at?: string | null
+          created_by?: string
+          dashboard_type?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          organization_id?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "embed_tokens_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       executive_alerts: {
         Row: {
           created_at: string
@@ -3168,6 +3212,53 @@ export type Database = {
           },
         ]
       }
+      org_branding: {
+        Row: {
+          accent_color: string | null
+          company_name: string | null
+          created_at: string | null
+          custom_domain: string | null
+          favicon_url: string | null
+          id: string
+          logo_url: string | null
+          organization_id: string
+          primary_color: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          accent_color?: string | null
+          company_name?: string | null
+          created_at?: string | null
+          custom_domain?: string | null
+          favicon_url?: string | null
+          id?: string
+          logo_url?: string | null
+          organization_id: string
+          primary_color?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          accent_color?: string | null
+          company_name?: string | null
+          created_at?: string | null
+          custom_domain?: string | null
+          favicon_url?: string | null
+          id?: string
+          logo_url?: string | null
+          organization_id?: string
+          primary_color?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_branding_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_members: {
         Row: {
           created_at: string
@@ -3719,6 +3810,41 @@ export type Database = {
           },
           {
             foreignKeyName: "reports_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      role_permissions: {
+        Row: {
+          created_at: string | null
+          granted: boolean | null
+          id: string
+          organization_id: string
+          permission: string
+          role: Database["public"]["Enums"]["org_role"]
+        }
+        Insert: {
+          created_at?: string | null
+          granted?: boolean | null
+          id?: string
+          organization_id: string
+          permission: string
+          role: Database["public"]["Enums"]["org_role"]
+        }
+        Update: {
+          created_at?: string | null
+          granted?: boolean | null
+          id?: string
+          organization_id?: string
+          permission?: string
+          role?: Database["public"]["Enums"]["org_role"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_permissions_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -4472,6 +4598,10 @@ export type Database = {
         Returns: Database["public"]["Enums"]["org_role"]
       }
       get_user_organization_id: { Args: { _user_id: string }; Returns: string }
+      has_permission: {
+        Args: { _org_id: string; _permission: string; _user_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

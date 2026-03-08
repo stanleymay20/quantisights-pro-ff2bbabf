@@ -4,7 +4,7 @@ import {
   Crown, Shuffle, Search, Upload, CreditCard, Settings, Building2,
   TrendingUp, Radio, Webhook, Globe, Key, Brain, GitBranch, Lock,
   Eye, AlertTriangle, Cpu, BarChart, LineChart, PieChart, Workflow,
-  ServerCrash, Fingerprint, type LucideIcon,
+  ServerCrash, Fingerprint, Code2, Palette, Languages, Presentation, type LucideIcon,
 } from "lucide-react";
 
 export interface DocSection {
@@ -1561,6 +1561,290 @@ Users are not limited to pre-defined metric types. Any string can be a metric ty
 - \`warehouse_utilization_pct\`
 
 The system will analyze trends, detect anomalies, and generate insights for ANY metric type without pre-configuration.
+    `,
+  },
+
+  // ─── NEW ENTERPRISE SECTIONS ───
+
+  {
+    id: "granular-rbac",
+    title: "Granular RBAC & Permissions",
+    icon: Lock,
+    content: `
+## Granular Role-Based Access Control
+
+Quantivis implements a **database-enforced, permission-level RBAC system** that goes beyond simple role checks. Every feature surface is gated by fine-grained permissions that can be customized per organization.
+
+### Role Hierarchy
+The platform supports five built-in roles, each with escalating default privileges:
+
+| Role | Default Access |
+|------|---------------|
+| \`viewer\` | Dashboard view only |
+| \`analyst\` | All \`.view\` permissions |
+| \`executive\` | All \`.view\` permissions + reports |
+| \`admin\` | Full access except billing/ownership |
+| \`owner\` | Unrestricted |
+
+### Permission Types
+Permissions follow a \`resource.action\` convention:
+
+- \`dashboard.view\` / \`dashboard.edit\` — Dashboard read/write
+- \`decisions.view\` / \`decisions.approve\` — Decision ledger access
+- \`data.upload\` / \`data.delete\` — Data management
+- \`team.manage\` — Team member administration
+- \`billing.manage\` — Subscription and payment access
+- \`settings.manage\` — Organization settings
+- \`reports.generate\` — Report creation
+- \`simulations.run\` — Monte Carlo and scenario simulations
+- \`copilot.use\` — Executive Copilot access
+- \`embed.manage\` — Embeddable dashboard token management
+- \`branding.manage\` — White-label customization
+
+### Database Architecture
+Permissions are stored in the \`role_permissions\` table with a composite unique constraint on \`(organization_id, role, permission)\`. A \`has_permission()\` SECURITY DEFINER function provides a single entry point for all permission checks, with intelligent fallback defaults when no explicit override exists.
+
+### Frontend Enforcement
+The \`<PermissionGate>\` component wraps any UI element to conditionally render based on permissions:
+
+\`\`\`tsx
+<PermissionGate permission="decisions.approve">
+  <ApproveButton />
+</PermissionGate>
+\`\`\`
+
+The \`usePermissions()\` hook provides programmatic access:
+\`\`\`tsx
+const { hasPermission } = usePermissions();
+if (hasPermission("simulations.run")) { /* ... */ }
+\`\`\`
+
+### Custom Overrides
+Organization owners can override default permissions per role via the \`role_permissions\` table, enabling configurations like:
+- Giving \`analyst\` role \`simulations.run\` access
+- Restricting \`admin\` from \`billing.manage\`
+- Enabling \`viewer\` to access \`reports.generate\`
+    `,
+  },
+
+  {
+    id: "embeddable-dashboards",
+    title: "Embeddable Dashboards",
+    icon: Code2,
+    content: `
+## Embeddable Dashboard System
+
+Quantivis supports **token-authenticated embeddable dashboards** that can be embedded in external portals, LP reports, or client-facing applications via a simple iframe.
+
+### How It Works
+1. **Generate Token** — Admins/owners create embed tokens from Settings → Embeds
+2. **Copy Embed Code** — An iframe snippet is generated with the token
+3. **Embed Anywhere** — Paste into any HTML page, Notion, Confluence, or investor portal
+
+### Token Security
+- Tokens are 32-byte cryptographically random hex strings
+- Each token is scoped to a single organization
+- Optional expiration dates (auto-deactivated after expiry)
+- Tokens can be revoked instantly by the admin
+- Public \`anon\` role can only read active, non-expired tokens
+
+### Embed URL Format
+\`\`\`
+https://your-domain.com/embed?token=<64-char-hex-token>
+\`\`\`
+
+### iframe Integration
+\`\`\`html
+<iframe 
+  src="https://quantivis.app/embed?token=abc123..."
+  width="100%" 
+  height="600" 
+  frameborder="0"
+></iframe>
+\`\`\`
+
+### Dashboard Types
+- \`kpi_overview\` — Metric cards with latest values and change percentages
+- More types (funnel, cohort, executive summary) planned for future releases
+
+### Data Isolation
+Embedded dashboards pull from the \`metric_latest\` materialized view, ensuring:
+- Read-only access (no mutations possible)
+- Organization-scoped data only
+- No authentication required for viewers (token-based)
+- No access to raw data, decisions, or sensitive intelligence
+    `,
+  },
+
+  {
+    id: "white-label-branding",
+    title: "White-Label & Branding",
+    icon: Palette,
+    content: `
+## White-Label Organization Branding
+
+Enterprise organizations can fully customize the platform's visual identity to match their corporate brand, enabling deployment as a white-labeled internal tool or client-facing product.
+
+### Configurable Elements
+
+| Element | Description |
+|---------|-------------|
+| **Company Name** | Replaces "Quantivis" in headers and exports |
+| **Primary Color** | Main brand color (HSL format) — buttons, accents, active states |
+| **Accent Color** | Secondary brand color — gradients, highlights |
+| **Logo URL** | Custom logo displayed in navigation and reports |
+| **Favicon URL** | Browser tab icon |
+| **Custom Domain** | Map \`intelligence.acme.com\` to the platform |
+
+### HSL Color Format
+Colors use HSL notation for seamless integration with the Tailwind CSS design system:
+\`\`\`
+246 59% 50%    → Indigo (default primary)
+263 70% 50%    → Violet (default accent)
+142 76% 36%    → Emerald (example custom)
+\`\`\`
+
+### Branding in Exports
+When PowerPoint or PDF reports are generated, the organization's branding colors and company name are automatically applied to:
+- Title slides
+- Header bars
+- Chart accent colors
+- Footer attribution
+
+### Database Schema
+Branding is stored in the \`org_branding\` table with a unique constraint on \`organization_id\`, ensuring exactly one branding configuration per organization. Public read access is enabled for embed/white-label rendering scenarios.
+    `,
+  },
+
+  {
+    id: "internationalization",
+    title: "Internationalization (i18n)",
+    icon: Languages,
+    content: `
+## Multi-Language Support
+
+Quantivis supports **5 languages** out of the box with a fully extensible internationalization framework powered by \`react-i18next\`.
+
+### Supported Languages
+
+| Code | Language | Direction |
+|------|----------|-----------|
+| \`en\` | English | LTR |
+| \`de\` | Deutsch (German) | LTR |
+| \`fr\` | Français (French) | LTR |
+| \`es\` | Español (Spanish) | LTR |
+| \`ar\` | العربية (Arabic) | RTL |
+
+### Auto-Detection
+The system automatically detects the user's preferred language using:
+1. \`localStorage\` (persisted selection)
+2. Browser \`navigator.language\` (fallback)
+3. English (final fallback)
+
+### Translation Coverage
+Translations cover:
+- **Navigation** — All sidebar menu items
+- **Common UI** — Buttons (Save, Cancel, Delete, etc.)
+- **Authentication** — Login, Register, Password Reset flows
+- **Dashboard** — KPI labels, chart titles, insight headers
+- **Decisions** — Status labels, confidence terms
+- **Reports** — Generation buttons, export labels
+- **Settings** — All configuration sections
+
+### Using Translations in Components
+\`\`\`tsx
+import { useTranslation } from "react-i18next";
+
+const MyComponent = () => {
+  const { t } = useTranslation();
+  return <h1>{t("dashboard.title")}</h1>;
+};
+\`\`\`
+
+### Adding New Languages
+1. Create a new JSON file in \`src/i18n/locales/\`
+2. Add the language to \`src/i18n/index.ts\` resources
+3. Add to the \`LanguageSelector\` component
+
+### RTL Support
+Arabic (\`ar\`) is fully supported with right-to-left text direction. The layout system automatically adjusts when Arabic is selected.
+    `,
+  },
+
+  {
+    id: "powerpoint-export",
+    title: "PowerPoint Export",
+    icon: Presentation,
+    content: `
+## Executive PowerPoint Export
+
+Quantivis generates **board-ready PowerPoint presentations** (.pptx) with professional formatting, branded slide masters, and automated content population.
+
+### Slide Structure
+Every exported deck includes:
+
+1. **Title Slide** — Report name, company branding, date, confidentiality notice
+2. **Content Slides** — Configurable per report type:
+   - Bullet-point summaries
+   - Data tables with styled headers
+   - Subtitle context
+   - Footnotes and caveats
+3. **Disclaimer Slide** — Epistemic integrity notice, confidence capping disclosure, fiduciary disclaimer
+
+### Branding Integration
+When organization branding is configured:
+- **Primary Color** → Slide headers, table headers, accent shapes
+- **Accent Color** → Company name, highlights
+- **Company Name** → Replaces default attribution
+- Background: Dark slate (\`#0F172A\`) for executive aesthetic
+
+### Technical Details
+- Format: Office Open XML (.pptx) — compatible with PowerPoint, Keynote, Google Slides
+- Library: \`pptxgenjs\` (zero server-side dependencies)
+- Generation: Client-side (no data leaves the browser)
+- File naming: \`{report-title}-{date}.pptx\`
+
+### Usage
+\`\`\`tsx
+import { exportToPowerPoint } from "@/lib/pptx-export";
+
+await exportToPowerPoint({
+  companyName: "Acme Corp",
+  reportTitle: "Q1 Board Intelligence Report",
+  date: "2026-03-08",
+  slides: [
+    {
+      title: "Executive Summary",
+      subtitle: "Key findings from Q1 analysis",
+      bullets: [
+        "Revenue grew 12.3% QoQ (P75 benchmark: 8.1%)",
+        "Decision accuracy improved to 73% (from 61% in Q4)",
+        "3 high-confidence advisories require board attention",
+      ],
+    },
+    {
+      title: "KPI Performance",
+      table: {
+        headers: ["Metric", "Current", "Target", "Status"],
+        rows: [
+          ["MRR", "€2.1M", "€2.0M", "✓ On Track"],
+          ["Churn", "4.2%", "3.5%", "⚠ Watch"],
+        ],
+      },
+    },
+  ],
+});
+\`\`\`
+
+### Comparison: PDF vs PPTX
+
+| Feature | PDF Export | PPTX Export |
+|---------|-----------|-------------|
+| Editability | Read-only | Fully editable |
+| Use case | Board record | Board presentation |
+| Charts | Embedded images | Native shapes |
+| File size | Smaller | Larger |
+| Best for | Compliance archives | Live board meetings |
     `,
   },
 ];

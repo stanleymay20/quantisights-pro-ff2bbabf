@@ -77,6 +77,7 @@ const SSOConfig = lazy(() => import("./pages/SSOConfig"));
 const APIDocs = lazy(() => import("./pages/APIDocs"));
 const PipelineObservability = lazy(() => import("./pages/PipelineObservability"));
 const DataCatalog = lazy(() => import("./pages/DataCatalog"));
+const EmbedDashboard = lazy(() => import("./pages/EmbedDashboard"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -148,6 +149,7 @@ const App = () => (
               <Route path="/subprocessors" element={<Subprocessors />} />
               <Route path="/accept-invite" element={<AcceptInvite />} />
               <Route path="/demo" element={<Demo />} />
+              <Route path="/embed" element={<EmbedDashboard />} />
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/business-model" element={<BusinessModel />} />
               <Route path="/security" element={<Security />} />

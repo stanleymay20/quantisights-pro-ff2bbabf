@@ -1,0 +1,88 @@
+{
+  "nav": {
+    "dashboard": "لوحة التحكم",
+    "data_upload": "رفع البيانات",
+    "kpis": "مؤشرات الأداء",
+    "decisions": "القرارات",
+    "scenarios": "السيناريوهات",
+    "simulations": "المحاكاة",
+    "reports": "التقارير",
+    "advisory": "الاستشارات",
+    "executive": "تنفيذي",
+    "team": "الفريق",
+    "settings": "الإعدادات",
+    "billing": "الفواتير",
+    "docs": "التوثيق",
+    "logout": "تسجيل الخروج"
+  },
+  "common": {
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "delete": "حذف",
+    "edit": "تعديل",
+    "create": "إنشاء",
+    "loading": "جاري التحميل...",
+    "error": "حدث خطأ",
+    "success": "نجاح",
+    "confirm": "تأكيد",
+    "search": "بحث",
+    "filter": "تصفية",
+    "export": "تصدير",
+    "download": "تحميل",
+    "upload": "رفع",
+    "back": "رجوع",
+    "next": "التالي",
+    "previous": "السابق",
+    "close": "إغلاق",
+    "noData": "لا توجد بيانات متاحة",
+    "viewAll": "عرض الكل"
+  },
+  "auth": {
+    "login": "تسجيل الدخول",
+    "register": "إنشاء حساب",
+    "logout": "تسجيل الخروج",
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "forgotPassword": "نسيت كلمة المرور؟",
+    "resetPassword": "إعادة تعيين كلمة المرور",
+    "fullName": "الاسم الكامل",
+    "createAccount": "أنشئ حسابك",
+    "alreadyHaveAccount": "هل لديك حساب بالفعل؟",
+    "dontHaveAccount": "ليس لديك حساب؟"
+  },
+  "dashboard": {
+    "title": "لوحة ذكاء القرار",
+    "kpiCards": "نظرة عامة على مؤشرات الأداء",
+    "revenueChart": "اتجاهات الإيرادات",
+    "insights": "رؤى الذكاء الاصطناعي",
+    "anomalies": "كشف الحالات الشاذة",
+    "decisionQueue": "قائمة انتظار القرارات",
+    "noDataset": "ارفع مجموعة بيانات للبدء"
+  },
+  "decisions": {
+    "title": "سجل القرارات",
+    "newDecision": "قرار جديد",
+    "status": "الحالة",
+    "confidence": "الثقة",
+    "impact": "التأثير",
+    "pending": "قيد الانتظار",
+    "approved": "معتمد",
+    "rejected": "مرفوض",
+    "executed": "منفذ"
+  },
+  "reports": {
+    "title": "التقارير",
+    "generate": "إنشاء تقرير",
+    "boardReport": "تقرير مجلس الإدارة",
+    "exportPdf": "تصدير PDF",
+    "exportPptx": "تصدير PowerPoint"
+  },
+  "settings": {
+    "title": "الإعدادات",
+    "general": "عام",
+    "branding": "العلامة التجارية",
+    "permissions": "الصلاحيات",
+    "language": "اللغة",
+    "theme": "المظهر"
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "nav": {
+    "dashboard": "Panel",
+    "data_upload": "Subir datos",
+    "kpis": "KPIs",
+    "decisions": "Decisiones",
+    "scenarios": "Escenarios",
+    "simulations": "Simulaciones",
+    "reports": "Informes",
+    "advisory": "Asesoría",
+    "executive": "Ejecutivo",
+    "team": "Equipo",
+    "settings": "Configuración",
+    "billing": "Facturación",
+    "docs": "Documentación",
+    "logout": "Cerrar sesión"
+  },
+  "common": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "create": "Crear",
+    "loading": "Cargando...",
+    "error": "Ha ocurrido un error",
+    "success": "Éxito",
+    "confirm": "Confirmar",
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "export": "Exportar",
+    "download": "Descargar",
+    "upload": "Subir",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "previous": "Anterior",
+    "close": "Cerrar",
+    "noData": "No hay datos disponibles",
+    "viewAll": "Ver todo"
+  },
+  "auth": {
+    "login": "Iniciar sesión",
+    "register": "Crear cuenta",
+    "logout": "Cerrar sesión",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "forgotPassword": "¿Olvidó su contraseña?",
+    "resetPassword": "Restablecer contraseña",
+    "fullName": "Nombre completo",
+    "createAccount": "Cree su cuenta",
+    "alreadyHaveAccount": "¿Ya tiene una cuenta?",
+    "dontHaveAccount": "¿No tiene una cuenta?"
+  },
+  "dashboard": {
+    "title": "Panel de inteligencia decisional",
+    "kpiCards": "Resumen de KPIs",
+    "revenueChart": "Tendencias de ingresos",
+    "insights": "Insights de IA",
+    "anomalies": "Detección de anomalías",
+    "decisionQueue": "Cola de decisiones",
+    "noDataset": "Suba un conjunto de datos para comenzar"
+  },
+  "decisions": {
+    "title": "Libro de decisiones",
+    "newDecision": "Nueva decisión",
+    "status": "Estado",
+    "confidence": "Confianza",
+    "impact": "Impacto",
+    "pending": "Pendiente",
+    "approved": "Aprobado",
+    "rejected": "Rechazado",
+    "executed": "Ejecutado"
+  },
+  "reports": {
+    "title": "Informes",
+    "generate": "Generar informe",
+    "boardReport": "Informe de junta",
+    "exportPdf": "Exportar PDF",
+    "exportPptx": "Exportar PowerPoint"
+  },
+  "settings": {
+    "title": "Configuración",
+    "general": "General",
+    "branding": "Marca",
+    "permissions": "Permisos",
+    "language": "Idioma",
+    "theme": "Tema"
+  }
+}
