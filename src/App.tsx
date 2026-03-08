@@ -192,6 +192,8 @@ const App = () => (
               <Route path="/portfolio" element={<P><Portfolio /></P>} />
               <Route path="/pilot-audit" element={<P><PilotAudit /></P>} />
               <Route path="/dataset-explorer" element={<P><DatasetExplorer /></P>} />
+              <Route path="/compliance" element={<P><Compliance /></P>} />
+              <Route path="/sso" element={<P><SSOConfig /></P>} />
             </Routes>
             </Suspense>
           </AuthProvider>
