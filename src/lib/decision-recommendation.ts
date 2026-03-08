@@ -266,6 +266,7 @@ export function generateRecommendation(input: RecommendationInput): StructuredRe
   const metricTypes = [met, cat].filter(Boolean);
   const traceability = buildTraceability({
     datasetId: input.datasetId ?? "active-dataset",
+    datasetName: input.datasetName,
     dataRowsUsed: input.dataRowsUsed ?? sampleSize,
     metricTypes: metricTypes.length > 0 ? metricTypes : ["unknown"],
     modelUsed: sampleSize >= 12
