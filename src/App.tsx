@@ -13,6 +13,7 @@ import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import ProtectedLayout, { MinimalProtectedLayout } from "@/components/layout/ProtectedLayout";
+import CookieConsent from "@/components/CookieConsent";
 
 // Eager: landing page (critical path)
 import Index from "./pages/Index";
@@ -79,6 +80,7 @@ const PipelineObservability = lazy(() => import("./pages/PipelineObservability")
 const DataCatalog = lazy(() => import("./pages/DataCatalog"));
 const EmbedDashboard = lazy(() => import("./pages/EmbedDashboard"));
 const FounderHandbook = lazy(() => import("./pages/FounderHandbook"));
+const PrivacyDashboard = lazy(() => import("./pages/PrivacyDashboard"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -134,6 +136,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
+            <CookieConsent />
             <Suspense fallback={<PageLoader />}>
             <Routes>
               {/* Public routes */}
@@ -203,6 +206,7 @@ const App = () => (
               <Route path="/api-docs" element={<P><APIDocs /></P>} />
               <Route path="/pipeline" element={<P><PipelineObservability /></P>} />
               <Route path="/data-catalog" element={<P><DataCatalog /></P>} />
+              <Route path="/privacy-dashboard" element={<P><PrivacyDashboard /></P>} />
             </Routes>
             </Suspense>
           </AuthProvider>
