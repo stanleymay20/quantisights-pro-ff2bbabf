@@ -206,6 +206,7 @@ const App = () => (
               <Route path="/api-docs" element={<P><APIDocs /></P>} />
               <Route path="/pipeline" element={<P><PipelineObservability /></P>} />
               <Route path="/data-catalog" element={<P><DataCatalog /></P>} />
+              <Route path="/privacy-dashboard" element={<P><PrivacyDashboard /></P>} />
             </Routes>
             </Suspense>
           </AuthProvider>
