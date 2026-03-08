@@ -39,6 +39,7 @@ serve(async (req) => {
 
     const {
       organization_id,
+      dataset_id,
       decision_id,
       revenue_delta_pct = 0,
       cost_delta_pct = 0,
@@ -54,6 +55,12 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+    if (!dataset_id) {
+      return new Response(
+        JSON.stringify({ error: "dataset_id required by Active Data Contract. Simulations cannot run without explicit dataset scoping." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     const { data: isMember } = await svc.rpc("is_org_member", {
       _user_id: user.id,
@@ -66,7 +73,21 @@ serve(async (req) => {
       });
     }
 
-    // Fetch historical metrics for volatility estimation
+    // Validate dataset belongs to org
+    const { data: dsCheck } = await svc
+      .from("datasets")
+      .select("id")
+      .eq("id", dataset_id)
+      .eq("organization_id", organization_id)
+      .maybeSingle();
+    if (!dsCheck) {
+      return new Response(
+        JSON.stringify({ error: "dataset_id does not belong to this organization" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Fetch historical metrics scoped to dataset
     const metricTypes = ["revenue", "cost", "churn_rate"];
     const metricData: Record<string, number[]> = {};
 
@@ -75,6 +96,7 @@ serve(async (req) => {
         .from("metrics")
         .select("value")
         .eq("organization_id", organization_id)
+        .eq("dataset_id", dataset_id)
         .eq("metric_type", mt)
         .order("date", { ascending: true });
       metricData[mt] = (data || []).map((m) => Number(m.value));
@@ -84,22 +106,42 @@ serve(async (req) => {
     const costValues = metricData.cost;
     const churnValues = metricData.churn_rate;
 
-    const sampleSize = Math.max(
-      3,
-      Math.min(
-        revenueValues.length || 3,
-        costValues.length || 3,
-        churnValues.length || 3
-      )
+    // ENTERPRISE INTEGRITY: Refuse to simulate without real baseline data
+    const hasRevenue = revenueValues.length >= 3;
+    const hasCost = costValues.length >= 3;
+    const hasChurn = churnValues.length >= 3;
+
+    if (!hasRevenue && !hasCost && !hasChurn) {
+      return new Response(
+        JSON.stringify({
+          error: null,
+          simulation_refused: true,
+          reason: "Simulation unavailable: insufficient baseline metrics in dataset. At least 3 data points required for revenue, cost, or churn_rate metrics.",
+          missing_metrics: {
+            revenue: { available: revenueValues.length, required: 3 },
+            cost: { available: costValues.length, required: 3 },
+            churn_rate: { available: churnValues.length, required: 3 },
+          },
+          recommendation: "Upload time-series data with revenue, cost, or churn_rate metrics to enable Monte Carlo simulation.",
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Use only metrics with sufficient data; refuse to fabricate missing baselines
+    const baseRevenue = hasRevenue ? revenueValues[revenueValues.length - 1] : null;
+    const baseCost = hasCost ? costValues[costValues.length - 1] : null;
+    const baseChurn = hasChurn ? churnValues[churnValues.length - 1] : null;
+
+    const sampleSize = Math.min(
+      hasRevenue ? revenueValues.length : Infinity,
+      hasCost ? costValues.length : Infinity,
+      hasChurn ? churnValues.length : Infinity
     );
 
-    const revenueVol = computeLogVolatility(revenueValues);
-    const costVol = computeLogVolatility(costValues);
-    const churnVol = computeLogVolatility(churnValues);
-
-    const baseRevenue = revenueValues.length > 0 ? revenueValues[revenueValues.length - 1] : 100000;
-    const baseCost = costValues.length > 0 ? costValues[costValues.length - 1] : 50000;
-    const baseChurn = churnValues.length > 0 ? churnValues[churnValues.length - 1] : 5;
+    const revenueVol = hasRevenue ? computeLogVolatility(revenueValues) : 0;
+    const costVol = hasCost ? computeLogVolatility(costValues) : 0;
+    const churnVol = hasChurn ? computeLogVolatility(churnValues) : 0;
 
     const runs = Math.min(simulation_runs, 50000);
     const steps = time_to_impact_months;
@@ -107,24 +149,31 @@ serve(async (req) => {
 
     const netImpacts: number[] = [];
 
+    // Use real baselines only — null means metric unavailable (not simulated)
+    const effRevenue = baseRevenue ?? 0;
+    const effCost = baseCost ?? 0;
+    const effChurn = baseChurn ?? 0;
+
     for (let r = 0; r < runs; r++) {
       const z1 = randn();
       const z2 = correlations.revenue_cost * z1 + Math.sqrt(1 - correlations.revenue_cost ** 2) * randn();
       const z3 = correlations.revenue_churn * z1 + Math.sqrt(1 - correlations.revenue_churn ** 2) * randn();
 
-      const revDrift = (revenue_delta_pct / 100) / steps;
-      const revShock = (revenueVol / 100) * Math.sqrt(steps) * z1;
-      const simRevenue = baseRevenue * Math.exp(revDrift * steps + revShock);
+      const simRevenue = hasRevenue
+        ? effRevenue * Math.exp(((revenue_delta_pct / 100) / steps) * steps + (revenueVol / 100) * Math.sqrt(steps) * z1)
+        : 0;
+      const simCost = hasCost
+        ? effCost * Math.exp(((cost_delta_pct / 100) / steps) * steps + (costVol / 100) * Math.sqrt(steps) * z2)
+        : 0;
 
-      const costDrift = (cost_delta_pct / 100) / steps;
-      const costShock = (costVol / 100) * Math.sqrt(steps) * z2;
-      const simCost = baseCost * Math.exp(costDrift * steps + costShock);
-
-      const churnDelta = baseChurn * (churn_change_pct / 100) + (churnVol / 100) * baseChurn * z3;
-      const simChurn = Math.max(0, Math.min(100, baseChurn + churnDelta));
+      let simChurn = effChurn;
+      if (hasChurn) {
+        const churnDelta = effChurn * (churn_change_pct / 100) + (churnVol / 100) * effChurn * z3;
+        simChurn = Math.max(0, Math.min(100, effChurn + churnDelta));
+      }
 
       const retentionFactor = Math.pow(1 - simChurn / 100, steps);
-      const baselineProfit = (baseRevenue * Math.pow(1 - baseChurn / 100, steps)) - baseCost;
+      const baselineProfit = (effRevenue * Math.pow(1 - effChurn / 100, steps)) - effCost;
       const simProfit = (simRevenue * retentionFactor) - simCost - implementation_cost;
       const netImpact = simProfit - baselineProfit;
 
@@ -175,6 +224,7 @@ serve(async (req) => {
 
     const result = {
       organization_id,
+      dataset_id,
       decision_id: decision_id || null,
       revenue_delta_pct,
       cost_delta_pct,
@@ -196,6 +246,11 @@ serve(async (req) => {
       sample_size: sampleSize,
       data_sufficiency: conf.data_sufficiency,
       correlation_assumptions: correlations,
+      baselines_used: {
+        revenue: baseRevenue !== null ? { value: baseRevenue, source: "dataset", data_points: revenueValues.length } : { value: null, source: "unavailable" },
+        cost: baseCost !== null ? { value: baseCost, source: "dataset", data_points: costValues.length } : { value: null, source: "unavailable" },
+        churn_rate: baseChurn !== null ? { value: baseChurn, source: "dataset", data_points: churnValues.length } : { value: null, source: "unavailable" },
+      },
       model_version: 1,
       simulation_runs: runs,
       created_by: user.id,

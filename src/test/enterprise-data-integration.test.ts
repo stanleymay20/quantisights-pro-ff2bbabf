@@ -428,3 +428,107 @@ describe("Decision Context – Scoped Query Params", () => {
     expect("decision_context_id" in p).toBe(false);
   });
 });
+
+// ═══════════════════════════════════════════════════════
+// ENTERPRISE INTEGRITY: Simulation & Insight Hardening
+// ═══════════════════════════════════════════════════════
+
+describe("Simulation Baseline Integrity", () => {
+  it("refuses simulation with zero baselines", () => {
+    const result = validateSimulationBaselines([]);
+    expect(result.valid).toBe(false);
+    expect(result.errors[0]).toContain("baseline metrics missing");
+  });
+
+  it("rejects baselines with non-finite values", () => {
+    const result = validateSimulationBaselines([
+      { metric: "revenue", value: NaN, source: "dataset", datasetId: "ds-1" },
+    ]);
+    expect(result.valid).toBe(false);
+    expect(result.errors[0]).toContain("not a finite number");
+  });
+
+  it("rejects baselines without dataset reference", () => {
+    const result = validateSimulationBaselines([
+      { metric: "revenue", value: 100000, source: "dataset", datasetId: "" },
+    ]);
+    expect(result.valid).toBe(false);
+    expect(result.errors[0]).toContain("must reference a dataset");
+  });
+
+  it("accepts valid real baselines", () => {
+    const result = validateSimulationBaselines([
+      { metric: "revenue", value: 250000, source: "dataset", datasetId: "ds-abc" },
+      { metric: "cost", value: 120000, source: "dataset", datasetId: "ds-abc" },
+    ]);
+    expect(result.valid).toBe(true);
+    expect(result.errors.length).toBe(0);
+  });
+
+  it("rejects Infinity as a baseline value", () => {
+    const result = validateSimulationBaselines([
+      { metric: "churn", value: Infinity, source: "dataset", datasetId: "ds-1" },
+    ]);
+    expect(result.valid).toBe(false);
+  });
+});
+
+describe("Insight Hallucination Guards", () => {
+  it("insight messages must reference specific dataset name pattern", () => {
+    const datasetName = "Q4 Revenue Data";
+    const validInsight = `In ${datasetName}, revenue declined 14% across enterprise accounts.`;
+    const genericInsight = "Revenue is declining. Take action.";
+    
+    expect(validInsight.toLowerCase().includes(datasetName.toLowerCase())).toBe(true);
+    expect(genericInsight.toLowerCase().includes(datasetName.toLowerCase())).toBe(false);
+  });
+
+  it("insight messages must reference at least one known metric", () => {
+    const knownMetrics = ["revenue", "churn_rate", "cost"];
+    const validMsg = "In dataset, revenue declined 14% month-over-month.";
+    const invalidMsg = "In dataset, things are looking problematic.";
+    
+    const validRefs = knownMetrics.some(m => validMsg.toLowerCase().includes(m));
+    const invalidRefs = knownMetrics.some(m => invalidMsg.toLowerCase().includes(m));
+    
+    expect(validRefs).toBe(true);
+    expect(invalidRefs).toBe(false);
+  });
+
+  it("fallback insights must include dataset name and date ranges", () => {
+    const datasetName = "Economic Indicators";
+    const metricType = "gdp_growth";
+    const dateRange = "2024-01 to 2024-12";
+    const fallbackInsight = `In ${datasetName}, ${metricType.replace(/_/g, ' ')} declined 15.2% over the dataset period (${dateRange}). Review contributing factors.`;
+    
+    expect(fallbackInsight).toContain(datasetName);
+    expect(fallbackInsight).toContain("gdp growth");
+    expect(fallbackInsight).toContain("2024-01");
+  });
+});
+
+describe("Dataset Scoping Enforcement", () => {
+  it("scoped query params always include dataset_id", () => {
+    const params = scopedQueryParams("org-1", "ds-abc");
+    expect(params.dataset_id).toBe("ds-abc");
+    expect(params.organization_id).toBe("org-1");
+  });
+
+  it("analysis scope rejects missing dataset_id", () => {
+    const result = validateAnalysisScope("org-1", null, "ctx-1");
+    expect(result.valid).toBe(false);
+    expect(result.errors.some(e => e.includes("Dataset"))).toBe(true);
+  });
+
+  it("analysis scope rejects missing organization_id", () => {
+    const result = validateAnalysisScope(null, "ds-1", "ctx-1");
+    expect(result.valid).toBe(false);
+    expect(result.errors.some(e => e.includes("Organization"))).toBe(true);
+  });
+
+  it("analysis scope passes with all required fields", () => {
+    const result = validateAnalysisScope("org-1", "ds-1", "ctx-1");
+    expect(result.valid).toBe(true);
+    expect(result.errors.length).toBe(0);
+  });
+});

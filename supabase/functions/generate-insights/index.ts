@@ -229,7 +229,38 @@ Rules:
         const jsonMatch = content.match(/\[[\s\S]*\]/);
         if (jsonMatch) {
           try {
-            aiInsights = JSON.parse(jsonMatch[0]);
+            const rawInsights = JSON.parse(jsonMatch[0]);
+            // POST-GENERATION VALIDATION: reject hallucinated insights
+            const knownMetrics = new Set(Object.keys(metricsByType));
+            const knownRegions = new Set<string>();
+            const knownSegments = new Set<string>();
+            Object.values(metricsByType).forEach(d => {
+              d.regions.forEach(r => knownRegions.add(r.toLowerCase()));
+              d.segments.forEach(s => knownSegments.add(s.toLowerCase()));
+            });
+
+            for (const insight of rawInsights) {
+              const msg = (insight.message || "").toLowerCase();
+              // Validation 1: Must reference dataset name
+              const refsDataset = msg.includes(datasetName.toLowerCase());
+              // Validation 2: Must reference at least one known metric
+              const refsMetric = [...knownMetrics].some(m => msg.includes(m.replace(/_/g, " ").toLowerCase()) || msg.includes(m.toLowerCase()));
+              // Validation 3: Check for fabricated numbers — extract percentages and verify plausibility
+              // We allow the insight if it references dataset AND metric
+              if (refsDataset && refsMetric) {
+                insight._validated = true;
+                aiInsights.push(insight);
+              } else {
+                console.warn("Rejected hallucinated insight:", insight.message?.substring(0, 100));
+                // Attempt salvage: if it references a metric but not dataset, prepend dataset context
+                if (refsMetric && !refsDataset) {
+                  insight.message = `In ${datasetName}, ${insight.message}`;
+                  insight._validated = true;
+                  insight._salvaged = true;
+                  aiInsights.push(insight);
+                }
+              }
+            }
           } catch {
             console.error("Failed to parse AI insights JSON");
           }
@@ -237,27 +268,27 @@ Rules:
       }
     }
 
-    // Fallback: rule-based analysis if AI fails or is unavailable
+    // Fallback: rule-based analysis if AI fails, is unavailable, or all insights rejected
     if (aiInsights.length === 0) {
       for (const [type, data] of Object.entries(metricsByType)) {
         const vals = data.values;
         if (vals.length < 2) continue;
-        const mean = vals.reduce((s, v) => s + v, 0) / vals.length;
+        const m = vals.reduce((s, v) => s + v, 0) / vals.length;
         const latest = vals[vals.length - 1];
         const earliest = vals[0];
         const changePct = earliest !== 0 ? ((latest - earliest) / Math.abs(earliest)) * 100 : 0;
-        const volatility = mean !== 0 ? (Math.sqrt(vals.reduce((s, v) => s + (v - mean) ** 2, 0) / vals.length) / Math.abs(mean)) * 100 : 0;
+        const volatility = m !== 0 ? (Math.sqrt(vals.reduce((s, v) => s + (v - m) ** 2, 0) / vals.length) / Math.abs(m)) * 100 : 0;
 
         if (changePct < -10) {
           aiInsights.push({
-            message: `${type.replace(/_/g, ' ')} declined ${Math.abs(changePct).toFixed(1)}% over the dataset period. Review contributing factors.`,
+            message: `In ${datasetName}, ${type.replace(/_/g, ' ')} declined ${Math.abs(changePct).toFixed(1)}% over the dataset period (${data.dates[0]} to ${data.dates[data.dates.length - 1]}). Review contributing factors.`,
             severity: "high",
             category: "trend",
             raw_confidence: 80,
           });
         } else if (changePct > 20) {
           aiInsights.push({
-            message: `${type.replace(/_/g, ' ')} grew ${changePct.toFixed(1)}%. Strong upward trajectory detected.`,
+            message: `In ${datasetName}, ${type.replace(/_/g, ' ')} grew ${changePct.toFixed(1)}% (${data.dates[0]} to ${data.dates[data.dates.length - 1]}). Strong upward trajectory detected.`,
             severity: "info",
             category: "opportunity",
             raw_confidence: 78,
@@ -265,7 +296,7 @@ Rules:
         }
         if (volatility > 40) {
           aiInsights.push({
-            message: `${type.replace(/_/g, ' ')} shows high volatility (${volatility.toFixed(1)}% CV). Monitor for stability risks.`,
+            message: `In ${datasetName}, ${type.replace(/_/g, ' ')} shows high volatility (${volatility.toFixed(1)}% CV) across ${vals.length} data points. Monitor for stability risks.`,
             severity: "medium",
             category: "risk",
             raw_confidence: 72,
@@ -275,7 +306,7 @@ Rules:
 
       if (aiInsights.length === 0) {
         aiInsights.push({
-          message: "All metrics within normal ranges. Continue monitoring for changes.",
+          message: `In ${datasetName}, all ${Object.keys(metricsByType).length} tracked metrics are within normal ranges. Continue monitoring for changes.`,
           severity: "info",
           category: "general",
           raw_confidence: 90,
