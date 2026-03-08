@@ -331,6 +331,9 @@ serve(async (req) => {
       .order("date", { ascending: false })
       .limit(50);
 
+    // Calibrate coefficients from historical data
+    const coefficients = await calibrateFromHistory(serviceClient, organization_id, dataset_id);
+
     // Compute deterministic projection
     const params: SimulationInput = {
       revenue_change_percent: scenario_parameters.revenue_change_percent ?? null,
@@ -340,11 +343,11 @@ serve(async (req) => {
       custom_notes: scenario_parameters.custom_notes ?? null,
     };
 
-    const projected = computeProjectedRisk(baselineComponents, params);
+    const projected = computeProjectedRisk(baselineComponents, params, coefficients);
     const riskDelta = projected.score - baselineRisk;
     const escalationTriggered = projected.score >= 80;
 
-    // Build KPI projections
+    // Build KPI projections using calibrated coefficients
     const kpiMap: Record<string, { name: string; baseline: number }> = {};
     if (kpiValues) {
       for (const kv of kpiValues as any[]) {
@@ -356,20 +359,19 @@ serve(async (req) => {
     }
 
     const kpiProjections = Object.values(kpiMap).map(kpi => {
-      // Directional projection — labeled as estimates, not predictions.
-      // Uses simple linear sensitivity: revenue change → proportional KPI shift
-      // This is a HEURISTIC MODEL — labeled clearly in the output.
       const revImpact = (params.revenue_change_percent || 0) / 100;
       const costImpact = (params.cost_change_percent || 0) / 100;
-      // Sensitivity coefficients are heuristic assumptions, not calibrated
-      const projectedValue = kpi.baseline * (1 + revImpact * 0.7 - costImpact * 0.3);
+      const projectedValue = kpi.baseline * (1 + revImpact * coefficients.kpi_revenue_sensitivity - costImpact * coefficients.kpi_cost_sensitivity);
+      const isCalibrated = coefficients.calibration_source === "historical_regression";
       return {
         kpi_name: kpi.name,
         baseline_value: Math.round(kpi.baseline * 100) / 100,
         projected_value: Math.round(projectedValue * 100) / 100,
         delta_percent: Math.round((projectedValue / kpi.baseline - 1) * 10000) / 100,
-        model_type: "heuristic_linear_sensitivity",
-        note: "Estimate based on assumed linear sensitivity coefficients (0.7 revenue, 0.3 cost). Not calibrated to historical data.",
+        model_type: isCalibrated ? "calibrated_sensitivity" : "heuristic_linear_sensitivity",
+        note: isCalibrated
+          ? `Coefficients calibrated from ${coefficients.data_points_used} historical data points (R²=${coefficients.r_squared ?? "N/A"}).`
+          : "Heuristic estimate — insufficient historical data for calibration.",
       };
     });
 
