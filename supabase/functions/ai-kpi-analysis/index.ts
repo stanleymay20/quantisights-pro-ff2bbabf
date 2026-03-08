@@ -158,6 +158,7 @@ RESPONSE FORMAT: Always respond with valid JSON using this schema:
             content: `Analyze this KPI: "${kpi.name}" (${kpi.description || "No description"})
 Formula: ${kpi.formula}
 Aggregation: ${kpi.aggregation_type}
+Data Points: ${values.length}
 
 Historical values:
 ${dataStr}
@@ -165,7 +166,7 @@ ${dataStr}
 Targets:
 ${targetStr}
 
-Provide executive-grade analysis.`
+Provide executive-grade analysis grounded ONLY in the data above. Reference specific dates and values.`
           }
         ],
         tools: [
