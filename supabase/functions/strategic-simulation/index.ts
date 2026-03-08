@@ -253,7 +253,7 @@ serve(async (req) => {
       });
     }
 
-    const { organization_id, role_type, scenario_parameters } = await req.json();
+    const { organization_id, role_type, scenario_parameters, dataset_id } = await req.json();
 
     if (!organization_id || !role_type || !scenario_parameters) {
       return new Response(JSON.stringify({ error: "organization_id, role_type, scenario_parameters required" }), {
