@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import { useTheme } from "@/components/ThemeProvider";
 import { SidebarMobileToggle } from "@/components/layout/ProtectedShell";
@@ -11,10 +11,11 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOrganization } from "@/hooks/useOrganization";
+import { usePermissions } from "@/hooks/usePermissions";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import {
-  User, Building2, Bell, Save, Loader2, Mail, X, ScrollText, Clock, Shield, Trash2, AlertTriangle, ShieldCheck, Sun, Moon, Monitor, Activity,
+  User, Building2, Bell, Save, Loader2, Mail, X, ScrollText, Clock, Shield, Trash2, AlertTriangle, ShieldCheck, Sun, Moon, Monitor, Activity, Lock,
 } from "lucide-react";
 import MFAEnroll from "@/components/auth/MFAEnroll";
 import SecurityPosture from "@/components/security/SecurityPosture";
@@ -23,19 +24,21 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
 interface AuditEntry {
   id: string;
   action_type: string;
   actor_type: string;
   resource_type: string;
   resource_id: string | null;
-  payload: any;
   created_at: string;
 }
 
 const Settings = () => {
   const { user, signOut } = useAuth();
   const { currentOrgId, currentOrg } = useOrganization();
+  const { hasPermission, orgRole } = usePermissions();
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
   const [deletingAccount, setDeletingAccount] = useState(false);
@@ -44,11 +47,13 @@ const Settings = () => {
   // Profile
   const [fullName, setFullName] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
+  const [profileDirty, setProfileDirty] = useState(false);
 
   // Organization
   const [orgName, setOrgName] = useState("");
   const [industry, setIndustry] = useState("");
   const [savingOrg, setSavingOrg] = useState(false);
+  const [orgDirty, setOrgDirty] = useState(false);
 
   // Notifications
   const [emailEnabled, setEmailEnabled] = useState(true);
@@ -58,16 +63,38 @@ const Settings = () => {
   const [emailRecipients, setEmailRecipients] = useState<string[]>([]);
   const [emailInput, setEmailInput] = useState("");
   const [savingNotif, setSavingNotif] = useState(false);
+  const [notifDirty, setNotifDirty] = useState(false);
 
   // Audit log
   const [auditLog, setAuditLog] = useState<AuditEntry[]>([]);
   const [loadingAudit, setLoadingAudit] = useState(false);
 
+  // Saved snapshots for dirty tracking
+  const savedProfile = useRef("");
+  const savedOrg = useRef({ name: "", industry: "" });
+  const savedNotif = useRef({ emailEnabled: true, weeklyBrief: false, alertThreshold: 50, escalationThreshold: 85, emailRecipients: [] as string[] });
+
+  // Unsaved changes warning
+  useEffect(() => {
+    const hasDirty = profileDirty || orgDirty || notifDirty;
+    const handler = (e: BeforeUnloadEvent) => {
+      if (hasDirty) { e.preventDefault(); }
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [profileDirty, orgDirty, notifDirty]);
+
+  const canManageOrg = orgRole === "owner" || orgRole === "admin";
+
   useEffect(() => {
     if (!user) return;
     const load = async () => {
       const { data: profile } = await supabase.from("profiles").select("full_name").eq("user_id", user.id).maybeSingle();
-      if (profile) setFullName(profile.full_name || "");
+      if (profile) {
+        const name = profile.full_name || "";
+        setFullName(name);
+        savedProfile.current = name;
+      }
     };
     load();
   }, [user]);
@@ -76,7 +103,11 @@ const Settings = () => {
     if (!currentOrgId) return;
     const load = async () => {
       const { data: org } = await supabase.from("organizations").select("name, industry").eq("id", currentOrgId).maybeSingle();
-      if (org) { setOrgName(org.name || ""); setIndustry(org.industry || ""); }
+      if (org) {
+        setOrgName(org.name || "");
+        setIndustry(org.industry || "");
+        savedOrg.current = { name: org.name || "", industry: org.industry || "" };
+      }
 
       const { data: prefs } = await supabase.from("notification_preferences").select("*").eq("organization_id", currentOrgId).eq("role_type", "ceo").maybeSingle();
       if (prefs) {
@@ -84,18 +115,39 @@ const Settings = () => {
         setWeeklyBrief(prefs.weekly_brief_enabled);
         setAlertThreshold(prefs.alert_threshold);
         setEscalationThreshold(prefs.escalation_threshold);
-        setEmailRecipients((prefs as any).email_recipients || []);
+        const recipients = (prefs as any).email_recipients || [];
+        setEmailRecipients(recipients);
+        savedNotif.current = {
+          emailEnabled: prefs.email_enabled,
+          weeklyBrief: prefs.weekly_brief_enabled,
+          alertThreshold: prefs.alert_threshold,
+          escalationThreshold: prefs.escalation_threshold,
+          emailRecipients: recipients,
+        };
       }
     };
     load();
   }, [currentOrgId]);
+
+  // Dirty tracking
+  useEffect(() => { setProfileDirty(fullName !== savedProfile.current); }, [fullName]);
+  useEffect(() => { setOrgDirty(orgName !== savedOrg.current.name || industry !== savedOrg.current.industry); }, [orgName, industry]);
+  useEffect(() => {
+    setNotifDirty(
+      emailEnabled !== savedNotif.current.emailEnabled ||
+      weeklyBrief !== savedNotif.current.weeklyBrief ||
+      alertThreshold !== savedNotif.current.alertThreshold ||
+      escalationThreshold !== savedNotif.current.escalationThreshold ||
+      JSON.stringify(emailRecipients) !== JSON.stringify(savedNotif.current.emailRecipients)
+    );
+  }, [emailEnabled, weeklyBrief, alertThreshold, escalationThreshold, emailRecipients]);
 
   const fetchAuditLog = async () => {
     if (!currentOrgId) return;
     setLoadingAudit(true);
     const { data } = await supabase
       .from("audit_log")
-      .select("*")
+      .select("id, action_type, actor_type, resource_type, resource_id, created_at")
       .eq("organization_id", currentOrgId)
       .order("created_at", { ascending: false })
       .limit(100);
@@ -107,8 +159,11 @@ const Settings = () => {
     if (!user) return;
     setSavingProfile(true);
     try {
-      const { error } = await supabase.from("profiles").update({ full_name: fullName.trim().slice(0, 200) }).eq("user_id", user.id);
+      const trimmed = fullName.trim().slice(0, 200);
+      const { error } = await supabase.from("profiles").update({ full_name: trimmed }).eq("user_id", user.id);
       if (error) throw error;
+      savedProfile.current = trimmed;
+      setFullName(trimmed);
       toast({ title: "Profile updated" });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
@@ -117,12 +172,18 @@ const Settings = () => {
 
   const saveOrg = async () => {
     if (!currentOrgId) return;
+    if (!canManageOrg) {
+      toast({ title: "Permission denied", description: "Only owners and admins can update organization settings.", variant: "destructive" });
+      return;
+    }
     setSavingOrg(true);
     try {
       const trimmedName = orgName.trim().slice(0, 200);
       if (!trimmedName) throw new Error("Organization name is required");
-      const { error } = await supabase.from("organizations").update({ name: trimmedName, industry: industry.trim().slice(0, 100) || null }).eq("id", currentOrgId);
+      const trimmedIndustry = industry.trim().slice(0, 100) || null;
+      const { error } = await supabase.from("organizations").update({ name: trimmedName, industry: trimmedIndustry }).eq("id", currentOrgId);
       if (error) throw error;
+      savedOrg.current = { name: trimmedName, industry: trimmedIndustry || "" };
       toast({ title: "Organization updated" });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
@@ -133,14 +194,17 @@ const Settings = () => {
     if (!currentOrgId) return;
     setSavingNotif(true);
     try {
+      const safeAlert = Math.max(0, Math.min(100, alertThreshold));
+      const safeEsc = Math.max(0, Math.min(100, escalationThreshold));
       const { error } = await supabase.from("notification_preferences").upsert({
         organization_id: currentOrgId, role_type: "ceo",
         email_enabled: emailEnabled, weekly_brief_enabled: weeklyBrief,
-        alert_threshold: Math.max(0, Math.min(100, alertThreshold)),
-        escalation_threshold: Math.max(0, Math.min(100, escalationThreshold)),
+        alert_threshold: safeAlert,
+        escalation_threshold: safeEsc,
         email_recipients: emailRecipients,
       }, { onConflict: "organization_id,role_type" });
       if (error) throw error;
+      savedNotif.current = { emailEnabled, weeklyBrief, alertThreshold: safeAlert, escalationThreshold: safeEsc, emailRecipients: [...emailRecipients] };
       toast({ title: "Notification preferences saved" });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
@@ -148,11 +212,22 @@ const Settings = () => {
   };
 
   const addRecipient = () => {
-    const trimmed = emailInput.trim();
-    if (trimmed && trimmed.includes("@") && !emailRecipients.includes(trimmed)) {
-      setEmailRecipients(prev => [...prev, trimmed]);
-      setEmailInput("");
+    const trimmed = emailInput.trim().toLowerCase();
+    if (!trimmed) return;
+    if (!EMAIL_REGEX.test(trimmed)) {
+      toast({ title: "Invalid email", description: "Please enter a valid email address.", variant: "destructive" });
+      return;
     }
+    if (emailRecipients.includes(trimmed)) {
+      toast({ title: "Duplicate", description: "This email is already added.", variant: "destructive" });
+      return;
+    }
+    if (emailRecipients.length >= 20) {
+      toast({ title: "Limit reached", description: "Maximum 20 recipients.", variant: "destructive" });
+      return;
+    }
+    setEmailRecipients(prev => [...prev, trimmed]);
+    setEmailInput("");
   };
 
   const ACTION_LABELS: Record<string, string> = {
@@ -178,13 +253,13 @@ const Settings = () => {
         <main className="flex-1 p-8 overflow-auto">
           <div className="max-w-3xl mx-auto">
             <Tabs defaultValue="profile" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-6">
-                <TabsTrigger value="profile" className="gap-2"><User className="w-4 h-4" /> Profile</TabsTrigger>
-                <TabsTrigger value="appearance" className="gap-2"><Sun className="w-4 h-4" /> Appearance</TabsTrigger>
-                <TabsTrigger value="security" className="gap-2"><ShieldCheck className="w-4 h-4" /> Security</TabsTrigger>
-                <TabsTrigger value="organization" className="gap-2"><Building2 className="w-4 h-4" /> Organization</TabsTrigger>
-                <TabsTrigger value="notifications" className="gap-2"><Bell className="w-4 h-4" /> Notifications</TabsTrigger>
-                <TabsTrigger value="audit" className="gap-2" onClick={fetchAuditLog}><ScrollText className="w-4 h-4" /> Audit Log</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6">
+                <TabsTrigger value="profile" className="gap-1 text-xs sm:text-sm sm:gap-2"><User className="w-4 h-4 hidden sm:block" /> Profile</TabsTrigger>
+                <TabsTrigger value="appearance" className="gap-1 text-xs sm:text-sm sm:gap-2"><Sun className="w-4 h-4 hidden sm:block" /> Appearance</TabsTrigger>
+                <TabsTrigger value="security" className="gap-1 text-xs sm:text-sm sm:gap-2"><ShieldCheck className="w-4 h-4 hidden sm:block" /> Security</TabsTrigger>
+                <TabsTrigger value="organization" className="gap-1 text-xs sm:text-sm sm:gap-2"><Building2 className="w-4 h-4 hidden sm:block" /> Organization</TabsTrigger>
+                <TabsTrigger value="notifications" className="gap-1 text-xs sm:text-sm sm:gap-2"><Bell className="w-4 h-4 hidden sm:block" /> Notifications</TabsTrigger>
+                <TabsTrigger value="audit" className="gap-1 text-xs sm:text-sm sm:gap-2" onClick={fetchAuditLog}><ScrollText className="w-4 h-4 hidden sm:block" /> Audit</TabsTrigger>
               </TabsList>
 
               {/* Profile */}
@@ -202,7 +277,7 @@ const Settings = () => {
                         <Label>Full Name</Label>
                         <Input value={fullName} onChange={e => setFullName(e.target.value)} maxLength={200} placeholder="Your full name" />
                       </div>
-                      <Button onClick={saveProfile} disabled={savingProfile} className="gap-2">
+                      <Button onClick={saveProfile} disabled={savingProfile || !profileDirty} className="gap-2">
                         {savingProfile ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Save Profile
                       </Button>
                     </CardContent>
@@ -304,56 +379,63 @@ const Settings = () => {
                   <Card>
                     <CardHeader><CardTitle className="flex items-center gap-2"><Building2 className="w-5 h-5 text-primary" /> Organization Settings</CardTitle></CardHeader>
                     <CardContent className="space-y-6">
+                      {!canManageOrg && (
+                        <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/30 border border-border/50 text-sm text-muted-foreground">
+                          <Lock className="w-4 h-4 shrink-0" />
+                          Only owners and admins can modify organization settings.
+                        </div>
+                      )}
                       <div className="space-y-2">
                         <Label>Organization Name</Label>
-                        <Input value={orgName} onChange={e => setOrgName(e.target.value)} maxLength={200} placeholder="Organization name" />
+                        <Input value={orgName} onChange={e => setOrgName(e.target.value)} maxLength={200} placeholder="Organization name" disabled={!canManageOrg} />
                       </div>
                       <div className="space-y-2">
                         <Label>Industry</Label>
-                        <Input value={industry} onChange={e => setIndustry(e.target.value)} maxLength={100} placeholder="e.g. SaaS, Manufacturing, Retail" />
+                        <Input value={industry} onChange={e => setIndustry(e.target.value)} maxLength={100} placeholder="e.g. SaaS, Manufacturing, Retail" disabled={!canManageOrg} />
                       </div>
-                      {/* Org ID removed — technical details hidden from executive UI */}
-                      <Button onClick={saveOrg} disabled={savingOrg} className="gap-2">
+                      <Button onClick={saveOrg} disabled={savingOrg || !canManageOrg || !orgDirty} className="gap-2">
                         {savingOrg ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Save Organization
                       </Button>
                     </CardContent>
                   </Card>
 
                   {/* Demo Data */}
-                  <Card className="mt-6 border-primary/30">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2"><Activity className="w-5 h-5 text-primary" /> Demo Environment</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-muted-foreground mb-4">
-                        Populate your organization with a realistic enterprise scenario — 15 months of metrics, risk indices, simulations, decisions, and advisories. This will overwrite existing demo data.
-                      </p>
-                      <Button
-                        variant="outline"
-                        disabled={seedingDemo}
-                        className="gap-2"
-                        onClick={async () => {
-                          setSeedingDemo(true);
-                          try {
-                            const { data, error } = await supabase.functions.invoke("seed-demo-data");
-                            if (error) throw error;
-                            if (data?.error) throw new Error(data.error);
-                            toast({
-                              title: "Demo data loaded",
-                              description: `${data.summary.metrics} metrics, ${data.summary.decisions} decisions, ${data.summary.advisories} advisories seeded.`,
-                            });
-                          } catch (err: any) {
-                            toast({ title: "Error", description: err.message, variant: "destructive" });
-                          } finally {
-                            setSeedingDemo(false);
-                          }
-                        }}
-                      >
-                        {seedingDemo ? <Loader2 className="w-4 h-4 animate-spin" /> : <Activity className="w-4 h-4" />}
-                        {seedingDemo ? "Seeding data…" : "Load Demo Scenario"}
-                      </Button>
-                    </CardContent>
-                  </Card>
+                  {canManageOrg && (
+                    <Card className="mt-6 border-primary/30">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><Activity className="w-5 h-5 text-primary" /> Demo Environment</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm text-muted-foreground mb-4">
+                          Populate your organization with a realistic enterprise scenario — 15 months of metrics, risk indices, simulations, decisions, and advisories. This will overwrite existing demo data.
+                        </p>
+                        <Button
+                          variant="outline"
+                          disabled={seedingDemo}
+                          className="gap-2"
+                          onClick={async () => {
+                            setSeedingDemo(true);
+                            try {
+                              const { data, error } = await supabase.functions.invoke("seed-demo-data");
+                              if (error) throw error;
+                              if (data?.error) throw new Error(data.error);
+                              toast({
+                                title: "Demo data loaded",
+                                description: `${data.summary.metrics} metrics, ${data.summary.decisions} decisions, ${data.summary.advisories} advisories seeded.`,
+                              });
+                            } catch (err: any) {
+                              toast({ title: "Error", description: err.message, variant: "destructive" });
+                            } finally {
+                              setSeedingDemo(false);
+                            }
+                          }}
+                        >
+                          {seedingDemo ? <Loader2 className="w-4 h-4 animate-spin" /> : <Activity className="w-4 h-4" />}
+                          {seedingDemo ? "Seeding data…" : "Load Demo Scenario"}
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  )}
                 </motion.div>
               </TabsContent>
 
@@ -384,7 +466,13 @@ const Settings = () => {
                       <div className="space-y-2">
                         <Label>Email Recipients</Label>
                         <div className="flex gap-2">
-                          <Input value={emailInput} onChange={e => setEmailInput(e.target.value)} placeholder="Add email recipient" onKeyDown={e => e.key === "Enter" && (e.preventDefault(), addRecipient())} />
+                          <Input
+                            value={emailInput}
+                            onChange={e => setEmailInput(e.target.value)}
+                            placeholder="Add email recipient"
+                            maxLength={255}
+                            onKeyDown={e => e.key === "Enter" && (e.preventDefault(), addRecipient())}
+                          />
                           <Button variant="outline" size="sm" onClick={addRecipient}><Mail className="w-4 h-4" /></Button>
                         </div>
                         <div className="flex flex-wrap gap-2 mt-2">
@@ -396,7 +484,7 @@ const Settings = () => {
                           ))}
                         </div>
                       </div>
-                      <Button onClick={saveNotifications} disabled={savingNotif} className="gap-2">
+                      <Button onClick={saveNotifications} disabled={savingNotif || !notifDirty} className="gap-2">
                         {savingNotif ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Save Notifications
                       </Button>
                     </CardContent>
