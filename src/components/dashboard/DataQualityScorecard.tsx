@@ -7,7 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { ShieldCheck, AlertTriangle, Database, Clock, Activity, CheckCircle2 } from "lucide-react";
 
 const DataQualityScorecard = () => {
-  const { organizationId } = useOrganization();
+  const { currentOrgId: organizationId } = useOrganization();
 
   const { data: checks } = useQuery({
     queryKey: ["data-quality-scorecard", organizationId],
