@@ -250,7 +250,8 @@ export function generateExecutiveSummary(
   risks: RiskSignal[],
   drivers: DriverResult[] | null,
   pendingDecisions: number,
-  datasetName?: string
+  datasetName?: string,
+  metrics?: MetricRow[],
 ): string {
   if (!health) return "Insufficient data to generate executive summary. Upload or connect data to enable strategic intelligence.";
 
@@ -277,6 +278,30 @@ export function generateExecutiveSummary(
   if (drivers && drivers.length > 0) {
     const top = drivers[0];
     parts.push(`Primary change driver: ${top.metric.replace(/_/g, " ")} (${top.changePct > 0 ? "+" : ""}${top.changePct.toFixed(1)}%, ${top.contribution.toFixed(0)}% of total variance).`);
+  }
+
+  // Seasonality warning
+  if (metrics && metrics.length >= 12) {
+    const byType = new Map<string, number[]>();
+    metrics.forEach(m => {
+      const list = byType.get(m.metric_type) || [];
+      list.push(Number(m.value));
+      byType.set(m.metric_type, list);
+    });
+    
+    const seasonalMetrics: string[] = [];
+    byType.forEach((vals, type) => {
+      if (vals.length >= 12) {
+        const seasonality = detectSeasonality(vals);
+        if (seasonality.detected && seasonality.strength > 0.3) {
+          seasonalMetrics.push(type.replace(/_/g, " "));
+        }
+      }
+    });
+    
+    if (seasonalMetrics.length > 0) {
+      parts.push(`Seasonal patterns detected in ${seasonalMetrics.slice(0, 3).join(", ")} — compare same-period YoY for accurate assessment.`);
+    }
   }
 
   // Pending decisions

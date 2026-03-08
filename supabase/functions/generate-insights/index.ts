@@ -105,7 +105,7 @@ serve(async (req) => {
       if (m.segment) metricsByType[m.metric_type].segments.add(m.segment);
     }
 
-    // Build statistical summaries for AI
+    // Build statistical summaries for AI with advanced profiling
     const metricSummaries = Object.entries(metricsByType).map(([type, data]) => {
       const vals = data.values;
       const n = vals.length;
@@ -118,6 +118,65 @@ serve(async (req) => {
       const earlyAvg = vals.slice(0, half).length > 0 ? vals.slice(0, half).reduce((s, v) => s + v, 0) / vals.slice(0, half).length : recentAvg;
       const trendPct = earlyAvg !== 0 ? ((recentAvg - earlyAvg) / Math.abs(earlyAvg)) * 100 : 0;
       const volatility = mean !== 0 ? (Math.sqrt(vals.reduce((s, v) => s + (v - mean) ** 2, 0) / n) / Math.abs(mean)) * 100 : 0;
+
+      // Distribution profiling
+      let skewness = 0;
+      const std = Math.sqrt(vals.reduce((s, v) => s + (v - mean) ** 2, 0) / n);
+      if (n >= 3 && std > 0) {
+        let skewSum = 0;
+        for (let i = 0; i < n; i++) skewSum += ((vals[i] - mean) / std) ** 3;
+        skewness = (skewSum * n) / ((n - 1) * (n - 2));
+      }
+      const isNormal = Math.abs(skewness) < 1;
+
+      // Seasonality detection via autocorrelation
+      let seasonalPeriod: number | null = null;
+      let seasonalStrength = 0;
+      if (n >= 24) {
+        for (const period of [4, 7, 12]) {
+          if (n < period * 2) continue;
+          let num = 0, den = 0;
+          for (let i = 0; i < n; i++) {
+            den += (vals[i] - mean) ** 2;
+            if (i + period < n) num += (vals[i] - mean) * (vals[i + period] - mean);
+          }
+          const acf = den !== 0 ? num / den : 0;
+          if (acf > 0.3 && acf > seasonalStrength) {
+            seasonalStrength = acf;
+            seasonalPeriod = period;
+          }
+        }
+      }
+
+      // Changepoint detection (simplified CUSUM for edge function)
+      let changepointIdx: number | null = null;
+      let changepointMagnitude = 0;
+      if (n >= 10) {
+        let bestStat = 0;
+        const globalStd = std > 0 ? std : 1;
+        for (let i = 5; i <= n - 5; i++) {
+          const leftMean = vals.slice(0, i).reduce((s, v) => s + v, 0) / i;
+          const rightMean = vals.slice(i).reduce((s, v) => s + v, 0) / (n - i);
+          const stat = Math.abs(leftMean - rightMean) / globalStd * Math.sqrt((i * (n - i)) / n);
+          if (stat > bestStat) {
+            bestStat = stat;
+            changepointIdx = i;
+            changepointMagnitude = leftMean !== 0 ? ((rightMean - leftMean) / Math.abs(leftMean)) * 100 : 0;
+          }
+        }
+        const threshold = 1.5 + 0.5 * Math.log(n);
+        if (bestStat < threshold) {
+          changepointIdx = null;
+          changepointMagnitude = 0;
+        }
+      }
+
+      // IQR for outlier context
+      const sorted = [...vals].sort((a, b) => a - b);
+      const q1 = sorted[Math.floor(n * 0.25)];
+      const q3 = sorted[Math.floor(n * 0.75)];
+      const iqr = q3 - q1;
+      const outlierCount = iqr > 0 ? vals.filter(v => v < q1 - 1.5 * iqr || v > q3 + 1.5 * iqr).length : 0;
 
       return {
         metric_type: type,
@@ -133,6 +192,18 @@ serve(async (req) => {
         volatility_pct: Number(volatility.toFixed(2)),
         regions: [...data.regions],
         segments: [...data.segments],
+        // Advanced profiling
+        distribution: isNormal ? "normal" : (skewness > 1 ? "right-skewed" : skewness < -1 ? "left-skewed" : "approximately normal"),
+        skewness: Number(skewness.toFixed(3)),
+        outlier_count: outlierCount,
+        q1: Number(q1.toFixed(4)),
+        q3: Number(q3.toFixed(4)),
+        seasonality: seasonalPeriod ? { period: seasonalPeriod, strength: Number(seasonalStrength.toFixed(3)) } : null,
+        structural_break: changepointIdx ? {
+          at_index: changepointIdx,
+          at_date: data.dates[changepointIdx] || null,
+          magnitude_pct: Number(changepointMagnitude.toFixed(1)),
+        } : null,
       };
     });
 
@@ -182,34 +253,51 @@ IMPORTANT: Frame ALL insights through this decision context. Every insight must 
 
     const insightPrompt = `You are an enterprise data intelligence engine producing analyst-grade insights. The dataset is called "${datasetName}".
 ${contextBlock}
-METRIC SUMMARIES:
+METRIC SUMMARIES (with advanced statistical profiling):
 ${JSON.stringify(metricSummaries, null, 2)}
 
-Generate 5-10 CONTEXTUAL insights. Each insight MUST reference:
+STATISTICAL CONTEXT:
+- Distribution profiles include skewness and outlier counts. Flag non-normal distributions.
+- Seasonality fields show detected periodic patterns. Reference these to avoid false trend conclusions.
+- Structural breaks (changepoints) indicate regime changes. Split analysis into pre/post periods.
+- IQR-based outlier counts quantify data quality concerns.
+
+Generate 8-12 CONTEXTUAL insights following these tiers:
+1. CRITICAL FINDINGS (2-3): Structural breaks, regime changes, high-severity anomalies
+2. TREND INTELLIGENCE (2-3): Growth/decline with seasonality adjustment, momentum shifts
+3. SEGMENT/REGION ANALYSIS (2-3): Cross-segment disparities, geographic patterns
+4. STATISTICAL WARNINGS (1-2): Distribution issues, outlier concentrations, data quality
+5. ACTIONABLE OPPORTUNITIES (1-2): Correlations to exploit, underperforming segments to fix
+
+Each insight MUST reference:
 - The dataset name ("${datasetName}")
-- Specific metric names from the data
-- Actual values, percentages, and date ranges
-- Segment or region names when available
+- Specific metric names and their actual values
+- Date ranges and sample sizes
+- Statistical evidence (p-values, effect sizes, confidence intervals where applicable)
 ${decision_context_id ? "- The decision context and how the finding impacts the stated objective" : ""}
 
 Return ONLY a JSON array:
 [
   {
-    "message": "In ${datasetName}, [metric_name] [specific observation with values]. [Statistical inference]. [${decision_context_id ? "Decision relevance. " : ""}Actionable recommendation].",
+    "message": "In ${datasetName}, [metric_name] [specific observation with values]. [Statistical evidence]. [${decision_context_id ? "Decision relevance. " : ""}Actionable recommendation with success metric].",
     "severity": "high" | "medium" | "info",
-    "category": "trend" | "anomaly" | "risk" | "opportunity" | "segmentation" | "correlation" | "driver",
-    "raw_confidence": 60-90
+    "category": "trend" | "anomaly" | "risk" | "opportunity" | "segmentation" | "correlation" | "driver" | "seasonality" | "changepoint" | "distribution",
+    "raw_confidence": 55-92
   }
 ]
 
 Rules:
-- NEVER produce generic insights like "all metrics stable" — always reference specific metrics
+- NEVER produce generic insights like "all metrics stable" — always reference specific metrics and values
 - Include segment/region analysis when segment or region data exists
 - Cross-reference metrics: note correlations or divergences between metric types
-- High severity: declines >10%, volatility >50%, or cross-metric divergence
-- Medium: 5-10% changes, emerging patterns, segment disparities
-- Info: positive trends, stable-but-notable patterns
+- If seasonality is detected, warn that sequential period comparison may be misleading
+- If structural breaks exist, specify pre/post period statistics separately
+- If distribution is non-normal, flag which statistical methods are unreliable
+- High severity: declines >10%, volatility >50%, structural breaks >25%, bimodal distributions
+- Medium: 5-10% changes, emerging patterns, segment disparities, seasonality warnings
+- Info: positive trends, data quality confirmations, stable patterns
 - At least 2 insights must reference specific segments or regions if present
+- Confidence should reflect data quality: lower for small samples, skewed data, or single-method signals
 - Return ONLY the JSON array`;
 
     if (LOVABLE_API_KEY) {

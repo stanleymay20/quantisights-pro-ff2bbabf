@@ -51,8 +51,11 @@ const MiniSparkline = ({ trend, dataPoints }: { trend: "up" | "down" | "flat" | 
     const h = 24;
     const pad = 2;
     const usable = h - pad * 2;
-    const min = Math.min(...dataPoints);
-    const max = Math.max(...dataPoints);
+    let min = dataPoints[0], max = dataPoints[0];
+    for (let i = 1; i < dataPoints.length; i++) {
+      if (dataPoints[i] < min) min = dataPoints[i];
+      if (dataPoints[i] > max) max = dataPoints[i];
+    }
     const range = max - min || 1; // avoid division by zero
 
     // Sample down to max 12 points for clean rendering

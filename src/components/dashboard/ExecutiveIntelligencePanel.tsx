@@ -176,7 +176,7 @@ const ForecastPanel = ({ forecasts }: { forecasts: ForecastResult[] }) => {
                 </div>
               ))}
             </div>
-            <p className="text-[10px] text-muted-foreground mt-1">Based on {fc.sampleSize} observations · Linear regression + 80% prediction interval</p>
+            <p className="text-[10px] text-muted-foreground mt-1">Based on {fc.sampleSize} observations · {fc.baseline.label.replace('Baseline ', '').replace(/[()]/g, '')}</p>
           </div>
         ))}
       </CardContent>
@@ -258,8 +258,8 @@ const ExecutiveIntelligencePanel = ({
   }, [metrics]);
 
   const summary = useMemo(
-    () => generateExecutiveSummary(health, risks, drivers, pendingDecisions, datasetName || undefined),
-    [health, risks, drivers, pendingDecisions, datasetName]
+    () => generateExecutiveSummary(health, risks, drivers, pendingDecisions, datasetName || undefined, metrics),
+    [health, risks, drivers, pendingDecisions, datasetName, metrics]
   );
 
   return (

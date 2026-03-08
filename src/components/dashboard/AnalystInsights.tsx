@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Brain, TrendingUp, AlertTriangle, BarChart3, Layers, ArrowRight, FlaskConical, Activity, ChevronDown, ChevronUp, Download, FileText, Table2 } from "lucide-react";
+import { Brain, TrendingUp, AlertTriangle, BarChart3, Layers, ArrowRight, FlaskConical, Activity, ChevronDown, ChevronUp, Download, FileText, Table2, Waves, GitBranch, BarChart } from "lucide-react";
 import { Link } from "react-router-dom";
 import ConfidenceBadge from "@/components/ConfidenceBadge";
 import type { Insight } from "@/hooks/useInsights";
@@ -7,6 +7,7 @@ import type { MetricRow, MetricTypeSummary } from "@/hooks/useMetrics";
 import { runFullAnalysis, generateAnalystNote, type AnalystFinding } from "@/lib/analysis-engine";
 import { exportAndDownload } from "@/lib/executive-export";
 import { buildSourceContext, validateAIOutput } from "@/lib/anti-hallucination";
+import { profileDistribution, detectSeasonality, detectChangepoints } from "@/lib/advanced-statistics";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
@@ -97,6 +98,39 @@ const AnalystInsights = ({ insights, metrics, topMetrics, datasetName, datasetId
   const findings = useMemo(() => runFullAnalysis(metrics, datasetId), [metrics, datasetId]);
   const analystNote = useMemo(() => generateAnalystNote(findings), [findings]);
 
+  // Advanced statistical profiling summary
+  const dataHealth = useMemo(() => {
+    const byType = new Map<string, number[]>();
+    metrics.forEach(m => {
+      const list = byType.get(m.metric_type) || [];
+      list.push(Number(m.value));
+      byType.set(m.metric_type, list);
+    });
+
+    let seasonalCount = 0;
+    let nonNormalCount = 0;
+    let changepointCount = 0;
+    const totalTypes = byType.size;
+
+    byType.forEach((vals) => {
+      if (vals.length >= 12) {
+        const s = detectSeasonality(vals);
+        if (s.detected) seasonalCount++;
+      }
+      if (vals.length >= 8) {
+        const d = profileDistribution(vals);
+        if (!d.isNormal) nonNormalCount++;
+      }
+      if (vals.length >= 10) {
+        const sorted = [...vals]; // already numeric
+        const cp = detectChangepoints(sorted);
+        if (cp.length > 0) changepointCount++;
+      }
+    });
+
+    return { seasonalCount, nonNormalCount, changepointCount, totalTypes };
+  }, [metrics]);
+
   // Anti-hallucination: validate AI insights against source data
   const sourceContext = useMemo(() => buildSourceContext(
     metrics.map(m => ({ metric_type: m.metric_type, date: m.date, value: Number(m.value), region: m.region, segment: m.segment })),
@@ -144,6 +178,21 @@ const AnalystInsights = ({ insights, metrics, topMetrics, datasetName, datasetId
           <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary">
             {findings.length} findings
           </span>
+          {dataHealth.seasonalCount > 0 && (
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent/50 text-accent-foreground flex items-center gap-0.5">
+              <Waves className="w-2.5 h-2.5" /> {dataHealth.seasonalCount} seasonal
+            </span>
+          )}
+          {dataHealth.changepointCount > 0 && (
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-destructive/10 text-destructive flex items-center gap-0.5">
+              <GitBranch className="w-2.5 h-2.5" /> {dataHealth.changepointCount} regime shift{dataHealth.changepointCount > 1 ? "s" : ""}
+            </span>
+          )}
+          {dataHealth.nonNormalCount > 0 && (
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-secondary text-muted-foreground flex items-center gap-0.5">
+              <BarChart className="w-2.5 h-2.5" /> {dataHealth.nonNormalCount} non-normal
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <DropdownMenu>
