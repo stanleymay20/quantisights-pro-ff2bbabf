@@ -163,13 +163,14 @@ const KPIs = () => {
 
     const { error } = await supabase.from("kpis").insert({
       organization_id: currentOrgId,
+      dataset_id: activeDatasetId,
       name: newName,
       description: newDesc || null,
       formula: newFormula,
       metric_dependencies: newDeps,
       aggregation_type: newAggType,
       created_by: user.id,
-    });
+    } as any);
 
     if (error) {
       toast({ title: "Failed to create KPI", description: error.message, variant: "destructive" });
