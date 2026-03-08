@@ -9,6 +9,7 @@ import AnalystInsights from "./AnalystInsights";
 import ExecutiveIntelligencePanel from "./ExecutiveIntelligencePanel";
 import CrossContextAnalytics from "./CrossContextAnalytics";
 import DecisionContextPanel from "./DecisionContextPanel";
+import DataQualityScorecard from "./DataQualityScorecard";
 import { useDecisionContexts, type DecisionContext } from "@/hooks/useDecisionContexts";
 import type { Insight } from "@/hooks/useInsights";
 import type { MetricTypeSummary } from "@/hooks/useMetrics";
@@ -95,12 +96,13 @@ const CommandCenter = memo(({
         calibrationScore={calibrationScore}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <QuickDecisionLog
           organizationId={organizationId}
           onLogged={onDecisionLogged}
         />
         <CalibrationProgress organizationId={organizationId} />
+        <DataQualityScorecard />
       </div>
 
       <KPICards topMetrics={topMetrics} />
