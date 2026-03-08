@@ -73,22 +73,24 @@ export interface StructuredRecommendation {
   decisionGateMessage: string | null;
 }
 
-const OWNER_MAP: Record<string, string> = {
-  revenue: "VP Revenue / CRO",
-  churn: "VP Customer Success",
-  retention: "VP Customer Success",
-  cost: "VP Finance / CFO",
-  margin: "CFO / VP Finance",
-  growth: "VP Growth / CGO",
-  operational: "COO / VP Operations",
-  financial: "CFO / VP Finance",
-  strategic: "CEO / Strategy Lead",
-  calibration: "Decision Governance Lead",
-};
+// Ordered longest-first to prevent partial matches (e.g. "cost_of_revenue" matching "cost" before "revenue")
+const OWNER_MAP: [string, string][] = [
+  ["cost_of_revenue", "VP Revenue / CRO"],
+  ["calibration", "Decision Governance Lead"],
+  ["operational", "COO / VP Operations"],
+  ["strategic", "CEO / Strategy Lead"],
+  ["retention", "VP Customer Success"],
+  ["financial", "CFO / VP Finance"],
+  ["revenue", "VP Revenue / CRO"],
+  ["growth", "VP Growth / CGO"],
+  ["margin", "CFO / VP Finance"],
+  ["churn", "VP Customer Success"],
+  ["cost", "VP Finance / CFO"],
+];
 
 function inferOwner(category: string | null | undefined, metricType: string | null | undefined): string {
   const key = [category, metricType].filter(Boolean).join(" ").toLowerCase();
-  for (const [k, v] of Object.entries(OWNER_MAP)) {
+  for (const [k, v] of OWNER_MAP) {
     if (key.includes(k)) return v;
   }
   return "Decision Owner (assign)";
