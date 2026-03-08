@@ -99,7 +99,10 @@ const DiagnosticCard = ({ diagnostic: d, index, isExpanded, onToggle }: Diagnost
               </div>
 
               <div>
-                <h4 className="text-sm font-semibold mb-2">Causal Factors</h4>
+                <div className="flex items-center gap-2 mb-2">
+                  <h4 className="text-sm font-semibold">Causal Factors</h4>
+                  <OutputClassificationBadge classification="STATISTICAL_INFERENCE" compact />
+                </div>
                 <div className="flex flex-wrap gap-2">
                   {d.causal_factors.map((f, j) => (
                     <Badge key={j} variant="outline" className="text-xs">{f}</Badge>
