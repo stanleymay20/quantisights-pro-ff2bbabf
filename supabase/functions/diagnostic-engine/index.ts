@@ -83,7 +83,7 @@ function applyMeta(meta: AdaptiveConfidenceMeta): Pick<DiagnosticResult,
 }
 
 /** Compute pure statistics for each metric type — no hardcoded interpretations. */
-function computeStats(metrics: MetricRow[]): MetricStats[] {
+function computeStats(metrics: MetricRow[]): { stats: MetricStats[]; skippedMetrics: string[] } {
   const grouped: Record<string, MetricRow[]> = {};
   for (const m of metrics) {
     if (!grouped[m.metric_type]) grouped[m.metric_type] = [];
@@ -91,9 +91,13 @@ function computeStats(metrics: MetricRow[]): MetricStats[] {
   }
 
   const results: MetricStats[] = [];
+  const skippedMetrics: string[] = [];
 
   for (const [type, rows] of Object.entries(grouped)) {
-    if (rows.length < 2) continue;
+    if (rows.length < 2) {
+      skippedMetrics.push(type);
+      continue;
+    }
 
     const sorted = rows.sort((a, b) => a.date.localeCompare(b.date));
     const values = sorted.map(r => Number(r.value));
@@ -157,7 +161,7 @@ function computeStats(metrics: MetricRow[]): MetricStats[] {
     });
   }
 
-  return results;
+  return { stats: results, skippedMetrics };
 }
 
 /**

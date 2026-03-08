@@ -42,6 +42,8 @@ const Diagnostics = () => {
   const [diagnostics, setDiagnostics] = useState<DiagnosticResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [analyzedCount, setAnalyzedCount] = useState(0);
+  const [metricTypesAnalyzed, setMetricTypesAnalyzed] = useState(0);
+  const [skippedMetrics, setSkippedMetrics] = useState<string[]>([]);
   const [expanded, setExpanded] = useState<string | null>(null);
 
   const runDiagnostics = async () => {
@@ -55,6 +57,8 @@ const Diagnostics = () => {
       if (data?.error) throw new Error(data.error);
       setDiagnostics(data.diagnostics || []);
       setAnalyzedCount(data.analyzed_metrics || 0);
+      setMetricTypesAnalyzed(data.metric_types_analyzed?.length || 0);
+      setSkippedMetrics(data.skipped_metrics || []);
       if (data.diagnostics?.length === 0) {
         toast({ title: "No anomalies detected", description: "All metrics within expected ranges." });
       }
@@ -95,6 +99,8 @@ const Diagnostics = () => {
             criticalCount={criticalCount}
             warningCount={warningCount}
             totalDiagnosed={diagnostics.length}
+            metricTypesAnalyzed={metricTypesAnalyzed}
+            skippedMetrics={skippedMetrics}
           />
 
           {loading ? (
