@@ -807,9 +807,184 @@ function resolveConnectorType(body: ConnectorRequest): string {
   if (body.account) return "snowflake";
   if (body.service_account_json || body.project_id) return "bigquery";
   if (body.tenant_id && body.client_id) return "powerbi";
+  if (body.redshift_host || body.cluster_id || body.connector_type === "redshift" || body.port === 5439) return "redshift";
   if (body.port === 3306) return "mysql";
   if (body.port === 1433) return "sqlserver";
   return "postgresql";
+}
+
+// ─── Amazon Redshift Driver (via PostgreSQL wire protocol) ───
+async function testRedshift(body: ConnectorRequest) {
+  const host = body.redshift_host || body.host || "";
+  const port = body.redshift_port || body.port || 5439;
+  const database = body.redshift_database || body.database_name || "dev";
+  const user = body.redshift_user || body.username || "";
+  const password = body.redshift_password || body.password || "";
+
+  if (!host || !user || !password) {
+    return { success: false, message: "Redshift requires host, user, and password" };
+  }
+
+  let sql: any;
+  try {
+    const { default: postgres } = await import("https://deno.land/x/postgresjs@v3.4.5/mod.js");
+    sql = postgres({
+      host, port, database, username: user, password,
+      ssl: { rejectUnauthorized: false },
+      max: 1, idle_timeout: 10, connect_timeout: 15,
+    });
+    const result = await sql`SELECT version()`;
+    await sql.end();
+    const version = result[0]?.version || "Connected";
+    const isRedshift = version.toLowerCase().includes("redshift");
+    return {
+      success: true,
+      message: isRedshift ? "Redshift connection successful" : "Connection successful (non-Redshift PostgreSQL detected)",
+      version,
+      is_redshift: isRedshift,
+    };
+  } catch (err: unknown) {
+    try { if (sql) await sql.end(); } catch {}
+    return { success: false, message: `Redshift connection failed: ${err instanceof Error ? err.message : String(err)}` };
+  }
+}
+
+async function discoverRedshift(body: ConnectorRequest) {
+  const host = body.redshift_host || body.host || "";
+  const port = body.redshift_port || body.port || 5439;
+  const database = body.redshift_database || body.database_name || "dev";
+  const user = body.redshift_user || body.username || "";
+  const password = body.redshift_password || body.password || "";
+  const schema = body.redshift_schema || body.schema_name || "public";
+
+  let sql: any;
+  try {
+    const { default: postgres } = await import("https://deno.land/x/postgresjs@v3.4.5/mod.js");
+    sql = postgres({
+      host, port, database, username: user, password,
+      ssl: { rejectUnauthorized: false },
+      max: 1, idle_timeout: 10, connect_timeout: 15,
+    });
+
+    // Redshift uses SVV_TABLE_INFO for table metadata
+    const tables = await sql`
+      SELECT DISTINCT tablename as table_name
+      FROM pg_table_def
+      WHERE schemaname = ${schema}
+      ORDER BY tablename
+    `;
+
+    const tableDetails = [];
+    for (const t of tables.slice(0, 50)) {
+      const columns = await sql`
+        SELECT "column" as column_name, type as data_type, notnull as is_not_null
+        FROM pg_table_def
+        WHERE schemaname = ${schema} AND tablename = ${t.table_name}
+        ORDER BY "column"
+      `;
+
+      const rowCount = await sql`
+        SELECT COUNT(*) as count FROM ${sql(schema)}.${sql(t.table_name)}
+      `.catch(() => [{ count: 0 }]);
+
+      tableDetails.push({
+        table_name: t.table_name,
+        schema: schema,
+        columns: columns.map((c: any) => ({
+          name: c.column_name,
+          type: c.data_type,
+          nullable: !c.is_not_null,
+        })),
+        row_count: Number(rowCount[0]?.count || 0),
+      });
+    }
+
+    await sql.end();
+    return { tables: tableDetails, schema, database, engine: "redshift" };
+  } catch (err: unknown) {
+    try { if (sql) await sql.end(); } catch {}
+    return { tables: [], error: `Redshift discovery failed: ${err instanceof Error ? err.message : String(err)}` };
+  }
+}
+
+async function syncRedshift(
+  body: ConnectorRequest,
+  mappings: ConnectorRequest["metric_mappings"],
+  organizationId: string,
+  dataSourceId: string,
+  serviceClient: any,
+) {
+  const host = body.redshift_host || body.host || "";
+  const port = body.redshift_port || body.port || 5439;
+  const database = body.redshift_database || body.database_name || "dev";
+  const user = body.redshift_user || body.username || "";
+  const password = body.redshift_password || body.password || "";
+  const schema = body.redshift_schema || body.schema_name || "public";
+
+  const result = { records: 0, errors: [] as string[] };
+  if (!mappings?.length) return result;
+
+  let sql: any;
+  try {
+    const { default: postgres } = await import("https://deno.land/x/postgresjs@v3.4.5/mod.js");
+    sql = postgres({
+      host, port, database, username: user, password,
+      ssl: { rejectUnauthorized: false },
+      max: 1, idle_timeout: 30, connect_timeout: 15,
+    });
+
+    for (const mapping of mappings) {
+      try {
+        const agg = mapping.aggregation || "none";
+        let query: string;
+
+        if (agg === "none") {
+          query = `SELECT "${mapping.date_column}" as date, "${mapping.source_column}" as value FROM "${schema}"."${mapping.source_table}" WHERE "${mapping.date_column}" IS NOT NULL ORDER BY "${mapping.date_column}" LIMIT 50000`;
+        } else {
+          query = `SELECT DATE_TRUNC('month', "${mapping.date_column}") as date, ${agg}("${mapping.source_column}") as value FROM "${schema}"."${mapping.source_table}" WHERE "${mapping.date_column}" IS NOT NULL GROUP BY 1 ORDER BY 1 LIMIT 50000`;
+        }
+
+        const rows = await sql.unsafe(query);
+
+        const metrics = [];
+        for (const row of rows) {
+          const date = row.date;
+          const value = parseFloat(row.value);
+          if (!date || isNaN(value) || !isFinite(value)) continue;
+          const dateStr = new Date(date).toISOString().split("T")[0];
+          metrics.push({
+            organization_id: organizationId,
+            metric_type: mapping.metric_type,
+            date: dateStr,
+            value,
+            source_type: "redshift",
+            source_id: dataSourceId,
+            quality_score: 90,
+          });
+        }
+
+        // Batch upsert
+        const BATCH = 1000;
+        for (let i = 0; i < metrics.length; i += BATCH) {
+          const batch = metrics.slice(i, i + BATCH);
+          const { error } = await serviceClient.from("metrics").upsert(batch, {
+            onConflict: "organization_id,metric_type,date,region,segment,source_id",
+          });
+          if (error) result.errors.push(`${mapping.metric_type}: ${error.message}`);
+          else result.records += batch.length;
+        }
+      } catch (err: unknown) {
+        result.errors.push(`${mapping.metric_type}: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+
+    await sql.end();
+  } catch (err: unknown) {
+    try { if (sql) await sql.end(); } catch {}
+    result.errors.push(`Redshift connection: ${err instanceof Error ? err.message : String(err)}`);
+  }
+
+  return result;
 }
 
 serve(async (req) => {
