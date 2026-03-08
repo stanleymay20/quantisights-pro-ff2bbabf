@@ -335,11 +335,15 @@ Rules:
         };
       });
 
-      await fetch(`${supabaseUrl}/rest/v1/advisory_instances`, {
+      const insertResp = await fetch(`${supabaseUrl}/rest/v1/advisory_instances`, {
         method: "POST",
         headers: serviceHeaders,
         body: JSON.stringify(rows),
       });
+      if (!insertResp.ok) {
+        const errBody = await insertResp.text();
+        console.error("advisory_instances INSERT failed:", insertResp.status, errBody);
+      }
     }
 
     return new Response(JSON.stringify({
