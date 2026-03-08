@@ -136,6 +136,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
+            <CookieConsent />
             <Suspense fallback={<PageLoader />}>
             <Routes>
               {/* Public routes */}
