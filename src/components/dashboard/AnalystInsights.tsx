@@ -8,6 +8,7 @@ import { runFullAnalysis, generateAnalystNote, type AnalystFinding } from "@/lib
 import { exportAndDownload } from "@/lib/executive-export";
 import { buildSourceContext, validateAIOutput } from "@/lib/anti-hallucination";
 import { profileDistribution, detectSeasonality, detectChangepoints } from "@/lib/advanced-statistics";
+import { detectIndustry } from "@/lib/industry-detection";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
