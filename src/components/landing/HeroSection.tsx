@@ -1,9 +1,10 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { ArrowRight, ShieldCheck, Target, TrendingDown, BarChart3 } from "lucide-react";
+import { ArrowRight, ShieldCheck, Target, TrendingDown, BarChart3, Database, Cable } from "lucide-react";
 import heroVisual from "@/assets/hero-visual.png";
 
 const CAPABILITY_PILLS = [
+  { icon: Cable, label: "Enterprise Data Connectors" },
   { icon: ShieldCheck, label: "Decision Audit Trails" },
   { icon: Target, label: "Forecast Calibration" },
   { icon: TrendingDown, label: "Overconfidence Detection" },
@@ -82,16 +83,16 @@ const HeroSection = () => {
 
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
               <Link
-                to="/demo"
+                to="/register"
                 className="inline-flex items-center justify-center gap-2 px-6 sm:px-10 py-3.5 sm:py-4 rounded-xl bg-primary text-primary-foreground font-semibold text-sm sm:text-base hover:brightness-110 transition-all shadow-lg shadow-primary/25"
               >
-                Start Tracking Strategic Decisions <ArrowRight className="w-4 h-4" />
+                <Database className="w-4 h-4" /> Connect Your Data <ArrowRight className="w-4 h-4" />
               </Link>
               <Link
-                to="/register"
+                to="/demo"
                 className="inline-flex items-center justify-center gap-2 px-6 sm:px-10 py-3.5 sm:py-4 rounded-xl border border-border bg-card/50 text-foreground font-semibold text-sm sm:text-base hover:border-primary/30 transition-all"
               >
-                See a Sample Audit Trail
+                Try with Sample Data
               </Link>
             </div>
 

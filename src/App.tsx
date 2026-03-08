@@ -24,6 +24,7 @@ const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const DataUpload = lazy(() => import("./pages/DataUpload"));
+const DataConnectors = lazy(() => import("./pages/DataConnectors"));
 const DataSources = lazy(() => import("./pages/DataSources"));
 const KPIs = lazy(() => import("./pages/KPIs"));
 const Scenarios = lazy(() => import("./pages/Scenarios"));
@@ -157,6 +158,7 @@ const App = () => (
               <Route path="/dashboard" element={<P><Dashboard /></P>} />
               <Route path="/data-upload" element={<P><DataUpload /></P>} />
               <Route path="/data-sources" element={<P><DataSources /></P>} />
+              <Route path="/data-connectors" element={<P><DataConnectors /></P>} />
               <Route path="/kpis" element={<P><KPIs /></P>} />
               <Route path="/diagnostics" element={<P><Diagnostics /></P>} />
               <Route path="/advisory" element={<P><Advisory /></P>} />
