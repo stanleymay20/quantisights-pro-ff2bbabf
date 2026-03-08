@@ -114,17 +114,20 @@ const ExecutiveQuickView = memo(({
           <h3 className="text-sm font-semibold mb-4">Key Performance Indicators</h3>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {quickMetrics.map((m) => {
-              const changeColor = m.change_pct == null ? "text-muted-foreground"
-                : m.change_pct >= 0 ? "text-emerald-500" : "text-destructive";
+              const changePct = m.previousTotal != null && m.previousTotal !== 0
+                ? ((m.total - m.previousTotal) / Math.abs(m.previousTotal)) * 100
+                : null;
+              const changeColor = changePct == null ? "text-muted-foreground"
+                : changePct >= 0 ? "text-emerald-500" : "text-destructive";
               return (
-                <div key={m.metric_type} className="space-y-1">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider truncate">{m.metric_type}</p>
+                <div key={m.metricType} className="space-y-1">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider truncate">{m.metricType}</p>
                   <p className="text-xl font-bold">
-                    {typeof m.latest_value === "number" ? m.latest_value.toLocaleString(undefined, { maximumFractionDigits: 1 }) : "—"}
+                    {m.latest.toLocaleString(undefined, { maximumFractionDigits: 1 })}
                   </p>
-                  {m.change_pct != null && (
+                  {changePct != null && (
                     <p className={`text-xs font-medium ${changeColor}`}>
-                      {m.change_pct >= 0 ? "▲" : "▼"} {Math.abs(m.change_pct).toFixed(1)}%
+                      {changePct >= 0 ? "▲" : "▼"} {Math.abs(changePct).toFixed(1)}%
                     </p>
                   )}
                 </div>
