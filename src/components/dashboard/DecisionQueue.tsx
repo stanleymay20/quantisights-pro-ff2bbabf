@@ -144,10 +144,10 @@ const DecisionQueue = memo(({
     setActingOn(decision.id);
     try {
       if (decision.type === "advisory" && decision.sourceId) {
-        await supabase.from("advisory_instances").update({ status: "in_progress", assigned_to: user?.id }).eq("id", decision.sourceId);
+        await supabase.from("advisory_instances").update({ status: "in_progress", assigned_to: user?.id }).eq("id", decision.sourceId).eq("organization_id", organizationId);
       }
       if (decision.type === "signal" && decision.sourceId) {
-        await supabase.from("insights").update({ is_read: true }).eq("id", decision.sourceId);
+        await supabase.from("insights").update({ is_read: true }).eq("id", decision.sourceId).eq("organization_id", organizationId);
       }
       await supabase.from("decision_ledger").insert({
         organization_id: organizationId,
