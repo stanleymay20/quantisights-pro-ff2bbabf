@@ -238,6 +238,13 @@ IMPORTANT: Frame ALL insights through this decision context. Every insight must 
       }
     }
 
+    // ── INDUSTRY DETECTION ──
+    const allMetricTypes = Object.keys(metricsByType);
+    const allRegions = [...new Set(metrics.flatMap((m: any) => m.region ? [m.region] : []))];
+    const allSegments = [...new Set(metrics.flatMap((m: any) => m.segment ? [m.segment] : []))];
+    
+    const industryProfile = detectIndustryFromMetrics(allMetricTypes, allSegments, allRegions, datasetName);
+
     // Use AI with multi-model failover chain to generate contextual insights
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
@@ -251,8 +258,16 @@ IMPORTANT: Frame ALL insights through this decision context. Every insight must 
       "google/gemini-2.5-flash-lite",
     ];
 
-    const insightPrompt = `You are an enterprise data intelligence engine producing analyst-grade insights. The dataset is called "${datasetName}".
+    const insightPrompt = `You are an enterprise data intelligence engine producing analyst-grade insights for the ${industryProfile.industry}${industryProfile.subIndustry ? ` (${industryProfile.subIndustry})` : ""} industry. The dataset is called "${datasetName}".
+
+DETECTED INDUSTRY: ${industryProfile.industry} (confidence: ${industryProfile.confidence}%, matched signals: ${industryProfile.matchedSignals.join(", ")})
 ${contextBlock}
+
+${industryProfile.analysisFramework}
+
+INDUSTRY KPI BENCHMARKS:
+${industryProfile.kpiFramework.map(k => `- ${k.metric} [${k.importance}]: ${k.context}`).join("\n")}
+
 METRIC SUMMARIES (with advanced statistical profiling):
 ${JSON.stringify(metricSummaries, null, 2)}
 
@@ -263,39 +278,43 @@ STATISTICAL CONTEXT:
 - IQR-based outlier counts quantify data quality concerns.
 
 Generate 8-12 CONTEXTUAL insights following these tiers:
-1. CRITICAL FINDINGS (2-3): Structural breaks, regime changes, high-severity anomalies
-2. TREND INTELLIGENCE (2-3): Growth/decline with seasonality adjustment, momentum shifts
+1. CRITICAL FINDINGS (2-3): Structural breaks, regime changes, high-severity anomalies with ROOT-CAUSE HYPOTHESES specific to ${industryProfile.industry}
+2. TREND INTELLIGENCE (2-3): Growth/decline with seasonality adjustment, momentum shifts. Compare against industry benchmarks where applicable.
 3. SEGMENT/REGION ANALYSIS (2-3): Cross-segment disparities, geographic patterns
 4. STATISTICAL WARNINGS (1-2): Distribution issues, outlier concentrations, data quality
-5. ACTIONABLE OPPORTUNITIES (1-2): Correlations to exploit, underperforming segments to fix
+5. ACTIONABLE OPPORTUNITIES (1-2): Industry-specific recommendations with success metrics
 
-Each insight MUST reference:
-- The dataset name ("${datasetName}")
-- Specific metric names and their actual values
-- Date ranges and sample sizes
-- Statistical evidence (p-values, effect sizes, confidence intervals where applicable)
-${decision_context_id ? "- The decision context and how the finding impacts the stated objective" : ""}
+Each insight MUST:
+- Reference the dataset name ("${datasetName}")
+- Reference specific metric names and their actual values
+- Include date ranges and sample sizes
+- Include statistical evidence (p-values, effect sizes, confidence intervals where applicable)
+- For anomalies: provide 2-3 industry-specific root-cause hypotheses
+- For benchmarking: compare against ${industryProfile.industry} industry standards
+${decision_context_id ? "- Reference the decision context and how the finding impacts the stated objective" : ""}
 
 Return ONLY a JSON array:
 [
   {
-    "message": "In ${datasetName}, [metric_name] [specific observation with values]. [Statistical evidence]. [${decision_context_id ? "Decision relevance. " : ""}Actionable recommendation with success metric].",
+    "message": "In ${datasetName}, [metric_name] [specific observation with values]. [Statistical evidence]. [Industry context: how this compares to ${industryProfile.industry} benchmarks]. [Root-cause hypotheses if anomaly]. [Actionable recommendation with success metric].",
     "severity": "high" | "medium" | "info",
-    "category": "trend" | "anomaly" | "risk" | "opportunity" | "segmentation" | "correlation" | "driver" | "seasonality" | "changepoint" | "distribution",
+    "category": "trend" | "anomaly" | "risk" | "opportunity" | "segmentation" | "correlation" | "driver" | "seasonality" | "changepoint" | "distribution" | "benchmark",
     "raw_confidence": 55-92
   }
 ]
 
 Rules:
-- NEVER produce generic insights like "all metrics stable" — always reference specific metrics and values
+- NEVER produce generic insights — every sentence must contain a specific number, metric name, or date
+- For EVERY anomaly, include 2-3 ${industryProfile.industry}-specific root-cause hypotheses
+- Compare metrics against industry benchmarks when data allows
 - Include segment/region analysis when segment or region data exists
 - Cross-reference metrics: note correlations or divergences between metric types
 - If seasonality is detected, warn that sequential period comparison may be misleading
 - If structural breaks exist, specify pre/post period statistics separately
 - If distribution is non-normal, flag which statistical methods are unreliable
-- High severity: declines >10%, volatility >50%, structural breaks >25%, bimodal distributions
+- High severity: declines >10%, volatility >50%, structural breaks >25%, below p25 benchmark
 - Medium: 5-10% changes, emerging patterns, segment disparities, seasonality warnings
-- Info: positive trends, data quality confirmations, stable patterns
+- Info: positive trends, above p75 benchmark, data quality confirmations
 - At least 2 insights must reference specific segments or regions if present
 - Confidence should reflect data quality: lower for small samples, skewed data, or single-method signals
 - Return ONLY the JSON array`;
