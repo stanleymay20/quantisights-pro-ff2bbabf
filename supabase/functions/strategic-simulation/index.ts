@@ -494,16 +494,26 @@ No markdown, no code fences, no text outside JSON.`,
       scenario_parameters: params,
       // Model disclosure — mandatory for decision-grade integrity
       model_disclosure: {
-        risk_model: "Deterministic sensitivity model with hardcoded multipliers (revenue: 1.5/0.8, cost: 0.6/0.3, headcount: 1.2/0.5, marketing: 0.6/0.3). Not calibrated to historical data.",
-        kpi_model: "Heuristic linear sensitivity (revenue coeff: 0.7, cost coeff: 0.3). Assumed, not calibrated.",
-        risk_weighting: "Composite: 40% deviation + 20% volatility + 20% trend + 20% forecast. Weights are assumed, not optimized.",
-        classification: "HEURISTIC_ESTIMATE",
-        limitations: [
-          "Sensitivity coefficients are not calibrated to historical org data",
-          "Linear model does not capture non-linear interactions",
-          "Component weights are assumed equal (except deviation at 40%)",
-          "KPI projections assume independent linear responses",
-        ],
+        risk_model: coefficients.calibration_source === "historical_regression"
+          ? `Calibrated sensitivity model. Coefficients derived from ${coefficients.data_points_used} historical data points via OLS regression (R²=${coefficients.r_squared ?? "N/A"}).`
+          : "Heuristic sensitivity model — insufficient historical data for calibration. Using assumed multipliers.",
+        kpi_model: coefficients.calibration_source === "historical_regression"
+          ? `Calibrated linear sensitivity (revenue: ${coefficients.kpi_revenue_sensitivity}, cost: ${coefficients.kpi_cost_sensitivity}). Derived from org history.`
+          : `Heuristic linear sensitivity (revenue: ${coefficients.kpi_revenue_sensitivity}, cost: ${coefficients.kpi_cost_sensitivity}). Assumed, not calibrated.`,
+        risk_weighting: "Composite: 40% deviation + 20% volatility + 20% trend + 20% forecast.",
+        classification: coefficients.calibration_source === "historical_regression" ? "CALIBRATED_MODEL" : "HEURISTIC_ESTIMATE",
+        coefficients_used: coefficients,
+        limitations: coefficients.calibration_source === "historical_regression"
+          ? [
+              "Linear model does not capture non-linear interactions",
+              "Calibration assumes stationarity of historical relationships",
+              `Model R² = ${coefficients.r_squared ?? "N/A"} — check for overfitting`,
+            ]
+          : [
+              "Sensitivity coefficients are NOT calibrated to historical org data",
+              "Linear model does not capture non-linear interactions",
+              "Upload ≥24 metric data points to enable auto-calibration",
+            ],
       },
       // Standardized adaptive calibration metadata
       adaptive_calibration_applied: !!calModel,
