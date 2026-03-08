@@ -138,6 +138,7 @@ const App = () => (
         <BrowserRouter>
           <AuthProvider>
             <CookieConsent />
+            <SessionTimeout />
             <Suspense fallback={<PageLoader />}>
             <Routes>
               {/* Public routes */}

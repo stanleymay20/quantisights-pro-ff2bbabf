@@ -76,6 +76,23 @@ const Login = forwardRef<HTMLDivElement>((_, ref) => {
         }
       }
 
+      // Check for login anomalies (fire-and-forget)
+      supabase.functions.invoke("login-anomaly-detect", {
+        body: {
+          ip_address: null, // Server-side detection
+          user_agent: navigator.userAgent,
+        },
+      }).then(({ data }) => {
+        if (data?.is_anomalous) {
+          toast({
+            title: "Security Notice",
+            description: data.message + ". If this wasn't you, change your password immediately.",
+            variant: "destructive",
+            duration: 10000,
+          });
+        }
+      }).catch(() => {}); // Non-blocking
+
       navigate(redirectTo);
     } catch (err: any) {
       toast({ title: "Login failed", description: err.message, variant: "destructive" });
