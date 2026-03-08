@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, ShieldCheck } from "lucide-react";
 
@@ -6,10 +6,14 @@ interface MFAChallengeProps {
   onVerified: () => void;
 }
 
+const MAX_MFA_ATTEMPTS = 5;
+
 const MFAChallenge = ({ onVerified }: MFAChallengeProps) => {
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [locked, setLocked] = useState(false);
+  const attempts = useRef(0);
 
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
