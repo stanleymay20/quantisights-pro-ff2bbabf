@@ -79,16 +79,16 @@ const DataQualityScorecard = () => {
 
   const getScoreColor = (score: number | null) => {
     if (score == null) return "text-muted-foreground";
-    if (score >= 90) return "text-green-500";
-    if (score >= 70) return "text-yellow-500";
-    return "text-red-500";
+    if (score >= 90) return "text-primary";
+    if (score >= 70) return "text-accent-foreground";
+    return "text-destructive";
   };
 
   const getScoreBg = (score: number | null) => {
     if (score == null) return "bg-muted";
-    if (score >= 90) return "bg-green-500/15";
-    if (score >= 70) return "bg-yellow-500/15";
-    return "bg-red-500/15";
+    if (score >= 90) return "bg-primary/10";
+    if (score >= 70) return "bg-accent/10";
+    return "bg-destructive/10";
   };
 
   // dbt checks
