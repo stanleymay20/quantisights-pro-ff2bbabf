@@ -1042,6 +1042,7 @@ serve(async (req) => {
           case "snowflake": result = await testSnowflake(body); break;
           case "bigquery": result = await testBigQuery(body); break;
           case "powerbi": result = await testPowerBI(body); break;
+          case "redshift": result = await testRedshift(body); break;
           default: result = { success: false, message: `Unsupported connector: ${connectorType}` };
         }
 
