@@ -2,6 +2,8 @@ import { useMemo, useState } from "react";
 import { Brain, TrendingUp, AlertTriangle, BarChart3, Layers, ArrowRight, FlaskConical, Activity, ChevronDown, ChevronUp, Download, FileText, Table2, Waves, GitBranch, BarChart } from "lucide-react";
 import { Link } from "react-router-dom";
 import ConfidenceBadge from "@/components/ConfidenceBadge";
+import OutputClassificationBadge from "@/components/dashboard/OutputClassificationBadge";
+import type { OutputClassification } from "@/components/dashboard/OutputClassificationBadge";
 import type { Insight } from "@/hooks/useInsights";
 import type { MetricRow, MetricTypeSummary } from "@/hooks/useMetrics";
 import { runFullAnalysis, generateAnalystNote, type AnalystFinding } from "@/lib/analysis-engine";
