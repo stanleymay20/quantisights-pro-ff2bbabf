@@ -97,6 +97,19 @@ const AnalystInsights = ({ insights, metrics, topMetrics, datasetName, datasetId
   const findings = useMemo(() => runFullAnalysis(metrics, datasetId), [metrics, datasetId]);
   const analystNote = useMemo(() => generateAnalystNote(findings), [findings]);
 
+  // Anti-hallucination: validate AI insights against source data
+  const sourceContext = useMemo(() => buildSourceContext(
+    metrics.map(m => ({ metric_type: m.metric_type, date: m.date, value: Number(m.value), region: m.region, segment: m.segment })),
+    datasetName || undefined
+  ), [metrics, datasetName]);
+
+  const validatedInsights = useMemo(() => {
+    return insights.map(insight => {
+      const validation = validateAIOutput(insight.message, sourceContext);
+      return { ...insight, _validation: validation };
+    });
+  }, [insights, sourceContext]);
+
   if (metrics.length === 0) {
     return (
       <div className="glass-card p-6 rounded-xl text-center">
@@ -105,6 +118,15 @@ const AnalystInsights = ({ insights, metrics, topMetrics, datasetName, datasetId
       </div>
     );
   }
+
+  const handleExport = (format: "csv" | "markdown" | "json") => {
+    exportAndDownload(findings, {
+      format,
+      title: "Analysis Report",
+      datasetName: datasetName || undefined,
+      organizationName: undefined,
+    });
+  };
 
   return (
     <div className="space-y-4">
@@ -123,9 +145,29 @@ const AnalystInsights = ({ insights, metrics, topMetrics, datasetName, datasetId
             {findings.length} findings
           </span>
         </div>
-        <Link to="/dataset-explorer" className="text-[11px] font-semibold text-primary hover:underline flex items-center gap-0.5">
-          Explore Data <ArrowRight className="w-3 h-3" />
-        </Link>
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="h-7 text-xs">
+                <Download className="w-3 h-3 mr-1" /> Export
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleExport("markdown")}>
+                <FileText className="w-3 h-3 mr-2" /> Board Report (Markdown)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport("csv")}>
+                <Table2 className="w-3 h-3 mr-2" /> Spreadsheet (CSV)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport("json")}>
+                <Download className="w-3 h-3 mr-2" /> Structured (JSON)
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Link to="/dataset-explorer" className="text-[11px] font-semibold text-primary hover:underline flex items-center gap-0.5">
+            Explore Data <ArrowRight className="w-3 h-3" />
+          </Link>
+        </div>
       </div>
 
       {/* AI-generated contextual insights */}
