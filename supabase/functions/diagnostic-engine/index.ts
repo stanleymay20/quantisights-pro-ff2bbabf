@@ -262,7 +262,7 @@ serve(async (req) => {
   if (auth.response) return auth.response;
 
   try {
-    const { organization_id, dataset_id } = await req.json();
+    const { organization_id, dataset_id, decision_context_id } = await req.json();
     if (!organization_id) throw new Error("organization_id required");
 
     const isMember = await verifyOrgMembership(auth.userId, organization_id);
