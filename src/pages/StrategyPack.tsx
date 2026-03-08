@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useOrganization } from "@/hooks/useOrganization";
+import { useActiveDataContext } from "@/hooks/useActiveDataContext";
 import { supabase } from "@/integrations/supabase/client";
 import { SidebarMobileToggle } from "@/components/layout/ProtectedShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -107,6 +108,7 @@ const ROLES = ["ceo", "cfo", "cmo", "coo"];
 
 const StrategyPack = () => {
   const { currentOrgId } = useOrganization();
+  const { datasetId: activeDatasetId } = useActiveDataContext();
   const [loading, setLoading] = useState(true);
   const [orgName, setOrgName] = useState("");
 
@@ -130,7 +132,9 @@ const StrategyPack = () => {
         supabase.from("executive_conflicts").select("*").eq("organization_id", currentOrgId).is("resolved_at", null),
         supabase.from("decision_ledger").select("id, recommended_action, decision_type, decision_status, capped_confidence, predicted_net_impact, predicted_roi_probability, outcome_delta, execution_status, confidence_cap_reason, raw_confidence").eq("organization_id", currentOrgId).order("created_at", { ascending: false }).limit(50),
         supabase.from("simulation_results").select("metric_type, expected_value, p10_value, p90_value, probability_negative, capped_confidence, confidence_cap_reason, raw_confidence, sample_size, data_sufficiency").eq("organization_id", currentOrgId).order("created_at", { ascending: false }).limit(10),
-        supabase.from("advisory_instances").select("title, action, priority, category, capped_confidence, raw_confidence, confidence_cap_reason, rationale, impact_score, source_evidence").eq("organization_id", currentOrgId).in("status", ["open", "in_progress"]).order("created_at", { ascending: false }).limit(10),
+        activeDatasetId
+          ? supabase.from("advisory_instances").select("title, action, priority, category, capped_confidence, raw_confidence, confidence_cap_reason, rationale, impact_score, source_evidence").eq("organization_id", currentOrgId).eq("dataset_id", activeDatasetId).in("status", ["open", "in_progress"]).order("created_at", { ascending: false }).limit(10)
+          : Promise.resolve({ data: [], error: null }),
       ]);
 
       setOrgName(orgRes.data?.name || "Organization");
