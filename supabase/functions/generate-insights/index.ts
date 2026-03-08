@@ -144,6 +144,29 @@ serve(async (req) => {
       .maybeSingle();
     const datasetName = dsInfo?.name || "dataset";
 
+    // Fetch decision context if provided
+    let contextBlock = "";
+    if (decision_context_id) {
+      const { data: ctxData } = await serviceSupabase
+        .from("decision_contexts")
+        .select("name, decision_type, objective, industry, target_metrics")
+        .eq("id", decision_context_id)
+        .eq("organization_id", organization_id)
+        .maybeSingle();
+      if (ctxData) {
+        contextBlock = `
+DECISION CONTEXT:
+Name: ${ctxData.name}
+Type: ${ctxData.decision_type}
+Objective: ${ctxData.objective || "Not specified"}
+Industry: ${ctxData.industry || "Not specified"}
+Target Metrics: ${JSON.stringify(ctxData.target_metrics || [])}
+
+IMPORTANT: Frame ALL insights through this decision context. Every insight must explain its relevance to the "${ctxData.decision_type}" decision. Prioritize metrics listed in target_metrics.
+`;
+      }
+    }
+
     // Use AI to generate contextual, analyst-grade insights
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
@@ -164,7 +187,7 @@ serve(async (req) => {
           messages: [{
             role: "user",
             content: `You are an enterprise data intelligence engine producing analyst-grade insights. The dataset is called "${datasetName}".
-
+${contextBlock}
 METRIC SUMMARIES:
 ${JSON.stringify(metricSummaries, null, 2)}
 
@@ -173,11 +196,12 @@ Generate 5-10 CONTEXTUAL insights. Each insight MUST reference:
 - Specific metric names from the data
 - Actual values, percentages, and date ranges
 - Segment or region names when available
+${decision_context_id ? "- The decision context and how the finding impacts the stated objective" : ""}
 
 Return ONLY a JSON array:
 [
   {
-    "message": "In ${datasetName}, [metric_name] [specific observation with values]. [Statistical inference]. [Actionable recommendation].",
+    "message": "In ${datasetName}, [metric_name] [specific observation with values]. [Statistical inference]. [${decision_context_id ? "Decision relevance. " : ""}Actionable recommendation].",
     "severity": "high" | "medium" | "info",
     "category": "trend" | "anomaly" | "risk" | "opportunity" | "segmentation" | "correlation" | "driver",
     "raw_confidence": 60-90
