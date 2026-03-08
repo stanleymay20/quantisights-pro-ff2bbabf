@@ -2,6 +2,7 @@ import { Lightbulb, Target, TrendingDown, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { Insight } from "@/hooks/useInsights";
 import ConfidenceBadge from "@/components/ConfidenceBadge";
+import OutputClassificationBadge from "@/components/dashboard/OutputClassificationBadge";
 
 const ICONS = [Target, Lightbulb, TrendingDown];
 
