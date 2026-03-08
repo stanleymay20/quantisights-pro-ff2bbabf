@@ -149,8 +149,8 @@ function computeStats(metrics: MetricRow[]): MetricStats[] {
       volatility_pct: Number(volatility.toFixed(2)),
       slope_normalized_pct: Number(slopeNorm.toFixed(2)),
       trend_direction,
-      min: Number(Math.min(...values).toFixed(4)),
-      max: Number(Math.max(...values).toFixed(4)),
+      min: Number(values.reduce((a, b) => a < b ? a : b, values[0]).toFixed(4)),
+      max: Number(values.reduce((a, b) => a > b ? a : b, values[0]).toFixed(4)),
       date_range: `${sorted[0].date} to ${sorted[n - 1].date}`,
       segment_shifts: segmentShifts,
     });
@@ -160,7 +160,7 @@ function computeStats(metrics: MetricRow[]): MetricStats[] {
 }
 
 /** Use AI to generate real diagnostic intelligence from computed statistics. */
-async function generateAIDiagnostics(stats: MetricStats[], contextBlock: string = ""): Promise<any[]> {
+async function generateAIDiagnostics(stats: MetricStats[], contextBlock: string = "", datasetName: string = "dataset"): Promise<any[]> {
   const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
   if (!lovableApiKey || stats.length === 0) return [];
 
@@ -179,7 +179,7 @@ async function generateAIDiagnostics(stats: MetricStats[], contextBlock: string 
         model: "google/gemini-2.5-flash",
         messages: [{
           role: "user",
-          content: `You are an enterprise diagnostic intelligence engine performing root cause analysis on organizational metrics.
+          content: `You are an enterprise diagnostic intelligence engine performing root cause analysis on metrics from the dataset "${datasetName}".
 ${contextBlock}
 METRIC STATISTICS (computed from real data):
 ${JSON.stringify(stats, null, 2)}
@@ -207,6 +207,7 @@ Rules:
 - causal_factors MUST reference specific statistical evidence (segment shifts, volatility levels, trend slopes)
 - raw_confidence should reflect data_points count: <12 pts = max 65, <20 pts = max 75, 20+ pts = max 85
 - Do NOT invent data not present in the statistics
+- Every diagnosis MUST reference the dataset name "${datasetName}" and specific metric values
 - Return ONLY the JSON array`,
         }],
       }),
@@ -277,11 +278,15 @@ serve(async (req) => {
 
     if (!dataset_id) throw new Error("dataset_id required by Active Data Contract");
 
-    const metricsUrl = `${supabaseUrl}/rest/v1/metrics?organization_id=eq.${organization_id}&dataset_id=eq.${dataset_id}&order=date.asc&limit=500`;
-    const metricsResp = await fetch(metricsUrl, {
-      headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` },
-    });
+    const metricsUrl = `${supabaseUrl}/rest/v1/metrics?organization_id=eq.${organization_id}&dataset_id=eq.${dataset_id}&order=date.asc&limit=1000`;
+    const dsUrl = `${supabaseUrl}/rest/v1/datasets?id=eq.${dataset_id}&organization_id=eq.${organization_id}&select=name&limit=1`;
+    const [metricsResp, dsResp] = await Promise.all([
+      fetch(metricsUrl, { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` } }),
+      fetch(dsUrl, { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` } }),
+    ]);
     const metrics: MetricRow[] = await metricsResp.json();
+    const dsArr = await dsResp.json();
+    const datasetName = dsArr?.[0]?.name || "dataset";
 
     if (!metrics || metrics.length < 2) {
       return new Response(JSON.stringify({
@@ -318,7 +323,7 @@ IMPORTANT: Frame all diagnoses through this decision context. Explain how each f
     }
 
     // Step 2: Generate AI-driven diagnostics from statistics
-    let aiResults = await generateAIDiagnostics(stats, contextBlock);
+    let aiResults = await generateAIDiagnostics(stats, contextBlock, datasetName);
 
     // Step 3: Fallback to data-driven rule engine if AI unavailable
     if (aiResults.length === 0) {

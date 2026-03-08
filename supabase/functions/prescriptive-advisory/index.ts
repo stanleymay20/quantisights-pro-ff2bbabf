@@ -35,7 +35,7 @@ serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const headers = { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` };
 
-    const metricsUrl = `${supabaseUrl}/rest/v1/metrics?organization_id=eq.${organization_id}&dataset_id=eq.${dataset_id}&order=date.asc&limit=500`;
+    const metricsUrl = `${supabaseUrl}/rest/v1/metrics?organization_id=eq.${organization_id}&dataset_id=eq.${dataset_id}&order=date.asc&limit=1000`;
     const insightsUrl = `${supabaseUrl}/rest/v1/insights?organization_id=eq.${organization_id}&dataset_id=eq.${dataset_id}&severity=in.(high,medium)&order=created_at.desc&limit=20`;
 
     const [metricsResp, riskResp, insightsResp, calibrationModel] = await Promise.all([
@@ -90,8 +90,8 @@ serve(async (req) => {
       const recentAvg = recentHalf.reduce((s, v) => s + v, 0) / recentHalf.length;
       const earlyAvg = earlyHalf.length > 0 ? earlyHalf.reduce((s, v) => s + v, 0) / earlyHalf.length : recentAvg;
       const trendPct = earlyAvg !== 0 ? ((recentAvg - earlyAvg) / Math.abs(earlyAvg)) * 100 : 0;
-      const max = Math.max(...vals);
-      const min = Math.min(...vals);
+      const max = vals.reduce((a, b) => a > b ? a : b, vals[0]);
+      const min = vals.reduce((a, b) => a < b ? a : b, vals[0]);
       const volatility = mean !== 0 ? (Math.sqrt(vals.reduce((s, v) => s + (v - mean) ** 2, 0) / n) / Math.abs(mean)) * 100 : 0;
 
       return {
