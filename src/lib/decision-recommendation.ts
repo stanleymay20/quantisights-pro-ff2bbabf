@@ -134,10 +134,12 @@ export function generateRecommendation(input: RecommendationInput): StructuredRe
   // --- Classified sections ---
   const sections: ClassifiedSection[] = [];
 
-  // OBSERVED_FACT: What we directly see in data
+  // What happened — advisory prior actions are AI_RECOMMENDATION, not OBSERVED_FACT
   let whatHappened: string;
+  let whatHappenedClassification: OutputClassification;
   if (input.signalType === "advisory" && input.priorAdvisoryAction) {
     whatHappened = input.priorAdvisoryAction;
+    whatHappenedClassification = "AI_RECOMMENDATION";
   } else if (msg.length > 20) {
     whatHappened = msg.slice(0, 200);
   } else {
