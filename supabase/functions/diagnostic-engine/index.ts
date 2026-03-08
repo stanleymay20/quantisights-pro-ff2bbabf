@@ -179,7 +179,7 @@ async function generateAIDiagnostics(stats: MetricStats[], contextBlock: string 
         model: "google/gemini-2.5-flash",
         messages: [{
           role: "user",
-          content: `You are an enterprise diagnostic intelligence engine performing root cause analysis on organizational metrics.
+          content: `You are an enterprise diagnostic intelligence engine performing root cause analysis on organizational metrics from the dataset "${contextBlock.includes("DECISION CONTEXT") ? "" : ""}".
 ${contextBlock}
 METRIC STATISTICS (computed from real data):
 ${JSON.stringify(stats, null, 2)}
