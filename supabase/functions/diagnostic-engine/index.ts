@@ -160,7 +160,7 @@ function computeStats(metrics: MetricRow[]): MetricStats[] {
 }
 
 /** Use AI to generate real diagnostic intelligence from computed statistics. */
-async function generateAIDiagnostics(stats: MetricStats[]): Promise<any[]> {
+async function generateAIDiagnostics(stats: MetricStats[], contextBlock: string = ""): Promise<any[]> {
   const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
   if (!lovableApiKey || stats.length === 0) return [];
 
