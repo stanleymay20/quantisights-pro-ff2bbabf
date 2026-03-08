@@ -281,9 +281,15 @@ serve(async (req) => {
         earliest_value: Number(earliest.toFixed(4)),
         total_change_pct: Number(changePct.toFixed(2)),
         recent_trend_pct: Number(trendPct.toFixed(2)),
+        // Iterative min/max to avoid stack overflow on large datasets
+        let minVal = vals[0], maxVal = vals[0];
+        for (let i = 1; i < n; i++) {
+          if (vals[i] < minVal) minVal = vals[i];
+          if (vals[i] > maxVal) maxVal = vals[i];
+        }
         mean: Number(mean.toFixed(4)),
-        min: Number(Math.min(...vals).toFixed(4)),
-        max: Number(Math.max(...vals).toFixed(4)),
+        min: Number(minVal.toFixed(4)),
+        max: Number(maxVal.toFixed(4)),
         volatility_pct: Number(volatility.toFixed(2)),
         regions: [...data.regions],
         segments: [...data.segments],
