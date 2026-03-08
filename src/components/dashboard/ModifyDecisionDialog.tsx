@@ -176,8 +176,6 @@ const ModifyDecisionDialog = ({ decision, organizationId, open, onOpenChange, on
       </DialogContent>
     </Dialog>
   );
-});
-
-ModifyDecisionDialog.displayName = "ModifyDecisionDialog";
+};
 
 export default ModifyDecisionDialog;

@@ -184,7 +184,7 @@ export function useBuildDecisionQueue({
           cappedConfidence: null,
           confidenceCapReason: null,
           generatedAt: now,
-          sampleSize: (insight as any).sample_size ?? undefined,
+          sampleSize: undefined,
           sourceDatasetId: datasetId ?? null,
         });
       });
