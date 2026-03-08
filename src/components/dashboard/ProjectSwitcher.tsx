@@ -27,11 +27,12 @@ const ProjectSwitcher = () => {
   const [creating, setCreating] = useState(false);
 
   const handleCreate = async () => {
-    if (!newName.trim()) return;
+    const trimmed = newName.trim().slice(0, 100);
+    if (!trimmed) return;
     setCreating(true);
     try {
-      await createProject(newName.trim());
-      toast({ title: "Project created", description: `"${newName.trim()}" is now active.` });
+      await createProject(trimmed);
+      toast({ title: "Project created", description: `"${trimmed}" is now active.` });
       setShowCreate(false);
       setNewName("");
     } catch (e: any) {
@@ -40,8 +41,6 @@ const ProjectSwitcher = () => {
       setCreating(false);
     }
   };
-
-  if (projects.length === 0 && !currentProject) return null;
 
   return (
     <>
@@ -54,21 +53,27 @@ const ProjectSwitcher = () => {
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-56">
-          {projects.map((p) => (
-            <DropdownMenuItem
-              key={p.id}
-              onClick={() => {
-                switchProject(p.id);
-                if (p.id !== currentProject?.id) {
-                  toast({ title: `Switched to "${p.name}"` });
-                }
-              }}
-              className="flex items-center justify-between"
-            >
-              <span className="truncate">{p.name}</span>
-              {p.id === currentProject?.id && <Check className="w-3.5 h-3.5 text-primary shrink-0" />}
-            </DropdownMenuItem>
-          ))}
+          {projects.length === 0 ? (
+            <div className="px-3 py-4 text-center text-xs text-muted-foreground">
+              No projects in this workspace
+            </div>
+          ) : (
+            projects.map((p) => (
+              <DropdownMenuItem
+                key={p.id}
+                onClick={() => {
+                  switchProject(p.id);
+                  if (p.id !== currentProject?.id) {
+                    toast({ title: `Switched to "${p.name}"` });
+                  }
+                }}
+                className="flex items-center justify-between"
+              >
+                <span className="truncate">{p.name}</span>
+                {p.id === currentProject?.id && <Check className="w-3.5 h-3.5 text-primary shrink-0" />}
+              </DropdownMenuItem>
+            ))
+          )}
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => setShowCreate(true)} className="gap-2">
             <Plus className="w-3.5 h-3.5" />
@@ -82,12 +87,16 @@ const ProjectSwitcher = () => {
           <DialogHeader>
             <DialogTitle>Create Project</DialogTitle>
           </DialogHeader>
-          <Input
-            placeholder="e.g. Middle East Macro 2024"
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleCreate()}
-          />
+          <div>
+            <Input
+              placeholder="e.g. Middle East Macro 2024"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              maxLength={100}
+              onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+            />
+            <p className="text-xs text-muted-foreground mt-1">{newName.trim().length}/100</p>
+          </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCreate(false)}>Cancel</Button>
             <Button onClick={handleCreate} disabled={creating || !newName.trim()}>

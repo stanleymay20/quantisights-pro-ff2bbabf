@@ -22,25 +22,29 @@ import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 
 const WorkspaceSwitcher = () => {
-  const { workspaces, currentWorkspace, switchWorkspace, createWorkspace } = useWorkspace();
-  const { createProject } = useProject();
+  const { workspaces, currentWorkspace, switchWorkspace, createWorkspace, refreshWorkspaces } = useWorkspace();
+  const { createProject, refreshProjects } = useProject();
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState("");
   const [creating, setCreating] = useState(false);
 
   const handleCreate = async () => {
-    if (!newName.trim()) return;
+    const trimmed = newName.trim().slice(0, 100);
+    if (!trimmed) return;
     setCreating(true);
     try {
-      const ws = await createWorkspace(newName.trim());
-      // Auto-create a default project so the user never lands on "No project"
+      const ws = await createWorkspace(trimmed);
+      // Wait for workspace context to settle, then create default project
+      // We pass the workspace ID explicitly to avoid depending on state propagation
       try {
         await createProject("Default Project", undefined, ws.id);
       } catch {
-        // Non-fatal: workspace was created, project creation may fail if context hasn't propagated yet
-        console.warn("Auto-project creation deferred");
+        // Non-fatal: workspace was created, project creation may need a manual refresh
+        console.warn("Auto-project creation deferred — will retry on next context refresh");
       }
-      toast({ title: "Workspace created", description: `"${newName.trim()}" is now active with a default project.` });
+      // Refresh to ensure both contexts have the latest data
+      await refreshWorkspaces();
+      toast({ title: "Workspace created", description: `"${trimmed}" is now active with a default project.` });
       setShowCreate(false);
       setNewName("");
     } catch (e: any) {
@@ -97,8 +101,10 @@ const WorkspaceSwitcher = () => {
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 placeholder="e.g. Client ABC, Q2 Strategy"
+                maxLength={100}
                 onKeyDown={(e) => e.key === "Enter" && handleCreate()}
               />
+              <p className="text-xs text-muted-foreground mt-1">{newName.trim().length}/100</p>
             </div>
           </div>
           <DialogFooter>

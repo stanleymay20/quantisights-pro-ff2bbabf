@@ -77,11 +77,11 @@ export const DatasetProvider = ({ children }: { children: ReactNode }) => {
     setLoading(false);
   }, [currentProjectId, currentProject]);
 
-  // Eagerly clear stale datasets when project changes, then re-fetch
+  // Eagerly clear stale datasets when project OR workspace changes, then re-fetch
   useEffect(() => {
     setDatasets([]);
     fetchDatasets();
-  }, [fetchDatasets]);
+  }, [fetchDatasets, currentWorkspaceId]);
 
   const activeDataset = useMemo(
     () => datasets.find(d => d.id === activeDatasetId) ?? null,
