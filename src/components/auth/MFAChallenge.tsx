@@ -17,8 +17,18 @@ const MFAChallenge = ({ onVerified }: MFAChallengeProps) => {
 
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (locked) return;
     setError("");
     setLoading(true);
+
+    attempts.current += 1;
+    if (attempts.current > MAX_MFA_ATTEMPTS) {
+      setLocked(true);
+      setError("Too many failed attempts. Please sign in again.");
+      setLoading(false);
+      return;
+    }
+
     try {
       const { data: factorsData } = await supabase.auth.mfa.listFactors();
       const totpFactor = factorsData?.totp?.[0];
