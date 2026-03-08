@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Upload, FileText, TrendingUp, Settings, CreditCard, LogOut,
   Database, BarChart3, Shuffle, Users, Building2, Search, Zap, Menu, X,
   BookOpen, Target, Brain, MessageSquare, GitBranch, Globe,
-  Sparkles, GitCommitVertical, Crosshair, Bell,
+  Sparkles, GitCommitVertical, Crosshair, Bell, Cable,
   Briefcase, ChevronDown, Shield, Eye, Compass, FlaskConical,
   ClipboardCheck, AlertOctagon, RotateCcw, Award,
 } from "lucide-react";
