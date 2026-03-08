@@ -192,14 +192,15 @@ export function generateRecommendation(input: RecommendationInput): StructuredRe
     assumptions.push("Proactive signal — threshold-based detection, not anomaly-confirmed");
   }
 
-  // Risk if wrong
+  // Risk if wrong — contextualized with metric/category exposure
+  const riskMetricRef = met || cat || "the monitored metric";
   let riskIfWrong: string;
   if (input.severity === "critical") {
-    riskIfWrong = "If this signal is a false positive, acting on it may divert resources unnecessarily. However, the cost of ignoring a true critical signal typically outweighs the cost of investigation.";
+    riskIfWrong = `If this ${riskMetricRef} signal is a false positive, acting on it may divert resources from other priorities. However, the cost of ignoring a true critical ${riskMetricRef} degradation typically outweighs the cost of investigation.`;
   } else if (conf < 40) {
-    riskIfWrong = `Low confidence (${conf}%) means this signal has a high probability of being noise. Recommend investigation before committing resources.`;
+    riskIfWrong = `Low confidence (${conf}%) on ${riskMetricRef} means this signal has a high probability of being noise. Recommend investigation before committing resources.`;
   } else {
-    riskIfWrong = "If the underlying trend reverses naturally, the recommended action may be unnecessary. Monitor the success metrics to detect early and adjust.";
+    riskIfWrong = `If the underlying ${riskMetricRef} trend reverses naturally, the recommended action may be unnecessary. Monitor the success metrics to detect early and adjust.`;
   }
 
   // AI_RECOMMENDATION: Action
