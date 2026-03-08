@@ -36,7 +36,7 @@ serve(async (req) => {
 
     const userId = user.id;
     const body = await req.json();
-    const { organization_id, dataset_id, dry_run } = body;
+    const { organization_id, dataset_id, decision_context_id, dry_run } = body;
 
     if (!organization_id) {
       return new Response(JSON.stringify({ error: "organization_id required" }), { status: 400, headers: corsHeaders });
