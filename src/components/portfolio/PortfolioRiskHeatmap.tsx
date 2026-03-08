@@ -39,11 +39,6 @@ const statusBadge = (status: string) => {
   return <Badge className={config.className}>{config.label}</Badge>;
 };
 
-const fmt = (n: number) => {
-  if (Math.abs(n) >= 1e6) return `$${(n / 1e6).toFixed(1)}M`;
-  if (Math.abs(n) >= 1e3) return `$${(n / 1e3).toFixed(0)}K`;
-  return `$${n.toFixed(0)}`;
-};
 
 const PortfolioRiskHeatmap = ({ companies, onSelect, selectedId }: Props) => {
   if (companies.length === 0) {
