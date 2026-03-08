@@ -24,6 +24,7 @@ const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const DataUpload = lazy(() => import("./pages/DataUpload"));
+const DataConnectors = lazy(() => import("./pages/DataConnectors"));
 const DataSources = lazy(() => import("./pages/DataSources"));
 const KPIs = lazy(() => import("./pages/KPIs"));
 const Scenarios = lazy(() => import("./pages/Scenarios"));
