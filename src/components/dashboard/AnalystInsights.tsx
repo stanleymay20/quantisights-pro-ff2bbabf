@@ -187,6 +187,11 @@ const AnalystInsights = ({ insights, metrics, topMetrics, datasetName, datasetId
           <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary">
             {findings.length} findings
           </span>
+          {industryProfile.confidence > 40 && (
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent text-accent-foreground font-medium">
+              {industryProfile.industry}{industryProfile.subIndustry ? ` · ${industryProfile.subIndustry}` : ""}
+            </span>
+          )}
           {dataHealth.seasonalCount > 0 && (
             <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent/50 text-accent-foreground flex items-center gap-0.5">
               <Waves className="w-2.5 h-2.5" /> {dataHealth.seasonalCount} seasonal
