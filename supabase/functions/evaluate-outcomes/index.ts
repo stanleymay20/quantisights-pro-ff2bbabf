@@ -1,0 +1,293 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+};
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, serviceKey);
+
+    // Auth check
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
+
+    const anonClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!);
+    const { data: { user }, error: authErr } = await anonClient.auth.getUser(authHeader.replace("Bearer ", ""));
+    if (authErr || !user) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
+
+    const body = await req.json();
+    const { action, organization_id, dataset_id, decision_id, outcome_id } = body;
+
+    if (!organization_id) {
+      return new Response(JSON.stringify({ error: "organization_id required" }), { status: 400, headers: corsHeaders });
+    }
+
+    // ── SCHEDULE: Create outcome tracking entry when decision is approved ──
+    if (action === "schedule") {
+      if (!decision_id || !body.expected_metric) {
+        return new Response(JSON.stringify({ error: "decision_id and expected_metric required" }), { status: 400, headers: corsHeaders });
+      }
+
+      const { data, error } = await supabase.from("decision_outcomes").insert({
+        decision_id,
+        organization_id,
+        dataset_id: dataset_id || null,
+        expected_metric: body.expected_metric,
+        expected_direction: body.expected_direction || "increase",
+        expected_change: body.expected_change || null,
+        evaluation_window_days: body.evaluation_window_days || 30,
+        outcome_status: "pending",
+      }).select().single();
+
+      if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: corsHeaders });
+      return new Response(JSON.stringify({ success: true, outcome: data }), { headers: corsHeaders });
+    }
+
+    // ── EVALUATE: Check pending outcomes against actual metrics ──
+    if (action === "evaluate") {
+      const { data: pending, error: fetchErr } = await supabase
+        .from("decision_outcomes")
+        .select("*, decision_ledger!inner(decided_at, organization_id)")
+        .eq("organization_id", organization_id)
+        .eq("outcome_status", "pending");
+
+      if (fetchErr) return new Response(JSON.stringify({ error: fetchErr.message }), { status: 500, headers: corsHeaders });
+
+      const now = new Date();
+      const evaluated: unknown[] = [];
+
+      for (const outcome of (pending || [])) {
+        const decidedAt = new Date((outcome as any).decision_ledger?.decided_at);
+        if (isNaN(decidedAt.getTime())) continue;
+
+        const windowEnd = new Date(decidedAt.getTime() + outcome.evaluation_window_days * 86400000);
+        if (now < windowEnd) continue; // Not yet in evaluation window
+
+        // Can we evaluate? Need dataset_id and metric data
+        if (!outcome.dataset_id) {
+          await supabase.from("decision_outcomes").update({
+            outcome_status: "not_evaluable",
+            evaluation_date: now.toISOString(),
+            notes: "No dataset_id linked — cannot measure outcome.",
+          }).eq("id", outcome.id);
+          evaluated.push({ id: outcome.id, status: "not_evaluable" });
+          continue;
+        }
+
+        // Get metric values BEFORE decision
+        const beforeStart = new Date(decidedAt.getTime() - 30 * 86400000);
+        const { data: beforeMetrics } = await supabase
+          .from("metrics")
+          .select("value")
+          .eq("organization_id", organization_id)
+          .eq("dataset_id", outcome.dataset_id)
+          .eq("metric_type", outcome.expected_metric)
+          .gte("date", beforeStart.toISOString().slice(0, 10))
+          .lte("date", decidedAt.toISOString().slice(0, 10))
+          .order("date", { ascending: false })
+          .limit(50);
+
+        // Get metric values AFTER evaluation window
+        const { data: afterMetrics } = await supabase
+          .from("metrics")
+          .select("value")
+          .eq("organization_id", organization_id)
+          .eq("dataset_id", outcome.dataset_id)
+          .eq("metric_type", outcome.expected_metric)
+          .gte("date", decidedAt.toISOString().slice(0, 10))
+          .lte("date", windowEnd.toISOString().slice(0, 10))
+          .order("date", { ascending: false })
+          .limit(50);
+
+        if (!beforeMetrics?.length || !afterMetrics?.length) {
+          await supabase.from("decision_outcomes").update({
+            outcome_status: "not_evaluable",
+            evaluation_date: now.toISOString(),
+            notes: `Insufficient ${outcome.expected_metric} data for evaluation period.`,
+          }).eq("id", outcome.id);
+          evaluated.push({ id: outcome.id, status: "not_evaluable" });
+          continue;
+        }
+
+        // Compute averages
+        const avgBefore = beforeMetrics.reduce((s: number, m: any) => s + Number(m.value), 0) / beforeMetrics.length;
+        const avgAfter = afterMetrics.reduce((s: number, m: any) => s + Number(m.value), 0) / afterMetrics.length;
+        const observedChange = avgBefore !== 0 ? ((avgAfter - avgBefore) / Math.abs(avgBefore)) * 100 : 0;
+
+        // Determine outcome status
+        let outcomeStatus = "no_effect";
+        const expectedDir = outcome.expected_direction;
+        const directionMatch = (expectedDir === "increase" && observedChange > 1) ||
+                               (expectedDir === "decrease" && observedChange < -1);
+
+        if (directionMatch) {
+          if (outcome.expected_change !== null) {
+            const expectedMagnitude = Math.abs(Number(outcome.expected_change));
+            const observedMagnitude = Math.abs(observedChange);
+            if (observedMagnitude >= expectedMagnitude * 0.8) {
+              outcomeStatus = "success";
+            } else if (observedMagnitude >= expectedMagnitude * 0.3) {
+              outcomeStatus = "partial_success";
+            }
+          } else {
+            outcomeStatus = "success";
+          }
+        } else if ((expectedDir === "increase" && observedChange < -5) ||
+                   (expectedDir === "decrease" && observedChange > 5)) {
+          outcomeStatus = "negative_outcome";
+        }
+
+        // Accuracy score: how close was the prediction?
+        let accuracyScore: number | null = null;
+        if (outcome.expected_change !== null && Number(outcome.expected_change) !== 0) {
+          accuracyScore = Math.max(0, Math.min(100,
+            100 - Math.abs(observedChange - Number(outcome.expected_change)) * 2
+          ));
+        }
+
+        await supabase.from("decision_outcomes").update({
+          observed_metric: outcome.expected_metric,
+          observed_value_before: avgBefore,
+          observed_value_after: avgAfter,
+          outcome_status: outcomeStatus,
+          evaluation_date: now.toISOString(),
+          accuracy_score: accuracyScore,
+          notes: `Observed ${observedChange.toFixed(2)}% change (expected: ${expectedDir} ${outcome.expected_change ?? "any"}%). Before avg: ${avgBefore.toFixed(2)}, After avg: ${avgAfter.toFixed(2)}.`,
+        }).eq("id", outcome.id);
+
+        // Also update the decision_ledger with outcome data
+        await supabase.from("decision_ledger").update({
+          actual_value: avgAfter,
+          outcome_delta: observedChange,
+          outcome_measured_at: now.toISOString(),
+          prediction_accuracy_score: accuracyScore,
+        }).eq("id", outcome.decision_id);
+
+        evaluated.push({ id: outcome.id, status: outcomeStatus, accuracy: accuracyScore });
+      }
+
+      return new Response(JSON.stringify({ success: true, evaluated_count: evaluated.length, results: evaluated }), { headers: corsHeaders });
+    }
+
+    // ── PERFORMANCE: Get decision performance metrics ──
+    if (action === "performance") {
+      const { data: outcomes, error: perfErr } = await supabase
+        .from("decision_outcomes")
+        .select("outcome_status, accuracy_score, expected_metric, evaluation_date")
+        .eq("organization_id", organization_id)
+        .neq("outcome_status", "pending");
+
+      if (perfErr) return new Response(JSON.stringify({ error: perfErr.message }), { status: 500, headers: corsHeaders });
+
+      const total = outcomes?.length || 0;
+      const evaluable = outcomes?.filter((o: any) => o.outcome_status !== "not_evaluable") || [];
+      const successes = evaluable.filter((o: any) => o.outcome_status === "success" || o.outcome_status === "partial_success");
+      const negatives = evaluable.filter((o: any) => o.outcome_status === "negative_outcome");
+      const scored = evaluable.filter((o: any) => o.accuracy_score !== null);
+      const avgAccuracy = scored.length > 0
+        ? scored.reduce((s: number, o: any) => s + Number(o.accuracy_score), 0) / scored.length
+        : null;
+
+      // Per-metric breakdown
+      const byMetric = new Map<string, { total: number; success: number; avgAccuracy: number; scores: number[] }>();
+      evaluable.forEach((o: any) => {
+        const key = o.expected_metric;
+        const entry = byMetric.get(key) || { total: 0, success: 0, avgAccuracy: 0, scores: [] };
+        entry.total++;
+        if (o.outcome_status === "success" || o.outcome_status === "partial_success") entry.success++;
+        if (o.accuracy_score !== null) entry.scores.push(Number(o.accuracy_score));
+        byMetric.set(key, entry);
+      });
+
+      const metricBreakdown = [...byMetric.entries()].map(([metric, data]) => ({
+        metric,
+        total: data.total,
+        successRate: data.total > 0 ? (data.success / data.total) * 100 : 0,
+        avgAccuracy: data.scores.length > 0 ? data.scores.reduce((s, v) => s + v, 0) / data.scores.length : null,
+      })).sort((a, b) => b.total - a.total);
+
+      // Confidence calibration: compare predicted confidence vs actual success rate
+      const { data: decisions } = await supabase
+        .from("decision_ledger")
+        .select("id, confidence_at_decision, prediction_accuracy_score")
+        .eq("organization_id", organization_id)
+        .not("confidence_at_decision", "is", null)
+        .not("prediction_accuracy_score", "is", null);
+
+      let calibrationGap: number | null = null;
+      if (decisions && decisions.length >= 5) {
+        const avgConf = decisions.reduce((s: number, d: any) => s + Number(d.confidence_at_decision), 0) / decisions.length;
+        const avgAcc = decisions.reduce((s: number, d: any) => s + Number(d.prediction_accuracy_score), 0) / decisions.length;
+        calibrationGap = avgConf - avgAcc;
+      }
+
+      // Generate learning insights
+      const learnings: string[] = [];
+      metricBreakdown.forEach(mb => {
+        if (mb.total >= 3) {
+          learnings.push(
+            `${mb.metric} recommendations have produced positive outcomes in ${mb.successRate.toFixed(0)}% of cases (n=${mb.total}).`
+          );
+        }
+      });
+      if (calibrationGap !== null && Math.abs(calibrationGap) > 5) {
+        learnings.push(
+          calibrationGap > 0
+            ? `System is overconfident by ${calibrationGap.toFixed(1)} points — recommendations carry more certainty than outcomes justify.`
+            : `System is underconfident by ${Math.abs(calibrationGap).toFixed(1)} points — outcomes are better than predicted.`
+        );
+      }
+
+      return new Response(JSON.stringify({
+        total_decisions: total,
+        evaluable_decisions: evaluable.length,
+        success_count: successes.length,
+        success_rate: evaluable.length > 0 ? (successes.length / evaluable.length) * 100 : null,
+        negative_count: negatives.length,
+        false_positive_rate: evaluable.length > 0 ? (negatives.length / evaluable.length) * 100 : null,
+        avg_accuracy: avgAccuracy,
+        calibration_gap: calibrationGap,
+        metric_breakdown: metricBreakdown,
+        learnings,
+      }), { headers: corsHeaders });
+    }
+
+    // ── RELIABILITY: Get reliability index for a recommendation context ──
+    if (action === "reliability") {
+      const metricType = body.metric_type;
+      if (!metricType) {
+        return new Response(JSON.stringify({ error: "metric_type required" }), { status: 400, headers: corsHeaders });
+      }
+
+      const { data: similar } = await supabase
+        .from("decision_outcomes")
+        .select("outcome_status, accuracy_score")
+        .eq("organization_id", organization_id)
+        .eq("expected_metric", metricType)
+        .neq("outcome_status", "pending")
+        .neq("outcome_status", "not_evaluable");
+
+      const total = similar?.length || 0;
+      const successes = similar?.filter((o: any) => o.outcome_status === "success" || o.outcome_status === "partial_success").length || 0;
+      const reliability = total >= 3 ? (successes / total) * 100 : null;
+
+      return new Response(JSON.stringify({
+        metric_type: metricType,
+        similar_decisions: total,
+        reliability_index: reliability,
+        note: total < 3 ? "Insufficient historical data for reliability estimation." : `Based on ${total} similar past decisions.`,
+      }), { headers: corsHeaders });
+    }
+
+    return new Response(JSON.stringify({ error: "Unknown action. Use: schedule, evaluate, performance, reliability" }), { status: 400, headers: corsHeaders });
+  } catch (err) {
+    return new Response(JSON.stringify({ error: (err as Error).message }), { status: 500, headers: corsHeaders });
+  }
+});

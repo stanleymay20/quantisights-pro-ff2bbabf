@@ -1409,6 +1409,88 @@ export type Database = {
           },
         ]
       }
+      decision_outcomes: {
+        Row: {
+          accuracy_score: number | null
+          created_at: string
+          dataset_id: string | null
+          decision_id: string
+          evaluation_date: string | null
+          evaluation_window_days: number
+          expected_change: number | null
+          expected_direction: string
+          expected_metric: string
+          id: string
+          notes: string | null
+          observed_metric: string | null
+          observed_value_after: number | null
+          observed_value_before: number | null
+          organization_id: string
+          outcome_status: string
+          updated_at: string
+        }
+        Insert: {
+          accuracy_score?: number | null
+          created_at?: string
+          dataset_id?: string | null
+          decision_id: string
+          evaluation_date?: string | null
+          evaluation_window_days?: number
+          expected_change?: number | null
+          expected_direction?: string
+          expected_metric: string
+          id?: string
+          notes?: string | null
+          observed_metric?: string | null
+          observed_value_after?: number | null
+          observed_value_before?: number | null
+          organization_id: string
+          outcome_status?: string
+          updated_at?: string
+        }
+        Update: {
+          accuracy_score?: number | null
+          created_at?: string
+          dataset_id?: string | null
+          decision_id?: string
+          evaluation_date?: string | null
+          evaluation_window_days?: number
+          expected_change?: number | null
+          expected_direction?: string
+          expected_metric?: string
+          id?: string
+          notes?: string | null
+          observed_metric?: string | null
+          observed_value_after?: number | null
+          observed_value_before?: number | null
+          organization_id?: string
+          outcome_status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "decision_outcomes_dataset_id_fkey"
+            columns: ["dataset_id"]
+            isOneToOne: false
+            referencedRelation: "datasets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "decision_outcomes_decision_id_fkey"
+            columns: ["decision_id"]
+            isOneToOne: false
+            referencedRelation: "decision_ledger"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "decision_outcomes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       decision_simulations: {
         Row: {
           actual_net_impact: number | null

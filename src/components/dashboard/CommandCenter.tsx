@@ -6,6 +6,7 @@ import QuickDecisionLog from "./QuickDecisionLog";
 import CalibrationProgress from "./CalibrationProgress";
 import KPICards from "./KPICards";
 import AnalystInsights from "./AnalystInsights";
+import DecisionPerformanceDashboard from "./DecisionPerformanceDashboard";
 import type { Insight } from "@/hooks/useInsights";
 import type { MetricTypeSummary } from "@/hooks/useMetrics";
 
@@ -27,6 +28,8 @@ interface CommandCenterProps {
   onDecisionLogged: () => void;
   /** Dynamic metric summaries — domain-agnostic */
   topMetrics?: MetricTypeSummary[];
+  datasetId?: string;
+  datasetName?: string | null;
 }
 
 const CommandCenter = memo(({
@@ -44,6 +47,8 @@ const CommandCenter = memo(({
   segmentData,
   onDecisionLogged,
   topMetrics,
+  datasetId,
+  datasetName,
 }: CommandCenterProps) => {
   const [showAnalytics, setShowAnalytics] = useState(false);
 
@@ -84,7 +89,11 @@ const CommandCenter = memo(({
         insights={insights}
         metrics={metrics}
         topMetrics={topMetrics ?? []}
+        datasetId={datasetId}
+        datasetName={datasetName}
       />
+
+      <DecisionPerformanceDashboard />
 
       <div className="flex items-center justify-center">
         <button
