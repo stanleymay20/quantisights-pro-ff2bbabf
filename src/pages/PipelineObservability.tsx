@@ -29,7 +29,7 @@ const STATUS_BADGE: Record<string, "default" | "secondary" | "destructive" | "ou
 };
 
 export default function PipelineObservability() {
-  const { organizationId } = useOrganization();
+  const { currentOrgId: organizationId } = useOrganization();
   const [syncJobs, setSyncJobs] = useState<any[]>([]);
   const [dataSources, setDataSources] = useState<any[]>([]);
   const [qualityChecks, setQualityChecks] = useState<any[]>([]);

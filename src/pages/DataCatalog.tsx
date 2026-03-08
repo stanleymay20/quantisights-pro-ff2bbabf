@@ -31,7 +31,7 @@ interface DatasetEntry {
 }
 
 export default function DataCatalog() {
-  const { organizationId } = useOrganization();
+  const { currentOrgId: organizationId } = useOrganization();
   const [datasets, setDatasets] = useState<DatasetEntry[]>([]);
   const [qualityChecks, setQualityChecks] = useState<Record<string, any>>({});
   const [search, setSearch] = useState("");
