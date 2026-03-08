@@ -1,9 +1,10 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { ArrowRight, ShieldCheck, Target, TrendingDown, BarChart3 } from "lucide-react";
+import { ArrowRight, ShieldCheck, Target, TrendingDown, BarChart3, Database, Cable } from "lucide-react";
 import heroVisual from "@/assets/hero-visual.png";
 
 const CAPABILITY_PILLS = [
+  { icon: Cable, label: "Enterprise Data Connectors" },
   { icon: ShieldCheck, label: "Decision Audit Trails" },
   { icon: Target, label: "Forecast Calibration" },
   { icon: TrendingDown, label: "Overconfidence Detection" },
