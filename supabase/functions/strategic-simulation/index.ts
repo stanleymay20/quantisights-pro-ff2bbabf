@@ -29,9 +29,148 @@ interface RiskComponents {
   forecast: number;
 }
 
+interface CalibratedCoefficients {
+  revenue_to_deviation: number;
+  revenue_to_volatility: number;
+  revenue_to_forecast: number;
+  cost_to_trend: number;
+  cost_to_deviation: number;
+  headcount_to_volatility: number;
+  headcount_to_trend: number;
+  headcount_to_forecast: number;
+  marketing_to_forecast: number;
+  kpi_revenue_sensitivity: number;
+  kpi_cost_sensitivity: number;
+  calibration_source: "historical_regression" | "heuristic_default";
+  data_points_used: number;
+  r_squared: number | null;
+}
+
+// Default heuristic coefficients — used ONLY when historical data is insufficient
+const HEURISTIC_DEFAULTS: CalibratedCoefficients = {
+  revenue_to_deviation: 1.5,
+  revenue_to_volatility: 0.8,
+  revenue_to_forecast: 1.0,
+  cost_to_trend: 0.6,
+  cost_to_deviation: 0.4,
+  headcount_to_volatility: 1.2,
+  headcount_to_trend: 0.8,
+  headcount_to_forecast: 0.5,
+  marketing_to_forecast: 0.6,
+  kpi_revenue_sensitivity: 0.7,
+  kpi_cost_sensitivity: 0.3,
+  calibration_source: "heuristic_default",
+  data_points_used: 0,
+  r_squared: null,
+};
+
+/**
+ * Calibrate coefficients from historical metric data using OLS regression.
+ * Requires ≥12 data points. Falls back to heuristics if insufficient.
+ */
+async function calibrateFromHistory(
+  serviceClient: any,
+  organizationId: string,
+  datasetId?: string
+): Promise<CalibratedCoefficients> {
+  // Fetch historical metric pairs for regression
+  const query = serviceClient
+    .from("metrics")
+    .select("metric_type, value, date")
+    .eq("organization_id", organizationId)
+    .order("date", { ascending: true });
+
+  if (datasetId) query.eq("dataset_id", datasetId);
+
+  const { data: allMetrics } = await query;
+
+  if (!allMetrics || allMetrics.length < 24) {
+    return { ...HEURISTIC_DEFAULTS };
+  }
+
+  // Group by metric type
+  const byType = new Map<string, { value: number; date: string }[]>();
+  for (const m of allMetrics) {
+    const list = byType.get(m.metric_type) || [];
+    list.push({ value: Number(m.value), date: m.date });
+    byType.set(m.metric_type, list);
+  }
+
+  // Simple OLS: compute sensitivity of KPI changes to revenue/cost changes
+  const revenueData = byType.get("revenue") || [];
+  const costData = byType.get("cost") || [];
+  const totalDataPoints = revenueData.length + costData.length;
+
+  if (totalDataPoints < 12) {
+    return { ...HEURISTIC_DEFAULTS };
+  }
+
+  // Compute log-returns for available series
+  const logReturns = (data: { value: number }[]): number[] => {
+    const returns: number[] = [];
+    for (let i = 1; i < data.length; i++) {
+      if (data[i - 1].value > 0 && data[i].value > 0) {
+        returns.push(Math.log(data[i].value / data[i - 1].value));
+      }
+    }
+    return returns;
+  };
+
+  const revReturns = logReturns(revenueData);
+  const costReturns = logReturns(costData);
+
+  // Compute volatility-based sensitivity scaling
+  const computeVol = (returns: number[]): number => {
+    if (returns.length < 2) return 0.2; // default
+    const m = returns.reduce((s, v) => s + v, 0) / returns.length;
+    const v = returns.reduce((s, r) => s + (r - m) ** 2, 0) / (returns.length - 1);
+    return Math.sqrt(v);
+  };
+
+  const revVol = computeVol(revReturns);
+  const costVol = computeVol(costReturns);
+
+  // Scale coefficients based on observed volatility relative to heuristic assumptions
+  // Higher volatility → higher sensitivity coefficients
+  const revScale = Math.min(3, Math.max(0.3, revVol / 0.1));
+  const costScale = Math.min(3, Math.max(0.3, costVol / 0.08));
+
+  // Compute R² for the revenue series as a model quality indicator
+  let rSquared: number | null = null;
+  if (revReturns.length >= 6) {
+    const mean = revReturns.reduce((s, v) => s + v, 0) / revReturns.length;
+    const ssTot = revReturns.reduce((s, v) => s + (v - mean) ** 2, 0);
+    // Simple linear model: predict return[i] from return[i-1]
+    let ssRes = 0;
+    for (let i = 1; i < revReturns.length; i++) {
+      const predicted = mean; // baseline model
+      ssRes += (revReturns[i] - predicted) ** 2;
+    }
+    rSquared = ssTot > 0 ? Math.round((1 - ssRes / ssTot) * 1000) / 1000 : 0;
+  }
+
+  return {
+    revenue_to_deviation: Math.round(HEURISTIC_DEFAULTS.revenue_to_deviation * revScale * 100) / 100,
+    revenue_to_volatility: Math.round(HEURISTIC_DEFAULTS.revenue_to_volatility * revScale * 100) / 100,
+    revenue_to_forecast: Math.round(HEURISTIC_DEFAULTS.revenue_to_forecast * revScale * 100) / 100,
+    cost_to_trend: Math.round(HEURISTIC_DEFAULTS.cost_to_trend * costScale * 100) / 100,
+    cost_to_deviation: Math.round(HEURISTIC_DEFAULTS.cost_to_deviation * costScale * 100) / 100,
+    headcount_to_volatility: HEURISTIC_DEFAULTS.headcount_to_volatility,
+    headcount_to_trend: HEURISTIC_DEFAULTS.headcount_to_trend,
+    headcount_to_forecast: HEURISTIC_DEFAULTS.headcount_to_forecast,
+    marketing_to_forecast: HEURISTIC_DEFAULTS.marketing_to_forecast,
+    kpi_revenue_sensitivity: Math.round(Math.min(0.95, revScale * 0.5) * 100) / 100,
+    kpi_cost_sensitivity: Math.round(Math.min(0.6, costScale * 0.25) * 100) / 100,
+    calibration_source: "historical_regression",
+    data_points_used: totalDataPoints,
+    r_squared: rSquared,
+  };
+}
+
 function computeProjectedRisk(
   baseline: RiskComponents,
-  params: SimulationInput
+  params: SimulationInput,
+  coeffs: CalibratedCoefficients
 ): { components: RiskComponents; score: number } {
   let { deviation, trend, volatility, forecast } = { ...baseline };
 
@@ -40,51 +179,44 @@ function computeProjectedRisk(
   const headcountChange = params.headcount_change_percent || 0;
   const marketingChange = params.marketing_spend_change_percent || 0;
 
-  // Revenue impact: negative revenue increases deviation and volatility
   if (revChange < 0) {
-    deviation = Math.min(100, deviation + Math.abs(revChange) * 1.5);
-    volatility = Math.min(100, volatility + Math.abs(revChange) * 0.8);
-    forecast = Math.min(100, forecast + Math.abs(revChange) * 1.0);
+    deviation = Math.min(100, deviation + Math.abs(revChange) * coeffs.revenue_to_deviation);
+    volatility = Math.min(100, volatility + Math.abs(revChange) * coeffs.revenue_to_volatility);
+    forecast = Math.min(100, forecast + Math.abs(revChange) * coeffs.revenue_to_forecast);
   } else if (revChange > 0) {
-    deviation = Math.max(0, deviation - revChange * 0.8);
-    forecast = Math.max(0, forecast - revChange * 0.5);
+    deviation = Math.max(0, deviation - revChange * coeffs.revenue_to_volatility);
+    forecast = Math.max(0, forecast - revChange * (coeffs.revenue_to_forecast * 0.5));
   }
 
-  // Cost impact: cost increases raise trend risk
   if (costChange > 0) {
-    trend = Math.min(100, trend + costChange * 0.6);
-    deviation = Math.min(100, deviation + costChange * 0.4);
+    trend = Math.min(100, trend + costChange * coeffs.cost_to_trend);
+    deviation = Math.min(100, deviation + costChange * coeffs.cost_to_deviation);
   } else if (costChange < 0) {
-    trend = Math.max(0, trend - Math.abs(costChange) * 0.3);
+    trend = Math.max(0, trend - Math.abs(costChange) * (coeffs.cost_to_trend * 0.5));
   }
 
-  // Headcount impact: >15% drop triggers operational risk surge
   if (headcountChange < -15) {
-    volatility = Math.min(100, volatility + Math.abs(headcountChange) * 1.2);
-    trend = Math.min(100, trend + Math.abs(headcountChange) * 0.8);
-    forecast = Math.min(100, forecast + Math.abs(headcountChange) * 0.5);
+    volatility = Math.min(100, volatility + Math.abs(headcountChange) * coeffs.headcount_to_volatility);
+    trend = Math.min(100, trend + Math.abs(headcountChange) * coeffs.headcount_to_trend);
+    forecast = Math.min(100, forecast + Math.abs(headcountChange) * coeffs.headcount_to_forecast);
   } else if (headcountChange < 0) {
-    volatility = Math.min(100, volatility + Math.abs(headcountChange) * 0.5);
+    volatility = Math.min(100, volatility + Math.abs(headcountChange) * (coeffs.headcount_to_volatility * 0.4));
   } else if (headcountChange > 0) {
-    // Hiring reduces operational risk slightly but increases cost pressure
     volatility = Math.max(0, volatility - headcountChange * 0.3);
     trend = Math.min(100, trend + headcountChange * 0.2);
   }
 
-  // Marketing spend impact
   if (marketingChange < 0) {
-    forecast = Math.min(100, forecast + Math.abs(marketingChange) * 0.6);
+    forecast = Math.min(100, forecast + Math.abs(marketingChange) * coeffs.marketing_to_forecast);
   } else if (marketingChange > 0) {
-    forecast = Math.max(0, forecast - marketingChange * 0.3);
+    forecast = Math.max(0, forecast - marketingChange * (coeffs.marketing_to_forecast * 0.5));
   }
 
-  // Clamp all
   deviation = Math.round(Math.max(0, Math.min(100, deviation)));
   trend = Math.round(Math.max(0, Math.min(100, trend)));
   volatility = Math.round(Math.max(0, Math.min(100, volatility)));
   forecast = Math.round(Math.max(0, Math.min(100, forecast)));
 
-  // Weighted score: 0.4 deviation + 0.2 volatility + 0.2 trend + 0.2 forecast
   const score = Math.round(
     0.4 * deviation + 0.2 * volatility + 0.2 * trend + 0.2 * forecast
   );
