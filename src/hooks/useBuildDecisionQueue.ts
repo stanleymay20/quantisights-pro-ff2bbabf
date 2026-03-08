@@ -24,6 +24,8 @@ export interface EnrichedDecision {
   confidenceCapReason?: string | null;
   generatedAt: string;
   sampleSize?: number;
+  /** Dataset this decision originated from (for ledger provenance) */
+  sourceDatasetId?: string | null;
 }
 
 interface UseBuildDecisionQueueArgs {
