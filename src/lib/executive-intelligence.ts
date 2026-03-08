@@ -10,6 +10,7 @@ import {
   mean, stdDev, detectTrend, driverAnalysis, evidenceConfidence,
   type TrendResult, type DriverResult,
 } from "@/lib/analysis-engine";
+import { exponentialSmoothing, detectSeasonality } from "@/lib/advanced-statistics";
 import type { MetricRow } from "@/hooks/useMetrics";
 
 // ═══════════════════════════════════════════════════════
