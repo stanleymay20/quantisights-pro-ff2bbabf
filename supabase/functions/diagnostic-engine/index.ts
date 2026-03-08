@@ -294,8 +294,31 @@ serve(async (req) => {
     // Step 1: Compute pure statistics from real data
     const stats = computeStats(metrics);
 
+    // Fetch decision context if provided
+    let contextBlock = "";
+    if (decision_context_id) {
+      const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const ctxResp = await fetch(
+        `${supabaseUrl}/rest/v1/decision_contexts?id=eq.${decision_context_id}&organization_id=eq.${organization_id}&select=name,decision_type,objective,industry,target_metrics`,
+        { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` } }
+      );
+      const ctxArr = await ctxResp.json();
+      if (ctxArr?.[0]) {
+        const ctx = ctxArr[0];
+        contextBlock = `
+DECISION CONTEXT:
+Name: ${ctx.name}
+Type: ${ctx.decision_type}
+Objective: ${ctx.objective || "Not specified"}
+Industry: ${ctx.industry || "Not specified"}
+
+IMPORTANT: Frame all diagnoses through this decision context. Explain how each finding impacts the "${ctx.decision_type}" decision and the stated objective.
+`;
+      }
+    }
+
     // Step 2: Generate AI-driven diagnostics from statistics
-    let aiResults = await generateAIDiagnostics(stats);
+    let aiResults = await generateAIDiagnostics(stats, contextBlock);
 
     // Step 3: Fallback to data-driven rule engine if AI unavailable
     if (aiResults.length === 0) {

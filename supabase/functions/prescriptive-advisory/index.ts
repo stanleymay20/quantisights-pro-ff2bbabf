@@ -130,6 +130,29 @@ serve(async (req) => {
       category: i.category,
     }));
 
+    // Fetch decision context if provided
+    let contextBlock = "";
+    if (decision_context_id) {
+      const ctxResp = await fetch(
+        `${supabaseUrl}/rest/v1/decision_contexts?id=eq.${decision_context_id}&organization_id=eq.${organization_id}&select=name,decision_type,objective,industry,target_metrics`,
+        { headers }
+      );
+      const ctxArr = await ctxResp.json();
+      if (ctxArr?.[0]) {
+        const ctx = ctxArr[0];
+        contextBlock = `
+DECISION CONTEXT:
+Name: ${ctx.name}
+Type: ${ctx.decision_type}
+Objective: ${ctx.objective || "Not specified"}
+Industry: ${ctx.industry || "Not specified"}
+Target Metrics: ${JSON.stringify(ctx.target_metrics || [])}
+
+IMPORTANT: Generate advisories specifically relevant to this "${ctx.decision_type}" decision. Prioritize actions that advance the stated objective. Every advisory must explain its relevance to the decision context.
+`;
+      }
+    }
+
     const aiController = new AbortController();
     const aiTimeout = setTimeout(() => aiController.abort(), 30000);
     const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -144,7 +167,7 @@ serve(async (req) => {
         messages: [{
           role: "user",
           content: `You are an enterprise decision intelligence advisor for a $1B+ company.
-
+${contextBlock}
 Analyze the following dataset metrics and generate strategic advisories.
 
 METRIC SUMMARIES:

@@ -294,6 +294,7 @@ Rules:
       return {
         organization_id,
         dataset_id,
+        decision_context_id: decision_context_id || null,
         message: i.message,
         severity: i.severity || "info",
         category: i.category || "general",
