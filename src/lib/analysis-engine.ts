@@ -19,6 +19,7 @@ import {
   type Changepoint,
   type AnovaResult,
 } from "@/lib/advanced-statistics";
+import { detectIndustry, generateRootCauseHypotheses, type IndustryProfile } from "@/lib/industry-detection";
 
 // ═══════════════════════════════════════════════════════
 // TYPES
