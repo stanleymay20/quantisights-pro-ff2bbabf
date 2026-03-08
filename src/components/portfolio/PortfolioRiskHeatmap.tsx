@@ -56,13 +56,12 @@ const PortfolioRiskHeatmap = ({ companies, onSelect, selectedId }: Props) => {
     );
   }
 
-  // Sort by risk score descending (highest risk first)
   const sorted = [...companies].sort((a, b) => b.risk_score - a.risk_score);
 
   return (
     <div className="space-y-2">
-      {/* Header */}
-      <div className="grid grid-cols-12 gap-2 px-4 py-2 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+      {/* Desktop header - hidden on mobile */}
+      <div className="hidden lg:grid grid-cols-12 gap-2 px-4 py-2 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
         <div className="col-span-3">Company</div>
         <div className="col-span-1 text-center">Risk</div>
         <div className="col-span-1 text-center">Trend</div>
@@ -73,45 +72,67 @@ const PortfolioRiskHeatmap = ({ companies, onSelect, selectedId }: Props) => {
         <div className="col-span-1"></div>
       </div>
 
-      {/* Rows */}
       {sorted.map((company) => (
         <button
           key={company.id}
           onClick={() => onSelect(company)}
-          className={`w-full grid grid-cols-12 gap-2 items-center px-4 py-3 rounded-xl border transition-all hover:shadow-md cursor-pointer text-left ${
+          aria-label={`View ${company.name} — Risk score ${company.risk_score}, Status ${company.health_status}`}
+          className={`w-full rounded-xl border transition-all hover:shadow-md cursor-pointer text-left ${
             selectedId === company.id
               ? "border-primary/40 bg-primary/5 shadow-sm"
               : `${riskColor(company.risk_score)} hover:border-primary/20`
           }`}
         >
-          <div className="col-span-3">
-            <p className="text-sm font-semibold truncate">{company.name}</p>
-            <p className="text-[11px] text-muted-foreground">{company.sector}{company.fund_name ? ` · ${company.fund_name}` : ""}</p>
+          {/* Mobile layout */}
+          <div className="lg:hidden p-4 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold truncate">{company.name}</p>
+                <p className="text-[11px] text-muted-foreground">{company.sector}{company.fund_name ? ` · ${company.fund_name}` : ""}</p>
+              </div>
+              <span className={`text-xl font-bold ml-3 ${riskTextColor(company.risk_score)}`}>{company.risk_score}</span>
+            </div>
+            <div className="flex items-center gap-3 flex-wrap">
+              {statusBadge(company.health_status)}
+              <span className="text-xs text-muted-foreground">{fmt(company.revenue_ltm)} rev</span>
+              <span className="text-xs text-muted-foreground">{company.ebitda_margin_pct.toFixed(1)}% EBITDA</span>
+              <span className={`text-xs ${company.revenue_growth_pct > 0 ? "text-[hsl(var(--severity-success))]" : company.revenue_growth_pct < 0 ? "text-destructive" : "text-muted-foreground"}`}>
+                {company.revenue_growth_pct > 0 ? "+" : ""}{company.revenue_growth_pct.toFixed(0)}% growth
+              </span>
+            </div>
           </div>
-          <div className="col-span-1 text-center">
-            <span className={`text-lg font-bold ${riskTextColor(company.risk_score)}`}>{company.risk_score}</span>
-          </div>
-          <div className="col-span-1 flex justify-center">
-            {trendIcon(company.risk_trend)}
-          </div>
-          <div className="col-span-1 flex justify-center">
-            {statusBadge(company.health_status)}
-          </div>
-          <div className="col-span-2 text-right">
-            <span className="text-sm font-medium">{fmt(company.revenue_ltm)}</span>
-          </div>
-          <div className="col-span-2 text-right">
-            <span className={`text-sm font-medium ${company.ebitda_margin_pct < 0 ? "text-destructive" : ""}`}>
-              {company.ebitda_margin_pct.toFixed(1)}%
-            </span>
-          </div>
-          <div className="col-span-1 text-right">
-            <span className={`text-sm font-medium ${company.revenue_growth_pct > 0 ? "text-[hsl(var(--severity-success))]" : company.revenue_growth_pct < 0 ? "text-destructive" : ""}`}>
-              {company.revenue_growth_pct > 0 ? "+" : ""}{company.revenue_growth_pct.toFixed(0)}%
-            </span>
-          </div>
-          <div className="col-span-1 flex justify-end">
-            <ArrowRight className="w-4 h-4 text-muted-foreground" />
+
+          {/* Desktop layout */}
+          <div className="hidden lg:grid grid-cols-12 gap-2 items-center px-4 py-3">
+            <div className="col-span-3">
+              <p className="text-sm font-semibold truncate">{company.name}</p>
+              <p className="text-[11px] text-muted-foreground">{company.sector}{company.fund_name ? ` · ${company.fund_name}` : ""}</p>
+            </div>
+            <div className="col-span-1 text-center">
+              <span className={`text-lg font-bold ${riskTextColor(company.risk_score)}`}>{company.risk_score}</span>
+            </div>
+            <div className="col-span-1 flex justify-center">
+              {trendIcon(company.risk_trend)}
+            </div>
+            <div className="col-span-1 flex justify-center">
+              {statusBadge(company.health_status)}
+            </div>
+            <div className="col-span-2 text-right">
+              <span className="text-sm font-medium">{fmt(company.revenue_ltm)}</span>
+            </div>
+            <div className="col-span-2 text-right">
+              <span className={`text-sm font-medium ${company.ebitda_margin_pct < 0 ? "text-destructive" : ""}`}>
+                {company.ebitda_margin_pct.toFixed(1)}%
+              </span>
+            </div>
+            <div className="col-span-1 text-right">
+              <span className={`text-sm font-medium ${company.revenue_growth_pct > 0 ? "text-[hsl(var(--severity-success))]" : company.revenue_growth_pct < 0 ? "text-destructive" : ""}`}>
+                {company.revenue_growth_pct > 0 ? "+" : ""}{company.revenue_growth_pct.toFixed(0)}%
+              </span>
+            </div>
+            <div className="col-span-1 flex justify-end">
+              <ArrowRight className="w-4 h-4 text-muted-foreground" />
+            </div>
           </div>
         </button>
       ))}
