@@ -84,10 +84,10 @@ const MFAChallenge = ({ onVerified }: MFAChallengeProps) => {
         {error && <p className="text-sm text-destructive text-center">{error}</p>}
         <button
           type="submit"
-          disabled={loading || code.length !== 6}
+          disabled={loading || code.length !== 6 || locked}
           className="w-full py-3 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:brightness-110 transition-all disabled:opacity-50"
         >
-          {loading ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : "Verify"}
+          {locked ? "Locked — sign in again" : loading ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : "Verify"}
         </button>
       </form>
     </div>
