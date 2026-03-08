@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { authenticateRequest, verifyOrgMembership } from "../_shared/auth-guard.ts";
 import { applyAdaptiveConfidenceWithFetch } from "../_shared/adaptive-confidence.ts";
 import type { AdaptiveConfidenceMeta } from "../_shared/adaptive-confidence.ts";
+import { enforceDatasetContract } from "../_shared/dataset-contract.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -159,6 +160,32 @@ function computeStats(metrics: MetricRow[]): MetricStats[] {
   return results;
 }
 
+/**
+ * Paginated fetch: retrieves ALL metric rows for the dataset, not just the first 1000.
+ */
+async function fetchAllMetrics(
+  supabaseUrl: string,
+  serviceKey: string,
+  organizationId: string,
+  datasetId: string,
+): Promise<MetricRow[]> {
+  const PAGE_SIZE = 1000;
+  const all: MetricRow[] = [];
+  let offset = 0;
+  const headers = { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` };
+
+  while (true) {
+    const url = `${supabaseUrl}/rest/v1/metrics?organization_id=eq.${organizationId}&dataset_id=eq.${datasetId}&order=date.asc&limit=${PAGE_SIZE}&offset=${offset}`;
+    const resp = await fetch(url, { headers });
+    const page: MetricRow[] = await resp.json();
+    if (!Array.isArray(page) || page.length === 0) break;
+    all.push(...page);
+    if (page.length < PAGE_SIZE) break;
+    offset += PAGE_SIZE;
+  }
+  return all;
+}
+
 /** Use AI to generate real diagnostic intelligence from computed statistics. */
 async function generateAIDiagnostics(stats: MetricStats[], contextBlock: string = "", datasetName: string = "dataset"): Promise<any[]> {
   const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
@@ -194,6 +221,7 @@ For EACH metric, generate a diagnostic assessment. Return ONLY a JSON array:
     "causal_factors": ["factor1", "factor2", "factor3"],
     "trend_direction": "improving" | "declining" | "stable" | "volatile",
     "change_pct": <number from period_change_pct>,
+    "recommendation": "1-2 sentence actionable recommendation for decision-makers to address the diagnosed pattern",
     "raw_confidence": <60-90 based on data quality>
   }
 ]
@@ -205,6 +233,7 @@ Rules:
 - severity "warning": moderate decline (5-10%), emerging instability, threshold approaches
 - severity "info": stable/improving metrics, healthy patterns
 - causal_factors MUST reference specific statistical evidence (segment shifts, volatility levels, trend slopes)
+- recommendation MUST be concrete and actionable, referencing the specific metric and its diagnosed issue
 - raw_confidence should reflect data_points count: <12 pts = max 65, <20 pts = max 75, 20+ pts = max 85
 - Do NOT invent data not present in the statistics
 - Every diagnosis MUST reference the dataset name "${datasetName}" and specific metric values
@@ -222,7 +251,12 @@ Rules:
     const jsonMatch = content.match(/\[[\s\S]*\]/);
     if (!jsonMatch) return [];
 
-    return JSON.parse(jsonMatch[0]);
+    try {
+      return JSON.parse(jsonMatch[0]);
+    } catch (parseErr) {
+      console.error("AI returned malformed JSON, falling back to rule engine:", parseErr);
+      return [];
+    }
   } catch (e) {
     clearTimeout(timeout);
     console.error("AI diagnostic generation error:", e);
@@ -243,6 +277,15 @@ function fallbackDiagnostics(stats: MetricStats[]): any[] {
       ...s.segment_shifts.slice(0, 3),
     ];
 
+    let recommendation = "";
+    if (severity === "critical") {
+      recommendation = `Investigate ${s.metric_type.replace(/_/g, " ")} immediately: ${Math.abs(s.period_change_pct).toFixed(1)}% period change with ${s.volatility_pct.toFixed(0)}% volatility indicates structural instability requiring root cause intervention.`;
+    } else if (severity === "warning") {
+      recommendation = `Monitor ${s.metric_type.replace(/_/g, " ")} closely and prepare contingency plans. The ${s.trend_direction} trend at ${s.slope_normalized_pct.toFixed(1)}% normalized slope may accelerate.`;
+    } else {
+      recommendation = `${s.metric_type.replace(/_/g, " ")} is within normal parameters. Continue current approach and review at next reporting cycle.`;
+    }
+
     return {
       metric_type: s.metric_type,
       diagnosis: `${s.metric_type.replace(/_/g, " ")} changed ${s.period_change_pct > 0 ? "+" : ""}${s.period_change_pct.toFixed(1)}% (latest: ${s.latest_value}, mean: ${s.mean.toFixed(2)}). Trend is ${s.trend_direction} with ${s.volatility_pct.toFixed(0)}% volatility across ${s.data_points} observations.`,
@@ -251,6 +294,7 @@ function fallbackDiagnostics(stats: MetricStats[]): any[] {
       causal_factors: factors.length > 0 ? factors : [`Overall ${s.trend_direction} pattern`],
       trend_direction: s.trend_direction,
       change_pct: s.period_change_pct,
+      recommendation,
       raw_confidence: Math.min(50 + Math.min((s.data_points - 2) * 2, 20) + (s.volatility_pct < 15 ? 10 : s.volatility_pct < 30 ? 5 : 0), 85),
     };
   });
@@ -263,7 +307,8 @@ serve(async (req) => {
   if (auth.response) return auth.response;
 
   try {
-    const { organization_id, dataset_id, decision_context_id } = await req.json();
+    const body = await req.json();
+    const { organization_id, dataset_id, decision_context_id, dry_run } = body;
     if (!organization_id) throw new Error("organization_id required");
 
     const isMember = await verifyOrgMembership(auth.userId, organization_id);
@@ -278,13 +323,38 @@ serve(async (req) => {
 
     if (!dataset_id) throw new Error("dataset_id required by Active Data Contract");
 
-    const metricsUrl = `${supabaseUrl}/rest/v1/metrics?organization_id=eq.${organization_id}&dataset_id=eq.${dataset_id}&order=date.asc&limit=1000`;
-    const dsUrl = `${supabaseUrl}/rest/v1/datasets?id=eq.${dataset_id}&organization_id=eq.${organization_id}&select=name&limit=1`;
-    const [metricsResp, dsResp] = await Promise.all([
-      fetch(metricsUrl, { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` } }),
-      fetch(dsUrl, { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` } }),
+    // Enforce dataset contract (validates dataset belongs to org, supports dry_run)
+    const contract = await enforceDatasetContract(
+      { organization_id, dataset_id, dry_run },
+      { from: (table: string) => {
+        const headers = { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` };
+        return {
+          select: (cols: string) => ({
+            eq: (col: string, val: string) => ({
+              eq: (col2: string, val2: string) => ({
+                maybeSingle: async () => {
+                  const url = `${supabaseUrl}/rest/v1/${table}?select=${cols}&${col}=eq.${val}&${col2}=eq.${val2}&limit=1`;
+                  const resp = await fetch(url, { headers });
+                  const arr = await resp.json();
+                  return { data: arr?.[0] || null, error: null };
+                },
+              }),
+            }),
+          }),
+        };
+      }},
+    );
+
+    if (contract.response) return contract.response;
+
+    // Paginated fetch: retrieve ALL metrics, not just first 1000
+    const [metrics, dsResp] = await Promise.all([
+      fetchAllMetrics(supabaseUrl, serviceKey, organization_id, dataset_id),
+      fetch(
+        `${supabaseUrl}/rest/v1/datasets?id=eq.${dataset_id}&organization_id=eq.${organization_id}&select=name&limit=1`,
+        { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` } },
+      ),
     ]);
-    const metrics: MetricRow[] = await metricsResp.json();
     const dsArr = await dsResp.json();
     const datasetName = dsArr?.[0]?.name || "dataset";
 
@@ -299,10 +369,9 @@ serve(async (req) => {
     // Step 1: Compute pure statistics from real data
     const stats = computeStats(metrics);
 
-    // Fetch decision context if provided
+    // Fetch decision context if provided (no duplicate serviceKey declaration)
     let contextBlock = "";
     if (decision_context_id) {
-      const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
       const ctxResp = await fetch(
         `${supabaseUrl}/rest/v1/decision_contexts?id=eq.${decision_context_id}&organization_id=eq.${organization_id}&select=name,decision_type,objective,industry,target_metrics`,
         { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` } }
