@@ -1131,10 +1131,13 @@ serve(async (req) => {
           case "bigquery":
             result = await syncBigQuery(body, body.metric_mappings, organization_id, body.data_source_id, serviceClient);
             break;
+          case "redshift":
+            result = await syncRedshift(body, body.metric_mappings, organization_id, body.data_source_id, serviceClient);
+            break;
           default:
             result = {
               records: 0,
-              errors: [`Full sync for ${connectorType} requires enterprise driver activation. PostgreSQL, Snowflake, and BigQuery sync are fully operational.`],
+              errors: [`Full sync for ${connectorType} requires enterprise driver activation. PostgreSQL, Snowflake, BigQuery, and Redshift sync are fully operational.`],
             };
         }
 
