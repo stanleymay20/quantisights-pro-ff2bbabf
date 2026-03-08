@@ -296,9 +296,17 @@ Rules:
     const priorityOrder: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
     advisories.sort((a: any, b: any) => (priorityOrder[a.priority] ?? 3) - (priorityOrder[b.priority] ?? 3));
 
-    // Store advisories in advisory_instances
-    const supabaseServiceUrl = Deno.env.get("SUPABASE_URL")!;
+    // Deduplication: close existing open advisories for this dataset before inserting new ones
     const serviceHeaders = { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, "Content-Type": "application/json", Prefer: "return=minimal" };
+
+    await fetch(
+      `${supabaseUrl}/rest/v1/advisory_instances?organization_id=eq.${organization_id}&dataset_id=eq.${dataset_id}&advisory_type=eq.prescriptive&status=in.(open)`,
+      {
+        method: "PATCH",
+        headers: serviceHeaders,
+        body: JSON.stringify({ status: "dismissed", resolution_summary: "Superseded by newer analysis run" }),
+      }
+    );
 
     if (advisories.length > 0) {
       const rows = advisories.map((a: any) => ({
@@ -319,7 +327,7 @@ Rules:
         status: "open",
       }));
 
-      await fetch(`${supabaseServiceUrl}/rest/v1/advisory_instances`, {
+      await fetch(`${supabaseUrl}/rest/v1/advisory_instances`, {
         method: "POST",
         headers: serviceHeaders,
         body: JSON.stringify(rows),
