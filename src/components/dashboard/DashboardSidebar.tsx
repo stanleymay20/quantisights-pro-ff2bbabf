@@ -184,7 +184,10 @@ const CollapsibleSection = ({ section, location, onNavClick }: { section: NavSec
               >
                 <item.icon className={cn("w-[15px] h-[15px] transition-colors", isActive ? "text-primary" : "text-muted-foreground group-hover:text-sidebar-accent-foreground")} />
                 {item.label}
-                {isActive && (
+                {ITEM_HELP[item.label] && (
+                  <HelpTooltip content={ITEM_HELP[item.label]} className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
+                )}
+                {isActive && !ITEM_HELP[item.label] && (
                   <span className="ml-auto w-1.5 h-1.5 rounded-full bg-primary" />
                 )}
               </Link>
