@@ -322,7 +322,7 @@ IMPORTANT: Frame all diagnoses through this decision context. Explain how each f
     }
 
     // Step 2: Generate AI-driven diagnostics from statistics
-    let aiResults = await generateAIDiagnostics(stats, contextBlock);
+    let aiResults = await generateAIDiagnostics(stats, contextBlock, datasetName);
 
     // Step 3: Fallback to data-driven rule engine if AI unavailable
     if (aiResults.length === 0) {
