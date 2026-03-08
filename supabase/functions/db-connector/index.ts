@@ -640,10 +640,16 @@ serve(async (req) => {
           case "postgresql":
             result = await syncPostgres(pgConfig, body.metric_mappings, organization_id, body.data_source_id, serviceClient);
             break;
+          case "snowflake":
+            result = await syncSnowflake(body, body.metric_mappings, organization_id, body.data_source_id, serviceClient);
+            break;
+          case "bigquery":
+            result = await syncBigQuery(body, body.metric_mappings, organization_id, body.data_source_id, serviceClient);
+            break;
           default:
             result = {
               records: 0,
-              errors: [`Full sync for ${connectorType} requires enterprise driver activation. PostgreSQL sync is fully operational.`],
+              errors: [`Full sync for ${connectorType} requires enterprise driver activation. PostgreSQL, Snowflake, and BigQuery sync are fully operational.`],
             };
         }
 
