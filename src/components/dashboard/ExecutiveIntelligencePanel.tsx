@@ -258,8 +258,8 @@ const ExecutiveIntelligencePanel = ({
   }, [metrics]);
 
   const summary = useMemo(
-    () => generateExecutiveSummary(health, risks, drivers, pendingDecisions, datasetName || undefined),
-    [health, risks, drivers, pendingDecisions, datasetName]
+    () => generateExecutiveSummary(health, risks, drivers, pendingDecisions, datasetName || undefined, metrics),
+    [health, risks, drivers, pendingDecisions, datasetName, metrics]
   );
 
   return (
