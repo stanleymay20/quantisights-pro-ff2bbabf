@@ -165,6 +165,9 @@ const ExecutiveQuickView = memo(({
         </div>
       )}
 
+      {/* Cross-Workspace Intelligence (only renders for multi-workspace orgs) */}
+      <CrossWorkspaceIntelligence organizationId={organizationId} />
+
       {/* Expand Button */}
       <div className="flex items-center justify-center pt-2">
         <button
