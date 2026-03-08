@@ -149,24 +149,31 @@ serve(async (req) => {
 
     const netImpacts: number[] = [];
 
+    // Use real baselines only — null means metric unavailable (not simulated)
+    const effRevenue = baseRevenue ?? 0;
+    const effCost = baseCost ?? 0;
+    const effChurn = baseChurn ?? 0;
+
     for (let r = 0; r < runs; r++) {
       const z1 = randn();
       const z2 = correlations.revenue_cost * z1 + Math.sqrt(1 - correlations.revenue_cost ** 2) * randn();
       const z3 = correlations.revenue_churn * z1 + Math.sqrt(1 - correlations.revenue_churn ** 2) * randn();
 
-      const revDrift = (revenue_delta_pct / 100) / steps;
-      const revShock = (revenueVol / 100) * Math.sqrt(steps) * z1;
-      const simRevenue = baseRevenue * Math.exp(revDrift * steps + revShock);
+      const simRevenue = hasRevenue
+        ? effRevenue * Math.exp(((revenue_delta_pct / 100) / steps) * steps + (revenueVol / 100) * Math.sqrt(steps) * z1)
+        : 0;
+      const simCost = hasCost
+        ? effCost * Math.exp(((cost_delta_pct / 100) / steps) * steps + (costVol / 100) * Math.sqrt(steps) * z2)
+        : 0;
 
-      const costDrift = (cost_delta_pct / 100) / steps;
-      const costShock = (costVol / 100) * Math.sqrt(steps) * z2;
-      const simCost = baseCost * Math.exp(costDrift * steps + costShock);
-
-      const churnDelta = baseChurn * (churn_change_pct / 100) + (churnVol / 100) * baseChurn * z3;
-      const simChurn = Math.max(0, Math.min(100, baseChurn + churnDelta));
+      let simChurn = effChurn;
+      if (hasChurn) {
+        const churnDelta = effChurn * (churn_change_pct / 100) + (churnVol / 100) * effChurn * z3;
+        simChurn = Math.max(0, Math.min(100, effChurn + churnDelta));
+      }
 
       const retentionFactor = Math.pow(1 - simChurn / 100, steps);
-      const baselineProfit = (baseRevenue * Math.pow(1 - baseChurn / 100, steps)) - baseCost;
+      const baselineProfit = (effRevenue * Math.pow(1 - effChurn / 100, steps)) - effCost;
       const simProfit = (simRevenue * retentionFactor) - simCost - implementation_cost;
       const netImpact = simProfit - baselineProfit;
 
