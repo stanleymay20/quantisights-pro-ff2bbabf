@@ -121,6 +121,8 @@ const CommandCenter = memo(({
         datasetName={datasetName}
       />
 
+      <CrossContextAnalytics organizationId={organizationId} />
+
       <div className="flex items-center justify-center">
         <button
           onClick={() => setShowAnalytics(!showAnalytics)}
