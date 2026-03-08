@@ -58,7 +58,12 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
       .eq("organization_id", currentOrgId)
       .order("created_at", { ascending: true });
 
-    if (error || !data) {
+    if (error) {
+      console.error("[WorkspaceContext] Failed to fetch workspaces:", error.message);
+      setLoading(false);
+      return;
+    }
+    if (!data) {
       setLoading(false);
       return;
     }

@@ -54,6 +54,9 @@ export const useOrganization = () => {
   const switchOrganization = (orgId: string) => {
     setCurrentOrgId(orgId);
     sessionStorage.setItem("quantivis_org_id", orgId);
+    // Cascade: clear downstream context to prevent cross-org data leakage
+    sessionStorage.removeItem("quantivis_workspace_id");
+    sessionStorage.removeItem("quantivis_project_id");
   };
 
   const currentOrg = organizations.find((o) => o.id === currentOrgId) ?? null;
