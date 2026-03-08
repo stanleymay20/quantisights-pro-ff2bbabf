@@ -149,6 +149,7 @@ const App = () => (
               <Route path="/subprocessors" element={<Subprocessors />} />
               <Route path="/accept-invite" element={<AcceptInvite />} />
               <Route path="/demo" element={<Demo />} />
+              <Route path="/embed" element={<EmbedDashboard />} />
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/business-model" element={<BusinessModel />} />
               <Route path="/security" element={<Security />} />

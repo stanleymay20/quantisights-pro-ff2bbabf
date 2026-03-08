@@ -15,7 +15,7 @@ export interface OrgBranding {
 }
 
 export function useOrgBranding() {
-  const { organization } = useOrganization();
+  const { currentOrg: organization } = useOrganization();
   const queryClient = useQueryClient();
 
   const { data: branding, isLoading } = useQuery({

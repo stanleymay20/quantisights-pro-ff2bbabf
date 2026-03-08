@@ -13,7 +13,7 @@ export type Permission =
 
 export function usePermissions() {
   const { user } = useAuth();
-  const { organization } = useOrganization();
+  const { currentOrg: organization } = useOrganization();
 
   const { data: permissions = [], isLoading } = useQuery({
     queryKey: ["permissions", user?.id, organization?.id],

@@ -12,7 +12,7 @@ import { toast } from "sonner";
 
 export const EmbedManager = () => {
   const { user } = useAuth();
-  const { organization } = useOrganization();
+  const { currentOrg: organization } = useOrganization();
   const queryClient = useQueryClient();
   const [creating, setCreating] = useState(false);
 
