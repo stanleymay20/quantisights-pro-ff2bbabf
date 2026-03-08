@@ -4,6 +4,7 @@ import OrgSwitcher from "@/components/dashboard/OrgSwitcher";
 import ProjectSwitcher from "@/components/dashboard/ProjectSwitcher";
 import IntelligenceStatusBar from "@/components/dashboard/IntelligenceStatusBar";
 import CommandCenter from "@/components/dashboard/CommandCenter";
+import ExecutiveQuickView from "@/components/dashboard/ExecutiveQuickView";
 import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
 
 import { useAuth } from "@/contexts/AuthContext";
@@ -11,12 +12,14 @@ import { useOrganization } from "@/hooks/useOrganization";
 import { useProject } from "@/contexts/ProjectContext";
 import { useMetrics } from "@/hooks/useMetrics";
 import { useInsights } from "@/hooks/useInsights";
-import { Bell, User, RefreshCw, Shield, Upload, Zap, TrendingUp, ArrowRight } from "lucide-react";
+import { Bell, User, RefreshCw, Shield, Upload, Zap, TrendingUp, ArrowRight, Minimize2, Maximize2 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import GuidedTour from "@/components/dashboard/GuidedTour";
+
+const VIEW_STORAGE_KEY = "quantivis_dashboard_view";
 
 const Dashboard = () => {
   const { user } = useAuth();
