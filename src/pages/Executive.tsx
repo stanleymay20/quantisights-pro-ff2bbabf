@@ -900,6 +900,7 @@ const Executive = () => {
               <TabsContent value="simulation">
                 <StrategicSimulation
                   organizationId={currentOrgId!}
+                  datasetId={activeDatasetId!}
                   roleType={activeRole}
                   tier={tier}
                 />
