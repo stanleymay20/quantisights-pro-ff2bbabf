@@ -55,17 +55,22 @@ function parseExpectedImpactBonus(expectedImpact: string | null | undefined): nu
   const lower = expectedImpact.toLowerCase();
   let bonus = 0;
 
-  // High-impact keywords
-  if (lower.includes("severe") || lower.includes("critical") || lower.includes("catastroph")) bonus += 8;
-  else if (lower.includes("significant") || lower.includes("major") || lower.includes("substantial")) bonus += 5;
-  else if (lower.includes("moderate") || lower.includes("notable")) bonus += 3;
+  // High-impact keywords (universal)
+  if (lower.includes("severe") || lower.includes("critical") || lower.includes("catastroph") || lower.includes("life-threatening") || lower.includes("fatality")) bonus += 8;
+  else if (lower.includes("significant") || lower.includes("major") || lower.includes("substantial") || lower.includes("systemic")) bonus += 5;
+  else if (lower.includes("moderate") || lower.includes("notable") || lower.includes("elevated")) bonus += 3;
   else if (lower.includes("minor") || lower.includes("low") || lower.includes("negligible")) bonus += 1;
 
-  // Multiplier keywords
-  if (lower.includes("revenue") || lower.includes("margin") || lower.includes("profit")) bonus += 2;
-  if (lower.includes("compounding") || lower.includes("accelerat") || lower.includes("exponential")) bonus += 2;
+  // Financial / business keywords
+  if (lower.includes("revenue") || lower.includes("margin") || lower.includes("profit") || lower.includes("liability") || lower.includes("penalty") || lower.includes("fine")) bonus += 2;
+  // Acceleration / compounding keywords
+  if (lower.includes("compounding") || lower.includes("accelerat") || lower.includes("exponential") || lower.includes("cascading") || lower.includes("contagion")) bonus += 2;
+  // Safety / regulatory keywords
+  if (lower.includes("safety") || lower.includes("contamination") || lower.includes("hazard") || lower.includes("regulatory") || lower.includes("compliance breach")) bonus += 2;
+  // Operational disruption keywords
+  if (lower.includes("outage") || lower.includes("shutdown") || lower.includes("downtime") || lower.includes("disruption") || lower.includes("stoppage")) bonus += 2;
 
-  return Math.min(10, bonus);
+  return Math.min(14, bonus);
 }
 
 export function computeCostOfDelay(input: CostOfDelayInput): CostOfDelayResult {
@@ -135,12 +140,27 @@ export function computeCostOfDelay(input: CostOfDelayInput): CostOfDelayResult {
     estimatedDelayCost = formatCurrency(weeklyImpact, currencySymbol) + "/week";
   } else if (input.revenue && input.revenue > 0 && score >= cfg.labelThresholds.medium) {
     // Revenue-derived exposure estimate — only for medium+ severity
-    // Base exposure rate by metric type (churn=8%, revenue=7%, default=5%)
+    // Tiered base exposure rates by domain (highest-risk categories first)
     const metricLower = (input.affectedMetricType ?? "").toLowerCase();
-    const baseRate = metricLower.includes("churn") || metricLower.includes("retention")
-      ? 0.08
-      : metricLower.includes("revenue") || metricLower.includes("margin")
-      ? 0.07
+    const baseRate =
+      // Tier 1 — 10%: life-safety, regulatory, fraud (existential risk)
+      (metricLower.includes("safety") || metricLower.includes("patient") || metricLower.includes("mortality") ||
+       metricLower.includes("compliance") || metricLower.includes("regulatory") || metricLower.includes("fraud"))
+        ? 0.10
+      // Tier 2 — 8%: operational disruption (high direct cost)
+      : (metricLower.includes("downtime") || metricLower.includes("outage") || metricLower.includes("throughput") ||
+         metricLower.includes("supply chain") || metricLower.includes("churn") || metricLower.includes("retention") ||
+         metricLower.includes("liquidity") || metricLower.includes("defect"))
+        ? 0.08
+      // Tier 3 — 7%: financial performance metrics
+      : (metricLower.includes("revenue") || metricLower.includes("margin") || metricLower.includes("credit") ||
+         metricLower.includes("exposure") || metricLower.includes("energy") || metricLower.includes("emission"))
+        ? 0.07
+      // Tier 4 — 6%: operational efficiency
+      : (metricLower.includes("yield") || metricLower.includes("inventory") || metricLower.includes("occupancy") ||
+         metricLower.includes("enrollment") || metricLower.includes("attrition") || metricLower.includes("vacancy"))
+        ? 0.06
+      // Default — 5%
       : 0.05;
     const weeklyExposure = (input.revenue * baseRate * (score / 100)) / 52;
     estimatedDelayCost = `~${formatCurrency(weeklyExposure, currencySymbol)}/week exposure`;

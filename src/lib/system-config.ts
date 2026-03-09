@@ -99,12 +99,48 @@ export function getSystemConfig(): SystemConfig {
       entityCountMax: envFloat("VITE_COD_ENTITY_COUNT_MAX", 5),
       trendAccelerationBonus: envFloat("VITE_COD_TREND_ACCEL_BONUS", 5),
       metricUrgency: {
+        // SaaS / Subscription
         churn: envFloat("VITE_COD_URGENCY_CHURN", 1.3),
         retention: envFloat("VITE_COD_URGENCY_RETENTION", 1.3),
         revenue: envFloat("VITE_COD_URGENCY_REVENUE", 1.2),
         cost: envFloat("VITE_COD_URGENCY_COST", 1.1),
         margin: envFloat("VITE_COD_URGENCY_MARGIN", 1.15),
         growth: envFloat("VITE_COD_URGENCY_GROWTH", 1.05),
+        // Industrial / Manufacturing
+        safety: envFloat("VITE_COD_URGENCY_SAFETY", 1.5),
+        downtime: envFloat("VITE_COD_URGENCY_DOWNTIME", 1.35),
+        yield: envFloat("VITE_COD_URGENCY_YIELD", 1.2),
+        throughput: envFloat("VITE_COD_URGENCY_THROUGHPUT", 1.15),
+        defect: envFloat("VITE_COD_URGENCY_DEFECT", 1.25),
+        // Regulatory / Compliance
+        compliance: envFloat("VITE_COD_URGENCY_COMPLIANCE", 1.4),
+        regulatory: envFloat("VITE_COD_URGENCY_REGULATORY", 1.4),
+        audit: envFloat("VITE_COD_URGENCY_AUDIT", 1.25),
+        // Healthcare / Life Sciences
+        patient: envFloat("VITE_COD_URGENCY_PATIENT", 1.45),
+        clinical: envFloat("VITE_COD_URGENCY_CLINICAL", 1.3),
+        mortality: envFloat("VITE_COD_URGENCY_MORTALITY", 1.5),
+        readmission: envFloat("VITE_COD_URGENCY_READMISSION", 1.25),
+        // Supply Chain / Logistics
+        "supply chain": envFloat("VITE_COD_URGENCY_SUPPLY_CHAIN", 1.3),
+        inventory: envFloat("VITE_COD_URGENCY_INVENTORY", 1.15),
+        logistics: envFloat("VITE_COD_URGENCY_LOGISTICS", 1.2),
+        procurement: envFloat("VITE_COD_URGENCY_PROCUREMENT", 1.15),
+        // Energy / Utilities
+        energy: envFloat("VITE_COD_URGENCY_ENERGY", 1.25),
+        outage: envFloat("VITE_COD_URGENCY_OUTAGE", 1.4),
+        emission: envFloat("VITE_COD_URGENCY_EMISSION", 1.3),
+        // Financial Services / Risk
+        fraud: envFloat("VITE_COD_URGENCY_FRAUD", 1.4),
+        exposure: envFloat("VITE_COD_URGENCY_EXPOSURE", 1.3),
+        liquidity: envFloat("VITE_COD_URGENCY_LIQUIDITY", 1.35),
+        credit: envFloat("VITE_COD_URGENCY_CREDIT", 1.25),
+        // Education / Public Sector
+        enrollment: envFloat("VITE_COD_URGENCY_ENROLLMENT", 1.15),
+        attrition: envFloat("VITE_COD_URGENCY_ATTRITION", 1.25),
+        // Hospitality / Real Estate
+        occupancy: envFloat("VITE_COD_URGENCY_OCCUPANCY", 1.2),
+        vacancy: envFloat("VITE_COD_URGENCY_VACANCY", 1.2),
       },
       labelThresholds: {
         critical: envInt("VITE_COD_LABEL_CRITICAL", 80),
