@@ -57,8 +57,8 @@ export function useBuildDecisionQueue({
   // Debounce ref
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const criticalInsights = useMemo(
-    () => insights.filter(i => i.severity === "high"),
+  const highSeverityInsights = useMemo(
+    () => insights.filter(i => i.severity === "high" || i.severity === "critical"),
     [insights]
   );
 
