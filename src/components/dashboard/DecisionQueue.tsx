@@ -110,6 +110,7 @@ const DecisionQueue = memo(({
 }: DecisionQueueProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { identity } = useOrganizationalIdentity(organizationId);
   const { decisions, setDecisions, loading } = useBuildDecisionQueue({
     organizationId,
     insights,
