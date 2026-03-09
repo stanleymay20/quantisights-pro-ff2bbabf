@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import {
   Plus, Calculator, Sparkles, TrendingUp, TrendingDown, Minus, Target,
@@ -129,10 +130,12 @@ const KPIs = () => {
   useEffect(() => { fetchKpis(); }, [fetchKpis]);
 
   const fetchKpiData = useCallback(async (kpiId: string) => {
+    if (!currentOrgId) return;
     const { data: values } = await supabase
       .from("kpi_values")
       .select("date, value")
       .eq("kpi_id", kpiId)
+      .eq("organization_id", currentOrgId)
       .order("date", { ascending: true });
 
     if (values) setKpiValues(values.map(v => ({ date: v.date, value: Number(v.value) })));
@@ -141,10 +144,11 @@ const KPIs = () => {
       .from("kpi_targets")
       .select("id, target_value, target_date")
       .eq("kpi_id", kpiId)
+      .eq("organization_id", currentOrgId)
       .order("target_date", { ascending: true });
 
     if (targets) setKpiTargets(targets.map(t => ({ ...t, target_value: Number(t.target_value) })));
-  }, []);
+  }, [currentOrgId]);
 
   useEffect(() => {
     if (selectedKpi) {
@@ -252,7 +256,8 @@ const KPIs = () => {
   };
 
   const handleDelete = async (kpiId: string) => {
-    const { error } = await supabase.from("kpis").update({ status: "archived" }).eq("id", kpiId);
+    if (!currentOrgId) return;
+    const { error } = await supabase.from("kpis").update({ status: "archived" }).eq("id", kpiId).eq("organization_id", currentOrgId);
     if (!error) {
       toast({ title: "KPI archived" });
       if (selectedKpi === kpiId) setSelectedKpi(null);
@@ -266,10 +271,23 @@ const KPIs = () => {
 
   const selectedKpiObj = kpis.find(k => k.id === selectedKpi);
 
+  // Inverse metrics where "up" is bad
+  const INVERSE_METRICS = ["cost", "churn", "expense", "debt", "loss", "attrition", "turnover"];
+  const isInverseKpi = selectedKpiObj
+    ? (selectedKpiObj.metric_dependencies as string[]).some(d => INVERSE_METRICS.some(inv => d.toLowerCase().includes(inv)))
+    : false;
+
   const trendIcon = (trend?: string) => {
-    if (trend === "up") return <TrendingUp className="w-4 h-4 text-success" />;
-    if (trend === "down") return <TrendingDown className="w-4 h-4 text-destructive" />;
+    const isPositive = trend === "up" ? !isInverseKpi : isInverseKpi;
+    if (trend === "up") return <TrendingUp className={`w-4 h-4 ${isPositive ? "text-success" : "text-destructive"}`} />;
+    if (trend === "down") return <TrendingDown className={`w-4 h-4 ${isPositive ? "text-success" : "text-destructive"}`} />;
     return <Minus className="w-4 h-4 text-muted-foreground" />;
+  };
+
+  const trendColor = (trend?: string) => {
+    if (!trend || trend === "stable") return "text-muted-foreground";
+    const isPositive = trend === "up" ? !isInverseKpi : isInverseKpi;
+    return isPositive ? "text-success" : "text-destructive";
   };
 
   const riskBadge = (level?: string) => {
@@ -412,12 +430,28 @@ const KPIs = () => {
                   >
                     <div className="flex items-center justify-between mb-1">
                       <h3 className="font-semibold text-sm">{kpi.name}</h3>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleDelete(kpi.id); }}
-                        className="p-1 rounded hover:bg-destructive/20 transition-colors"
-                      >
-                        <Trash2 className="w-3.5 h-3.5 text-muted-foreground" />
-                      </button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <button
+                            onClick={(e) => e.stopPropagation()}
+                            className="p-1 rounded hover:bg-destructive/20 transition-colors"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-muted-foreground" />
+                          </button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Archive KPI?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This will archive "{kpi.name}" and hide it from the active list. This action cannot be undone from the UI.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDelete(kpi.id)}>Archive</AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                     <p className="text-xs text-muted-foreground font-mono">{kpi.formula}</p>
                     <div className="flex gap-1 mt-2 flex-wrap">
@@ -562,10 +596,7 @@ const KPIs = () => {
                         </h3>
                         <div className="flex items-center gap-3">
                           {trendIcon(analysis.trend)}
-                          <span className={`text-sm font-bold ${
-                            analysis.trend === "up" ? "text-success" :
-                            analysis.trend === "down" ? "text-destructive" : "text-muted-foreground"
-                          }`}>
+                         <span className={`text-sm font-bold ${trendColor(analysis.trend)}`}>
                             {analysis.trend_percentage > 0 ? "+" : ""}{analysis.trend_percentage?.toFixed(1)}%
                           </span>
                           {riskBadge(analysis.risk_level)}
