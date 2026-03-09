@@ -394,7 +394,20 @@ const DecisionQueue = memo(({
                             {decision.source}
                           </span>
                           {decision.confidence != null && (
-                            <ConfidenceBadge confidence={decision.confidence} showDetails />
+                            <ConfidenceBadge
+                              confidence={
+                                decision.rawConfidence != null || decision.cappedConfidence != null
+                                  ? {
+                                      raw_confidence: decision.rawConfidence ?? undefined,
+                                      capped_confidence: decision.cappedConfidence ?? undefined,
+                                      confidence_cap_reason: decision.confidenceCapReason ?? undefined,
+                                      sample_size: decision.sampleSize ?? undefined,
+                                    }
+                                  : decision.confidence
+                              }
+                              showDetails
+                              isHeuristic={rec.confidenceBasis?.isHeuristic}
+                            />
                           )}
                           {decision.confidenceCapReason && /heuristic/i.test(decision.confidenceCapReason) && (
                             <span className="text-[9px] font-bold text-warning bg-warning/10 px-1.5 py-0.5 rounded uppercase">
