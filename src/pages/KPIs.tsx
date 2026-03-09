@@ -580,10 +580,7 @@ const KPIs = () => {
                         </h3>
                         <div className="flex items-center gap-3">
                           {trendIcon(analysis.trend)}
-                          <span className={`text-sm font-bold ${
-                            analysis.trend === "up" ? "text-success" :
-                            analysis.trend === "down" ? "text-destructive" : "text-muted-foreground"
-                          }`}>
+                         <span className={`text-sm font-bold ${trendColor(analysis.trend)}`}>
                             {analysis.trend_percentage > 0 ? "+" : ""}{analysis.trend_percentage?.toFixed(1)}%
                           </span>
                           {riskBadge(analysis.risk_level)}
