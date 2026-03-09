@@ -280,6 +280,14 @@ const Executive = () => {
     setBriefHistory((history as any) || []);
   }, [currentOrgId, activeRole, isGated]);
 
+  // Reset state when dataset changes
+  useEffect(() => {
+    setBrief(null);
+    setRiskIndex(null);
+    setDbAlerts([]);
+    setBriefHistory([]);
+  }, [activeDatasetId]);
+
   useEffect(() => {
     fetchSignalData();
   }, [fetchSignalData]);
