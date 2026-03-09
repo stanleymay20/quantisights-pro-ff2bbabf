@@ -130,10 +130,12 @@ const KPIs = () => {
   useEffect(() => { fetchKpis(); }, [fetchKpis]);
 
   const fetchKpiData = useCallback(async (kpiId: string) => {
+    if (!currentOrgId) return;
     const { data: values } = await supabase
       .from("kpi_values")
       .select("date, value")
       .eq("kpi_id", kpiId)
+      .eq("organization_id", currentOrgId)
       .order("date", { ascending: true });
 
     if (values) setKpiValues(values.map(v => ({ date: v.date, value: Number(v.value) })));
@@ -142,10 +144,11 @@ const KPIs = () => {
       .from("kpi_targets")
       .select("id, target_value, target_date")
       .eq("kpi_id", kpiId)
+      .eq("organization_id", currentOrgId)
       .order("target_date", { ascending: true });
 
     if (targets) setKpiTargets(targets.map(t => ({ ...t, target_value: Number(t.target_value) })));
-  }, []);
+  }, [currentOrgId]);
 
   useEffect(() => {
     if (selectedKpi) {
