@@ -903,7 +903,7 @@ const Executive = () => {
                   riskScore={riskIndex?.score}
                   tier={tier}
                   datasetId={activeDatasetId ?? undefined}
-                  datasetName={undefined}
+                  datasetName={activeDatasetId ? undefined : undefined}
                 />
               </TabsContent>
 
