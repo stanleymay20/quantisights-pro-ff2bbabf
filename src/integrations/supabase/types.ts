@@ -4664,6 +4664,7 @@ export type Database = {
         }[]
       }
       update_dataset_staleness: { Args: never; Returns: undefined }
+      validate_embed_token: { Args: { _token: string }; Returns: Json }
     }
     Enums: {
       app_role: "admin" | "analyst" | "executive" | "client_viewer"
