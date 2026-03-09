@@ -255,15 +255,39 @@ export function generateRecommendation(input: RecommendationInput): StructuredRe
     }
     actionParts.push(`Quantify impact using ${conf}% confidence signal (${confLabel}).`);
 
-    if (cat.includes("churn") || met.includes("churn")) {
+    // Domain-specific action playbooks — ordered by urgency tier
+    const actionKey = [cat, met].join(" ");
+    if (actionKey.includes("mortality") || actionKey.includes("patient") || actionKey.includes("clinical")) {
+      actionParts.push(`Initiate clinical safety review. Assess patient impact, escalate through safety committee, and implement corrective protocol for ${segment}.`);
+    } else if (actionKey.includes("safety")) {
+      actionParts.push(`Trigger EHS incident review. Conduct root cause analysis, implement containment measures, and update safety protocols for ${segment}.`);
+    } else if (actionKey.includes("compliance") || actionKey.includes("regulatory")) {
+      actionParts.push(`Initiate compliance gap assessment. Document findings, engage regulatory affairs, and implement remediation plan within action window.`);
+    } else if (actionKey.includes("fraud")) {
+      actionParts.push(`Escalate to fraud investigation team. Freeze affected transactions, run pattern analysis, and implement enhanced monitoring for ${segment}.`);
+    } else if (actionKey.includes("outage") || actionKey.includes("downtime")) {
+      actionParts.push(`Execute incident response protocol. Perform root cause analysis, implement corrective maintenance, and update failover procedures.`);
+    } else if (actionKey.includes("defect") || actionKey.includes("yield")) {
+      actionParts.push(`Run Pareto analysis on defect categories. Implement corrective actions on top contributors and verify via control charts.`);
+    } else if (actionKey.includes("liquidity") || actionKey.includes("credit") || actionKey.includes("exposure")) {
+      actionParts.push(`Review risk exposure limits. Stress-test current positions, adjust hedging strategy, and escalate to risk committee if thresholds breached.`);
+    } else if (actionKey.includes("supply chain") || actionKey.includes("inventory") || actionKey.includes("logistics")) {
+      actionParts.push(`Assess supply chain disruption scope. Activate contingency suppliers, rebalance inventory buffers, and update demand forecast.`);
+    } else if (actionKey.includes("emission") || actionKey.includes("energy")) {
+      actionParts.push(`Audit energy consumption patterns. Identify top emission sources, evaluate reduction scenarios, and update sustainability roadmap.`);
+    } else if (actionKey.includes("enrollment") || actionKey.includes("attrition")) {
+      actionParts.push(`Analyze attrition drivers by cohort. Activate retention interventions, review engagement scores, and adjust resource allocation.`);
+    } else if (actionKey.includes("occupancy") || actionKey.includes("vacancy")) {
+      actionParts.push(`Review pricing strategy and market positioning. Analyze competitor rates, adjust incentives, and target high-conversion channels.`);
+    } else if (actionKey.includes("churn") || actionKey.includes("retention")) {
       actionParts.push(`Run cohort analysis on ${segment} to identify at-risk accounts and activate retention playbook.`);
-    } else if (cat.includes("revenue") || met.includes("revenue")) {
+    } else if (actionKey.includes("revenue")) {
       actionParts.push(`Diagnose variance by segment/channel and simulate recovery scenarios.`);
-    } else if (cat.includes("cost") || met.includes("cost")) {
+    } else if (actionKey.includes("cost")) {
       actionParts.push(`Audit top cost drivers and evaluate optimization scenarios.`);
-    } else if (cat.includes("growth")) {
+    } else if (actionKey.includes("growth")) {
       actionParts.push(`Analyze by acquisition channel and reallocate to highest-ROI vectors.`);
-    } else if (cat.includes("calibration")) {
+    } else if (actionKey.includes("calibration")) {
       actionParts.push(`Complete pending calibration assessments and close outstanding decision outcomes.`);
     } else {
       actionParts.push(`Approve corrective action and set measurement checkpoint.`);
