@@ -8,6 +8,7 @@ import ExecutiveQuickView from "@/components/dashboard/ExecutiveQuickView";
 import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
 
 import { useAuth } from "@/contexts/AuthContext";
+
 import { useOrganization } from "@/hooks/useOrganization";
 import { useProject } from "@/contexts/ProjectContext";
 import { useMetrics } from "@/hooks/useMetrics";
