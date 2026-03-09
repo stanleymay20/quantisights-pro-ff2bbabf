@@ -430,12 +430,28 @@ const KPIs = () => {
                   >
                     <div className="flex items-center justify-between mb-1">
                       <h3 className="font-semibold text-sm">{kpi.name}</h3>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleDelete(kpi.id); }}
-                        className="p-1 rounded hover:bg-destructive/20 transition-colors"
-                      >
-                        <Trash2 className="w-3.5 h-3.5 text-muted-foreground" />
-                      </button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <button
+                            onClick={(e) => e.stopPropagation()}
+                            className="p-1 rounded hover:bg-destructive/20 transition-colors"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-muted-foreground" />
+                          </button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Archive KPI?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This will archive "{kpi.name}" and hide it from the active list. This action cannot be undone from the UI.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDelete(kpi.id)}>Archive</AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                     <p className="text-xs text-muted-foreground font-mono">{kpi.formula}</p>
                     <div className="flex gap-1 mt-2 flex-wrap">
