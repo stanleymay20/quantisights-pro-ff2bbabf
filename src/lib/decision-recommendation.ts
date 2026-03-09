@@ -74,8 +74,46 @@ export interface StructuredRecommendation {
 }
 
 // Ordered longest-first to prevent partial matches (e.g. "cost_of_revenue" matching "cost" before "revenue")
+// Ordered longest-first to prevent partial matches
 const OWNER_MAP: [string, string][] = [
+  // Multi-word keys first
   ["cost_of_revenue", "VP Revenue / CRO"],
+  ["supply chain", "VP Supply Chain / CPO"],
+  // Safety / Healthcare / Life Sciences
+  ["mortality", "CMO / Chief Patient Safety Officer"],
+  ["patient", "CMO / Chief Patient Safety Officer"],
+  ["clinical", "CMO / VP Clinical Operations"],
+  ["readmission", "CMO / VP Clinical Quality"],
+  ["safety", "VP EHS / Chief Safety Officer"],
+  // Regulatory / Compliance
+  ["compliance", "CCO / Chief Compliance Officer"],
+  ["regulatory", "CCO / VP Regulatory Affairs"],
+  ["audit", "VP Internal Audit / CCO"],
+  // Financial Services / Risk
+  ["fraud", "CRO / VP Fraud Prevention"],
+  ["liquidity", "CFO / VP Treasury"],
+  ["exposure", "CRO / VP Risk Management"],
+  ["credit", "CRO / VP Credit Risk"],
+  // Industrial / Manufacturing
+  ["downtime", "VP Operations / Plant Manager"],
+  ["outage", "VP Operations / Grid Manager"],
+  ["defect", "VP Quality / Six Sigma Lead"],
+  ["throughput", "VP Operations / Plant Manager"],
+  ["yield", "VP Manufacturing / Process Engineering Lead"],
+  // Energy / Utilities
+  ["emission", "VP Sustainability / Chief Sustainability Officer"],
+  ["energy", "VP Energy Management / Facilities Director"],
+  // Supply Chain / Logistics
+  ["inventory", "VP Supply Chain / Inventory Manager"],
+  ["logistics", "VP Supply Chain / Logistics Director"],
+  ["procurement", "VP Procurement / CPO"],
+  // Education / Public Sector
+  ["enrollment", "VP Enrollment Management / Registrar"],
+  ["attrition", "VP Student Success / CHRO"],
+  // Hospitality / Real Estate
+  ["occupancy", "VP Revenue Management / Asset Manager"],
+  ["vacancy", "VP Leasing / Asset Manager"],
+  // SaaS / Subscription (original)
   ["calibration", "Decision Governance Lead"],
   ["operational", "COO / VP Operations"],
   ["strategic", "CEO / Strategy Lead"],
@@ -217,15 +255,39 @@ export function generateRecommendation(input: RecommendationInput): StructuredRe
     }
     actionParts.push(`Quantify impact using ${conf}% confidence signal (${confLabel}).`);
 
-    if (cat.includes("churn") || met.includes("churn")) {
+    // Domain-specific action playbooks — ordered by urgency tier
+    const actionKey = [cat, met].join(" ");
+    if (actionKey.includes("mortality") || actionKey.includes("patient") || actionKey.includes("clinical")) {
+      actionParts.push(`Initiate clinical safety review. Assess patient impact, escalate through safety committee, and implement corrective protocol for ${segment}.`);
+    } else if (actionKey.includes("safety")) {
+      actionParts.push(`Trigger EHS incident review. Conduct root cause analysis, implement containment measures, and update safety protocols for ${segment}.`);
+    } else if (actionKey.includes("compliance") || actionKey.includes("regulatory")) {
+      actionParts.push(`Initiate compliance gap assessment. Document findings, engage regulatory affairs, and implement remediation plan within action window.`);
+    } else if (actionKey.includes("fraud")) {
+      actionParts.push(`Escalate to fraud investigation team. Freeze affected transactions, run pattern analysis, and implement enhanced monitoring for ${segment}.`);
+    } else if (actionKey.includes("outage") || actionKey.includes("downtime")) {
+      actionParts.push(`Execute incident response protocol. Perform root cause analysis, implement corrective maintenance, and update failover procedures.`);
+    } else if (actionKey.includes("defect") || actionKey.includes("yield")) {
+      actionParts.push(`Run Pareto analysis on defect categories. Implement corrective actions on top contributors and verify via control charts.`);
+    } else if (actionKey.includes("liquidity") || actionKey.includes("credit") || actionKey.includes("exposure")) {
+      actionParts.push(`Review risk exposure limits. Stress-test current positions, adjust hedging strategy, and escalate to risk committee if thresholds breached.`);
+    } else if (actionKey.includes("supply chain") || actionKey.includes("inventory") || actionKey.includes("logistics")) {
+      actionParts.push(`Assess supply chain disruption scope. Activate contingency suppliers, rebalance inventory buffers, and update demand forecast.`);
+    } else if (actionKey.includes("emission") || actionKey.includes("energy")) {
+      actionParts.push(`Audit energy consumption patterns. Identify top emission sources, evaluate reduction scenarios, and update sustainability roadmap.`);
+    } else if (actionKey.includes("enrollment") || actionKey.includes("attrition")) {
+      actionParts.push(`Analyze attrition drivers by cohort. Activate retention interventions, review engagement scores, and adjust resource allocation.`);
+    } else if (actionKey.includes("occupancy") || actionKey.includes("vacancy")) {
+      actionParts.push(`Review pricing strategy and market positioning. Analyze competitor rates, adjust incentives, and target high-conversion channels.`);
+    } else if (actionKey.includes("churn") || actionKey.includes("retention")) {
       actionParts.push(`Run cohort analysis on ${segment} to identify at-risk accounts and activate retention playbook.`);
-    } else if (cat.includes("revenue") || met.includes("revenue")) {
+    } else if (actionKey.includes("revenue")) {
       actionParts.push(`Diagnose variance by segment/channel and simulate recovery scenarios.`);
-    } else if (cat.includes("cost") || met.includes("cost")) {
+    } else if (actionKey.includes("cost")) {
       actionParts.push(`Audit top cost drivers and evaluate optimization scenarios.`);
-    } else if (cat.includes("growth")) {
+    } else if (actionKey.includes("growth")) {
       actionParts.push(`Analyze by acquisition channel and reallocate to highest-ROI vectors.`);
-    } else if (cat.includes("calibration")) {
+    } else if (actionKey.includes("calibration")) {
       actionParts.push(`Complete pending calibration assessments and close outstanding decision outcomes.`);
     } else {
       actionParts.push(`Approve corrective action and set measurement checkpoint.`);
@@ -307,7 +369,60 @@ export function generateRecommendation(input: RecommendationInput): StructuredRe
 function inferSuccessMetrics(category: string, metricType: string): string[] {
   const key = [category, metricType].filter(Boolean).join(" ").toLowerCase();
 
-  if (key.includes("churn") || key.includes("retention")) {
+  // Healthcare / Life Sciences
+  if (key.includes("mortality") || key.includes("patient")) {
+    return ["Patient outcome improvement rate", "Adverse event reduction", "Readmission rate delta"];
+  } else if (key.includes("clinical")) {
+    return ["Clinical efficacy measure", "Treatment adherence rate", "Patient safety incident reduction"];
+  } else if (key.includes("readmission")) {
+    return ["30-day readmission rate", "Post-discharge follow-up compliance", "Patient satisfaction score"];
+  }
+  // Safety
+  else if (key.includes("safety")) {
+    return ["TRIR (Total Recordable Incident Rate)", "Lost time injury frequency", "Near-miss reporting rate"];
+  }
+  // Regulatory / Compliance
+  else if (key.includes("compliance") || key.includes("regulatory")) {
+    return ["Compliance gap closure rate", "Audit finding remediation time", "Regulatory submission success rate"];
+  } else if (key.includes("audit")) {
+    return ["Audit finding count (trend)", "Remediation completion rate", "Control effectiveness score"];
+  }
+  // Financial Services / Risk
+  else if (key.includes("fraud")) {
+    return ["Fraud detection rate", "False positive reduction", "Mean time to detection (MTTD)"];
+  } else if (key.includes("liquidity")) {
+    return ["Liquidity coverage ratio", "Cash conversion cycle", "Days payable/receivable outstanding"];
+  } else if (key.includes("exposure") || key.includes("credit")) {
+    return ["Value-at-Risk (VaR) delta", "Expected loss reduction", "Risk-adjusted return improvement"];
+  }
+  // Industrial / Manufacturing
+  else if (key.includes("downtime") || key.includes("outage")) {
+    return ["MTTR (Mean Time To Repair)", "MTBF (Mean Time Between Failures)", "Availability % improvement"];
+  } else if (key.includes("defect")) {
+    return ["Defect rate (PPM) reduction", "First-pass yield improvement", "Cost of poor quality (COPQ) delta"];
+  } else if (key.includes("yield") || key.includes("throughput")) {
+    return ["Overall Equipment Effectiveness (OEE)", "Throughput rate improvement", "Cycle time reduction"];
+  }
+  // Supply Chain / Logistics
+  else if (key.includes("supply chain") || key.includes("inventory") || key.includes("logistics")) {
+    return ["Inventory turnover ratio", "Order fulfillment rate", "Supply chain cycle time"];
+  } else if (key.includes("procurement")) {
+    return ["Cost savings vs. baseline", "Supplier lead time reduction", "Purchase order cycle time"];
+  }
+  // Energy / Sustainability
+  else if (key.includes("emission") || key.includes("energy")) {
+    return ["Carbon intensity reduction (tCO2e/unit)", "Energy efficiency improvement", "Sustainability target progress"];
+  }
+  // Education / Public Sector
+  else if (key.includes("enrollment") || key.includes("attrition")) {
+    return ["Retention/enrollment rate improvement", "Engagement score delta", "Time-to-completion improvement"];
+  }
+  // Hospitality / Real Estate
+  else if (key.includes("occupancy") || key.includes("vacancy")) {
+    return ["Occupancy rate improvement", "RevPAR / Revenue per unit", "Average lease-up velocity"];
+  }
+  // SaaS / Subscription (original)
+  else if (key.includes("churn") || key.includes("retention")) {
     return ["Monthly churn rate (% change)", "At-risk cohort size reduction", "NPS / CSAT delta"];
   } else if (key.includes("revenue")) {
     return ["MRR / ARR recovery trajectory", "Revenue variance vs. plan", "Pipeline conversion rate"];
@@ -321,7 +436,7 @@ function inferSuccessMetrics(category: string, metricType: string): string[] {
     return ["Calibration score improvement", "Brier score reduction", "Pending outcomes closed"];
   }
 
-  // Domain-agnostic fallback: derive from the metric type itself
+  // Domain-agnostic fallback
   const metricLabel = metricType?.replace(/_/g, " ") || category?.replace(/_/g, " ") || "primary metric";
   return [
     `${metricLabel} trend direction (period-over-period)`,
