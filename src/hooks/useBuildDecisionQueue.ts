@@ -142,7 +142,7 @@ export function useBuildDecisionQueue({
       .filter(insight => !advisorySourceSignalIds.has(insight.id))
       .slice(0, 2)
       .forEach(insight => {
-        const severity: "critical" | "high" = insight.severity === "critical" ? "critical" : "critical";
+        const severity: "critical" | "high" = insight.severity === "critical" ? "critical" : "high";
         const age = ageDays(insight.created_at);
         const hasCappedConf = insight.capped_confidence != null;
 
