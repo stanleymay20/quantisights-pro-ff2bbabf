@@ -70,7 +70,7 @@ function parseExpectedImpactBonus(expectedImpact: string | null | undefined): nu
   // Operational disruption keywords
   if (lower.includes("outage") || lower.includes("shutdown") || lower.includes("downtime") || lower.includes("disruption") || lower.includes("stoppage")) bonus += 2;
 
-  return Math.min(10, bonus);
+  return Math.min(14, bonus);
 }
 
 export function computeCostOfDelay(input: CostOfDelayInput): CostOfDelayResult {
