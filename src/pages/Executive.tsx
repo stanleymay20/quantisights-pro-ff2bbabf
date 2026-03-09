@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOrganization } from "@/hooks/useOrganization";
-import { useProject } from "@/contexts/ProjectContext";
+import { useActiveDataContext } from "@/hooks/useActiveDataContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
 import { SidebarMobileToggle } from "@/components/layout/ProtectedShell";
