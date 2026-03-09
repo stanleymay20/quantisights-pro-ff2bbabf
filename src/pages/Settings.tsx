@@ -533,6 +533,13 @@ const Settings = () => {
                   </Card>
                 </motion.div>
               </TabsContent>
+
+              {/* Organizational Identity */}
+              <TabsContent value="identity">
+                <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
+                  <OrganizationalIdentitySettings organizationId={currentOrgId} />
+                </motion.div>
+              </TabsContent>
             </Tabs>
           </div>
         </main>
