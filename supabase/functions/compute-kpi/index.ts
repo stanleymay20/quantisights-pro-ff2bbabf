@@ -293,6 +293,7 @@ serve(async (req) => {
         .from("kpi_values")
         .delete()
         .eq("kpi_id", kpi_id)
+        .eq("organization_id", kpi.organization_id)
         .gte("date", startDate)
         .lte("date", endDate);
 

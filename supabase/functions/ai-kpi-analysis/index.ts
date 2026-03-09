@@ -138,6 +138,7 @@ serve(async (req) => {
       .from("kpi_targets")
       .select("target_value, target_date")
       .eq("kpi_id", kpi_id)
+      .eq("organization_id", kpi.organization_id)
       .order("target_date", { ascending: true });
 
     // Build AI prompt
