@@ -335,7 +335,7 @@ export function useBuildDecisionQueue({
 
     setDecisions(queue.slice(0, 5));
     setLoading(false);
-  }, [organizationId, criticalInsights, churnRate, revenue, pendingDecisions, calibrationScore, datasetId]);
+  }, [organizationId, highSeverityInsights, churnRate, revenue, pendingDecisions, calibrationScore, datasetId]);
 
   // Debounced effect — 200ms
   useEffect(() => {
