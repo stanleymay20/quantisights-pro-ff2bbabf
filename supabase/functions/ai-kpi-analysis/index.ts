@@ -122,6 +122,7 @@ serve(async (req) => {
       .from("kpi_values")
       .select("date, value")
       .eq("kpi_id", kpi_id)
+      .eq("organization_id", kpi.organization_id)
       .order("date", { ascending: true })
       .limit(365);
 
