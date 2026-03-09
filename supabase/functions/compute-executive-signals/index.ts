@@ -41,10 +41,12 @@ serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const { data: { user }, error: authErr } = await supabase.auth.getUser();
-    if (authErr || !user) {
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: authErr } = await supabase.auth.getClaims(token);
+    if (authErr || !claimsData?.claims) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
     }
+    const userId = claimsData.claims.sub as string;
 
     const { role_type, organization_id } = await req.json();
     if (!role_type || !organization_id) {
