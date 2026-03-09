@@ -57,8 +57,8 @@ export function useBuildDecisionQueue({
   // Debounce ref
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const criticalInsights = useMemo(
-    () => insights.filter(i => i.severity === "high"),
+  const highSeverityInsights = useMemo(
+    () => insights.filter(i => i.severity === "high" || i.severity === "critical"),
     [insights]
   );
 
@@ -137,18 +137,21 @@ export function useBuildDecisionQueue({
       });
     });
 
-    // 2. Critical signals (skip if already covered by an advisory)
-    criticalInsights
+    // 2. High-severity signals (skip if already covered by an advisory)
+    highSeverityInsights
       .filter(insight => !advisorySourceSignalIds.has(insight.id))
       .slice(0, 2)
       .forEach(insight => {
-        const severity: "critical" | "high" = "critical";
+        const severity: "critical" | "high" = insight.severity === "critical" ? "critical" : "critical";
         const age = ageDays(insight.created_at);
+        const hasCappedConf = insight.capped_confidence != null;
 
         const codResult = computeCostOfDelay({
           severity,
-          confidence: insight.confidence_score ?? null,
+          confidence: insight.capped_confidence ?? insight.confidence_score ?? null,
+          cappedConfidence: insight.capped_confidence ?? null,
           affectedMetricType: insight.category,
+          signalDelta: insight.variance_score ?? null,
           revenue,
           ageDays: age,
           trendAccelerating: insight.message?.toLowerCase().includes("accelerat") ?? false,
@@ -159,10 +162,11 @@ export function useBuildDecisionQueue({
           metricType: insight.category,
           trendDirection: (insight.message?.toLowerCase().includes("decline") || insight.message?.toLowerCase().includes("drop")) ? "down" : "stable",
           severity,
-          confidence: insight.confidence_score ?? null,
+          confidence: insight.capped_confidence ?? insight.confidence_score ?? null,
           message: insight.message,
           category: insight.category,
-           sampleSize: undefined,
+          sampleSize: insight.sample_size ?? undefined,
+          calibrationApplied: hasCappedConf,
           datasetId: datasetId,
         });
 
@@ -173,7 +177,7 @@ export function useBuildDecisionQueue({
           title: rec.whatHappened,
           context: insight.message?.slice(0, 160) || "Critical signal detected",
           recommendedAction: rec.recommendedAction,
-          confidence: insight.confidence_score,
+          confidence: insight.capped_confidence ?? insight.confidence_score,
           source: insight.category ? `${insight.category} Diagnostics` : "Diagnostic Engine",
           sourceId: insight.id,
           costOfDelayResult: codResult,
@@ -181,10 +185,10 @@ export function useBuildDecisionQueue({
           riskIfIgnored: codResult.label === "critical" || codResult.label === "high" ? "high" : "medium",
           createdAt: insight.created_at,
           rawConfidence: insight.confidence_score ?? null,
-          cappedConfidence: null,
-          confidenceCapReason: null,
+          cappedConfidence: insight.capped_confidence ?? null,
+          confidenceCapReason: insight.confidence_cap_reason ?? null,
           generatedAt: now,
-          sampleSize: undefined,
+          sampleSize: insight.sample_size ?? undefined,
           sourceDatasetId: datasetId ?? null,
         });
       });
@@ -331,7 +335,7 @@ export function useBuildDecisionQueue({
 
     setDecisions(queue.slice(0, 5));
     setLoading(false);
-  }, [organizationId, criticalInsights, churnRate, revenue, pendingDecisions, calibrationScore, datasetId]);
+  }, [organizationId, highSeverityInsights, churnRate, revenue, pendingDecisions, calibrationScore, datasetId]);
 
   // Debounced effect — 200ms
   useEffect(() => {

@@ -10,6 +10,12 @@ export interface Insight {
   created_at: string;
   confidence_score?: number;
   generation_model?: string;
+  raw_confidence?: number | null;
+  capped_confidence?: number | null;
+  confidence_cap_reason?: string | null;
+  sample_size?: number | null;
+  variance_score?: number | null;
+  data_quality_index?: number | null;
 }
 
 /**
