@@ -119,7 +119,7 @@ const ExecutiveQuickView = memo(({
                 ? ((m.total - m.previousTotal) / Math.abs(m.previousTotal)) * 100
                 : null;
               const changeColor = changePct == null ? "text-muted-foreground"
-                : changePct >= 0 ? "text-emerald-500" : "text-destructive";
+                : changePct >= 0 ? "text-success" : "text-destructive";
               return (
                 <div key={m.metricType} className="space-y-1">
                   <p className="text-xs text-muted-foreground uppercase tracking-wider truncate">{m.metricType}</p>
