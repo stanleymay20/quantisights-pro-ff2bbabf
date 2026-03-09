@@ -48,9 +48,14 @@ serve(async (req) => {
     }
     const userId = claimsData.claims.sub as string;
 
-    const { role_type, organization_id } = await req.json();
+    const { role_type, organization_id, dataset_id } = await req.json();
     if (!role_type || !organization_id) {
       return new Response(JSON.stringify({ error: "role_type and organization_id required" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (!dataset_id) {
+      return new Response(JSON.stringify({ error: "dataset_id required (Active Data Contract)" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
