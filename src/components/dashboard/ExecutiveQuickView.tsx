@@ -30,8 +30,8 @@ const ExecutiveQuickView = memo(({
   const riskLevel = criticalSignals > 3 ? "high" : criticalSignals > 0 ? "medium" : "low";
   const riskConfig = {
     high: { label: "Exposed", color: "text-destructive", bg: "bg-destructive/10", border: "border-destructive/30", icon: AlertTriangle },
-    medium: { label: "Watch", color: "text-amber-500", bg: "bg-amber-500/10", border: "border-amber-500/30", icon: AlertTriangle },
-    low: { label: "Covered", color: "text-emerald-500", bg: "bg-emerald-500/10", border: "border-emerald-500/30", icon: Shield },
+    medium: { label: "Watch", color: "text-warning", bg: "bg-warning/10", border: "border-warning/30", icon: AlertTriangle },
+    low: { label: "Covered", color: "text-success", bg: "bg-success/10", border: "border-success/30", icon: Shield },
   };
   const risk = riskConfig[riskLevel];
   const RiskIcon = risk.icon;
