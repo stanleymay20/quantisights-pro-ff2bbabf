@@ -187,7 +187,7 @@ const RiskDial = ({ score, lastUpdated }: { score: number; lastUpdated?: string 
 const Executive = () => {
   const { user } = useAuth();
   const { currentOrgId } = useOrganization();
-  const { activeDatasetId } = useProject();
+  const { datasetId: activeDatasetId, datasetName: activeDatasetName } = useActiveDataContext();
   const { tier } = useSubscription();
   const { toast } = useToast();
   const navigate = useNavigate();
