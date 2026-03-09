@@ -71,7 +71,7 @@ serve(async (req) => {
     }
 
     // Log the current login
-    const orgId = user.user_metadata?.organization_id;
+    const orgId = (user.user_metadata as any)?.organization_id;
     if (orgId) {
       await supabase.from("audit_log").insert({
         organization_id: orgId,
