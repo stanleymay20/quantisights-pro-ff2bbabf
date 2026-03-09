@@ -140,12 +140,27 @@ export function computeCostOfDelay(input: CostOfDelayInput): CostOfDelayResult {
     estimatedDelayCost = formatCurrency(weeklyImpact, currencySymbol) + "/week";
   } else if (input.revenue && input.revenue > 0 && score >= cfg.labelThresholds.medium) {
     // Revenue-derived exposure estimate — only for medium+ severity
-    // Base exposure rate by metric type (churn=8%, revenue=7%, default=5%)
+    // Tiered base exposure rates by domain (highest-risk categories first)
     const metricLower = (input.affectedMetricType ?? "").toLowerCase();
-    const baseRate = metricLower.includes("churn") || metricLower.includes("retention")
-      ? 0.08
-      : metricLower.includes("revenue") || metricLower.includes("margin")
-      ? 0.07
+    const baseRate =
+      // Tier 1 — 10%: life-safety, regulatory, fraud (existential risk)
+      (metricLower.includes("safety") || metricLower.includes("patient") || metricLower.includes("mortality") ||
+       metricLower.includes("compliance") || metricLower.includes("regulatory") || metricLower.includes("fraud"))
+        ? 0.10
+      // Tier 2 — 8%: operational disruption (high direct cost)
+      : (metricLower.includes("downtime") || metricLower.includes("outage") || metricLower.includes("throughput") ||
+         metricLower.includes("supply chain") || metricLower.includes("churn") || metricLower.includes("retention") ||
+         metricLower.includes("liquidity") || metricLower.includes("defect"))
+        ? 0.08
+      // Tier 3 — 7%: financial performance metrics
+      : (metricLower.includes("revenue") || metricLower.includes("margin") || metricLower.includes("credit") ||
+         metricLower.includes("exposure") || metricLower.includes("energy") || metricLower.includes("emission"))
+        ? 0.07
+      // Tier 4 — 6%: operational efficiency
+      : (metricLower.includes("yield") || metricLower.includes("inventory") || metricLower.includes("occupancy") ||
+         metricLower.includes("enrollment") || metricLower.includes("attrition") || metricLower.includes("vacancy"))
+        ? 0.06
+      // Default — 5%
       : 0.05;
     const weeklyExposure = (input.revenue * baseRate * (score / 100)) / 52;
     estimatedDelayCost = `~${formatCurrency(weeklyExposure, currencySymbol)}/week exposure`;
