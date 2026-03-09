@@ -30,8 +30,8 @@ const ExecutiveQuickView = memo(({
   const riskLevel = criticalSignals > 3 ? "high" : criticalSignals > 0 ? "medium" : "low";
   const riskConfig = {
     high: { label: "Exposed", color: "text-destructive", bg: "bg-destructive/10", border: "border-destructive/30", icon: AlertTriangle },
-    medium: { label: "Watch", color: "text-amber-500", bg: "bg-amber-500/10", border: "border-amber-500/30", icon: AlertTriangle },
-    low: { label: "Covered", color: "text-emerald-500", bg: "bg-emerald-500/10", border: "border-emerald-500/30", icon: Shield },
+    medium: { label: "Watch", color: "text-warning", bg: "bg-warning/10", border: "border-warning/30", icon: AlertTriangle },
+    low: { label: "Covered", color: "text-success", bg: "bg-success/10", border: "border-success/30", icon: Shield },
   };
   const risk = riskConfig[riskLevel];
   const RiskIcon = risk.icon;
@@ -119,7 +119,7 @@ const ExecutiveQuickView = memo(({
                 ? ((m.total - m.previousTotal) / Math.abs(m.previousTotal)) * 100
                 : null;
               const changeColor = changePct == null ? "text-muted-foreground"
-                : changePct >= 0 ? "text-emerald-500" : "text-destructive";
+                : changePct >= 0 ? "text-success" : "text-destructive";
               return (
                 <div key={m.metricType} className="space-y-1">
                   <p className="text-xs text-muted-foreground uppercase tracking-wider truncate">{m.metricType}</p>
@@ -149,7 +149,7 @@ const ExecutiveQuickView = memo(({
                 className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 border border-border/30"
               >
                 <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${
-                  insight.severity === "high" ? "bg-destructive" : "bg-amber-500"
+                  insight.severity === "high" ? "bg-destructive" : "bg-warning"
                 }`} />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium line-clamp-2">{insight.message}</p>

@@ -50,15 +50,22 @@ serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: authError } = await supabase.auth.getClaims(token);
+    if (authError || !claimsData?.claims) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
     }
+    const userId = claimsData.claims.sub as string;
 
-    const { role_type, organization_id } = await req.json();
+    const { role_type, organization_id, dataset_id } = await req.json();
 
     if (!role_type || !organization_id || !ROLE_CONFIGS[role_type]) {
       return new Response(JSON.stringify({ error: "Valid role_type and organization_id required" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (!dataset_id) {
+      return new Response(JSON.stringify({ error: "dataset_id required (Active Data Contract)" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -67,7 +74,7 @@ serve(async (req) => {
     const { data: membership } = await supabase
       .from("organization_members")
       .select("id")
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .eq("organization_id", organization_id)
       .single();
 
@@ -158,7 +165,7 @@ serve(async (req) => {
       supabase.from("kpi_targets").select("kpi_id, target_value, target_date")
         .eq("organization_id", organization_id),
       supabase.from("metrics").select("metric_type, value, date")
-        .eq("organization_id", organization_id).gte("date", ninetyDaysAgo).order("date", { ascending: true }),
+        .eq("organization_id", organization_id).eq("dataset_id", dataset_id).gte("date", ninetyDaysAgo).order("date", { ascending: true }),
     ]);
 
     const kpis = kpisRes.data || [];

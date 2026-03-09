@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOrganization } from "@/hooks/useOrganization";
-import { useProject } from "@/contexts/ProjectContext";
+import { useActiveDataContext } from "@/hooks/useActiveDataContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
 import { SidebarMobileToggle } from "@/components/layout/ProtectedShell";
@@ -187,7 +187,7 @@ const RiskDial = ({ score, lastUpdated }: { score: number; lastUpdated?: string 
 const Executive = () => {
   const { user } = useAuth();
   const { currentOrgId } = useOrganization();
-  const { activeDatasetId } = useProject();
+  const { datasetId: activeDatasetId, datasetName: activeDatasetName } = useActiveDataContext();
   const { tier } = useSubscription();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -279,6 +279,14 @@ const Executive = () => {
 
     setBriefHistory((history as any) || []);
   }, [currentOrgId, activeRole, isGated]);
+
+  // Reset state when dataset changes
+  useEffect(() => {
+    setBrief(null);
+    setRiskIndex(null);
+    setDbAlerts([]);
+    setBriefHistory([]);
+  }, [activeDatasetId]);
 
   useEffect(() => {
     fetchSignalData();
@@ -895,7 +903,7 @@ const Executive = () => {
                   riskScore={riskIndex?.score}
                   tier={tier}
                   datasetId={activeDatasetId ?? undefined}
-                  datasetName={undefined}
+                  datasetName={activeDatasetName}
                 />
               </TabsContent>
 
