@@ -412,6 +412,10 @@ const DecisionQueue = memo(({
                               isHeuristic={rec.confidenceBasis?.isHeuristic}
                             />
                           )}
+                          {identity && (() => {
+                            const alignment = assessMissionAlignment(identity, decision.decisionType ?? "general", rec.recommendedAction);
+                            return <MissionAlignmentBadge score={alignment.score} alignment={alignment.alignment} factors={alignment.factors} />;
+                          })()}
                           {decision.confidenceCapReason && /heuristic/i.test(decision.confidenceCapReason) && (
                             <span className="text-[9px] font-bold text-warning bg-warning/10 px-1.5 py-0.5 rounded uppercase">
                               Heuristic
