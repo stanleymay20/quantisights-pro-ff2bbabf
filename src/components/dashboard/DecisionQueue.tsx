@@ -2,8 +2,10 @@ import { useState, useEffect, useCallback, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Brain, AlertTriangle, TrendingDown, Clock, Sparkles, CheckCircle2, XCircle, Pencil, Loader2, ShieldCheck, FileCheck, Crosshair, Flame, Zap, User, CalendarDays, Target } from "lucide-react";
 import ConfidenceBadge from "@/components/ConfidenceBadge";
+import MissionAlignmentBadge from "./MissionAlignmentBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useOrganizationalIdentity, assessMissionAlignment } from "@/hooks/useOrganizationalIdentity";
 import { useToast } from "@/hooks/use-toast";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import DecisionResponsibilityDialog from "@/components/DecisionResponsibilityDialog";
@@ -108,6 +110,7 @@ const DecisionQueue = memo(({
 }: DecisionQueueProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { identity } = useOrganizationalIdentity(organizationId);
   const { decisions, setDecisions, loading } = useBuildDecisionQueue({
     organizationId,
     insights,
@@ -409,6 +412,10 @@ const DecisionQueue = memo(({
                               isHeuristic={rec.confidenceBasis?.isHeuristic}
                             />
                           )}
+                          {identity && (() => {
+                            const alignment = assessMissionAlignment(identity, decision.type === "advisory" ? "risk_management" : "general", rec.recommendedAction);
+                            return <MissionAlignmentBadge score={alignment.score} alignment={alignment.alignment} factors={alignment.factors} />;
+                          })()}
                           {decision.confidenceCapReason && /heuristic/i.test(decision.confidenceCapReason) && (
                             <span className="text-[9px] font-bold text-warning bg-warning/10 px-1.5 py-0.5 rounded uppercase">
                               Heuristic

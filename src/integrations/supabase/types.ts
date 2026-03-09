@@ -3301,6 +3301,86 @@ export type Database = {
           },
         ]
       }
+      organizational_identity: {
+        Row: {
+          competitive_position: string | null
+          core_values: Json | null
+          created_at: string
+          decision_principles: Json | null
+          decision_speed_preference: string | null
+          ethical_boundaries: Json | null
+          governance_model: string | null
+          id: string
+          industry_context: string | null
+          innovation_posture: string | null
+          key_stakeholders: Json | null
+          market_stage: string | null
+          mission_statement: string | null
+          organization_id: string
+          regulatory_environment: string | null
+          risk_appetite: string | null
+          stakeholder_orientation: string | null
+          strategic_priorities: Json | null
+          updated_at: string
+          updated_by: string | null
+          vision_statement: string | null
+        }
+        Insert: {
+          competitive_position?: string | null
+          core_values?: Json | null
+          created_at?: string
+          decision_principles?: Json | null
+          decision_speed_preference?: string | null
+          ethical_boundaries?: Json | null
+          governance_model?: string | null
+          id?: string
+          industry_context?: string | null
+          innovation_posture?: string | null
+          key_stakeholders?: Json | null
+          market_stage?: string | null
+          mission_statement?: string | null
+          organization_id: string
+          regulatory_environment?: string | null
+          risk_appetite?: string | null
+          stakeholder_orientation?: string | null
+          strategic_priorities?: Json | null
+          updated_at?: string
+          updated_by?: string | null
+          vision_statement?: string | null
+        }
+        Update: {
+          competitive_position?: string | null
+          core_values?: Json | null
+          created_at?: string
+          decision_principles?: Json | null
+          decision_speed_preference?: string | null
+          ethical_boundaries?: Json | null
+          governance_model?: string | null
+          id?: string
+          industry_context?: string | null
+          innovation_posture?: string | null
+          key_stakeholders?: Json | null
+          market_stage?: string | null
+          mission_statement?: string | null
+          organization_id?: string
+          regulatory_environment?: string | null
+          risk_appetite?: string | null
+          stakeholder_orientation?: string | null
+          strategic_priorities?: Json | null
+          updated_at?: string
+          updated_by?: string | null
+          vision_statement?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organizational_identity_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
           ai_raw_text_enabled: boolean

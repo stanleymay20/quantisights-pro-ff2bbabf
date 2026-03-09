@@ -15,8 +15,9 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import {
-  User, Building2, Bell, Save, Loader2, Mail, X, ScrollText, Clock, Shield, Trash2, AlertTriangle, ShieldCheck, Sun, Moon, Monitor, Activity, Lock,
+  User, Building2, Bell, Save, Loader2, Mail, X, ScrollText, Clock, Shield, Trash2, AlertTriangle, ShieldCheck, Sun, Moon, Monitor, Activity, Lock, Compass,
 } from "lucide-react";
+import OrganizationalIdentitySettings from "@/components/settings/OrganizationalIdentitySettings";
 import MFAEnroll from "@/components/auth/MFAEnroll";
 import SecurityPosture from "@/components/security/SecurityPosture";
 import {
@@ -250,11 +251,12 @@ const Settings = () => {
         <main className="flex-1 p-8 overflow-auto">
           <div className="max-w-3xl mx-auto">
             <Tabs defaultValue="profile" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6">
+              <TabsList className="grid w-full grid-cols-4 sm:grid-cols-7">
                 <TabsTrigger value="profile" className="gap-1 text-xs sm:text-sm sm:gap-2"><User className="w-4 h-4 hidden sm:block" /> Profile</TabsTrigger>
                 <TabsTrigger value="appearance" className="gap-1 text-xs sm:text-sm sm:gap-2"><Sun className="w-4 h-4 hidden sm:block" /> Appearance</TabsTrigger>
                 <TabsTrigger value="security" className="gap-1 text-xs sm:text-sm sm:gap-2"><ShieldCheck className="w-4 h-4 hidden sm:block" /> Security</TabsTrigger>
                 <TabsTrigger value="organization" className="gap-1 text-xs sm:text-sm sm:gap-2"><Building2 className="w-4 h-4 hidden sm:block" /> Organization</TabsTrigger>
+                <TabsTrigger value="identity" className="gap-1 text-xs sm:text-sm sm:gap-2"><Compass className="w-4 h-4 hidden sm:block" /> Identity</TabsTrigger>
                 <TabsTrigger value="notifications" className="gap-1 text-xs sm:text-sm sm:gap-2"><Bell className="w-4 h-4 hidden sm:block" /> Notifications</TabsTrigger>
                 <TabsTrigger value="audit" className="gap-1 text-xs sm:text-sm sm:gap-2" onClick={fetchAuditLog}><ScrollText className="w-4 h-4 hidden sm:block" /> Audit</TabsTrigger>
               </TabsList>
@@ -529,6 +531,13 @@ const Settings = () => {
                       )}
                     </CardContent>
                   </Card>
+                </motion.div>
+              </TabsContent>
+
+              {/* Organizational Identity */}
+              <TabsContent value="identity">
+                <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
+                  <OrganizationalIdentitySettings organizationId={currentOrgId} />
                 </motion.div>
               </TabsContent>
             </Tabs>
