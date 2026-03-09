@@ -76,7 +76,7 @@ serve(async (req) => {
 
     // Verify membership
     const { data: isMember } = await serviceClient.rpc("is_org_member", {
-      _user_id: user.id,
+      _user_id: userId,
       _org_id: kpi.organization_id,
     });
     if (!isMember) {
