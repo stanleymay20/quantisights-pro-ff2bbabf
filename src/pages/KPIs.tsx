@@ -127,6 +127,14 @@ const KPIs = () => {
     setLoading(false);
   }, [currentOrgId, activeDatasetId]);
 
+  // Reset selection when dataset changes
+  useEffect(() => {
+    setSelectedKpi(null);
+    setKpiValues([]);
+    setKpiTargets([]);
+    setAnalysis(null);
+  }, [activeDatasetId]);
+
   useEffect(() => { fetchKpis(); }, [fetchKpis]);
 
   const fetchKpiData = useCallback(async (kpiId: string) => {
@@ -192,7 +200,7 @@ const KPIs = () => {
     setComputing(true);
     try {
       const { data, error } = await supabase.functions.invoke("compute-kpi", {
-        body: { kpi_id: kpiId, dataset_id: activeDatasetId },
+        body: { kpi_id: kpiId, dataset_id: activeDatasetId, organization_id: currentOrgId },
       });
       if (error) throw error;
       if (data?.error) {
@@ -218,7 +226,7 @@ const KPIs = () => {
     setAnalyzing(true);
     try {
       const { data, error } = await supabase.functions.invoke("ai-kpi-analysis", {
-        body: { kpi_id: kpiId, dataset_id: activeDatasetId },
+        body: { kpi_id: kpiId, dataset_id: activeDatasetId, organization_id: currentOrgId },
       });
       if (error) throw error;
       if (data?.error) {
