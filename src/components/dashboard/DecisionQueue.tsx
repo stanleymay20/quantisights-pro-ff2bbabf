@@ -413,7 +413,7 @@ const DecisionQueue = memo(({
                             />
                           )}
                           {identity && (() => {
-                            const alignment = assessMissionAlignment(identity, decision.decisionType ?? "general", rec.recommendedAction);
+                            const alignment = assessMissionAlignment(identity, decision.type === "advisory" ? "risk_management" : "general", rec.recommendedAction);
                             return <MissionAlignmentBadge score={alignment.score} alignment={alignment.alignment} factors={alignment.factors} />;
                           })()}
                           {decision.confidenceCapReason && /heuristic/i.test(decision.confidenceCapReason) && (
