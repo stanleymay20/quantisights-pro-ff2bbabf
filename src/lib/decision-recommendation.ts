@@ -74,8 +74,46 @@ export interface StructuredRecommendation {
 }
 
 // Ordered longest-first to prevent partial matches (e.g. "cost_of_revenue" matching "cost" before "revenue")
+// Ordered longest-first to prevent partial matches
 const OWNER_MAP: [string, string][] = [
+  // Multi-word keys first
   ["cost_of_revenue", "VP Revenue / CRO"],
+  ["supply chain", "VP Supply Chain / CPO"],
+  // Safety / Healthcare / Life Sciences
+  ["mortality", "CMO / Chief Patient Safety Officer"],
+  ["patient", "CMO / Chief Patient Safety Officer"],
+  ["clinical", "CMO / VP Clinical Operations"],
+  ["readmission", "CMO / VP Clinical Quality"],
+  ["safety", "VP EHS / Chief Safety Officer"],
+  // Regulatory / Compliance
+  ["compliance", "CCO / Chief Compliance Officer"],
+  ["regulatory", "CCO / VP Regulatory Affairs"],
+  ["audit", "VP Internal Audit / CCO"],
+  // Financial Services / Risk
+  ["fraud", "CRO / VP Fraud Prevention"],
+  ["liquidity", "CFO / VP Treasury"],
+  ["exposure", "CRO / VP Risk Management"],
+  ["credit", "CRO / VP Credit Risk"],
+  // Industrial / Manufacturing
+  ["downtime", "VP Operations / Plant Manager"],
+  ["outage", "VP Operations / Grid Manager"],
+  ["defect", "VP Quality / Six Sigma Lead"],
+  ["throughput", "VP Operations / Plant Manager"],
+  ["yield", "VP Manufacturing / Process Engineering Lead"],
+  // Energy / Utilities
+  ["emission", "VP Sustainability / Chief Sustainability Officer"],
+  ["energy", "VP Energy Management / Facilities Director"],
+  // Supply Chain / Logistics
+  ["inventory", "VP Supply Chain / Inventory Manager"],
+  ["logistics", "VP Supply Chain / Logistics Director"],
+  ["procurement", "VP Procurement / CPO"],
+  // Education / Public Sector
+  ["enrollment", "VP Enrollment Management / Registrar"],
+  ["attrition", "VP Student Success / CHRO"],
+  // Hospitality / Real Estate
+  ["occupancy", "VP Revenue Management / Asset Manager"],
+  ["vacancy", "VP Leasing / Asset Manager"],
+  // SaaS / Subscription (original)
   ["calibration", "Decision Governance Lead"],
   ["operational", "COO / VP Operations"],
   ["strategic", "CEO / Strategy Lead"],
