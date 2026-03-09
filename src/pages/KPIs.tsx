@@ -271,10 +271,23 @@ const KPIs = () => {
 
   const selectedKpiObj = kpis.find(k => k.id === selectedKpi);
 
+  // Inverse metrics where "up" is bad
+  const INVERSE_METRICS = ["cost", "churn", "expense", "debt", "loss", "attrition", "turnover"];
+  const isInverseKpi = selectedKpiObj
+    ? (selectedKpiObj.metric_dependencies as string[]).some(d => INVERSE_METRICS.some(inv => d.toLowerCase().includes(inv)))
+    : false;
+
   const trendIcon = (trend?: string) => {
-    if (trend === "up") return <TrendingUp className="w-4 h-4 text-success" />;
-    if (trend === "down") return <TrendingDown className="w-4 h-4 text-destructive" />;
+    const isPositive = trend === "up" ? !isInverseKpi : isInverseKpi;
+    if (trend === "up") return <TrendingUp className={`w-4 h-4 ${isPositive ? "text-success" : "text-destructive"}`} />;
+    if (trend === "down") return <TrendingDown className={`w-4 h-4 ${isPositive ? "text-success" : "text-destructive"}`} />;
     return <Minus className="w-4 h-4 text-muted-foreground" />;
+  };
+
+  const trendColor = (trend?: string) => {
+    if (!trend || trend === "stable") return "text-muted-foreground";
+    const isPositive = trend === "up" ? !isInverseKpi : isInverseKpi;
+    return isPositive ? "text-success" : "text-destructive";
   };
 
   const riskBadge = (level?: string) => {
