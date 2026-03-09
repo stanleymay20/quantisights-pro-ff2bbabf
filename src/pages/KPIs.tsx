@@ -226,7 +226,7 @@ const KPIs = () => {
     setAnalyzing(true);
     try {
       const { data, error } = await supabase.functions.invoke("ai-kpi-analysis", {
-        body: { kpi_id: kpiId, dataset_id: activeDatasetId },
+        body: { kpi_id: kpiId, dataset_id: activeDatasetId, organization_id: currentOrgId },
       });
       if (error) throw error;
       if (data?.error) {
