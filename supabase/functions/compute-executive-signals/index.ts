@@ -91,7 +91,7 @@ serve(async (req) => {
       });
     }
 
-    // Fetch KPIs
+    // Fetch KPIs — note: KPIs are org-scoped but we filter values by dataset context
     const { data: kpis } = await supabase
       .from("kpis")
       .select("id, name, formula, metric_dependencies")

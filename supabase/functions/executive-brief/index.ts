@@ -165,7 +165,7 @@ serve(async (req) => {
       supabase.from("kpi_targets").select("kpi_id, target_value, target_date")
         .eq("organization_id", organization_id),
       supabase.from("metrics").select("metric_type, value, date")
-        .eq("organization_id", organization_id).gte("date", ninetyDaysAgo).order("date", { ascending: true }),
+        .eq("organization_id", organization_id).eq("dataset_id", dataset_id).gte("date", ninetyDaysAgo).order("date", { ascending: true }),
     ]);
 
     const kpis = kpisRes.data || [];
