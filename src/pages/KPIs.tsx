@@ -256,7 +256,8 @@ const KPIs = () => {
   };
 
   const handleDelete = async (kpiId: string) => {
-    const { error } = await supabase.from("kpis").update({ status: "archived" }).eq("id", kpiId);
+    if (!currentOrgId) return;
+    const { error } = await supabase.from("kpis").update({ status: "archived" }).eq("id", kpiId).eq("organization_id", currentOrgId);
     if (!error) {
       toast({ title: "KPI archived" });
       if (selectedKpi === kpiId) setSelectedKpi(null);
