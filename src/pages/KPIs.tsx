@@ -127,6 +127,14 @@ const KPIs = () => {
     setLoading(false);
   }, [currentOrgId, activeDatasetId]);
 
+  // Reset selection when dataset changes
+  useEffect(() => {
+    setSelectedKpi(null);
+    setKpiValues([]);
+    setKpiTargets([]);
+    setAnalysis(null);
+  }, [activeDatasetId]);
+
   useEffect(() => { fetchKpis(); }, [fetchKpis]);
 
   const fetchKpiData = useCallback(async (kpiId: string) => {
