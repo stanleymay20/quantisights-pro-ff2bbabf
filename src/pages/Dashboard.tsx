@@ -202,8 +202,8 @@ const Dashboard = () => {
                   ) : (
                     criticalInsights.slice(0, 5).map((insight, i) => (
                       <div key={i} className="px-3 py-2.5 border-b border-border/10 last:border-0 hover:bg-muted/40 transition-colors">
-                        <p className="text-xs font-medium truncate">{insight.title}</p>
-                        <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{insight.description}</p>
+                        <p className="text-xs font-medium truncate">{insight.category || "Alert"}</p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{insight.message}</p>
                       </div>
                     ))
                   )}
