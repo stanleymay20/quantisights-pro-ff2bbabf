@@ -183,18 +183,64 @@ const Dashboard = () => {
                 </button>
               </>
             )}
-            <button className="p-2 rounded-lg hover:bg-secondary/60 transition-colors relative" aria-label="Notifications">
-              <Bell className="w-4 h-4 text-muted-foreground" />
-              {hasAnomalies && (
-                <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-destructive" />
-              )}
-            </button>
-            <div className="hidden sm:flex items-center gap-2 ml-1 pl-2.5 border-l border-border/30">
-              <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
-                <User className="w-3.5 h-3.5 text-primary" />
-              </div>
-              <span className="text-[13px] font-medium">{displayName}</span>
-            </div>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className="p-2 rounded-lg hover:bg-secondary/60 transition-colors relative" aria-label="Notifications">
+                  <Bell className="w-4 h-4 text-muted-foreground" />
+                  {hasAnomalies && (
+                    <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-destructive animate-pulse" />
+                  )}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-80 p-0">
+                <div className="p-3 border-b border-border/30">
+                  <h4 className="text-sm font-semibold">Notifications</h4>
+                </div>
+                <div className="max-h-64 overflow-y-auto">
+                  {criticalInsights.length === 0 ? (
+                    <p className="p-4 text-sm text-muted-foreground text-center">No active alerts</p>
+                  ) : (
+                    criticalInsights.slice(0, 5).map((insight, i) => (
+                      <div key={i} className="px-3 py-2.5 border-b border-border/10 last:border-0 hover:bg-muted/40 transition-colors">
+                        <p className="text-xs font-medium truncate">{insight.title}</p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{insight.description}</p>
+                      </div>
+                    ))
+                  )}
+                </div>
+                {criticalInsights.length > 0 && (
+                  <button onClick={() => navigate("/diagnostics")} className="w-full p-2.5 text-xs text-primary hover:bg-muted/40 border-t border-border/30 transition-colors">
+                    View all diagnostics
+                  </button>
+                )}
+              </PopoverContent>
+            </Popover>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="hidden sm:flex items-center gap-2 ml-1 pl-2.5 border-l border-border/30 hover:bg-secondary/40 rounded-lg px-2 py-1 transition-colors">
+                  <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
+                    <User className="w-3.5 h-3.5 text-primary" />
+                  </div>
+                  <span className="text-[13px] font-medium">{displayName}</span>
+                  <ChevronDown className="w-3 h-3 text-muted-foreground" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem onClick={() => navigate("/settings")}>
+                  <Settings className="w-4 h-4 mr-2" /> Settings
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/billing")}>
+                  <CreditCard className="w-4 h-4 mr-2" /> Billing
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/team")}>
+                  <Users className="w-4 h-4 mr-2" /> Team
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => signOut()} className="text-destructive focus:text-destructive">
+                  <LogOut className="w-4 h-4 mr-2" /> Sign out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </header>
 
