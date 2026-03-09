@@ -26,7 +26,7 @@ import WelcomeFlow from "@/components/dashboard/WelcomeFlow";
 const VIEW_STORAGE_KEY = "quantivis_dashboard_view";
 
 const Dashboard = () => {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const { organizations, currentOrgId, currentOrg, switchOrganization, loading: orgLoading } = useOrganization();
   const { currentProject, activeDatasetId } = useProject();
   const {
