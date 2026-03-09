@@ -36,13 +36,15 @@ serve(async (req) => {
     });
     const serviceClient = createClient(supabaseUrl, serviceKey);
 
-    const { data: { user }, error: userError } = await userClient.auth.getUser();
-    if (userError || !user) {
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await userClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    const userId = claimsData.claims.sub as string;
 
     const { kpi_id, dataset_id } = await req.json();
     if (!kpi_id) {
@@ -74,7 +76,7 @@ serve(async (req) => {
 
     // Verify membership
     const { data: isMember } = await serviceClient.rpc("is_org_member", {
-      _user_id: user.id,
+      _user_id: userId,
       _org_id: kpi.organization_id,
     });
     if (!isMember) {
@@ -120,6 +122,7 @@ serve(async (req) => {
       .from("kpi_values")
       .select("date, value")
       .eq("kpi_id", kpi_id)
+      .eq("organization_id", kpi.organization_id)
       .order("date", { ascending: true })
       .limit(365);
 
@@ -135,6 +138,7 @@ serve(async (req) => {
       .from("kpi_targets")
       .select("target_value, target_date")
       .eq("kpi_id", kpi_id)
+      .eq("organization_id", kpi.organization_id)
       .order("target_date", { ascending: true });
 
     // Build AI prompt
