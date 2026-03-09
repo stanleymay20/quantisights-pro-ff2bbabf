@@ -369,7 +369,60 @@ export function generateRecommendation(input: RecommendationInput): StructuredRe
 function inferSuccessMetrics(category: string, metricType: string): string[] {
   const key = [category, metricType].filter(Boolean).join(" ").toLowerCase();
 
-  if (key.includes("churn") || key.includes("retention")) {
+  // Healthcare / Life Sciences
+  if (key.includes("mortality") || key.includes("patient")) {
+    return ["Patient outcome improvement rate", "Adverse event reduction", "Readmission rate delta"];
+  } else if (key.includes("clinical")) {
+    return ["Clinical efficacy measure", "Treatment adherence rate", "Patient safety incident reduction"];
+  } else if (key.includes("readmission")) {
+    return ["30-day readmission rate", "Post-discharge follow-up compliance", "Patient satisfaction score"];
+  }
+  // Safety
+  else if (key.includes("safety")) {
+    return ["TRIR (Total Recordable Incident Rate)", "Lost time injury frequency", "Near-miss reporting rate"];
+  }
+  // Regulatory / Compliance
+  else if (key.includes("compliance") || key.includes("regulatory")) {
+    return ["Compliance gap closure rate", "Audit finding remediation time", "Regulatory submission success rate"];
+  } else if (key.includes("audit")) {
+    return ["Audit finding count (trend)", "Remediation completion rate", "Control effectiveness score"];
+  }
+  // Financial Services / Risk
+  else if (key.includes("fraud")) {
+    return ["Fraud detection rate", "False positive reduction", "Mean time to detection (MTTD)"];
+  } else if (key.includes("liquidity")) {
+    return ["Liquidity coverage ratio", "Cash conversion cycle", "Days payable/receivable outstanding"];
+  } else if (key.includes("exposure") || key.includes("credit")) {
+    return ["Value-at-Risk (VaR) delta", "Expected loss reduction", "Risk-adjusted return improvement"];
+  }
+  // Industrial / Manufacturing
+  else if (key.includes("downtime") || key.includes("outage")) {
+    return ["MTTR (Mean Time To Repair)", "MTBF (Mean Time Between Failures)", "Availability % improvement"];
+  } else if (key.includes("defect")) {
+    return ["Defect rate (PPM) reduction", "First-pass yield improvement", "Cost of poor quality (COPQ) delta"];
+  } else if (key.includes("yield") || key.includes("throughput")) {
+    return ["Overall Equipment Effectiveness (OEE)", "Throughput rate improvement", "Cycle time reduction"];
+  }
+  // Supply Chain / Logistics
+  else if (key.includes("supply chain") || key.includes("inventory") || key.includes("logistics")) {
+    return ["Inventory turnover ratio", "Order fulfillment rate", "Supply chain cycle time"];
+  } else if (key.includes("procurement")) {
+    return ["Cost savings vs. baseline", "Supplier lead time reduction", "Purchase order cycle time"];
+  }
+  // Energy / Sustainability
+  else if (key.includes("emission") || key.includes("energy")) {
+    return ["Carbon intensity reduction (tCO2e/unit)", "Energy efficiency improvement", "Sustainability target progress"];
+  }
+  // Education / Public Sector
+  else if (key.includes("enrollment") || key.includes("attrition")) {
+    return ["Retention/enrollment rate improvement", "Engagement score delta", "Time-to-completion improvement"];
+  }
+  // Hospitality / Real Estate
+  else if (key.includes("occupancy") || key.includes("vacancy")) {
+    return ["Occupancy rate improvement", "RevPAR / Revenue per unit", "Average lease-up velocity"];
+  }
+  // SaaS / Subscription (original)
+  else if (key.includes("churn") || key.includes("retention")) {
     return ["Monthly churn rate (% change)", "At-risk cohort size reduction", "NPS / CSAT delta"];
   } else if (key.includes("revenue")) {
     return ["MRR / ARR recovery trajectory", "Revenue variance vs. plan", "Pipeline conversion rate"];
@@ -383,7 +436,7 @@ function inferSuccessMetrics(category: string, metricType: string): string[] {
     return ["Calibration score improvement", "Brier score reduction", "Pending outcomes closed"];
   }
 
-  // Domain-agnostic fallback: derive from the metric type itself
+  // Domain-agnostic fallback
   const metricLabel = metricType?.replace(/_/g, " ") || category?.replace(/_/g, " ") || "primary metric";
   return [
     `${metricLabel} trend direction (period-over-period)`,
