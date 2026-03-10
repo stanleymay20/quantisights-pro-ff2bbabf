@@ -127,8 +127,9 @@ export function useBuildDecisionQueue({
         confidence: (adv.capped_confidence ?? adv.confidence) as number | null,
         priorAdvisoryAction: adv.action,
         message: adv.title,
-        sampleSize: undefined, // advisories don't carry sample_size directly
+        sampleSize: undefined,
         datasetId: adv.dataset_id ?? datasetId,
+        orgIdentity: orgIdentityContext,
       });
 
       queue.push({
