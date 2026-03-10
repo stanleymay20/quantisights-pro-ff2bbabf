@@ -44,6 +44,15 @@ export interface RecommendationInput {
   datasetName?: string;
   /** Row count used */
   dataRowsUsed?: number;
+  /** Organizational identity context for mission-aware recommendations */
+  orgIdentity?: {
+    riskAppetite?: string;
+    decisionSpeedPreference?: string;
+    governanceModel?: string;
+    stakeholderOrientation?: string;
+    marketStage?: string;
+    strategicPriorities?: string[];
+  } | null;
 }
 
 export interface ClassifiedSection {
