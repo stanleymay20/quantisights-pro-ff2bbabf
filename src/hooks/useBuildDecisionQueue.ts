@@ -330,7 +330,58 @@ export function useBuildDecisionQueue({
       });
     }
 
+    // --- Mission alignment scoring ---
+    if (identity) {
+      for (const item of queue) {
+        const decisionType = item.type === "advisory" ? "risk_management" :
+          item.type === "proactive" ? (item.id.includes("churn") ? "retention_strategy" : "calibration") :
+          "general";
+        const alignment = assessMissionAlignment(identity, decisionType, item.recommendation.recommendedAction);
+        const ethicalConflict = alignment.factors.some(f => f.startsWith("⚠"));
+        item.missionAlignment = { ...alignment, ethicalConflict };
+
+        // Boost CoD score for strongly aligned decisions (org priorities match)
+        if (alignment.score >= 75) {
+          item.costOfDelayResult = {
+            ...item.costOfDelayResult,
+            score: Math.min(100, item.costOfDelayResult.score + 8),
+            reason: item.costOfDelayResult.reason + " · strong mission alignment",
+          };
+        }
+
+        // Demote misaligned decisions & flag ethical conflicts
+        if (alignment.score < 25 || ethicalConflict) {
+          item.costOfDelayResult = {
+            ...item.costOfDelayResult,
+            score: Math.max(0, item.costOfDelayResult.score - 10),
+            reason: item.costOfDelayResult.reason + (ethicalConflict ? " · ⚠ ethical boundary conflict" : " · weak mission alignment"),
+          };
+        }
+
+        // Adjust urgency based on risk appetite alignment
+        if (identity.risk_appetite === "conservative" && item.urgency === "medium" && alignment.score >= 60) {
+          // Conservative orgs should pay more attention to moderate risks that align with their mission
+          item.costOfDelayResult = {
+            ...item.costOfDelayResult,
+            score: Math.min(100, item.costOfDelayResult.score + 5),
+          };
+        }
+        if (identity.decision_speed_preference === "rapid" || identity.decision_speed_preference === "agile") {
+          // Reduce action window for fast-moving orgs
+          item.costOfDelayResult = {
+            ...item.costOfDelayResult,
+            recommendedActionWindowDays: Math.max(1, item.costOfDelayResult.recommendedActionWindowDays - 2),
+          };
+        }
+      }
+    }
+
     queue.sort((a, b) => {
+      // Ethical conflicts always sort last (flag, don't auto-act)
+      const aEthical = a.missionAlignment?.ethicalConflict ? 1 : 0;
+      const bEthical = b.missionAlignment?.ethicalConflict ? 1 : 0;
+      if (aEthical !== bEthical) return aEthical - bEthical;
+
       if (b.costOfDelayResult.score !== a.costOfDelayResult.score) {
         return b.costOfDelayResult.score - a.costOfDelayResult.score;
       }
@@ -340,7 +391,7 @@ export function useBuildDecisionQueue({
 
     setDecisions(queue.slice(0, 5));
     setLoading(false);
-  }, [organizationId, highSeverityInsights, churnRate, revenue, pendingDecisions, calibrationScore, datasetId]);
+  }, [organizationId, highSeverityInsights, churnRate, revenue, pendingDecisions, calibrationScore, datasetId, identity]);
 
   // Debounced effect — 200ms
   useEffect(() => {
