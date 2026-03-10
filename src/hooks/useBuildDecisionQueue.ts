@@ -186,6 +186,7 @@ export function useBuildDecisionQueue({
           sampleSize: insight.sample_size ?? undefined,
           calibrationApplied: hasCappedConf,
           datasetId: datasetId,
+          orgIdentity: orgIdentityContext,
         });
 
         queue.push({
