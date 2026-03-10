@@ -119,6 +119,7 @@ const DecisionQueue = memo(({
     pendingDecisions,
     calibrationScore,
     datasetId,
+    identity,
   });
   const [actingOn, setActingOn] = useState<string | null>(null);
   const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
