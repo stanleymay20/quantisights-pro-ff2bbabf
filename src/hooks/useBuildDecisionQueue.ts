@@ -54,6 +54,7 @@ export function useBuildDecisionQueue({
   pendingDecisions,
   calibrationScore,
   datasetId,
+  identity,
 }: UseBuildDecisionQueueArgs) {
   const [decisions, setDecisions] = useState<EnrichedDecision[]>([]);
   const [loading, setLoading] = useState(true);
