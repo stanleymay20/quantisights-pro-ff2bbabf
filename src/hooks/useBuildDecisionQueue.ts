@@ -27,6 +27,8 @@ export interface EnrichedDecision {
   sampleSize?: number;
   /** Dataset this decision originated from (for ledger provenance) */
   sourceDatasetId?: string | null;
+  /** Mission alignment scoring (computed if org identity exists) */
+  missionAlignment?: { score: number; alignment: string; factors: string[]; ethicalConflict: boolean } | null;
 }
 
 interface UseBuildDecisionQueueArgs {
