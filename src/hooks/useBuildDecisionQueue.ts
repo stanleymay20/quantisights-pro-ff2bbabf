@@ -408,7 +408,7 @@ export function useBuildDecisionQueue({
 
     setDecisions(queue.slice(0, 5));
     setLoading(false);
-  }, [organizationId, highSeverityInsights, churnRate, revenue, pendingDecisions, calibrationScore, datasetId, identity]);
+  }, [organizationId, highSeverityInsights, churnRate, revenue, pendingDecisions, calibrationScore, datasetId, identity, orgIdentityContext]);
 
   // Debounced effect — 200ms
   useEffect(() => {
