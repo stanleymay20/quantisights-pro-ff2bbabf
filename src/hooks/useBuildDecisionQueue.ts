@@ -39,6 +39,7 @@ interface UseBuildDecisionQueueArgs {
   pendingDecisions: number;
   calibrationScore: number | null;
   datasetId?: string;
+  identity?: OrganizationalIdentity | null;
 }
 
 function ageDays(createdAt: string): number {
