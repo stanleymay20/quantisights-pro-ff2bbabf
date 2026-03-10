@@ -413,7 +413,15 @@ const DecisionQueue = memo(({
                               isHeuristic={rec.confidenceBasis?.isHeuristic}
                             />
                           )}
-                          {identity && (() => {
+                          {decision.missionAlignment && (
+                            <MissionAlignmentBadge
+                              score={decision.missionAlignment.score}
+                              alignment={decision.missionAlignment.alignment}
+                              factors={decision.missionAlignment.factors}
+                              ethicalConflict={decision.missionAlignment.ethicalConflict}
+                            />
+                          )}
+                          {!decision.missionAlignment && identity && (() => {
                             const alignment = assessMissionAlignment(identity, decision.type === "advisory" ? "risk_management" : "general", rec.recommendedAction);
                             return <MissionAlignmentBadge score={alignment.score} alignment={alignment.alignment} factors={alignment.factors} />;
                           })()}
