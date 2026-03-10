@@ -192,14 +192,26 @@ export function assessMissionAlignment(
 
   // Risk appetite alignment
   const riskMap: Record<string, string[]> = {
-    conservative: ["risk_management", "cost_optimization", "retention_strategy"],
-    moderate: ["operational_efficiency", "retention_strategy", "pricing_strategy"],
-    aggressive: ["growth_strategy", "market_expansion", "investment_decision"],
-    visionary: ["market_expansion", "growth_strategy", "investment_decision"],
+    conservative: ["risk_management", "cost_optimization", "retention_strategy", "compliance", "safety"],
+    moderate: ["operational_efficiency", "retention_strategy", "pricing_strategy", "cost_optimization"],
+    aggressive: ["growth_strategy", "market_expansion", "investment_decision", "innovation"],
+    visionary: ["market_expansion", "growth_strategy", "investment_decision", "innovation", "disruption"],
   };
   if (riskMap[identity.risk_appetite]?.includes(decisionType)) {
     score += 15;
     factors.push(`Aligns with ${identity.risk_appetite} risk appetite`);
+  }
+
+  // Anti-alignment: conservative org seeing aggressive decisions, or vice versa
+  const aggressiveTypes = ["market_expansion", "growth_strategy", "investment_decision", "disruption"];
+  const conservativeTypes = ["risk_management", "cost_optimization", "compliance", "safety"];
+  if (identity.risk_appetite === "conservative" && aggressiveTypes.includes(decisionType)) {
+    score -= 10;
+    factors.push("Aggressive decision type conflicts with conservative risk appetite");
+  }
+  if ((identity.risk_appetite === "aggressive" || identity.risk_appetite === "visionary") && conservativeTypes.includes(decisionType)) {
+    score -= 5;
+    factors.push("Conservative decision type may underserve aggressive growth posture");
   }
 
   // Innovation posture alignment
@@ -210,9 +222,44 @@ export function assessMissionAlignment(
     score += 10;
     factors.push(`Matches ${identity.innovation_posture} innovation posture`);
   }
+  if (identity.innovation_posture === "defender" && aggressiveTypes.includes(decisionType)) {
+    score -= 8;
+    factors.push("Defender posture may resist aggressive expansion");
+  }
+
+  // Stakeholder orientation alignment
+  const recLower = recommendation.toLowerCase();
+  if (identity.stakeholder_orientation === "community" || identity.stakeholder_orientation === "stakeholder") {
+    if (recLower.includes("community") || recLower.includes("social") || recLower.includes("sustainability") || recLower.includes("employee")) {
+      score += 8;
+      factors.push(`Supports ${identity.stakeholder_orientation} stakeholder orientation`);
+    }
+    if (recLower.includes("cost cutting") || recLower.includes("layoff") || recLower.includes("downsize")) {
+      score -= 10;
+      factors.push(`⚠ Action conflicts with ${identity.stakeholder_orientation} orientation`);
+    }
+  }
+
+  // Market stage alignment
+  const stageDecisionFit: Record<string, string[]> = {
+    startup: ["growth_strategy", "market_expansion", "innovation", "investment_decision"],
+    growth: ["growth_strategy", "market_expansion", "operational_efficiency", "retention_strategy"],
+    mature: ["cost_optimization", "operational_efficiency", "retention_strategy", "risk_management"],
+    turnaround: ["cost_optimization", "risk_management", "retention_strategy"],
+    decline: ["cost_optimization", "risk_management", "retention_strategy"],
+  };
+  if (stageDecisionFit[identity.market_stage]?.includes(decisionType)) {
+    score += 8;
+    factors.push(`Fits ${identity.market_stage} market stage priorities`);
+  }
+
+  // Governance model — consensus orgs need more time for group decisions
+  if (identity.governance_model === "consensus" && recLower.includes("immediate")) {
+    score -= 5;
+    factors.push("Consensus governance may slow immediate action recommendations");
+  }
 
   // Values alignment — check if recommendation text mentions any core values
-  const recLower = recommendation.toLowerCase();
   for (const value of identity.core_values) {
     if (recLower.includes(value.toLowerCase())) {
       score += 5;
@@ -228,7 +275,7 @@ export function assessMissionAlignment(
     }
   }
 
-  // Ethical boundaries check
+  // Ethical boundaries check — CRITICAL: these are hard flags
   for (const boundary of identity.ethical_boundaries) {
     if (recLower.includes(boundary.toLowerCase())) {
       score -= 20;
@@ -241,6 +288,24 @@ export function assessMissionAlignment(
     if (recLower.includes(principle.toLowerCase())) {
       score += 5;
       factors.push(`Upholds decision principle: ${principle}`);
+    }
+  }
+
+  // Vision/mission keyword alignment
+  if (identity.vision_statement) {
+    const visionWords = identity.vision_statement.toLowerCase().split(/\s+/).filter(w => w.length > 5);
+    const matchedVision = visionWords.filter(w => recLower.includes(w));
+    if (matchedVision.length >= 2) {
+      score += 7;
+      factors.push("Aligns with organizational vision themes");
+    }
+  }
+  if (identity.mission_statement) {
+    const missionWords = identity.mission_statement.toLowerCase().split(/\s+/).filter(w => w.length > 5);
+    const matchedMission = missionWords.filter(w => recLower.includes(w));
+    if (matchedMission.length >= 2) {
+      score += 7;
+      factors.push("Aligns with organizational mission themes");
     }
   }
 

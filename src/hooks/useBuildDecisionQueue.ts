@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { computeCostOfDelay, type CostOfDelayResult, type CostOfDelayInput } from "@/lib/cost-of-delay";
 import { generateRecommendation, type StructuredRecommendation } from "@/lib/decision-recommendation";
 import type { Insight } from "@/hooks/useInsights";
+import { assessMissionAlignment, type OrganizationalIdentity } from "@/hooks/useOrganizationalIdentity";
 
 export interface EnrichedDecision {
   id: string;
@@ -26,6 +27,8 @@ export interface EnrichedDecision {
   sampleSize?: number;
   /** Dataset this decision originated from (for ledger provenance) */
   sourceDatasetId?: string | null;
+  /** Mission alignment scoring (computed if org identity exists) */
+  missionAlignment?: { score: number; alignment: string; factors: string[]; ethicalConflict: boolean } | null;
 }
 
 interface UseBuildDecisionQueueArgs {
@@ -36,6 +39,7 @@ interface UseBuildDecisionQueueArgs {
   pendingDecisions: number;
   calibrationScore: number | null;
   datasetId?: string;
+  identity?: OrganizationalIdentity | null;
 }
 
 function ageDays(createdAt: string): number {
@@ -50,6 +54,7 @@ export function useBuildDecisionQueue({
   pendingDecisions,
   calibrationScore,
   datasetId,
+  identity,
 }: UseBuildDecisionQueueArgs) {
   const [decisions, setDecisions] = useState<EnrichedDecision[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,6 +66,18 @@ export function useBuildDecisionQueue({
     () => insights.filter(i => i.severity === "high" || i.severity === "critical"),
     [insights]
   );
+
+  const orgIdentityContext = useMemo(() => {
+    if (!identity) return undefined;
+    return {
+      riskAppetite: identity.risk_appetite,
+      decisionSpeedPreference: identity.decision_speed_preference,
+      governanceModel: identity.governance_model,
+      stakeholderOrientation: identity.stakeholder_orientation,
+      marketStage: identity.market_stage,
+      strategicPriorities: identity.strategic_priorities,
+    };
+  }, [identity]);
 
   const buildQueue = useCallback(async () => {
     if (!organizationId) return;
@@ -110,8 +127,9 @@ export function useBuildDecisionQueue({
         confidence: (adv.capped_confidence ?? adv.confidence) as number | null,
         priorAdvisoryAction: adv.action,
         message: adv.title,
-        sampleSize: undefined, // advisories don't carry sample_size directly
+        sampleSize: undefined,
         datasetId: adv.dataset_id ?? datasetId,
+        orgIdentity: orgIdentityContext,
       });
 
       queue.push({
@@ -168,6 +186,7 @@ export function useBuildDecisionQueue({
           sampleSize: insight.sample_size ?? undefined,
           calibrationApplied: hasCappedConf,
           datasetId: datasetId,
+          orgIdentity: orgIdentityContext,
         });
 
         queue.push({
@@ -221,6 +240,7 @@ export function useBuildDecisionQueue({
           message: dec.recommended_action,
           category: dec.decision_type,
           sampleSize: 0,
+          orgIdentity: orgIdentityContext,
         });
 
         queue.push({
@@ -265,6 +285,7 @@ export function useBuildDecisionQueue({
         confidence: heuristicConf,
         category: "retention",
         sampleSize: 0,
+        orgIdentity: orgIdentityContext,
       });
 
       queue.push({
@@ -304,6 +325,7 @@ export function useBuildDecisionQueue({
         confidence: calibrationScore,
         message: `Calibration at ${calibrationScore}% — ${65 - calibrationScore}pp below governance threshold`,
         sampleSize: 0,
+        orgIdentity: orgIdentityContext,
       });
 
       queue.push({
@@ -325,7 +347,58 @@ export function useBuildDecisionQueue({
       });
     }
 
+    // --- Mission alignment scoring ---
+    if (identity) {
+      for (const item of queue) {
+        const decisionType = item.type === "advisory" ? "risk_management" :
+          item.type === "proactive" ? (item.id.includes("churn") ? "retention_strategy" : "calibration") :
+          "general";
+        const alignment = assessMissionAlignment(identity, decisionType, item.recommendation.recommendedAction);
+        const ethicalConflict = alignment.factors.some(f => f.startsWith("⚠"));
+        item.missionAlignment = { ...alignment, ethicalConflict };
+
+        // Boost CoD score for strongly aligned decisions (org priorities match)
+        if (alignment.score >= 75) {
+          item.costOfDelayResult = {
+            ...item.costOfDelayResult,
+            score: Math.min(100, item.costOfDelayResult.score + 8),
+            reason: item.costOfDelayResult.reason + " · strong mission alignment",
+          };
+        }
+
+        // Demote misaligned decisions & flag ethical conflicts
+        if (alignment.score < 25 || ethicalConflict) {
+          item.costOfDelayResult = {
+            ...item.costOfDelayResult,
+            score: Math.max(0, item.costOfDelayResult.score - 10),
+            reason: item.costOfDelayResult.reason + (ethicalConflict ? " · ⚠ ethical boundary conflict" : " · weak mission alignment"),
+          };
+        }
+
+        // Adjust urgency based on risk appetite alignment
+        if (identity.risk_appetite === "conservative" && item.urgency === "medium" && alignment.score >= 60) {
+          // Conservative orgs should pay more attention to moderate risks that align with their mission
+          item.costOfDelayResult = {
+            ...item.costOfDelayResult,
+            score: Math.min(100, item.costOfDelayResult.score + 5),
+          };
+        }
+        if (identity.decision_speed_preference === "rapid" || identity.decision_speed_preference === "agile") {
+          // Reduce action window for fast-moving orgs
+          item.costOfDelayResult = {
+            ...item.costOfDelayResult,
+            recommendedActionWindowDays: Math.max(1, item.costOfDelayResult.recommendedActionWindowDays - 2),
+          };
+        }
+      }
+    }
+
     queue.sort((a, b) => {
+      // Ethical conflicts always sort last (flag, don't auto-act)
+      const aEthical = a.missionAlignment?.ethicalConflict ? 1 : 0;
+      const bEthical = b.missionAlignment?.ethicalConflict ? 1 : 0;
+      if (aEthical !== bEthical) return aEthical - bEthical;
+
       if (b.costOfDelayResult.score !== a.costOfDelayResult.score) {
         return b.costOfDelayResult.score - a.costOfDelayResult.score;
       }
@@ -335,7 +408,7 @@ export function useBuildDecisionQueue({
 
     setDecisions(queue.slice(0, 5));
     setLoading(false);
-  }, [organizationId, highSeverityInsights, churnRate, revenue, pendingDecisions, calibrationScore, datasetId]);
+  }, [organizationId, highSeverityInsights, churnRate, revenue, pendingDecisions, calibrationScore, datasetId, identity, orgIdentityContext]);
 
   // Debounced effect — 200ms
   useEffect(() => {
