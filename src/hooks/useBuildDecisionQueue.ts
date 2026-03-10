@@ -67,6 +67,18 @@ export function useBuildDecisionQueue({
     [insights]
   );
 
+  const orgIdentityContext = useMemo(() => {
+    if (!identity) return undefined;
+    return {
+      riskAppetite: identity.risk_appetite,
+      decisionSpeedPreference: identity.decision_speed_preference,
+      governanceModel: identity.governance_model,
+      stakeholderOrientation: identity.stakeholder_orientation,
+      marketStage: identity.market_stage,
+      strategicPriorities: identity.strategic_priorities,
+    };
+  }, [identity]);
+
   const buildQueue = useCallback(async () => {
     if (!organizationId) return;
     setLoading(true);
