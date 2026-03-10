@@ -302,6 +302,24 @@ export function generateRecommendation(input: RecommendationInput): StructuredRe
       actionParts.push(`Approve corrective action and set measurement checkpoint.`);
     }
 
+    // Inject organizational identity context
+    if (input.orgIdentity) {
+      const oi = input.orgIdentity;
+      if (oi.decisionSpeedPreference === "rapid" || oi.decisionSpeedPreference === "agile") {
+        actionParts.push(`Organization operates in ${oi.decisionSpeedPreference} decision mode — prioritize speed of execution.`);
+      }
+      if (oi.governanceModel === "consensus") {
+        actionParts.push(`Governance model requires consensus — secure stakeholder alignment before execution.`);
+      }
+      if (oi.stakeholderOrientation === "community" || oi.stakeholderOrientation === "stakeholder") {
+        actionParts.push(`Evaluate impact on broader stakeholder groups per organizational orientation.`);
+      }
+      if (oi.strategicPriorities && oi.strategicPriorities.length > 0) {
+        const relevantPriorities = oi.strategicPriorities.slice(0, 2).join(", ");
+        actionParts.push(`Align execution with strategic priorities: ${relevantPriorities}.`);
+      }
+    }
+
     actionParts.push(`Target resolution within ${deadlineDays}d. Track via success metrics.`);
     recommendedAction = actionParts.join(" ");
   }
