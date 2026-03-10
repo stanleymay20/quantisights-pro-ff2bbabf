@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { computeCostOfDelay, type CostOfDelayResult, type CostOfDelayInput } from "@/lib/cost-of-delay";
 import { generateRecommendation, type StructuredRecommendation } from "@/lib/decision-recommendation";
 import type { Insight } from "@/hooks/useInsights";
+import { assessMissionAlignment, type OrganizationalIdentity } from "@/hooks/useOrganizationalIdentity";
 
 export interface EnrichedDecision {
   id: string;
