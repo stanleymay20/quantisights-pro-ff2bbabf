@@ -240,6 +240,7 @@ export function useBuildDecisionQueue({
           message: dec.recommended_action,
           category: dec.decision_type,
           sampleSize: 0,
+          orgIdentity: orgIdentityContext,
         });
 
         queue.push({
