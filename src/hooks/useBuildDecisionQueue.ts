@@ -285,6 +285,7 @@ export function useBuildDecisionQueue({
         confidence: heuristicConf,
         category: "retention",
         sampleSize: 0,
+        orgIdentity: orgIdentityContext,
       });
 
       queue.push({
