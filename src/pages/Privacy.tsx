@@ -38,7 +38,7 @@ const Privacy = () => (
         </section>
         <section>
           <h2 className="text-lg font-semibold mb-2">6. Your Rights (GDPR / CCPA)</h2>
-          <p>You have the right to: (a) access your data; (b) request correction or deletion; (c) export your data; (d) withdraw consent; (e) lodge a complaint with a supervisory authority. Contact <span className="text-primary">privacy@quantivis.io</span> to exercise these rights.</p>
+          <p>You have the right to: (a) access your data; (b) request correction or deletion; (c) export your data; (d) withdraw consent; (e) lodge a complaint with a supervisory authority. Contact <span className="text-primary">{CONTACT.email.privacy}</span> to exercise these rights.</p>
         </section>
         <section>
           <h2 className="text-lg font-semibold mb-2">7. Cookies</h2>

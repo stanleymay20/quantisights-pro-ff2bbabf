@@ -124,7 +124,7 @@ const Pricing = () => {
 
                     {"contactSales" in tier && tier.contactSales ? (
                       <a
-                        href="mailto:hello@quantivis.io"
+                        href={`mailto:${CONTACT.email.general}`}
                         className="w-full py-3 rounded-lg border border-border text-sm font-semibold hover:bg-secondary transition-colors text-center block"
                       >
                         Contact Sales

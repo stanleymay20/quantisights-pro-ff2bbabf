@@ -56,7 +56,7 @@ const Subprocessors = () => (
 
         <section>
           <h2 className="text-lg font-semibold mb-2">Contact</h2>
-          <p>Data Protection Officer: <span className="text-primary">dpo@quantivis.io</span></p>
+          <p>Data Protection Officer: <span className="text-primary">{CONTACT.email.dpo}</span></p>
         </section>
       </div>
     </main>

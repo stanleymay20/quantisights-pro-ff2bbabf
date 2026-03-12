@@ -58,7 +58,7 @@ const DataRetention = () => (
         </section>
         <section>
           <h2 className="text-lg font-semibold mb-2">5. Contact</h2>
-          <p>For questions about data retention, contact <span className="text-primary">privacy@quantivis.io</span>.</p>
+          <p>For questions about data retention, contact <span className="text-primary">{CONTACT.email.privacy}</span>.</p>
         </section>
       </div>
     </main>

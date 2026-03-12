@@ -117,7 +117,7 @@ const Footer = forwardRef<HTMLElement>((_, ref) => (
       {/* Bottom bar */}
       <div className="border-t border-border pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
         <p className="text-xs text-muted-foreground">
-          © {new Date().getFullYear()} Quantivis Global. All rights reserved.
+          © {new Date().getFullYear()} {CONTACT.company}. All rights reserved.
         </p>
         <div className="flex items-center gap-6">
           <Link to="/privacy" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Privacy</Link>
