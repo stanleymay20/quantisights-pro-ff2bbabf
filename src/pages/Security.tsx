@@ -668,7 +668,7 @@ const Security = () => {
               Start Free Trial
             </Link>
             <a
-              href="mailto:security@quantivis.io"
+              href={`mailto:${CONTACT.email.security}`}
               className="px-6 py-3 rounded-lg border border-border text-sm font-medium hover:bg-muted/50 transition-colors"
             >
               Contact Security Team
