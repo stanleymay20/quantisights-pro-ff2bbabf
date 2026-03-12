@@ -44,7 +44,7 @@ const DataRetention = () => (
         </section>
         <section>
           <h2 className="text-lg font-semibold mb-2">3. Account Deletion</h2>
-          <p>You may request account deletion at any time via Settings → Profile → Delete Account or by emailing <span className="text-primary">privacy@quantivis.io</span>. Upon deletion:</p>
+          <p>You may request account deletion at any time via Settings → Profile → Delete Account or by emailing <span className="text-primary">{CONTACT.email.privacy}</span>. Upon deletion:</p>
           <ul className="list-disc pl-5 space-y-1">
             <li>Personal data is purged within 30 days</li>
             <li>Uploaded datasets are deleted within 7 days</li>
