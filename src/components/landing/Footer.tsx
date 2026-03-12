@@ -34,26 +34,26 @@ const Footer = forwardRef<HTMLElement>((_, ref) => (
       <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
         {/* Brand */}
         <div className="col-span-2 md:col-span-1">
-          <img src={logo} alt="Quantivis Global" className="h-8 w-auto mb-4" />
+          <img src={logo} alt={CONTACT.company} className="h-8 w-auto mb-4" />
           <p className="text-sm text-muted-foreground leading-relaxed max-w-xs mb-4">
             Enterprise decision intelligence platform. Transforming operational data into defensible strategic choices.
           </p>
           {/* Contact details */}
           <div className="space-y-2">
-            <a href="mailto:hello@quantivis.io" className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
+            <a href={`mailto:${CONTACT.email.general}`} className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
               <Mail className="w-3.5 h-3.5 text-primary" />
-              hello@quantivis.io
+              {CONTACT.email.general}
             </a>
-            <a href="tel:+491791455906" className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
+            <a href={CONTACT.phone.href} className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
               <Phone className="w-3.5 h-3.5 text-primary" />
-              +49 179 145 5906
+              {CONTACT.phone.display}
             </a>
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
-              Germany
+              {CONTACT.location}
             </div>
             <a
-              href="https://linkedin.com/company/quantivis"
+              href={CONTACT.linkedin}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
