@@ -5,6 +5,7 @@ import {
   Database, Lock, Globe, Zap, CheckCircle2, Award
 } from "lucide-react";
 import logo from "@/assets/quantivis-logo.png";
+import { CONTACT } from "@/lib/contact-config";
 
 const METRICS = [
   { label: "Decision Accuracy Lift", value: "+34%", desc: "avg improvement after 90 days" },

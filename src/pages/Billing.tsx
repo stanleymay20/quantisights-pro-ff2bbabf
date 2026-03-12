@@ -17,6 +17,7 @@ import {
   TrendingUp, Shield,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { CONTACT } from "@/lib/contact-config";
 
 interface UsageData {
   simulations: number;

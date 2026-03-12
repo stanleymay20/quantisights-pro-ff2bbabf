@@ -12,6 +12,7 @@ import {
   Shield, Download, MapPin, Database, Eye, Lock, Server,
   FileText, Clock, Loader2, CheckCircle2, AlertTriangle,
 } from "lucide-react";
+import { CONTACT } from "@/lib/contact-config";
 
 interface DataSummary {
   datasets: number;

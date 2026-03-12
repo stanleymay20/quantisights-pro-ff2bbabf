@@ -11,6 +11,7 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
 import ComparisonSection from "@/components/landing/ComparisonSection";
+import { CONTACT } from "@/lib/contact-config";
 
 const renderCellValue = (value: boolean | string) => {
   if (value === true) return <Check className="w-4 h-4 text-primary mx-auto" />;

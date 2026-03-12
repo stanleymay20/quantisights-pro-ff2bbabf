@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Monitor, Smartphone, ArrowRight, Play, Shield, Brain, TrendingUp, Zap, BarChart3, Network } from "lucide-react";
 import { Link } from "react-router-dom";
+import { CONTACT } from "@/lib/contact-config";
 
 const PREVIEW_FEATURES = [
   {
