@@ -23,7 +23,7 @@ const Subprocessors = () => (
       <div className="prose prose-sm prose-invert max-w-none space-y-6 text-foreground/90 text-sm leading-relaxed">
         <section>
           <p>Quantivis Global GmbH uses the following third-party subprocessors to deliver its services. All subprocessors are contractually bound to equivalent data protection standards under GDPR-compliant agreements.</p>
-          <p>We provide 30 days' advance notice before adding or replacing a subprocessor. Subscribe to updates by emailing <span className="text-primary">dpo@quantivis.io</span>.</p>
+          <p>We provide 30 days' advance notice before adding or replacing a subprocessor. Subscribe to updates by emailing <span className="text-primary">{CONTACT.email.dpo}</span>.</p>
         </section>
 
         <div className="overflow-x-auto">
