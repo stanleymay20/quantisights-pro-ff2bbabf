@@ -83,6 +83,7 @@ const EmbedDashboard = lazy(() => import("./pages/EmbedDashboard"));
 const FounderHandbook = lazy(() => import("./pages/FounderHandbook"));
 const PrivacyDashboard = lazy(() => import("./pages/PrivacyDashboard"));
 const WhyVsMicrosoft = lazy(() => import("./pages/WhyVsMicrosoft"));
+const Pitch = lazy(() => import("./pages/Pitch"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -164,6 +165,7 @@ const App = () => (
               <Route path="/calibration" element={<CalibrationAssessment />} />
               <Route path="/handbook" element={<FounderHandbook />} />
               <Route path="/vs/microsoft" element={<WhyVsMicrosoft />} />
+              <Route path="/pitch" element={<Pitch />} />
               <Route path="*" element={<NotFound />} />
 
               {/* Standalone protected routes (no sidebar shell) */}
