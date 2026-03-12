@@ -105,7 +105,7 @@ const Footer = forwardRef<HTMLElement>((_, ref) => (
               </a>
             </li>
             <li>
-              <Link to="/documentation" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              <Link to="/docs" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                 Documentation
               </Link>
             </li>
