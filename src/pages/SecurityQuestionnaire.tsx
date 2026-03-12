@@ -5,6 +5,7 @@ import {
   FileCheck, KeyRound, Network
 } from "lucide-react";
 import logo from "@/assets/quantivis-logo.png";
+import { CONTACT } from "@/lib/contact-config";
 
 interface QAItem {
   id: string;
