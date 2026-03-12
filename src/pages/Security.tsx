@@ -523,7 +523,7 @@ const Security = () => {
             <p className="text-sm text-muted-foreground mb-6">
               We maintain a public <code className="bg-muted px-1.5 py-0.5 rounded text-xs">security.txt</code> policy
               for responsible vulnerability reporting. If you discover a security issue, please report it to{" "}
-              <a href="mailto:security@quantivis.io" className="text-primary hover:underline">security@quantivis.io</a>.
+              <a href={`mailto:${CONTACT.email.security}`} className="text-primary hover:underline">{CONTACT.email.security}</a>.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-4">
               <Link
