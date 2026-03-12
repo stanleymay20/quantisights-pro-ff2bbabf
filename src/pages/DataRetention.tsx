@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import logo from "@/assets/quantivis-logo.png";
+import { CONTACT } from "@/lib/contact-config";
 
 const DataRetention = () => (
   <div className="min-h-screen bg-background">
