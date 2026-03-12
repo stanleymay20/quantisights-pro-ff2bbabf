@@ -2,6 +2,7 @@ import { forwardRef } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { ArrowRight, Mail, Phone, Linkedin } from "lucide-react";
+import { CONTACT } from "@/lib/contact-config";
 
 const TIMELINE = [
   { month: "Month 1", title: "Decision Ledger", desc: "Start tracking your most important strategic calls with signals and confidence scores." },
@@ -67,21 +68,21 @@ const CTASection = forwardRef<HTMLElement>((_, ref) => {
           {/* Contact channels */}
           <div className="flex flex-wrap justify-center gap-4 sm:gap-6 mb-6">
             <a
-              href="mailto:hello@quantivis.io"
+              href={`mailto:${CONTACT.email.general}`}
               className="inline-flex items-center gap-2 text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               <Mail className="w-4 h-4 text-primary" />
-              hello@quantivis.io
+              {CONTACT.email.general}
             </a>
             <a
-              href="tel:+491791455906"
+              href={CONTACT.phone.href}
               className="inline-flex items-center gap-2 text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               <Phone className="w-4 h-4 text-primary" />
-              +49 179 145 5906
+              {CONTACT.phone.display}
             </a>
             <a
-              href="https://linkedin.com/company/quantivis"
+              href={CONTACT.linkedin}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors"

@@ -1,8 +1,8 @@
 # Quantivis Global Security Policy
 # https://securitytxt.org/
 
-Contact: mailto:security@quantivis.global
+Contact: mailto:security@quantivis.io
 Expires: 2027-02-25T00:00:00.000Z
 Preferred-Languages: en, de
-Canonical: https://quantisights-pro.lovable.app/.well-known/security.txt
-Policy: https://quantisights-pro.lovable.app/privacy
+Canonical: https://www.quantivis.io/.well-known/security.txt
+Policy: https://www.quantivis.io/privacy

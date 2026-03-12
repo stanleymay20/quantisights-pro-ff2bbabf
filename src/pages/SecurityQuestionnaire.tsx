@@ -5,6 +5,7 @@ import {
   FileCheck, KeyRound, Network
 } from "lucide-react";
 import logo from "@/assets/quantivis-logo.png";
+import { CONTACT } from "@/lib/contact-config";
 
 interface QAItem {
   id: string;
@@ -275,8 +276,8 @@ const SecurityQuestionnaire = () => (
       <div className="mt-8 text-center text-sm text-muted-foreground">
         <p>
           Need a custom response or additional documentation?{" "}
-          <a href="mailto:security@quantivis.io" className="text-primary hover:underline">
-            security@quantivis.io
+          <a href={`mailto:${CONTACT.email.security}`} className="text-primary hover:underline">
+            {CONTACT.email.security}
           </a>
         </p>
       </div>

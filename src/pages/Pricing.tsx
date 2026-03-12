@@ -11,6 +11,7 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
 import ComparisonSection from "@/components/landing/ComparisonSection";
+import { CONTACT } from "@/lib/contact-config";
 
 const renderCellValue = (value: boolean | string) => {
   if (value === true) return <Check className="w-4 h-4 text-primary mx-auto" />;
@@ -124,7 +125,7 @@ const Pricing = () => {
 
                     {"contactSales" in tier && tier.contactSales ? (
                       <a
-                        href="mailto:hello@quantivis.io"
+                        href={`mailto:${CONTACT.email.general}`}
                         className="w-full py-3 rounded-lg border border-border text-sm font-semibold hover:bg-secondary transition-colors text-center block"
                       >
                         Contact Sales

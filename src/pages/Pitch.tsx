@@ -5,6 +5,7 @@ import {
   Database, Lock, Globe, Zap, CheckCircle2, Award
 } from "lucide-react";
 import logo from "@/assets/quantivis-logo.png";
+import { CONTACT } from "@/lib/contact-config";
 
 const METRICS = [
   { label: "Decision Accuracy Lift", value: "+34%", desc: "avg improvement after 90 days" },
@@ -232,14 +233,14 @@ const Pitch = () => {
                   Launch Live Demo <ArrowRight className="w-5 h-5" />
                 </Link>
                 <a
-                  href="mailto:hello@quantivis.io"
+                  href={`mailto:${CONTACT.email.general}`}
                   className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl border border-border bg-card/50 text-foreground font-semibold hover:border-primary/30 transition-all"
                 >
                   Contact Founders
                 </a>
               </div>
               <p className="text-xs text-muted-foreground mt-6">
-                hello@quantivis.io · +49 179 145 5906 · Germany · GDPR ready
+                {CONTACT.email.general} · {CONTACT.phone.display} · {CONTACT.location} · GDPR ready
               </p>
             </motion.div>
           </div>

@@ -7,6 +7,7 @@ import {
   Terminal, HardDrive, Clock, Download, FileText, ExternalLink
 } from "lucide-react";
 import logo from "@/assets/quantivis-logo.png";
+import { CONTACT } from "@/lib/contact-config";
 
 const generateWhitepaperContent = (): string => {
   const date = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
@@ -522,7 +523,7 @@ const Security = () => {
             <p className="text-sm text-muted-foreground mb-6">
               We maintain a public <code className="bg-muted px-1.5 py-0.5 rounded text-xs">security.txt</code> policy
               for responsible vulnerability reporting. If you discover a security issue, please report it to{" "}
-              <a href="mailto:security@quantivis.io" className="text-primary hover:underline">security@quantivis.io</a>.
+              <a href={`mailto:${CONTACT.email.security}`} className="text-primary hover:underline">{CONTACT.email.security}</a>.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-4">
               <Link
@@ -642,7 +643,7 @@ const Security = () => {
                 View Security Questionnaire <ArrowRight className="w-4 h-4" />
               </Link>
               <a
-                href="mailto:security@quantivis.io?subject=Enterprise%20Security%20Pack%20Request"
+                href={`mailto:${CONTACT.email.security}?subject=Enterprise%20Security%20Pack%20Request`}
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border border-border text-sm font-medium hover:bg-muted/50 transition-colors"
               >
                 Request Custom Pack
@@ -667,7 +668,7 @@ const Security = () => {
               Start Free Trial
             </Link>
             <a
-              href="mailto:security@quantivis.io"
+              href={`mailto:${CONTACT.email.security}`}
               className="px-6 py-3 rounded-lg border border-border text-sm font-medium hover:bg-muted/50 transition-colors"
             >
               Contact Security Team

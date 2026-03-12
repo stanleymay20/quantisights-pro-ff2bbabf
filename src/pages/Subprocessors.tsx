@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import logo from "@/assets/quantivis-logo.png";
+import { CONTACT } from "@/lib/contact-config";
 
 const SUBPROCESSORS = [
   { name: "Amazon Web Services (AWS)", location: "EU-West-1 (Ireland)", purpose: "Cloud infrastructure, database hosting, file storage", safeguards: "EU Data Center, SOC 2 Type II" },
@@ -22,7 +23,7 @@ const Subprocessors = () => (
       <div className="prose prose-sm prose-invert max-w-none space-y-6 text-foreground/90 text-sm leading-relaxed">
         <section>
           <p>Quantivis Global GmbH uses the following third-party subprocessors to deliver its services. All subprocessors are contractually bound to equivalent data protection standards under GDPR-compliant agreements.</p>
-          <p>We provide 30 days' advance notice before adding or replacing a subprocessor. Subscribe to updates by emailing <span className="text-primary">dpo@quantivis.io</span>.</p>
+          <p>We provide 30 days' advance notice before adding or replacing a subprocessor. Subscribe to updates by emailing <span className="text-primary">{CONTACT.email.dpo}</span>.</p>
         </section>
 
         <div className="overflow-x-auto">
@@ -55,7 +56,7 @@ const Subprocessors = () => (
 
         <section>
           <h2 className="text-lg font-semibold mb-2">Contact</h2>
-          <p>Data Protection Officer: <span className="text-primary">dpo@quantivis.io</span></p>
+          <p>Data Protection Officer: <span className="text-primary">{CONTACT.email.dpo}</span></p>
         </section>
       </div>
     </main>

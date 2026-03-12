@@ -17,6 +17,7 @@ import {
   TrendingUp, Shield,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { CONTACT } from "@/lib/contact-config";
 
 interface UsageData {
   simulations: number;
@@ -258,7 +259,7 @@ const Billing = () => {
                     </Button>
                   ) : (
                     <Button asChild size="lg" className="gap-2 shadow-lg shadow-primary/20">
-                      <a href="mailto:hello@quantivis.io">
+                      <a href={`mailto:${CONTACT.email.general}`}>
                         <Zap className="w-4 h-4" />
                         Contact Sales for Enterprise
                       </a>
@@ -302,7 +303,7 @@ const Billing = () => {
                 </div>
                 <div className="mt-6 flex items-center gap-3">
                   <Button asChild variant="outline" className="gap-2">
-                    <a href="mailto:hello@quantivis.io">
+                    <a href={`mailto:${CONTACT.email.general}`}>
                       <ExternalLink className="w-4 h-4" /> Request Pilot or Services
                     </a>
                   </Button>

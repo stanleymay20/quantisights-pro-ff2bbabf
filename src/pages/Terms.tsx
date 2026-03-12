@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import logo from "@/assets/quantivis-logo.png";
+import { CONTACT } from "@/lib/contact-config";
 
 const Terms = () => (
   <div className="min-h-screen bg-background">
@@ -84,7 +85,7 @@ const Terms = () => (
         </section>
         <section>
           <h2 className="text-lg font-semibold mb-2">13. Contact</h2>
-          <p>For questions regarding these Terms, contact us at <span className="text-primary">legal@quantivis.io</span>.</p>
+          <p>For questions regarding these Terms, contact us at <span className="text-primary">{CONTACT.email.legal}</span>.</p>
         </section>
       </div>
     </main>

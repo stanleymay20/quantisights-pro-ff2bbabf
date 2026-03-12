@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import logo from "@/assets/quantivis-logo.png";
+import { CONTACT } from "@/lib/contact-config";
 
 const CookiePolicy = () => (
   <div className="min-h-screen bg-background">
@@ -37,7 +38,7 @@ const CookiePolicy = () => (
         </section>
         <section>
           <h2 className="text-lg font-semibold mb-2">6. Contact</h2>
-          <p>Questions about our cookie practices? Contact <span className="text-primary">privacy@quantivis.io</span>.</p>
+          <p>Questions about our cookie practices? Contact <span className="text-primary">{CONTACT.email.privacy}</span>.</p>
         </section>
       </div>
     </main>

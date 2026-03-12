@@ -12,6 +12,7 @@ import {
   Shield, Download, MapPin, Database, Eye, Lock, Server,
   FileText, Clock, Loader2, CheckCircle2, AlertTriangle,
 } from "lucide-react";
+import { CONTACT } from "@/lib/contact-config";
 
 interface DataSummary {
   datasets: number;
@@ -210,7 +211,7 @@ const PrivacyDashboard = () => {
                   Under GDPR & CCPA you can access, correct, export, or delete your data at any time.
                   Use the Export button above or go to{" "}
                   <span className="text-primary">Settings → Delete Account</span> to exercise deletion.
-                  Contact <span className="text-primary">privacy@quantivis.io</span> for any other requests.
+                  Contact <span className="text-primary">{CONTACT.email.privacy}</span> for any other requests.
                 </p>
               </div>
               <Badge variant="outline" className="text-[10px] shrink-0">GDPR Art. 15-20</Badge>

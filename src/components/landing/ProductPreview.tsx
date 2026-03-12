@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Monitor, Smartphone, ArrowRight, Play, Shield, Brain, TrendingUp, Zap, BarChart3, Network } from "lucide-react";
 import { Link } from "react-router-dom";
+import { CONTACT } from "@/lib/contact-config";
 
 const PREVIEW_FEATURES = [
   {
@@ -170,7 +171,7 @@ const ProductPreview = () => {
               </div>
               <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
                 <a
-                  href="mailto:hello@quantivis.io?subject=Demo%20Request"
+                  href={`mailto:${CONTACT.email.general}?subject=Demo%20Request`}
                   className="inline-flex items-center justify-center gap-1.5 flex-1 sm:flex-initial px-4 py-2 rounded-lg border border-border text-xs font-semibold text-muted-foreground hover:text-foreground hover:border-primary/30 transition-all"
                 >
                   Request Demo
