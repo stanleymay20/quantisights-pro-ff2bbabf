@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import logo from "@/assets/quantivis-logo.png";
+import { CONTACT } from "@/lib/contact-config";
 
 const SUBPROCESSORS = [
   { name: "Amazon Web Services (AWS)", location: "EU-West-1 (Ireland)", purpose: "Cloud infrastructure, database hosting, file storage", safeguards: "EU Data Center, SOC 2 Type II" },
