@@ -2,6 +2,7 @@ import { forwardRef } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { ArrowRight, Mail, Phone, Linkedin } from "lucide-react";
+import { CONTACT } from "@/lib/contact-config";
 
 const TIMELINE = [
   { month: "Month 1", title: "Decision Ledger", desc: "Start tracking your most important strategic calls with signals and confidence scores." },
