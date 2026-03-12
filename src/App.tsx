@@ -83,6 +83,7 @@ const EmbedDashboard = lazy(() => import("./pages/EmbedDashboard"));
 const FounderHandbook = lazy(() => import("./pages/FounderHandbook"));
 const PrivacyDashboard = lazy(() => import("./pages/PrivacyDashboard"));
 const WhyVsMicrosoft = lazy(() => import("./pages/WhyVsMicrosoft"));
+const Pitch = lazy(() => import("./pages/Pitch"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
