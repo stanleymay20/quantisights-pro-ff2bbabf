@@ -258,7 +258,7 @@ const Billing = () => {
                     </Button>
                   ) : (
                     <Button asChild size="lg" className="gap-2 shadow-lg shadow-primary/20">
-                      <a href="mailto:hello@quantivis.io">
+                      <a href={`mailto:${CONTACT.email.general}`}>
                         <Zap className="w-4 h-4" />
                         Contact Sales for Enterprise
                       </a>
