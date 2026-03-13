@@ -84,6 +84,8 @@ const FounderHandbook = lazy(() => import("./pages/FounderHandbook"));
 const PrivacyDashboard = lazy(() => import("./pages/PrivacyDashboard"));
 const WhyVsMicrosoft = lazy(() => import("./pages/WhyVsMicrosoft"));
 const Pitch = lazy(() => import("./pages/Pitch"));
+const Competitions = lazy(() => import("./pages/Competitions"));
+const PitchDeck = lazy(() => import("./pages/PitchDeck"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
