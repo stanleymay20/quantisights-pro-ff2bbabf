@@ -84,6 +84,8 @@ const FounderHandbook = lazy(() => import("./pages/FounderHandbook"));
 const PrivacyDashboard = lazy(() => import("./pages/PrivacyDashboard"));
 const WhyVsMicrosoft = lazy(() => import("./pages/WhyVsMicrosoft"));
 const Pitch = lazy(() => import("./pages/Pitch"));
+const Competitions = lazy(() => import("./pages/Competitions"));
+const PitchDeck = lazy(() => import("./pages/PitchDeck"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -166,6 +168,8 @@ const App = () => (
               <Route path="/handbook" element={<FounderHandbook />} />
               <Route path="/vs/microsoft" element={<WhyVsMicrosoft />} />
               <Route path="/pitch" element={<Pitch />} />
+              <Route path="/competitions" element={<Competitions />} />
+              <Route path="/pitch-deck" element={<PitchDeck />} />
               <Route path="*" element={<NotFound />} />
 
               {/* Standalone protected routes (no sidebar shell) */}
