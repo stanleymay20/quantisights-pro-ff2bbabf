@@ -2,7 +2,8 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import {
   ArrowRight, Shield, Brain, Target, TrendingUp, Users, BarChart3,
-  Database, Lock, Globe, Zap, CheckCircle2, Award
+  Database, Lock, Globe, Zap, CheckCircle2, Award, Calendar, MapPin,
+  Trophy, Rocket, Euro
 } from "lucide-react";
 import logo from "@/assets/quantivis-logo.png";
 import { CONTACT } from "@/lib/contact-config";
@@ -38,6 +39,13 @@ const TRACTION = [
   { label: "Decision Frameworks", value: "20+", icon: Brain },
 ];
 
+const MARKET_DATA = [
+  { label: "TAM", value: "$4.2B", desc: "Decision Intelligence market (2026)" },
+  { label: "CAGR", value: "22%", desc: "projected growth through 2030" },
+  { label: "ICP", value: "CEO / CFO / COO", desc: "PE/VC firms, mid-market enterprises" },
+  { label: "ACV", value: "€18K–€72K", desc: "per org, usage-based tiers" },
+];
+
 const Pitch = () => {
   return (
     <div className="min-h-screen bg-background">
@@ -47,9 +55,14 @@ const Pitch = () => {
           <Link to="/" className="flex items-center gap-3">
             <img src={logo} alt="Quantivis" className="h-10 w-auto" />
           </Link>
-          <Link to="/demo" className="px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:brightness-110 transition-all">
-            Live Demo
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link to="/competitions" className="px-4 py-2 rounded-lg border border-border text-sm font-medium hover:border-primary/30 transition-all hidden sm:inline-flex">
+              Competitions
+            </Link>
+            <Link to="/demo" className="px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:brightness-110 transition-all">
+              Live Demo
+            </Link>
+          </div>
         </div>
       </nav>
 
@@ -60,7 +73,7 @@ const Pitch = () => {
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary/20 bg-primary/5 text-xs font-semibold text-primary mb-6">
                 <Award className="w-3.5 h-3.5" />
-                Competition One-Pager
+                Investor One-Pager · Decision Intelligence
               </div>
               <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold font-display leading-tight mb-6">
                 Decision Governance for{" "}
@@ -69,9 +82,23 @@ const Pitch = () => {
               <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-4">
                 Quantivis is <strong className="text-foreground">Executive Overconfidence Insurance</strong> — the first platform that makes every strategic decision board-defensible by tracking the full Decision → Outcome → Learning lifecycle.
               </p>
-              <p className="text-sm text-muted-foreground max-w-xl mx-auto">
-                Target: CEO, CFO, COO, PE/VC firms · Market: $4.2B Decision Intelligence · HQ: Germany
+              <p className="text-sm text-muted-foreground max-w-xl mx-auto mb-8">
+                Target: CEO, CFO, COO, PE/VC firms · Market: $4.2B Decision Intelligence · HQ: {CONTACT.location}
               </p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Link
+                  to="/demo"
+                  className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl bg-primary text-primary-foreground font-semibold hover:brightness-110 transition-all shadow-lg shadow-primary/25"
+                >
+                  Launch Live Demo <ArrowRight className="w-5 h-5" />
+                </Link>
+                <Link
+                  to="/pitch-deck"
+                  className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl border border-border bg-card/50 text-foreground font-semibold hover:border-primary/30 transition-all"
+                >
+                  View Pitch Deck
+                </Link>
+              </div>
             </motion.div>
           </div>
         </section>
@@ -143,8 +170,31 @@ const Pitch = () => {
           </div>
         </section>
 
-        {/* Capabilities */}
+        {/* Market Opportunity */}
         <section className="py-16 sm:py-20">
+          <div className="container mx-auto px-6">
+            <h2 className="text-2xl sm:text-3xl font-bold font-display mb-8 text-center">Market Opportunity</h2>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 max-w-4xl mx-auto">
+              {MARKET_DATA.map((m, i) => (
+                <motion.div
+                  key={m.label}
+                  initial={{ opacity: 0, y: 16 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.1 }}
+                  className="text-center p-5 rounded-xl border border-border/50 bg-card/60"
+                >
+                  <p className="text-xs font-bold text-primary uppercase tracking-widest mb-1">{m.label}</p>
+                  <p className="text-2xl font-bold">{m.value}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{m.desc}</p>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Capabilities */}
+        <section className="py-16 sm:py-20 bg-muted/10">
           <div className="container mx-auto px-6">
             <h2 className="text-2xl sm:text-3xl font-bold font-display mb-12 text-center">Platform Capabilities</h2>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
@@ -167,7 +217,7 @@ const Pitch = () => {
         </section>
 
         {/* Differentiators */}
-        <section className="py-16 sm:py-20 bg-muted/10">
+        <section className="py-16 sm:py-20">
           <div className="container mx-auto px-6 max-w-3xl">
             <h2 className="text-2xl sm:text-3xl font-bold font-display mb-8 text-center">What Makes Us Different</h2>
             <div className="space-y-4">
@@ -189,7 +239,7 @@ const Pitch = () => {
         </section>
 
         {/* Technical Traction */}
-        <section className="py-16 sm:py-20">
+        <section className="py-16 sm:py-20 bg-muted/10">
           <div className="container mx-auto px-6">
             <h2 className="text-2xl sm:text-3xl font-bold font-display mb-8 text-center">Technical Traction</h2>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 max-w-3xl mx-auto">
