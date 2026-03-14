@@ -34,6 +34,7 @@ const ITEM_HELP: Record<string, string> = {
   "OKR Alignment": "Link your Objectives & Key Results to the data — track progress with live metrics.",
   "Alert Playbooks": "Automated response plans that trigger when specific metric thresholds are breached.",
   "Pilot Audit": "Pre-launch checklist ensuring your data and configuration are production-ready.",
+  "Governance Maturity": "Score your organization across 6 data governance dimensions — strategy, quality, culture, and more.",
 };
 
 interface NavItem {

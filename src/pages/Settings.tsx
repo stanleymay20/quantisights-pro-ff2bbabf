@@ -371,6 +371,8 @@ const Settings = () => {
                 <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
                   <SecurityPosture />
                   <MFAEnroll />
+                  <RetentionPolicySettings />
+                  <GovernanceKPIs />
                 </motion.div>
               </TabsContent>
 
