@@ -18,6 +18,8 @@ import {
   User, Building2, Bell, Save, Loader2, Mail, X, ScrollText, Clock, Shield, Trash2, AlertTriangle, ShieldCheck, Sun, Moon, Monitor, Activity, Lock, Compass,
 } from "lucide-react";
 import OrganizationalIdentitySettings from "@/components/settings/OrganizationalIdentitySettings";
+import RetentionPolicySettings from "@/components/settings/RetentionPolicySettings";
+import GovernanceKPIs from "@/components/dashboard/GovernanceKPIs";
 import MFAEnroll from "@/components/auth/MFAEnroll";
 import SecurityPosture from "@/components/security/SecurityPosture";
 import {
