@@ -43,14 +43,14 @@ const SLIDES: Slide[] = [
       <div className="space-y-4">
         <p className="text-lg font-semibold text-foreground">73% of executives are systematically overconfident in their strategic forecasts.</p>
         <ul className="space-y-3 text-sm text-muted-foreground">
-          <li className="flex items-start gap-2"><span className="text-destructive font-bold mt-0.5">✕</span> No tool tracks whether past predictions were accurate</li>
-          <li className="flex items-start gap-2"><span className="text-destructive font-bold mt-0.5">✕</span> Boards lack decision audit trails</li>
-          <li className="flex items-start gap-2"><span className="text-destructive font-bold mt-0.5">✕</span> PE firms can't measure portfolio management quality</li>
-          <li className="flex items-start gap-2"><span className="text-destructive font-bold mt-0.5">✕</span> CFOs reforecast without learning from prior misses</li>
+          <li className="flex items-start gap-2"><span className="text-destructive font-bold mt-0.5">✕</span> Poor data quality costs organizations <strong className="text-foreground">$12.9M annually</strong> (Gartner 2022)</li>
+          <li className="flex items-start gap-2"><span className="text-destructive font-bold mt-0.5">✕</span> <strong className="text-foreground">85% of AI projects fail</strong> due to inadequate data governance (MIT Sloan)</li>
+          <li className="flex items-start gap-2"><span className="text-destructive font-bold mt-0.5">✕</span> Ungoverned orgs face <strong className="text-foreground">40% higher operational costs</strong> from data errors (TDWI 2023)</li>
+          <li className="flex items-start gap-2"><span className="text-destructive font-bold mt-0.5">✕</span> Analysts spend <strong className="text-foreground">80% of time</strong> on data cleansing instead of analysis</li>
         </ul>
         <div className="mt-4 p-4 rounded-lg bg-destructive/5 border border-destructive/20">
-          <p className="text-sm font-semibold text-destructive">$2.3 Trillion in annual value destruction from preventable strategic miscalls</p>
-          <p className="text-xs text-muted-foreground mt-1">Source: McKinsey, HBR 2023</p>
+          <p className="text-sm font-semibold text-destructive">$2.3 Trillion in annual value destruction from the "Data-to-Wisdom Gap"</p>
+          <p className="text-xs text-muted-foreground mt-1">Sources: McKinsey, HBR 2023, Gartner Data Quality Report 2022</p>
         </div>
       </div>
     ),
