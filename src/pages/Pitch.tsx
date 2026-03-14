@@ -136,6 +136,20 @@ const Pitch = () => {
               <p className="text-base sm:text-lg leading-relaxed">
                 The result: <strong className="text-foreground">$2.3T in annual value destruction</strong> from preventable strategic miscalls. Boards lack audit trails. PE firms can't measure portfolio management quality. CFOs reforecast without learning from prior misses.
               </p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6">
+                {[
+                  { stat: "$12.9M", label: "Avg. annual cost of poor data quality", src: "Gartner 2022" },
+                  { stat: "85%", label: "AI projects that fail due to data gaps", src: "MIT Sloan" },
+                  { stat: "40%", label: "Higher ops cost without governance", src: "TDWI 2023" },
+                  { stat: "80%", label: "Analyst time wasted on data cleansing", src: "Industry avg." },
+                ].map((d) => (
+                  <div key={d.stat} className="text-center p-3 rounded-lg border border-destructive/20 bg-destructive/5">
+                    <p className="text-xl font-bold text-destructive">{d.stat}</p>
+                    <p className="text-[10px] text-muted-foreground mt-1 leading-tight">{d.label}</p>
+                    <p className="text-[9px] text-muted-foreground/60 mt-0.5">{d.src}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </section>

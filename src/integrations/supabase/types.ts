@@ -976,6 +976,47 @@ export type Database = {
           },
         ]
       }
+      data_retention_policies: {
+        Row: {
+          auto_cleanup: boolean
+          created_at: string
+          data_category: string
+          description: string | null
+          id: string
+          organization_id: string
+          retention_days: number
+          updated_at: string
+        }
+        Insert: {
+          auto_cleanup?: boolean
+          created_at?: string
+          data_category: string
+          description?: string | null
+          id?: string
+          organization_id: string
+          retention_days?: number
+          updated_at?: string
+        }
+        Update: {
+          auto_cleanup?: boolean
+          created_at?: string
+          data_category?: string
+          description?: string | null
+          id?: string
+          organization_id?: string
+          retention_days?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "data_retention_policies_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       data_sources: {
         Row: {
           config: Json
@@ -2169,6 +2210,44 @@ export type Database = {
           },
           {
             foreignKeyName: "forecast_results_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      governance_maturity_assessments: {
+        Row: {
+          assessed_by: string
+          created_at: string
+          dimensions: Json
+          id: string
+          organization_id: string
+          overall_score: number
+          recommendations: Json | null
+        }
+        Insert: {
+          assessed_by: string
+          created_at?: string
+          dimensions?: Json
+          id?: string
+          organization_id: string
+          overall_score?: number
+          recommendations?: Json | null
+        }
+        Update: {
+          assessed_by?: string
+          created_at?: string
+          dimensions?: Json
+          id?: string
+          organization_id?: string
+          overall_score?: number
+          recommendations?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "governance_maturity_assessments_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -4748,7 +4827,13 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "analyst" | "executive" | "client_viewer"
-      org_role: "owner" | "admin" | "analyst" | "executive" | "viewer"
+      org_role:
+        | "owner"
+        | "admin"
+        | "analyst"
+        | "executive"
+        | "viewer"
+        | "steward"
       workspace_role:
         | "workspace_admin"
         | "workspace_editor"
@@ -4881,7 +4966,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "analyst", "executive", "client_viewer"],
-      org_role: ["owner", "admin", "analyst", "executive", "viewer"],
+      org_role: ["owner", "admin", "analyst", "executive", "viewer", "steward"],
       workspace_role: [
         "workspace_admin",
         "workspace_editor",

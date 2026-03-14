@@ -86,6 +86,7 @@ const WhyVsMicrosoft = lazy(() => import("./pages/WhyVsMicrosoft"));
 const Pitch = lazy(() => import("./pages/Pitch"));
 const Competitions = lazy(() => import("./pages/Competitions"));
 const PitchDeck = lazy(() => import("./pages/PitchDeck"));
+const GovernanceMaturity = lazy(() => import("./pages/GovernanceMaturity"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -217,6 +218,7 @@ const App = () => (
               <Route path="/pipeline" element={<P><PipelineObservability /></P>} />
               <Route path="/data-catalog" element={<P><DataCatalog /></P>} />
               <Route path="/privacy-dashboard" element={<P><PrivacyDashboard /></P>} />
+              <Route path="/governance-maturity" element={<P><GovernanceMaturity /></P>} />
             </Routes>
             </Suspense>
           </AuthProvider>

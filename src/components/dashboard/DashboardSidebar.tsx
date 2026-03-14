@@ -34,6 +34,7 @@ const ITEM_HELP: Record<string, string> = {
   "OKR Alignment": "Link your Objectives & Key Results to the data — track progress with live metrics.",
   "Alert Playbooks": "Automated response plans that trigger when specific metric thresholds are breached.",
   "Pilot Audit": "Pre-launch checklist ensuring your data and configuration are production-ready.",
+  "Governance Maturity": "Score your organization across 6 data governance dimensions — strategy, quality, culture, and more.",
 };
 
 interface NavItem {
@@ -118,6 +119,7 @@ const navSections: NavSection[] = [
       { icon: Shield, label: "Compliance", path: "/compliance" },
       { icon: Shield, label: "SSO / SAML", path: "/sso" },
       { icon: Eye, label: "Privacy", path: "/privacy-dashboard" },
+      { icon: Award, label: "Governance Maturity", path: "/governance-maturity" },
       { icon: Settings, label: "Settings", path: "/settings" },
     ],
   },
