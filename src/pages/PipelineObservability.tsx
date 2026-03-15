@@ -40,7 +40,7 @@ export default function PipelineObservability() {
   useEffect(() => {
     if (!organizationId) return;
     loadData();
-  }, [organizationId]);
+  }, [organizationId, activeDatasetId]);
 
   const loadData = async () => {
     if (!organizationId) return;
