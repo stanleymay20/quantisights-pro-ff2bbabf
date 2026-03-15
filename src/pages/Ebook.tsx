@@ -411,8 +411,10 @@ const Ebook = () => {
                 const a = document.createElement("a");
                 a.href = url;
                 a.download = "quantivis-ebook.md";
+                document.body.appendChild(a);
                 a.click();
-                URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
               }}
             >
               <Download className="w-3.5 h-3.5" />
