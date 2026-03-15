@@ -49,7 +49,7 @@ const CognitiveBiasDetection = () => {
   const [expandedBias, setExpandedBias] = useState<string | null>(null);
 
   const runScan = async () => {
-    if (!currentOrgId) return;
+    if (!currentOrgId || !activeDatasetId) return;
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("cognitive-bias-detect", {

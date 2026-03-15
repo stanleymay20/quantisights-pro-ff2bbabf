@@ -79,7 +79,7 @@ const CounterfactualExplanation = () => {
   const entities = entityType === "decision" ? decisions : advisories;
 
   const runAnalysis = async () => {
-    if (!currentOrgId || !entityId) return;
+    if (!currentOrgId || !datasetId || !entityId) return;
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("counterfactual-explain", {

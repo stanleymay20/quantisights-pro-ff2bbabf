@@ -235,7 +235,7 @@ const Scenarios = () => {
   };
 
   const handleAIAnalysis = async () => {
-    if (!selectedId || !canUseAI) return;
+    if (!selectedId || !canUseAI || !activeDatasetId) return;
     setAnalyzing(true);
     try {
       const { data, error } = await supabase.functions.invoke("ai-scenario-analysis", {

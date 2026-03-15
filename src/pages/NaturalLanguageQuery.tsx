@@ -41,7 +41,7 @@ const NaturalLanguageQuery = () => {
   const [history, setHistory] = useState<QueryHistory[]>([]);
 
   const executeQuery = async (queryText: string) => {
-    if (!currentOrgId || !queryText.trim()) return;
+    if (!currentOrgId || !datasetId || !queryText.trim()) return;
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("nlq-query", {

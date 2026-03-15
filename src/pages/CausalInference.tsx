@@ -44,7 +44,7 @@ const CausalInference = () => {
   const [result, setResult] = useState<CausalResult | null>(null);
 
   const runAnalysis = async () => {
-    if (!currentOrgId) return;
+    if (!currentOrgId || !activeDatasetId) return;
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("causal-inference", {
