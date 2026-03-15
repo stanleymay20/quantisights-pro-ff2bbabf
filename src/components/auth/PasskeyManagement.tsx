@@ -43,7 +43,7 @@ const PasskeyManagement = () => {
         .select("id, credential_id, device_name, created_at, last_used_at")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
-      return (data as PasskeyCredential[]) ?? [];
+      return (data as unknown as PasskeyCredential[]) ?? [];
     },
     enabled: !!user?.id,
   });

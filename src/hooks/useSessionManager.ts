@@ -98,7 +98,7 @@ export function useSessionManager() {
         .select("*")
         .eq("organization_id", currentOrgId)
         .order("last_active_at", { ascending: false });
-      return (data as UserSession[]) ?? [];
+      return (data as unknown as UserSession[]) ?? [];
     },
     enabled: !!user?.id && !!currentOrgId,
     refetchInterval: 30000,

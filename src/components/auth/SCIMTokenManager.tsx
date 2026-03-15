@@ -43,7 +43,7 @@ const SCIMTokenManager = () => {
         .select("id, description, created_at, last_used_at, revoked_at")
         .eq("organization_id", currentOrgId)
         .order("created_at", { ascending: false });
-      return (data as SCIMToken[]) ?? [];
+      return (data as unknown as SCIMToken[]) ?? [];
     },
     enabled: !!currentOrgId,
   });
