@@ -52,7 +52,6 @@ function toMonthlyBuckets(metrics: { date: string; value: number }[]) {
     if (!buckets.has(key)) buckets.set(key, []);
     buckets.get(key)!.push(m.value);
   }
-  // Average within each month
   const monthly: { date: string; value: number }[] = [];
   for (const [key, vals] of [...buckets.entries()].sort()) {
     monthly.push({
@@ -91,23 +90,29 @@ serve(async (req) => {
 
   try {
     const authHeader = req.headers.get("authorization");
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: "Missing authorization" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const userClient = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } },
-    );
-    const { data: { user }, error: authError } = await userClient.auth.getUser();
-    if (authError || !user) {
+    if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    const userClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const serviceClient = createClient(supabaseUrl, serviceKey);
+
+    // Auth via JWT claims (enterprise standard)
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await userClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims?.sub) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const userId = claimsData.claims.sub as string;
 
     const { organization_id, dataset_id, metric_type, horizon_months = 6, dry_run } = await req.json();
     if (!organization_id || !metric_type) {
@@ -121,10 +126,16 @@ serve(async (req) => {
       });
     }
 
-    const serviceClient = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    );
+    // Verify org membership
+    const { data: isMember } = await serviceClient.rpc("is_org_member", {
+      _user_id: userId,
+      _org_id: organization_id,
+    });
+    if (!isMember) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // Validate dataset belongs to org
     const { data: dsCheck } = await serviceClient
@@ -142,8 +153,8 @@ serve(async (req) => {
       });
     }
 
-    // Fetch historical metrics
-    const { data: metrics, error: mErr } = await userClient
+    // Fetch historical metrics — use serviceClient for consistent reads
+    const { data: metrics, error: mErr } = await serviceClient
       .from("metrics").select("value, date")
       .eq("organization_id", organization_id)
       .eq("dataset_id", dataset_id)
@@ -194,7 +205,6 @@ serve(async (req) => {
       forecastDate.setMonth(forecastDate.getMonth() + h);
       const dateStr = forecastDate.toISOString().slice(0, 10);
       const pointForecast = level + trend * h;
-      // 80% prediction interval widens with horizon
       const intervalWidth = 1.28 * residualStd * Math.sqrt(h);
       predictions.push({
         date: dateStr,
@@ -207,7 +217,7 @@ serve(async (req) => {
     // 6. Compute growth rate (linear regression)
     const regPoints = monthly.map((m, i) => ({ x: i, y: m.value }));
     const { slope } = linearRegression(regPoints);
-    const growthRatePct = mean > 0 ? (slope / mean) * 100 * 12 : 0; // annualized
+    const growthRatePct = mean > 0 ? (slope / mean) * 100 * 12 : 0;
 
     // 7. Determine trend direction
     const trendDirection = Math.abs(growthRatePct) < 5 ? "stable"
@@ -274,12 +284,29 @@ serve(async (req) => {
       seasonality_detected: forecast.seasonality_detected,
       trend_direction: forecast.trend_direction,
       mape: forecast.mape_estimate,
-      created_by: user.id,
+      created_by: userId,
+    });
+
+    // Audit trail
+    await serviceClient.from("audit_log").insert({
+      organization_id,
+      actor_id: userId,
+      actor_type: "user",
+      action_type: "forecast_generated",
+      resource_type: "forecast",
+      payload: {
+        dataset_id,
+        metric_type,
+        horizon_months,
+        data_points: monthly.length,
+        mape: forecast.mape_estimate,
+        trend: trendDirection,
+      },
     });
 
     return new Response(JSON.stringify({
       ...forecast,
-      historical: monthly, // Return aggregated monthly data, not raw
+      historical: monthly,
       metric_type,
       horizon_months,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
