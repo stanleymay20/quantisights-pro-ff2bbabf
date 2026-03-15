@@ -127,6 +127,10 @@ serve(async (req) => {
       });
     }
 
+    // Rate limit: intelligence tier (20/min per org)
+    const rl = applyRateLimit(req, organization_id, "intelligence", "predictive-forecast");
+    if (rl) return rl;
+
     // Verify org membership
     const { data: isMember } = await serviceClient.rpc("is_org_member", {
       _user_id: userId,

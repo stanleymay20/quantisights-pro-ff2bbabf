@@ -50,8 +50,12 @@ serve(async (req) => {
       });
     }
 
+    // Rate limit: intelligence tier (20/min per org)
+    const rl = applyRateLimit(req, organization_id, "intelligence", "nlq-query");
+    if (rl) return rl;
+
     const { data: isMember } = await svc.rpc("is_org_member", {
-      _user_id: user.id,
+      _user_id: userId,
       _org_id: organization_id,
     });
     if (!isMember) {

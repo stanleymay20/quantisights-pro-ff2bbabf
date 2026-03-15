@@ -49,6 +49,10 @@ serve(async (req) => {
       });
     }
 
+    // Rate limit: intelligence tier (20/min per org)
+    const rl = applyRateLimit(req, organization_id, "intelligence", "generate-board-report");
+    if (rl) return rl;
+
     const { data: isMember } = await serviceClient.rpc("is_org_member", {
       _user_id: userId, _org_id: organization_id,
     });

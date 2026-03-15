@@ -60,6 +60,10 @@ serve(async (req) => {
       });
     }
 
+    // Rate limit: intelligence tier (20/min per org)
+    const rl = applyRateLimit(req, kpi_id, "intelligence", "ai-kpi-analysis");
+    if (rl) return rl;
+
     // Fetch KPI
     const { data: kpi } = await serviceClient
       .from("kpis")
