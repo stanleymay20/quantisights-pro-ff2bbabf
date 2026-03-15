@@ -351,6 +351,53 @@ export type Database = {
           },
         ]
       }
+      auth_events: {
+        Row: {
+          created_at: string
+          device_fingerprint: string | null
+          event_type: string
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          organization_id: string | null
+          risk_score: number | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          device_fingerprint?: string | null
+          event_type: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          organization_id?: string | null
+          risk_score?: number | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          device_fingerprint?: string | null
+          event_type?: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          organization_id?: string | null
+          risk_score?: number | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auth_events_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       benchmark_scores: {
         Row: {
           benchmark_id: string
@@ -4236,6 +4283,47 @@ export type Database = {
           },
         ]
       }
+      scim_tokens: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          last_used_at: string | null
+          organization_id: string
+          revoked_at: string | null
+          token_hash: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          last_used_at?: string | null
+          organization_id: string
+          revoked_at?: string | null
+          token_hash: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          last_used_at?: string | null
+          organization_id?: string
+          revoked_at?: string | null
+          token_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scim_tokens_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       simulation_results: {
         Row: {
           capped_confidence: number | null
@@ -4422,6 +4510,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      step_up_challenges: {
+        Row: {
+          action_type: string
+          created_at: string
+          expires_at: string
+          id: string
+          user_id: string
+          verified_at: string | null
+        }
+        Insert: {
+          action_type: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          user_id: string
+          verified_at?: string | null
+        }
+        Update: {
+          action_type?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          user_id?: string
+          verified_at?: string | null
+        }
+        Relationships: []
       }
       subscriptions: {
         Row: {
@@ -4642,6 +4757,131 @@ export type Database = {
         Update: {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_sessions: {
+        Row: {
+          created_at: string
+          device_name: string | null
+          expires_at: string | null
+          id: string
+          ip_address: string | null
+          last_active_at: string | null
+          location_info: Json | null
+          organization_id: string
+          revoked_at: string | null
+          revoked_by: string | null
+          session_token_hash: string | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          device_name?: string | null
+          expires_at?: string | null
+          id?: string
+          ip_address?: string | null
+          last_active_at?: string | null
+          location_info?: Json | null
+          organization_id: string
+          revoked_at?: string | null
+          revoked_by?: string | null
+          session_token_hash?: string | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          device_name?: string | null
+          expires_at?: string | null
+          id?: string
+          ip_address?: string | null
+          last_active_at?: string | null
+          location_info?: Json | null
+          organization_id?: string
+          revoked_at?: string | null
+          revoked_by?: string | null
+          session_token_hash?: string | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_sessions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      webauthn_challenges: {
+        Row: {
+          ceremony_type: string
+          challenge: string
+          created_at: string
+          expires_at: string
+          id: string
+          used_at: string | null
+          user_id: string
+        }
+        Insert: {
+          ceremony_type: string
+          challenge: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          used_at?: string | null
+          user_id: string
+        }
+        Update: {
+          ceremony_type?: string
+          challenge?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          used_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      webauthn_credentials: {
+        Row: {
+          aaguid: string | null
+          created_at: string
+          credential_id: string
+          device_name: string
+          id: string
+          last_used_at: string | null
+          public_key: string
+          sign_count: number | null
+          transports: Json | null
+          user_id: string
+        }
+        Insert: {
+          aaguid?: string | null
+          created_at?: string
+          credential_id: string
+          device_name?: string
+          id?: string
+          last_used_at?: string | null
+          public_key: string
+          sign_count?: number | null
+          transports?: Json | null
+          user_id: string
+        }
+        Update: {
+          aaguid?: string | null
+          created_at?: string
+          credential_id?: string
+          device_name?: string
+          id?: string
+          last_used_at?: string | null
+          public_key?: string
+          sign_count?: number | null
+          transports?: Json | null
           user_id?: string
         }
         Relationships: []
