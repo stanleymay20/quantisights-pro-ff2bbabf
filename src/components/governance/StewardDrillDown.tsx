@@ -16,7 +16,9 @@ interface DatasetOwnership {
   id: string;
   name: string;
   uploaded_by: string;
+  steward_user_id: string | null;
   has_quality_check: boolean;
+  steward_name: string | null;
 }
 
 const StewardDrillDown = () => {
