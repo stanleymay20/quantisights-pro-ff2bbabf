@@ -45,20 +45,6 @@ export function usePermissions() {
     enabled: !!user?.id && !!organization?.id && !!orgRole,
   });
 
-  const { data: orgRole } = useQuery({
-    queryKey: ["org-role", user?.id, organization?.id],
-    queryFn: async () => {
-      if (!user?.id || !organization?.id) return null;
-      const { data } = await supabase
-        .from("organization_members")
-        .select("role")
-        .eq("user_id", user.id)
-        .eq("organization_id", organization.id)
-        .single();
-      return data?.role ?? null;
-    },
-    enabled: !!user?.id && !!organization?.id,
-  });
 
   const hasPermission = (permission: Permission): boolean => {
     // Check explicit permissions first
