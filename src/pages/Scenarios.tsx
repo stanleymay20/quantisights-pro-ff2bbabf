@@ -213,7 +213,10 @@ const Scenarios = () => {
   };
 
   const handleSimulate = async () => {
-    if (!selectedId) return;
+    if (!selectedId || !activeDatasetId) {
+      toast({ title: "Select a dataset first", variant: "destructive" });
+      return;
+    }
     setSimulating(true);
     try {
       const { data, error } = await supabase.functions.invoke("simulate-scenario", {
