@@ -77,7 +77,7 @@ const StewardDrillDown = () => {
         (d) => d.steward_user_id == null && !stewardUserIds.has(d.uploaded_by)
       );
 
-      return { stewards, nonStewards, datasets, unownedDatasets, profileMap };
+      return { stewards, datasets, unownedDatasets, profileMap };
     },
     enabled: !!currentOrgId,
   });
