@@ -173,6 +173,7 @@ const App = () => (
               <Route path="/pitch" element={<Pitch />} />
               <Route path="/competitions" element={<Competitions />} />
               <Route path="/pitch-deck" element={<PitchDeck />} />
+              <Route path="/ebook" element={<Ebook />} />
               <Route path="*" element={<NotFound />} />
 
               {/* Standalone protected routes (no sidebar shell) */}
