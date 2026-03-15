@@ -10,6 +10,7 @@ interface ConnectorConfig {
   connector_type: string;
   data_source_id: string;
   organization_id: string;
+  dataset_id?: string;
   date_from?: string;
   date_to?: string;
 }
@@ -74,8 +75,18 @@ async function pullStripe(
   const fromTs = Math.floor(from.getTime() / 1000).toString();
   const toTs = Math.floor(to.getTime() / 1000).toString();
 
+  const baseMetricFields = {
+    organization_id: config.organization_id,
+    dataset_id: config.dataset_id || null,
+    source_type: "connector",
+    source_id: config.data_source_id,
+    quality_score: 95,
+    region: "",
+    segment: "",
+  };
+
   try {
-    // Charges → Revenue (net of refunds)
+    // Charges → Revenue
     const chargesResult = await stripeFetchAll("charges", {
       "created[gte]": fromTs,
       "created[lte]": toTs,
@@ -97,11 +108,11 @@ async function pullStripe(
       for (const [date, gross] of Object.entries(grossByMonth)) {
         const refunds = refundsByMonth[date] || 0;
         metrics.push(
-          { organization_id: config.organization_id, metric_type: "revenue", value: gross - refunds, date, source_type: "connector", source_id: config.data_source_id, quality_score: 95 },
-          { organization_id: config.organization_id, metric_type: "gross_revenue", value: gross, date, source_type: "connector", source_id: config.data_source_id, quality_score: 95 },
+          { ...baseMetricFields, metric_type: "revenue", value: gross - refunds, date },
+          { ...baseMetricFields, metric_type: "gross_revenue", value: gross, date },
         );
         if (refunds > 0) {
-          metrics.push({ organization_id: config.organization_id, metric_type: "refunds", value: refunds, date, source_type: "connector", source_id: config.data_source_id, quality_score: 95 });
+          metrics.push({ ...baseMetricFields, metric_type: "refunds", value: refunds, date });
         }
       }
     }
@@ -118,7 +129,7 @@ async function pullStripe(
         byMonth[key] = (byMonth[key] || 0) + 1;
       }
       for (const [date, value] of Object.entries(byMonth)) {
-        metrics.push({ organization_id: config.organization_id, metric_type: "customers", value, date, source_type: "connector", source_id: config.data_source_id, quality_score: 95 });
+        metrics.push({ ...baseMetricFields, metric_type: "customers", value, date });
       }
     }
 
@@ -135,7 +146,6 @@ async function pullStripe(
         const created = new Date(s.created * 1000);
         const key = `${created.getFullYear()}-${String(created.getMonth() + 1).padStart(2, "0")}-01`;
 
-        // MRR from active subs
         if (s.status === "active" && s.items?.data?.[0]?.price) {
           const price = s.items.data[0].price;
           let monthly = (price.unit_amount || 0) / 100;
@@ -144,7 +154,6 @@ async function pullStripe(
           activeByMonth[key] = (activeByMonth[key] || 0) + 1;
         }
 
-        // Churn
         if (s.status === "canceled" && s.canceled_at) {
           const canceled = new Date(s.canceled_at * 1000);
           const cKey = `${canceled.getFullYear()}-${String(canceled.getMonth() + 1).padStart(2, "0")}-01`;
@@ -153,12 +162,12 @@ async function pullStripe(
       }
 
       for (const [date, value] of Object.entries(mrrByMonth)) {
-        metrics.push({ organization_id: config.organization_id, metric_type: "mrr", value, date, source_type: "connector", source_id: config.data_source_id, quality_score: 95 });
+        metrics.push({ ...baseMetricFields, metric_type: "mrr", value, date });
       }
       for (const [date, churned] of Object.entries(churnByMonth)) {
         const active = activeByMonth[date] || 1;
         const rate = (churned / (active + churned)) * 100;
-        metrics.push({ organization_id: config.organization_id, metric_type: "churn_rate", value: Math.round(rate * 100) / 100, date, source_type: "connector", source_id: config.data_source_id, quality_score: 90 });
+        metrics.push({ ...baseMetricFields, metric_type: "churn_rate", value: Math.round(rate * 100) / 100, date });
       }
     }
   } catch (err: unknown) {
@@ -167,7 +176,7 @@ async function pullStripe(
 
   if (metrics.length > 0) {
     const { error } = await serviceClient.from("metrics").upsert(metrics, {
-      onConflict: "organization_id,metric_type,date,source_id",
+      onConflict: "organization_id,metric_type,date,region,segment,source_id",
       ignoreDuplicates: false,
     });
     if (error) errors.push(`DB upsert: ${error.message}`);
@@ -192,7 +201,6 @@ async function getGoogleAccessToken(serviceAccountJson: string): Promise<string>
     exp: now + 3600,
   }));
 
-  // Import private key
   const pemContent = sa.private_key
     .replace(/-----BEGIN PRIVATE KEY-----/g, "")
     .replace(/-----END PRIVATE KEY-----/g, "")
@@ -200,11 +208,9 @@ async function getGoogleAccessToken(serviceAccountJson: string): Promise<string>
   const binaryKey = Uint8Array.from(atob(pemContent), (c) => c.charCodeAt(0));
 
   const key = await crypto.subtle.importKey(
-    "pkcs8",
-    binaryKey,
+    "pkcs8", binaryKey,
     { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
-    false,
-    ["sign"],
+    false, ["sign"],
   );
 
   const signatureInput = new TextEncoder().encode(`${header}.${claim}`);
@@ -235,11 +241,21 @@ async function pullGA4(
   const saJson = Deno.env.get("GA4_SERVICE_ACCOUNT_JSON");
   const propertyId = Deno.env.get("GA4_PROPERTY_ID");
 
-  if (!saJson) return { records: 0, errors: ["GA4_SERVICE_ACCOUNT_JSON not configured. Add your Google service account JSON in Settings → Secrets."] };
-  if (!propertyId) return { records: 0, errors: ["GA4_PROPERTY_ID not configured. Add your GA4 property ID in Settings → Secrets."] };
+  if (!saJson) return { records: 0, errors: ["GA4_SERVICE_ACCOUNT_JSON not configured."] };
+  if (!propertyId) return { records: 0, errors: ["GA4_PROPERTY_ID not configured."] };
 
   const errors: string[] = [];
   const metrics: any[] = [];
+
+  const baseMetricFields = {
+    organization_id: config.organization_id,
+    dataset_id: config.dataset_id || null,
+    source_type: "connector",
+    source_id: config.data_source_id,
+    quality_score: 90,
+    region: "",
+    segment: "",
+  };
 
   try {
     const accessToken = await getGoogleAccessToken(saJson);
@@ -252,7 +268,6 @@ async function pullGA4(
     })();
     const to = config.date_to || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
-    // Fetch sessions, users, conversions, pageviews by month
     const reportRes = await fetch(
       `https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runReport`,
       {
@@ -265,12 +280,9 @@ async function pullGA4(
           dateRanges: [{ startDate: from, endDate: to }],
           dimensions: [{ name: "yearMonth" }],
           metrics: [
-            { name: "sessions" },
-            { name: "totalUsers" },
-            { name: "conversions" },
-            { name: "screenPageViews" },
-            { name: "bounceRate" },
-            { name: "averageSessionDuration" },
+            { name: "sessions" }, { name: "totalUsers" },
+            { name: "conversions" }, { name: "screenPageViews" },
+            { name: "bounceRate" }, { name: "averageSessionDuration" },
           ],
         }),
       },
@@ -286,26 +298,18 @@ async function pullGA4(
 
     if (report.rows) {
       for (const row of report.rows) {
-        const ym = row.dimensionValues[0].value; // "202501"
+        const ym = row.dimensionValues[0].value;
         const date = `${ym.substring(0, 4)}-${ym.substring(4, 6)}-01`;
-
         const metricValues = row.metricValues.map((v: any) => parseFloat(v.value) || 0);
         const [sessions, users, conversions, pageviews, bounceRate, avgDuration] = metricValues;
 
-        const baseMetric = {
-          organization_id: config.organization_id,
-          source_type: "connector",
-          source_id: config.data_source_id,
-          quality_score: 90,
-        };
-
         metrics.push(
-          { ...baseMetric, metric_type: "sessions", value: sessions, date },
-          { ...baseMetric, metric_type: "users", value: users, date },
-          { ...baseMetric, metric_type: "conversions", value: conversions, date },
-          { ...baseMetric, metric_type: "pageviews", value: pageviews, date },
-          { ...baseMetric, metric_type: "bounce_rate", value: Math.round(bounceRate * 100) / 100, date },
-          { ...baseMetric, metric_type: "avg_session_duration", value: Math.round(avgDuration), date },
+          { ...baseMetricFields, metric_type: "sessions", value: sessions, date },
+          { ...baseMetricFields, metric_type: "users", value: users, date },
+          { ...baseMetricFields, metric_type: "conversions", value: conversions, date },
+          { ...baseMetricFields, metric_type: "pageviews", value: pageviews, date },
+          { ...baseMetricFields, metric_type: "bounce_rate", value: Math.round(bounceRate * 100) / 100, date },
+          { ...baseMetricFields, metric_type: "avg_session_duration", value: Math.round(avgDuration), date },
         );
       }
     }
@@ -337,14 +341,11 @@ async function pullGA4(
           const [channelSessions] = row.metricValues.map((v: any) => parseFloat(v.value) || 0);
 
           metrics.push({
-            organization_id: config.organization_id,
+            ...baseMetricFields,
             metric_type: "sessions",
             value: channelSessions,
             date,
             segment: channel,
-            source_type: "connector",
-            source_id: config.data_source_id,
-            quality_score: 90,
           });
         }
       }
@@ -355,7 +356,7 @@ async function pullGA4(
 
   if (metrics.length > 0) {
     const { error } = await serviceClient.from("metrics").upsert(metrics, {
-      onConflict: "organization_id,metric_type,date,source_id",
+      onConflict: "organization_id,metric_type,date,region,segment,source_id",
       ignoreDuplicates: false,
     });
     if (error) errors.push(`DB upsert: ${error.message}`);
@@ -373,7 +374,7 @@ async function pullHubSpot(
   serviceClient: any,
 ): Promise<{ records: number; errors: string[] }> {
   const HUBSPOT_KEY = Deno.env.get("HUBSPOT_API_KEY");
-  if (!HUBSPOT_KEY) return { records: 0, errors: ["HUBSPOT_API_KEY not configured. Add your HubSpot private app token in Settings → Secrets."] };
+  if (!HUBSPOT_KEY) return { records: 0, errors: ["HUBSPOT_API_KEY not configured."] };
 
   const errors: string[] = [];
   const metrics: any[] = [];
@@ -382,8 +383,17 @@ async function pullHubSpot(
     ? new Date(config.date_from).getTime()
     : new Date(now.getFullYear(), now.getMonth() - 3, 1).getTime();
 
+  const baseMetricFields = {
+    organization_id: config.organization_id,
+    dataset_id: config.dataset_id || null,
+    source_type: "connector",
+    source_id: config.data_source_id,
+    quality_score: 85,
+    region: "",
+    segment: "",
+  };
+
   try {
-    // Fetch deals
     let after: string | undefined;
     const allDeals: any[] = [];
     let pages = 0;
@@ -416,7 +426,6 @@ async function pullHubSpot(
       }
     }
 
-    // Aggregate deals by month
     const pipelineByMonth: Record<string, number> = {};
     const closedWonByMonth: Record<string, number> = {};
     const dealCountByMonth: Record<string, number> = {};
@@ -439,21 +448,14 @@ async function pullHubSpot(
       }
     }
 
-    const baseMetric = {
-      organization_id: config.organization_id,
-      source_type: "connector",
-      source_id: config.data_source_id,
-      quality_score: 85,
-    };
-
     for (const [date, value] of Object.entries(pipelineByMonth)) {
-      metrics.push({ ...baseMetric, metric_type: "pipeline_value", value, date });
+      metrics.push({ ...baseMetricFields, metric_type: "pipeline_value", value, date });
     }
     for (const [date, value] of Object.entries(closedWonByMonth)) {
-      metrics.push({ ...baseMetric, metric_type: "closed_won_revenue", value, date });
+      metrics.push({ ...baseMetricFields, metric_type: "closed_won_revenue", value, date });
     }
     for (const [date, value] of Object.entries(dealCountByMonth)) {
-      metrics.push({ ...baseMetric, metric_type: "deals_created", value, date });
+      metrics.push({ ...baseMetricFields, metric_type: "deals_created", value, date });
     }
 
     // Fetch contacts count
@@ -464,7 +466,7 @@ async function pullHubSpot(
       const contactData = await contactRes.json();
       if (contactData.total) {
         const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
-        metrics.push({ ...baseMetric, metric_type: "contacts", value: contactData.total, date: todayKey });
+        metrics.push({ ...baseMetricFields, metric_type: "contacts", value: contactData.total, date: todayKey });
       }
     }
   } catch (err: unknown) {
@@ -473,7 +475,7 @@ async function pullHubSpot(
 
   if (metrics.length > 0) {
     const { error } = await serviceClient.from("metrics").upsert(metrics, {
-      onConflict: "organization_id,metric_type,date,source_id",
+      onConflict: "organization_id,metric_type,date,region,segment,source_id",
       ignoreDuplicates: false,
     });
     if (error) errors.push(`DB upsert: ${error.message}`);
@@ -492,18 +494,27 @@ async function pullXero(
 ): Promise<{ records: number; errors: string[] }> {
   const XERO_TOKEN = Deno.env.get("XERO_ACCESS_TOKEN");
   const XERO_TENANT = Deno.env.get("XERO_TENANT_ID");
-  if (!XERO_TOKEN) return { records: 0, errors: ["XERO_ACCESS_TOKEN not configured. Add your Xero OAuth access token in Settings → Secrets."] };
-  if (!XERO_TENANT) return { records: 0, errors: ["XERO_TENANT_ID not configured. Add your Xero tenant ID in Settings → Secrets."] };
+  if (!XERO_TOKEN) return { records: 0, errors: ["XERO_ACCESS_TOKEN not configured."] };
+  if (!XERO_TENANT) return { records: 0, errors: ["XERO_TENANT_ID not configured."] };
 
   const errors: string[] = [];
   const metrics: any[] = [];
+
+  const baseMetricFields = {
+    organization_id: config.organization_id,
+    dataset_id: config.dataset_id || null,
+    source_type: "connector",
+    source_id: config.data_source_id,
+    quality_score: 92,
+    region: "",
+    segment: "",
+  };
 
   try {
     const now = new Date();
     const from = config.date_from || `${now.getFullYear() - 1}-01-01`;
     const to = config.date_to || now.toISOString().split("T")[0];
 
-    // Profit & Loss
     const plRes = await fetch(
       `https://api.xero.com/api.xro/2.0/Reports/ProfitAndLoss?fromDate=${from}&toDate=${to}`,
       {
@@ -519,14 +530,7 @@ async function pullXero(
       const plData = await plRes.json();
       const report = plData.Reports?.[0];
       if (report?.Rows) {
-        const baseMetric = {
-          organization_id: config.organization_id,
-          source_type: "connector",
-          source_id: config.data_source_id,
-          quality_score: 92,
-        };
         const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
-
         for (const section of report.Rows) {
           if (section.RowType === "Section" && section.Title) {
             const total = section.Rows?.find((r: any) => r.RowType === "SummaryRow");
@@ -536,7 +540,7 @@ async function pullXero(
                 : section.Title.toLowerCase().includes("expense") ? "operating_costs"
                 : null;
               if (type) {
-                metrics.push({ ...baseMetric, metric_type: type, value: Math.abs(value), date: todayKey });
+                metrics.push({ ...baseMetricFields, metric_type: type, value: Math.abs(value), date: todayKey });
               }
             }
           }
@@ -563,16 +567,8 @@ async function pullXero(
         for (const acc of bankData.Accounts) {
           totalBalance += acc.BankBalance || 0;
         }
-        const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
-        metrics.push({
-          organization_id: config.organization_id,
-          metric_type: "cash_balance",
-          value: totalBalance,
-          date: todayKey,
-          source_type: "connector",
-          source_id: config.data_source_id,
-          quality_score: 95,
-        });
+        const todayKey = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}-01`;
+        metrics.push({ ...baseMetricFields, metric_type: "cash_balance", value: totalBalance, date: todayKey, quality_score: 95 });
       }
     }
   } catch (err: unknown) {
@@ -581,14 +577,13 @@ async function pullXero(
 
   if (metrics.length > 0) {
     const { error } = await serviceClient.from("metrics").upsert(metrics, {
-      onConflict: "organization_id,metric_type,date,source_id",
+      onConflict: "organization_id,metric_type,date,region,segment,source_id",
       ignoreDuplicates: false,
     });
     if (error) errors.push(`DB upsert: ${error.message}`);
   }
 
   await serviceClient.from("data_sources").update({ last_synced_at: new Date().toISOString() }).eq("id", config.data_source_id);
-
   return { records: metrics.length, errors };
 }
 
@@ -601,8 +596,8 @@ async function pullQuickBooks(
   const QB_TOKEN = Deno.env.get("QUICKBOOKS_ACCESS_TOKEN");
   const QB_REALM = Deno.env.get("QUICKBOOKS_REALM_ID");
   const QB_ENV = Deno.env.get("QUICKBOOKS_ENVIRONMENT") || "production";
-  if (!QB_TOKEN) return { records: 0, errors: ["QUICKBOOKS_ACCESS_TOKEN not configured. Add your QuickBooks OAuth access token in Settings → Secrets."] };
-  if (!QB_REALM) return { records: 0, errors: ["QUICKBOOKS_REALM_ID not configured. Add your QuickBooks company (realm) ID in Settings → Secrets."] };
+  if (!QB_TOKEN) return { records: 0, errors: ["QUICKBOOKS_ACCESS_TOKEN not configured."] };
+  if (!QB_REALM) return { records: 0, errors: ["QUICKBOOKS_REALM_ID not configured."] };
 
   const baseUrl = QB_ENV === "sandbox"
     ? "https://sandbox-quickbooks.api.intuit.com"
@@ -611,38 +606,31 @@ async function pullQuickBooks(
   const errors: string[] = [];
   const metrics: any[] = [];
 
+  const baseMetricFields = {
+    organization_id: config.organization_id,
+    dataset_id: config.dataset_id || null,
+    source_type: "connector",
+    source_id: config.data_source_id,
+    quality_score: 92,
+    region: "",
+    segment: "",
+  };
+
   try {
     const now = new Date();
     const from = config.date_from || `${now.getFullYear() - 1}-01-01`;
     const to = config.date_to || now.toISOString().split("T")[0];
 
-    // Profit & Loss report
     const plRes = await fetch(
       `${baseUrl}/v3/company/${QB_REALM}/reports/ProfitAndLoss?start_date=${from}&end_date=${to}&summarize_column_by=Month&minorversion=65`,
-      {
-        headers: {
-          Authorization: `Bearer ${QB_TOKEN}`,
-          Accept: "application/json",
-        },
-      },
+      { headers: { Authorization: `Bearer ${QB_TOKEN}`, Accept: "application/json" } },
     );
 
     if (plRes.ok) {
       const plData = await plRes.json();
       const columns = plData.Columns?.Column || [];
       const rows = plData.Rows?.Row || [];
-
-      // Extract month headers
-      const monthHeaders = columns
-        .filter((c: any) => c.ColType === "Money")
-        .map((c: any) => c.ColTitle); // e.g., "Jan 2025"
-
-      const baseMetric = {
-        organization_id: config.organization_id,
-        source_type: "connector",
-        source_id: config.data_source_id,
-        quality_score: 92,
-      };
+      const monthHeaders = columns.filter((c: any) => c.ColType === "Money").map((c: any) => c.ColTitle);
 
       const parseQBRow = (row: any, metricType: string) => {
         if (!row?.Summary?.ColData) return;
@@ -650,15 +638,14 @@ async function pullQuickBooks(
         for (let i = 1; i < cols.length && i - 1 < monthHeaders.length; i++) {
           const value = parseFloat(cols[i].value) || 0;
           if (value === 0) continue;
-          // Parse month header to date
           const monthStr = monthHeaders[i - 1];
           try {
             const parsed = new Date(`${monthStr} 1`);
             if (!isNaN(parsed.getTime())) {
               const date = `${parsed.getFullYear()}-${String(parsed.getMonth() + 1).padStart(2, "0")}-01`;
-              metrics.push({ ...baseMetric, metric_type: metricType, value: Math.abs(value), date });
+              metrics.push({ ...baseMetricFields, metric_type: metricType, value: Math.abs(value), date });
             }
-          } catch { /* skip unparseable */ }
+          } catch { /* skip */ }
         }
       };
 
@@ -674,14 +661,10 @@ async function pullQuickBooks(
     }
 
     // Cash flow
+    const now2 = new Date();
     const cfRes = await fetch(
       `${baseUrl}/v3/company/${QB_REALM}/reports/CashFlow?start_date=${from}&end_date=${to}&minorversion=65`,
-      {
-        headers: {
-          Authorization: `Bearer ${QB_TOKEN}`,
-          Accept: "application/json",
-        },
-      },
+      { headers: { Authorization: `Bearer ${QB_TOKEN}`, Accept: "application/json" } },
     );
 
     if (cfRes.ok) {
@@ -689,16 +672,8 @@ async function pullQuickBooks(
       const netCashRow = cfData.Rows?.Row?.find((r: any) => r.group === "NetCash");
       if (netCashRow?.Summary?.ColData?.[1]) {
         const value = parseFloat(netCashRow.Summary.ColData[1].value) || 0;
-        const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
-        metrics.push({
-          organization_id: config.organization_id,
-          metric_type: "net_cash_flow",
-          value,
-          date: todayKey,
-          source_type: "connector",
-          source_id: config.data_source_id,
-          quality_score: 92,
-        });
+        const todayKey = `${now2.getFullYear()}-${String(now2.getMonth() + 1).padStart(2, "0")}-01`;
+        metrics.push({ ...baseMetricFields, metric_type: "net_cash_flow", value, date: todayKey });
       }
     }
   } catch (err: unknown) {
@@ -707,14 +682,13 @@ async function pullQuickBooks(
 
   if (metrics.length > 0) {
     const { error } = await serviceClient.from("metrics").upsert(metrics, {
-      onConflict: "organization_id,metric_type,date,source_id",
+      onConflict: "organization_id,metric_type,date,region,segment,source_id",
       ignoreDuplicates: false,
     });
     if (error) errors.push(`DB upsert: ${error.message}`);
   }
 
   await serviceClient.from("data_sources").update({ last_synced_at: new Date().toISOString() }).eq("id", config.data_source_id);
-
   return { records: metrics.length, errors };
 }
 
@@ -726,22 +700,25 @@ async function pullSalesforce(
 ): Promise<{ records: number; errors: string[] }> {
   const SF_TOKEN = Deno.env.get("SALESFORCE_ACCESS_TOKEN");
   const SF_INSTANCE = Deno.env.get("SALESFORCE_INSTANCE_URL");
-  if (!SF_TOKEN) return { records: 0, errors: ["SALESFORCE_ACCESS_TOKEN not configured. Add your Salesforce OAuth access token in Settings → Secrets."] };
-  if (!SF_INSTANCE) return { records: 0, errors: ["SALESFORCE_INSTANCE_URL not configured. Add your Salesforce instance URL in Settings → Secrets."] };
+  if (!SF_TOKEN) return { records: 0, errors: ["SALESFORCE_ACCESS_TOKEN not configured."] };
+  if (!SF_INSTANCE) return { records: 0, errors: ["SALESFORCE_INSTANCE_URL not configured."] };
 
   const errors: string[] = [];
   const metrics: any[] = [];
 
+  const baseMetricFields = {
+    organization_id: config.organization_id,
+    dataset_id: config.dataset_id || null,
+    source_type: "connector",
+    source_id: config.data_source_id,
+    quality_score: 88,
+    region: "",
+    segment: "",
+  };
+
   try {
     const now = new Date();
     const from = config.date_from || `${now.getFullYear() - 1}-01-01T00:00:00Z`;
-
-    const baseMetric = {
-      organization_id: config.organization_id,
-      source_type: "connector",
-      source_id: config.data_source_id,
-      quality_score: 88,
-    };
 
     // Opportunities (won)
     const oppQuery = encodeURIComponent(
@@ -766,8 +743,8 @@ async function pullSalesforce(
 
       for (const [date, data] of Object.entries(byMonth)) {
         metrics.push(
-          { ...baseMetric, metric_type: "closed_won_revenue", value: data.revenue, date },
-          { ...baseMetric, metric_type: "deals_won", value: data.count, date },
+          { ...baseMetricFields, metric_type: "closed_won_revenue", value: data.revenue, date },
+          { ...baseMetricFields, metric_type: "deals_won", value: data.count, date },
         );
       }
     } else {
@@ -788,8 +765,8 @@ async function pullSalesforce(
       if (pipeData.records?.[0]) {
         const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
         metrics.push(
-          { ...baseMetric, metric_type: "pipeline_value", value: pipeData.records[0].total || 0, date: todayKey },
-          { ...baseMetric, metric_type: "open_deals", value: pipeData.records[0].cnt || 0, date: todayKey },
+          { ...baseMetricFields, metric_type: "pipeline_value", value: pipeData.records[0].total || 0, date: todayKey },
+          { ...baseMetricFields, metric_type: "open_deals", value: pipeData.records[0].cnt || 0, date: todayKey },
         );
       }
     }
@@ -804,7 +781,7 @@ async function pullSalesforce(
       const leadData = await leadRes.json();
       if (leadData.records?.[0]) {
         const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
-        metrics.push({ ...baseMetric, metric_type: "leads", value: leadData.records[0].cnt || 0, date: todayKey });
+        metrics.push({ ...baseMetricFields, metric_type: "leads", value: leadData.records[0].cnt || 0, date: todayKey });
       }
     }
   } catch (err: unknown) {
@@ -813,14 +790,13 @@ async function pullSalesforce(
 
   if (metrics.length > 0) {
     const { error } = await serviceClient.from("metrics").upsert(metrics, {
-      onConflict: "organization_id,metric_type,date,source_id",
+      onConflict: "organization_id,metric_type,date,region,segment,source_id",
       ignoreDuplicates: false,
     });
     if (error) errors.push(`DB upsert: ${error.message}`);
   }
 
   await serviceClient.from("data_sources").update({ last_synced_at: new Date().toISOString() }).eq("id", config.data_source_id);
-
   return { records: metrics.length, errors };
 }
 
@@ -833,27 +809,31 @@ serve(async (req) => {
 
   try {
     const authHeader = req.headers.get("authorization");
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: "Missing authorization" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 
-    const serviceClient = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    );
+    // Allow both service role (from orchestrator) and user JWT
+    const token = authHeader?.replace("Bearer ", "") || "";
+    const isServiceCall = token === serviceKey;
 
-    const userClient = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } },
-    );
-    const { data: { user }, error: authError } = await userClient.auth.getUser();
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    const serviceClient = createClient(supabaseUrl, serviceKey);
+
+    if (!isServiceCall) {
+      if (!authHeader) {
+        return new Response(JSON.stringify({ error: "Missing authorization" }), {
+          status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const userClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
+        global: { headers: { Authorization: authHeader } },
       });
+      const { data: { user }, error: authError } = await userClient.auth.getUser();
+      if (authError || !user) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
 
     const config: ConnectorConfig = await req.json();
@@ -907,6 +887,16 @@ serve(async (req) => {
         completed_at: new Date().toISOString(),
       }).eq("id", job.id);
     }
+
+    // Audit log
+    await serviceClient.from("audit_log").insert({
+      organization_id,
+      actor_type: isServiceCall ? "system" : "user",
+      action_type: "connector_pull",
+      resource_type: "data_source",
+      resource_id: data_source_id,
+      payload: { connector_type, records: result.records, errors: result.errors.length, dataset_id: config.dataset_id },
+    });
 
     return new Response(JSON.stringify({ success: true, ...result }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

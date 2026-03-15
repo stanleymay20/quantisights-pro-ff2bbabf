@@ -15,6 +15,9 @@ const corsHeaders = {
  * 
  * Supports: monthly, quarterly, yearly aggregation periods.
  * Designed for 100M+ metric scale — dashboards read aggregates, not raw metrics.
+ * 
+ * Auth: Accepts both authenticated user calls and internal service calls
+ * (identified by service role key in Authorization header).
  */
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -30,11 +33,50 @@ serve(async (req) => {
       });
     }
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-      { auth: { persistSession: false } }
-    );
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
+
+    // Auth: verify caller is either the service role or an authenticated user with org membership
+    const authHeader = req.headers.get("Authorization") || "";
+    const token = authHeader.replace("Bearer ", "");
+    const isServiceCall = token === serviceKey;
+
+    if (!isServiceCall) {
+      // Validate user JWT
+      const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+      const userClient = createClient(supabaseUrl, anonKey, {
+        global: { headers: { Authorization: authHeader } },
+      });
+      const { data, error } = await userClient.auth.getUser();
+      if (error || !data?.user) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      // Verify org membership
+      const { data: membership } = await supabase
+        .from("organization_members")
+        .select("id")
+        .eq("user_id", data.user.id)
+        .eq("organization_id", organization_id)
+        .maybeSingle();
+      if (!membership) {
+        return new Response(JSON.stringify({ error: "Forbidden: not a member of this organization" }), {
+          status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
+    // Verify dataset belongs to org if provided
+    if (dataset_id) {
+      const { data: ds } = await supabase.from("datasets").select("id").eq("id", dataset_id).eq("organization_id", organization_id).maybeSingle();
+      if (!ds) {
+        return new Response(JSON.stringify({ error: "Dataset not found or does not belong to this organization" }), {
+          status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
 
     if (pipeline_run_id) {
       await supabase.from("pipeline_runs").update({ stage: "aggregating", status: "running" }).eq("id", pipeline_run_id);
@@ -61,7 +103,6 @@ serve(async (req) => {
       });
     }
 
-    // Build aggregation buckets
     interface AggBucket {
       sum: number;
       count: number;
@@ -74,7 +115,7 @@ serve(async (req) => {
     function getPeriodStart(dateStr: string, periodType: string): string {
       const d = new Date(dateStr);
       const y = d.getFullYear();
-      const m = d.getMonth(); // 0-indexed
+      const m = d.getMonth();
       switch (periodType) {
         case "monthly":
           return `${y}-${String(m + 1).padStart(2, "0")}-01`;
@@ -108,7 +149,6 @@ serve(async (req) => {
       }
     }
 
-    // Convert to upsert rows
     const rows: Record<string, unknown>[] = [];
     for (const [key, agg] of buckets) {
       const [dsId, metricType, periodType, periodStart, region, segment] = key.split("|");
@@ -130,7 +170,6 @@ serve(async (req) => {
       });
     }
 
-    // Batch upsert aggregates
     let upserted = 0;
     for (let i = 0; i < rows.length; i += 500) {
       const batch = rows.slice(i, i + 500);
@@ -150,6 +189,16 @@ serve(async (req) => {
       }).eq("id", pipeline_run_id);
     }
 
+    // Audit log
+    await supabase.from("audit_log").insert({
+      organization_id,
+      actor_type: isServiceCall ? "system" : "user",
+      action_type: "refresh_aggregates",
+      resource_type: "dataset",
+      resource_id: dataset_id || organization_id,
+      payload: { aggregated: upserted, periods, metric_count: metrics.length },
+    });
+
     return new Response(JSON.stringify({
       success: true,
       aggregated: upserted,
@@ -160,6 +209,7 @@ serve(async (req) => {
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
+    console.error("refresh-aggregates error:", message);
     return new Response(JSON.stringify({ error: message }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

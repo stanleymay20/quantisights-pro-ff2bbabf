@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { authenticateRequest, verifyOrgMembership } from "../_shared/auth-guard.ts";
+import { enforceDatasetContract } from "../_shared/dataset-contract.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -20,17 +22,13 @@ function cleanNumeric(raw: string | undefined | null): number {
 function normalizeDate(val: string | undefined | null): string | null {
   if (!val) return null;
   const trimmed = String(val).trim();
-  // Year-only
   if (/^\d{4}$/.test(trimmed)) return `${trimmed}-01-01`;
-  // Quarter: 2024-Q1
   if (/^\d{4}[/-]Q[1-4]$/i.test(trimmed)) {
     const y = trimmed.slice(0, 4);
     const q = parseInt(trimmed.slice(-1));
     return `${y}-${String((q - 1) * 3 + 1).padStart(2, "0")}-01`;
   }
-  // Month: 2024-01
   if (/^\d{4}[/-]\d{2}$/.test(trimmed)) return `${trimmed}-01`;
-  // Full date
   if (!isNaN(Date.parse(trimmed))) return trimmed;
   return null;
 }
@@ -41,27 +39,37 @@ serve(async (req) => {
   }
 
   try {
-    const { organization_id, dataset_id, pipeline_run_id, column_mapping, headers: colHeaders, default_metric_type, workspace_id } = await req.json();
+    // Auth guard: verify caller identity
+    const auth = await authenticateRequest(req);
+    if (auth.response) return auth.response;
 
-    if (!organization_id || !dataset_id) {
-      return new Response(JSON.stringify({ error: "organization_id and dataset_id required" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const body = await req.json();
+    const { organization_id, dataset_id, pipeline_run_id, column_mapping, headers: colHeaders, default_metric_type, workspace_id } = body;
 
+    // Enforce Active Data Contract
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
       { auth: { persistSession: false } }
     );
 
+    const contract = await enforceDatasetContract(body, supabase);
+    if (!contract.valid) return contract.response!;
+    if (contract.dry_run) return contract.response!;
+
+    // Verify org membership
+    const isMember = await verifyOrgMembership(auth.userId, organization_id);
+    if (!isMember) {
+      return new Response(JSON.stringify({ error: "Forbidden: not a member of this organization" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Update pipeline stage
     if (pipeline_run_id) {
       await supabase.from("pipeline_runs").update({ stage: "transforming", status: "running" }).eq("id", pipeline_run_id);
     }
 
-    // Build field index mapping from column_mapping
-    // column_mapping format: { "colIdx": "target_type" } e.g. { "0": "date", "1": "value", "2": "region" }
     const mapping: Record<string, string> = column_mapping || {};
     const dateIdx = Object.entries(mapping).find(([, v]) => v === "date")?.[0];
     const valueIndices = Object.entries(mapping).filter(([, v]) => v === "value").map(([k]) => k);
@@ -73,7 +81,6 @@ serve(async (req) => {
     const isMultiMetric = valueIndices.length > 1;
     const headerNames: string[] = colHeaders || [];
 
-    // Compute slugified metric names for multi-metric
     const metricSlugs: string[] = valueIndices.map(idx => {
       const name = headerNames[Number(idx)] || `metric_${idx}`;
       return name.toLowerCase()
@@ -81,7 +88,6 @@ serve(async (req) => {
         .replace(/[()]/g, "").replace(/[^a-z0-9]+/g, "_")
         .replace(/^_+|_+$/g, "").replace(/_+/g, "_");
     });
-    // Deduplicate
     const slugCounts = new Map<string, number>();
     const dedupedSlugs = metricSlugs.map(s => {
       const count = (slugCounts.get(s) ?? 0) + 1;
@@ -91,7 +97,6 @@ serve(async (req) => {
 
     const NULL_SOURCE = "00000000-0000-0000-0000-000000000000";
 
-    // Fetch raw records in batches
     let offset = 0;
     const batchSize = 1000;
     let totalTransformed = 0;
@@ -116,14 +121,12 @@ serve(async (req) => {
       for (const raw of rawBatch) {
         const d = raw.raw_data as Record<string, string>;
         
-        // Extract date (optional — dateless datasets get synthetic dates)
         const dateRaw = dateIdx !== undefined ? d[dateIdx] : null;
         let dateVal: string | null = null;
         if (dateRaw) {
           dateVal = normalizeDate(dateRaw);
         }
         if (!dateVal) {
-          // Generate synthetic date spread across months/years to avoid upsert collision
           const syntheticYear = 2024 + Math.floor(raw.row_index / 365);
           const dayOfYear = raw.row_index % 365;
           const syntheticMonth = Math.floor(dayOfYear / 28) % 12 + 1;
@@ -170,7 +173,6 @@ serve(async (req) => {
         transformedIds.push(raw.id);
       }
 
-      // Batch upsert metrics
       if (metricsToUpsert.length > 0) {
         for (let i = 0; i < metricsToUpsert.length; i += 500) {
           const batch = metricsToUpsert.slice(i, i + 500);
@@ -181,7 +183,6 @@ serve(async (req) => {
         }
       }
 
-      // Mark transformed
       if (transformedIds.length > 0) {
         await supabase.from("raw_records")
           .update({ transform_status: "transformed", transformed_at: new Date().toISOString() })
@@ -189,7 +190,6 @@ serve(async (req) => {
         totalTransformed += transformedIds.length;
       }
 
-      // Mark failed
       for (const fail of failedUpdates) {
         await supabase.from("raw_records")
           .update({ transform_status: "failed", transform_error: fail.error })
@@ -209,6 +209,17 @@ serve(async (req) => {
       }).eq("id", pipeline_run_id);
     }
 
+    // Audit log
+    await supabase.from("audit_log").insert({
+      organization_id,
+      actor_type: "system",
+      actor_id: auth.userId,
+      action_type: "transform_metrics",
+      resource_type: "dataset",
+      resource_id: dataset_id,
+      payload: { transformed: totalTransformed, errors: totalErrors, pipeline_run_id },
+    });
+
     return new Response(JSON.stringify({
       success: true,
       transformed: totalTransformed,
@@ -218,6 +229,7 @@ serve(async (req) => {
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
+    console.error("transform-metrics error:", message);
     return new Response(JSON.stringify({ error: message }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
