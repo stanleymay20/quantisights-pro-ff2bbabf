@@ -18,6 +18,7 @@ const Login = forwardRef<HTMLDivElement>((_, ref) => {
   const [ssoChecking, setSsoChecking] = useState(false);
   const [ssoEnforced, setSsoEnforced] = useState(false);
   const { signIn } = useAuth();
+  const { logAuthEvent } = useAuthEvents();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const rawRedirect = searchParams.get("redirect") || "/dashboard";

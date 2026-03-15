@@ -22,6 +22,10 @@ import RetentionPolicySettings from "@/components/settings/RetentionPolicySettin
 import GovernanceKPIs from "@/components/dashboard/GovernanceKPIs";
 import MFAEnroll from "@/components/auth/MFAEnroll";
 import SecurityPosture from "@/components/security/SecurityPosture";
+import SessionManagement from "@/components/auth/SessionManagement";
+import AuthEventLog from "@/components/auth/AuthEventLog";
+import PasskeyManagement from "@/components/auth/PasskeyManagement";
+import SCIMTokenManager from "@/components/auth/SCIMTokenManager";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
