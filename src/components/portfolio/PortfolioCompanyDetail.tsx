@@ -116,7 +116,7 @@ const PortfolioCompanyDetail = ({ company, onClose, onUpdate, onDelete }: Props)
           <div className="flex items-center gap-2 mt-1 flex-wrap">
             <span className="text-xs text-muted-foreground capitalize">{company.sector}</span>
             {company.fund_name && <span className="text-xs text-muted-foreground">· {company.fund_name}</span>}
-            <Badge className={`${risk.className} border-none text-xs`}>{risk.text} Risk ({company.risk_score})</Badge>
+            <Badge className={`${risk.className} border-none text-xs`}>{risk.text} Risk ({n(company.risk_score)})</Badge>
           </div>
         </div>
         <div className="flex items-center gap-1 shrink-0">

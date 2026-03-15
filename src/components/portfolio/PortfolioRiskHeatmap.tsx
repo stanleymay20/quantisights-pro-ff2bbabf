@@ -106,25 +106,25 @@ const PortfolioRiskHeatmap = ({ companies, onSelect, selectedId }: Props) => {
               <p className="text-[11px] text-muted-foreground">{company.sector}{company.fund_name ? ` · ${company.fund_name}` : ""}</p>
             </div>
             <div className="col-span-1 text-center">
-              <span className={`text-lg font-bold ${riskTextColor(company.risk_score)}`}>{company.risk_score}</span>
+              <span className={`text-lg font-bold ${riskTextColor(n(company.risk_score))}`}>{n(company.risk_score)}</span>
             </div>
             <div className="col-span-1 flex justify-center">
-              {trendIcon(company.risk_trend)}
+              {trendIcon(company.risk_trend ?? 'stable')}
             </div>
             <div className="col-span-1 flex justify-center">
-              {statusBadge(company.health_status)}
+              {statusBadge(company.health_status ?? 'on_track')}
             </div>
             <div className="col-span-2 text-right">
-              <span className="text-sm font-medium">{fmtCurrency(company.revenue_ltm)}</span>
+              <span className="text-sm font-medium">{fmtCurrency(n(company.revenue_ltm))}</span>
             </div>
             <div className="col-span-2 text-right">
-              <span className={`text-sm font-medium ${company.ebitda_margin_pct < 0 ? "text-destructive" : ""}`}>
-                {company.ebitda_margin_pct.toFixed(1)}%
+              <span className={`text-sm font-medium ${n(company.ebitda_margin_pct) < 0 ? "text-destructive" : ""}`}>
+                {n(company.ebitda_margin_pct).toFixed(1)}%
               </span>
             </div>
             <div className="col-span-1 text-right">
-              <span className={`text-sm font-medium ${company.revenue_growth_pct > 0 ? "text-[hsl(var(--severity-success))]" : company.revenue_growth_pct < 0 ? "text-destructive" : ""}`}>
-                {company.revenue_growth_pct > 0 ? "+" : ""}{company.revenue_growth_pct.toFixed(0)}%
+              <span className={`text-sm font-medium ${n(company.revenue_growth_pct) > 0 ? "text-[hsl(var(--severity-success))]" : n(company.revenue_growth_pct) < 0 ? "text-destructive" : ""}`}>
+                {n(company.revenue_growth_pct) > 0 ? "+" : ""}{n(company.revenue_growth_pct).toFixed(0)}%
               </span>
             </div>
             <div className="col-span-1 flex justify-end">
