@@ -31,6 +31,7 @@ const STATUS_BADGE: Record<string, "default" | "secondary" | "destructive" | "ou
 
 export default function PipelineObservability() {
   const { currentOrgId: organizationId } = useOrganization();
+  const { activeDatasetId } = useProject();
   const [syncJobs, setSyncJobs] = useState<any[]>([]);
   const [dataSources, setDataSources] = useState<any[]>([]);
   const [qualityChecks, setQualityChecks] = useState<any[]>([]);
