@@ -168,6 +168,7 @@ serve(async (req) => {
 
     const result = {
       organization_id,
+      dataset_id,
       metric_type,
       forecast_horizon: steps,
       simulation_runs: runs,
@@ -181,20 +182,13 @@ serve(async (req) => {
       value_at_risk_95: round2(var95),
       mean_growth_rate: round2(mu * 100),
       volatility: round2(sigma * 100),
-      // Standardized adaptive confidence metadata
-      confidence: conf.confidence,
-      raw_confidence: conf.raw_confidence,
+      // Map adaptive confidence to table columns
       capped_confidence: conf.capped_confidence,
+      raw_confidence: conf.raw_confidence,
       confidence_cap_reason: conf.confidence_cap_reason,
       variance_score: conf.variance_score,
       sample_size: sampleSize,
       data_sufficiency: conf.data_sufficiency,
-      adaptive_calibration_applied: conf.adaptive_calibration_applied,
-      calibration_model_version: conf.calibration_model_version,
-      calibration_band_used: conf.calibration_band_used,
-      calibration_correction_applied_pp: conf.calibration_correction_applied_pp,
-      calibration_low_sample_band: conf.calibration_low_sample_band,
-      confidence_source: conf.confidence_source,
       created_by: user.id,
     };
 
