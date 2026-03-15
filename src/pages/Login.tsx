@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthThrottle } from "@/hooks/useAuthThrottle";
+import { useAuthEvents } from "@/hooks/useAuthEvents";
 import { supabase } from "@/integrations/supabase/client";
 import MFAChallenge from "@/components/auth/MFAChallenge";
 import logo from "@/assets/quantivis-logo.png";
@@ -17,6 +18,7 @@ const Login = forwardRef<HTMLDivElement>((_, ref) => {
   const [ssoChecking, setSsoChecking] = useState(false);
   const [ssoEnforced, setSsoEnforced] = useState(false);
   const { signIn } = useAuth();
+  const { logAuthEvent } = useAuthEvents();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const rawRedirect = searchParams.get("redirect") || "/dashboard";
@@ -100,8 +102,10 @@ const Login = forwardRef<HTMLDivElement>((_, ref) => {
         }
       }).catch(() => {}); // Non-blocking
 
+      logAuthEvent({ eventType: "login", metadata: { method: "password" } });
       navigate(redirectTo);
     } catch (err: any) {
+      logAuthEvent({ eventType: "failed_login", metadata: { email, reason: err.message } });
       toast({ title: "Login failed", description: err.message, variant: "destructive" });
     } finally {
       setIsLoading(false);
