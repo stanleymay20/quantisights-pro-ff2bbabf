@@ -102,8 +102,10 @@ const Login = forwardRef<HTMLDivElement>((_, ref) => {
         }
       }).catch(() => {}); // Non-blocking
 
+      logAuthEvent({ eventType: "login", metadata: { method: "password" } });
       navigate(redirectTo);
     } catch (err: any) {
+      logAuthEvent({ eventType: "failed_login", metadata: { email, reason: err.message } });
       toast({ title: "Login failed", description: err.message, variant: "destructive" });
     } finally {
       setIsLoading(false);
