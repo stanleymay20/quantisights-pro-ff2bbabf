@@ -21,7 +21,9 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    console.error("ErrorBoundary caught:", error, info);
+    // Log to console for debugging — in production, this would go to a monitoring service
+    console.error("[ErrorBoundary] Uncaught error:", error.message);
+    console.error("[ErrorBoundary] Component stack:", info.componentStack);
   }
 
   render() {
