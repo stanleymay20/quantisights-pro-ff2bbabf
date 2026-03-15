@@ -64,7 +64,14 @@ const RetentionPolicySettings = () => {
         prev.map((p) => {
           const saved = savedPolicies.find((s: any) => s.data_category === p.data_category);
           return saved
-            ? { ...p, retention_days: saved.retention_days, auto_cleanup: saved.auto_cleanup }
+            ? {
+                ...p,
+                retention_days: saved.retention_days,
+                auto_cleanup: saved.auto_cleanup,
+                enforcement_status: saved.enforcement_status ?? "configured",
+                last_cleanup_at: saved.last_cleanup_at ?? null,
+                next_scheduled_at: saved.next_scheduled_at ?? null,
+              }
             : p;
         })
       );
