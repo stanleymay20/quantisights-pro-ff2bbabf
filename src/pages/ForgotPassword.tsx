@@ -10,6 +10,7 @@ const ForgotPassword = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const { toast } = useToast();
+  const throttle = useAuthThrottle(3, 120_000);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
