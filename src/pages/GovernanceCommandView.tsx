@@ -10,10 +10,10 @@ import { Link } from "react-router-dom";
 import GovernanceKPIs from "@/components/dashboard/GovernanceKPIs";
 import StewardDrillDown from "@/components/governance/StewardDrillDown";
 import { GovernanceExportButton } from "@/components/governance/GovernanceExport";
-import HelpTooltip from "@/components/ui/help-tooltip";
+import { evaluateGovernanceRisks, type RiskContext } from "@/lib/governance-rules";
 import {
   Shield, Award, Clock, Users, AlertTriangle, CheckCircle2,
-  ArrowRight, TrendingUp, TrendingDown, Minus, BarChart3, Info,
+  ArrowRight, TrendingUp, TrendingDown, Minus, BarChart3,
 } from "lucide-react";
 
 const MATURITY_LEVELS = [
@@ -26,48 +26,6 @@ const MATURITY_LEVELS = [
 
 const getLevel = (score: number) =>
   MATURITY_LEVELS.find((l) => score >= l.min && score <= l.max) ?? MATURITY_LEVELS[0];
-
-// Risk detection rules with explanations
-const RISK_RULES: { check: (ctx: RiskContext) => boolean; label: string; severity: "high" | "medium"; rule: string }[] = [
-  {
-    check: (c) => c.stewardCount === 0,
-    label: "No Data Stewards assigned",
-    severity: "high",
-    rule: "Triggered when steward count = 0. Without accountability, governance cannot be enforced.",
-  },
-  {
-    check: (c) => c.retentionCount < 3,
-    label: "Retention policies incomplete",
-    severity: "high",
-    rule: "Triggered when fewer than 3 of 6 data categories have a retention policy defined.",
-  },
-  {
-    check: (c) => c.maturityScore !== null && c.maturityScore < 40,
-    label: "Governance maturity below threshold",
-    severity: "high",
-    rule: "Triggered when maturity assessment score is below 40/100 (Initial or Developing level).",
-  },
-  {
-    check: (c) => c.maturityScore !== null && c.maturityScore >= 40 && c.maturityScore < 60,
-    label: "Governance maturity developing — not yet managed",
-    severity: "medium",
-    rule: "Triggered when maturity score is 40–59 (Defined level, but not yet Managed).",
-  },
-  {
-    check: (c) => c.weakestScore !== null && c.weakestScore < 30,
-    label: (c) => `Weak dimension: ${c.weakestName} (${c.weakestScore}%)`,
-    severity: "medium",
-    rule: "Triggered when any governance dimension scores below 30%.",
-  } as any,
-];
-
-interface RiskContext {
-  stewardCount: number;
-  retentionCount: number;
-  maturityScore: number | null;
-  weakestScore: number | null;
-  weakestName: string | null;
-}
 
 const GovernanceCommandView = () => {
   const { currentOrgId, currentOrg } = useOrganization();
