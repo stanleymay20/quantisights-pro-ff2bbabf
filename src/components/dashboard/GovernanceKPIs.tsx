@@ -159,7 +159,13 @@ const GovernanceKPIs = () => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-1">
-                    <p className="text-xs font-semibold text-foreground">{kpi.label}</p>
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-xs font-semibold text-foreground">{kpi.label}</p>
+                      <HelpTooltip
+                        content={`${kpi.help.what}\n\nCalculation: ${kpi.help.how}\n\nWhy it matters: ${kpi.help.why}`}
+                        side="top"
+                      />
+                    </div>
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-bold">{kpi.value}</span>
                       <Badge className={`${statusColors[kpi.status].badge} text-[9px] border`}>
