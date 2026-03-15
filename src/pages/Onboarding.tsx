@@ -112,9 +112,23 @@ const Onboarding = () => {
   };
 
   const saveOrgProfile = async () => {
-    if (!currentOrgId) return;
+    if (!currentOrgId || !user) return;
     const sanitizedName = orgName.trim().slice(0, 200);
     if (!sanitizedName) return;
+
+    // Verify user has admin/owner role before mutating org
+    const { data: membership } = await supabase
+      .from("organization_members")
+      .select("role")
+      .eq("organization_id", currentOrgId)
+      .eq("user_id", user.id)
+      .single();
+
+    if (!membership || !["owner", "admin"].includes(membership.role)) {
+      toast({ title: "Permission denied", description: "Only admins can update organization settings.", variant: "destructive" });
+      return;
+    }
+
     await supabase
       .from("organizations")
       .update({
