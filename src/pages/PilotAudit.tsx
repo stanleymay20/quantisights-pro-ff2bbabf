@@ -288,7 +288,7 @@ const PilotAudit = () => {
               items={results.filter((r) => r.scope === "edge_dry_run")}
             />
             <ResultSection
-              title="Edge Function Rejection Tests (missing dataset_id)"
+              title="Edge Function Rejection Coverage"
               icon={<AlertTriangle className="w-4 h-4" />}
               items={results.filter((r) => r.scope === "edge_reject")}
             />
