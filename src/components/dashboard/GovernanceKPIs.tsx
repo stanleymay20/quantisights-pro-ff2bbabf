@@ -29,12 +29,13 @@ const GovernanceKPIs = () => {
     queryFn: async () => {
       if (!currentOrgId) return null;
 
-      const [datasets, quality, decisions, members, policies] = await Promise.all([
-        supabase.from("datasets").select("id", { count: "exact", head: true }).eq("organization_id", currentOrgId),
-        supabase.from("data_quality_checks").select("score").eq("organization_id", currentOrgId).order("created_at", { ascending: false }).limit(10),
+      const [datasets, quality, decisions, members, policies, retentionPolicies] = await Promise.all([
+        supabase.from("datasets").select("id, uploaded_by").eq("organization_id", currentOrgId).eq("status", "active"),
+        supabase.from("data_quality_checks").select("score, dataset_id").eq("organization_id", currentOrgId).order("created_at", { ascending: false }).limit(10),
         supabase.from("decision_ledger").select("id, outcome_measured_at", { count: "exact" }).eq("organization_id", currentOrgId),
-        supabase.from("organization_members").select("role").eq("organization_id", currentOrgId),
+        supabase.from("organization_members").select("role, user_id").eq("organization_id", currentOrgId),
         supabase.from("data_retention_policies").select("id", { count: "exact", head: true }).eq("organization_id", currentOrgId),
+        supabase.from("data_retention_policies").select("data_category").eq("organization_id", currentOrgId),
       ]);
 
       const avgQuality = quality.data?.length
