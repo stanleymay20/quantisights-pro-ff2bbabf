@@ -57,6 +57,13 @@ const Simulations = () => {
 
   const runSim = useMutation({
     mutationFn: async () => {
+      if (!organizationId || !activeDatasetId) {
+        throw new Error("Select an active dataset before running a simulation.");
+      }
+      if (!metricType) {
+        throw new Error("Select a metric type first.");
+      }
+
       const { data, error } = await supabase.functions.invoke("monte-carlo-sim", {
         body: {
           organization_id: organizationId,
