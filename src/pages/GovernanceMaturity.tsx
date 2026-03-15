@@ -13,6 +13,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   Shield, Database, Users, FileText, Brain, BarChart3,
   CheckCircle2, AlertTriangle, ArrowRight, Award,
+  TrendingUp, TrendingDown, Minus,
 } from "lucide-react";
 
 interface Dimension {
