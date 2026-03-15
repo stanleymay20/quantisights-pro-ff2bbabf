@@ -103,11 +103,11 @@ export const usePortfolioCompanies = (orgId: string | null, datasetId: string | 
     else throw error;
   };
 
-  const totalAUM = companies.reduce((s, c) => s + (c.current_valuation ?? 0), 0);
-  const totalRevenue = companies.reduce((s, c) => s + c.revenue_ltm, 0);
-  const avgRisk = companies.length ? Math.round(companies.reduce((s, c) => s + c.risk_score, 0) / companies.length) : 0;
-  const atRiskCount = companies.filter(c => c.risk_score >= 70).length;
-  const avgEbitdaMargin = companies.length ? companies.reduce((s, c) => s + c.ebitda_margin_pct, 0) / companies.length : 0;
+  const totalAUM = companies.reduce((s, c) => s + n(c.current_valuation), 0);
+  const totalRevenue = companies.reduce((s, c) => s + n(c.revenue_ltm), 0);
+  const avgRisk = companies.length ? Math.round(companies.reduce((s, c) => s + n(c.risk_score), 0) / companies.length) : 0;
+  const atRiskCount = companies.filter(c => n(c.risk_score) >= 70).length;
+  const avgEbitdaMargin = companies.length ? companies.reduce((s, c) => s + n(c.ebitda_margin_pct), 0) / companies.length : 0;
 
   return {
     companies, loading, error, refresh: fetchCompanies,
