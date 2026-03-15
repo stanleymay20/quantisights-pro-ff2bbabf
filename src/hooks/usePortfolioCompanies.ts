@@ -78,23 +78,27 @@ export const usePortfolioCompanies = (orgId: string | null, datasetId: string | 
   };
 
   const updateCompany = async (id: string, updates: Partial<PortfolioCompany>) => {
-    if (!orgId) throw new Error("Organization context required");
+    if (!orgId || !datasetId) throw new Error("Organization and dataset context required (Active Data Contract)");
+    // Prevent mutation of identity fields
+    const { id: _id, organization_id: _o, dataset_id: _d, created_at: _c, ...safeUpdates } = updates as any;
     const { error } = await supabase
       .from("portfolio_companies")
-      .update({ ...updates, updated_at: new Date().toISOString() })
+      .update({ ...safeUpdates, updated_at: new Date().toISOString() })
       .eq("id", id)
-      .eq("organization_id", orgId);
+      .eq("organization_id", orgId)
+      .eq("dataset_id", datasetId);
     if (!error) await fetchCompanies();
     else throw error;
   };
 
   const deleteCompany = async (id: string) => {
-    if (!orgId) throw new Error("Organization context required");
+    if (!orgId || !datasetId) throw new Error("Organization and dataset context required (Active Data Contract)");
     const { error } = await supabase
       .from("portfolio_companies")
       .delete()
       .eq("id", id)
-      .eq("organization_id", orgId);
+      .eq("organization_id", orgId)
+      .eq("dataset_id", datasetId);
     if (!error) await fetchCompanies();
     else throw error;
   };
