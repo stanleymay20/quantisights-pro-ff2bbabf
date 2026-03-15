@@ -43,17 +43,18 @@ serve(async (req) => {
     const isServiceCall = token === serviceKey;
 
     if (!isServiceCall) {
-      // Validate user JWT
+      // Validate user JWT using getClaims for secure, real-time verification
       const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
       const userClient = createClient(supabaseUrl, anonKey, {
         global: { headers: { Authorization: authHeader } },
       });
-      const { data, error } = await userClient.auth.getUser();
-      if (error || !data?.user) {
+      const { data, error } = await userClient.auth.getClaims(token);
+      if (error || !data?.claims?.sub) {
         return new Response(JSON.stringify({ error: "Unauthorized" }), {
           status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+      const userId = data.claims.sub as string;
       // Verify org membership
       const { data: membership } = await supabase
         .from("organization_members")
