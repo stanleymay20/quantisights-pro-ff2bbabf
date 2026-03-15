@@ -43,22 +43,23 @@ serve(async (req) => {
     const isServiceCall = token === serviceKey;
 
     if (!isServiceCall) {
-      // Validate user JWT
+      // Validate user JWT using getClaims for secure, real-time verification
       const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
       const userClient = createClient(supabaseUrl, anonKey, {
         global: { headers: { Authorization: authHeader } },
       });
-      const { data, error } = await userClient.auth.getUser();
-      if (error || !data?.user) {
+      const { data, error } = await userClient.auth.getClaims(token);
+      if (error || !data?.claims?.sub) {
         return new Response(JSON.stringify({ error: "Unauthorized" }), {
           status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+      const userId = data.claims.sub as string;
       // Verify org membership
       const { data: membership } = await supabase
         .from("organization_members")
         .select("id")
-        .eq("user_id", data.user.id)
+        .eq("user_id", userId)
         .eq("organization_id", organization_id)
         .maybeSingle();
       if (!membership) {
@@ -84,20 +85,32 @@ serve(async (req) => {
 
     const periods = period_types || ["monthly", "quarterly", "yearly"];
 
-    // Fetch all metrics for scope (org + optional dataset)
-    let query = supabase
-      .from("metrics")
-      .select("metric_type, value, date, region, segment, dataset_id")
-      .eq("organization_id", organization_id)
-      .order("date", { ascending: true });
+    // Fetch all metrics for scope in batches to avoid 1000-row default limit
+    const allMetrics: Record<string, unknown>[] = [];
+    const PAGE_SIZE = 1000;
+    let page = 0;
+    while (true) {
+      let query = supabase
+        .from("metrics")
+        .select("metric_type, value, date, region, segment, dataset_id")
+        .eq("organization_id", organization_id)
+        .order("date", { ascending: true })
+        .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
 
-    if (dataset_id) {
-      query = query.eq("dataset_id", dataset_id);
+      if (dataset_id) {
+        query = query.eq("dataset_id", dataset_id);
+      }
+
+      const { data: batch, error: fetchErr } = await query;
+      if (fetchErr) throw fetchErr;
+      if (!batch || batch.length === 0) break;
+      allMetrics.push(...batch);
+      if (batch.length < PAGE_SIZE) break;
+      page++;
     }
 
-    const { data: metrics, error: fetchErr } = await query;
-    if (fetchErr) throw fetchErr;
-    if (!metrics || metrics.length === 0) {
+    const metrics = allMetrics;
+    if (metrics.length === 0) {
       return new Response(JSON.stringify({ success: true, aggregated: 0, message: "No metrics to aggregate" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

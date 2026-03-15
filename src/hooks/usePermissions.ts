@@ -15,19 +15,6 @@ export function usePermissions() {
   const { user } = useAuth();
   const { currentOrg: organization } = useOrganization();
 
-  const { data: permissions = [], isLoading } = useQuery({
-    queryKey: ["permissions", user?.id, organization?.id],
-    queryFn: async () => {
-      if (!user?.id || !organization?.id) return [];
-      const { data } = await supabase
-        .from("role_permissions")
-        .select("permission, granted")
-        .eq("organization_id", organization.id);
-      return data ?? [];
-    },
-    enabled: !!user?.id && !!organization?.id,
-  });
-
   const { data: orgRole } = useQuery({
     queryKey: ["org-role", user?.id, organization?.id],
     queryFn: async () => {
@@ -42,6 +29,22 @@ export function usePermissions() {
     },
     enabled: !!user?.id && !!organization?.id,
   });
+
+  const { data: permissions = [], isLoading } = useQuery({
+    queryKey: ["permissions", user?.id, organization?.id, orgRole],
+    queryFn: async () => {
+      if (!user?.id || !organization?.id || !orgRole) return [];
+      // Only fetch permissions for the user's actual role in this org
+      const { data } = await supabase
+        .from("role_permissions")
+        .select("permission, granted")
+        .eq("organization_id", organization.id)
+        .eq("role", orgRole);
+      return data ?? [];
+    },
+    enabled: !!user?.id && !!organization?.id && !!orgRole,
+  });
+
 
   const hasPermission = (permission: Permission): boolean => {
     // Check explicit permissions first

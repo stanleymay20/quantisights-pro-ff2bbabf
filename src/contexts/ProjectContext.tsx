@@ -102,15 +102,20 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const setActiveDataset = useCallback(async (projectId: string, datasetId: string) => {
-    await supabase
+    if (!currentOrgId) throw new Error("Organization context required");
+    // Scope update to org to prevent cross-org project mutation
+    const { error } = await supabase
       .from("projects")
       .update({ active_dataset_id: datasetId })
-      .eq("id", projectId);
+      .eq("id", projectId)
+      .eq("organization_id", currentOrgId);
+
+    if (error) throw error;
 
     setProjects((prev) =>
       prev.map((p) => (p.id === projectId ? { ...p, active_dataset_id: datasetId } : p))
     );
-  }, []);
+  }, [currentOrgId]);
 
   const createProject = useCallback(async (name: string, description?: string, workspaceIdOverride?: string): Promise<Project> => {
     if (!currentOrgId || !user) throw new Error("No org or user");

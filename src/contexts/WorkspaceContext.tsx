@@ -93,6 +93,7 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
     const nextId = valid ? valid.id : data[0]?.id ?? null;
     setCurrentWorkspaceId(nextId);
     if (nextId) sessionStorage.setItem(STORAGE_KEY, nextId);
+    else sessionStorage.removeItem(STORAGE_KEY);
     setLoading(false);
   }, [currentOrgId, user]);
 
