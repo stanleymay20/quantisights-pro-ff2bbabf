@@ -87,14 +87,14 @@ const PortfolioRiskHeatmap = ({ companies, onSelect, selectedId }: Props) => {
                 <p className="text-sm font-semibold truncate">{company.name}</p>
                 <p className="text-[11px] text-muted-foreground">{company.sector}{company.fund_name ? ` · ${company.fund_name}` : ""}</p>
               </div>
-              <span className={`text-xl font-bold ml-3 ${riskTextColor(company.risk_score)}`}>{company.risk_score}</span>
+              <span className={`text-xl font-bold ml-3 ${riskTextColor(n(company.risk_score))}`}>{n(company.risk_score)}</span>
             </div>
             <div className="flex items-center gap-3 flex-wrap">
-              {statusBadge(company.health_status)}
-              <span className="text-xs text-muted-foreground">{fmtCurrency(company.revenue_ltm)} rev</span>
-              <span className="text-xs text-muted-foreground">{company.ebitda_margin_pct.toFixed(1)}% EBITDA</span>
-              <span className={`text-xs ${company.revenue_growth_pct > 0 ? "text-[hsl(var(--severity-success))]" : company.revenue_growth_pct < 0 ? "text-destructive" : "text-muted-foreground"}`}>
-                {company.revenue_growth_pct > 0 ? "+" : ""}{company.revenue_growth_pct.toFixed(0)}% growth
+              {statusBadge(company.health_status ?? 'on_track')}
+              <span className="text-xs text-muted-foreground">{fmtCurrency(n(company.revenue_ltm))} rev</span>
+              <span className="text-xs text-muted-foreground">{n(company.ebitda_margin_pct).toFixed(1)}% EBITDA</span>
+              <span className={`text-xs ${n(company.revenue_growth_pct) > 0 ? "text-[hsl(var(--severity-success))]" : n(company.revenue_growth_pct) < 0 ? "text-destructive" : "text-muted-foreground"}`}>
+                {n(company.revenue_growth_pct) > 0 ? "+" : ""}{n(company.revenue_growth_pct).toFixed(0)}% growth
               </span>
             </div>
           </div>
