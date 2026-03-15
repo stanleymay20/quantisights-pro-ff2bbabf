@@ -309,26 +309,100 @@ const GovernanceMaturity = () => {
         </Button>
       </div>
 
-      {/* Last Assessment */}
+      {/* Executive Summary + Trend */}
       {lastAssessment && (
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm flex items-center gap-2">
                 <BarChart3 className="w-4 h-4 text-primary" />
-                Previous Assessment
+                Executive Summary
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-4">
-                <span className="text-2xl font-bold">{Number(lastAssessment.overall_score)}/100</span>
-                <Badge className={`${getLevel(Number(lastAssessment.overall_score)).bg} ${getLevel(Number(lastAssessment.overall_score)).color} border-0`}>
-                  {getLevel(Number(lastAssessment.overall_score)).label}
-                </Badge>
+            <CardContent className="space-y-4">
+              {/* Score + Trend */}
+              <div className="flex items-center gap-4 flex-wrap">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-2xl font-bold">{Number(lastAssessment.overall_score)}/100</span>
+                  <Badge className={`${getLevel(Number(lastAssessment.overall_score)).bg} ${getLevel(Number(lastAssessment.overall_score)).color} border-0`}>
+                    {getLevel(Number(lastAssessment.overall_score)).label}
+                  </Badge>
+                </div>
+                {previousAssessment && (() => {
+                  const delta = Number(lastAssessment.overall_score) - Number(previousAssessment.overall_score);
+                  return (
+                    <div className="flex items-center gap-1 text-xs">
+                      {delta > 0 ? <TrendingUp className="w-3 h-3 text-emerald-400" /> :
+                       delta < 0 ? <TrendingDown className="w-3 h-3 text-destructive" /> :
+                       <Minus className="w-3 h-3 text-muted-foreground" />}
+                      <span className={delta > 0 ? "text-emerald-400" : delta < 0 ? "text-destructive" : "text-muted-foreground"}>
+                        {delta > 0 ? "+" : ""}{delta} from previous ({new Date(previousAssessment.created_at).toLocaleDateString()})
+                      </span>
+                    </div>
+                  );
+                })()}
                 <span className="text-xs text-muted-foreground ml-auto">
                   {new Date(lastAssessment.created_at).toLocaleDateString()}
                 </span>
               </div>
+
+              {/* Strongest / Weakest / Next Step */}
+              {(() => {
+                const dims = (lastAssessment.dimensions ?? {}) as Record<string, number>;
+                const entries = Object.entries(dims).sort((a, b) => b[1] - a[1]);
+                const strongest = entries[0];
+                const weakest = entries[entries.length - 1];
+                const recs = (lastAssessment.recommendations ?? []) as { dimension: string; action: string }[];
+                return (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    {strongest && (
+                      <div className="p-3 rounded-xl border border-border/40 bg-emerald-500/5">
+                        <p className="text-[10px] text-muted-foreground font-semibold mb-1">STRONGEST</p>
+                        <p className="text-xs font-bold capitalize">{strongest[0]}</p>
+                        <p className="text-lg font-bold text-emerald-400">{strongest[1]}%</p>
+                      </div>
+                    )}
+                    {weakest && (
+                      <div className="p-3 rounded-xl border border-border/40 bg-destructive/5">
+                        <p className="text-[10px] text-muted-foreground font-semibold mb-1">WEAKEST</p>
+                        <p className="text-xs font-bold capitalize">{weakest[0]}</p>
+                        <p className="text-lg font-bold text-destructive">{weakest[1]}%</p>
+                      </div>
+                    )}
+                    {recs.length > 0 && (
+                      <div className="p-3 rounded-xl border border-border/40 bg-primary/5">
+                        <p className="text-[10px] text-muted-foreground font-semibold mb-1">RECOMMENDED NEXT STEP</p>
+                        <p className="text-xs text-foreground">{recs[0].action}</p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* Assessment History */}
+              {assessmentHistory && assessmentHistory.length > 1 && (
+                <div>
+                  <p className="text-[10px] text-muted-foreground font-semibold mb-2">ASSESSMENT HISTORY</p>
+                  <div className="flex items-end gap-2">
+                    {[...assessmentHistory].reverse().map((a: any, i: number) => {
+                      const score = Number(a.overall_score);
+                      const lvl = getLevel(score);
+                      return (
+                        <div key={i} className="flex flex-col items-center gap-1">
+                          <span className={`text-[10px] font-bold ${lvl.color}`}>{score}</span>
+                          <div
+                            className={`w-8 rounded-t ${lvl.bg}`}
+                            style={{ height: `${Math.max(score * 0.6, 8)}px` }}
+                          />
+                          <span className="text-[8px] text-muted-foreground/60">
+                            {new Date(a.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </motion.div>
