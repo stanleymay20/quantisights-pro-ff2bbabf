@@ -36,7 +36,7 @@ const StewardDrillDown = () => {
           .eq("organization_id", currentOrgId),
         supabase
           .from("datasets")
-          .select("id, name, uploaded_by")
+          .select("id, name, uploaded_by, steward_user_id")
           .eq("organization_id", currentOrgId)
           .eq("status", "active"),
         supabase
