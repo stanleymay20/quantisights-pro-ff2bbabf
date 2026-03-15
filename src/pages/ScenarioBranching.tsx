@@ -109,7 +109,7 @@ const ScenarioBranching = () => {
   };
 
   const simulateBranch = async (branch: Branch) => {
-    if (!currentOrgId) return;
+    if (!currentOrgId || !activeDatasetId) return;
     setSimulating(branch.id);
     try {
       const { data, error } = await supabase.functions.invoke("strategic-simulation", {

@@ -46,7 +46,7 @@ const BoardReport = () => {
 
   useEffect(() => {
     const fetchReport = async () => {
-      if (!currentOrgId) return;
+      if (!currentOrgId || !activeDatasetId) return;
       try {
         const { data, error: fnError } = await supabase.functions.invoke("generate-board-report", {
           body: { organization_id: currentOrgId, dataset_id: activeDatasetId },
@@ -61,7 +61,7 @@ const BoardReport = () => {
       }
     };
     fetchReport();
-  }, [currentOrgId]);
+  }, [currentOrgId, activeDatasetId]);
 
   const handlePrint = () => window.print();
 
