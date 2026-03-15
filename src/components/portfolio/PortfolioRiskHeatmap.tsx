@@ -53,7 +53,7 @@ const PortfolioRiskHeatmap = ({ companies, onSelect, selectedId }: Props) => {
     );
   }
 
-  const sorted = [...companies].sort((a, b) => b.risk_score - a.risk_score);
+  const sorted = [...companies].sort((a, b) => n(b.risk_score) - n(a.risk_score));
 
   return (
     <div className="space-y-2">
