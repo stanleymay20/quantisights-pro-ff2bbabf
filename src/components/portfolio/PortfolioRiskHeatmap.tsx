@@ -1,5 +1,7 @@
 import { PortfolioCompany } from "@/hooks/usePortfolioCompanies";
 import { TrendingUp, TrendingDown, Minus, AlertTriangle, ArrowRight } from "lucide-react";
+
+const n = (v: number | null | undefined): number => v ?? 0;
 import { Badge } from "@/components/ui/badge";
 import { fmtCurrency } from "@/lib/format-utils";
 interface Props {
