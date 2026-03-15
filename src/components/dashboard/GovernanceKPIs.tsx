@@ -117,13 +117,13 @@ const GovernanceKPIs = () => {
     {
       label: "Governed Datasets",
       icon: Database,
-      value: stats?.datasetCount ?? 0,
+      value: `${stats?.governedCount ?? 0}/${stats?.datasetCount ?? 0}`,
       target: "All active",
-      progress: Math.min((stats?.datasetCount ?? 0) * 20, 100),
-      status: (stats?.datasetCount ?? 0) >= 3 ? "healthy" : (stats?.datasetCount ?? 0) >= 1 ? "warning" : "critical",
+      progress: (stats?.datasetCount ?? 0) > 0 ? Math.round(((stats?.governedCount ?? 0) / (stats?.datasetCount ?? 1)) * 100) : 0,
+      status: (stats?.datasetCount ?? 0) > 0 && (stats?.governedCount ?? 0) === (stats?.datasetCount ?? 0) ? "healthy" : (stats?.governedCount ?? 0) >= 1 ? "warning" : "critical",
       help: {
-        what: "Datasets with at least one quality check, an assigned owner, and active retention policy.",
-        how: "Count of datasets in the organization that have passed at least one data quality check.",
+        what: "Datasets that meet all three governance criteria: quality-checked, steward-owned, and covered by a retention policy.",
+        how: "Count of active datasets where (1) at least one quality check exists, (2) the uploader holds a steward role, and (3) a 'datasets' retention policy is defined.",
         why: "Ungoverned datasets create blind spots — decisions built on unchecked data carry hidden risk.",
       },
     },
