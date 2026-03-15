@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Book, ChevronRight, ChevronDown, ArrowUp, Menu, X } from "lucide-react";
+import { Book, ChevronRight, ChevronDown, ArrowUp, Menu, X, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
