@@ -394,8 +394,32 @@ const Ebook = () => {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5 text-xs"
+              onClick={() => {
+                const md = chapters.map(ch => {
+                  const body = ch.sections.map(s =>
+                    `### ${s.heading}\n\n${s.content.replace(/\\n/g, "\n")}`
+                  ).join("\n\n");
+                  return `## Chapter ${String(ch.id).padStart(2, "0")}: ${ch.title}\n\n${body}`;
+                }).join("\n\n---\n\n");
+                const full = `# Quantivis — The Complete Guide\n\n${md}\n`;
+                const blob = new Blob([full], { type: "text/markdown;charset=utf-8" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "quantivis-ebook.md";
+                a.click();
+                URL.revokeObjectURL(url);
+              }}
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Download</span>
+            </Button>
             <span className="text-xs text-muted-foreground hidden sm:block">
-              Chapter {activeChapter} of {chapters.length}
+              {activeChapter} / {chapters.length}
             </span>
             <div className="w-24 h-1.5 bg-secondary rounded-full overflow-hidden">
               <div
