@@ -87,6 +87,7 @@ const Pitch = lazy(() => import("./pages/Pitch"));
 const Competitions = lazy(() => import("./pages/Competitions"));
 const PitchDeck = lazy(() => import("./pages/PitchDeck"));
 const GovernanceMaturity = lazy(() => import("./pages/GovernanceMaturity"));
+const GovernanceCommandView = lazy(() => import("./pages/GovernanceCommandView"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -219,6 +220,7 @@ const App = () => (
               <Route path="/data-catalog" element={<P><DataCatalog /></P>} />
               <Route path="/privacy-dashboard" element={<P><PrivacyDashboard /></P>} />
               <Route path="/governance-maturity" element={<P><GovernanceMaturity /></P>} />
+              <Route path="/governance" element={<P><GovernanceCommandView /></P>} />
             </Routes>
             </Suspense>
           </AuthProvider>

@@ -35,6 +35,7 @@ const ITEM_HELP: Record<string, string> = {
   "Alert Playbooks": "Automated response plans that trigger when specific metric thresholds are breached.",
   "Pilot Audit": "Pre-launch checklist ensuring your data and configuration are production-ready.",
   "Governance Maturity": "Score your organization across 6 data governance dimensions — strategy, quality, culture, and more.",
+  "Governance": "Executive command view — KPIs, risks, steward coverage, and recommended actions in one place.",
 };
 
 interface NavItem {
@@ -116,10 +117,11 @@ const navSections: NavSection[] = [
       { icon: Users, label: "Team", path: "/team" },
       { icon: Building2, label: "Clients", path: "/clients" },
       { icon: CreditCard, label: "Billing", path: "/billing" },
+      { icon: Shield, label: "Governance", path: "/governance" },
+      { icon: Award, label: "Governance Maturity", path: "/governance-maturity" },
       { icon: Shield, label: "Compliance", path: "/compliance" },
       { icon: Shield, label: "SSO / SAML", path: "/sso" },
       { icon: Eye, label: "Privacy", path: "/privacy-dashboard" },
-      { icon: Award, label: "Governance Maturity", path: "/governance-maturity" },
       { icon: Settings, label: "Settings", path: "/settings" },
     ],
   },
