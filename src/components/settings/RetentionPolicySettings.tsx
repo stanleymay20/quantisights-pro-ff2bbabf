@@ -15,6 +15,9 @@ interface RetentionPolicy {
   retention_days: number;
   auto_cleanup: boolean;
   description: string;
+  enforcement_status: "configured" | "scheduled" | "enforced";
+  last_cleanup_at: string | null;
+  next_scheduled_at: string | null;
 }
 
 const DEFAULT_POLICIES: RetentionPolicy[] = [
