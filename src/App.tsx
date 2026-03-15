@@ -220,6 +220,7 @@ const App = () => (
               <Route path="/data-catalog" element={<P><DataCatalog /></P>} />
               <Route path="/privacy-dashboard" element={<P><PrivacyDashboard /></P>} />
               <Route path="/governance-maturity" element={<P><GovernanceMaturity /></P>} />
+              <Route path="/governance" element={<P><GovernanceCommandView /></P>} />
             </Routes>
             </Suspense>
           </AuthProvider>
