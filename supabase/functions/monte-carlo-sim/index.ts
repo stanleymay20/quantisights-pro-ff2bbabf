@@ -62,9 +62,13 @@ serve(async (req) => {
       );
     }
 
+    // Rate limit: simulation tier (10/min per org)
+    const rl = applyRateLimit(req, organization_id, "simulation", "monte-carlo-sim");
+    if (rl) return rl;
+
     // Verify org membership
     const { data: isMember } = await serviceClient.rpc("is_org_member", {
-      _user_id: user.id,
+      _user_id: userId,
       _org_id: organization_id,
     });
     if (!isMember) {
