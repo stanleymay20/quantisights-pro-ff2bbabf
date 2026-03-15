@@ -31,17 +31,25 @@ class ErrorBoundary extends Component<Props, State> {
       return (
         this.props.fallback || (
           <div className="min-h-screen flex items-center justify-center bg-background px-4">
-            <div className="glass-card p-8 max-w-md w-full text-center rounded-xl">
+            <div className="glass-card p-8 max-w-md w-full text-center rounded-xl space-y-4">
               <h2 className="text-xl font-semibold font-display mb-2">Something went wrong</h2>
-              <p className="text-sm text-muted-foreground mb-4">
-                {this.state.error?.message || "An unexpected error occurred"}
+              <p className="text-sm text-muted-foreground">
+                An unexpected error occurred. Our team has been notified.
               </p>
-              <button
-                onClick={() => window.location.reload()}
-                className="px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:brightness-110 transition-all"
-              >
-                Reload Page
-              </button>
+              <div className="flex gap-3 justify-center">
+                <button
+                  onClick={() => this.setState({ hasError: false, error: null })}
+                  className="px-5 py-2.5 rounded-lg bg-secondary text-foreground text-sm font-medium hover:brightness-110 transition-all"
+                >
+                  Try Again
+                </button>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:brightness-110 transition-all"
+                >
+                  Reload Page
+                </button>
+              </div>
             </div>
           </div>
         )

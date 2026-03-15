@@ -115,11 +115,11 @@ const ResetPassword = () => {
                   {PASSWORD_RULES.map((rule, i) => (
                     <div key={i} className="flex items-center gap-1.5">
                       {passedRules[i] ? (
-                        <Check className="w-3 h-3 text-emerald-400" />
+                        <Check className="w-3 h-3 text-success" />
                       ) : (
                         <X className="w-3 h-3 text-muted-foreground/50" />
                       )}
-                      <span className={`text-[11px] ${passedRules[i] ? "text-emerald-400" : "text-muted-foreground/60"}`}>{rule.label}</span>
+                      <span className={`text-[11px] ${passedRules[i] ? "text-success" : "text-muted-foreground/60"}`}>{rule.label}</span>
                     </div>
                   ))}
                 </div>
