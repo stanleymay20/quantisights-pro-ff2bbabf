@@ -18,6 +18,7 @@ interface GovKPI {
   target: string;
   progress: number;
   status: "healthy" | "warning" | "critical";
+  help: { what: string; how: string; why: string };
 }
 
 const GovernanceKPIs = () => {
