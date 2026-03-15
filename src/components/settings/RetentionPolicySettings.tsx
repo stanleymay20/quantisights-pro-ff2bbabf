@@ -68,7 +68,7 @@ const RetentionPolicySettings = () => {
                 ...p,
                 retention_days: saved.retention_days,
                 auto_cleanup: saved.auto_cleanup,
-                enforcement_status: saved.enforcement_status ?? "configured",
+                enforcement_status: (saved.enforcement_status ?? "configured") as RetentionPolicy["enforcement_status"],
                 last_cleanup_at: saved.last_cleanup_at ?? null,
                 next_scheduled_at: saved.next_scheduled_at ?? null,
               }
