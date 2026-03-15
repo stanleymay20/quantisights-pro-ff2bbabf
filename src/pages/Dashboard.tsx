@@ -106,7 +106,10 @@ const Dashboard = () => {
   }, [currentOrgId, activeDatasetId]);
 
   const handleRecalculate = async () => {
-    if (!currentOrgId) return;
+    if (!currentOrgId || !activeDatasetId) {
+      toast({ title: "Select a dataset first", variant: "destructive" });
+      return;
+    }
     setRecalculating(true);
     try {
       await supabase.functions.invoke("generate-insights", {
