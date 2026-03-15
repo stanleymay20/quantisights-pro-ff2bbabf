@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { authenticateRequest, verifyOrgMembership } from "../_shared/auth-guard.ts";
+import { enforceDatasetContract } from "../_shared/dataset-contract.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -29,20 +31,23 @@ serve(async (req) => {
     new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
   try {
-    // Auth
-    const authHeader = req.headers.get("authorization");
-    if (!authHeader) return respond({ error: "Authorization required" }, 401);
-
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const userClient = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
-    const { data: { user }, error: authErr } = await userClient.auth.getUser();
-    if (authErr || !user) return respond({ error: "Unauthorized" }, 401);
+    // Auth guard
+    const auth = await authenticateRequest(req);
+    if (auth.response) return auth.response;
 
     const body = await req.json();
     const { dataset_id, organization_id } = body;
-    if (!dataset_id || !organization_id) return respond({ error: "dataset_id and organization_id required" }, 400);
+
+    // Enforce Active Data Contract
+    const contract = await enforceDatasetContract(body, svc);
+    if (!contract.valid) return contract.response!;
+    if (contract.dry_run) return contract.response!;
+
+    // Verify org membership
+    const isMember = await verifyOrgMembership(auth.userId, organization_id);
+    if (!isMember) {
+      return respond({ error: "Forbidden: not a member of this organization" }, 403);
+    }
 
     // Fetch metrics for this dataset
     const { data: metrics, error: mErr } = await svc.from("metrics")
@@ -60,7 +65,7 @@ serve(async (req) => {
     const segments = new Set<string>();
     const dateRange = { min: "", max: "" };
     let totalNulls = 0;
-    let totalRecords = metrics.length;
+    const totalRecords = metrics.length;
 
     for (const m of metrics) {
       const mt = m.metric_type || "unknown";
@@ -96,26 +101,21 @@ serve(async (req) => {
       const upperFence = p75 + 1.5 * iqr;
       const outliers = sorted.filter(v => v < lowerFence || v > upperFence);
 
-      // Skewness (Fisher-Pearson)
       const skewness = stdDev > 0
         ? sorted.reduce((a, v) => a + ((v - mean) / stdDev) ** 3, 0) / n
         : 0;
 
-      // Kurtosis (excess)
       const kurtosis = stdDev > 0
         ? sorted.reduce((a, v) => a + ((v - mean) / stdDev) ** 4, 0) / n - 3
         : 0;
 
-      // Coefficient of variation
       const cv = mean !== 0 ? (stdDev / Math.abs(mean)) * 100 : 0;
 
-      // Distribution shape classification
       let distribution = "normal";
       if (Math.abs(skewness) > 1) distribution = skewness > 0 ? "right_skewed" : "left_skewed";
       else if (kurtosis > 3) distribution = "leptokurtic";
       else if (kurtosis < -1) distribution = "platykurtic";
 
-      // Histogram (10 bins)
       const binCount = Math.min(10, n);
       const binWidth = (sorted[n - 1] - sorted[0]) / binCount || 1;
       const histogram = Array(binCount).fill(0);
@@ -214,6 +214,17 @@ serve(async (req) => {
       score: qualityScore,
       records_checked: totalRecords,
       details: profile,
+    });
+
+    // Audit log
+    await svc.from("audit_log").insert({
+      organization_id,
+      actor_type: "user",
+      actor_id: auth.userId,
+      action_type: "data_profile",
+      resource_type: "dataset",
+      resource_id: dataset_id,
+      payload: { quality_score: qualityScore, total_records: totalRecords, metric_types: metricTypes.length },
     });
 
     return respond({ success: true, profile });

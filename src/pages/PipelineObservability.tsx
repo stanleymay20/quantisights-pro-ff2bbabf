@@ -46,21 +46,30 @@ export default function PipelineObservability() {
     if (!organizationId) return;
     setLoading(true);
 
+    // Build queries with optional dataset filter
+    let jobsQuery = supabase.from("data_sync_jobs")
+      .select("*")
+      .eq("organization_id", organizationId)
+      .order("created_at", { ascending: false })
+      .limit(100);
+
+    let qualityQuery = supabase.from("data_quality_checks")
+      .select("*")
+      .eq("organization_id", organizationId)
+      .order("created_at", { ascending: false })
+      .limit(50);
+
+    if (activeDatasetId) {
+      qualityQuery = qualityQuery.eq("dataset_id", activeDatasetId);
+    }
+
     const [jobsRes, sourcesRes, qualityRes] = await Promise.all([
-      supabase.from("data_sync_jobs")
-        .select("*")
-        .eq("organization_id", organizationId)
-        .order("created_at", { ascending: false })
-        .limit(100),
+      jobsQuery,
       supabase.from("data_sources")
         .select("*")
         .eq("organization_id", organizationId)
         .order("created_at", { ascending: false }),
-      supabase.from("data_quality_checks")
-        .select("*")
-        .eq("organization_id", organizationId)
-        .order("created_at", { ascending: false })
-        .limit(50),
+      qualityQuery,
     ]);
 
     setSyncJobs(jobsRes.data || []);
