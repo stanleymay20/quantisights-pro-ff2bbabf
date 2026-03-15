@@ -122,8 +122,8 @@ const GovernanceKPIs = () => {
       progress: (stats?.datasetCount ?? 0) > 0 ? Math.round(((stats?.governedCount ?? 0) / (stats?.datasetCount ?? 1)) * 100) : 0,
       status: (stats?.datasetCount ?? 0) > 0 && (stats?.governedCount ?? 0) === (stats?.datasetCount ?? 0) ? "healthy" : (stats?.governedCount ?? 0) >= 1 ? "warning" : "critical",
       help: {
-        what: "Datasets that meet all three governance criteria: quality-checked, steward-owned, and covered by a retention policy.",
-        how: "Count of active datasets where (1) at least one quality check exists, (2) the uploader holds a steward role, and (3) a 'datasets' retention policy is defined.",
+        what: "Datasets that meet all three governance criteria: quality-checked, steward-assigned, and covered by a retention policy.",
+        how: "Count of active datasets where (1) at least one quality check exists, (2) a steward is explicitly assigned (steward_user_id) or uploader holds steward role, and (3) a 'datasets' retention policy is defined.",
         why: "Ungoverned datasets create blind spots — decisions built on unchecked data carry hidden risk.",
       },
     },
