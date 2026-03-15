@@ -61,7 +61,7 @@ const BoardReport = () => {
       }
     };
     fetchReport();
-  }, [currentOrgId]);
+  }, [currentOrgId, activeDatasetId]);
 
   const handlePrint = () => window.print();
 
