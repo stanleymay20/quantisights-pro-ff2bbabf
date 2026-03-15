@@ -14,7 +14,7 @@ serve(async (req) => {
 
   try {
     const authHeader = req.headers.get("authorization");
-    if (!authHeader) {
+    if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -29,43 +29,68 @@ serve(async (req) => {
     });
     const svc = createClient(supabaseUrl, serviceKey);
 
-    const { data: { user }, error: userError } = await userClient.auth.getUser();
-    if (userError || !user) {
+    // Use getClaims() for secure JWT validation
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: authErr } = await userClient.auth.getClaims(token);
+    if (authErr || !claimsData?.claims?.sub) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    const userId = claimsData.claims.sub as string;
 
-    const { organization_id, entity_type, entity_id } = await req.json();
+    const { organization_id, dataset_id, entity_type, entity_id } = await req.json();
     if (!organization_id || !entity_type || !entity_id) {
       return new Response(JSON.stringify({ error: "organization_id, entity_type, entity_id required" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    if (!dataset_id) {
+      return new Response(JSON.stringify({ error: "dataset_id required by Active Data Contract" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
-    const { data: isMember } = await svc.rpc("is_org_member", { _user_id: user.id, _org_id: organization_id });
+    // Verify org membership
+    const { data: isMember } = await svc.rpc("is_org_member", { _user_id: userId, _org_id: organization_id });
     if (!isMember) {
       return new Response(JSON.stringify({ error: "Forbidden" }), {
         status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Fetch entity data based on type
+    // Validate dataset belongs to org
+    const { data: dsCheck } = await svc.from("datasets").select("id")
+      .eq("id", dataset_id).eq("organization_id", organization_id).maybeSingle();
+    if (!dsCheck) {
+      return new Response(JSON.stringify({ error: "dataset_id does not belong to this organization" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Fetch entity data based on type — ALWAYS scoped to organization_id
     let entityData: any = null;
-    let contextMetrics: any[] = [];
 
     if (entity_type === "advisory") {
-      const { data } = await svc.from("advisory_instances").select("*").eq("id", entity_id).single();
+      const { data } = await svc.from("advisory_instances").select("*")
+        .eq("id", entity_id).eq("organization_id", organization_id).single();
       entityData = data;
     } else if (entity_type === "insight") {
-      const { data } = await svc.from("insights").select("*").eq("id", entity_id).single();
+      const { data } = await svc.from("insights").select("*")
+        .eq("id", entity_id).eq("organization_id", organization_id).single();
       entityData = data;
     } else if (entity_type === "decision") {
-      const { data } = await svc.from("decision_ledger").select("*").eq("id", entity_id).single();
+      const { data } = await svc.from("decision_ledger").select("*")
+        .eq("id", entity_id).eq("organization_id", organization_id).single();
       entityData = data;
     } else if (entity_type === "simulation") {
-      const { data } = await svc.from("decision_simulations").select("*").eq("id", entity_id).single();
+      const { data } = await svc.from("decision_simulations").select("*")
+        .eq("id", entity_id).eq("organization_id", organization_id).single();
       entityData = data;
+    } else {
+      return new Response(JSON.stringify({ error: "Invalid entity_type" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     if (!entityData) {
@@ -74,13 +99,14 @@ serve(async (req) => {
       });
     }
 
-    // Fetch related metrics for attribution
+    // Fetch related metrics — DATASET-SCOPED
     const { data: metrics } = await svc.from("metrics")
       .select("metric_type, value, date")
       .eq("organization_id", organization_id)
+      .eq("dataset_id", dataset_id)
       .order("date", { ascending: false })
       .limit(100);
-    contextMetrics = metrics || [];
+    const contextMetrics = metrics || [];
 
     // Compute deterministic feature attributions (SHAP-like)
     const metricsByType: Record<string, number[]> = {};
@@ -114,12 +140,15 @@ serve(async (req) => {
     }
     attributions.sort((a, b) => b.contribution_pct - a.contribution_pct);
 
-    // AI narrative explanation
+    // AI narrative explanation with AbortController timeout
     let narrative = "";
     if (lovableApiKey) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 30000);
       try {
         const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
           method: "POST",
+          signal: controller.signal,
           headers: {
             Authorization: `Bearer ${lovableApiKey}`,
             "Content-Type": "application/json",
@@ -140,11 +169,18 @@ and what the key uncertainties are. Be specific about numbers and percentages. R
             ],
           }),
         });
+        clearTimeout(timeout);
         if (aiResp.ok) {
           const aiData = await aiResp.json();
           narrative = aiData.choices?.[0]?.message?.content || "";
+        } else {
+          await aiResp.text(); // consume body
+          if (aiResp.status === 429) {
+            console.warn("AI rate limit hit in explain-ai");
+          }
         }
       } catch (e) {
+        clearTimeout(timeout);
         console.error("AI explanation error:", e);
       }
     }
@@ -171,6 +207,17 @@ and what the key uncertainties are. Be specific about numbers and percentages. R
       explanation_narrative: narrative,
       confidence_breakdown: result.confidence_breakdown,
     });
+
+    // Audit log
+    console.log(JSON.stringify({
+      event: "ai_explanation_generated",
+      organization_id,
+      dataset_id,
+      entity_type,
+      entity_id,
+      user_id: userId,
+      attributions_count: attributions.length,
+    }));
 
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

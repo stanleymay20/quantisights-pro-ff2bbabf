@@ -12,7 +12,6 @@ const BIAS_PATTERNS = [
     type: "anchoring",
     name: "Anchoring Bias",
     detect: (decisions: any[]) => {
-      // Detect if first data point disproportionately influences all subsequent decisions
       if (decisions.length < 3) return null;
       const firstImpact = Number(decisions[0].predicted_net_impact) || 0;
       const others = decisions.slice(1).map(d => Number(d.predicted_net_impact) || 0);
@@ -32,7 +31,6 @@ const BIAS_PATTERNS = [
     type: "sunk_cost",
     name: "Sunk Cost Fallacy",
     detect: (decisions: any[]) => {
-      // Detect continued investment in failing decisions
       const executed = decisions.filter(d => d.execution_status === "completed" && d.outcome_delta != null);
       const negativeOutcomes = executed.filter(d => Number(d.outcome_delta) < 0);
       const followUps = decisions.filter(d =>
@@ -53,7 +51,6 @@ const BIAS_PATTERNS = [
     type: "confirmation",
     name: "Confirmation Bias",
     detect: (decisions: any[]) => {
-      // Detect pattern of always approving recommendations regardless of confidence
       const withConf = decisions.filter(d => d.capped_confidence != null);
       if (withConf.length < 5) return null;
       const approved = withConf.filter(d => d.decision_status === "approved");
@@ -76,7 +73,6 @@ const BIAS_PATTERNS = [
     type: "recency",
     name: "Recency Bias",
     detect: (decisions: any[]) => {
-      // Detect if recent outcomes disproportionately influence new decisions
       if (decisions.length < 6) return null;
       const sorted = [...decisions].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
       const recent = sorted.slice(0, 3);
@@ -98,7 +94,6 @@ const BIAS_PATTERNS = [
     type: "overconfidence",
     name: "Overconfidence Bias",
     detect: (decisions: any[]) => {
-      // Detect systematic overconfidence by comparing predictions to outcomes
       const completed = decisions.filter(d =>
         d.execution_status === "completed" &&
         d.capped_confidence != null &&
@@ -129,7 +124,7 @@ serve(async (req) => {
 
   try {
     const authHeader = req.headers.get("authorization");
-    if (!authHeader) {
+    if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -144,12 +139,15 @@ serve(async (req) => {
     });
     const svc = createClient(supabaseUrl, serviceKey);
 
-    const { data: { user }, error: userError } = await userClient.auth.getUser();
-    if (userError || !user) {
+    // Use getClaims() for secure JWT validation
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: authErr } = await userClient.auth.getClaims(token);
+    if (authErr || !claimsData?.claims?.sub) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    const userId = claimsData.claims.sub as string;
 
     const { organization_id } = await req.json();
     if (!organization_id) {
@@ -158,16 +156,16 @@ serve(async (req) => {
       });
     }
 
-    const { data: isMember } = await svc.rpc("is_org_member", { _user_id: user.id, _org_id: organization_id });
+    const { data: isMember } = await svc.rpc("is_org_member", { _user_id: userId, _org_id: organization_id });
     if (!isMember) {
       return new Response(JSON.stringify({ error: "Forbidden" }), {
         status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Fetch decision history
+    // Fetch decision history (org-scoped — correct per entity scoping architecture)
     const { data: decisions } = await svc.from("decision_ledger")
-      .select("*")
+      .select("recommended_action, decision_status, execution_status, capped_confidence, raw_confidence, predicted_net_impact, outcome_delta, prediction_accuracy_score, created_at")
       .eq("organization_id", organization_id)
       .order("created_at", { ascending: true })
       .limit(200);
@@ -194,12 +192,15 @@ serve(async (req) => {
       }
     }
 
-    // AI-powered deep analysis if biases found
+    // AI-powered deep analysis with AbortController timeout
     let aiAnalysis = "";
     if (lovableApiKey && detectedBiases.length > 0) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 30000);
       try {
         const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
           method: "POST",
+          signal: controller.signal,
           headers: { Authorization: `Bearer ${lovableApiKey}`, "Content-Type": "application/json" },
           body: JSON.stringify({
             model: "google/gemini-3-flash-preview",
@@ -215,11 +216,15 @@ serve(async (req) => {
             ],
           }),
         });
+        clearTimeout(timeout);
         if (aiResp.ok) {
           const aiData = await aiResp.json();
           aiAnalysis = aiData.choices?.[0]?.message?.content || "";
+        } else {
+          await aiResp.text(); // consume body
         }
       } catch (e) {
+        clearTimeout(timeout);
         console.error("AI bias analysis error:", e);
       }
     }
@@ -237,6 +242,16 @@ serve(async (req) => {
         mitigation_suggestion: bias.mitigation,
       });
     }
+
+    // Audit log
+    console.log(JSON.stringify({
+      event: "cognitive_bias_scan",
+      organization_id,
+      user_id: userId,
+      decisions_analyzed: decisions.length,
+      biases_detected: detectedBiases.length,
+      bias_types: detectedBiases.map(b => b.bias_type),
+    }));
 
     return new Response(JSON.stringify({
       biases: detectedBiases,
