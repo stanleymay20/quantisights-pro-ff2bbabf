@@ -156,8 +156,25 @@ const RetentionPolicySettings = () => {
                       {isLocked && (
                         <Badge variant="outline" className="text-[9px] px-1.5">Regulatory min</Badge>
                       )}
+                      <Badge
+                        variant="outline"
+                        className={`text-[9px] px-1.5 ${
+                          policy.enforcement_status === "enforced"
+                            ? "text-emerald-400 border-emerald-500/20"
+                            : policy.enforcement_status === "scheduled"
+                            ? "text-blue-400 border-blue-500/20"
+                            : "text-muted-foreground border-border"
+                        }`}
+                      >
+                        {policy.enforcement_status}
+                      </Badge>
                     </div>
                     <p className="text-[10px] text-muted-foreground">{policy.description}</p>
+                    {policy.last_cleanup_at && (
+                      <p className="text-[9px] text-muted-foreground/50">
+                        Last cleanup: {new Date(policy.last_cleanup_at).toLocaleDateString()}
+                      </p>
+                    )}
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
                     <div className="flex items-center gap-1.5">
