@@ -19,20 +19,17 @@ const TIER_LIMITS: Record<string, number> = {
  * NO eval/Function constructor — prevents code injection.
  */
 function evaluateFormula(formula: string, variables: Record<string, number>): number {
-  // Replace variable names with their values (longest-first to prevent partial matches)
   let expr = formula;
   const sortedVars = Object.entries(variables).sort(([a], [b]) => b.length - a.length);
   for (const [name, val] of sortedVars) {
     expr = expr.replaceAll(name, String(val));
   }
 
-  // Validate: only digits, operators, parens, dots, whitespace, minus
   const sanitized = expr.replace(/\s+/g, "");
   if (!/^[\d+\-*/().]+$/.test(sanitized)) {
     throw new Error("Invalid formula expression: contains disallowed characters");
   }
 
-  // Recursive descent parser
   let pos = 0;
   const peek = () => sanitized[pos];
   const consume = (ch?: string) => {
@@ -62,7 +59,6 @@ function evaluateFormula(formula: string, variables: Record<string, number>): nu
   }
 
   function parseFactor(): number {
-    // Handle unary minus
     if (peek() === "-") {
       consume("-");
       return -parseFactor();
@@ -73,7 +69,6 @@ function evaluateFormula(formula: string, variables: Record<string, number>): nu
       consume(")");
       return result;
     }
-    // Parse number
     const start = pos;
     while (pos < sanitized.length && (/\d/.test(sanitized[pos]) || sanitized[pos] === ".")) {
       pos++;
@@ -132,13 +127,16 @@ serve(async (req) => {
     });
     const serviceClient = createClient(supabaseUrl, serviceKey);
 
-    const { data: { user }, error: userError } = await userClient.auth.getUser();
-    if (userError || !user) {
+    // Auth via JWT claims (enterprise standard)
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await userClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims?.sub) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    const userId = claimsData.claims.sub as string;
 
     const { scenario_id } = await req.json();
     if (!scenario_id) {
@@ -164,13 +162,36 @@ serve(async (req) => {
 
     // Verify org membership
     const { data: isMember } = await serviceClient.rpc("is_org_member", {
-      _user_id: user.id,
+      _user_id: userId,
       _org_id: scenario.organization_id,
     });
     if (!isMember) {
       return new Response(JSON.stringify({ error: "Forbidden" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Active Data Contract: scenario must have a dataset_id
+    const dataset_id = scenario.dataset_id;
+    if (!dataset_id) {
+      return new Response(
+        JSON.stringify({ error: "Scenario is not linked to a dataset. Active Data Contract requires dataset_id." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validate dataset belongs to org
+    const { data: dsCheck } = await serviceClient
+      .from("datasets")
+      .select("id")
+      .eq("id", dataset_id)
+      .eq("organization_id", scenario.organization_id)
+      .maybeSingle();
+
+    if (!dsCheck) {
+      return new Response(JSON.stringify({ error: "dataset_id does not belong to this organization" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -240,17 +261,18 @@ serve(async (req) => {
       deps.forEach((d: string) => allDeps.add(d));
     }
 
-    // Fetch baseline metrics (historical data before forecast period)
+    // Fetch baseline metrics — SCOPED TO DATASET (Active Data Contract)
     const { data: metrics } = await serviceClient
       .from("metrics")
       .select("metric_type, date, value")
       .eq("organization_id", scenario.organization_id)
+      .eq("dataset_id", dataset_id)
       .in("metric_type", Array.from(allDeps))
       .order("date", { ascending: true });
 
     if (!metrics || metrics.length === 0) {
       return new Response(
-        JSON.stringify({ error: "No metrics data available for simulation" }),
+        JSON.stringify({ error: "No metrics data available in this dataset for simulation" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -310,15 +332,12 @@ serve(async (req) => {
       kpiSummaries[kpi.id] = { name: kpi.name, totalBaseline: 0, totalSimulated: 0 };
 
       for (const date of dates) {
-        // Baseline: use average values
         const baselineVars: Record<string, number> = {};
         const simulatedVars: Record<string, number> = {};
 
         for (const dep of deps) {
           const baseVal = metricAverages[dep] || 0;
           baselineVars[dep] = baseVal;
-
-          // Apply adjustment if exists
           const adj = adjustmentMap[dep];
           simulatedVars[dep] = adj ? applyAdjustment(baseVal, adj.type, adj.value) : baseVal;
         }
@@ -392,10 +411,28 @@ serve(async (req) => {
 
     const executionTime = Date.now() - startTime;
 
+    // Audit trail
+    await serviceClient.from("audit_log").insert({
+      organization_id: scenario.organization_id,
+      actor_id: userId,
+      actor_type: "user",
+      action_type: "scenario_simulated",
+      resource_type: "scenario",
+      resource_id: scenario_id,
+      payload: {
+        dataset_id,
+        results_count: allResults.length,
+        kpis_computed: Object.keys(kpiSummaries).length,
+        forecast_days: dates.length,
+        execution_time_ms: executionTime,
+      },
+    });
+
     console.log(JSON.stringify({
       event: "scenario_simulated",
       scenario_id,
       organization_id: scenario.organization_id,
+      dataset_id,
       results_count: allResults.length,
       kpis_computed: Object.keys(kpiSummaries).length,
       forecast_days: dates.length,

@@ -1,4 +1,4 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -14,13 +14,22 @@ Deno.serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceKey);
 
-    // Auth check
+    // Auth via JWT claims (enterprise standard — avoids session propagation delay)
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
+    }
 
-    const anonClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!);
-    const { data: { user }, error: authErr } = await anonClient.auth.getUser(authHeader.replace("Bearer ", ""));
-    if (authErr || !user) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
+    const userClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await userClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims?.sub) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
+    }
+    const userId = claimsData.claims.sub as string;
 
     const body = await req.json();
     const { action, organization_id, dataset_id, decision_id, outcome_id } = body;
@@ -29,10 +38,36 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "organization_id required" }), { status: 400, headers: corsHeaders });
     }
 
+    // Verify org membership
+    const { data: isMember } = await supabase.rpc("is_org_member", {
+      _user_id: userId,
+      _org_id: organization_id,
+    });
+    if (!isMember) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // ── SCHEDULE: Create outcome tracking entry when decision is approved ──
     if (action === "schedule") {
       if (!decision_id || !body.expected_metric) {
         return new Response(JSON.stringify({ error: "decision_id and expected_metric required" }), { status: 400, headers: corsHeaders });
+      }
+
+      // Validate dataset belongs to org if provided
+      if (dataset_id) {
+        const { data: dsCheck } = await supabase
+          .from("datasets")
+          .select("id")
+          .eq("id", dataset_id)
+          .eq("organization_id", organization_id)
+          .maybeSingle();
+        if (!dsCheck) {
+          return new Response(JSON.stringify({ error: "dataset_id does not belong to this organization" }), {
+            status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
       }
 
       const { data, error } = await supabase.from("decision_outcomes").insert({
@@ -47,7 +82,21 @@ Deno.serve(async (req) => {
       }).select().single();
 
       if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: corsHeaders });
-      return new Response(JSON.stringify({ success: true, outcome: data }), { headers: corsHeaders });
+
+      // Audit trail
+      await supabase.from("audit_log").insert({
+        organization_id,
+        actor_id: userId,
+        actor_type: "user",
+        action_type: "outcome_scheduled",
+        resource_type: "decision_outcome",
+        resource_id: data.id,
+        payload: { decision_id, expected_metric: body.expected_metric, dataset_id: dataset_id || null },
+      });
+
+      return new Response(JSON.stringify({ success: true, outcome: data }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     // ── EVALUATE: Check pending outcomes against actual metrics ──
@@ -76,6 +125,24 @@ Deno.serve(async (req) => {
             outcome_status: "not_evaluable",
             evaluation_date: now.toISOString(),
             notes: "No dataset_id linked — cannot measure outcome.",
+          }).eq("id", outcome.id);
+          evaluated.push({ id: outcome.id, status: "not_evaluable" });
+          continue;
+        }
+
+        // Validate dataset still belongs to org
+        const { data: dsCheck } = await supabase
+          .from("datasets")
+          .select("id")
+          .eq("id", outcome.dataset_id)
+          .eq("organization_id", organization_id)
+          .maybeSingle();
+
+        if (!dsCheck) {
+          await supabase.from("decision_outcomes").update({
+            outcome_status: "not_evaluable",
+            evaluation_date: now.toISOString(),
+            notes: "Dataset no longer accessible for this organization.",
           }).eq("id", outcome.id);
           evaluated.push({ id: outcome.id, status: "not_evaluable" });
           continue;
@@ -173,7 +240,21 @@ Deno.serve(async (req) => {
         evaluated.push({ id: outcome.id, status: outcomeStatus, accuracy: accuracyScore });
       }
 
-      return new Response(JSON.stringify({ success: true, evaluated_count: evaluated.length, results: evaluated }), { headers: corsHeaders });
+      // Audit trail for batch evaluation
+      if (evaluated.length > 0) {
+        await supabase.from("audit_log").insert({
+          organization_id,
+          actor_id: userId,
+          actor_type: "user",
+          action_type: "outcomes_evaluated",
+          resource_type: "decision_outcome",
+          payload: { evaluated_count: evaluated.length, results: evaluated },
+        });
+      }
+
+      return new Response(JSON.stringify({ success: true, evaluated_count: evaluated.length, results: evaluated }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     // ── PERFORMANCE: Get decision performance metrics ──
@@ -256,7 +337,7 @@ Deno.serve(async (req) => {
         calibration_gap: calibrationGap,
         metric_breakdown: metricBreakdown,
         learnings,
-      }), { headers: corsHeaders });
+      }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // ── RELIABILITY: Get reliability index for a recommendation context ──
@@ -283,11 +364,16 @@ Deno.serve(async (req) => {
         similar_decisions: total,
         reliability_index: reliability,
         note: total < 3 ? "Insufficient historical data for reliability estimation." : `Based on ${total} similar past decisions.`,
-      }), { headers: corsHeaders });
+      }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    return new Response(JSON.stringify({ error: "Unknown action. Use: schedule, evaluate, performance, reliability" }), { status: 400, headers: corsHeaders });
+    return new Response(JSON.stringify({ error: "Unknown action. Use: schedule, evaluate, performance, reliability" }), {
+      status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (err) {
-    return new Response(JSON.stringify({ error: (err as Error).message }), { status: 500, headers: corsHeaders });
+    console.error("evaluate-outcomes error:", err);
+    return new Response(JSON.stringify({ error: (err as Error).message }), {
+      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });
