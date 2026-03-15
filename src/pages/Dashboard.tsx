@@ -220,15 +220,20 @@ const Dashboard = () => {
             </Popover>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="hidden sm:flex items-center gap-2 ml-1 pl-2.5 border-l border-border/30 hover:bg-secondary/40 rounded-lg px-2 py-1 transition-colors">
+                <button className="flex items-center gap-2 ml-1 pl-2.5 border-l border-border/30 hover:bg-secondary/40 rounded-lg px-2 py-1 transition-colors">
                   <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
                     <User className="w-3.5 h-3.5 text-primary" />
                   </div>
-                  <span className="text-[13px] font-medium">{displayName}</span>
-                  <ChevronDown className="w-3 h-3 text-muted-foreground" />
+                  <span className="text-[13px] font-medium hidden sm:inline">{displayName}</span>
+                  <ChevronDown className="w-3 h-3 text-muted-foreground hidden sm:block" />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
+                <div className="px-2 py-1.5 sm:hidden">
+                  <p className="text-sm font-medium truncate">{displayName}</p>
+                  <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                </div>
+                <DropdownMenuSeparator className="sm:hidden" />
                 <DropdownMenuItem onClick={() => navigate("/settings")}>
                   <Settings className="w-4 h-4 mr-2" /> Settings
                 </DropdownMenuItem>

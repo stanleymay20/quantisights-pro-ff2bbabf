@@ -517,32 +517,34 @@ const DecisionQueue = memo(({
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex sm:flex-col gap-1.5 shrink-0 w-full sm:w-auto">
+                    <div className="flex flex-col sm:flex-col gap-1.5 shrink-0 w-full sm:w-auto">
                       <button
                         onClick={() => initiateApprove(decision)}
                         disabled={isActing || !rec.isDecisionGrade}
                         title={!rec.isDecisionGrade ? "Cannot approve: not decision-grade" : "Approve"}
-                        className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex items-center justify-center gap-1.5 px-3 py-2.5 sm:py-2 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed touch-target"
                       >
                         {isActing ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
                         Approve
                       </button>
-                      <button
-                        onClick={() => initiateDismiss(decision)}
-                        disabled={isActing}
-                        className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-border/50 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors disabled:opacity-50"
-                      >
-                        <XCircle className="w-3 h-3" />
-                        Dismiss
-                      </button>
-                      <button
-                        onClick={() => setModifyTarget(decision)}
-                        disabled={isActing}
-                        className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors disabled:opacity-50"
-                      >
-                        <Pencil className="w-3 h-3" />
-                        Modify
-                      </button>
+                      <div className="grid grid-cols-2 sm:grid-cols-1 gap-1.5">
+                        <button
+                          onClick={() => initiateDismiss(decision)}
+                          disabled={isActing}
+                          className="flex items-center justify-center gap-1.5 px-3 py-2.5 sm:py-2 rounded-lg border border-border/50 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors disabled:opacity-50 touch-target"
+                        >
+                          <XCircle className="w-3 h-3" />
+                          Dismiss
+                        </button>
+                        <button
+                          onClick={() => setModifyTarget(decision)}
+                          disabled={isActing}
+                          className="flex items-center justify-center gap-1.5 px-3 py-2.5 sm:py-2 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors disabled:opacity-50 touch-target"
+                        >
+                          <Pencil className="w-3 h-3" />
+                          Modify
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </motion.div>
