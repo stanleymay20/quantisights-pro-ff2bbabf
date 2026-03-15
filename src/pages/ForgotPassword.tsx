@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuthThrottle } from "@/hooks/useAuthThrottle";
 import logo from "@/assets/quantivis-logo.png";
 
 const ForgotPassword = () => {
