@@ -982,7 +982,10 @@ export type Database = {
           created_at: string
           data_category: string
           description: string | null
+          enforcement_status: string
           id: string
+          last_cleanup_at: string | null
+          next_scheduled_at: string | null
           organization_id: string
           retention_days: number
           updated_at: string
@@ -992,7 +995,10 @@ export type Database = {
           created_at?: string
           data_category: string
           description?: string | null
+          enforcement_status?: string
           id?: string
+          last_cleanup_at?: string | null
+          next_scheduled_at?: string | null
           organization_id: string
           retention_days?: number
           updated_at?: string
@@ -1002,7 +1008,10 @@ export type Database = {
           created_at?: string
           data_category?: string
           description?: string | null
+          enforcement_status?: string
           id?: string
+          last_cleanup_at?: string | null
+          next_scheduled_at?: string | null
           organization_id?: string
           retention_days?: number
           updated_at?: string

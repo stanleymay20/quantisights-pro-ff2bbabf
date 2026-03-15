@@ -3,15 +3,17 @@ import { SidebarMobileToggle } from "@/components/layout/ProtectedShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Button } from "@/components/ui/button";
 import { useOrganization } from "@/hooks/useOrganization";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import GovernanceKPIs from "@/components/dashboard/GovernanceKPIs";
+import StewardDrillDown from "@/components/governance/StewardDrillDown";
+import { GovernanceExportButton } from "@/components/governance/GovernanceExport";
+import HelpTooltip from "@/components/ui/help-tooltip";
 import {
   Shield, Award, Clock, Users, AlertTriangle, CheckCircle2,
-  ArrowRight, TrendingUp, TrendingDown, Minus, BarChart3,
+  ArrowRight, TrendingUp, TrendingDown, Minus, BarChart3, Info,
 } from "lucide-react";
 
 const MATURITY_LEVELS = [
@@ -25,10 +27,51 @@ const MATURITY_LEVELS = [
 const getLevel = (score: number) =>
   MATURITY_LEVELS.find((l) => score >= l.min && score <= l.max) ?? MATURITY_LEVELS[0];
 
-const GovernanceCommandView = () => {
-  const { currentOrgId } = useOrganization();
+// Risk detection rules with explanations
+const RISK_RULES: { check: (ctx: RiskContext) => boolean; label: string; severity: "high" | "medium"; rule: string }[] = [
+  {
+    check: (c) => c.stewardCount === 0,
+    label: "No Data Stewards assigned",
+    severity: "high",
+    rule: "Triggered when steward count = 0. Without accountability, governance cannot be enforced.",
+  },
+  {
+    check: (c) => c.retentionCount < 3,
+    label: "Retention policies incomplete",
+    severity: "high",
+    rule: "Triggered when fewer than 3 of 6 data categories have a retention policy defined.",
+  },
+  {
+    check: (c) => c.maturityScore !== null && c.maturityScore < 40,
+    label: "Governance maturity below threshold",
+    severity: "high",
+    rule: "Triggered when maturity assessment score is below 40/100 (Initial or Developing level).",
+  },
+  {
+    check: (c) => c.maturityScore !== null && c.maturityScore >= 40 && c.maturityScore < 60,
+    label: "Governance maturity developing — not yet managed",
+    severity: "medium",
+    rule: "Triggered when maturity score is 40–59 (Defined level, but not yet Managed).",
+  },
+  {
+    check: (c) => c.weakestScore !== null && c.weakestScore < 30,
+    label: (c) => `Weak dimension: ${c.weakestName} (${c.weakestScore}%)`,
+    severity: "medium",
+    rule: "Triggered when any governance dimension scores below 30%.",
+  } as any,
+];
 
-  // Latest 2 maturity assessments for trend
+interface RiskContext {
+  stewardCount: number;
+  retentionCount: number;
+  maturityScore: number | null;
+  weakestScore: number | null;
+  weakestName: string | null;
+}
+
+const GovernanceCommandView = () => {
+  const { currentOrgId, currentOrg } = useOrganization();
+
   const { data: assessments } = useQuery({
     queryKey: ["governance-maturity-trend", currentOrgId],
     queryFn: async () => {
@@ -44,21 +87,19 @@ const GovernanceCommandView = () => {
     enabled: !!currentOrgId,
   });
 
-  // Retention policy coverage
-  const { data: retentionCount } = useQuery({
-    queryKey: ["retention-policy-count", currentOrgId],
+  const { data: retentionData } = useQuery({
+    queryKey: ["retention-policy-detail", currentOrgId],
     queryFn: async () => {
-      if (!currentOrgId) return 0;
-      const { count } = await supabase
+      if (!currentOrgId) return [];
+      const { data } = await supabase
         .from("data_retention_policies")
-        .select("id", { count: "exact", head: true })
+        .select("id, data_category, enforcement_status, last_cleanup_at")
         .eq("organization_id", currentOrgId);
-      return count ?? 0;
+      return data ?? [];
     },
     enabled: !!currentOrgId,
   });
 
-  // Steward count
   const { data: stewardCount } = useQuery({
     queryKey: ["steward-count", currentOrgId],
     queryFn: async () => {
@@ -75,31 +116,48 @@ const GovernanceCommandView = () => {
 
   const latest = assessments?.[0];
   const previous = assessments?.[1];
-  const latestScore = Number(latest?.overall_score ?? 0);
+  const latestScore = latest ? Number(latest.overall_score) : null;
   const previousScore = previous ? Number(previous.overall_score) : null;
-  const delta = previousScore !== null ? latestScore - previousScore : null;
-  const latestLevel = getLevel(latestScore);
+  const delta = latestScore !== null && previousScore !== null ? latestScore - previousScore : null;
+  const latestLevel = getLevel(latestScore ?? 0);
   const dims = (latest?.dimensions ?? {}) as Record<string, number>;
   const dimEntries = Object.entries(dims).sort((a, b) => b[1] - a[1]);
-  const strongest = dimEntries[0];
-  const weakest = dimEntries[dimEntries.length - 1];
+  const strongest = dimEntries[0] ?? null;
+  const weakest = dimEntries[dimEntries.length - 1] ?? null;
   const recommendations = (latest?.recommendations ?? []) as { dimension: string; score: number; action: string }[];
-  const retentionCoverage = Math.round(((retentionCount ?? 0) / 6) * 100);
+  const retentionCount = retentionData?.length ?? 0;
+  const retentionCoverage = Math.round((retentionCount / 6) * 100);
 
-  // Top governance risks
-  const risks: { label: string; severity: "high" | "medium" | "low" }[] = [];
-  if ((stewardCount ?? 0) === 0) risks.push({ label: "No Data Stewards assigned", severity: "high" });
-  if ((retentionCount ?? 0) < 3) risks.push({ label: "Retention policies incomplete", severity: "high" });
-  if (latestScore < 40) risks.push({ label: "Governance maturity below threshold", severity: "high" });
-  else if (latestScore < 60) risks.push({ label: "Governance maturity developing — not yet managed", severity: "medium" });
-  if (weakest && weakest[1] < 30) risks.push({ label: `Weak dimension: ${weakest[0]} (${weakest[1]}%)`, severity: "medium" });
-  if (risks.length === 0) risks.push({ label: "No critical governance risks detected", severity: "low" });
+  // Enforcement breakdown
+  const enforcementCounts = {
+    configured: (retentionData ?? []).filter((p: any) => (p.enforcement_status ?? "configured") === "configured").length,
+    scheduled: (retentionData ?? []).filter((p: any) => p.enforcement_status === "scheduled").length,
+    enforced: (retentionData ?? []).filter((p: any) => p.enforcement_status === "enforced").length,
+  };
+
+  // Risk detection
+  const riskCtx: RiskContext = {
+    stewardCount: stewardCount ?? 0,
+    retentionCount,
+    maturityScore: latestScore,
+    weakestScore: weakest ? weakest[1] : null,
+    weakestName: weakest ? weakest[0] : null,
+  };
+
+  const risks: { label: string; severity: "high" | "medium" | "low"; rule: string }[] = [];
+  for (const r of RISK_RULES) {
+    if (r.check(riskCtx)) {
+      const label = typeof r.label === "function" ? (r.label as any)(riskCtx) : r.label;
+      risks.push({ label, severity: r.severity, rule: r.rule });
+    }
+  }
+  if (risks.length === 0) risks.push({ label: "No critical governance risks detected", severity: "low", rule: "All governance checks passed." });
 
   // Recommended next actions
   const actions: { label: string; link: string }[] = [];
   if (!latest) actions.push({ label: "Complete your first governance maturity assessment", link: "/governance-maturity" });
   if ((stewardCount ?? 0) === 0) actions.push({ label: "Assign at least one Data Steward in Team settings", link: "/team" });
-  if ((retentionCount ?? 0) < 6) actions.push({ label: "Define retention policies for all 6 data categories", link: "/settings" });
+  if (retentionCount < 6) actions.push({ label: "Define retention policies for all 6 data categories", link: "/settings" });
   if (recommendations.length > 0) actions.push({ label: recommendations[0].action, link: "/governance-maturity" });
   if (actions.length === 0) actions.push({ label: "Reassess governance maturity to track progress", link: "/governance-maturity" });
 
@@ -109,19 +167,35 @@ const GovernanceCommandView = () => {
     low: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
   };
 
+  const exportData = {
+    maturityScore: latestScore,
+    maturityLevel: latestLevel.label,
+    delta,
+    strongest: strongest as [string, number] | null,
+    weakest: weakest as [string, number] | null,
+    stewardCount: stewardCount ?? 0,
+    retentionCount,
+    risks: risks.map((r) => ({ label: r.label, severity: r.severity })),
+    actions: actions.map((a) => ({ label: a.label })),
+    orgName: currentOrg?.name ?? "Organization",
+  };
+
   return (
     <div className="space-y-8 max-w-6xl pb-12">
-      <div className="flex items-center gap-3">
-        <SidebarMobileToggle />
-        <div>
-          <h1 className="text-2xl font-bold font-display">Governance Command View</h1>
-          <p className="text-sm text-muted-foreground">
-            Unified executive view — are we governed, where are we weak, and what to do next.
-          </p>
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-3">
+          <SidebarMobileToggle />
+          <div>
+            <h1 className="text-2xl font-bold font-display">Governance Command View</h1>
+            <p className="text-sm text-muted-foreground">
+              Unified executive view — are we governed, where are we weak, and what to do next.
+            </p>
+          </div>
         </div>
+        <GovernanceExportButton data={exportData} />
       </div>
 
-      {/* Top row: Maturity Score + Trend + Steward + Retention */}
+      {/* Top row: Maturity Score + Steward + Retention + Strongest/Weakest */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
           <Card className="h-full">
@@ -131,9 +205,9 @@ const GovernanceCommandView = () => {
                 <span className="text-xs font-semibold text-muted-foreground">Maturity Score</span>
               </div>
               <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-bold font-display">{latest ? latestScore : "—"}</span>
+                <span className="text-3xl font-bold font-display">{latestScore !== null ? latestScore : "—"}</span>
                 <span className="text-sm text-muted-foreground">/100</span>
-                {latest && (
+                {latestScore !== null && (
                   <Badge className={`${latestLevel.bg} ${latestLevel.color} border-0 text-[10px] ml-1`}>
                     {latestLevel.label}
                   </Badge>
@@ -149,7 +223,7 @@ const GovernanceCommandView = () => {
                   </span>
                 </div>
               )}
-              {!latest && (
+              {latestScore === null && (
                 <p className="text-[10px] text-muted-foreground/60 mt-2">No assessment yet</p>
               )}
             </CardContent>
@@ -179,10 +253,17 @@ const GovernanceCommandView = () => {
                 <span className="text-xs font-semibold text-muted-foreground">Retention Coverage</span>
               </div>
               <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-bold font-display">{retentionCount ?? 0}</span>
+                <span className="text-3xl font-bold font-display">{retentionCount}</span>
                 <span className="text-sm text-muted-foreground">/6 categories</span>
               </div>
-              <Progress value={retentionCoverage} className="h-1.5 mt-3" />
+              <Progress value={retentionCoverage} className="h-1.5 mt-2" />
+              {retentionCount > 0 && (
+                <div className="flex items-center gap-2 mt-2 text-[10px] text-muted-foreground/60">
+                  {enforcementCounts.enforced > 0 && <span className="text-emerald-400">{enforcementCounts.enforced} enforced</span>}
+                  {enforcementCounts.scheduled > 0 && <span className="text-blue-400">{enforcementCounts.scheduled} scheduled</span>}
+                  {enforcementCounts.configured > 0 && <span>{enforcementCounts.configured} configured</span>}
+                </div>
+              )}
             </CardContent>
           </Card>
         </motion.div>
@@ -217,71 +298,76 @@ const GovernanceCommandView = () => {
         </motion.div>
       </div>
 
-      {/* Middle row: Governance KPIs + Risks */}
+      {/* Middle row: KPIs + Steward drill-down */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <GovernanceKPIs />
+        <StewardDrillDown />
+      </div>
 
-        <div className="space-y-6">
-          {/* Governance Risks */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-destructive" />
-                Top Governance Risks
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {risks.map((risk, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, x: -8 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.05 }}
-                    className="flex items-center gap-3 p-3 rounded-xl border border-border/40 bg-muted/20"
-                  >
-                    <Badge className={`${riskColors[risk.severity]} text-[9px] border shrink-0`}>
-                      {risk.severity}
-                    </Badge>
+      {/* Bottom row: Risks + Actions */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Governance Risks with rule explanations */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-destructive" />
+              Top Governance Risks
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {risks.map((risk, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.05 }}
+                  className="flex items-start gap-3 p-3 rounded-xl border border-border/40 bg-muted/20"
+                >
+                  <Badge className={`${riskColors[risk.severity]} text-[9px] border shrink-0 mt-0.5`}>
+                    {risk.severity}
+                  </Badge>
+                  <div className="flex-1 min-w-0">
                     <span className="text-xs text-foreground">{risk.label}</span>
-                  </motion.div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                    <p className="text-[10px] text-muted-foreground/60 mt-0.5 italic">{risk.rule}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
-          {/* Recommended Next Actions */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <ArrowRight className="w-4 h-4 text-primary" />
-                Recommended Next Actions
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {actions.slice(0, 4).map((action, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, x: -8 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.05 }}
-                  >
-                    <Link to={action.link}>
-                      <div className="flex items-center gap-3 p-3 rounded-xl border border-border/40 bg-muted/20 hover:bg-muted/40 transition-colors cursor-pointer">
-                        <div className="w-5 h-5 rounded bg-primary/10 flex items-center justify-center shrink-0">
-                          <span className="text-[10px] font-bold text-primary">{i + 1}</span>
-                        </div>
-                        <span className="text-xs text-foreground">{action.label}</span>
-                        <ArrowRight className="w-3 h-3 text-muted-foreground ml-auto shrink-0" />
+        {/* Recommended Next Actions */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <ArrowRight className="w-4 h-4 text-primary" />
+              Recommended Next Actions
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {actions.slice(0, 4).map((action, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.05 }}
+                >
+                  <Link to={action.link}>
+                    <div className="flex items-center gap-3 p-3 rounded-xl border border-border/40 bg-muted/20 hover:bg-muted/40 transition-colors cursor-pointer">
+                      <div className="w-5 h-5 rounded bg-primary/10 flex items-center justify-center shrink-0">
+                        <span className="text-[10px] font-bold text-primary">{i + 1}</span>
                       </div>
-                    </Link>
-                  </motion.div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+                      <span className="text-xs text-foreground">{action.label}</span>
+                      <ArrowRight className="w-3 h-3 text-muted-foreground ml-auto shrink-0" />
+                    </div>
+                  </Link>
+                </motion.div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

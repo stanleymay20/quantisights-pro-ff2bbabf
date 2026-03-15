@@ -15,15 +15,18 @@ interface RetentionPolicy {
   retention_days: number;
   auto_cleanup: boolean;
   description: string;
+  enforcement_status: "configured" | "scheduled" | "enforced";
+  last_cleanup_at: string | null;
+  next_scheduled_at: string | null;
 }
 
 const DEFAULT_POLICIES: RetentionPolicy[] = [
-  { data_category: "datasets", retention_days: 37, auto_cleanup: false, description: "Uploaded datasets and raw records" },
-  { data_category: "decisions", retention_days: 60, auto_cleanup: false, description: "Decision ledger entries and outcomes" },
-  { data_category: "advisories", retention_days: 60, auto_cleanup: false, description: "Advisory instances and recommendations" },
-  { data_category: "copilot_messages", retention_days: 90, auto_cleanup: true, description: "Copilot conversation history" },
-  { data_category: "audit_logs", retention_days: 730, auto_cleanup: false, description: "Immutable audit trail (regulatory minimum)" },
-  { data_category: "session_data", retention_days: 365, auto_cleanup: true, description: "Session and usage analytics" },
+  { data_category: "datasets", retention_days: 37, auto_cleanup: false, description: "Uploaded datasets and raw records", enforcement_status: "configured", last_cleanup_at: null, next_scheduled_at: null },
+  { data_category: "decisions", retention_days: 60, auto_cleanup: false, description: "Decision ledger entries and outcomes", enforcement_status: "configured", last_cleanup_at: null, next_scheduled_at: null },
+  { data_category: "advisories", retention_days: 60, auto_cleanup: false, description: "Advisory instances and recommendations", enforcement_status: "configured", last_cleanup_at: null, next_scheduled_at: null },
+  { data_category: "copilot_messages", retention_days: 90, auto_cleanup: true, description: "Copilot conversation history", enforcement_status: "configured", last_cleanup_at: null, next_scheduled_at: null },
+  { data_category: "audit_logs", retention_days: 730, auto_cleanup: false, description: "Immutable audit trail (regulatory minimum)", enforcement_status: "configured", last_cleanup_at: null, next_scheduled_at: null },
+  { data_category: "session_data", retention_days: 365, auto_cleanup: true, description: "Session and usage analytics", enforcement_status: "configured", last_cleanup_at: null, next_scheduled_at: null },
 ];
 
 const CATEGORY_ICONS: Record<string, typeof Database> = {
@@ -61,7 +64,14 @@ const RetentionPolicySettings = () => {
         prev.map((p) => {
           const saved = savedPolicies.find((s: any) => s.data_category === p.data_category);
           return saved
-            ? { ...p, retention_days: saved.retention_days, auto_cleanup: saved.auto_cleanup }
+            ? {
+                ...p,
+                retention_days: saved.retention_days,
+                auto_cleanup: saved.auto_cleanup,
+                enforcement_status: (saved.enforcement_status ?? "configured") as RetentionPolicy["enforcement_status"],
+                last_cleanup_at: saved.last_cleanup_at ?? null,
+                next_scheduled_at: saved.next_scheduled_at ?? null,
+              }
             : p;
         })
       );
@@ -146,8 +156,25 @@ const RetentionPolicySettings = () => {
                       {isLocked && (
                         <Badge variant="outline" className="text-[9px] px-1.5">Regulatory min</Badge>
                       )}
+                      <Badge
+                        variant="outline"
+                        className={`text-[9px] px-1.5 ${
+                          policy.enforcement_status === "enforced"
+                            ? "text-emerald-400 border-emerald-500/20"
+                            : policy.enforcement_status === "scheduled"
+                            ? "text-blue-400 border-blue-500/20"
+                            : "text-muted-foreground border-border"
+                        }`}
+                      >
+                        {policy.enforcement_status}
+                      </Badge>
                     </div>
                     <p className="text-[10px] text-muted-foreground">{policy.description}</p>
+                    {policy.last_cleanup_at && (
+                      <p className="text-[9px] text-muted-foreground/50">
+                        Last cleanup: {new Date(policy.last_cleanup_at).toLocaleDateString()}
+                      </p>
+                    )}
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
                     <div className="flex items-center gap-1.5">

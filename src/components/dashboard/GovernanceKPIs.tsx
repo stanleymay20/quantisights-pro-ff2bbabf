@@ -29,26 +29,41 @@ const GovernanceKPIs = () => {
     queryFn: async () => {
       if (!currentOrgId) return null;
 
-      const [datasets, quality, decisions, members, policies] = await Promise.all([
-        supabase.from("datasets").select("id", { count: "exact", head: true }).eq("organization_id", currentOrgId),
-        supabase.from("data_quality_checks").select("score").eq("organization_id", currentOrgId).order("created_at", { ascending: false }).limit(10),
+      const [datasets, quality, decisions, members, policies, retentionPolicies] = await Promise.all([
+        supabase.from("datasets").select("id, uploaded_by").eq("organization_id", currentOrgId).eq("status", "active"),
+        supabase.from("data_quality_checks").select("score, dataset_id").eq("organization_id", currentOrgId).order("created_at", { ascending: false }).limit(10),
         supabase.from("decision_ledger").select("id, outcome_measured_at", { count: "exact" }).eq("organization_id", currentOrgId),
-        supabase.from("organization_members").select("role").eq("organization_id", currentOrgId),
+        supabase.from("organization_members").select("role, user_id").eq("organization_id", currentOrgId),
         supabase.from("data_retention_policies").select("id", { count: "exact", head: true }).eq("organization_id", currentOrgId),
+        supabase.from("data_retention_policies").select("data_category").eq("organization_id", currentOrgId),
       ]);
 
       const avgQuality = quality.data?.length
         ? Math.round(quality.data.reduce((s, d) => s + (d.score ?? 0), 0) / quality.data.length)
         : 0;
 
-      const stewardCount = members.data?.filter((m: any) => m.role === "steward").length ?? 0;
+      const stewardUserIds = new Set(
+        (members.data ?? []).filter((m: any) => m.role === "steward").map((m: any) => m.user_id)
+      );
+      const stewardCount = stewardUserIds.size;
       const totalMembers = members.data?.length ?? 1;
       const outcomeTracked = decisions.data?.filter((d: any) => d.outcome_measured_at).length ?? 0;
       const totalDecisions = decisions.count ?? 0;
       const outcomeRate = totalDecisions > 0 ? Math.round((outcomeTracked / totalDecisions) * 100) : 0;
 
+      // Governed dataset = has quality check + has steward owner + has retention policy for 'datasets'
+      const qualityDatasetIds = new Set((quality.data ?? []).map((q: any) => q.dataset_id).filter(Boolean));
+      const hasDatasetRetention = (retentionPolicies.data ?? []).some((p: any) => p.data_category === "datasets");
+      const allDatasets = datasets.data ?? [];
+      const governedCount = allDatasets.filter((d: any) =>
+        qualityDatasetIds.has(d.id) &&
+        stewardUserIds.has(d.uploaded_by) &&
+        hasDatasetRetention
+      ).length;
+
       return {
-        datasetCount: datasets.count ?? 0,
+        datasetCount: allDatasets.length,
+        governedCount,
         avgQuality,
         stewardCount,
         stewardRatio: Math.round((stewardCount / totalMembers) * 100),
@@ -102,13 +117,13 @@ const GovernanceKPIs = () => {
     {
       label: "Governed Datasets",
       icon: Database,
-      value: stats?.datasetCount ?? 0,
+      value: `${stats?.governedCount ?? 0}/${stats?.datasetCount ?? 0}`,
       target: "All active",
-      progress: Math.min((stats?.datasetCount ?? 0) * 20, 100),
-      status: (stats?.datasetCount ?? 0) >= 3 ? "healthy" : (stats?.datasetCount ?? 0) >= 1 ? "warning" : "critical",
+      progress: (stats?.datasetCount ?? 0) > 0 ? Math.round(((stats?.governedCount ?? 0) / (stats?.datasetCount ?? 1)) * 100) : 0,
+      status: (stats?.datasetCount ?? 0) > 0 && (stats?.governedCount ?? 0) === (stats?.datasetCount ?? 0) ? "healthy" : (stats?.governedCount ?? 0) >= 1 ? "warning" : "critical",
       help: {
-        what: "Datasets with at least one quality check, an assigned owner, and active retention policy.",
-        how: "Count of datasets in the organization that have passed at least one data quality check.",
+        what: "Datasets that meet all three governance criteria: quality-checked, steward-owned, and covered by a retention policy.",
+        how: "Count of active datasets where (1) at least one quality check exists, (2) the uploader holds a steward role, and (3) a 'datasets' retention policy is defined.",
         why: "Ungoverned datasets create blind spots — decisions built on unchecked data carry hidden risk.",
       },
     },
