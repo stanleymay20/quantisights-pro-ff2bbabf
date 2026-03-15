@@ -21,12 +21,12 @@ interface RetentionPolicy {
 }
 
 const DEFAULT_POLICIES: RetentionPolicy[] = [
-  { data_category: "datasets", retention_days: 37, auto_cleanup: false, description: "Uploaded datasets and raw records" },
-  { data_category: "decisions", retention_days: 60, auto_cleanup: false, description: "Decision ledger entries and outcomes" },
-  { data_category: "advisories", retention_days: 60, auto_cleanup: false, description: "Advisory instances and recommendations" },
-  { data_category: "copilot_messages", retention_days: 90, auto_cleanup: true, description: "Copilot conversation history" },
-  { data_category: "audit_logs", retention_days: 730, auto_cleanup: false, description: "Immutable audit trail (regulatory minimum)" },
-  { data_category: "session_data", retention_days: 365, auto_cleanup: true, description: "Session and usage analytics" },
+  { data_category: "datasets", retention_days: 37, auto_cleanup: false, description: "Uploaded datasets and raw records", enforcement_status: "configured", last_cleanup_at: null, next_scheduled_at: null },
+  { data_category: "decisions", retention_days: 60, auto_cleanup: false, description: "Decision ledger entries and outcomes", enforcement_status: "configured", last_cleanup_at: null, next_scheduled_at: null },
+  { data_category: "advisories", retention_days: 60, auto_cleanup: false, description: "Advisory instances and recommendations", enforcement_status: "configured", last_cleanup_at: null, next_scheduled_at: null },
+  { data_category: "copilot_messages", retention_days: 90, auto_cleanup: true, description: "Copilot conversation history", enforcement_status: "configured", last_cleanup_at: null, next_scheduled_at: null },
+  { data_category: "audit_logs", retention_days: 730, auto_cleanup: false, description: "Immutable audit trail (regulatory minimum)", enforcement_status: "configured", last_cleanup_at: null, next_scheduled_at: null },
+  { data_category: "session_data", retention_days: 365, auto_cleanup: true, description: "Session and usage analytics", enforcement_status: "configured", last_cleanup_at: null, next_scheduled_at: null },
 ];
 
 const CATEGORY_ICONS: Record<string, typeof Database> = {
