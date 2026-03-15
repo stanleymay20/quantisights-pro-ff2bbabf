@@ -73,11 +73,11 @@ const PortfolioRiskHeatmap = ({ companies, onSelect, selectedId }: Props) => {
         <button
           key={company.id}
           onClick={() => onSelect(company)}
-          aria-label={`View ${company.name} — Risk score ${company.risk_score}, Status ${company.health_status}`}
+          aria-label={`View ${company.name} — Risk score ${n(company.risk_score)}, Status ${company.health_status ?? 'unknown'}`}
           className={`w-full rounded-xl border transition-all hover:shadow-md cursor-pointer text-left ${
             selectedId === company.id
               ? "border-primary/40 bg-primary/5 shadow-sm"
-              : `${riskColor(company.risk_score)} hover:border-primary/20`
+              : `${riskColor(n(company.risk_score))} hover:border-primary/20`
           }`}
         >
           {/* Mobile layout */}
