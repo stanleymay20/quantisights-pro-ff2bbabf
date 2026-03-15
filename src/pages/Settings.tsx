@@ -371,6 +371,14 @@ const Settings = () => {
                 <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
                   <SecurityPosture />
                   <MFAEnroll />
+                  <PasskeyManagement />
+                  <SessionManagement />
+                  {(orgRole === "owner" || orgRole === "admin") && (
+                    <>
+                      <SCIMTokenManager />
+                      <AuthEventLog />
+                    </>
+                  )}
                   <RetentionPolicySettings />
                   <GovernanceKPIs />
                 </motion.div>
