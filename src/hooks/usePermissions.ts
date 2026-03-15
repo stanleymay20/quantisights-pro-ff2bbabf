@@ -15,17 +15,34 @@ export function usePermissions() {
   const { user } = useAuth();
   const { currentOrg: organization } = useOrganization();
 
-  const { data: permissions = [], isLoading } = useQuery({
-    queryKey: ["permissions", user?.id, organization?.id],
+  const { data: orgRole } = useQuery({
+    queryKey: ["org-role", user?.id, organization?.id],
     queryFn: async () => {
-      if (!user?.id || !organization?.id) return [];
+      if (!user?.id || !organization?.id) return null;
+      const { data } = await supabase
+        .from("organization_members")
+        .select("role")
+        .eq("user_id", user.id)
+        .eq("organization_id", organization.id)
+        .single();
+      return data?.role ?? null;
+    },
+    enabled: !!user?.id && !!organization?.id,
+  });
+
+  const { data: permissions = [], isLoading } = useQuery({
+    queryKey: ["permissions", user?.id, organization?.id, orgRole],
+    queryFn: async () => {
+      if (!user?.id || !organization?.id || !orgRole) return [];
+      // Only fetch permissions for the user's actual role in this org
       const { data } = await supabase
         .from("role_permissions")
         .select("permission, granted")
-        .eq("organization_id", organization.id);
+        .eq("organization_id", organization.id)
+        .eq("role", orgRole);
       return data ?? [];
     },
-    enabled: !!user?.id && !!organization?.id,
+    enabled: !!user?.id && !!organization?.id && !!orgRole,
   });
 
   const { data: orgRole } = useQuery({
