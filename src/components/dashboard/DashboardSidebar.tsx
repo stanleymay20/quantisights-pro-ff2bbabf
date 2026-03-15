@@ -221,7 +221,7 @@ const DashboardSidebar = () => {
   };
 
   const sidebarContent = (
-    <aside className="w-56 h-screen bg-sidebar border-r border-sidebar-border flex flex-col shrink-0">
+    <aside className="w-56 h-screen h-[100dvh] bg-sidebar border-r border-sidebar-border flex flex-col shrink-0 safe-area-left safe-area-top safe-area-bottom">
       <div className="p-4 pb-3 flex items-center justify-between">
         <Link to="/" onClick={handleNavClick}>
           <img src={logo} alt="Quantivis" className="h-7 w-auto" />

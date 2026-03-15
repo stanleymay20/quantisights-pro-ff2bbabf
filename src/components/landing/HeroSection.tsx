@@ -13,7 +13,7 @@ const CAPABILITY_PILLS = [
 
 const HeroSection = () => {
   return (
-    <header className="relative min-h-[85vh] flex items-center overflow-hidden pt-20" role="banner">
+    <header className="relative min-h-[85vh] min-h-[85dvh] flex items-center overflow-hidden pt-20" role="banner">
       <img
         src={heroVisual}
         alt=""

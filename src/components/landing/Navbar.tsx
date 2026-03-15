@@ -52,8 +52,12 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
       </div>
 
       {/* Mobile menu */}
-      {mobileOpen && (
-        <div className="md:hidden border-t border-border/30 bg-background/95 backdrop-blur-xl px-6 py-4 space-y-3">
+      <div
+        className={`md:hidden border-t border-border/30 bg-background/95 backdrop-blur-xl overflow-hidden transition-all duration-300 ease-in-out ${
+          mobileOpen ? "max-h-[400px] opacity-100" : "max-h-0 opacity-0"
+        }`}
+      >
+        <div className="px-6 py-4 space-y-3">
           {NAV_LINKS.map((link) => (
             <div key={link.label} className="py-2">
               <NavItem link={link} onClick={() => setMobileOpen(false)} />
@@ -70,7 +74,7 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
             Start Free Trial
           </Link>
         </div>
-      )}
+      </div>
     </nav>
   );
 });
