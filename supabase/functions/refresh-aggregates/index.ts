@@ -59,7 +59,7 @@ serve(async (req) => {
       const { data: membership } = await supabase
         .from("organization_members")
         .select("id")
-        .eq("user_id", data.user.id)
+        .eq("user_id", userId)
         .eq("organization_id", organization_id)
         .maybeSingle();
       if (!membership) {
