@@ -75,7 +75,10 @@ const Reports = () => {
   }, [currentOrgId, activeDatasetId]);
 
   const handleGenerate = async () => {
-    if (!currentOrgId) return;
+    if (!currentOrgId || !activeDatasetId) {
+      toast({ title: "Select a dataset first", variant: "destructive" });
+      return;
+    }
     setGenerating(true);
     try {
       await supabase.functions.invoke("generate-insights", {
