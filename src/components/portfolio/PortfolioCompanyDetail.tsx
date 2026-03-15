@@ -98,10 +98,10 @@ const PortfolioCompanyDetail = ({ company, onClose, onUpdate, onDelete }: Props)
   };
 
   const metrics = [
-    { label: "Revenue LTM", value: fmtCurrency(company.revenue_ltm), icon: DollarSign },
-    { label: "EBITDA LTM", value: fmtCurrency(company.ebitda_ltm), icon: DollarSign },
-    { label: "Revenue Growth", value: `${company.revenue_growth_pct > 0 ? "+" : ""}${company.revenue_growth_pct.toFixed(1)}%`, icon: TrendingUp },
-    { label: "EBITDA Margin", value: `${company.ebitda_margin_pct.toFixed(1)}%`, icon: Target },
+    { label: "Revenue LTM", value: fmtCurrency(n(company.revenue_ltm)), icon: DollarSign },
+    { label: "EBITDA LTM", value: fmtCurrency(n(company.ebitda_ltm)), icon: DollarSign },
+    { label: "Revenue Growth", value: `${n(company.revenue_growth_pct) > 0 ? "+" : ""}${n(company.revenue_growth_pct).toFixed(1)}%`, icon: TrendingUp },
+    { label: "EBITDA Margin", value: `${n(company.ebitda_margin_pct).toFixed(1)}%`, icon: Target },
     { label: "Valuation", value: fmtCurrency(company.current_valuation), icon: DollarSign },
     { label: "Headcount", value: company.headcount?.toString() ?? "—", icon: Users },
     { label: "Ownership", value: company.ownership_pct ? `${company.ownership_pct}%` : "—", icon: Target },
