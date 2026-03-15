@@ -67,6 +67,11 @@ const GovernanceKPIs = () => {
       target: ">95%",
       progress: stats?.avgQuality ?? 0,
       status: (stats?.avgQuality ?? 0) >= 95 ? "healthy" : (stats?.avgQuality ?? 0) >= 70 ? "warning" : "critical",
+      help: {
+        what: "Average accuracy and completeness of your data across recent quality checks.",
+        how: "Mean score of the 10 most recent data quality checks (completeness, accuracy, consistency).",
+        why: "Low quality data produces unreliable insights and erodes executive trust in recommendations.",
+      },
     },
     {
       label: "Outcome Tracking Rate",
@@ -75,6 +80,11 @@ const GovernanceKPIs = () => {
       target: ">80%",
       progress: stats?.outcomeRate ?? 0,
       status: (stats?.outcomeRate ?? 0) >= 80 ? "healthy" : (stats?.outcomeRate ?? 0) >= 50 ? "warning" : "critical",
+      help: {
+        what: "Percentage of strategic decisions where the real-world outcome was measured and recorded.",
+        how: "Decisions with outcome_measured_at ÷ total decisions in the ledger.",
+        why: "Without tracking outcomes, you can't learn from past decisions or improve future judgment.",
+      },
     },
     {
       label: "Data Stewards Assigned",
@@ -83,6 +93,11 @@ const GovernanceKPIs = () => {
       target: ">1 per domain",
       progress: Math.min((stats?.stewardRatio ?? 0), 100),
       status: (stats?.stewardCount ?? 0) >= 2 ? "healthy" : (stats?.stewardCount ?? 0) >= 1 ? "warning" : "critical",
+      help: {
+        what: "Number of team members assigned the Data Steward role — accountable for data quality in their domain.",
+        how: "Count of organization members with 'steward' role ÷ total members.",
+        why: "Without clear ownership, data quality issues have no accountable resolver.",
+      },
     },
     {
       label: "Governed Datasets",
@@ -91,6 +106,11 @@ const GovernanceKPIs = () => {
       target: "All active",
       progress: Math.min((stats?.datasetCount ?? 0) * 20, 100),
       status: (stats?.datasetCount ?? 0) >= 3 ? "healthy" : (stats?.datasetCount ?? 0) >= 1 ? "warning" : "critical",
+      help: {
+        what: "Datasets with at least one quality check, an assigned owner, and active retention policy.",
+        how: "Count of datasets in the organization that have passed at least one data quality check.",
+        why: "Ungoverned datasets create blind spots — decisions built on unchecked data carry hidden risk.",
+      },
     },
     {
       label: "Retention Policies Defined",
@@ -99,6 +119,11 @@ const GovernanceKPIs = () => {
       target: "6 categories",
       progress: Math.round(((stats?.policyCount ?? 0) / 6) * 100),
       status: (stats?.policyCount ?? 0) >= 6 ? "healthy" : (stats?.policyCount ?? 0) >= 3 ? "warning" : "critical",
+      help: {
+        what: "Number of data categories with a defined retention period (e.g., datasets, audit logs, sessions).",
+        how: "Count of entries in data_retention_policies for this organization (target: 6 categories).",
+        why: "Missing retention policies create compliance exposure and unlimited storage liability.",
+      },
     },
   ];
 
