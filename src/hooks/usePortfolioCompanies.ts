@@ -4,22 +4,22 @@ import { supabase } from "@/integrations/supabase/client";
 export interface PortfolioCompany {
   id: string;
   organization_id: string;
-  dataset_id?: string | null;
+  dataset_id: string | null;
   name: string;
   sector: string;
   investment_date: string | null;
   investment_amount: number | null;
   ownership_pct: number | null;
   current_valuation: number | null;
-  revenue_ltm: number;
-  ebitda_ltm: number;
-  revenue_growth_pct: number;
-  ebitda_margin_pct: number;
+  revenue_ltm: number | null;
+  ebitda_ltm: number | null;
+  revenue_growth_pct: number | null;
+  ebitda_margin_pct: number | null;
   cash_runway_months: number | null;
   headcount: number | null;
-  risk_score: number;
-  risk_trend: string;
-  health_status: string;
+  risk_score: number | null;
+  risk_trend: string | null;
+  health_status: string | null;
   last_board_date: string | null;
   next_board_date: string | null;
   fund_name: string | null;
@@ -27,6 +27,9 @@ export interface PortfolioCompany {
   created_at: string;
   updated_at: string;
 }
+
+/** Safe accessor for nullable numeric fields — returns 0 if null/undefined */
+const n = (v: number | null | undefined): number => v ?? 0;
 
 export type NewPortfolioCompany = Omit<PortfolioCompany, "id" | "created_at" | "updated_at" | "risk_trend" | "health_status"> & {
   organization_id: string;
