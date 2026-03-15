@@ -16,7 +16,9 @@ interface DatasetOwnership {
   id: string;
   name: string;
   uploaded_by: string;
+  steward_user_id: string | null;
   has_quality_check: boolean;
+  steward_name: string | null;
 }
 
 const StewardDrillDown = () => {
@@ -34,7 +36,7 @@ const StewardDrillDown = () => {
           .eq("organization_id", currentOrgId),
         supabase
           .from("datasets")
-          .select("id, name, uploaded_by")
+          .select("id, name, uploaded_by, steward_user_id")
           .eq("organization_id", currentOrgId)
           .eq("status", "active"),
         supabase
@@ -62,17 +64,20 @@ const StewardDrillDown = () => {
         id: d.id,
         name: d.name,
         uploaded_by: d.uploaded_by,
+        steward_user_id: d.steward_user_id,
         has_quality_check: qualityDatasetIds.has(d.id),
+        steward_name: d.steward_user_id ? (profileMap.get(d.steward_user_id) ?? "Unknown") : null,
       }));
 
       const stewards = members.filter((m) => m.role === "steward");
-      const nonStewards = members.filter((m) => m.role !== "steward");
 
-      // Datasets not uploaded by a steward = "unowned" from governance perspective
+      // Unowned = no explicit steward_user_id AND uploader is not a steward
       const stewardUserIds = new Set(stewards.map((s) => s.user_id));
-      const unownedDatasets = datasets.filter((d) => !stewardUserIds.has(d.uploaded_by));
+      const unownedDatasets = datasets.filter(
+        (d) => d.steward_user_id == null && !stewardUserIds.has(d.uploaded_by)
+      );
 
-      return { stewards, nonStewards, datasets, unownedDatasets, profileMap };
+      return { stewards, datasets, unownedDatasets, profileMap };
     },
     enabled: !!currentOrgId,
   });

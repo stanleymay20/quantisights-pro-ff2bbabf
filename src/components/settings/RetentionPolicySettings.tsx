@@ -89,6 +89,11 @@ const RetentionPolicySettings = () => {
     setSaving(true);
 
     for (const policy of policies) {
+      // Determine enforcement_status: if auto_cleanup just turned on and never run, mark as scheduled
+      const effectiveStatus = policy.auto_cleanup
+        ? (policy.last_cleanup_at ? "enforced" : "scheduled")
+        : "configured";
+
       const { error } = await supabase
         .from("data_retention_policies")
         .upsert(
@@ -98,6 +103,7 @@ const RetentionPolicySettings = () => {
             retention_days: policy.retention_days,
             auto_cleanup: policy.auto_cleanup,
             description: policy.description,
+            enforcement_status: effectiveStatus,
           } as any,
           { onConflict: "organization_id,data_category" }
         );
