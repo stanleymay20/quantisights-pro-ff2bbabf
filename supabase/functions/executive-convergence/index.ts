@@ -169,7 +169,7 @@ serve(async (req) => {
 
   try {
     const authHeader = req.headers.get("authorization");
-    if (!authHeader) {
+    if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -184,12 +184,15 @@ serve(async (req) => {
     });
     const serviceClient = createClient(supabaseUrl, serviceKey);
 
-    const { data: { user }, error: userError } = await userClient.auth.getUser();
-    if (userError || !user) {
+    // Use getClaims() for secure JWT validation
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: authErr } = await userClient.auth.getClaims(token);
+    if (authErr || !claimsData?.claims?.sub) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    const userId = claimsData.claims.sub as string;
 
     const { organization_id, trigger } = await req.json();
 
@@ -201,7 +204,7 @@ serve(async (req) => {
 
     // Verify membership
     const { data: isMember } = await serviceClient.rpc("is_org_member", {
-      _user_id: user.id, _org_id: organization_id,
+      _user_id: userId, _org_id: organization_id,
     });
     if (!isMember) {
       return new Response(JSON.stringify({ error: "Forbidden" }), {
@@ -285,16 +288,17 @@ serve(async (req) => {
       });
     }
 
-    // Log
+    // Audit log
     console.log(JSON.stringify({
       event: trigger === "auto" ? "convergence_auto_triggered" : "convergence_manual_triggered",
       organization_id,
+      user_id: userId,
       score: result.score,
       alignment_status: result.alignment_status,
       conflicts_count: result.conflicts.length,
     }));
 
-    // AI narrative (enterprise only)
+    // AI narrative (enterprise only) with AbortController timeout
     let aiNarrative: any = null;
     if (tier === "enterprise" && lovableApiKey) {
       const contextBlock = `
@@ -311,9 +315,12 @@ ${roles.map(r => `${r.role_type.toUpperCase()}: ${r.score}/100 (dev=${r.componen
 ACTIVE CONFLICTS:
 ${result.conflicts.length > 0 ? result.conflicts.map(c => `[${c.severity.toUpperCase()}] ${c.description}`).join("\n") : "None"}
 `;
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 30000);
       try {
         const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
           method: "POST",
+          signal: controller.signal,
           headers: {
             Authorization: `Bearer ${lovableApiKey}`,
             "Content-Type": "application/json",
@@ -355,14 +362,18 @@ No markdown. No hallucinated data. Reference only supplied metrics.`,
             tool_choice: { type: "function", function: { name: "convergence_narrative" } },
           }),
         });
+        clearTimeout(timeout);
         if (aiResp.ok) {
           const aiData = await aiResp.json();
           const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
           if (toolCall?.function?.arguments) {
             aiNarrative = JSON.parse(toolCall.function.arguments);
           }
+        } else {
+          await aiResp.text(); // consume body
         }
       } catch (aiErr) {
+        clearTimeout(timeout);
         console.error("AI convergence narrative error:", aiErr);
       }
     }

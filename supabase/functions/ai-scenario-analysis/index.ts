@@ -14,7 +14,7 @@ serve(async (req) => {
 
   try {
     const authHeader = req.headers.get("authorization");
-    if (!authHeader) {
+    if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -27,12 +27,15 @@ serve(async (req) => {
     });
     const serviceClient = createClient(supabaseUrl, serviceKey);
 
-    const { data: { user } } = await userClient.auth.getUser();
-    if (!user) {
+    // Use getClaims() for secure JWT validation
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: authErr } = await userClient.auth.getClaims(token);
+    if (authErr || !claimsData?.claims?.sub) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    const userId = claimsData.claims.sub as string;
 
     const { scenario_id } = await req.json();
     if (!scenario_id) {
@@ -56,7 +59,7 @@ serve(async (req) => {
 
     // Verify membership
     const { data: isMember } = await serviceClient.rpc("is_org_member", {
-      _user_id: user.id, _org_id: scenario.organization_id,
+      _user_id: userId, _org_id: scenario.organization_id,
     });
     if (!isMember) {
       return new Response(JSON.stringify({ error: "Forbidden" }), {
@@ -127,8 +130,13 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
+    // AI call with AbortController timeout
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000);
+
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
+      signal: controller.signal,
       headers: {
         Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
@@ -190,6 +198,8 @@ Provide strategic analysis of this scenario.`,
       }),
     });
 
+    clearTimeout(timeout);
+
     if (!aiResponse.ok) {
       if (aiResponse.status === 429) {
         return new Response(JSON.stringify({ error: "AI rate limit exceeded" }), {
@@ -201,6 +211,8 @@ Provide strategic analysis of this scenario.`,
           status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+      const errText = await aiResponse.text();
+      console.error("AI gateway error:", aiResponse.status, errText);
       throw new Error(`AI gateway error: ${aiResponse.status}`);
     }
 
@@ -220,10 +232,14 @@ Provide strategic analysis of this scenario.`,
         : { executive_summary: content, projected_outcome: "neutral", strategic_risks: [], opportunity_areas: [], recommended_actions: [], confidence_score: 50 };
     }
 
+    // Audit log
     console.log(JSON.stringify({
       event: "ai_scenario_analysis",
       scenario_id,
       organization_id: scenario.organization_id,
+      user_id: userId,
+      kpis_analyzed: Object.keys(kpiAgg).length,
+      assumptions_count: assumptions?.length || 0,
     }));
 
     return new Response(

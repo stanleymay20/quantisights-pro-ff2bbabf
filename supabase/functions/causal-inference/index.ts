@@ -12,7 +12,7 @@ serve(async (req) => {
 
   try {
     const authHeader = req.headers.get("authorization");
-    if (!authHeader) {
+    if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -27,12 +27,15 @@ serve(async (req) => {
     });
     const svc = createClient(supabaseUrl, serviceKey);
 
-    const { data: { user }, error: userError } = await userClient.auth.getUser();
-    if (userError || !user) {
+    // Use getClaims() for secure JWT validation
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: authErr } = await userClient.auth.getClaims(token);
+    if (authErr || !claimsData?.claims?.sub) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    const userId = claimsData.claims.sub as string;
 
     const { organization_id, dataset_id } = await req.json();
     if (!organization_id) {
@@ -40,24 +43,36 @@ serve(async (req) => {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    // CRITICAL: dataset_id is now MANDATORY per Active Data Contract
+    if (!dataset_id) {
+      return new Response(JSON.stringify({ error: "dataset_id required by Active Data Contract" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
-    const { data: isMember } = await svc.rpc("is_org_member", { _user_id: user.id, _org_id: organization_id });
+    const { data: isMember } = await svc.rpc("is_org_member", { _user_id: userId, _org_id: organization_id });
     if (!isMember) {
       return new Response(JSON.stringify({ error: "Forbidden" }), {
         status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Fetch metrics for causal analysis — scoped to dataset if provided
-    let metricsQuery = svc.from("metrics")
+    // Validate dataset belongs to org
+    const { data: dsCheck } = await svc.from("datasets").select("id")
+      .eq("id", dataset_id).eq("organization_id", organization_id).maybeSingle();
+    if (!dsCheck) {
+      return new Response(JSON.stringify({ error: "dataset_id does not belong to this organization" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Fetch metrics — always dataset-scoped
+    const { data: metrics } = await svc.from("metrics")
       .select("metric_type, value, date")
       .eq("organization_id", organization_id)
+      .eq("dataset_id", dataset_id)
       .order("date", { ascending: true })
       .limit(500);
-    if (dataset_id) {
-      metricsQuery = metricsQuery.eq("dataset_id", dataset_id);
-    }
-    const { data: metrics } = await metricsQuery;
 
     if (!metrics || metrics.length < 8) {
       return new Response(JSON.stringify({
@@ -88,7 +103,6 @@ serve(async (req) => {
         const minLen = Math.min(a.length, b.length);
         if (minLen < 4) continue;
 
-        // Test if A predicts B (lag-1) vs B predicts A (lag-1)
         const abCorr = laggedCorrelation(a.slice(0, minLen), b.slice(0, minLen), 1);
         const baCorr = laggedCorrelation(b.slice(0, minLen), a.slice(0, minLen), 1);
 
@@ -114,12 +128,15 @@ serve(async (req) => {
       mean: Math.round(byType[t].values.reduce((s, v) => s + v, 0) / byType[t].values.length * 100) / 100,
     }));
 
-    // AI narrative
+    // AI narrative with AbortController timeout
     let narrative = "";
     if (lovableApiKey && edges.length > 0) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 30000);
       try {
         const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
           method: "POST",
+          signal: controller.signal,
           headers: { Authorization: `Bearer ${lovableApiKey}`, "Content-Type": "application/json" },
           body: JSON.stringify({
             model: "google/gemini-3-flash-preview",
@@ -135,11 +152,15 @@ serve(async (req) => {
             ],
           }),
         });
+        clearTimeout(timeout);
         if (aiResp.ok) {
           const aiData = await aiResp.json();
           narrative = aiData.choices?.[0]?.message?.content || "";
+        } else {
+          await aiResp.text(); // consume body
         }
       } catch (e) {
+        clearTimeout(timeout);
         console.error("AI causal narrative error:", e);
       }
     }
@@ -168,8 +189,19 @@ serve(async (req) => {
       confidence_score: cappedConf,
       sample_size: sampleSize,
       model_status: "computed",
-      created_by: user.id,
+      created_by: userId,
     });
+
+    // Audit log
+    console.log(JSON.stringify({
+      event: "causal_inference_computed",
+      organization_id,
+      dataset_id,
+      user_id: userId,
+      edges_found: edges.length,
+      metric_types: types.length,
+      sample_size: sampleSize,
+    }));
 
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
