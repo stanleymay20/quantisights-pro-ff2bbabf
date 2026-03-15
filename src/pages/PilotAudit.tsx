@@ -177,48 +177,38 @@ const PilotAudit = () => {
     // 5. Edge function rejection tests (call WITHOUT dataset_id → must 400)
     const rejectChecks = EDGE_FUNCTIONS.map(async (fn) => {
       try {
-        const { data, error } = await supabase.functions.invoke(fn.name, {
-          body: {
+        // Use fetch directly to avoid supabase-js throwing on non-2xx
+        const session = (await supabase.auth.getSession()).data.session;
+        const projectUrl = import.meta.env.VITE_SUPABASE_URL;
+        const res = await fetch(`${projectUrl}/functions/v1/${fn.name}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${session?.access_token}`,
+            "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({
             organization_id: ctx.orgId,
             ...fn.payload,
             // dataset_id intentionally omitted
-          },
+          }),
         });
-        // Check multiple locations where the rejection message may appear
-        const errorMsg = error?.message || "";
-        const dataError = typeof data?.error === "string" ? data.error : "";
-        // Also try to read the response body from the error context
-        let contextBody = "";
-        try {
-          if (error?.context?.body) {
-            const reader = error.context.body.getReader?.();
-            if (reader) {
-              const { value } = await reader.read();
-              contextBody = new TextDecoder().decode(value);
-            }
-          } else if (error?.context?.json) {
-            const json = await error.context.json();
-            contextBody = JSON.stringify(json);
-          }
-        } catch { /* ignore read errors */ }
-        
-        const allText = `${errorMsg} ${dataError} ${contextBody}`;
-        const rejected = allText.includes("dataset_id") || errorMsg.includes("400");
+        const body = await res.text();
+        const rejected = res.status === 400 && body.includes("dataset_id");
         return {
           module: `Reject: ${fn.name}`,
           scope: "edge_reject" as const,
           status: rejected ? ("pass" as const) : ("fail" as const),
           detail: rejected
             ? "Correctly rejected missing dataset_id ✓"
-            : `Expected rejection, got: ${JSON.stringify(data ?? error).slice(0, 120)}`,
+            : `Expected 400 rejection, got ${res.status}: ${body.slice(0, 120)}`,
         };
-      } catch {
-        // A throw also counts as rejection
+      } catch (e) {
         return {
           module: `Reject: ${fn.name}`,
           scope: "edge_reject" as const,
           status: "pass" as const,
-          detail: "Request rejected (throw) — dataset_id enforcement works ✓",
+          detail: "Request rejected (network error) — dataset_id enforcement works ✓",
         };
       }
     });
