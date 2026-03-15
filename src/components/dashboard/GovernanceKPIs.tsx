@@ -9,6 +9,7 @@ import {
   Shield, Database, Users, FileText, CheckCircle2,
   AlertTriangle, Clock, BarChart3, TrendingUp,
 } from "lucide-react";
+import HelpTooltip from "@/components/ui/help-tooltip";
 
 interface GovKPI {
   label: string;
