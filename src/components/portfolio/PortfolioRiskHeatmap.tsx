@@ -1,5 +1,7 @@
 import { PortfolioCompany } from "@/hooks/usePortfolioCompanies";
 import { TrendingUp, TrendingDown, Minus, AlertTriangle, ArrowRight } from "lucide-react";
+
+const n = (v: number | null | undefined): number => v ?? 0;
 import { Badge } from "@/components/ui/badge";
 import { fmtCurrency } from "@/lib/format-utils";
 interface Props {
@@ -51,7 +53,7 @@ const PortfolioRiskHeatmap = ({ companies, onSelect, selectedId }: Props) => {
     );
   }
 
-  const sorted = [...companies].sort((a, b) => b.risk_score - a.risk_score);
+  const sorted = [...companies].sort((a, b) => n(b.risk_score) - n(a.risk_score));
 
   return (
     <div className="space-y-2">
@@ -71,11 +73,11 @@ const PortfolioRiskHeatmap = ({ companies, onSelect, selectedId }: Props) => {
         <button
           key={company.id}
           onClick={() => onSelect(company)}
-          aria-label={`View ${company.name} — Risk score ${company.risk_score}, Status ${company.health_status}`}
+          aria-label={`View ${company.name} — Risk score ${n(company.risk_score)}, Status ${company.health_status ?? 'unknown'}`}
           className={`w-full rounded-xl border transition-all hover:shadow-md cursor-pointer text-left ${
             selectedId === company.id
               ? "border-primary/40 bg-primary/5 shadow-sm"
-              : `${riskColor(company.risk_score)} hover:border-primary/20`
+              : `${riskColor(n(company.risk_score))} hover:border-primary/20`
           }`}
         >
           {/* Mobile layout */}
@@ -85,14 +87,14 @@ const PortfolioRiskHeatmap = ({ companies, onSelect, selectedId }: Props) => {
                 <p className="text-sm font-semibold truncate">{company.name}</p>
                 <p className="text-[11px] text-muted-foreground">{company.sector}{company.fund_name ? ` · ${company.fund_name}` : ""}</p>
               </div>
-              <span className={`text-xl font-bold ml-3 ${riskTextColor(company.risk_score)}`}>{company.risk_score}</span>
+              <span className={`text-xl font-bold ml-3 ${riskTextColor(n(company.risk_score))}`}>{n(company.risk_score)}</span>
             </div>
             <div className="flex items-center gap-3 flex-wrap">
-              {statusBadge(company.health_status)}
-              <span className="text-xs text-muted-foreground">{fmtCurrency(company.revenue_ltm)} rev</span>
-              <span className="text-xs text-muted-foreground">{company.ebitda_margin_pct.toFixed(1)}% EBITDA</span>
-              <span className={`text-xs ${company.revenue_growth_pct > 0 ? "text-[hsl(var(--severity-success))]" : company.revenue_growth_pct < 0 ? "text-destructive" : "text-muted-foreground"}`}>
-                {company.revenue_growth_pct > 0 ? "+" : ""}{company.revenue_growth_pct.toFixed(0)}% growth
+              {statusBadge(company.health_status ?? 'on_track')}
+              <span className="text-xs text-muted-foreground">{fmtCurrency(n(company.revenue_ltm))} rev</span>
+              <span className="text-xs text-muted-foreground">{n(company.ebitda_margin_pct).toFixed(1)}% EBITDA</span>
+              <span className={`text-xs ${n(company.revenue_growth_pct) > 0 ? "text-[hsl(var(--severity-success))]" : n(company.revenue_growth_pct) < 0 ? "text-destructive" : "text-muted-foreground"}`}>
+                {n(company.revenue_growth_pct) > 0 ? "+" : ""}{n(company.revenue_growth_pct).toFixed(0)}% growth
               </span>
             </div>
           </div>
@@ -104,25 +106,25 @@ const PortfolioRiskHeatmap = ({ companies, onSelect, selectedId }: Props) => {
               <p className="text-[11px] text-muted-foreground">{company.sector}{company.fund_name ? ` · ${company.fund_name}` : ""}</p>
             </div>
             <div className="col-span-1 text-center">
-              <span className={`text-lg font-bold ${riskTextColor(company.risk_score)}`}>{company.risk_score}</span>
+              <span className={`text-lg font-bold ${riskTextColor(n(company.risk_score))}`}>{n(company.risk_score)}</span>
             </div>
             <div className="col-span-1 flex justify-center">
-              {trendIcon(company.risk_trend)}
+              {trendIcon(company.risk_trend ?? 'stable')}
             </div>
             <div className="col-span-1 flex justify-center">
-              {statusBadge(company.health_status)}
+              {statusBadge(company.health_status ?? 'on_track')}
             </div>
             <div className="col-span-2 text-right">
-              <span className="text-sm font-medium">{fmtCurrency(company.revenue_ltm)}</span>
+              <span className="text-sm font-medium">{fmtCurrency(n(company.revenue_ltm))}</span>
             </div>
             <div className="col-span-2 text-right">
-              <span className={`text-sm font-medium ${company.ebitda_margin_pct < 0 ? "text-destructive" : ""}`}>
-                {company.ebitda_margin_pct.toFixed(1)}%
+              <span className={`text-sm font-medium ${n(company.ebitda_margin_pct) < 0 ? "text-destructive" : ""}`}>
+                {n(company.ebitda_margin_pct).toFixed(1)}%
               </span>
             </div>
             <div className="col-span-1 text-right">
-              <span className={`text-sm font-medium ${company.revenue_growth_pct > 0 ? "text-[hsl(var(--severity-success))]" : company.revenue_growth_pct < 0 ? "text-destructive" : ""}`}>
-                {company.revenue_growth_pct > 0 ? "+" : ""}{company.revenue_growth_pct.toFixed(0)}%
+              <span className={`text-sm font-medium ${n(company.revenue_growth_pct) > 0 ? "text-[hsl(var(--severity-success))]" : n(company.revenue_growth_pct) < 0 ? "text-destructive" : ""}`}>
+                {n(company.revenue_growth_pct) > 0 ? "+" : ""}{n(company.revenue_growth_pct).toFixed(0)}%
               </span>
             </div>
             <div className="col-span-1 flex justify-end">

@@ -28,21 +28,24 @@ interface Props {
   onDelete: () => Promise<void>;
 }
 
-const riskLabel = (score: number) => {
-  if (score <= 25) return { text: "Low", className: "bg-[hsl(var(--severity-success))]/10 text-[hsl(var(--severity-success))]" };
-  if (score <= 50) return { text: "Moderate", className: "bg-[hsl(var(--severity-info))]/10 text-[hsl(var(--severity-info))]" };
-  if (score <= 75) return { text: "Elevated", className: "bg-[hsl(var(--severity-warning))]/10 text-[hsl(var(--severity-warning))]" };
+const n = (v: number | null | undefined): number => v ?? 0;
+
+const riskLabel = (score: number | null) => {
+  const s = n(score);
+  if (s <= 25) return { text: "Low", className: "bg-[hsl(var(--severity-success))]/10 text-[hsl(var(--severity-success))]" };
+  if (s <= 50) return { text: "Moderate", className: "bg-[hsl(var(--severity-info))]/10 text-[hsl(var(--severity-info))]" };
+  if (s <= 75) return { text: "Elevated", className: "bg-[hsl(var(--severity-warning))]/10 text-[hsl(var(--severity-warning))]" };
   return { text: "Critical", className: "bg-destructive/10 text-destructive" };
 };
 
 const buildForm = (company: PortfolioCompany) => ({
-  revenue_ltm: company.revenue_ltm.toString(),
-  ebitda_ltm: company.ebitda_ltm.toString(),
-  revenue_growth_pct: company.revenue_growth_pct.toString(),
-  ebitda_margin_pct: company.ebitda_margin_pct.toString(),
+  revenue_ltm: n(company.revenue_ltm).toString(),
+  ebitda_ltm: n(company.ebitda_ltm).toString(),
+  revenue_growth_pct: n(company.revenue_growth_pct).toString(),
+  ebitda_margin_pct: n(company.ebitda_margin_pct).toString(),
   current_valuation: company.current_valuation?.toString() ?? "",
   headcount: company.headcount?.toString() ?? "",
-  risk_score: company.risk_score.toString(),
+  risk_score: n(company.risk_score).toString(),
 });
 
 const PortfolioCompanyDetail = ({ company, onClose, onUpdate, onDelete }: Props) => {
@@ -95,10 +98,10 @@ const PortfolioCompanyDetail = ({ company, onClose, onUpdate, onDelete }: Props)
   };
 
   const metrics = [
-    { label: "Revenue LTM", value: fmtCurrency(company.revenue_ltm), icon: DollarSign },
-    { label: "EBITDA LTM", value: fmtCurrency(company.ebitda_ltm), icon: DollarSign },
-    { label: "Revenue Growth", value: `${company.revenue_growth_pct > 0 ? "+" : ""}${company.revenue_growth_pct.toFixed(1)}%`, icon: TrendingUp },
-    { label: "EBITDA Margin", value: `${company.ebitda_margin_pct.toFixed(1)}%`, icon: Target },
+    { label: "Revenue LTM", value: fmtCurrency(n(company.revenue_ltm)), icon: DollarSign },
+    { label: "EBITDA LTM", value: fmtCurrency(n(company.ebitda_ltm)), icon: DollarSign },
+    { label: "Revenue Growth", value: `${n(company.revenue_growth_pct) > 0 ? "+" : ""}${n(company.revenue_growth_pct).toFixed(1)}%`, icon: TrendingUp },
+    { label: "EBITDA Margin", value: `${n(company.ebitda_margin_pct).toFixed(1)}%`, icon: Target },
     { label: "Valuation", value: fmtCurrency(company.current_valuation), icon: DollarSign },
     { label: "Headcount", value: company.headcount?.toString() ?? "—", icon: Users },
     { label: "Ownership", value: company.ownership_pct ? `${company.ownership_pct}%` : "—", icon: Target },
@@ -113,7 +116,7 @@ const PortfolioCompanyDetail = ({ company, onClose, onUpdate, onDelete }: Props)
           <div className="flex items-center gap-2 mt-1 flex-wrap">
             <span className="text-xs text-muted-foreground capitalize">{company.sector}</span>
             {company.fund_name && <span className="text-xs text-muted-foreground">· {company.fund_name}</span>}
-            <Badge className={`${risk.className} border-none text-xs`}>{risk.text} Risk ({company.risk_score})</Badge>
+            <Badge className={`${risk.className} border-none text-xs`}>{risk.text} Risk ({n(company.risk_score)})</Badge>
           </div>
         </div>
         <div className="flex items-center gap-1 shrink-0">
