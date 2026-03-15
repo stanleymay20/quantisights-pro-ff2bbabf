@@ -51,13 +51,13 @@ const GovernanceKPIs = () => {
       const totalDecisions = decisions.count ?? 0;
       const outcomeRate = totalDecisions > 0 ? Math.round((outcomeTracked / totalDecisions) * 100) : 0;
 
-      // Governed dataset = has quality check + has steward owner + has retention policy for 'datasets'
+      // Governed dataset = has quality check + has assigned steward + has retention policy for 'datasets'
       const qualityDatasetIds = new Set((quality.data ?? []).map((q: any) => q.dataset_id).filter(Boolean));
       const hasDatasetRetention = (retentionPolicies.data ?? []).some((p: any) => p.data_category === "datasets");
       const allDatasets = datasets.data ?? [];
       const governedCount = allDatasets.filter((d: any) =>
         qualityDatasetIds.has(d.id) &&
-        stewardUserIds.has(d.uploaded_by) &&
+        (d.steward_user_id != null || stewardUserIds.has(d.uploaded_by)) &&
         hasDatasetRetention
       ).length;
 
