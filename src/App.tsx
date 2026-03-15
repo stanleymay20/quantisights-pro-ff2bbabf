@@ -88,6 +88,7 @@ const Competitions = lazy(() => import("./pages/Competitions"));
 const PitchDeck = lazy(() => import("./pages/PitchDeck"));
 const GovernanceMaturity = lazy(() => import("./pages/GovernanceMaturity"));
 const GovernanceCommandView = lazy(() => import("./pages/GovernanceCommandView"));
+const Ebook = lazy(() => import("./pages/Ebook"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
