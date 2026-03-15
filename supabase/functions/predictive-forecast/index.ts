@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { applyRateLimit } from "../_shared/rate-guard.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -125,6 +126,10 @@ serve(async (req) => {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    // Rate limit: intelligence tier (20/min per org)
+    const rl = applyRateLimit(req, organization_id, "intelligence", "predictive-forecast");
+    if (rl) return rl;
 
     // Verify org membership
     const { data: isMember } = await serviceClient.rpc("is_org_member", {

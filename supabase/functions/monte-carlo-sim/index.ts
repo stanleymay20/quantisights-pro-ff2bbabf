@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { applyAdaptiveConfidenceWithFetch, computeVariance } from "../_shared/adaptive-confidence.ts";
-
+import { applyRateLimit } from "../_shared/rate-guard.ts";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -29,13 +29,16 @@ serve(async (req) => {
     });
     const serviceClient = createClient(supabaseUrl, serviceKey);
 
-    const { data: { user }, error: userError } = await userClient.auth.getUser();
-    if (userError || !user) {
+    // Use getClaims() for secure JWT validation
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await userClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims?.sub) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    const userId = claimsData.claims.sub as string;
 
     const {
       organization_id,
@@ -59,9 +62,13 @@ serve(async (req) => {
       );
     }
 
+    // Rate limit: simulation tier (10/min per org)
+    const rl = applyRateLimit(req, organization_id, "simulation", "monte-carlo-sim");
+    if (rl) return rl;
+
     // Verify org membership
     const { data: isMember } = await serviceClient.rpc("is_org_member", {
-      _user_id: user.id,
+      _user_id: userId,
       _org_id: organization_id,
     });
     if (!isMember) {

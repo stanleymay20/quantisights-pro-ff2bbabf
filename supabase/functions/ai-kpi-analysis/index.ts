@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
+import { applyRateLimit } from "../_shared/rate-guard.ts";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -59,6 +59,10 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    // Rate limit: intelligence tier (20/min per org)
+    const rl = applyRateLimit(req, kpi_id, "intelligence", "ai-kpi-analysis");
+    if (rl) return rl;
 
     // Fetch KPI
     const { data: kpi } = await serviceClient
