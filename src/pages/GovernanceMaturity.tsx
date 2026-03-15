@@ -110,21 +110,23 @@ const GovernanceMaturity = () => {
   const [answers, setAnswers] = useState<Record<string, Record<number, number>>>({});
   const [submitted, setSubmitted] = useState(false);
 
-  const { data: lastAssessment } = useQuery({
-    queryKey: ["governance-maturity", currentOrgId],
+  const { data: assessmentHistory } = useQuery({
+    queryKey: ["governance-maturity-history", currentOrgId],
     queryFn: async () => {
-      if (!currentOrgId) return null;
+      if (!currentOrgId) return [];
       const { data } = await supabase
         .from("governance_maturity_assessments")
-        .select("*")
+        .select("overall_score, dimensions, recommendations, created_at")
         .eq("organization_id", currentOrgId)
         .order("created_at", { ascending: false })
-        .limit(1)
-        .single();
-      return data;
+        .limit(5);
+      return data ?? [];
     },
     enabled: !!currentOrgId,
   });
+
+  const lastAssessment = assessmentHistory?.[0] ?? null;
+  const previousAssessment = assessmentHistory?.[1] ?? null;
 
   const setAnswer = (dimId: string, qIdx: number, value: number) => {
     setAnswers((prev) => ({
