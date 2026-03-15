@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrganization } from "@/hooks/useOrganization";
+import { useProject } from "@/contexts/ProjectContext";
 import {
   Activity, AlertTriangle, CheckCircle2, Clock, Database,
   RefreshCw, XCircle, Zap, TrendingUp, Shield,
