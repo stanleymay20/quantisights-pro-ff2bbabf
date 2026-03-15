@@ -93,7 +93,7 @@ const GovernanceCommandView = () => {
     enforced: (retentionData ?? []).filter((p: any) => p.enforcement_status === "enforced").length,
   };
 
-  // Risk detection
+  // Risk detection using centralized rules
   const riskCtx: RiskContext = {
     stewardCount: stewardCount ?? 0,
     retentionCount,
@@ -102,14 +102,7 @@ const GovernanceCommandView = () => {
     weakestName: weakest ? weakest[0] : null,
   };
 
-  const risks: { label: string; severity: "high" | "medium" | "low"; rule: string }[] = [];
-  for (const r of RISK_RULES) {
-    if (r.check(riskCtx)) {
-      const label = typeof r.label === "function" ? (r.label as any)(riskCtx) : r.label;
-      risks.push({ label, severity: r.severity, rule: r.rule });
-    }
-  }
-  if (risks.length === 0) risks.push({ label: "No critical governance risks detected", severity: "low", rule: "All governance checks passed." });
+  const risks = evaluateGovernanceRisks(riskCtx);
 
   // Recommended next actions
   const actions: { label: string; link: string }[] = [];
