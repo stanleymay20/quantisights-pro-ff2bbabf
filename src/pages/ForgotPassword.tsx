@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuthThrottle } from "@/hooks/useAuthThrottle";
 import logo from "@/assets/quantivis-logo.png";
 
 const ForgotPassword = () => {
@@ -9,9 +10,15 @@ const ForgotPassword = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const { toast } = useToast();
+  const throttle = useAuthThrottle(3, 120_000);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const { allowed, waitSeconds } = throttle.check();
+    if (!allowed) {
+      toast({ title: "Too many attempts", description: `Please wait ${waitSeconds}s before trying again.`, variant: "destructive" });
+      return;
+    }
     setIsLoading(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
