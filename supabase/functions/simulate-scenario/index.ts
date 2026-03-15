@@ -161,6 +161,10 @@ serve(async (req) => {
       });
     }
 
+    // Rate limit: simulation tier (10/min per org)
+    const rl = applyRateLimit(req, scenario.organization_id, "simulation", "simulate-scenario");
+    if (rl) return rl;
+
     // Verify org membership
     const { data: isMember } = await serviceClient.rpc("is_org_member", {
       _user_id: userId,
