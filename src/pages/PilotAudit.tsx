@@ -184,10 +184,26 @@ const PilotAudit = () => {
             // dataset_id intentionally omitted
           },
         });
-        // We expect either an error or data.error containing "dataset_id required"
-        const rejected =
-          error?.message?.includes("dataset_id") ||
-          (typeof data?.error === "string" && data.error.includes("dataset_id"));
+        // Check multiple locations where the rejection message may appear
+        const errorMsg = error?.message || "";
+        const dataError = typeof data?.error === "string" ? data.error : "";
+        // Also try to read the response body from the error context
+        let contextBody = "";
+        try {
+          if (error?.context?.body) {
+            const reader = error.context.body.getReader?.();
+            if (reader) {
+              const { value } = await reader.read();
+              contextBody = new TextDecoder().decode(value);
+            }
+          } else if (error?.context?.json) {
+            const json = await error.context.json();
+            contextBody = JSON.stringify(json);
+          }
+        } catch { /* ignore read errors */ }
+        
+        const allText = `${errorMsg} ${dataError} ${contextBody}`;
+        const rejected = allText.includes("dataset_id") || errorMsg.includes("400");
         return {
           module: `Reject: ${fn.name}`,
           scope: "edge_reject" as const,
