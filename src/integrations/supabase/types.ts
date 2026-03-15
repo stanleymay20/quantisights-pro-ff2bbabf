@@ -1210,8 +1210,10 @@ export type Database = {
           last_refreshed_at: string | null
           name: string
           organization_id: string
+          owner_user_id: string | null
           row_count: number | null
           status: string
+          steward_user_id: string | null
           uploaded_by: string
           workspace_id: string | null
         }
@@ -1227,8 +1229,10 @@ export type Database = {
           last_refreshed_at?: string | null
           name: string
           organization_id: string
+          owner_user_id?: string | null
           row_count?: number | null
           status?: string
+          steward_user_id?: string | null
           uploaded_by: string
           workspace_id?: string | null
         }
@@ -1244,8 +1248,10 @@ export type Database = {
           last_refreshed_at?: string | null
           name?: string
           organization_id?: string
+          owner_user_id?: string | null
           row_count?: number | null
           status?: string
+          steward_user_id?: string | null
           uploaded_by?: string
           workspace_id?: string | null
         }
