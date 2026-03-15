@@ -89,7 +89,10 @@ const MarketIntelligence = () => {
   useEffect(() => { fetchStoredSignals(); }, [currentOrgId]);
 
   const fetchSignals = async () => {
-    if (!currentOrgId) return;
+    if (!currentOrgId || !activeDatasetId) {
+      toast({ title: "Select a dataset first", variant: "destructive" });
+      return;
+    }
     setLoading(true);
     try {
       const topics = customTopics ? customTopics.split(",").map(t => t.trim()) : [];
