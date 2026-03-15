@@ -133,7 +133,7 @@ const Simulations = () => {
                 </div>
                 <Button
                   onClick={() => runSim.mutate()}
-                  disabled={!metricType || runSim.isPending}
+                  disabled={!organizationId || !activeDatasetId || !metricType || runSim.isPending}
                 >
                   {runSim.isPending ? (
                     <><Loader2 className="w-4 h-4 animate-spin mr-2" />Running 10K paths…</>
