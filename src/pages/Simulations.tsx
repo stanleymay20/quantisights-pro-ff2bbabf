@@ -57,6 +57,13 @@ const Simulations = () => {
 
   const runSim = useMutation({
     mutationFn: async () => {
+      if (!organizationId || !activeDatasetId) {
+        throw new Error("Select an active dataset before running a simulation.");
+      }
+      if (!metricType) {
+        throw new Error("Select a metric type first.");
+      }
+
       const { data, error } = await supabase.functions.invoke("monte-carlo-sim", {
         body: {
           organization_id: organizationId,
@@ -126,7 +133,7 @@ const Simulations = () => {
                 </div>
                 <Button
                   onClick={() => runSim.mutate()}
-                  disabled={!metricType || runSim.isPending}
+                  disabled={!organizationId || !activeDatasetId || !metricType || runSim.isPending}
                 >
                   {runSim.isPending ? (
                     <><Loader2 className="w-4 h-4 animate-spin mr-2" />Running 10K paths…</>
