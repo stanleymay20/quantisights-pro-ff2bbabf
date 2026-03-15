@@ -42,14 +42,28 @@ const GovernanceKPIs = () => {
         ? Math.round(quality.data.reduce((s, d) => s + (d.score ?? 0), 0) / quality.data.length)
         : 0;
 
-      const stewardCount = members.data?.filter((m: any) => m.role === "steward").length ?? 0;
+      const stewardUserIds = new Set(
+        (members.data ?? []).filter((m: any) => m.role === "steward").map((m: any) => m.user_id)
+      );
+      const stewardCount = stewardUserIds.size;
       const totalMembers = members.data?.length ?? 1;
       const outcomeTracked = decisions.data?.filter((d: any) => d.outcome_measured_at).length ?? 0;
       const totalDecisions = decisions.count ?? 0;
       const outcomeRate = totalDecisions > 0 ? Math.round((outcomeTracked / totalDecisions) * 100) : 0;
 
+      // Governed dataset = has quality check + has steward owner + has retention policy for 'datasets'
+      const qualityDatasetIds = new Set((quality.data ?? []).map((q: any) => q.dataset_id).filter(Boolean));
+      const hasDatasetRetention = (retentionPolicies.data ?? []).some((p: any) => p.data_category === "datasets");
+      const allDatasets = datasets.data ?? [];
+      const governedCount = allDatasets.filter((d: any) =>
+        qualityDatasetIds.has(d.id) &&
+        stewardUserIds.has(d.uploaded_by) &&
+        hasDatasetRetention
+      ).length;
+
       return {
-        datasetCount: datasets.count ?? 0,
+        datasetCount: allDatasets.length,
+        governedCount,
         avgQuality,
         stewardCount,
         stewardRatio: Math.round((stewardCount / totalMembers) * 100),
