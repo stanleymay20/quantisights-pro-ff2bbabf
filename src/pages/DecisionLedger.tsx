@@ -25,6 +25,8 @@ import DecisionResponsibilityDialog from "@/components/DecisionResponsibilityDia
 import DecisionComments from "@/components/decisions/DecisionComments";
 import LazyInputWarning from "@/components/dashboard/LazyInputWarning";
 import DatasetRequired from "@/components/layout/DatasetRequired";
+import ExecutionTimeline from "@/components/execution/ExecutionTimeline";
+import DecisionReplayPanel from "@/components/execution/DecisionReplayPanel";
 
 interface Decision {
   id: string;
@@ -102,6 +104,9 @@ const DecisionLedgerPage = () => {
   const [newAction, setNewAction] = useState("");
   const [newType, setNewType] = useState("strategic");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+
+  // Execution & Replay state
+  const [expandedDecision, setExpandedDecision] = useState<string | null>(null);
 
   // Impact simulation state
   const [simTarget, setSimTarget] = useState<string | null>(null);
@@ -584,6 +589,32 @@ const DecisionLedgerPage = () => {
                           </div>
                         </div>
                         <DecisionComments decisionId={d.id} />
+
+                        {/* Execution & Replay panels */}
+                        <div className="mt-4 flex gap-2">
+                          <Button
+                            size="sm"
+                            variant={expandedDecision === d.id ? "default" : "outline"}
+                            onClick={() => setExpandedDecision(expandedDecision === d.id ? null : d.id)}
+                            className="gap-1.5 text-xs"
+                          >
+                            <ArrowRight className="w-3 h-3" /> Execution & Replay
+                          </Button>
+                        </div>
+                        {expandedDecision === d.id && currentOrgId && (
+                          <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
+                            <ExecutionTimeline
+                              organizationId={currentOrgId}
+                              decisionId={d.id}
+                              decisionTitle={d.recommended_action}
+                            />
+                            <DecisionReplayPanel
+                              organizationId={currentOrgId}
+                              decisionId={d.id}
+                              decisionTitle={d.recommended_action}
+                            />
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   </motion.div>

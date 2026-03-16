@@ -89,6 +89,7 @@ const PitchDeck = lazy(() => import("./pages/PitchDeck"));
 const GovernanceMaturity = lazy(() => import("./pages/GovernanceMaturity"));
 const GovernanceCommandView = lazy(() => import("./pages/GovernanceCommandView"));
 const Ebook = lazy(() => import("./pages/Ebook"));
+const ExecutionDashboard = lazy(() => import("./pages/ExecutionDashboard"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -223,6 +224,7 @@ const App = () => (
               <Route path="/privacy-dashboard" element={<P><PrivacyDashboard /></P>} />
               <Route path="/governance-maturity" element={<P><GovernanceMaturity /></P>} />
               <Route path="/governance" element={<P><GovernanceCommandView /></P>} />
+              <Route path="/execution" element={<P><ExecutionDashboard /></P>} />
             </Routes>
             </Suspense>
           </AuthProvider>

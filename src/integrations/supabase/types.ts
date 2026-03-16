@@ -1733,6 +1733,69 @@ export type Database = {
           },
         ]
       }
+      decision_replays: {
+        Row: {
+          confidence_drift: number | null
+          created_at: string
+          current_data_summary: Json | null
+          decision_id: string
+          id: string
+          organization_id: string
+          original_confidence: number | null
+          original_recommendation: string | null
+          recommendation_changed: boolean | null
+          replay_narrative: string | null
+          replayed_by: string
+          replayed_confidence: number | null
+          replayed_recommendation: string | null
+        }
+        Insert: {
+          confidence_drift?: number | null
+          created_at?: string
+          current_data_summary?: Json | null
+          decision_id: string
+          id?: string
+          organization_id: string
+          original_confidence?: number | null
+          original_recommendation?: string | null
+          recommendation_changed?: boolean | null
+          replay_narrative?: string | null
+          replayed_by: string
+          replayed_confidence?: number | null
+          replayed_recommendation?: string | null
+        }
+        Update: {
+          confidence_drift?: number | null
+          created_at?: string
+          current_data_summary?: Json | null
+          decision_id?: string
+          id?: string
+          organization_id?: string
+          original_confidence?: number | null
+          original_recommendation?: string | null
+          recommendation_changed?: boolean | null
+          replay_narrative?: string | null
+          replayed_by?: string
+          replayed_confidence?: number | null
+          replayed_recommendation?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "decision_replays_decision_id_fkey"
+            columns: ["decision_id"]
+            isOneToOne: false
+            referencedRelation: "decision_ledger"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "decision_replays_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       decision_simulations: {
         Row: {
           actual_net_impact: number | null
@@ -1884,6 +1947,114 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "embed_tokens_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      execution_events: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          event_type: string
+          execution_plan_id: string
+          id: string
+          metadata: Json | null
+          organization_id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          event_type: string
+          execution_plan_id: string
+          id?: string
+          metadata?: Json | null
+          organization_id: string
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          event_type?: string
+          execution_plan_id?: string
+          id?: string
+          metadata?: Json | null
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "execution_events_execution_plan_id_fkey"
+            columns: ["execution_plan_id"]
+            isOneToOne: false
+            referencedRelation: "execution_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "execution_events_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      execution_plans: {
+        Row: {
+          action_description: string | null
+          action_title: string
+          created_at: string
+          deadline: string | null
+          decision_id: string
+          id: string
+          organization_id: string
+          owner_user_id: string | null
+          priority: string
+          status: string
+          trigger_config: Json | null
+          trigger_type: string | null
+          updated_at: string
+        }
+        Insert: {
+          action_description?: string | null
+          action_title: string
+          created_at?: string
+          deadline?: string | null
+          decision_id: string
+          id?: string
+          organization_id: string
+          owner_user_id?: string | null
+          priority?: string
+          status?: string
+          trigger_config?: Json | null
+          trigger_type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          action_description?: string | null
+          action_title?: string
+          created_at?: string
+          deadline?: string | null
+          decision_id?: string
+          id?: string
+          organization_id?: string
+          owner_user_id?: string | null
+          priority?: string
+          status?: string
+          trigger_config?: Json | null
+          trigger_type?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "execution_plans_decision_id_fkey"
+            columns: ["decision_id"]
+            isOneToOne: false
+            referencedRelation: "decision_ledger"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "execution_plans_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
