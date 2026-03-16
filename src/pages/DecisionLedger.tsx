@@ -105,6 +105,9 @@ const DecisionLedgerPage = () => {
   const [newType, setNewType] = useState("strategic");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
+  // Execution & Replay state
+  const [expandedDecision, setExpandedDecision] = useState<string | null>(null);
+
   // Impact simulation state
   const [simTarget, setSimTarget] = useState<string | null>(null);
   const [simRunning, setSimRunning] = useState(false);
