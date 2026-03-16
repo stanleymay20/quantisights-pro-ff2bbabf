@@ -12,7 +12,9 @@ export type SensitiveAction =
   | "delete_account"
   | "scim_config"
   | "session_revoke_all"
-  | "passkey_remove";
+  | "passkey_remove"
+  | "webhook_trigger"
+  | "slack_send";
 
 const STEP_UP_VALIDITY_MS = 5 * 60 * 1000; // 5 minutes
 
