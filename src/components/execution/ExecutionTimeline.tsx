@@ -328,8 +328,8 @@ const ExecutionTimeline = ({ organizationId, decisionId, decisionTitle }: Execut
                 key={plan.id}
                 plan={plan}
                 onStatusChange={updatePlanStatus}
-                onWebhook={(id) => setWebhookModal({ planId: id })}
-                onSlack={(id) => setSlackModal({ planId: id })}
+                onWebhook={(id) => requireStepUp("webhook_trigger", "Trigger Webhook", () => setWebhookModal({ planId: id }))}
+                onSlack={(id) => requireStepUp("slack_send", "Send Slack Notification", () => setSlackModal({ planId: id }))}
                 canTriggerActions={canTriggerActions}
               />
             ))}
