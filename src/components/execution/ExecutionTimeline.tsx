@@ -434,6 +434,16 @@ const ExecutionTimeline = ({ organizationId, decisionId, decisionTitle }: Execut
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Step-Up Auth Dialog */}
+      <StepUpAuthDialog
+        open={!!pendingAction}
+        action={pendingAction?.action ?? null}
+        actionLabel={pendingAction?.label ?? ""}
+        onVerify={verifyPassword}
+        onVerified={onVerified}
+        onCancel={cancelStepUp}
+      />
     </>
   );
 };
