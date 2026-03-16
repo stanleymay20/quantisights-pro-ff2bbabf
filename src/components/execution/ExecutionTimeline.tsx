@@ -158,6 +158,7 @@ const ExecutionTimeline = ({ organizationId, decisionId, decisionTitle }: Execut
 
   const { orgRole } = usePermissions();
   const canTriggerActions = orgRole === "owner" || orgRole === "admin";
+  const { requireStepUp, pendingAction, verifyPassword, onVerified, cancelStepUp } = useStepUpAuth();
 
   const [showCreate, setShowCreate] = useState(false);
   const [newTitle, setNewTitle] = useState("");
