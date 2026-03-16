@@ -18,6 +18,8 @@ import {
 } from "lucide-react";
 import { useExecutionPlans, type ExecutionPlan } from "@/hooks/useExecutionPlans";
 import { usePermissions } from "@/hooks/usePermissions";
+import { useStepUpAuth } from "@/hooks/useStepUpAuth";
+import StepUpAuthDialog from "@/components/auth/StepUpAuthDialog";
 import { formatDistanceToNow } from "date-fns";
 
 interface ExecutionTimelineProps {
@@ -156,6 +158,7 @@ const ExecutionTimeline = ({ organizationId, decisionId, decisionTitle }: Execut
 
   const { orgRole } = usePermissions();
   const canTriggerActions = orgRole === "owner" || orgRole === "admin";
+  const { requireStepUp, pendingAction, verifyPassword, onVerified, cancelStepUp } = useStepUpAuth();
 
   const [showCreate, setShowCreate] = useState(false);
   const [newTitle, setNewTitle] = useState("");
@@ -325,8 +328,8 @@ const ExecutionTimeline = ({ organizationId, decisionId, decisionTitle }: Execut
                 key={plan.id}
                 plan={plan}
                 onStatusChange={updatePlanStatus}
-                onWebhook={(id) => setWebhookModal({ planId: id })}
-                onSlack={(id) => setSlackModal({ planId: id })}
+                onWebhook={(id) => requireStepUp("webhook_trigger", "Trigger Webhook", () => setWebhookModal({ planId: id }))}
+                onSlack={(id) => requireStepUp("slack_send", "Send Slack Notification", () => setSlackModal({ planId: id }))}
                 canTriggerActions={canTriggerActions}
               />
             ))}
@@ -431,6 +434,16 @@ const ExecutionTimeline = ({ organizationId, decisionId, decisionTitle }: Execut
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Step-Up Auth Dialog */}
+      <StepUpAuthDialog
+        open={!!pendingAction}
+        action={pendingAction?.action ?? null}
+        actionLabel={pendingAction?.label ?? ""}
+        onVerify={verifyPassword}
+        onVerified={onVerified}
+        onCancel={cancelStepUp}
+      />
     </>
   );
 };
