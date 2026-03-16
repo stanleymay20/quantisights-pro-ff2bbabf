@@ -19,7 +19,7 @@ import {
 import { useExecutionPlans, type ExecutionPlan } from "@/hooks/useExecutionPlans";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useStepUpAuth } from "@/hooks/useStepUpAuth";
-import { StepUpAuthDialog } from "@/components/auth/StepUpAuthDialog";
+import StepUpAuthDialog from "@/components/auth/StepUpAuthDialog";
 import { formatDistanceToNow } from "date-fns";
 
 interface ExecutionTimelineProps {

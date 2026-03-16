@@ -28,6 +28,8 @@ const ACTION_DESCRIPTIONS: Record<SensitiveAction, string> = {
   scim_config: "Managing SCIM provisioning requires re-authentication.",
   session_revoke_all: "Revoking all sessions requires re-authentication.",
   passkey_remove: "Removing a passkey requires re-authentication.",
+  webhook_trigger: "Triggering an outbound webhook requires re-authentication.",
+  slack_send: "Sending a Slack notification requires re-authentication.",
 };
 
 const StepUpAuthDialog = ({
