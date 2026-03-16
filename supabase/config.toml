@@ -140,3 +140,9 @@ verify_jwt = false
 
 [functions.login-anomaly-detect]
 verify_jwt = false
+
+[functions.execute-decision-action]
+verify_jwt = false
+
+[functions.decision-replay]
+verify_jwt = false

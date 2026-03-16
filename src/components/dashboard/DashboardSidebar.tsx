@@ -25,6 +25,7 @@ const ITEM_HELP: Record<string, string> = {
   "Benchmarking": "Compare your metrics against industry peers to see where you lead and where you lag.",
   "Decision Intelligence": "A unified view of pending decisions, their expected impact, and recommended actions.",
   "Decision Ledger": "Permanent record of every strategic decision — who made it, why, and what happened.",
+  "Execution": "Track decision execution — actions, status, deadlines, and outcomes in real time.",
   "What-If Branching": "Create alternate future scenarios and compare outcomes side by side.",
   "Simulations": "Run Monte Carlo simulations — thousands of random scenarios to stress-test your strategy.",
   "Strategy Pack": "Pre-built strategic frameworks and templates for common business decisions.",
