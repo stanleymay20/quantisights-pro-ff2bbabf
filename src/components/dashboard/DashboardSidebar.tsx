@@ -71,6 +71,7 @@ const navSections: NavSection[] = [
       { icon: Zap, label: "Advisory", path: "/advisory" },
       { icon: Brain, label: "Decision Intelligence", path: "/decision-intelligence" },
       { icon: BookOpen, label: "Decision Ledger", path: "/decisions" },
+      { icon: Zap, label: "Execution", path: "/execution" },
       { icon: Sparkles, label: "Forecasting", path: "/forecasting" },
       { icon: Target, label: "Benchmarking", path: "/benchmarking" },
       { icon: MessageSquare, label: "Ask Quantivis", path: "/ask" },

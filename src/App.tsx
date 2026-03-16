@@ -224,6 +224,7 @@ const App = () => (
               <Route path="/privacy-dashboard" element={<P><PrivacyDashboard /></P>} />
               <Route path="/governance-maturity" element={<P><GovernanceMaturity /></P>} />
               <Route path="/governance" element={<P><GovernanceCommandView /></P>} />
+              <Route path="/execution" element={<P><ExecutionDashboard /></P>} />
             </Routes>
             </Suspense>
           </AuthProvider>
