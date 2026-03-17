@@ -75,7 +75,7 @@ const PitchDeck = () => {
                   <slide.icon className="w-4 h-4 text-primary" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Slide {slide.number}</p>
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Slide {slide.number} / {SLIDES.length}</p>
                   <p className="font-bold text-sm">{slide.title}</p>
                 </div>
               </div>

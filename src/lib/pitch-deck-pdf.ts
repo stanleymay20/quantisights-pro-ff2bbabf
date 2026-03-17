@@ -26,7 +26,7 @@ function drawLogo(doc: jsPDF, logoImg: HTMLImageElement) {
 function drawSlideNumber(doc: jsPDF, n: number) {
   doc.setFontSize(11);
   doc.setTextColor(...MUTED);
-  doc.text(`${n} / 9`, W - PAD, H - 40, { align: "right" });
+  doc.text(`${n} / 11`, W - PAD, H - 40, { align: "right" });
 }
 
 function sectionTitle(doc: jsPDF, text: string, y: number) {
@@ -256,9 +256,77 @@ const SLIDES: SlideData[] = [
       drawSlideNumber(doc, 4);
     },
   },
-  // 5 — Market
+  // 5 — Category Creation
   {
     number: 5,
+    title: "Category Creation",
+    render: (doc, logoImg) => {
+      doc.setFillColor(...WHITE);
+      doc.rect(0, 0, W, H, "F");
+      drawLogo(doc, logoImg);
+      sectionTitle(doc, "Category Creation", 180);
+      bodyText(doc, "Quantivis defines a new software layer that sits between data infrastructure and executive action.", PAD + 100, 240, W - PAD * 2 - 200, 18);
+
+      // Stack visualization
+      const layers = [
+        { layer: "Executive Action", tool: "Quantivis", desc: "Decision Governance", highlight: true },
+        { layer: "Analytics & BI", tool: "Tableau / Power BI", desc: "Visualization", highlight: false },
+        { layer: "Data Infrastructure", tool: "Snowflake / Databricks", desc: "Storage & Compute", highlight: false },
+      ];
+      const stackX = PAD + 200;
+      const stackW = W - PAD * 2 - 400;
+      layers.forEach((l, i) => {
+        const y = 300 + i * 110;
+        if (l.highlight) {
+          doc.setFillColor(240, 253, 250);
+          doc.setDrawColor(...PRIMARY);
+        } else {
+          doc.setFillColor(248, 248, 248);
+          doc.setDrawColor(200, 200, 200);
+        }
+        doc.setLineWidth(2);
+        doc.roundedRect(stackX, y, stackW, 80, 8, 8, "FD");
+        doc.setFontSize(22);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(l.highlight ? PRIMARY[0] : DARK[0], l.highlight ? PRIMARY[1] : DARK[1], l.highlight ? PRIMARY[2] : DARK[2]);
+        doc.text(l.layer, stackX + 40, y + 35);
+        doc.setFontSize(14);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(...MUTED);
+        doc.text(l.desc, stackX + 40, y + 58);
+        doc.setFontSize(16);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(l.highlight ? PRIMARY[0] : MUTED[0], l.highlight ? PRIMARY[1] : MUTED[1], l.highlight ? PRIMARY[2] : MUTED[2]);
+        doc.text(l.tool, stackX + stackW - 40, y + 45, { align: "right" });
+      });
+
+      // Why Now
+      doc.setFontSize(20);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...DARK);
+      doc.text("Why Now?", PAD + 200, 680);
+      const whyNow = [
+        "AI governance regulations emerging globally (EU AI Act)",
+        "Boards demanding traceable decision processes post-SVB, FTX",
+        "LLMs make calibrated confidence scoring accessible at scale",
+      ];
+      whyNow.forEach((w, i) => {
+        bullet(doc, w, PAD + 220, 720 + i * 36, W - PAD * 2 - 400, DARK);
+      });
+
+      // Positioning callout
+      doc.setFillColor(240, 253, 250);
+      doc.roundedRect(PAD + 200, 850, W - PAD * 2 - 400, 60, 8, 8, "F");
+      doc.setFontSize(15);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...PRIMARY);
+      doc.text('"The GitHub for Strategic Decisions" — version control for every executive call.', W / 2, 887, { align: "center", maxWidth: W - 500 });
+      drawSlideNumber(doc, 5);
+    },
+  },
+  // 6 — Market
+  {
+    number: 6,
     title: "Market",
     render: (doc, logoImg) => {
       doc.setFillColor(...WHITE);
@@ -287,12 +355,12 @@ const SLIDES: SlideData[] = [
       // Sources
       doc.setFontSize(12);
       doc.text("Sources: Gartner Decision Intelligence Market Guide 2024 · McKinsey AI Governance Spending · Deloitte Enterprise Analytics 2023", W / 2, 660, { align: "center", maxWidth: W - 300 });
-      drawSlideNumber(doc, 5);
+      drawSlideNumber(doc, 6);
     },
   },
-  // 6 — Traction
+  // 7 — Traction
   {
-    number: 6,
+    number: 7,
     title: "Traction",
     render: (doc, logoImg) => {
       doc.setFillColor(...WHITE);
@@ -322,12 +390,12 @@ const SLIDES: SlideData[] = [
       highlights.forEach((h, i) => {
         bullet(doc, h, PAD + 100, 510 + i * 48, W - PAD * 2 - 200, DARK);
       });
-      drawSlideNumber(doc, 6);
+      drawSlideNumber(doc, 7);
     },
   },
-  // 7 — Business Model
+  // 8 — Business Model
   {
-    number: 7,
+    number: 8,
     title: "Business Model",
     render: (doc, logoImg) => {
       doc.setFillColor(...WHITE);
@@ -362,12 +430,12 @@ const SLIDES: SlideData[] = [
       doc.setFont("helvetica", "bold");
       doc.setTextColor(...PRIMARY);
       doc.text("Paid pilot (€5K–€15K) de-risks adoption  ·  Usage-based AI compute add-on  ·  PE portfolio pricing available", W / 2, 672, { align: "center", maxWidth: W - 500 });
-      drawSlideNumber(doc, 7);
+      drawSlideNumber(doc, 8);
     },
   },
-  // 8 — Competitive Landscape
+  // 9 — Competitive Landscape
   {
-    number: 8,
+    number: 9,
     title: "Competitive Landscape",
     render: (doc, logoImg) => {
       doc.setFillColor(...WHITE);
@@ -457,12 +525,68 @@ const SLIDES: SlideData[] = [
       doc.setFont("helvetica", "bold");
       doc.setTextColor(...PRIMARY);
       doc.text("Category: Decision Governance — not BI, not data infra. We own the layer between data and executive action.", W / 2, 697, { align: "center", maxWidth: W - 500 });
-      drawSlideNumber(doc, 8);
+      drawSlideNumber(doc, 9);
     },
   },
-  // 9 — The Ask
+  // 10 — Defensibility & AI Moat
   {
-    number: 9,
+    number: 10,
+    title: "Defensibility & AI Moat",
+    render: (doc, logoImg) => {
+      doc.setFillColor(...WHITE);
+      doc.rect(0, 0, W, H, "F");
+      drawLogo(doc, logoImg);
+      sectionTitle(doc, "Defensibility & AI Moat", 180);
+      bodyText(doc, "Quantivis builds compounding defensibility that cannot be replicated by general-purpose AI tools.", PAD + 100, 240, W - PAD * 2 - 200, 18);
+
+      const moats = [
+        { title: "Decision Data Accumulation", desc: "Every logged decision, prediction, and outcome trains organization-specific calibration models. Competitors start at zero." },
+        { title: "Calibration Models Improve Over Time", desc: "Bayesian models get smarter with each resolved decision. After 6 months, switching costs become prohibitive." },
+        { title: "Organizational Memory Graph", desc: "Decision patterns, bias profiles, and team calibration scores create an irreplaceable institutional knowledge base." },
+      ];
+      const colW = 480;
+      const startX = (W - (colW * 3 + 60 * 2)) / 2;
+      moats.forEach((m, i) => {
+        const x = startX + i * (colW + 60);
+        doc.setDrawColor(200, 200, 200);
+        doc.roundedRect(x, 290, colW, 200, 8, 8, "S");
+        doc.setFontSize(20);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(...DARK);
+        doc.text(m.title, x + 30, 330, { maxWidth: colW - 60 });
+        bodyText(doc, m.desc, x + 30, 380, colW - 60, 15);
+      });
+
+      // Data Network Effect
+      doc.setFillColor(240, 253, 250);
+      doc.roundedRect(PAD + 200, 540, W - PAD * 2 - 400, 80, 8, 8, "F");
+      doc.setFontSize(18);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...PRIMARY);
+      doc.text("Data Network Effect", PAD + 240, 570);
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(...MUTED);
+      doc.text("The more decisions a company logs, the smarter Quantivis becomes. This creates a compounding moat that general-purpose AI cannot replicate.", PAD + 240, 598, { maxWidth: W - PAD * 2 - 520 });
+
+      // Why not Copilot
+      doc.setFillColor(248, 248, 248);
+      doc.roundedRect(PAD + 200, 660, W - PAD * 2 - 400, 80, 8, 8, "F");
+      doc.setFontSize(16);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...DARK);
+      doc.text("Why not Microsoft Copilot or OpenAI?", PAD + 240, 695);
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(...MUTED);
+      doc.text("General AI assists with tasks. Quantivis governs decisions — tracking predictions against outcomes, calibrating confidence, and building organizational memory.", PAD + 240, 722, { maxWidth: W - PAD * 2 - 520 });
+
+      drawSlideNumber(doc, 10);
+    },
+  },
+  // 11 — The Ask
+  {
+    number: 11,
     title: "The Ask",
     render: (doc, logoImg) => {
       doc.setFillColor(...WHITE);
@@ -525,7 +649,7 @@ const SLIDES: SlideData[] = [
       doc.setFont("helvetica", "bold");
       doc.setTextColor(...DARK);
       doc.text("hello@quantivis.io  ·  quantivis.io  ·  Germany", W / 2, 790, { align: "center" });
-      drawSlideNumber(doc, 9);
+      drawSlideNumber(doc, 11);
     },
   },
 ];
