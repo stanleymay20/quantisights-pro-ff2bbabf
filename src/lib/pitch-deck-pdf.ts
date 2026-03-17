@@ -26,7 +26,7 @@ function drawLogo(doc: jsPDF, logoImg: HTMLImageElement) {
 function drawSlideNumber(doc: jsPDF, n: number) {
   doc.setFontSize(11);
   doc.setTextColor(...MUTED);
-  doc.text(`${n} / 9`, W - PAD, H - 40, { align: "right" });
+  doc.text(`${n} / 11`, W - PAD, H - 40, { align: "right" });
 }
 
 function sectionTitle(doc: jsPDF, text: string, y: number) {
