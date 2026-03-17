@@ -393,9 +393,9 @@ const SLIDES: SlideData[] = [
       drawSlideNumber(doc, 7);
     },
   },
-  // 7 — Business Model
+  // 8 — Business Model
   {
-    number: 7,
+    number: 8,
     title: "Business Model",
     render: (doc, logoImg) => {
       doc.setFillColor(...WHITE);
