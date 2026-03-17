@@ -283,6 +283,16 @@ const PitchDeck = () => {
             <img src={logo} alt="Quantivis" className="h-10 w-auto" />
           </Link>
           <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDownload}
+              disabled={downloading}
+              className="hidden sm:inline-flex"
+            >
+              {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+              {downloading ? "Generating…" : "Download PDF"}
+            </Button>
             <Link to="/pitch" className="px-4 py-2 rounded-lg border border-border text-sm font-medium hover:border-primary/30 transition-all hidden sm:inline-flex">
               One-Pager
             </Link>
@@ -297,7 +307,18 @@ const PitchDeck = () => {
         <div className="container mx-auto px-6 text-center mb-12">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
             <h1 className="text-3xl sm:text-4xl font-bold font-display mb-3">Pitch Deck</h1>
-            <p className="text-muted-foreground">Scroll through each slide — ready for competition submissions.</p>
+            <p className="text-muted-foreground mb-6">Scroll through each slide — ready for competition submissions.</p>
+            <Button
+              onClick={handleDownload}
+              disabled={downloading}
+              size="lg"
+              className="gap-2"
+            >
+              {downloading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
+              {downloading ? "Generating PDF…" : "Download Pitch Deck"}
+            </Button>
+          </motion.div>
+        </div>
           </motion.div>
         </div>
 
