@@ -4,11 +4,11 @@ import logoUrl from "@/assets/quantivis-logo.png";
 const W = 1920;
 const H = 1080;
 const PAD = 80;
-const PRIMARY = [15, 118, 110] as const;  // Quantivis teal
-const DARK = [17, 24, 39] as const;
-const MUTED = [107, 114, 128] as const;
-const WHITE = [255, 255, 255] as const;
-const DESTRUCTIVE = [220, 38, 38] as const;
+const PRIMARY: [number, number, number] = [15, 118, 110];
+const DARK: [number, number, number] = [17, 24, 39];
+const MUTED: [number, number, number] = [107, 114, 128];
+const WHITE: [number, number, number] = [255, 255, 255];
+const DESTRUCTIVE: [number, number, number] = [220, 38, 38];
 
 interface SlideData {
   number: number;
