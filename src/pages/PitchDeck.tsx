@@ -319,8 +319,6 @@ const PitchDeck = () => {
             </Button>
           </motion.div>
         </div>
-          </motion.div>
-        </div>
 
         <div className="max-w-2xl mx-auto px-6 space-y-6">
           {SLIDES.map((slide) => (
