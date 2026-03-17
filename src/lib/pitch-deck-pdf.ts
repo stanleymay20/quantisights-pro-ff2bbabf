@@ -430,7 +430,7 @@ const SLIDES: SlideData[] = [
       doc.setFont("helvetica", "bold");
       doc.setTextColor(...PRIMARY);
       doc.text("Paid pilot (€5K–€15K) de-risks adoption  ·  Usage-based AI compute add-on  ·  PE portfolio pricing available", W / 2, 672, { align: "center", maxWidth: W - 500 });
-      drawSlideNumber(doc, 7);
+      drawSlideNumber(doc, 8);
     },
   },
   // 8 — Competitive Landscape
