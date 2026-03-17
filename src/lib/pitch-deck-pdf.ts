@@ -256,7 +256,75 @@ const SLIDES: SlideData[] = [
       drawSlideNumber(doc, 4);
     },
   },
-  // 5 — Market
+  // 5 — Category Creation
+  {
+    number: 5,
+    title: "Category Creation",
+    render: (doc, logoImg) => {
+      doc.setFillColor(...WHITE);
+      doc.rect(0, 0, W, H, "F");
+      drawLogo(doc, logoImg);
+      sectionTitle(doc, "Category Creation", 180);
+      bodyText(doc, "Quantivis defines a new software layer that sits between data infrastructure and executive action.", PAD + 100, 240, W - PAD * 2 - 200, 18);
+
+      // Stack visualization
+      const layers = [
+        { layer: "Executive Action", tool: "Quantivis", desc: "Decision Governance", highlight: true },
+        { layer: "Analytics & BI", tool: "Tableau / Power BI", desc: "Visualization", highlight: false },
+        { layer: "Data Infrastructure", tool: "Snowflake / Databricks", desc: "Storage & Compute", highlight: false },
+      ];
+      const stackX = PAD + 200;
+      const stackW = W - PAD * 2 - 400;
+      layers.forEach((l, i) => {
+        const y = 300 + i * 110;
+        if (l.highlight) {
+          doc.setFillColor(240, 253, 250);
+          doc.setDrawColor(...PRIMARY);
+        } else {
+          doc.setFillColor(248, 248, 248);
+          doc.setDrawColor(200, 200, 200);
+        }
+        doc.setLineWidth(2);
+        doc.roundedRect(stackX, y, stackW, 80, 8, 8, "FD");
+        doc.setFontSize(22);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(l.highlight ? PRIMARY[0] : DARK[0], l.highlight ? PRIMARY[1] : DARK[1], l.highlight ? PRIMARY[2] : DARK[2]);
+        doc.text(l.layer, stackX + 40, y + 35);
+        doc.setFontSize(14);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(...MUTED);
+        doc.text(l.desc, stackX + 40, y + 58);
+        doc.setFontSize(16);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(l.highlight ? PRIMARY[0] : MUTED[0], l.highlight ? PRIMARY[1] : MUTED[1], l.highlight ? PRIMARY[2] : MUTED[2]);
+        doc.text(l.tool, stackX + stackW - 40, y + 45, { align: "right" });
+      });
+
+      // Why Now
+      doc.setFontSize(20);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...DARK);
+      doc.text("Why Now?", PAD + 200, 680);
+      const whyNow = [
+        "AI governance regulations emerging globally (EU AI Act)",
+        "Boards demanding traceable decision processes post-SVB, FTX",
+        "LLMs make calibrated confidence scoring accessible at scale",
+      ];
+      whyNow.forEach((w, i) => {
+        bullet(doc, w, PAD + 220, 720 + i * 36, W - PAD * 2 - 400, DARK);
+      });
+
+      // Positioning callout
+      doc.setFillColor(240, 253, 250);
+      doc.roundedRect(PAD + 200, 850, W - PAD * 2 - 400, 60, 8, 8, "F");
+      doc.setFontSize(15);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...PRIMARY);
+      doc.text('"The GitHub for Strategic Decisions" — version control for every executive call.', W / 2, 887, { align: "center", maxWidth: W - 500 });
+      drawSlideNumber(doc, 5);
+    },
+  },
+  // 6 — Market
   {
     number: 5,
     title: "Market",
