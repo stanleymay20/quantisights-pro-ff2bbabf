@@ -390,7 +390,7 @@ const SLIDES: SlideData[] = [
       highlights.forEach((h, i) => {
         bullet(doc, h, PAD + 100, 510 + i * 48, W - PAD * 2 - 200, DARK);
       });
-      drawSlideNumber(doc, 6);
+      drawSlideNumber(doc, 7);
     },
   },
   // 7 — Business Model
