@@ -528,9 +528,65 @@ const SLIDES: SlideData[] = [
       drawSlideNumber(doc, 9);
     },
   },
-  // 9 — The Ask
+  // 10 — Defensibility & AI Moat
   {
-    number: 9,
+    number: 10,
+    title: "Defensibility & AI Moat",
+    render: (doc, logoImg) => {
+      doc.setFillColor(...WHITE);
+      doc.rect(0, 0, W, H, "F");
+      drawLogo(doc, logoImg);
+      sectionTitle(doc, "Defensibility & AI Moat", 180);
+      bodyText(doc, "Quantivis builds compounding defensibility that cannot be replicated by general-purpose AI tools.", PAD + 100, 240, W - PAD * 2 - 200, 18);
+
+      const moats = [
+        { title: "Decision Data Accumulation", desc: "Every logged decision, prediction, and outcome trains organization-specific calibration models. Competitors start at zero." },
+        { title: "Calibration Models Improve Over Time", desc: "Bayesian models get smarter with each resolved decision. After 6 months, switching costs become prohibitive." },
+        { title: "Organizational Memory Graph", desc: "Decision patterns, bias profiles, and team calibration scores create an irreplaceable institutional knowledge base." },
+      ];
+      const colW = 480;
+      const startX = (W - (colW * 3 + 60 * 2)) / 2;
+      moats.forEach((m, i) => {
+        const x = startX + i * (colW + 60);
+        doc.setDrawColor(200, 200, 200);
+        doc.roundedRect(x, 290, colW, 200, 8, 8, "S");
+        doc.setFontSize(20);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(...DARK);
+        doc.text(m.title, x + 30, 330, { maxWidth: colW - 60 });
+        bodyText(doc, m.desc, x + 30, 380, colW - 60, 15);
+      });
+
+      // Data Network Effect
+      doc.setFillColor(240, 253, 250);
+      doc.roundedRect(PAD + 200, 540, W - PAD * 2 - 400, 80, 8, 8, "F");
+      doc.setFontSize(18);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...PRIMARY);
+      doc.text("Data Network Effect", PAD + 240, 570);
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(...MUTED);
+      doc.text("The more decisions a company logs, the smarter Quantivis becomes. This creates a compounding moat that general-purpose AI cannot replicate.", PAD + 240, 598, { maxWidth: W - PAD * 2 - 520 });
+
+      // Why not Copilot
+      doc.setFillColor(248, 248, 248);
+      doc.roundedRect(PAD + 200, 660, W - PAD * 2 - 400, 80, 8, 8, "F");
+      doc.setFontSize(16);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...DARK);
+      doc.text("Why not Microsoft Copilot or OpenAI?", PAD + 240, 695);
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(...MUTED);
+      doc.text("General AI assists with tasks. Quantivis governs decisions — tracking predictions against outcomes, calibrating confidence, and building organizational memory.", PAD + 240, 722, { maxWidth: W - PAD * 2 - 520 });
+
+      drawSlideNumber(doc, 10);
+    },
+  },
+  // 11 — The Ask
+  {
+    number: 11,
     title: "The Ask",
     render: (doc, logoImg) => {
       doc.setFillColor(...WHITE);
