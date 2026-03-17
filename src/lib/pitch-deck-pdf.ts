@@ -358,9 +358,9 @@ const SLIDES: SlideData[] = [
       drawSlideNumber(doc, 6);
     },
   },
-  // 6 — Traction
+  // 7 — Traction
   {
-    number: 6,
+    number: 7,
     title: "Traction",
     render: (doc, logoImg) => {
       doc.setFillColor(...WHITE);
