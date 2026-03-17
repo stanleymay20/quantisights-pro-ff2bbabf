@@ -433,9 +433,9 @@ const SLIDES: SlideData[] = [
       drawSlideNumber(doc, 8);
     },
   },
-  // 8 — Competitive Landscape
+  // 9 — Competitive Landscape
   {
-    number: 8,
+    number: 9,
     title: "Competitive Landscape",
     render: (doc, logoImg) => {
       doc.setFillColor(...WHITE);
