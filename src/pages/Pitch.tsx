@@ -75,14 +75,14 @@ const Pitch = () => {
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary/20 bg-primary/5 text-xs font-semibold text-primary mb-6">
                 <Award className="w-3.5 h-3.5" />
-                Investor One-Pager · Decision Intelligence
+                Investor One-Pager · {CATEGORY}
               </div>
               <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold font-display leading-tight mb-6">
-                Decision Governance for{" "}
-                <span className="gradient-text">Leadership Teams</span>
+                Decision Governance{" "}
+                <span className="gradient-text">Infrastructure</span>
               </h1>
               <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-4">
-                Quantivis is <strong className="text-foreground">Executive Overconfidence Insurance</strong> — the first platform that makes every strategic decision board-defensible by tracking the full Decision → Outcome → Learning lifecycle.
+                Quantivis is the operating system for strategic decisions — making every executive call traceable, calibrated, and board-defensible through the Decision → Outcome → Learning lifecycle.
               </p>
               <p className="text-sm text-muted-foreground max-w-xl mx-auto mb-8">
                 Target: CEO, CFO, COO, PE/VC firms · Market: $4.2B Decision Intelligence · HQ: {CONTACT.location}
