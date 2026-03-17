@@ -326,7 +326,7 @@ const SLIDES: SlideData[] = [
   },
   // 6 — Market
   {
-    number: 5,
+    number: 6,
     title: "Market",
     render: (doc, logoImg) => {
       doc.setFillColor(...WHITE);
