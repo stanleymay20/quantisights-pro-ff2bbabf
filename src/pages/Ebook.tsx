@@ -18,7 +18,7 @@ const chapters = [
       },
       {
         heading: "The Core Value Proposition",
-        content: `We call it **Executive Overconfidence Insurance**.\n\nTraditional BI tools tell you *what happened*. Quantivis tells you *what to decide*, tracks *whether you were right*, and *automatically recalibrates* your next decision based on your organization's unique bias patterns.\n\nThe result: a compounding intelligence loop where every decision makes the next one better. Over time, your organization doesn't just collect data — it develops genuine institutional wisdom.`
+        content: `We call it **Decision Governance Infrastructure**.\n\nTraditional BI tools tell you *what happened*. Quantivis tells you *what to decide*, tracks *whether you were right*, and *automatically recalibrates* your next decision based on your organization's unique bias patterns.\n\nThe result: a compounding intelligence loop where every decision makes the next one better. Over time, your organization doesn't just collect data — it develops genuine institutional wisdom.`
       }
     ]
   },

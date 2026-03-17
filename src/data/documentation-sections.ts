@@ -25,7 +25,7 @@ export const DOC_SECTIONS: DocSection[] = [
 Quantivis is a **Decision Intelligence Operating System** that replaces traditional BI tools and strategy consultants with an AI-driven, probabilistic governance platform for institutional capital. It ingests multi-source operational data, computes KPIs via a formula engine, and delivers role-specific executive intelligence across CEO, CFO, CMO, and COO command modes.
 
 ### Core Value Proposition
-- **"Executive Overconfidence Insurance"** — reduces systematic overestimation in strategic judgment through automated calibration, audit trails, and epistemic confidence capping
+- **Decision Governance Infrastructure** — reduces systematic overestimation in strategic judgment through automated calibration, audit trails, and epistemic confidence capping
 - **Board-Defensible Decisions** — every recommendation carries traceable evidence, sample sizes, variance scores, and classified output types (OBSERVED_FACT vs AI_RECOMMENDATION)
 - **Institutional Memory** — captures the full \`Decision → Assumptions → Outcome → Attribution\` lifecycle, building organizational learning over time
 - **Real-time Strategic Oversight** — not retrospective reporting; dashboards update within milliseconds of new data arriving (Growth+ tiers)
