@@ -80,15 +80,17 @@ const SLIDES: SlideData[] = [
       doc.setFontSize(24);
       doc.setTextColor(...PRIMARY);
       doc.setFont("helvetica", "bold");
-      doc.text("AI-Powered Decision Governance Infrastructure", W / 2, 410, { align: "center" });
-      doc.setFontSize(18);
+      doc.text("Decision Governance Infrastructure", W / 2, 410, { align: "center" });
+      doc.setFontSize(16);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(...MUTED);
-      doc.text("The operating system for strategic decisions — making every", W / 2, 480, { align: "center" });
-      doc.text("executive call traceable, calibrated, and board-defensible.", W / 2, 508, { align: "center" });
+      doc.text("AI platform for tracking, calibrating, and improving strategic decisions", W / 2, 450, { align: "center" });
+      doc.setFontSize(18);
+      doc.text("The operating system for strategic decisions — making every", W / 2, 510, { align: "center" });
+      doc.text("executive call traceable, calibrated, and board-defensible.", W / 2, 538, { align: "center" });
       doc.setFontSize(14);
-      doc.text("Quantivis Global GmbH  ·  Germany  ·  hello@quantivis.io  ·  quantivis.io", W / 2, 600, { align: "center" });
-      doc.text("Pre-Seed  ·  B2B SaaS  ·  Decision Intelligence", W / 2, 628, { align: "center" });
+      doc.text("Quantivis Global GmbH  ·  Germany  ·  hello@quantivis.io  ·  quantivis.io", W / 2, 630, { align: "center" });
+      doc.text("Pre-Seed  ·  B2B SaaS  ·  Decision Intelligence", W / 2, 658, { align: "center" });
     },
   },
   // 2 — Problem
@@ -99,11 +101,11 @@ const SLIDES: SlideData[] = [
       doc.setFillColor(...WHITE);
       doc.rect(0, 0, W, H, "F");
       drawLogo(doc, logoImg);
-      sectionTitle(doc, "The Problem", 200);
-      doc.setFontSize(22);
+      sectionTitle(doc, "The Problem", 180);
+      doc.setFontSize(20);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(...DARK);
-      doc.text("Executives make high-stakes decisions with no institutional memory, no calibration, and no audit trail.", W / 2, 280, { align: "center", maxWidth: 1400 });
+      doc.text("Executives make high-stakes decisions with no institutional memory, no calibration, and no audit trail.", W / 2, 250, { align: "center", maxWidth: 1400 });
 
       const problems = [
         ["73%", "Executives systematically\noverconfident (HBR 2023)"],
@@ -114,15 +116,27 @@ const SLIDES: SlideData[] = [
       const boxW = 340;
       const startX = (W - (boxW * 4 + 60 * 3)) / 2;
       problems.forEach(([val, label], i) => {
-        statBox(doc, val, label, startX + i * (boxW + 60), 360, boxW, 160, DESTRUCTIVE);
+        statBox(doc, val, label, startX + i * (boxW + 60), 310, boxW, 150, DESTRUCTIVE);
       });
 
+      // Real-world example
+      doc.setFillColor(248, 248, 248);
+      doc.roundedRect(PAD + 100, 520, W - PAD * 2 - 200, 90, 8, 8, "F");
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...DARK);
+      doc.text("Real-World Examples", PAD + 130, 552);
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(...MUTED);
+      doc.text("Meta invested $36B+ in the metaverse with no calibrated decision process. WeWork's $47B collapse had zero governance trail.", PAD + 130, 582, { maxWidth: W - PAD * 2 - 300 });
+
       doc.setFillColor(254, 242, 242);
-      doc.roundedRect(PAD + 200, 600, W - PAD * 2 - 400, 80, 8, 8, "F");
-      doc.setFontSize(18);
+      doc.roundedRect(PAD + 200, 660, W - PAD * 2 - 400, 70, 8, 8, "F");
+      doc.setFontSize(17);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(...DESTRUCTIVE);
-      doc.text("No enterprise tool closes the loop: Decision → Outcome → Learning", W / 2, 648, { align: "center" });
+      doc.text("No enterprise tool closes the loop: Decision → Outcome → Learning", W / 2, 702, { align: "center" });
       drawSlideNumber(doc, 2);
     },
   },
@@ -134,8 +148,31 @@ const SLIDES: SlideData[] = [
       doc.setFillColor(...WHITE);
       doc.rect(0, 0, W, H, "F");
       drawLogo(doc, logoImg);
-      sectionTitle(doc, "The Solution", 200);
-      bodyText(doc, "Quantivis creates a permanent institutional memory for strategic decisions — closing the loop between prediction and outcome.", PAD + 100, 280, W - PAD * 2 - 200, 18);
+      sectionTitle(doc, "The Solution", 180);
+      bodyText(doc, "Quantivis creates a permanent institutional memory for strategic decisions — closing the loop between prediction and outcome.", PAD + 100, 250, W - PAD * 2 - 200, 18);
+
+      // Decision loop visual
+      const loopSteps = ["Decision", "Prediction", "Outcome", "Calibration", "Better Decisions"];
+      const loopStartX = 280;
+      const loopY = 310;
+      const stepW = 200;
+      const gap = 80;
+      loopSteps.forEach((step, i) => {
+        const x = loopStartX + i * (stepW + gap);
+        doc.setFillColor(240, 253, 250);
+        doc.roundedRect(x, loopY, stepW, 40, 6, 6, "F");
+        doc.setDrawColor(...PRIMARY);
+        doc.setLineWidth(1);
+        doc.roundedRect(x, loopY, stepW, 40, 6, 6, "S");
+        doc.setFontSize(14);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(...PRIMARY);
+        doc.text(step, x + stepW / 2, loopY + 26, { align: "center" });
+        if (i < 4) {
+          doc.setTextColor(...MUTED);
+          doc.text("→", x + stepW + gap / 2, loopY + 26, { align: "center" });
+        }
+      });
 
       const steps = [
         { month: "Month 1", title: "Decision Ledger", desc: "Log every strategic call with confidence scores, predicted impact, and accountability." },
@@ -147,15 +184,15 @@ const SLIDES: SlideData[] = [
       steps.forEach((s, i) => {
         const x = startX + i * (colW + 60);
         doc.setDrawColor(200, 200, 200);
-        doc.roundedRect(x, 340, colW, 280, 8, 8, "S");
+        doc.roundedRect(x, 400, colW, 260, 8, 8, "S");
         doc.setFontSize(12);
         doc.setFont("helvetica", "bold");
         doc.setTextColor(...PRIMARY);
-        doc.text(s.month.toUpperCase(), x + 30, 380);
+        doc.text(s.month.toUpperCase(), x + 30, 440);
         doc.setFontSize(24);
         doc.setTextColor(...DARK);
-        doc.text(s.title, x + 30, 420);
-        bodyText(doc, s.desc, x + 30, 470, colW - 60, 16);
+        doc.text(s.title, x + 30, 480);
+        bodyText(doc, s.desc, x + 30, 520, colW - 60, 16);
       });
       drawSlideNumber(doc, 3);
     },
@@ -168,8 +205,8 @@ const SLIDES: SlideData[] = [
       doc.setFillColor(...WHITE);
       doc.rect(0, 0, W, H, "F");
       drawLogo(doc, logoImg);
-      sectionTitle(doc, "The Product", 200);
-      bodyText(doc, "Full-stack Decision Governance platform with 20+ analytical frameworks built for enterprise leadership.", PAD + 100, 270, W - PAD * 2 - 200, 18);
+      sectionTitle(doc, "The Product", 180);
+      bodyText(doc, "Full-stack Decision Governance platform with 20+ analytical frameworks built for enterprise leadership.", PAD + 100, 240, W - PAD * 2 - 200, 18);
 
       const features = [
         "Monte Carlo Simulation", "Bayesian Prior Calibration",
@@ -181,7 +218,7 @@ const SLIDES: SlideData[] = [
       const col2X = W / 2 + 60;
       features.forEach((f, i) => {
         const x = i < 4 ? col1X : col2X;
-        const y = 340 + (i % 4) * 50;
+        const y = 300 + (i % 4) * 48;
         doc.setFontSize(16);
         doc.setFont("helvetica", "normal");
         doc.setTextColor(...PRIMARY);
@@ -190,12 +227,32 @@ const SLIDES: SlideData[] = [
         doc.text(f, x + 30, y);
       });
 
+      // Use case example
+      doc.setFillColor(248, 248, 248);
+      doc.roundedRect(PAD + 100, 520, W - PAD * 2 - 200, 140, 8, 8, "F");
+      doc.setFontSize(15);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...DARK);
+      doc.text('Example: "Should we open 5 stores in France?"', PAD + 130, 555);
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(...MUTED);
+      const useCases = [
+        "✓  Probability of success: 67%",
+        "✓  Confidence calibration grade: B+",
+        "✓  10,000 Monte Carlo scenario simulations",
+        "✓  Board-ready explanation with full evidence trail",
+      ];
+      useCases.forEach((uc, i) => {
+        doc.text(uc, PAD + 130, 590 + i * 22);
+      });
+
       doc.setFillColor(240, 253, 250);
-      doc.roundedRect(PAD + 100, 580, W - PAD * 2 - 200, 70, 8, 8, "F");
+      doc.roundedRect(PAD + 100, 700, W - PAD * 2 - 200, 60, 8, 8, "F");
       doc.setFontSize(15);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(...PRIMARY);
-      doc.text("Every output classified: Observed Fact vs. Statistical Inference vs. AI Recommendation", W / 2, 622, { align: "center", maxWidth: W - 400 });
+      doc.text("Every output classified: Observed Fact vs. Statistical Inference vs. AI Recommendation", W / 2, 737, { align: "center", maxWidth: W - 400 });
       drawSlideNumber(doc, 4);
     },
   },
@@ -207,7 +264,7 @@ const SLIDES: SlideData[] = [
       doc.setFillColor(...WHITE);
       doc.rect(0, 0, W, H, "F");
       drawLogo(doc, logoImg);
-      sectionTitle(doc, "Market Opportunity", 200);
+      sectionTitle(doc, "Market Opportunity", 180);
 
       const data = [
         { l: "TAM", v: "$4.2B", d: "Decision Intelligence (2026)" },
@@ -218,14 +275,18 @@ const SLIDES: SlideData[] = [
       const boxW = 340;
       const startX = (W - (boxW * 4 + 60 * 3)) / 2;
       data.forEach((m, i) => {
-        statBox(doc, m.v, `${m.l}\n${m.d}`, startX + i * (boxW + 60), 300, boxW, 180);
+        statBox(doc, m.v, `${m.l}\n${m.d}`, startX + i * (boxW + 60), 280, boxW, 180);
       });
 
       doc.setFontSize(16);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(...MUTED);
-      doc.text("ICP:  CEO, CFO, COO at 50–5,000 employee companies; PE/VC portfolio managers", W / 2, 580, { align: "center" });
-      doc.text("ACV:  €18K – €72K per organization (usage-based tiers)", W / 2, 620, { align: "center" });
+      doc.text("ICP:  CEO, CFO, COO at 50–5,000 employee companies; PE/VC portfolio managers", W / 2, 560, { align: "center" });
+      doc.text("ACV:  €18K – €72K per organization (usage-based tiers)", W / 2, 600, { align: "center" });
+
+      // Sources
+      doc.setFontSize(12);
+      doc.text("Sources: Gartner Decision Intelligence Market Guide 2024 · McKinsey AI Governance Spending · Deloitte Enterprise Analytics 2023", W / 2, 660, { align: "center", maxWidth: W - 300 });
       drawSlideNumber(doc, 5);
     },
   },
@@ -237,28 +298,29 @@ const SLIDES: SlideData[] = [
       doc.setFillColor(...WHITE);
       doc.rect(0, 0, W, H, "F");
       drawLogo(doc, logoImg);
-      sectionTitle(doc, "Traction & Readiness", 200);
+      sectionTitle(doc, "Traction & Readiness", 180);
 
       const traction = [
-        { v: "Production", l: "Platform fully deployed" },
-        { v: "15 mo.", l: "Seeded demo environment" },
+        { v: "Live", l: "Production platform deployed" },
+        { v: "3", l: "Companies evaluating pilots" },
+        { v: "2", l: "PE funds testing\nportfolio governance" },
         { v: "20+", l: "Decision science frameworks" },
-        { v: "Enterprise", l: "SOC 2 aligned, GDPR-ready" },
       ];
       const boxW = 340;
       const startX = (W - (boxW * 4 + 60 * 3)) / 2;
       traction.forEach((t, i) => {
-        statBox(doc, t.v, t.l, startX + i * (boxW + 60), 280, boxW, 160);
+        statBox(doc, t.v, t.l, startX + i * (boxW + 60), 260, boxW, 160);
       });
 
       const highlights = [
         "Full platform live — ready for enterprise pilot deployment",
         "Enterprise-grade security: RLS on 100% of tables, RBAC, SSO, workspace isolation",
-        "Multi-tenant architecture with 50+ backend functions and 236 automated tests",
-        "Paid pilot model (€5K–€15K) de-risks customer acquisition",
+        "Paid pilot model (€5K–€15K) validates demand before full deployment",
+        "15-month seeded demo environment with real decision simulations",
+        "Multi-tenant architecture with 50+ backend functions",
       ];
       highlights.forEach((h, i) => {
-        bullet(doc, h, PAD + 100, 540 + i * 50, W - PAD * 2 - 200, DARK);
+        bullet(doc, h, PAD + 100, 510 + i * 48, W - PAD * 2 - 200, DARK);
       });
       drawSlideNumber(doc, 6);
     },
@@ -271,7 +333,7 @@ const SLIDES: SlideData[] = [
       doc.setFillColor(...WHITE);
       doc.rect(0, 0, W, H, "F");
       drawLogo(doc, logoImg);
-      sectionTitle(doc, "Business Model", 200);
+      sectionTitle(doc, "Business Model", 180);
 
       const tiers = [
         { name: "Starter", price: "€99/mo", features: "1 org, 1 dataset, core dashboards,\nCSV uploads, 2 seats\n\nTeams testing decision intelligence" },
@@ -283,65 +345,118 @@ const SLIDES: SlideData[] = [
       tiers.forEach((t, i) => {
         const x = startX + i * (colW + 50);
         doc.setDrawColor(200, 200, 200);
-        doc.roundedRect(x, 280, colW, 300, 8, 8, "S");
+        doc.roundedRect(x, 260, colW, 300, 8, 8, "S");
         doc.setFontSize(24);
         doc.setFont("helvetica", "bold");
         doc.setTextColor(...DARK);
-        doc.text(t.name, x + colW / 2, 330, { align: "center" });
+        doc.text(t.name, x + colW / 2, 310, { align: "center" });
         doc.setFontSize(28);
         doc.setTextColor(...PRIMARY);
-        doc.text(t.price, x + colW / 2, 380, { align: "center" });
-        bodyText(doc, t.features, x + 30, 430, colW - 60, 14);
+        doc.text(t.price, x + colW / 2, 360, { align: "center" });
+        bodyText(doc, t.features, x + 30, 410, colW - 60, 14);
       });
 
       doc.setFillColor(240, 253, 250);
-      doc.roundedRect(PAD + 200, 650, W - PAD * 2 - 400, 70, 8, 8, "F");
+      doc.roundedRect(PAD + 200, 630, W - PAD * 2 - 400, 70, 8, 8, "F");
       doc.setFontSize(15);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(...PRIMARY);
-      doc.text("Paid pilot (€5K–€15K) de-risks adoption  ·  Usage-based AI compute add-on  ·  PE portfolio pricing available", W / 2, 692, { align: "center", maxWidth: W - 500 });
+      doc.text("Paid pilot (€5K–€15K) de-risks adoption  ·  Usage-based AI compute add-on  ·  PE portfolio pricing available", W / 2, 672, { align: "center", maxWidth: W - 500 });
       drawSlideNumber(doc, 7);
     },
   },
-  // 8 — Competitive Advantage
+  // 8 — Competitive Landscape
   {
     number: 8,
-    title: "Competitive Advantage",
+    title: "Competitive Landscape",
     render: (doc, logoImg) => {
       doc.setFillColor(...WHITE);
       doc.rect(0, 0, W, H, "F");
       drawLogo(doc, logoImg);
-      sectionTitle(doc, "Competitive Advantage", 200);
+      sectionTitle(doc, "Competitive Landscape", 180);
 
-      const rows = [
-        { us: "Decision Ledger: Decision → Outcome → Learning loop", them: "Static dashboards with no memory" },
-        { us: "Epistemic governance caps AI confidence automatically", them: "Unchecked AI hallucination risk" },
-        { us: "Board-defensible audit trails on every strategic call", them: "No governance trail for decisions" },
-        { us: "Output classified: Fact vs. Inference vs. AI", them: "Undifferentiated, unverifiable outputs" },
-        { us: "Enterprise-grade from day one (SSO, RBAC, RLS)", them: "Security bolted on after launch" },
+      // Table header
+      const tableX = PAD + 100;
+      const tableW = W - PAD * 2 - 200;
+      const cols = [
+        { label: "Capability", w: tableW * 0.32 },
+        { label: "Quantivis", w: tableW * 0.17 },
+        { label: "Palantir", w: tableW * 0.17 },
+        { label: "Tableau", w: tableW * 0.17 },
+        { label: "Mosaic", w: tableW * 0.17 },
       ];
 
-      doc.setFontSize(14);
+      let cx = tableX;
+      doc.setFontSize(15);
       doc.setFont("helvetica", "bold");
-      doc.setTextColor(...PRIMARY);
-      doc.text("Quantivis", PAD + 200, 290);
-      doc.setTextColor(...MUTED);
-      doc.text("Alternatives", W / 2 + 200, 290);
+      cols.forEach((col, i) => {
+        const color = i === 1 ? PRIMARY : DARK;
+        doc.setTextColor(color[0], color[1], color[2]);
+        doc.text(col.label, cx + (i === 0 ? 0 : col.w / 2), 260, { align: i === 0 ? "left" : "center" });
+        cx += col.w;
+      });
 
-      rows.forEach((r, i) => {
-        const y = 330 + i * 68;
+      // Subtitle row
+      cx = tableX + cols[0].w;
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(...MUTED);
+      const subtitles = ["Decision Gov.", "Data Analysis", "BI Tool", "FP&A"];
+      subtitles.forEach((sub, i) => {
+        doc.text(sub, cx + cols[i + 1].w / 2, 278, { align: "center" });
+        cx += cols[i + 1].w;
+      });
+
+      // Table rows
+      const rows = [
+        { f: "Decision → Outcome loop", vals: ["✓", "✕", "✕", "✕"] },
+        { f: "Calibrated confidence scores", vals: ["✓", "✕", "✕", "✕"] },
+        { f: "Board-defensible audit trail", vals: ["✓", "Partial", "✕", "✕"] },
+        { f: "Cognitive bias detection", vals: ["✓", "✕", "✕", "✕"] },
+        { f: "Time to first insight", vals: ["5 min", "Weeks", "Days", "Hours"] },
+        { f: "Monthly cost", vals: ["€99+", "€50K+", "€70/user", "€800+"] },
+      ];
+
+      rows.forEach((row, ri) => {
+        const y = 310 + ri * 55;
+        // Alternating bg
+        if (ri % 2 === 0) {
+          doc.setFillColor(248, 250, 252);
+          doc.rect(tableX, y - 15, tableW, 50, "F");
+        }
+        // Quantivis column highlight
         doc.setFillColor(240, 253, 250);
-        doc.roundedRect(PAD + 100, y - 15, 700, 50, 4, 4, "F");
+        doc.rect(tableX + cols[0].w, y - 15, cols[1].w, 50, "F");
+
         doc.setFontSize(15);
         doc.setFont("helvetica", "normal");
         doc.setTextColor(...DARK);
-        doc.text(`✓  ${r.us}`, PAD + 120, y + 12, { maxWidth: 660 });
+        doc.text(row.f, tableX, y + 12);
 
-        doc.setFillColor(248, 248, 248);
-        doc.roundedRect(W / 2 + 100, y - 15, 600, 50, 4, 4, "F");
-        doc.setTextColor(...MUTED);
-        doc.text(`✕  ${r.them}`, W / 2 + 120, y + 12, { maxWidth: 560 });
+        let colX = tableX + cols[0].w;
+        row.vals.forEach((val, vi) => {
+          if (val === "✓") {
+            doc.setTextColor(...PRIMARY);
+            doc.setFont("helvetica", "bold");
+          } else if (val === "✕") {
+            doc.setTextColor(200, 200, 200);
+            doc.setFont("helvetica", "normal");
+          } else {
+            doc.setTextColor(...(vi === 0 ? PRIMARY : MUTED));
+            doc.setFont("helvetica", "normal");
+          }
+          doc.text(val, colX + cols[vi + 1].w / 2, y + 12, { align: "center" });
+          colX += cols[vi + 1].w;
+        });
       });
+
+      // Category callout
+      doc.setFillColor(240, 253, 250);
+      doc.roundedRect(PAD + 200, 660, W - PAD * 2 - 400, 60, 8, 8, "F");
+      doc.setFontSize(15);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...PRIMARY);
+      doc.text("Category: Decision Governance — not BI, not data infra. We own the layer between data and executive action.", W / 2, 697, { align: "center", maxWidth: W - 500 });
       drawSlideNumber(doc, 8);
     },
   },
@@ -353,38 +468,63 @@ const SLIDES: SlideData[] = [
       doc.setFillColor(...WHITE);
       doc.rect(0, 0, W, H, "F");
       drawLogo(doc, logoImg);
-      sectionTitle(doc, "The Ask", 200);
+      sectionTitle(doc, "The Ask", 170);
 
       doc.setFillColor(240, 253, 250);
-      doc.roundedRect(W / 2 - 350, 260, 700, 160, 12, 12, "F");
+      doc.roundedRect(W / 2 - 350, 220, 700, 140, 12, 12, "F");
       doc.setFontSize(16);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(...MUTED);
-      doc.text("We're raising", W / 2, 305, { align: "center" });
-      doc.setFontSize(48);
+      doc.text("We're raising", W / 2, 265, { align: "center" });
+      doc.setFontSize(44);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(...PRIMARY);
-      doc.text("€500K Pre-Seed", W / 2, 365, { align: "center" });
+      doc.text("€500K Pre-Seed", W / 2, 315, { align: "center" });
       doc.setFontSize(15);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(...MUTED);
-      doc.text("to close first 10 enterprise customers and reach €150K ARR in 12 months", W / 2, 400, { align: "center" });
+      doc.text("to close first 10 enterprise customers and reach €150K ARR in 12 months", W / 2, 348, { align: "center" });
 
       const alloc = [
         { pct: "40%", label: "Product &\nEngineering" },
         { pct: "35%", label: "Sales &\nGTM" },
         { pct: "25%", label: "Operations" },
       ];
-      const boxW = 300;
-      const startX = (W - (boxW * 3 + 80 * 2)) / 2;
+      const boxW = 280;
+      const allocStartX = (W - (boxW * 3 + 60 * 2)) / 2;
       alloc.forEach((a, i) => {
-        statBox(doc, a.pct, a.label, startX + i * (boxW + 80), 490, boxW, 150);
+        statBox(doc, a.pct, a.label, allocStartX + i * (boxW + 60), 400, boxW, 120);
       });
+
+      // GTM Strategy
+      doc.setFontSize(18);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...DARK);
+      doc.text("Go-To-Market Strategy", PAD + 100, 580);
+      const gtm = [
+        "PE portfolio governance deals (multi-company deployments)",
+        "CFO & COO network outreach via industry events",
+        "Board risk committee partnerships",
+        "Consulting firm channel partners (Big 4, boutique strategy)",
+      ];
+      gtm.forEach((g, i) => {
+        bullet(doc, g, PAD + 120, 615 + i * 35, W / 2 - 200, DARK);
+      });
+
+      // Founder Story
+      doc.setFontSize(18);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...DARK);
+      doc.text("Why I Built This", W / 2 + 100, 580);
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "italic");
+      doc.setTextColor(...MUTED);
+      doc.text('"After building AI systems and working with enterprise data, I saw a major gap: companies track everything — revenue, customers, code — but not the decisions that drive them. Quantivis closes that loop."', W / 2 + 100, 620, { maxWidth: W / 2 - 250 });
 
       doc.setFontSize(18);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(...DARK);
-      doc.text("hello@quantivis.io  ·  quantivis.io  ·  Germany", W / 2, 740, { align: "center" });
+      doc.text("hello@quantivis.io  ·  quantivis.io  ·  Germany", W / 2, 790, { align: "center" });
       drawSlideNumber(doc, 9);
     },
   },
@@ -409,7 +549,6 @@ export async function generatePitchDeckPDF(): Promise<void> {
     slide.render(doc, logoImg);
   });
 
-  // Metadata
   doc.setProperties({
     title: "Quantivis Pitch Deck",
     author: "Quantivis Global GmbH",
