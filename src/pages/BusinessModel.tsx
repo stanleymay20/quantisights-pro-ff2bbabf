@@ -48,7 +48,7 @@ const LAYERS = [
       "Board-ready governance reports",
       "Executive copilot & natural language queries",
     ],
-    pricing: "€99–Custom/mo",
+    pricing: "€99–€499/mo",
     pricingNote: "Per organization, billed monthly or annually",
     buyerValue: "500x cheaper than equivalent consulting engagements. Always-on intelligence.",
   },
