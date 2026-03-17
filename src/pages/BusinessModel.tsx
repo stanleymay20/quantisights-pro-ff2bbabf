@@ -105,7 +105,7 @@ const BUYER_SEGMENTS = [
 
 const VALUE_PROPS = [
   "We don't just show data — we improve the quality, speed, and traceability of decisions.",
-  "Executive Overconfidence Insurance: reducing the 7–12pp systematic overestimation in strategic judgment.",
+  "Decision Governance Infrastructure: reducing the 7–12pp systematic overestimation in strategic judgment.",
   "Every strategic decision becomes board-defensible with a full digital audit trail.",
 ];
 

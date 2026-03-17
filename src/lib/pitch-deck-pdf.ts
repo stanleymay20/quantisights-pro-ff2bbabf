@@ -20,7 +20,7 @@ function drawLogo(doc: jsPDF, logoImg: HTMLImageElement) {
   doc.addImage(logoImg, "PNG", PAD, 40, 200, 58);
   doc.setFontSize(11);
   doc.setTextColor(...MUTED);
-  doc.text("Executive Overconfidence Insurance", PAD + 210, 72);
+  doc.text("Decision Governance Infrastructure", PAD + 210, 72);
 }
 
 function drawSlideNumber(doc: jsPDF, n: number) {
@@ -80,12 +80,12 @@ const SLIDES: SlideData[] = [
       doc.setFontSize(24);
       doc.setTextColor(...PRIMARY);
       doc.setFont("helvetica", "bold");
-      doc.text("Executive Overconfidence Insurance", W / 2, 410, { align: "center" });
+      doc.text("AI-Powered Decision Governance Infrastructure", W / 2, 410, { align: "center" });
       doc.setFontSize(18);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(...MUTED);
-      doc.text("The first Decision Governance platform that makes every", W / 2, 480, { align: "center" });
-      doc.text("strategic call board-defensible.", W / 2, 508, { align: "center" });
+      doc.text("The operating system for strategic decisions — making every", W / 2, 480, { align: "center" });
+      doc.text("executive call traceable, calibrated, and board-defensible.", W / 2, 508, { align: "center" });
       doc.setFontSize(14);
       doc.text("Quantivis Global GmbH  ·  Germany  ·  hello@quantivis.io  ·  quantivis.io", W / 2, 600, { align: "center" });
       doc.text("Pre-Seed  ·  B2B SaaS  ·  Decision Intelligence", W / 2, 628, { align: "center" });
@@ -103,13 +103,13 @@ const SLIDES: SlideData[] = [
       doc.setFontSize(22);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(...DARK);
-      doc.text("73% of executives are systematically overconfident in their strategic forecasts.", W / 2, 280, { align: "center", maxWidth: 1400 });
+      doc.text("Executives make high-stakes decisions with no institutional memory, no calibration, and no audit trail.", W / 2, 280, { align: "center", maxWidth: 1400 });
 
       const problems = [
-        ["$12.9M", "Avg. annual cost of poor data quality (Gartner 2022)"],
-        ["85%", "AI projects fail due to inadequate data governance (MIT Sloan)"],
-        ["40%", "Higher operational costs without governance (TDWI 2023)"],
-        ["80%", "Analyst time wasted on data cleansing instead of analysis"],
+        ["73%", "Executives systematically\noverconfident (HBR 2023)"],
+        ["$2.3T", "Annual value destruction\nfrom ungoverned decisions"],
+        ["Zero", "Enterprise tools tracking\nprediction accuracy"],
+        ["100%", "Boards lacking defensible\ndecision audit trails"],
       ];
       const boxW = 340;
       const startX = (W - (boxW * 4 + 60 * 3)) / 2;
@@ -122,7 +122,7 @@ const SLIDES: SlideData[] = [
       doc.setFontSize(18);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(...DESTRUCTIVE);
-      doc.text("$2.3 Trillion in annual value destruction from the \"Data-to-Wisdom Gap\"", W / 2, 648, { align: "center" });
+      doc.text("No enterprise tool closes the loop: Decision → Outcome → Learning", W / 2, 648, { align: "center" });
       drawSlideNumber(doc, 2);
     },
   },
@@ -135,12 +135,12 @@ const SLIDES: SlideData[] = [
       doc.rect(0, 0, W, H, "F");
       drawLogo(doc, logoImg);
       sectionTitle(doc, "The Solution", 200);
-      bodyText(doc, "A 90-day path from tracking decisions to measurably better judgment.", PAD, 280, W - PAD * 2, 18);
+      bodyText(doc, "Quantivis creates a permanent institutional memory for strategic decisions — closing the loop between prediction and outcome.", PAD + 100, 280, W - PAD * 2 - 200, 18);
 
       const steps = [
-        { month: "Month 1", title: "Decision Ledger", desc: "Log strategic calls with confidence scores and accountability." },
-        { month: "Month 2", title: "Outcome Tracking", desc: "Record real results. Measure forecast divergence." },
-        { month: "Month 3", title: "Calibration Active", desc: "AI adjusts confidence based on track record." },
+        { month: "Month 1", title: "Decision Ledger", desc: "Log every strategic call with confidence scores, predicted impact, and accountability." },
+        { month: "Month 2", title: "Outcome Tracking", desc: "Record real results. Measure where forecasts diverged from reality." },
+        { month: "Month 3", title: "Calibration Engine", desc: "AI adjusts confidence based on track record. Your organization makes measurably better decisions." },
       ];
       const colW = 480;
       const startX = (W - (colW * 3 + 60 * 2)) / 2;
@@ -169,13 +169,13 @@ const SLIDES: SlideData[] = [
       doc.rect(0, 0, W, H, "F");
       drawLogo(doc, logoImg);
       sectionTitle(doc, "The Product", 200);
-      bodyText(doc, "Full-stack Decision Intelligence platform with 20+ analytical frameworks.", PAD, 270, W - PAD * 2, 18);
+      bodyText(doc, "Full-stack Decision Governance platform with 20+ analytical frameworks built for enterprise leadership.", PAD + 100, 270, W - PAD * 2 - 200, 18);
 
       const features = [
         "Monte Carlo Simulation", "Bayesian Prior Calibration",
-        "Regret Minimization", "Causal Inference Engine",
-        "Value of Information", "Cognitive Bias Detection",
-        "Sensitivity Analysis", "Scenario Branching",
+        "Causal Inference Engine", "Cognitive Bias Detection",
+        "AI Executive Copilot", "Scenario War Room",
+        "Governance Board Reports", "Evidence Contract (A–F grading)",
       ];
       const col1X = PAD + 100;
       const col2X = W / 2 + 60;
@@ -195,7 +195,7 @@ const SLIDES: SlideData[] = [
       doc.setFontSize(15);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(...PRIMARY);
-      doc.text("Evidence Contract: Every recommendation graded A–F with traceability, assumptions, and risk-if-wrong", W / 2, 622, { align: "center", maxWidth: W - 400 });
+      doc.text("Every output classified: Observed Fact vs. Statistical Inference vs. AI Recommendation", W / 2, 622, { align: "center", maxWidth: W - 400 });
       drawSlideNumber(doc, 4);
     },
   },
@@ -237,13 +237,13 @@ const SLIDES: SlideData[] = [
       doc.setFillColor(...WHITE);
       doc.rect(0, 0, W, H, "F");
       drawLogo(doc, logoImg);
-      sectionTitle(doc, "Technical Traction", 200);
+      sectionTitle(doc, "Traction & Readiness", 200);
 
       const traction = [
-        { v: "236", l: "Automated tests" },
-        { v: "50+", l: "Edge functions" },
-        { v: "20+", l: "Decision frameworks" },
-        { v: "Zero", l: "Security vulnerabilities" },
+        { v: "Production", l: "Platform fully deployed" },
+        { v: "15 mo.", l: "Seeded demo environment" },
+        { v: "20+", l: "Decision science frameworks" },
+        { v: "Enterprise", l: "SOC 2 aligned, GDPR-ready" },
       ];
       const boxW = 340;
       const startX = (W - (boxW * 4 + 60 * 3)) / 2;
@@ -252,9 +252,10 @@ const SLIDES: SlideData[] = [
       });
 
       const highlights = [
-        "Full platform live with demo environment (15 months seeded data)",
-        "Enterprise-grade: RLS on 100% of tables, RBAC, SSO, GDPR-ready",
-        "Multi-tenant architecture with workspace isolation",
+        "Full platform live — ready for enterprise pilot deployment",
+        "Enterprise-grade security: RLS on 100% of tables, RBAC, SSO, workspace isolation",
+        "Multi-tenant architecture with 50+ backend functions and 236 automated tests",
+        "Paid pilot model (€5K–€15K) de-risks customer acquisition",
       ];
       highlights.forEach((h, i) => {
         bullet(doc, h, PAD + 100, 540 + i * 50, W - PAD * 2 - 200, DARK);
@@ -273,9 +274,9 @@ const SLIDES: SlideData[] = [
       sectionTitle(doc, "Business Model", 200);
 
       const tiers = [
-        { name: "Starter", price: "€99/mo", features: "1 organization, 1 dataset, basic dashboards,\nCSV uploads, standard reporting, 2 seats" },
-        { name: "Growth", price: "€249/mo", features: "Unlimited datasets, AI advisory & forecasting,\nMonte Carlo, executive copilot, calibration,\nboard-ready reports, 5 seats" },
-        { name: "Enterprise", price: "Custom", features: "Unlimited everything, cognitive bias detection,\ncounterfactual explanations, SSO/RBAC,\naudit logs, multi-org, unlimited seats" },
+        { name: "Starter", price: "€99/mo", features: "1 org, 1 dataset, core dashboards,\nCSV uploads, 2 seats\n\nTeams testing decision intelligence" },
+        { name: "Growth", price: "€499/mo", features: "Unlimited datasets, AI advisory,\nforecasting, Monte Carlo, copilot,\ncalibration, board reports, 10 seats" },
+        { name: "Enterprise", price: "€18K–€72K/yr", features: "Unlimited everything, cognitive bias\ndetection, SSO/RBAC, audit logs,\nmulti-org, scenario war room" },
       ];
       const colW = 500;
       const startX = (W - (colW * 3 + 50 * 2)) / 2;
@@ -298,26 +299,26 @@ const SLIDES: SlideData[] = [
       doc.setFontSize(15);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(...PRIMARY);
-      doc.text("Enterprise ACV: €18K – €72K annually  ·  Usage-based AI compute add-on  ·  PE portfolio pricing available", W / 2, 692, { align: "center", maxWidth: W - 500 });
+      doc.text("Paid pilot (€5K–€15K) de-risks adoption  ·  Usage-based AI compute add-on  ·  PE portfolio pricing available", W / 2, 692, { align: "center", maxWidth: W - 500 });
       drawSlideNumber(doc, 7);
     },
   },
-  // 8 — Competitive Edge
+  // 8 — Competitive Advantage
   {
     number: 8,
-    title: "Competitive Edge",
+    title: "Competitive Advantage",
     render: (doc, logoImg) => {
       doc.setFillColor(...WHITE);
       doc.rect(0, 0, W, H, "F");
       drawLogo(doc, logoImg);
-      sectionTitle(doc, "Competitive Edge", 200);
+      sectionTitle(doc, "Competitive Advantage", 200);
 
       const rows = [
-        { us: "Decision Ledger (Decision → Outcome → Learning)", them: "Static dashboards" },
-        { us: "Epistemic governance caps AI confidence", them: "Unchecked AI hallucination" },
-        { us: "Cost of Delay from real revenue data", them: "Fabricated currency values" },
-        { us: "Output classified: Fact vs. Inference vs. AI", them: "Undifferentiated outputs" },
-        { us: "236 automated integrity tests", them: "Manual QA" },
+        { us: "Decision Ledger: Decision → Outcome → Learning loop", them: "Static dashboards with no memory" },
+        { us: "Epistemic governance caps AI confidence automatically", them: "Unchecked AI hallucination risk" },
+        { us: "Board-defensible audit trails on every strategic call", them: "No governance trail for decisions" },
+        { us: "Output classified: Fact vs. Inference vs. AI", them: "Undifferentiated, unverifiable outputs" },
+        { us: "Enterprise-grade from day one (SSO, RBAC, RLS)", them: "Security bolted on after launch" },
       ];
 
       doc.setFontSize(14);
@@ -359,7 +360,7 @@ const SLIDES: SlideData[] = [
       doc.setFontSize(16);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(...MUTED);
-      doc.text("We're looking for", W / 2, 305, { align: "center" });
+      doc.text("We're raising", W / 2, 305, { align: "center" });
       doc.setFontSize(48);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(...PRIMARY);
@@ -367,7 +368,7 @@ const SLIDES: SlideData[] = [
       doc.setFontSize(15);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(...MUTED);
-      doc.text("to acquire first 10 enterprise customers and reach €150K ARR in 12 months", W / 2, 400, { align: "center" });
+      doc.text("to close first 10 enterprise customers and reach €150K ARR in 12 months", W / 2, 400, { align: "center" });
 
       const alloc = [
         { pct: "40%", label: "Product &\nEngineering" },
@@ -412,8 +413,8 @@ export async function generatePitchDeckPDF(): Promise<void> {
   doc.setProperties({
     title: "Quantivis Pitch Deck",
     author: "Quantivis Global GmbH",
-    subject: "Decision Intelligence",
-    keywords: "decision intelligence, governance, pitch deck",
+    subject: "Decision Governance Infrastructure",
+    keywords: "decision intelligence, governance, pitch deck, pre-seed",
     creator: "quantivis.io",
   });
 

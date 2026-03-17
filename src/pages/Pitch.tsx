@@ -257,7 +257,7 @@ const Pitch = () => {
         {/* Technical Traction */}
         <section className="py-16 sm:py-20 bg-muted/10">
           <div className="container mx-auto px-6">
-            <h2 className="text-2xl sm:text-3xl font-bold font-display mb-8 text-center">Technical Traction</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold font-display mb-8 text-center">Traction & Readiness</h2>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 max-w-3xl mx-auto">
               {TRACTION.map((t, i) => (
                 <motion.div
