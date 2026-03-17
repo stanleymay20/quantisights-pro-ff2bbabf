@@ -525,7 +525,7 @@ const SLIDES: SlideData[] = [
       doc.setFont("helvetica", "bold");
       doc.setTextColor(...PRIMARY);
       doc.text("Category: Decision Governance — not BI, not data infra. We own the layer between data and executive action.", W / 2, 697, { align: "center", maxWidth: W - 500 });
-      drawSlideNumber(doc, 8);
+      drawSlideNumber(doc, 9);
     },
   },
   // 9 — The Ask
