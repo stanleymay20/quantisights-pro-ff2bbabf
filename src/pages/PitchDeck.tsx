@@ -173,9 +173,9 @@ const SLIDES: Slide[] = [
       <div className="space-y-4">
         <div className="space-y-3">
           {[
-            { tier: "Starter", price: "€149/mo", features: "5 users, 1 workspace, core frameworks" },
-            { tier: "Professional", price: "€599/mo", features: "25 users, 5 workspaces, all frameworks + calibration" },
-            { tier: "Enterprise", price: "€1,499/mo", features: "Unlimited, SSO, dedicated support, custom connectors" },
+            { tier: "Starter", price: "€99/mo", features: "1 org, 1 dataset, basic dashboards, CSV uploads, 2 seats" },
+            { tier: "Growth", price: "€249/mo", features: "Unlimited datasets, AI advisory, forecasting, Monte Carlo, copilot, calibration, 5 seats" },
+            { tier: "Enterprise", price: "Custom", features: "Unlimited everything, cognitive bias detection, SSO/RBAC, audit logs, multi-org, unlimited seats" },
           ].map((t) => (
             <div key={t.tier} className="p-3 rounded-lg border border-border flex items-center justify-between">
               <div>
@@ -186,7 +186,7 @@ const SLIDES: Slide[] = [
             </div>
           ))}
         </div>
-        <p className="text-xs text-muted-foreground">Usage-based AI compute add-on · Annual discounts · PE portfolio pricing available</p>
+        <p className="text-xs text-muted-foreground">Enterprise ACV: €18K–€72K annually · Usage-based AI compute add-on · PE portfolio pricing</p>
       </div>
     ),
   },
