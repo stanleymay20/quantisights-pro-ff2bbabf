@@ -390,7 +390,8 @@ const SLIDES: SlideData[] = [
       doc.setFontSize(15);
       doc.setFont("helvetica", "bold");
       cols.forEach((col, i) => {
-        doc.setTextColor(i === 1 ? ...PRIMARY : ...DARK);
+        const color = i === 1 ? PRIMARY : DARK;
+        doc.setTextColor(color[0], color[1], color[2]);
         doc.text(col.label, cx + (i === 0 ? 0 : col.w / 2), 260, { align: i === 0 ? "left" : "center" });
         cx += col.w;
       });
