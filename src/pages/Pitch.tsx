@@ -15,6 +15,8 @@ const METRICS = [
   { label: "Board Prep Time", value: "-60%", desc: "automated audit trails" },
 ];
 
+const CATEGORY = "AI-Powered Decision Governance Infrastructure";
+
 const CAPABILITIES = [
   { icon: Brain, title: "20+ Decision Frameworks", desc: "Monte Carlo, Bayesian Priors, Regret Minimization, Causal Inference, Value of Information" },
   { icon: Target, title: "Calibration Engine", desc: "Learns from outcomes to correct systematic overconfidence in leadership teams" },
