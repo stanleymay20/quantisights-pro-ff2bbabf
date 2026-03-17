@@ -649,7 +649,7 @@ const SLIDES: SlideData[] = [
       doc.setFont("helvetica", "bold");
       doc.setTextColor(...DARK);
       doc.text("hello@quantivis.io  ·  quantivis.io  ·  Germany", W / 2, 790, { align: "center" });
-      drawSlideNumber(doc, 9);
+      drawSlideNumber(doc, 11);
     },
   },
 ];
