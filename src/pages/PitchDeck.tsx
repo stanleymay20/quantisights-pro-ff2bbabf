@@ -1,12 +1,15 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import {
   ArrowRight, AlertTriangle, Lightbulb, Target, TrendingUp, Shield,
   Users, BarChart3, Rocket, Globe, CheckCircle2, Brain, Database,
-  Lock, Zap
+  Lock, Zap, Download, Loader2
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import logo from "@/assets/quantivis-logo.png";
 import { CONTACT } from "@/lib/contact-config";
+import { generatePitchDeckPDF } from "@/lib/pitch-deck-pdf";
 
 interface Slide {
   number: number;
