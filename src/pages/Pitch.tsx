@@ -35,9 +35,9 @@ const DIFFERENTIATORS = [
 ];
 
 const TRACTION = [
-  { label: "Test Coverage", value: "236 tests", icon: CheckCircle2 },
-  { label: "Edge Functions", value: "50+", icon: Zap },
-  { label: "Security Vulns", value: "Zero", icon: Shield },
+  { label: "Platform Status", value: "Production", icon: CheckCircle2 },
+  { label: "Demo Environment", value: "15 months", icon: Zap },
+  { label: "Security Posture", value: "Enterprise", icon: Shield },
   { label: "Decision Frameworks", value: "20+", icon: Brain },
 ];
 
