@@ -41,14 +41,14 @@ const LAYERS = [
     border: "border-success/20",
     description: "After pilot success, convert into recurring platform access. Two public tiers plus custom Enterprise.",
     deliverables: [
-      "Starter (€99/mo): 1 org, 1 dataset, basic dashboards, 2 seats",
-      "Growth (€249/mo): unlimited datasets, AI advisory, forecasting, copilot, calibration, 5 seats",
-      "Enterprise (Custom): unlimited everything, SSO/RBAC, cognitive bias detection, multi-org",
+      "Starter (€99/mo): 1 org, 1 dataset, core dashboards, 2 seats",
+      "Growth (€499/mo): unlimited datasets, AI advisory, forecasting, copilot, calibration, 10 seats",
+      "Enterprise (€18K–€72K/yr): unlimited everything, SSO/RBAC, cognitive bias detection, multi-org",
       "Usage-based AI compute add-on",
       "Board-ready governance reports",
       "Executive copilot & natural language queries",
     ],
-    pricing: "€99–Custom/mo",
+    pricing: "€99–€499/mo",
     pricingNote: "Per organization, billed monthly or annually",
     buyerValue: "500x cheaper than equivalent consulting engagements. Always-on intelligence.",
   },
@@ -105,7 +105,7 @@ const BUYER_SEGMENTS = [
 
 const VALUE_PROPS = [
   "We don't just show data — we improve the quality, speed, and traceability of decisions.",
-  "Executive Overconfidence Insurance: reducing the 7–12pp systematic overestimation in strategic judgment.",
+  "Decision Governance Infrastructure: reducing the 7–12pp systematic overestimation in strategic judgment.",
   "Every strategic decision becomes board-defensible with a full digital audit trail.",
 ];
 

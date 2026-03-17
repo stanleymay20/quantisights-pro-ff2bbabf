@@ -15,6 +15,8 @@ const METRICS = [
   { label: "Board Prep Time", value: "-60%", desc: "automated audit trails" },
 ];
 
+const CATEGORY = "AI-Powered Decision Governance Infrastructure";
+
 const CAPABILITIES = [
   { icon: Brain, title: "20+ Decision Frameworks", desc: "Monte Carlo, Bayesian Priors, Regret Minimization, Causal Inference, Value of Information" },
   { icon: Target, title: "Calibration Engine", desc: "Learns from outcomes to correct systematic overconfidence in leadership teams" },
@@ -33,9 +35,9 @@ const DIFFERENTIATORS = [
 ];
 
 const TRACTION = [
-  { label: "Test Coverage", value: "236 tests", icon: CheckCircle2 },
-  { label: "Edge Functions", value: "50+", icon: Zap },
-  { label: "Security Vulns", value: "Zero", icon: Shield },
+  { label: "Platform Status", value: "Production", icon: CheckCircle2 },
+  { label: "Demo Environment", value: "15 months", icon: Zap },
+  { label: "Security Posture", value: "Enterprise", icon: Shield },
   { label: "Decision Frameworks", value: "20+", icon: Brain },
 ];
 
@@ -73,14 +75,14 @@ const Pitch = () => {
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary/20 bg-primary/5 text-xs font-semibold text-primary mb-6">
                 <Award className="w-3.5 h-3.5" />
-                Investor One-Pager · Decision Intelligence
+                Investor One-Pager · {CATEGORY}
               </div>
               <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold font-display leading-tight mb-6">
-                Decision Governance for{" "}
-                <span className="gradient-text">Leadership Teams</span>
+                Decision Governance{" "}
+                <span className="gradient-text">Infrastructure</span>
               </h1>
               <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-4">
-                Quantivis is <strong className="text-foreground">Executive Overconfidence Insurance</strong> — the first platform that makes every strategic decision board-defensible by tracking the full Decision → Outcome → Learning lifecycle.
+                Quantivis is the operating system for strategic decisions — making every executive call traceable, calibrated, and board-defensible through the Decision → Outcome → Learning lifecycle.
               </p>
               <p className="text-sm text-muted-foreground max-w-xl mx-auto mb-8">
                 Target: CEO, CFO, COO, PE/VC firms · Market: $4.2B Decision Intelligence · HQ: {CONTACT.location}
@@ -255,7 +257,7 @@ const Pitch = () => {
         {/* Technical Traction */}
         <section className="py-16 sm:py-20 bg-muted/10">
           <div className="container mx-auto px-6">
-            <h2 className="text-2xl sm:text-3xl font-bold font-display mb-8 text-center">Technical Traction</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold font-display mb-8 text-center">Traction & Readiness</h2>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 max-w-3xl mx-auto">
               {TRACTION.map((t, i) => (
                 <motion.div
