@@ -261,6 +261,19 @@ const SLIDES: Slide[] = [
 ];
 
 const PitchDeck = () => {
+  const [downloading, setDownloading] = useState(false);
+
+  const handleDownload = async () => {
+    setDownloading(true);
+    try {
+      await generatePitchDeckPDF();
+    } catch (e) {
+      console.error("PDF generation failed", e);
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Nav */}
