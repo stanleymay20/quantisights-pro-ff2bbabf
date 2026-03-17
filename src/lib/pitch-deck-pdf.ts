@@ -355,7 +355,7 @@ const SLIDES: SlideData[] = [
       // Sources
       doc.setFontSize(12);
       doc.text("Sources: Gartner Decision Intelligence Market Guide 2024 · McKinsey AI Governance Spending · Deloitte Enterprise Analytics 2023", W / 2, 660, { align: "center", maxWidth: W - 300 });
-      drawSlideNumber(doc, 5);
+      drawSlideNumber(doc, 6);
     },
   },
   // 6 — Traction
