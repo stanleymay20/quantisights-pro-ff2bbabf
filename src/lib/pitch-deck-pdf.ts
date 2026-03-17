@@ -273,16 +273,16 @@ const SLIDES: SlideData[] = [
       sectionTitle(doc, "Business Model", 200);
 
       const tiers = [
-        { name: "Starter", price: "€149/mo", features: "5 users, 1 workspace, core frameworks" },
-        { name: "Professional", price: "€599/mo", features: "25 users, 5 workspaces, all frameworks + calibration" },
-        { name: "Enterprise", price: "€1,499/mo", features: "Unlimited, SSO, dedicated support, custom connectors" },
+        { name: "Starter", price: "€99/mo", features: "1 organization, 1 dataset, basic dashboards,\nCSV uploads, standard reporting, 2 seats" },
+        { name: "Growth", price: "€249/mo", features: "Unlimited datasets, AI advisory & forecasting,\nMonte Carlo, executive copilot, calibration,\nboard-ready reports, 5 seats" },
+        { name: "Enterprise", price: "Custom", features: "Unlimited everything, cognitive bias detection,\ncounterfactual explanations, SSO/RBAC,\naudit logs, multi-org, unlimited seats" },
       ];
       const colW = 500;
       const startX = (W - (colW * 3 + 50 * 2)) / 2;
       tiers.forEach((t, i) => {
         const x = startX + i * (colW + 50);
         doc.setDrawColor(200, 200, 200);
-        doc.roundedRect(x, 280, colW, 260, 8, 8, "S");
+        doc.roundedRect(x, 280, colW, 300, 8, 8, "S");
         doc.setFontSize(24);
         doc.setFont("helvetica", "bold");
         doc.setTextColor(...DARK);
@@ -290,10 +290,15 @@ const SLIDES: SlideData[] = [
         doc.setFontSize(28);
         doc.setTextColor(...PRIMARY);
         doc.text(t.price, x + colW / 2, 380, { align: "center" });
-        bodyText(doc, t.features, x + 30, 430, colW - 60, 15);
+        bodyText(doc, t.features, x + 30, 430, colW - 60, 14);
       });
 
-      bodyText(doc, "Usage-based AI compute add-on  ·  Annual discounts  ·  PE portfolio pricing available", PAD, 640, W - PAD * 2, 15);
+      doc.setFillColor(240, 253, 250);
+      doc.roundedRect(PAD + 200, 650, W - PAD * 2 - 400, 70, 8, 8, "F");
+      doc.setFontSize(15);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...PRIMARY);
+      doc.text("Enterprise ACV: €18K – €72K annually  ·  Usage-based AI compute add-on  ·  PE portfolio pricing available", W / 2, 692, { align: "center", maxWidth: W - 500 });
       drawSlideNumber(doc, 7);
     },
   },
