@@ -425,7 +425,7 @@ A: "There is no direct competitor doing Decision Governance as a software catego
 A: "The calibration engine alone — learning an organization's bias patterns from historical decisions — is defensible IP that would take 2+ years to replicate. Combined with the anti-hallucination framework and evidence contract system, this is deep technical infrastructure, not a feature."
 
 **Q: "What's your TAM?"**
-A: "€47B global enterprise decision management, but we're focused on an €8.2B SAM of companies with formalized strategic decision processes. Our Year 3 target is €12M ARR from ~400 organizations."
+A: "$4.2B Decision Intelligence market (2026), with an $850M SAM in the EU enterprise segment. Our Year 3 SOM target is $42M focused on PE/VC + mid-market DACH."
 
 ## Questions About Traction
 
