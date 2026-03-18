@@ -348,7 +348,7 @@ const chapters = [
     sections: [
       {
         heading: "Current Security Posture",
-        content: `As of the latest audit, the platform meets the following security standards:\n\n✅ RLS enabled on 100% of tables\n✅ Multi-tenant isolation with SECURITY DEFINER functions\n✅ Immutable audit trail (write-once, no update/delete)\n✅ MFA and Passkey support with replay protection\n✅ SSO (SAML/OIDC) with domain-based auto-detection\n✅ SCIM 2.0 for automated user lifecycle management\n✅ Rate limiting on public endpoints\n✅ PII redaction in AI pipelines\n✅ Encrypted storage for datasets and reports\n✅ Webhook signature validation\n✅ Active Data Contract enforcement on all analytical functions\n\n**Not yet achieved**: SOC2 Type II certification (requires 6-12 months of operational evidence). However, the technical controls are in place to begin the certification process.`
+        content: `As of the latest audit, the platform meets the following security standards:\n\n✅ RLS enabled on 100% of tables\n✅ Multi-tenant isolation with SECURITY DEFINER functions\n✅ Immutable audit trail (write-once, no update/delete)\n✅ MFA and Passkey support with replay protection\n✅ SSO (SAML/OIDC) with domain-based auto-detection\n✅ SCIM 2.0 for automated user lifecycle management\n✅ Rate limiting on public endpoints\n✅ PII redaction in AI pipelines\n✅ Encrypted storage for datasets and reports\n✅ Webhook signature validation\n✅ Active Data Contract enforcement on all analytical functions\n\nEnterprise-grade security controls are fully implemented. All technical foundations for formal compliance certifications are in place.`
       },
       {
         heading: "Pilot Customer Requirements",

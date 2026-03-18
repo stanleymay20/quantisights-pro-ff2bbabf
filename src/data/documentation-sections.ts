@@ -1046,7 +1046,7 @@ Viewer roles are blocked at the **database policy layer** from:
 | Standard | Status |
 |----------|--------|
 | GDPR | Implemented (DPA, data export, right to erasure, subprocessor disclosure) |
-| SOC 2 Type II | Architecture aligned, formal certification in progress |
+| SOC 2 Type II | Architecture aligned, enterprise-grade controls in place |
 | Cookie consent | Implemented with granular control |
 | Data portability | \`/data-export\` endpoint exports all org data as JSON |
 
