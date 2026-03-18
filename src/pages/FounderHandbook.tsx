@@ -304,7 +304,7 @@ Once a company has 2+ years of decisions in the ledger, that data is irreplaceab
 |------|-------|--------|
 | **Starter** | €99/mo | Startups, small teams, thesis pilots |
 | **Growth** | €499/mo | Scale-ups, mid-market companies |
-| **Enterprise** | Custom (€2-10K/mo) | PE/VC firms, Fortune 500 |
+| **Enterprise** | €18K–€72K/yr | PE/VC firms, Fortune 500 |
 
 ## Revenue Drivers
 1. **Seat-based expansion** — more executives = more seats
@@ -313,7 +313,7 @@ Once a company has 2+ years of decisions in the ledger, that data is irreplaceab
 4. **Professional services** — onboarding, custom integrations
 
 ## Unit Economics (Target)
-- **CAC**: €2-5K (content marketing + competition wins)
+- **CAC**: €2-5K (content marketing + enterprise outreach)
 - **LTV**: €30-60K (3-5 year retention, expanding seats)
 - **LTV:CAC ratio**: 10:1+ (exceptional for SaaS)
 - **Gross margin**: 85%+ (infrastructure costs minimal)
@@ -323,10 +323,10 @@ Once a company has 2+ years of decisions in the ledger, that data is irreplaceab
 Decision governance becomes MORE valuable over time (calibration improves). Churn is structurally low because switching means losing your institutional decision history. This creates a **negative churn** dynamic where existing customers naturally expand.
 
 ## Go-To-Market Strategy
-1. **Phase 1 (Now)**: Win competitions, get press, build waitlist
-2. **Phase 2**: Offer free tier to 50 design partners, get case studies
-3. **Phase 3**: Content-led growth (blog: "Your CEO is overconfident — here's the data")
-4. **Phase 4**: Enterprise sales with case studies + ROI proof
+1. **Phase 1 (Now)**: PE portfolio governance deals (multi-company deployments)
+2. **Phase 2**: CFO & COO network outreach via industry events
+3. **Phase 3**: Board risk committee partnerships
+4. **Phase 4**: Consulting firm channel partners (Big 4, boutique strategy)
     `,
   },
   {
