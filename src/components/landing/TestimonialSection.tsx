@@ -1,5 +1,6 @@
+import { forwardRef } from "react";
 import { motion } from "framer-motion";
-import { Target, Brain, Clock, Shield, CheckCircle2, ArrowRight } from "lucide-react";
+import { Target, Brain, Shield, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const USE_CASES = [
@@ -33,9 +34,9 @@ const PLATFORM_FACTS = [
   { value: "100%", label: "Decision traceability" },
 ];
 
-const TestimonialSection = () => {
+const TestimonialSection = forwardRef<HTMLElement>((_, ref) => {
   return (
-    <section id="case-studies" className="py-24 relative">
+    <section ref={ref} id="case-studies" className="py-24 relative">
       <div className="container mx-auto px-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -52,7 +53,6 @@ const TestimonialSection = () => {
           </p>
         </motion.div>
 
-        {/* Platform facts strip */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -67,7 +67,6 @@ const TestimonialSection = () => {
           ))}
         </motion.div>
 
-        {/* Use case cards */}
         <div className="grid lg:grid-cols-3 gap-5 mb-16">
           {USE_CASES.map((uc, i) => (
             <motion.div
@@ -78,7 +77,6 @@ const TestimonialSection = () => {
               transition={{ delay: i * 0.12 }}
               className="glass-card-hover p-7 flex flex-col"
             >
-              {/* Header */}
               <div className="flex items-center gap-3 mb-5">
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                   <uc.icon className="w-5 h-5 text-primary" />
@@ -89,13 +87,11 @@ const TestimonialSection = () => {
                 </div>
               </div>
 
-              {/* Challenge */}
               <div className="mb-4">
                 <p className="text-[11px] uppercase tracking-widest text-muted-foreground/60 font-semibold mb-1.5">The Challenge</p>
                 <p className="text-sm text-foreground/80 leading-relaxed">{uc.challenge}</p>
               </div>
 
-              {/* How Quantivis helps */}
               <div className="mt-auto pt-4 border-t border-border/40">
                 <p className="text-[11px] uppercase tracking-widest text-primary/80 font-semibold mb-1.5">How Quantivis Helps</p>
                 <p className="text-sm text-foreground/90 leading-relaxed">{uc.howQuantivis}</p>
@@ -104,7 +100,6 @@ const TestimonialSection = () => {
           ))}
         </div>
 
-        {/* CTA */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -121,6 +116,8 @@ const TestimonialSection = () => {
       </div>
     </section>
   );
-};
+});
+
+TestimonialSection.displayName = "TestimonialSection";
 
 export default TestimonialSection;
