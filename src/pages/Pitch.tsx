@@ -9,10 +9,10 @@ import logo from "@/assets/quantivis-logo.png";
 import { CONTACT } from "@/lib/contact-config";
 
 const METRICS = [
-  { label: "Decision Accuracy Lift", value: "+34%", desc: "avg improvement after 90 days" },
-  { label: "Overconfidence Reduction", value: "2.1×", desc: "calibration improvement" },
-  { label: "Time to Decision", value: "-45%", desc: "faster strategic calls" },
-  { label: "Board Prep Time", value: "-60%", desc: "automated audit trails" },
+  { label: "Decision Frameworks", value: "20+", desc: "analytical models built-in" },
+  { label: "Market Size", value: "$4.2B", desc: "Decision Intelligence TAM (2026)" },
+  { label: "Enterprise ACV", value: "€18K–€72K", desc: "per organization annually" },
+  { label: "Time to Value", value: "90 days", desc: "from pilot to calibrated decisions" },
 ];
 
 const CATEGORY = "AI-Powered Decision Governance Infrastructure";
@@ -22,7 +22,7 @@ const CAPABILITIES = [
   { icon: Target, title: "Calibration Engine", desc: "Learns from outcomes to correct systematic overconfidence in leadership teams" },
   { icon: Shield, title: "Evidence Contract", desc: "Every recommendation graded A–F with traceability, assumptions, and risk-if-wrong" },
   { icon: Database, title: "Enterprise Connectors", desc: "Postgres, Snowflake, BigQuery — live connection to your institutional source of truth" },
-  { icon: Lock, title: "SOC 2–Aligned", desc: "RLS on 100% of tables, immutable audit trails, PII redaction, GDPR-ready" },
+  { icon: Lock, title: "Enterprise Security", desc: "RLS on 100% of tables, immutable audit trails, PII redaction, GDPR-ready" },
   { icon: Users, title: "Multi-Tenant RBAC", desc: "Workspace isolation, role-based access, SSO support, team invitations" },
 ];
 
@@ -31,7 +31,7 @@ const DIFFERENTIATORS = [
   "Confidence scores are capped using epistemic governance — no AI hallucination",
   "Cost of Delay uses real revenue data, never fabricated currency values",
   "Every insight classified: Observed Fact vs. Statistical Inference vs. AI Recommendation",
-  "236 automated integrity tests enforce truth-first data policies",
+  "Enterprise-grade security: RLS on 100% of tables, immutable audit trails, PII redaction",
 ];
 
 const TRACTION = [
@@ -58,8 +58,8 @@ const Pitch = () => {
             <img src={logo} alt="Quantivis" className="h-10 w-auto" />
           </Link>
           <div className="flex items-center gap-3">
-            <Link to="/competitions" className="px-4 py-2 rounded-lg border border-border text-sm font-medium hover:border-primary/30 transition-all hidden sm:inline-flex">
-              Competitions
+            <Link to="/pitch-deck" className="px-4 py-2 rounded-lg border border-border text-sm font-medium hover:border-primary/30 transition-all hidden sm:inline-flex">
+              Pitch Deck
             </Link>
             <Link to="/demo" className="px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:brightness-110 transition-all">
               Live Demo
@@ -302,7 +302,7 @@ const Pitch = () => {
                   href={`mailto:${CONTACT.email.general}`}
                   className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl border border-border bg-card/50 text-foreground font-semibold hover:border-primary/30 transition-all"
                 >
-                  Contact Founders
+                  Contact Founder
                 </a>
               </div>
               <p className="text-xs text-muted-foreground mt-6">
