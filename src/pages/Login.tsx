@@ -149,6 +149,10 @@ const Login = forwardRef<HTMLDivElement>((_, ref) => {
                 />
               </div>
 
+              {ssoChecking && (
+                <p className="text-xs text-muted-foreground">Checking organization sign-in options…</p>
+              )}
+
               {/* SSO Detection Banner */}
               {ssoRedirect && (
                 <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 space-y-2">
@@ -164,10 +168,11 @@ const Login = forwardRef<HTMLDivElement>((_, ref) => {
                   <button
                     type="button"
                     onClick={handleSSOLogin}
-                    className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:brightness-110 transition-all flex items-center justify-center gap-2"
+                    disabled={ssoChecking}
+                    className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:brightness-110 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                   >
                     <Shield className="w-4 h-4" />
-                    Sign in with SSO
+                    {ssoChecking ? "Checking…" : "Sign in with SSO"}
                   </button>
                 </div>
               )}
@@ -187,7 +192,7 @@ const Login = forwardRef<HTMLDivElement>((_, ref) => {
                   </div>
                   <button
                     type="submit"
-                    disabled={isLoading}
+                    disabled={isLoading || ssoChecking}
                     className="w-full py-3 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:brightness-110 transition-all disabled:opacity-50"
                   >
                     {isLoading ? "Signing in..." : "Sign In"}

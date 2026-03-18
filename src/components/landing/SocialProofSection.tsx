@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import { motion } from "framer-motion";
 import { TrendingDown, Clock, DollarSign, ShieldCheck, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -33,10 +34,9 @@ const CASE_STUDIES = [
   },
 ];
 
-const SocialProofSection = () => {
+const SocialProofSection = forwardRef<HTMLDivElement>((_, ref) => {
   return (
-    <>
-      {/* ROI Section */}
+    <div ref={ref}>
       <section className="py-24 relative">
         <div className="container mx-auto px-6">
           <motion.div
@@ -74,8 +74,7 @@ const SocialProofSection = () => {
         </div>
       </section>
 
-      {/* Case Studies */}
-      <section id="case-studies" className="py-24 relative">
+      <section id="decision-impact" className="py-24 relative">
         <div className="container mx-auto px-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -141,8 +140,10 @@ const SocialProofSection = () => {
           </motion.div>
         </div>
       </section>
-    </>
+    </div>
   );
-};
+});
+
+SocialProofSection.displayName = "SocialProofSection";
 
 export default SocialProofSection;
