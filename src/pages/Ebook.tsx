@@ -330,7 +330,7 @@ const chapters = [
     sections: [
       {
         heading: "Subscription Tiers",
-        content: `Quantivis offers three subscription tiers:\n\n**Starter (Free)**\n• Basic dashboard and data upload\n• Limited to 1 workspace, 3 datasets\n• Community benchmarks\n• Standard data quality checks\n\n**Growth**\n• Unlimited workspaces and datasets\n• Monte Carlo simulations\n• Executive Copilot (limited queries/day)\n• Board report generation\n• Prescriptive advisory system\n• SSO support\n\n**Enterprise**\n• Everything in Growth\n• Unlimited Copilot queries\n• SCIM provisioning\n• Custom RBAC permissions\n• Dedicated support\n• SLA guarantees\n• On-premise deployment options`
+        content: `Quantivis offers three subscription tiers:\n\n**Starter (€99/month)**\n• 1 organization, 1 dataset, 2 seats\n• Core dashboards and CSV upload\n• Data quality scoring\n• Basic KPI tracking\n\n**Growth (€499/month)**\n• Unlimited datasets, 10 seats\n• AI advisory, forecasting, Monte Carlo simulations\n• Executive Copilot (100 queries/day)\n• Board report generation\n• Calibration engine, prescriptive advisory\n\n**Enterprise (€18K–€72K/year)**\n• Unlimited everything, unlimited seats\n• Cognitive bias detection, scenario war room\n• SSO/SAML, SCIM provisioning, custom RBAC\n• Dedicated support and SLA guarantees\n• Multi-org portfolio governance`
       },
       {
         heading: "Usage Metering",
@@ -348,7 +348,7 @@ const chapters = [
     sections: [
       {
         heading: "Current Security Posture",
-        content: `As of the latest audit, the platform meets the following security standards:\n\n✅ RLS enabled on 100% of tables\n✅ Multi-tenant isolation with SECURITY DEFINER functions\n✅ Immutable audit trail (write-once, no update/delete)\n✅ MFA and Passkey support with replay protection\n✅ SSO (SAML/OIDC) with domain-based auto-detection\n✅ SCIM 2.0 for automated user lifecycle management\n✅ Rate limiting on public endpoints\n✅ PII redaction in AI pipelines\n✅ Encrypted storage for datasets and reports\n✅ Webhook signature validation\n✅ Active Data Contract enforcement on all analytical functions\n\n**Not yet achieved**: SOC2 Type II certification (requires 6-12 months of operational evidence). However, the technical controls are in place to begin the certification process.`
+        content: `As of the latest audit, the platform meets the following security standards:\n\n✅ RLS enabled on 100% of tables\n✅ Multi-tenant isolation with SECURITY DEFINER functions\n✅ Immutable audit trail (write-once, no update/delete)\n✅ MFA and Passkey support with replay protection\n✅ SSO (SAML/OIDC) with domain-based auto-detection\n✅ SCIM 2.0 for automated user lifecycle management\n✅ Rate limiting on public endpoints\n✅ PII redaction in AI pipelines\n✅ Encrypted storage for datasets and reports\n✅ Webhook signature validation\n✅ Active Data Contract enforcement on all analytical functions\n\nEnterprise-grade security controls are fully implemented. All technical foundations for formal compliance certifications are in place.`
       },
       {
         heading: "Pilot Customer Requirements",

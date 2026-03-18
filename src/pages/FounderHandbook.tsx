@@ -304,7 +304,7 @@ Once a company has 2+ years of decisions in the ledger, that data is irreplaceab
 |------|-------|--------|
 | **Starter** | €99/mo | Startups, small teams, thesis pilots |
 | **Growth** | €499/mo | Scale-ups, mid-market companies |
-| **Enterprise** | Custom (€2-10K/mo) | PE/VC firms, Fortune 500 |
+| **Enterprise** | €18K–€72K/yr | PE/VC firms, Fortune 500 |
 
 ## Revenue Drivers
 1. **Seat-based expansion** — more executives = more seats
@@ -313,7 +313,7 @@ Once a company has 2+ years of decisions in the ledger, that data is irreplaceab
 4. **Professional services** — onboarding, custom integrations
 
 ## Unit Economics (Target)
-- **CAC**: €2-5K (content marketing + competition wins)
+- **CAC**: €2-5K (content marketing + enterprise outreach)
 - **LTV**: €30-60K (3-5 year retention, expanding seats)
 - **LTV:CAC ratio**: 10:1+ (exceptional for SaaS)
 - **Gross margin**: 85%+ (infrastructure costs minimal)
@@ -323,10 +323,10 @@ Once a company has 2+ years of decisions in the ledger, that data is irreplaceab
 Decision governance becomes MORE valuable over time (calibration improves). Churn is structurally low because switching means losing your institutional decision history. This creates a **negative churn** dynamic where existing customers naturally expand.
 
 ## Go-To-Market Strategy
-1. **Phase 1 (Now)**: Win competitions, get press, build waitlist
-2. **Phase 2**: Offer free tier to 50 design partners, get case studies
-3. **Phase 3**: Content-led growth (blog: "Your CEO is overconfident — here's the data")
-4. **Phase 4**: Enterprise sales with case studies + ROI proof
+1. **Phase 1 (Now)**: PE portfolio governance deals (multi-company deployments)
+2. **Phase 2**: CFO & COO network outreach via industry events
+3. **Phase 3**: Board risk committee partnerships
+4. **Phase 4**: Consulting firm channel partners (Big 4, boutique strategy)
     `,
   },
   {
@@ -336,23 +336,23 @@ Decision governance becomes MORE valuable over time (calibration improves). Chur
     subtitle: "Numbers for your pitch deck",
     content: `
 ## Total Addressable Market (TAM)
-**€47B** — Global enterprise decision management software market
+**$4.2B** — Decision Intelligence market (2026)
 
 ## Serviceable Addressable Market (SAM)
-**€8.2B** — Companies with 50+ employees making tracked strategic decisions
-- ~500K companies globally with CFO/COO-level decision infrastructure
-- Average contract value: €16K/year
+**$850M** — EU enterprise segment
+- Companies with 50+ employees making tracked strategic decisions
+- Focus: mid-market + PE/VC portfolio governance
 
 ## Serviceable Obtainable Market (SOM) — Year 3
-**€12M ARR** — Conservative target
-- 400 paying organizations × €2,500/mo average
+**$42M** — PE/VC + mid-market DACH
 - Focus: DACH region + UK enterprise mid-market
+- ACV: €18K – €72K per organization
 
 ## Market Timing
 Why NOW:
 1. **AI trust crisis** — Every company using AI is worried about hallucinations. We solve this.
 2. **Board accountability** — Post-WeWork/FTX, boards demand decision audit trails
-3. **ESG/Governance** — Regulatory pressure for transparent decision-making
+3. **ESG/Governance** — Regulatory pressure for transparent decision-making (EU AI Act)
 4. **Remote work** — Distributed leadership teams need a shared decision system
 
 ## Comparable Exits
@@ -362,6 +362,8 @@ Why NOW:
 | Anaplan | Connected planning | $10.7B (acquired) |
 | Gong | Revenue intelligence | $7.2B |
 | Quantivis potential | Decision governance | €100M+ (5yr) |
+
+Sources: Gartner Decision Intelligence Market Guide 2024 · McKinsey AI Governance Spending Report · Deloitte Enterprise Analytics Budget Survey 2023
     `,
   },
   {
@@ -391,7 +393,7 @@ Why NOW:
 "Multi-factor authentication enforced at the route level. You can't access protected pages without completing a second-factor challenge."
 
 ## If Asked About SOC 2
-"Our infrastructure provider holds SOC 2 Type II certification. We've built all the technical controls aligned to SOC 2 standards — RLS, immutable audit logs, MFA, encrypted secrets. A formal certification for Quantivis as an entity is on our roadmap as we scale. In the meantime, our Trust Center at /security documents every control in detail, and we have a downloadable security whitepaper."
+"Our infrastructure provider holds SOC 2 Type II certification. We've built all the technical controls aligned to SOC 2 standards — RLS, immutable audit logs, MFA, encrypted secrets. We maintain enterprise-grade security across the platform. Our Trust Center at /security documents every control in detail."
     `,
   },
   {
@@ -423,7 +425,7 @@ A: "There is no direct competitor doing Decision Governance as a software catego
 A: "The calibration engine alone — learning an organization's bias patterns from historical decisions — is defensible IP that would take 2+ years to replicate. Combined with the anti-hallucination framework and evidence contract system, this is deep technical infrastructure, not a feature."
 
 **Q: "What's your TAM?"**
-A: "€47B global enterprise decision management, but we're focused on an €8.2B SAM of companies with formalized strategic decision processes. Our Year 3 target is €12M ARR from ~400 organizations."
+A: "$4.2B Decision Intelligence market (2026), with an $850M SAM in the EU enterprise segment. Our Year 3 SOM target is $42M focused on PE/VC + mid-market DACH."
 
 ## Questions About Traction
 
@@ -447,13 +449,13 @@ A: "Three things: (1) I deeply understand the problem from an academic/research 
 ## Questions About Fundraising
 
 **Q: "How much are you raising?"**
-A: "I'm exploring pre-seed options — €150-300K to fund 12 months of customer acquisition, one senior hire, and SOC 2 certification. The product is built; the investment goes into go-to-market."
+A: "€500K pre-seed to close first 10 enterprise customers and reach €150K ARR in 12 months. The product is built; the investment goes into go-to-market and one senior hire."
 
 **Q: "What's the use of funds?"**
-A: "40% customer acquisition (content, competitions, pilots), 30% one technical hire, 20% compliance (SOC 2, pen test), 10% infrastructure."
+A: "40% product & engineering, 35% sales & GTM, 25% operations. The product is built — investment goes into enterprise customer acquisition and scaling."
 
 **Q: "What milestones will you hit?"**
-A: "Month 3: 10 paid design partners. Month 6: €30K MRR. Month 12: €100K MRR with 2 enterprise logos. These unlock a Series Seed at 10-15x ARR."
+A: "Month 3: 5 paid pilot customers. Month 6: €50K ARR. Month 12: €150K ARR with 2+ enterprise logos. These unlock a Series Seed at 10-15x ARR."
     `,
   },
   {
