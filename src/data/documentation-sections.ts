@@ -1122,16 +1122,16 @@ A 200 response does NOT mean all records were inserted. Always check \`records_r
 ## Stripe-Powered Subscription System
 
 ### Tier Comparison
-| Feature | Starter (€29/mo) | Growth (€99/mo) | Enterprise (€299/mo) |
+| Feature | Starter (€99/mo) | Growth (€499/mo) | Enterprise (€18K–€72K/yr) |
 |---------|:-:|:-:|:-:|
-| Data Sources | 2 | 10 | Unlimited |
-| KPIs | 5 | 25 | Unlimited |
+| Data Sources | 1 | Unlimited | Unlimited |
+| Datasets | 1 | Unlimited | Unlimited |
 | Simulations/day | 5 | 50 | Unlimited |
 | Copilot messages/day | 20 | 100 | Unlimited |
 | Convergence/day | — | 10 | Unlimited |
 | Realtime Streaming | — | ✓ | ✓ |
 | Executive Modes | 1 role | 4 roles | 4 roles + AI briefs |
-| Team Members | 1 | 5 | Unlimited |
+| Team Members | 2 | 10 | Unlimited |
 | Reports | Basic | Full suite | Full + Board Report |
 | Strategy Pack | — | ✓ | ✓ |
 | Board Governance Report | — | — | ✓ |
