@@ -22,7 +22,7 @@ const CAPABILITIES = [
   { icon: Target, title: "Calibration Engine", desc: "Learns from outcomes to correct systematic overconfidence in leadership teams" },
   { icon: Shield, title: "Evidence Contract", desc: "Every recommendation graded A–F with traceability, assumptions, and risk-if-wrong" },
   { icon: Database, title: "Enterprise Connectors", desc: "Postgres, Snowflake, BigQuery — live connection to your institutional source of truth" },
-  { icon: Lock, title: "SOC 2–Aligned", desc: "RLS on 100% of tables, immutable audit trails, PII redaction, GDPR-ready" },
+  { icon: Lock, title: "Enterprise Security", desc: "RLS on 100% of tables, immutable audit trails, PII redaction, GDPR-ready" },
   { icon: Users, title: "Multi-Tenant RBAC", desc: "Workspace isolation, role-based access, SSO support, team invitations" },
 ];
 
