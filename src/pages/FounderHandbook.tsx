@@ -393,7 +393,7 @@ Sources: Gartner Decision Intelligence Market Guide 2024 · McKinsey AI Governan
 "Multi-factor authentication enforced at the route level. You can't access protected pages without completing a second-factor challenge."
 
 ## If Asked About SOC 2
-"Our infrastructure provider holds SOC 2 Type II certification. We've built all the technical controls aligned to SOC 2 standards — RLS, immutable audit logs, MFA, encrypted secrets. A formal certification for Quantivis as an entity is on our roadmap as we scale. In the meantime, our Trust Center at /security documents every control in detail, and we have a downloadable security whitepaper."
+"Our infrastructure provider holds SOC 2 Type II certification. We've built all the technical controls aligned to SOC 2 standards — RLS, immutable audit logs, MFA, encrypted secrets. We maintain enterprise-grade security across the platform. Our Trust Center at /security documents every control in detail."
     `,
   },
   {
