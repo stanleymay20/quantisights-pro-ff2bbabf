@@ -19,7 +19,7 @@ const badges = [
   {
     icon: Server,
     label: "Enterprise-Grade Hosting",
-    detail: "AWS-backed infrastructure with SOC 2–aligned controls",
+    detail: "AWS-backed infrastructure with enterprise-grade controls",
   },
 ];
 
