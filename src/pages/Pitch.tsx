@@ -58,8 +58,8 @@ const Pitch = () => {
             <img src={logo} alt="Quantivis" className="h-10 w-auto" />
           </Link>
           <div className="flex items-center gap-3">
-            <Link to="/competitions" className="px-4 py-2 rounded-lg border border-border text-sm font-medium hover:border-primary/30 transition-all hidden sm:inline-flex">
-              Competitions
+            <Link to="/pitch-deck" className="px-4 py-2 rounded-lg border border-border text-sm font-medium hover:border-primary/30 transition-all hidden sm:inline-flex">
+              Pitch Deck
             </Link>
             <Link to="/demo" className="px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:brightness-110 transition-all">
               Live Demo
