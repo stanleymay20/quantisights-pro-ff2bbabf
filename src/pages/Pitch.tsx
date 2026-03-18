@@ -302,7 +302,7 @@ const Pitch = () => {
                   href={`mailto:${CONTACT.email.general}`}
                   className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl border border-border bg-card/50 text-foreground font-semibold hover:border-primary/30 transition-all"
                 >
-                  Contact Founders
+                  Contact Founder
                 </a>
               </div>
               <p className="text-xs text-muted-foreground mt-6">

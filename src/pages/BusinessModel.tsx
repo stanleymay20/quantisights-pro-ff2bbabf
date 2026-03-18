@@ -124,7 +124,7 @@ const BusinessModel = () => {
             </h1>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
               Software subscription + implementation + premium intelligence workflows + enterprise support.
-              Four revenue layers designed for $10B category leadership.
+              Four revenue layers designed for category leadership in a $4.2B market growing 22% annually.
             </p>
           </motion.div>
 

@@ -241,7 +241,7 @@ const Pricing = () => {
       <section className="py-16">
         <div className="container mx-auto px-6 text-center">
           <p className="text-xs text-muted-foreground">
-            All plans include a 14-day free trial · GDPR compliance · SOC 2 Type II in progress · Data encryption at rest & in transit
+            All plans include a 14-day free trial · GDPR compliance · Enterprise-grade security · Data encryption at rest & in transit
           </p>
         </div>
       </section>
