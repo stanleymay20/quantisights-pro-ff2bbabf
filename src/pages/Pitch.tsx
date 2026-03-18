@@ -31,7 +31,7 @@ const DIFFERENTIATORS = [
   "Confidence scores are capped using epistemic governance — no AI hallucination",
   "Cost of Delay uses real revenue data, never fabricated currency values",
   "Every insight classified: Observed Fact vs. Statistical Inference vs. AI Recommendation",
-  "236 automated integrity tests enforce truth-first data policies",
+  "Enterprise-grade security: RLS on 100% of tables, immutable audit trails, PII redaction",
 ];
 
 const TRACTION = [
