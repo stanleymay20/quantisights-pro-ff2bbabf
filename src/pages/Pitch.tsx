@@ -9,10 +9,10 @@ import logo from "@/assets/quantivis-logo.png";
 import { CONTACT } from "@/lib/contact-config";
 
 const METRICS = [
-  { label: "Decision Accuracy Lift", value: "+34%", desc: "avg improvement after 90 days" },
-  { label: "Overconfidence Reduction", value: "2.1×", desc: "calibration improvement" },
-  { label: "Time to Decision", value: "-45%", desc: "faster strategic calls" },
-  { label: "Board Prep Time", value: "-60%", desc: "automated audit trails" },
+  { label: "Decision Frameworks", value: "20+", desc: "analytical models built-in" },
+  { label: "Market Size", value: "$4.2B", desc: "Decision Intelligence TAM (2026)" },
+  { label: "Enterprise ACV", value: "€18K–€72K", desc: "per organization annually" },
+  { label: "Time to Value", value: "90 days", desc: "from pilot to calibrated decisions" },
 ];
 
 const CATEGORY = "AI-Powered Decision Governance Infrastructure";
