@@ -101,7 +101,7 @@ const Footer = forwardRef<HTMLElement>((_, ref) => (
               </Link>
             </li>
             <li>
-              <a href="mailto:hello@quantivis.io" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              <a href={`mailto:${CONTACT.email.general}`} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                 Request Demo
               </a>
             </li>
