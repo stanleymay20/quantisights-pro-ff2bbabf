@@ -336,23 +336,23 @@ Decision governance becomes MORE valuable over time (calibration improves). Chur
     subtitle: "Numbers for your pitch deck",
     content: `
 ## Total Addressable Market (TAM)
-**€47B** — Global enterprise decision management software market
+**$4.2B** — Decision Intelligence market (2026)
 
 ## Serviceable Addressable Market (SAM)
-**€8.2B** — Companies with 50+ employees making tracked strategic decisions
-- ~500K companies globally with CFO/COO-level decision infrastructure
-- Average contract value: €16K/year
+**$850M** — EU enterprise segment
+- Companies with 50+ employees making tracked strategic decisions
+- Focus: mid-market + PE/VC portfolio governance
 
 ## Serviceable Obtainable Market (SOM) — Year 3
-**€12M ARR** — Conservative target
-- 400 paying organizations × €2,500/mo average
+**$42M** — PE/VC + mid-market DACH
 - Focus: DACH region + UK enterprise mid-market
+- ACV: €18K – €72K per organization
 
 ## Market Timing
 Why NOW:
 1. **AI trust crisis** — Every company using AI is worried about hallucinations. We solve this.
 2. **Board accountability** — Post-WeWork/FTX, boards demand decision audit trails
-3. **ESG/Governance** — Regulatory pressure for transparent decision-making
+3. **ESG/Governance** — Regulatory pressure for transparent decision-making (EU AI Act)
 4. **Remote work** — Distributed leadership teams need a shared decision system
 
 ## Comparable Exits
@@ -362,6 +362,8 @@ Why NOW:
 | Anaplan | Connected planning | $10.7B (acquired) |
 | Gong | Revenue intelligence | $7.2B |
 | Quantivis potential | Decision governance | €100M+ (5yr) |
+
+Sources: Gartner Decision Intelligence Market Guide 2024 · McKinsey AI Governance Spending Report · Deloitte Enterprise Analytics Budget Survey 2023
     `,
   },
   {
