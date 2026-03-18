@@ -92,7 +92,7 @@ const CTASection = forwardRef<HTMLElement>((_, ref) => {
             </a>
           </div>
 
-          <p className="text-xs text-muted-foreground">14-day free trial · No credit card required · GDPR ready · SOC 2–aligned controls</p>
+          <p className="text-xs text-muted-foreground">14-day free trial · No credit card required · GDPR ready · Enterprise-grade security</p>
         </motion.div>
       </div>
     </section>

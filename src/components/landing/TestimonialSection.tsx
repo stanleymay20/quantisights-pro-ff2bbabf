@@ -1,41 +1,36 @@
 import { motion } from "framer-motion";
-import { Star, Quote, TrendingUp, Clock, Brain } from "lucide-react";
+import { Target, Brain, Clock, Shield, CheckCircle2, ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 
-const TESTIMONIALS = [
+const USE_CASES = [
   {
-    quote: "We cancelled our management consulting retainer within 3 months. The causal inference engine surfaces root causes in real-time — no more 6-week engagement cycles to discover what we already suspected.",
     role: "CFO",
-    company: "Enterprise SaaS",
-    detail: "Series C · €45M ARR",
-    avatar: "CFO",
-    highlight: "Replaced €220K/yr advisory spend",
-    highlightIcon: TrendingUp,
+    scenario: "Annual budget reforecast",
+    challenge: "Leadership team consistently overestimated revenue growth by 8–12pp, leading to misallocated capital across 3 business units.",
+    howQuantivis: "The calibration engine tracks forecast accuracy over time and adjusts confidence scores. After 90 days, the CFO sees exactly where overconfidence occurs — and by how much.",
+    icon: Target,
   },
   {
-    quote: "The cognitive bias detection flagged a €1.2M sunk cost fallacy in our product roadmap that our entire leadership team missed. That single alert paid for 5 years of the platform.",
     role: "CEO",
-    company: "Industrial Manufacturing",
-    detail: "600+ employees · DACH region",
-    avatar: "CEO",
-    highlight: "€1.2M misallocation prevented",
-    highlightIcon: Brain,
+    scenario: "Market expansion decision",
+    challenge: "Board asked for defensible evidence behind a €2M market entry. The strategy team had spreadsheets and opinions — no traceable decision trail.",
+    howQuantivis: "Decision Ledger logs the call with confidence scores, Monte Carlo simulations, and causal inference. The board receives a governance-grade audit trail.",
+    icon: Brain,
   },
   {
-    quote: "Board prep went from a 5-day scramble across 4 departments to pressing a single button. The convergence index showed we were structurally misaligned — we restructured OKRs within a week.",
-    role: "COO",
-    company: "HealthTech Scale-up",
-    detail: "Series B · 120 employees",
-    avatar: "COO",
-    highlight: "Board prep: 5 days → 2 hours",
-    highlightIcon: Clock,
+    role: "PE Portfolio Manager",
+    scenario: "Cross-portfolio risk assessment",
+    challenge: "Managing 12 portfolio companies with no unified view of strategic decision quality or systematic overconfidence patterns.",
+    howQuantivis: "Portfolio-wide decision governance layer tracks predictions vs. outcomes across all companies, surfacing which management teams are well-calibrated.",
+    icon: Shield,
   },
 ];
 
-const METRICS = [
-  { value: "78%", label: "Avg. reduction in board prep time" },
-  { value: "3.2x", label: "ROI within first 6 months" },
-  { value: "<5min", label: "Time to first strategic insight" },
-  { value: "94%", label: "Executive renewal rate" },
+const PLATFORM_FACTS = [
+  { value: "20+", label: "Decision science frameworks" },
+  { value: "90 days", label: "Time to calibrated decisions" },
+  { value: "<5 min", label: "Time to first strategic insight" },
+  { value: "100%", label: "Decision traceability" },
 ];
 
 const TestimonialSection = () => {
@@ -48,23 +43,23 @@ const TestimonialSection = () => {
           viewport={{ once: true }}
           className="text-center mb-14"
         >
-          <p className="text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-3">From Our Customers</p>
+          <p className="text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-3">Platform in Action</p>
           <h2 className="text-3xl sm:text-4xl font-bold font-display mb-4">
-            Leaders Who Stopped <span className="gradient-text">Guessing</span>
+            How Leaders Use <span className="gradient-text">Quantivis</span>
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Real outcomes from executive teams who replaced intuition with decision science.
+            Representative scenarios showing how decision governance transforms strategic operations.
           </p>
         </motion.div>
 
-        {/* Metrics strip */}
+        {/* Platform facts strip */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-14"
         >
-          {METRICS.map((m) => (
+          {PLATFORM_FACTS.map((m) => (
             <div key={m.label} className="glass-card p-5 text-center">
               <p className="text-2xl lg:text-3xl font-bold font-display gradient-text">{m.value}</p>
               <p className="text-xs text-muted-foreground mt-1">{m.label}</p>
@@ -72,62 +67,57 @@ const TestimonialSection = () => {
           ))}
         </motion.div>
 
-        {/* Testimonial cards */}
+        {/* Use case cards */}
         <div className="grid lg:grid-cols-3 gap-5 mb-16">
-          {TESTIMONIALS.map((t, i) => (
+          {USE_CASES.map((uc, i) => (
             <motion.div
-              key={t.role + t.company}
+              key={uc.role + uc.scenario}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.12 }}
               className="glass-card-hover p-7 flex flex-col"
             >
-              {/* Stars */}
-              <div className="flex gap-0.5 mb-4">
-                {Array.from({ length: 5 }).map((_, j) => (
-                  <Star key={j} className="w-3.5 h-3.5 fill-warning text-warning" />
-                ))}
-              </div>
-
-              {/* Quote */}
-              <div className="relative flex-1 mb-6">
-                <Quote className="absolute -top-1 -left-1 w-6 h-6 text-primary/10" />
-                <p className="text-sm text-foreground/90 leading-relaxed pl-4">
-                  "{t.quote}"
-                </p>
-              </div>
-
-              {/* Highlight badge */}
-              <div className="mb-5 px-3 py-2 rounded-lg bg-success/[0.06] border border-success/20 flex items-center gap-2">
-                <t.highlightIcon className="w-3.5 h-3.5 text-success shrink-0" />
-                <p className="text-xs font-semibold text-success">{t.highlight}</p>
-              </div>
-
-              {/* Author */}
-              <div className="flex items-center gap-3 pt-4 border-t border-border/40">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
-                  {t.avatar}
+              {/* Header */}
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <uc.icon className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold">{t.role}</p>
-                  <p className="text-[11px] text-muted-foreground">{t.company}</p>
-                  <p className="text-[10px] text-muted-foreground/60">{t.detail}</p>
+                  <p className="text-sm font-semibold">{uc.role}</p>
+                  <p className="text-[11px] text-muted-foreground">{uc.scenario}</p>
                 </div>
+              </div>
+
+              {/* Challenge */}
+              <div className="mb-4">
+                <p className="text-[11px] uppercase tracking-widest text-muted-foreground/60 font-semibold mb-1.5">The Challenge</p>
+                <p className="text-sm text-foreground/80 leading-relaxed">{uc.challenge}</p>
+              </div>
+
+              {/* How Quantivis helps */}
+              <div className="mt-auto pt-4 border-t border-border/40">
+                <p className="text-[11px] uppercase tracking-widest text-primary/80 font-semibold mb-1.5">How Quantivis Helps</p>
+                <p className="text-sm text-foreground/90 leading-relaxed">{uc.howQuantivis}</p>
               </div>
             </motion.div>
           ))}
         </div>
 
-        {/* Anonymity note */}
-        <motion.p
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
+        {/* CTA */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center text-[11px] text-muted-foreground/40"
+          className="text-center"
         >
-          Customer identities anonymized per NDA agreements. Full case studies available upon request.
-        </motion.p>
+          <Link
+            to="/demo"
+            className="inline-flex items-center gap-2 text-primary font-semibold hover:underline"
+          >
+            See the platform in action <ArrowRight className="w-4 h-4" />
+          </Link>
+        </motion.div>
       </div>
     </section>
   );
