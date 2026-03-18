@@ -449,13 +449,13 @@ A: "Three things: (1) I deeply understand the problem from an academic/research 
 ## Questions About Fundraising
 
 **Q: "How much are you raising?"**
-A: "I'm exploring pre-seed options — €150-300K to fund 12 months of customer acquisition, one senior hire, and SOC 2 certification. The product is built; the investment goes into go-to-market."
+A: "€500K pre-seed to close first 10 enterprise customers and reach €150K ARR in 12 months. The product is built; the investment goes into go-to-market and one senior hire."
 
 **Q: "What's the use of funds?"**
-A: "40% customer acquisition (content, competitions, pilots), 30% one technical hire, 20% compliance (SOC 2, pen test), 10% infrastructure."
+A: "40% product & engineering, 35% sales & GTM, 25% operations. The product is built — investment goes into enterprise customer acquisition and scaling."
 
 **Q: "What milestones will you hit?"**
-A: "Month 3: 10 paid design partners. Month 6: €30K MRR. Month 12: €100K MRR with 2 enterprise logos. These unlock a Series Seed at 10-15x ARR."
+A: "Month 3: 5 paid pilot customers. Month 6: €50K ARR. Month 12: €150K ARR with 2+ enterprise logos. These unlock a Series Seed at 10-15x ARR."
     `,
   },
   {
