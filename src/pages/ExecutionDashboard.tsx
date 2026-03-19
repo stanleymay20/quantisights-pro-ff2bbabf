@@ -124,7 +124,7 @@ const ExecutionDashboard = () => {
   };
 
   return (
-    <DatasetRequired moduleName="Execution Dashboard">
+    <>
       <>
         <header className="h-14 border-b border-border/30 flex items-center px-8 shrink-0 bg-background/60 backdrop-blur-sm">
           <SidebarMobileToggle />
