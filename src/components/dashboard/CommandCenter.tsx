@@ -34,6 +34,7 @@ interface CommandCenterProps {
   topMetrics?: MetricTypeSummary[];
   datasetId?: string;
   datasetName?: string | null;
+  isDemoMode?: boolean;
 }
 
 const CommandCenter = memo(({
