@@ -47,6 +47,7 @@ const RevenueChart = ({ data }: RevenueChartProps) => {
       </div>
     )}
   </div>
-);
+  );
+};
 
 export default RevenueChart;
