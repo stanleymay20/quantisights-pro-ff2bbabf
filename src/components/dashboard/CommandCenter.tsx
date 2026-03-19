@@ -154,6 +154,7 @@ const CommandCenter = memo(({
             insights={insights}
             latestChurn={churnRate}
             latestCost={latestCost}
+            isDemoMode={isDemoMode}
           />
         </Suspense>
       )}
