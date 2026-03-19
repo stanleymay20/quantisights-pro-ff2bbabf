@@ -4,9 +4,20 @@ interface RevenueChartProps {
   data: { month: string; revenue: number }[];
 }
 
-const RevenueChart = ({ data }: RevenueChartProps) => (
+const RevenueChart = ({ data }: RevenueChartProps) => {
+  const trendHint = (() => {
+    if (data.length < 3) return null;
+    const recent = data.slice(-3);
+    const delta = recent[0].revenue > 0 ? ((recent[recent.length - 1].revenue - recent[0].revenue) / recent[0].revenue) * 100 : 0;
+    if (delta > 5) return "📈 Growth accelerating";
+    if (delta < -5) return "📉 Growth declining — investigate pipeline";
+    return "➡️ Revenue flat — growth stalled";
+  })();
+
+  return (
   <div className="glass-card p-6 rounded-xl">
-    <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">Revenue Growth</h3>
+    <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Revenue Growth</h3>
+    {trendHint && <p className="text-[11px] text-muted-foreground mb-3">{trendHint}</p>}
     {data.length === 0 ? (
       <div className="h-72 flex items-center justify-center text-muted-foreground text-sm">No revenue data yet</div>
     ) : (
