@@ -1310,8 +1310,8 @@ const DataUpload = () => {
 
                 {/* Errors summary */}
                 {validation.invalidRows > 0 && (
-                  <div className="p-3 rounded-lg border border-yellow-500/20 bg-yellow-500/5 flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4 text-yellow-500 shrink-0" />
+                  <div className="p-3 rounded-lg border border-warning/20 bg-warning/5 flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-warning shrink-0" />
                     <p className="text-xs text-muted-foreground">
                       {validation.invalidPoints.toLocaleString()} data point{validation.invalidPoints !== 1 ? "s" : ""} will be skipped.
                       <button onClick={() => setStep("validation")} className="text-primary ml-1 hover:underline">View details</button>
