@@ -314,42 +314,78 @@ const Dashboard = () => {
                     </motion.div>
                   ))
                 ) : (
-                  [
-                    { icon: Upload, title: "Upload verified data", desc: "Any structured CSV — financial, operational, academic, or custom metrics", path: "/data-upload", action: "Upload Data" },
-                    { icon: Zap, title: "Autonomous diagnostics engage", desc: "Root cause analysis, anomaly detection, and pattern recognition", path: null, action: null },
-                    { icon: TrendingUp, title: "Strategic advisory activates", desc: "Prescriptive playbooks, scenario modeling, and board reports", path: null, action: null },
-                  ].map((step, i) => (
+                  <>
+                    {/* Primary: Try with sample data */}
                     <motion.div
-                      key={step.title}
                       initial={{ opacity: 0, x: -12 }}
                       animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.2 + i * 0.1 }}
-                      className={`flex items-center gap-4 p-4 rounded-xl border transition-all duration-200 ${
-                        i === 0
-                          ? "border-primary/30 bg-primary/[0.04] hover:bg-primary/[0.06] hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/5 cursor-pointer"
-                          : "border-border/30 bg-card/20 opacity-50"
-                      }`}
-                      onClick={() => step.path && navigate(step.path)}
+                      transition={{ delay: 0.2 }}
+                      className="flex items-center gap-4 p-4 rounded-xl border border-primary/30 bg-primary/[0.04] hover:bg-primary/[0.06] hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/5 cursor-pointer transition-all duration-200"
+                      onClick={() => navigate("/demo")}
                     >
-                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
-                        i === 0 ? "bg-primary/15" : "bg-muted/50"
-                      }`}>
-                        <step.icon className={`w-5 h-5 ${i === 0 ? "text-primary" : "text-muted-foreground"}`} />
+                      <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 bg-primary/15">
+                        <Zap className="w-5 h-5 text-primary" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold">{step.title}</p>
-                        <p className="text-xs text-muted-foreground">{step.desc}</p>
+                        <p className="text-sm font-semibold">Try with Sample Data</p>
+                        <p className="text-xs text-muted-foreground">Load 15 months of B2B SaaS data — insights, diagnostics, and advisories appear instantly</p>
                       </div>
-                      {step.action && (
-                        <span className="text-xs font-semibold text-primary flex items-center gap-1">
-                          {step.action} <ArrowRight className="w-3 h-3" />
-                        </span>
-                      )}
-                      <span className="w-6 h-6 rounded-full bg-muted/50 flex items-center justify-center text-[10px] font-bold text-muted-foreground shrink-0">
-                        {i + 1}
+                      <span className="text-xs font-semibold text-primary flex items-center gap-1">
+                        Launch Demo <ArrowRight className="w-3 h-3" />
                       </span>
                     </motion.div>
-                  ))
+
+                    <div className="flex items-center gap-3 px-2">
+                      <div className="flex-1 h-px bg-border/40" />
+                      <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">or</span>
+                      <div className="flex-1 h-px bg-border/40" />
+                    </div>
+
+                    {/* Secondary: Upload your own data */}
+                    <motion.div
+                      initial={{ opacity: 0, x: -12 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.3 }}
+                      className="flex items-center gap-4 p-4 rounded-xl border border-border/30 bg-card/40 hover:bg-card/60 cursor-pointer transition-all duration-200"
+                      onClick={() => navigate("/data-upload")}
+                    >
+                      <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 bg-muted/50">
+                        <Upload className="w-5 h-5 text-muted-foreground" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold">Upload your own data</p>
+                        <p className="text-xs text-muted-foreground">Any structured CSV — financial, operational, academic, or custom metrics</p>
+                      </div>
+                      <span className="text-xs font-semibold text-primary flex items-center gap-1">
+                        Upload <ArrowRight className="w-3 h-3" />
+                      </span>
+                    </motion.div>
+
+                    {/* Steps preview (grayed out) */}
+                    {[
+                      { icon: Zap, title: "Autonomous diagnostics engage", desc: "Root cause analysis, anomaly detection, and pattern recognition" },
+                      { icon: TrendingUp, title: "Strategic advisory activates", desc: "Prescriptive playbooks, scenario modeling, and board reports" },
+                    ].map((step, i) => (
+                      <motion.div
+                        key={step.title}
+                        initial={{ opacity: 0, x: -12 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.4 + i * 0.1 }}
+                        className="flex items-center gap-4 p-4 rounded-xl border border-border/30 bg-card/20 opacity-50"
+                      >
+                        <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 bg-muted/50">
+                          <step.icon className="w-5 h-5 text-muted-foreground" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold">{step.title}</p>
+                          <p className="text-xs text-muted-foreground">{step.desc}</p>
+                        </div>
+                        <span className="w-6 h-6 rounded-full bg-muted/50 flex items-center justify-center text-[10px] font-bold text-muted-foreground shrink-0">
+                          {i + 2}
+                        </span>
+                      </motion.div>
+                    ))}
+                  </>
                 )}
               </div>
             </motion.div>
