@@ -43,10 +43,13 @@ const WaterfallChart = ({ data }: WaterfallChartProps) => {
     });
   }, [data]);
 
+  const hasUncertain = analysis?.some(d => d.type === "uncertain");
+
   const colors: Record<string, string> = {
     positive: "hsl(var(--success))",
     negative: "hsl(var(--destructive))",
     total: "hsl(var(--primary))",
+    uncertain: "hsl(var(--muted-foreground))",
   };
 
   if (!analysis) {
