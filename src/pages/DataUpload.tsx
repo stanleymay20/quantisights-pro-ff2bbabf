@@ -1060,7 +1060,7 @@ const DataUpload = () => {
                 <Card>
                   <CardContent className="p-6">
                     <div className="flex items-center gap-3 mb-6">
-                      <AlertTriangle className="w-6 h-6 text-yellow-500" />
+                      <AlertTriangle className="w-6 h-6 text-warning" />
                       <div>
                         <h2 className="text-lg font-semibold font-display">Data Issues Found</h2>
                         <p className="text-xs text-muted-foreground">
