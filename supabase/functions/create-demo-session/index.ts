@@ -348,6 +348,9 @@ Deno.serve(async (req) => {
       access_token: session.session?.access_token,
       refresh_token: session.session?.refresh_token,
       email,
+      org_id: orgId,
+      workspace_id: workspaceId,
+      project_id: project.id,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
