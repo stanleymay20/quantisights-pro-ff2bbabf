@@ -37,6 +37,9 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
           <Link to="/login" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
             Sign In
           </Link>
+          <Link to="/demo" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            Try Demo
+          </Link>
           <Link
             to="/register"
             className="px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:brightness-110 transition-all"
