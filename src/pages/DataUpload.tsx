@@ -846,7 +846,7 @@ const DataUpload = () => {
                         className="mt-4 p-4 rounded-lg border border-yellow-500/30 bg-yellow-500/5"
                       >
                         <div className="flex items-start gap-3">
-                          <Wand2 className="w-4 h-4 text-yellow-600 mt-0.5 shrink-0" />
+                          <Wand2 className="w-4 h-4 text-warning mt-0.5 shrink-0" />
                           <div className="flex-1">
                             <p className="text-sm font-medium text-foreground">Year-only dates detected</p>
                             <p className="text-xs text-muted-foreground mt-0.5">
@@ -864,9 +864,9 @@ const DataUpload = () => {
                     )}
 
                     {yearAutoFixed && (
-                      <div className="mt-4 p-3 rounded-lg border border-green-500/30 bg-green-500/5 flex items-center gap-2 text-sm">
-                        <Check className="w-4 h-4 text-green-500" />
-                        <span className="text-green-700 dark:text-green-400">Year values converted to full dates.</span>
+                      <div className="mt-4 p-3 rounded-lg border border-success/30 bg-success/5 flex items-center gap-2 text-sm">
+                        <Check className="w-4 h-4 text-success" />
+                        <span className="text-success">Year values converted to full dates.</span>
                       </div>
                     )}
 
