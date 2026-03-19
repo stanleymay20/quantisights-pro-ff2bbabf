@@ -1278,7 +1278,7 @@ const DataUpload = () => {
                       </div>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div className="p-3 rounded-lg bg-muted/30 border border-border/40">
-                          <p className={`text-lg font-bold ${diagnostics.missingValuesPct > 5 ? "text-yellow-500" : "text-green-500"}`}>
+                          <p className={`text-lg font-bold ${diagnostics.missingValuesPct > 5 ? "text-warning" : "text-success"}`}>
                             {diagnostics.missingValuesPct}%
                           </p>
                           <p className="text-xs text-muted-foreground">Missing values</p>
