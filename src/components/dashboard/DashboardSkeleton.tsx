@@ -1,68 +1,73 @@
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 
 interface DashboardSkeletonProps {
   className?: string;
 }
 
-const Pulse = ({ className }: { className?: string }) => (
-  <div className={cn("animate-pulse rounded-lg bg-muted/60", className)} />
+const Pulse = ({ className, delay = 0 }: { className?: string; delay?: number }) => (
+  <motion.div
+    initial={{ opacity: 0.4 }}
+    animate={{ opacity: [0.4, 0.7, 0.4] }}
+    transition={{ duration: 1.8, repeat: Infinity, delay }}
+    className={cn("rounded-lg bg-muted/50", className)}
+  />
 );
 
 const DashboardSkeleton = ({ className }: DashboardSkeletonProps) => (
-  <div className={cn("space-y-6", className)}>
-    {/* Status bar skeleton */}
-    <div className="flex items-center gap-6">
-      {[1, 2, 3, 4].map(i => (
-        <Pulse key={i} className="h-4 w-24" />
-      ))}
-    </div>
-
-    {/* Greeting skeleton */}
+  <motion.div
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    transition={{ duration: 0.3 }}
+    className={cn("space-y-6", className)}
+  >
+    {/* Greeting */}
     <div className="space-y-2">
-      <Pulse className="h-7 w-64" />
-      <Pulse className="h-4 w-40" />
+      <Pulse className="h-7 w-56" />
+      <Pulse className="h-4 w-80" delay={0.1} />
     </div>
 
-    {/* KPI cards skeleton */}
+    {/* KPI cards */}
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      {[1, 2, 3, 4].map(i => (
-        <div key={i} className="glass-card p-5 rounded-xl space-y-3">
+      {[0, 1, 2, 3].map(i => (
+        <div key={i} className="rounded-xl border border-border/20 bg-card/40 p-5 space-y-3">
           <div className="flex justify-between">
-            <Pulse className="h-3 w-16" />
-            <Pulse className="h-4 w-4 rounded" />
+            <Pulse className="h-3 w-16" delay={i * 0.08} />
+            <Pulse className="h-4 w-4 rounded" delay={i * 0.08} />
           </div>
-          <Pulse className="h-8 w-28" />
+          <Pulse className="h-8 w-28" delay={i * 0.08 + 0.05} />
+          <Pulse className="h-2 w-20" delay={i * 0.08 + 0.1} />
         </div>
       ))}
     </div>
 
-    {/* Charts skeleton */}
-    <div className="grid lg:grid-cols-3 gap-6">
-      <div className="lg:col-span-2 glass-card p-6 rounded-xl">
-        <Pulse className="h-4 w-32 mb-4" />
-        <Pulse className="h-56 w-full rounded-lg" />
+    {/* Charts row */}
+    <div className="grid lg:grid-cols-3 gap-5">
+      <div className="lg:col-span-2 rounded-xl border border-border/20 bg-card/40 p-6">
+        <Pulse className="h-4 w-32 mb-4" delay={0.2} />
+        <Pulse className="h-52 w-full rounded-lg" delay={0.25} />
       </div>
-      <div className="glass-card p-6 rounded-xl">
-        <Pulse className="h-4 w-36 mb-4" />
-        <Pulse className="h-48 w-48 rounded-full mx-auto" />
+      <div className="rounded-xl border border-border/20 bg-card/40 p-6">
+        <Pulse className="h-4 w-36 mb-4" delay={0.3} />
+        <Pulse className="h-44 w-44 rounded-full mx-auto" delay={0.35} />
       </div>
     </div>
 
-    {/* Intelligence row skeleton */}
-    <div className="grid lg:grid-cols-3 gap-6">
-      {[1, 2, 3].map(i => (
-        <div key={i} className="glass-card p-6 rounded-xl space-y-3">
-          <Pulse className="h-3 w-20" />
-          <Pulse className="h-3 w-32" />
+    {/* Intelligence row */}
+    <div className="grid lg:grid-cols-3 gap-5">
+      {[0, 1, 2].map(i => (
+        <div key={i} className="rounded-xl border border-border/20 bg-card/40 p-6 space-y-3">
+          <Pulse className="h-3 w-20" delay={0.4 + i * 0.05} />
+          <Pulse className="h-3 w-32" delay={0.45 + i * 0.05} />
           <div className="space-y-2 pt-2">
-            {[1, 2, 3].map(j => (
-              <Pulse key={j} className="h-10 w-full" />
+            {[0, 1, 2].map(j => (
+              <Pulse key={j} className="h-10 w-full" delay={0.5 + i * 0.05 + j * 0.03} />
             ))}
           </div>
         </div>
       ))}
     </div>
-  </div>
+  </motion.div>
 );
 
 export { DashboardSkeleton };
