@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, ReferenceLine, CartesianGrid } from "recharts";
 import { ArrowRightLeft, AlertTriangle, Info } from "lucide-react";
+import { Link } from "react-router-dom";
 import { MetricRow } from "@/hooks/useMetrics";
 import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { formatCurrency, axisStyle, tooltipStyle, gridStyle, CHART_HEIGHT } from "@/lib/chart-config";
@@ -43,12 +44,12 @@ const EBITDABridgeChart = ({ metrics, datasetLabel }: Props) => {
       const contribution = revenue - cost;
       return {
         mode: "simplified" as const,
-        title: "Revenue → Operating Margin",
-        subtitle: "Data-limited: cost is not split (COGS/OpEx not provided)",
+        title: "Revenue vs Total Spend",
+        subtitle: "Limited insight — cost data is not categorised",
         steps: [
           { name: "Revenue", value: revenue, bottom: 0, height: revenue, type: "total" },
-          { name: "Total Cost", value: -cost, bottom: revenue - cost, height: cost, type: "negative" },
-          { name: "Contribution", value: contribution, bottom: 0, height: Math.abs(contribution), type: contribution >= 0 ? "subtotal" : "negative" },
+          { name: "Total Spend", value: -cost, bottom: revenue - cost, height: cost, type: "uncertain" },
+          { name: "Est. Net", value: contribution, bottom: 0, height: Math.abs(contribution), type: contribution >= 0 ? "uncertain" : "negative" },
         ],
       };
     }
@@ -65,6 +66,7 @@ const EBITDABridgeChart = ({ metrics, datasetLabel }: Props) => {
     total: "hsl(var(--primary))",
     subtotal: "hsl(var(--success))",
     negative: "hsl(var(--destructive))",
+    uncertain: "hsl(var(--muted-foreground))",
   };
 
   if (analysis.mode === "empty") {
@@ -135,9 +137,17 @@ const EBITDABridgeChart = ({ metrics, datasetLabel }: Props) => {
         )}
       </div>
       {analysis.mode === "simplified" && (
-        <p className="text-[11px] text-muted-foreground/80 mb-3 italic">
-          Costs are reported as a single total. We cannot identify whether spending is on production vs operations. To unlock full analysis, break costs into COGS and OpEx categories.
-        </p>
+        <div className="rounded-lg border border-warning/30 bg-warning/5 px-3 py-2 mb-3 space-y-1">
+          <p className="text-[11px] font-medium text-warning flex items-center gap-1.5">
+            <AlertTriangle className="w-3 h-3 shrink-0" /> Limited profitability insight
+          </p>
+          <p className="text-[11px] text-muted-foreground leading-relaxed">
+            We cannot assess margin quality because cost data is not categorised (e.g., production, marketing, operations). This view shows only total spend — not true operating margin.
+          </p>
+          <Link to="/data-upload" className="inline-flex text-[11px] font-semibold text-primary hover:underline mt-0.5">
+            Upload cost breakdown to unlock margin analysis →
+          </Link>
+        </div>
       )}
 
       {/* Narrative interpretation */}
@@ -167,9 +177,9 @@ const EBITDABridgeChart = ({ metrics, datasetLabel }: Props) => {
             <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [formatCurrency(Math.abs(v), { compact: false }), "Amount"]} />
             <ReferenceLine y={0} stroke="hsl(var(--border))" />
             <Bar dataKey="bottom" stackId="bridge" fill="transparent" />
-            <Bar dataKey="height" stackId="bridge" radius={[4, 4, 0, 0]}>
+             <Bar dataKey="height" stackId="bridge" radius={[4, 4, 0, 0]}>
               {analysis.steps!.map((entry, i) => (
-                <Cell key={i} fill={colors[entry.type]} fillOpacity={0.85} />
+                <Cell key={i} fill={colors[entry.type]} fillOpacity={entry.type === "uncertain" ? 0.45 : 0.85} strokeDasharray={entry.type === "uncertain" ? "4 2" : undefined} stroke={entry.type === "uncertain" ? colors.uncertain : undefined} />
               ))}
             </Bar>
           </BarChart>

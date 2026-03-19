@@ -22,12 +22,12 @@ const WaterfallChart = ({ data }: WaterfallChartProps) => {
 
     if (revenue === 0) return null;
 
-    const items: { name: string; value: number; type: "positive" | "negative" | "total" }[] = [];
+    const items: { name: string; value: number; type: "positive" | "negative" | "total" | "uncertain" }[] = [];
     items.push({ name: "Revenue", value: revenue, type: "positive" });
 
     if (cogs > 0) items.push({ name: "COGS", value: -cogs, type: "negative" });
     if (opex > 0) items.push({ name: "OpEx", value: -opex, type: "negative" });
-    if (cogs === 0 && opex === 0 && cost > 0) items.push({ name: "Total Cost", value: -cost, type: "negative" });
+    if (cogs === 0 && opex === 0 && cost > 0) items.push({ name: "Total Spend", value: -cost, type: "uncertain" });
     if (churnRevLoss > 0) items.push({ name: "Churn Loss", value: -churnRevLoss, type: "negative" });
 
     const net = items.reduce((s, i) => s + i.value, 0);
@@ -43,10 +43,13 @@ const WaterfallChart = ({ data }: WaterfallChartProps) => {
     });
   }, [data]);
 
+  const hasUncertain = analysis?.some(d => d.type === "uncertain");
+
   const colors: Record<string, string> = {
     positive: "hsl(var(--success))",
     negative: "hsl(var(--destructive))",
     total: "hsl(var(--primary))",
+    uncertain: "hsl(var(--muted-foreground))",
   };
 
   if (!analysis) {
@@ -71,9 +74,23 @@ const WaterfallChart = ({ data }: WaterfallChartProps) => {
 
   return (
     <div className="glass-card p-6 rounded-xl">
-      <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">P&L Waterfall</h3>
-      {/* Narrative: explain the net position */}
-      {(() => {
+      <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+        {hasUncertain ? "Revenue vs Spend" : "P&L Waterfall"}
+      </h3>
+      {hasUncertain && (
+        <div className="rounded-lg border border-warning/30 bg-warning/5 px-3 py-2 mb-3 space-y-1">
+          <p className="text-[11px] font-medium text-warning flex items-center gap-1.5">
+            <AlertTriangle className="w-3 h-3 shrink-0" /> Unstructured cost data
+          </p>
+          <p className="text-[11px] text-muted-foreground leading-relaxed">
+            Cost is reported as a single total — we cannot attribute spending to production, operations, or growth. The net figure is mathematically correct but not actionable.
+          </p>
+          <Link to="/data-upload" className="inline-flex text-[11px] font-semibold text-primary hover:underline mt-0.5">
+            Upload categorised costs →
+          </Link>
+        </div>
+      )}
+      {!hasUncertain && (() => {
         const net = analysis[analysis.length - 1];
         const rev = analysis[0];
         if (!net || !rev) return null;
@@ -97,7 +114,7 @@ const WaterfallChart = ({ data }: WaterfallChartProps) => {
             <Bar dataKey="bottom" stackId="waterfall" fill="transparent" />
             <Bar dataKey="height" stackId="waterfall" radius={[4, 4, 0, 0]}>
               {analysis.map((entry, i) => (
-                <Cell key={i} fill={colors[entry.type]} fillOpacity={0.85} />
+                <Cell key={i} fill={colors[entry.type]} fillOpacity={entry.type === "uncertain" ? 0.45 : 0.85} />
               ))}
             </Bar>
           </BarChart>
