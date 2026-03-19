@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import {
-  Upload, Zap, TrendingUp, ArrowRight, CheckCircle2,
-  FileSpreadsheet, BarChart3, Shield, X,
+  Zap, TrendingUp, ArrowRight, CheckCircle2,
+  FileSpreadsheet, Shield, X,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -17,15 +17,15 @@ interface WelcomeFlowProps {
 const STEPS = [
   {
     icon: FileSpreadsheet,
-    title: "Connect Your Data",
-    subtitle: "60 seconds to your first insight",
+    title: "Get Started in 60 Seconds",
+    subtitle: "Choose your path",
     description:
-      "Upload a CSV or connect directly to your database (Postgres, Snowflake, BigQuery). We'll auto-detect your metrics and build your intelligence layer.",
-    cta: "Upload Data",
-    ctaPath: "/data-upload",
-    secondaryCta: "Connect Database",
-    secondaryPath: "/data-connectors",
-    tip: "Try our sample dataset to explore the platform instantly — no data required.",
+      "Load our pre-built demo with 15 months of B2B SaaS data to see the platform in action — or upload your own CSV to start building your decision ledger.",
+    cta: "Try with Sample Data",
+    ctaPath: "/demo",
+    secondaryCta: "Upload My Data",
+    secondaryPath: "/data-upload",
+    tip: "The demo includes metrics, decisions, insights, advisories, and executive briefs — fully populated.",
   },
   {
     icon: Zap,
@@ -176,7 +176,7 @@ const WelcomeFlow = ({ hasData, displayName }: WelcomeFlowProps) => {
               {/* Tip */}
               {current.tip && (
                 <div className="flex items-start gap-2.5 p-3 rounded-lg bg-primary/[0.06] border border-primary/10 mb-5">
-                  <BarChart3 className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                  <TrendingUp className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                   <p className="text-xs text-foreground/80 leading-relaxed">{current.tip}</p>
                 </div>
               )}

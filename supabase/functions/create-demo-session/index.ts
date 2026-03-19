@@ -42,6 +42,15 @@ Deno.serve(async (req) => {
     if (!profile?.organization_id) throw new Error("Profile not created");
     const orgId = profile.organization_id;
 
+    // Get default workspace
+    const { data: workspace } = await admin
+      .from("workspaces")
+      .select("id")
+      .eq("organization_id", orgId)
+      .limit(1)
+      .single();
+    const workspaceId = workspace?.id;
+
     await admin.from("organizations").update({
       name: "Acme Corp (Demo)",
       industry: "SaaS / B2B Software",
@@ -49,6 +58,35 @@ Deno.serve(async (req) => {
       size_band: "51-200",
       onboarding_completed: true,
     }).eq("id", orgId);
+
+    // ─── Create Dataset + Project (critical for data contract) ───
+    const { data: dataset, error: dsErr } = await admin.from("datasets").insert({
+      organization_id: orgId,
+      name: "Acme Corp — 15 Month Operating Data",
+      uploaded_by: userId,
+      status: "active",
+      row_count: 90,
+      workspace_id: workspaceId,
+    }).select("id").single();
+    if (dsErr || !dataset) throw new Error("Failed to create dataset: " + (dsErr?.message || "unknown"));
+    const datasetId = dataset.id;
+
+    const { data: project, error: projErr } = await admin.from("projects").insert({
+      organization_id: orgId,
+      name: "Acme Corp Demo",
+      description: "Pre-loaded demo with 15 months of B2B SaaS operational data",
+      created_by: userId,
+      active_dataset_id: datasetId,
+      workspace_id: workspaceId,
+    }).select("id").single();
+    if (projErr || !project) throw new Error("Failed to create project: " + (projErr?.message || "unknown"));
+
+    // Attach dataset to project
+    await admin.from("project_datasets").insert({
+      project_id: project.id,
+      dataset_id: datasetId,
+      added_by: userId,
+    });
 
     // ─── Seed Metrics (15 months) ───
     const metricTypes = ["revenue", "cost", "churn_rate", "customer_count", "mrr", "nps"];
@@ -70,6 +108,7 @@ Deno.serve(async (req) => {
           organization_id: orgId, metric_type: mt, date: dateStr,
           value: Math.round(base[mt] * 100) / 100,
           source_type: "demo_seed", quality_score: 85 + Math.round(Math.random() * 15),
+          dataset_id: datasetId,
         });
       }
     }
@@ -111,6 +150,7 @@ Deno.serve(async (req) => {
         chosen_action: "Approved with modified timeline — hiring 3 AEs in Q2, 1 in Q3",
         capped_confidence: 68, raw_confidence: 82, predicted_net_impact: 420000,
         confidence_cap_reason: "Limited historical data on enterprise segment conversion rates",
+        dataset_id: datasetId,
       },
       {
         organization_id: orgId, recommended_action: "Implement automated onboarding reducing time-to-value from 14 days to 3 days",
@@ -119,25 +159,28 @@ Deno.serve(async (req) => {
         capped_confidence: 74, raw_confidence: 88, predicted_net_impact: 180000,
         outcome_delta: 145000, actual_value: 995000, baseline_value: 850000, prediction_accuracy_score: 80,
         confidence_cap_reason: "Churn attribution model has moderate variance",
+        dataset_id: datasetId,
       },
       {
         organization_id: orgId, recommended_action: "Reduce infrastructure costs by migrating to serverless architecture",
         decision_type: "cost_optimization", decision_status: "pending", execution_status: "not_started",
         capped_confidence: 55, raw_confidence: 71, predicted_net_impact: 95000,
         confidence_cap_reason: "Migration complexity estimates based on comparable companies",
+        dataset_id: datasetId,
       },
     ]);
 
-    // ─── Advisory Instances with REAL AI-Quality Narratives ───
+    // ─── Advisory Instances ───
     await admin.from("advisory_instances").insert([
       {
         organization_id: orgId, title: "CFO Risk Score Approaching Escalation Threshold",
         action: "Review cash burn projections and schedule CFO-CEO alignment meeting within 48 hours",
         advisory_type: "prescriptive", priority: "high", category: "risk_management", status: "open",
-        rationale: "The CFO risk index increased 23 points over 60 days, driven primarily by a 12% increase in operating expenses without corresponding revenue growth. At the current trajectory, the escalation threshold of 85/100 will be breached within 3 weeks. The primary cost drivers are: (1) Engineering headcount grew 18% vs. planned 12%, adding $45K/mo in burn, (2) Cloud infrastructure costs spiked 31% due to unoptimized data pipeline jobs, (3) Sales compensation structure front-loaded commissions reducing near-term cash reserves. Recommendation: Immediate freeze on non-critical hiring and infrastructure audit to recover $28K-35K/mo in variable costs.",
+        rationale: "The CFO risk index increased 23 points over 60 days, driven primarily by a 12% increase in operating expenses without corresponding revenue growth. At the current trajectory, the escalation threshold of 85/100 will be breached within 3 weeks.",
         expected_impact: "Prevent board escalation and stabilize cash runway from 11 months back to 14+ months",
         impact_score: 78, capped_confidence: 72, raw_confidence: 84, data_quality_index: 88,
         confidence_cap_reason: "Cost trajectory extrapolation based on 4-month trend with R² = 0.83",
+        dataset_id: datasetId,
         source_evidence: [
           { type: "metric_trend", description: "OpEx growth rate 18% vs revenue growth 7%", weight: 0.4 },
           { type: "anomaly", description: "Cloud spend anomaly detected in last 3 billing cycles", weight: 0.3 },
@@ -155,10 +198,11 @@ Deno.serve(async (req) => {
         organization_id: orgId, title: "Churn Velocity Anomaly in Mid-Market Segment",
         action: "Deploy targeted retention campaign for 14 mid-market accounts showing pre-churn behavioral patterns",
         advisory_type: "prescriptive", priority: "high", category: "retention", status: "open",
-        rationale: "Mid-market churn velocity increased 1.8x vs the trailing 6-month average. Causal analysis reveals three correlated factors: (1) Time-to-first-value for mid-market accounts averages 21 days vs 8 days for SMB — onboarding friction is 2.6x higher, (2) Feature adoption depth for churned accounts is 34% vs 67% for retained accounts — the 'aha moment' (3+ integrations connected) is not being reached, (3) NPS scores for mid-market declined from 52 to 38 over Q4, correlating with support ticket volume increase of 40%. The 14 at-risk accounts represent $42K MRR ($504K ARR). At current churn probability (68%), expected loss is $28.6K MRR if no intervention within 30 days.",
+        rationale: "Mid-market churn velocity increased 1.8x vs the trailing 6-month average. 14 accounts ($42K MRR at risk) show pre-churn behavioral patterns: login frequency down 45%, API usage down 62%, support tickets up 40%.",
         expected_impact: "Retain 9-11 of 14 at-risk accounts, preserving $27K-33K MRR ($324K-$396K ARR)",
         impact_score: 65, capped_confidence: 64, raw_confidence: 78, data_quality_index: 82,
         confidence_cap_reason: "Churn prediction model accuracy is 73% on validation set; mid-market sample size n=86",
+        dataset_id: datasetId,
         source_evidence: [
           { type: "behavioral", description: "Login frequency dropped 45% for flagged accounts", weight: 0.35 },
           { type: "survey", description: "NPS mid-market segment declined 14 points in 90 days", weight: 0.25 },
@@ -177,10 +221,11 @@ Deno.serve(async (req) => {
         organization_id: orgId, title: "Revenue Growth Deceleration — Strategic Pivot Window",
         action: "Evaluate product-led growth motion to complement sales-led pipeline",
         advisory_type: "strategic", priority: "medium", category: "growth", status: "open",
-        rationale: "Month-over-month revenue growth decelerated from 4.2% to 1.8% over the last quarter. While absolute revenue continues to increase, the growth rate trajectory suggests hitting a plateau at $1.1M-$1.2M MRR within 4 months under current go-to-market dynamics. Benchmarking against 127 comparable B2B SaaS companies in the $5M-$20M ARR band shows: (1) Companies with hybrid PLG+Sales motions grow 2.1x faster at this stage, (2) Self-serve conversion from free trial to paid averages 4.2% vs Acme's current 0% (no free tier), (3) CAC payback period at 14 months exceeds the industry median of 10 months. A freemium or product-qualified-lead (PQL) motion could unlock the 'missing middle' of $10K-$50K ACV deals currently lost to self-serve competitors.",
+        rationale: "Month-over-month revenue growth decelerated from 4.2% to 1.8% over the last quarter. Benchmarking against 127 comparable B2B SaaS companies in the $5M-$20M ARR band shows companies with hybrid PLG+Sales motions grow 2.1x faster at this stage.",
         expected_impact: "Accelerate growth rate to 3.5-4.5% MoM and reduce CAC payback to 9-11 months",
         impact_score: 58, capped_confidence: 52, raw_confidence: 68, data_quality_index: 79,
         confidence_cap_reason: "Strategic recommendations rely on industry benchmark analogy; direct A/B testing not yet possible",
+        dataset_id: datasetId,
         source_evidence: [
           { type: "trend", description: "Revenue growth rate declining: 4.2% → 3.1% → 2.4% → 1.8%", weight: 0.35 },
           { type: "benchmark", description: "Peer companies with PLG motion grow 2.1x faster at $5M-$20M ARR", weight: 0.35 },
@@ -192,36 +237,36 @@ Deno.serve(async (req) => {
     // ─── Real AI Insights (pre-generated quality) ───
     await admin.from("insights").insert([
       {
-        organization_id: orgId, severity: "high",
-        message: "Revenue growth is decelerating: MoM growth dropped from 4.2% to 1.8% over the last quarter. At this trajectory, you'll plateau at ~$1.15M MRR within 4 months. The primary driver is pipeline coverage declining from 3.8x to 2.6x — your sales team is closing deals but the top-of-funnel isn't replenishing fast enough. Consider: (1) increasing SDR capacity or (2) launching a product-led acquisition channel.",
+        organization_id: orgId, severity: "high", dataset_id: datasetId,
+        message: "Revenue growth is decelerating: MoM growth dropped from 4.2% to 1.8% over the last quarter. At this trajectory, you'll plateau at ~$1.15M MRR within 4 months. The primary driver is pipeline coverage declining from 3.8x to 2.6x — your sales team is closing deals but the top-of-funnel isn't replenishing fast enough.",
         category: "growth", confidence_score: 78, raw_confidence: 85, capped_confidence: 78,
         data_quality_index: 88, sample_size: 15,
         confidence_cap_reason: "Growth extrapolation confidence limited by 15-month data window",
       },
       {
-        organization_id: orgId, severity: "high",
-        message: "Cost structure anomaly: Operating expenses grew 18% while revenue grew only 7% over the same period. Engineering headcount (+18% vs planned +12%) and cloud infrastructure (+31% due to unoptimized pipelines) are the two largest contributors. If uncorrected, gross margin will compress from 38.8% to 33.2% by end of Q3 — below the 35% threshold that typically triggers investor concern at Series B.",
+        organization_id: orgId, severity: "high", dataset_id: datasetId,
+        message: "Cost structure anomaly: Operating expenses grew 18% while revenue grew only 7% over the same period. Engineering headcount (+18% vs planned +12%) and cloud infrastructure (+31% due to unoptimized pipelines) are the two largest contributors. Gross margin will compress from 38.8% to 33.2% by end of Q3 if uncorrected.",
         category: "cost", confidence_score: 82, raw_confidence: 90, capped_confidence: 82,
         data_quality_index: 92, sample_size: 15,
         confidence_cap_reason: "High confidence — direct measurement from financial metrics",
       },
       {
-        organization_id: orgId, severity: "medium",
-        message: "Mid-market churn velocity spiked 1.8x vs trailing average. 14 accounts ($42K MRR at risk) show pre-churn behavioral patterns: login frequency down 45%, API usage down 62%, support tickets up 40%. The root cause appears to be onboarding friction — time-to-first-value for mid-market is 21 days vs 8 days for SMB. Accounts that connect 3+ integrations within 14 days have 4x better retention.",
+        organization_id: orgId, severity: "medium", dataset_id: datasetId,
+        message: "Mid-market churn velocity spiked 1.8x vs trailing average. 14 accounts ($42K MRR at risk) show pre-churn behavioral patterns: login frequency down 45%, API usage down 62%, support tickets up 40%. Root cause: onboarding friction — time-to-first-value for mid-market is 21 days vs 8 days for SMB.",
         category: "retention", confidence_score: 71, raw_confidence: 80, capped_confidence: 71,
         data_quality_index: 84, sample_size: 86,
         confidence_cap_reason: "Churn model validated on n=86 mid-market accounts",
       },
       {
-        organization_id: orgId, severity: "medium",
-        message: "NPS declined 14 points (52→38) in the mid-market segment over 90 days, while SMB NPS remained stable at 48. Correlation analysis shows the strongest predictor of NPS decline is support ticket resolution time — mid-market tickets average 4.2 days vs the 1.8-day SLA. This segment generates 62% of total ARR but receives proportionally less CS coverage.",
+        organization_id: orgId, severity: "medium", dataset_id: datasetId,
+        message: "NPS declined 14 points (52→38) in the mid-market segment over 90 days, while SMB NPS remained stable at 48. Strongest predictor: support ticket resolution time — mid-market tickets average 4.2 days vs the 1.8-day SLA. This segment generates 62% of total ARR but receives proportionally less CS coverage.",
         category: "satisfaction", confidence_score: 74, raw_confidence: 82, capped_confidence: 74,
         data_quality_index: 80, sample_size: 86,
         confidence_cap_reason: "NPS survey response rate 41% — potential non-response bias",
       },
       {
-        organization_id: orgId, severity: "info",
-        message: "Positive signal: Customer acquisition cost (CAC) for SMB segment improved 22% over 6 months ($1,840→$1,435) driven by organic search growth (+34%) and improved trial-to-paid conversion (8.2%→11.1%). The SMB flywheel is working. Consider replicating the SMB onboarding playbook for mid-market with modifications for team-based setup workflows.",
+        organization_id: orgId, severity: "info", dataset_id: datasetId,
+        message: "Positive signal: Customer acquisition cost (CAC) for SMB segment improved 22% over 6 months ($1,840→$1,435) driven by organic search growth (+34%) and improved trial-to-paid conversion (8.2%→11.1%). The SMB flywheel is working. Consider replicating the SMB onboarding playbook for mid-market.",
         category: "acquisition", confidence_score: 85, raw_confidence: 91, capped_confidence: 85,
         data_quality_index: 90, sample_size: 15,
         confidence_cap_reason: "Strong signal — consistent trend across 6 data points",
@@ -240,14 +285,14 @@ Deno.serve(async (req) => {
       },
     ]);
 
-    // ─── Executive Briefs (pre-generated board-ready content) ───
+    // ─── Executive Briefs ───
     await admin.from("executive_briefs").insert([
       {
         organization_id: orgId, role_type: "ceo", generated_by: "system",
         risk_score: 62,
         summary_json: {
           headline: "Growth Deceleration Requires Strategic Response Within 30 Days",
-          executive_summary: "Acme Corp's revenue trajectory shows a clear deceleration pattern, with MoM growth dropping from 4.2% to 1.8% over the last quarter. While the business remains fundamentally healthy — gross margin at 38.8%, customer count growing, and SMB acquisition costs improving — the top-line growth slowdown demands attention before it becomes structural. The most actionable lever is mid-market retention, where 14 accounts representing $504K ARR are at elevated churn risk.",
+          executive_summary: "Acme Corp's revenue trajectory shows a clear deceleration pattern, with MoM growth dropping from 4.2% to 1.8% over the last quarter. While the business remains fundamentally healthy — gross margin at 38.8%, customer count growing, and SMB acquisition costs improving — the top-line growth slowdown demands attention before it becomes structural.",
           key_metrics: [
             { label: "MRR", value: "$86K", trend: "up", delta: "+1.8% MoM (decelerating)" },
             { label: "Gross Margin", value: "38.8%", trend: "down", delta: "-2.1pp vs last quarter" },
@@ -268,7 +313,7 @@ Deno.serve(async (req) => {
       },
     ]);
 
-    // ─── Notification Preferences (enable Slack by default for demo) ───
+    // ─── Notification Preferences ───
     await admin.from("notification_preferences").insert([
       {
         organization_id: orgId, role_type: "ceo",
