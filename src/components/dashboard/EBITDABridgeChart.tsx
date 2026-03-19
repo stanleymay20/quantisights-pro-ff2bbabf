@@ -136,9 +136,17 @@ const EBITDABridgeChart = ({ metrics, datasetLabel }: Props) => {
         )}
       </div>
       {analysis.mode === "simplified" && (
-        <p className="text-[11px] text-muted-foreground/80 mb-3 italic">
-          Costs are reported as a single total. We cannot identify whether spending is on production vs operations. To unlock full analysis, break costs into COGS and OpEx categories.
-        </p>
+        <div className="rounded-lg border border-warning/30 bg-warning/5 px-3 py-2 mb-3 space-y-1">
+          <p className="text-[11px] font-medium text-warning flex items-center gap-1.5">
+            <AlertTriangle className="w-3 h-3 shrink-0" /> Limited profitability insight
+          </p>
+          <p className="text-[11px] text-muted-foreground leading-relaxed">
+            We cannot assess margin quality because cost data is not categorised (e.g., production, marketing, operations). This view shows only total spend — not true operating margin.
+          </p>
+          <Link to="/data-upload" className="inline-flex text-[11px] font-semibold text-primary hover:underline mt-0.5">
+            Upload cost breakdown to unlock margin analysis →
+          </Link>
+        </div>
       )}
 
       {/* Narrative interpretation */}
