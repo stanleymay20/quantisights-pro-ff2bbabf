@@ -16,8 +16,8 @@ import { format, formatDistanceToNow } from "date-fns";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from "recharts";
 
 const STATUS_COLORS: Record<string, string> = {
-  completed: "text-green-500",
-  running: "text-blue-500",
+  completed: "text-success",
+  running: "text-primary",
   failed: "text-destructive",
   pending: "text-muted-foreground",
 };

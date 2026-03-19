@@ -195,6 +195,7 @@ const DecisionLedgerPage = () => {
     setSimRunning(true);
     setSimResult(null);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
       const { data, error } = await supabase.functions.invoke("decision-impact-sim", {
         body: {
           organization_id: currentOrgId,
@@ -202,6 +203,7 @@ const DecisionLedgerPage = () => {
           decision_id: decisionId,
           ...impactForm,
         },
+        ...(session?.access_token ? { headers: { Authorization: `Bearer ${session.access_token}` } } : {}),
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
