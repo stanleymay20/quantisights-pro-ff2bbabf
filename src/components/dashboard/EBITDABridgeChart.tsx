@@ -41,15 +41,15 @@ const EBITDABridgeChart = ({ metrics, datasetLabel }: Props) => {
     }
 
     if (hasRevenue && hasCost) {
-      const contribution = revenue - cost;
+      const net = revenue - cost;
       return {
         mode: "simplified" as const,
         title: "Revenue vs Total Spend",
         subtitle: "Limited insight — cost data is not categorised",
         steps: [
           { name: "Revenue", value: revenue, bottom: 0, height: revenue, type: "total" },
-          { name: "Total Spend", value: -cost, bottom: revenue - cost, height: cost, type: "uncertain" },
-          { name: "Est. Net", value: contribution, bottom: 0, height: Math.abs(contribution), type: contribution >= 0 ? "uncertain" : "negative" },
+          { name: "Total Spend", value: cost, bottom: 0, height: cost, type: "uncertain" },
+          { name: "Est. Net", value: Math.abs(net), bottom: 0, height: Math.abs(net), type: net >= 0 ? "subtotal" : "negative" },
         ],
       };
     }

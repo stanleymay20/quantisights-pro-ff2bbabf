@@ -28,6 +28,17 @@ const WaterfallChart = ({ data }: WaterfallChartProps) => {
     if (cogs > 0) items.push({ name: "COGS", value: -cogs, type: "negative" });
     if (opex > 0) items.push({ name: "OpEx", value: -opex, type: "negative" });
     if (cogs === 0 && opex === 0 && cost > 0) items.push({ name: "Total Spend", value: -cost, type: "uncertain" });
+
+    // If unsplit cost, use zero-baseline grouped bars instead of waterfall
+    if (cogs === 0 && opex === 0 && cost > 0) {
+      const net = revenue - cost - churnRevLoss;
+      return [
+        { name: "Revenue", value: revenue, bottom: 0, height: revenue, type: "positive" as const },
+        { name: "Total Spend", value: cost, bottom: 0, height: cost, type: "uncertain" as const },
+        ...(churnRevLoss > 0 ? [{ name: "Churn Loss", value: churnRevLoss, bottom: 0, height: churnRevLoss, type: "negative" as const }] : []),
+        { name: "Net", value: Math.abs(net), bottom: 0, height: Math.abs(net), type: net >= 0 ? "total" as const : "negative" as const },
+      ];
+    }
     if (churnRevLoss > 0) items.push({ name: "Churn Loss", value: -churnRevLoss, type: "negative" });
 
     const net = items.reduce((s, i) => s + i.value, 0);
