@@ -21,8 +21,8 @@ export const TIERS = {
     price: 499,
     currency: "€",
     interval: "month",
-    price_id: "price_1T6Ji9JYFIBeCvef3KiArWFx",
-    product_id: "prod_U4SdjQfflN6R1d",
+    price_id: "price_1TCfwlJYFIBeCvefvzY9z5m9",
+    product_id: "prod_UB202T0yfALsxx",
     tagline: "Full AI decision engine for operational and leadership teams",
     features: [
       "Unlimited datasets & integrations",
