@@ -272,6 +272,8 @@ const Dashboard = () => {
           </div>
         </header>
 
+        {isDemoUser && hasData && <DemoBanner />}
+
         <main id="main-content" className="flex-1 p-3 sm:p-4 md:p-8 overflow-auto">
           {!hasData && !isLoading ? (
             <motion.div
