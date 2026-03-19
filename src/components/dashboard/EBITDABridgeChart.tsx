@@ -65,6 +65,7 @@ const EBITDABridgeChart = ({ metrics, datasetLabel }: Props) => {
     total: "hsl(var(--primary))",
     subtotal: "hsl(var(--success))",
     negative: "hsl(var(--destructive))",
+    uncertain: "hsl(var(--muted-foreground))",
   };
 
   if (analysis.mode === "empty") {
