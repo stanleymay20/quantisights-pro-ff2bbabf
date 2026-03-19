@@ -66,6 +66,9 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
               <NavItem link={link} onClick={() => setMobileOpen(false)} />
             </div>
           ))}
+          <Link to="/demo" className="block text-sm text-primary font-semibold hover:text-foreground py-2" onClick={() => setMobileOpen(false)}>
+            Try Demo
+          </Link>
           <Link to="/login" className="block text-sm text-muted-foreground hover:text-foreground py-2" onClick={() => setMobileOpen(false)}>
             Sign In
           </Link>
