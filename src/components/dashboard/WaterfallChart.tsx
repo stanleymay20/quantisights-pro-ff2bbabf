@@ -33,7 +33,7 @@ const WaterfallChart = ({ data }: WaterfallChartProps) => {
       ];
     }
 
-    const items: { name: string; value: number; type: "positive" | "negative" | "positive" | "uncertain" }[] = [];
+    const items: { name: string; value: number; type: "positive" | "negative" | "uncertain" }[] = [];
     items.push({ name: "Revenue", value: revenue, type: "positive" });
 
     if (cogs > 0) items.push({ name: "COGS", value: -cogs, type: "negative" });
