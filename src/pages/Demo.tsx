@@ -22,11 +22,15 @@ const Demo = () => {
 
     const initDemo = async () => {
       try {
-        // Sign out any existing session
         await supabase.auth.signOut();
-        // Clear any stale tour/welcome flags so demo users see the guided experience
+
+        sessionStorage.setItem("quantivis_demo_mode", "true");
+        sessionStorage.removeItem("quantivis_org_id");
+        sessionStorage.removeItem("quantivis_workspace_id");
+        sessionStorage.removeItem("quantivis_project_id");
+
         localStorage.removeItem("quantivis_tour_completed");
-        localStorage.removeItem("quantivis_welcome_completed");
+        localStorage.setItem("quantivis_welcome_completed", "true");
 
         if (cancelled) return;
         setCurrentStep(1);
@@ -43,7 +47,6 @@ const Demo = () => {
         if (cancelled) return;
         setCurrentStep(3);
 
-        // Set the session from the returned tokens
         const { error: sessErr } = await supabase.auth.setSession({
           access_token: data.access_token,
           refresh_token: data.refresh_token,
@@ -56,6 +59,7 @@ const Demo = () => {
 
         navigate("/dashboard", { replace: true });
       } catch (err: any) {
+        sessionStorage.removeItem("quantivis_demo_mode");
         if (!cancelled) {
           console.error("Demo init error:", err);
           setError(err.message || "Failed to create demo session");
