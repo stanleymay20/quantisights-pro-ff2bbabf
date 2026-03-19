@@ -154,9 +154,9 @@ const ExecutiveQuickView = memo(({
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium line-clamp-2">{insight.message}</p>
                 </div>
-                {insight.confidence_score != null && (
+                {(insight.capped_confidence ?? insight.confidence_score) != null && (
                   <span className="text-[10px] font-mono text-muted-foreground shrink-0">
-                    {Math.round(insight.confidence_score * 100)}%
+                    {Math.round((insight.capped_confidence ?? insight.confidence_score ?? 0))}%
                   </span>
                 )}
               </div>
