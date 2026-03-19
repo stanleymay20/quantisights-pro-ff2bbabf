@@ -1284,7 +1284,7 @@ const DataUpload = () => {
                           <p className="text-xs text-muted-foreground">Missing values</p>
                         </div>
                         <div className="p-3 rounded-lg bg-muted/30 border border-border/40">
-                          <p className={`text-lg font-bold ${diagnostics.outlierCount > 5 ? "text-yellow-500" : "text-green-500"}`}>
+                          <p className={`text-lg font-bold ${diagnostics.outlierCount > 5 ? "text-warning" : "text-success"}`}>
                             {diagnostics.outlierCount}
                           </p>
                           <p className="text-xs text-muted-foreground">Outliers detected</p>
