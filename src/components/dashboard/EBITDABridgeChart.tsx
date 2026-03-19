@@ -146,7 +146,7 @@ const EBITDABridgeChart = ({ metrics, datasetLabel }: Props) => {
           </span>
         )}
       </div>
-      <div className="flex items-center gap-1.5 mb-4">
+      <div className="flex items-center gap-1.5 mb-1">
         <p className="text-[11px] text-muted-foreground">{analysis.subtitle}</p>
         {analysis.mode === "simplified" && (
           <TooltipProvider>
