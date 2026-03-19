@@ -27,7 +27,7 @@ const WaterfallChart = ({ data }: WaterfallChartProps) => {
 
     if (cogs > 0) items.push({ name: "COGS", value: -cogs, type: "negative" });
     if (opex > 0) items.push({ name: "OpEx", value: -opex, type: "negative" });
-    if (cogs === 0 && opex === 0 && cost > 0) items.push({ name: "Total Cost", value: -cost, type: "negative" });
+    if (cogs === 0 && opex === 0 && cost > 0) items.push({ name: "Total Spend", value: -cost, type: "uncertain" });
     if (churnRevLoss > 0) items.push({ name: "Churn Loss", value: -churnRevLoss, type: "negative" });
 
     const net = items.reduce((s, i) => s + i.value, 0);
