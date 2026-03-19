@@ -45,7 +45,7 @@ const LEVEL_CONFIG: Record<ProtectionLevel, {
   },
   exposed: {
     label: "Exposed",
-    description: "Critical governance gaps. Unresolved signals and unclosed decisions increase board risk.",
+    description: "Open signals detected. Review and resolve to improve governance posture.",
     icon: ShieldAlert,
     containerClass: "border-destructive/30 bg-destructive/[0.03]",
     badgeClass: "bg-destructive/10 text-destructive",
