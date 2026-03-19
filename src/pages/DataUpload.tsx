@@ -1082,7 +1082,7 @@ const DataUpload = () => {
                           <div key={title} className="rounded-lg border border-border overflow-hidden">
                             <div className="px-4 py-3 bg-muted/30 flex items-center justify-between">
                               <div className="flex items-center gap-2">
-                                <AlertTriangle className="w-4 h-4 text-yellow-500" />
+                                <AlertTriangle className="w-4 h-4 text-warning" />
                                 <span className="text-sm font-medium">{title}</span>
                                 <Badge variant="outline" className="text-xs">{errs.length} row{errs.length > 1 ? "s" : ""}</Badge>
                               </div>
