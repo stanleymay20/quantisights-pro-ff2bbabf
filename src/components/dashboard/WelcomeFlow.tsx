@@ -8,6 +8,7 @@ import {
 import { useNavigate } from "react-router-dom";
 
 const WELCOME_KEY = "quantivis_welcome_completed";
+const DEMO_MODE_KEY = "quantivis_demo_mode";
 
 interface WelcomeFlowProps {
   hasData: boolean;
@@ -59,12 +60,20 @@ const WelcomeFlow = ({ hasData, displayName }: WelcomeFlowProps) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (hasData) return; // Don't show if they already have data
+    const isDemoMode = sessionStorage.getItem(DEMO_MODE_KEY) === "true";
+
+    if (hasData || isDemoMode) {
+      setVisible(false);
+      return;
+    }
+
     const completed = localStorage.getItem(WELCOME_KEY);
     if (!completed) {
       const timer = setTimeout(() => setVisible(true), 400);
       return () => clearTimeout(timer);
     }
+
+    setVisible(false);
   }, [hasData]);
 
   const handleComplete = () => {

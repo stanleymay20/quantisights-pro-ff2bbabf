@@ -24,6 +24,7 @@ const Demo = () => {
       try {
         await supabase.auth.signOut();
 
+        sessionStorage.setItem("quantivis_demo_mode", "true");
         sessionStorage.removeItem("quantivis_org_id");
         sessionStorage.removeItem("quantivis_workspace_id");
         sessionStorage.removeItem("quantivis_project_id");
@@ -58,6 +59,7 @@ const Demo = () => {
 
         navigate("/dashboard", { replace: true });
       } catch (err: any) {
+        sessionStorage.removeItem("quantivis_demo_mode");
         if (!cancelled) {
           console.error("Demo init error:", err);
           setError(err.message || "Failed to create demo session");
