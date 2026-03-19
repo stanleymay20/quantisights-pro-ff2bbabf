@@ -43,12 +43,12 @@ const EBITDABridgeChart = ({ metrics, datasetLabel }: Props) => {
       const contribution = revenue - cost;
       return {
         mode: "simplified" as const,
-        title: "Revenue → Operating Margin",
-        subtitle: "Data-limited: cost is not split (COGS/OpEx not provided)",
+        title: "Revenue vs Total Spend",
+        subtitle: "Limited insight — cost data is not categorised",
         steps: [
           { name: "Revenue", value: revenue, bottom: 0, height: revenue, type: "total" },
-          { name: "Total Cost", value: -cost, bottom: revenue - cost, height: cost, type: "negative" },
-          { name: "Contribution", value: contribution, bottom: 0, height: Math.abs(contribution), type: contribution >= 0 ? "subtotal" : "negative" },
+          { name: "Total Spend", value: -cost, bottom: revenue - cost, height: cost, type: "uncertain" },
+          { name: "Est. Net", value: contribution, bottom: 0, height: Math.abs(contribution), type: contribution >= 0 ? "uncertain" : "negative" },
         ],
       };
     }
