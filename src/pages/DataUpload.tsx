@@ -843,7 +843,7 @@ const DataUpload = () => {
                     {hasYearOnlyDates && !yearAutoFixed && (
                       <motion.div
                         initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}
-                        className="mt-4 p-4 rounded-lg border border-yellow-500/30 bg-yellow-500/5"
+                        className="mt-4 p-4 rounded-lg border border-warning/30 bg-warning/5"
                       >
                         <div className="flex items-start gap-3">
                           <Wand2 className="w-4 h-4 text-warning mt-0.5 shrink-0" />
