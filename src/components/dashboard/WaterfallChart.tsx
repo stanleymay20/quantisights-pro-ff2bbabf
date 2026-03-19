@@ -28,6 +28,17 @@ const WaterfallChart = ({ data }: WaterfallChartProps) => {
     if (cogs > 0) items.push({ name: "COGS", value: -cogs, type: "negative" });
     if (opex > 0) items.push({ name: "OpEx", value: -opex, type: "negative" });
     if (cogs === 0 && opex === 0 && cost > 0) items.push({ name: "Total Spend", value: -cost, type: "uncertain" });
+
+    // If unsplit cost, use zero-baseline grouped bars instead of waterfall
+    if (cogs === 0 && opex === 0 && cost > 0) {
+      const net = revenue - cost - churnRevLoss;
+      return [
+        { name: "Revenue", value: revenue, bottom: 0, height: revenue, type: "positive" as const },
+        { name: "Total Spend", value: cost, bottom: 0, height: cost, type: "uncertain" as const },
+        ...(churnRevLoss > 0 ? [{ name: "Churn Loss", value: churnRevLoss, bottom: 0, height: churnRevLoss, type: "negative" as const }] : []),
+        { name: "Net", value: Math.abs(net), bottom: 0, height: Math.abs(net), type: net >= 0 ? "total" as const : "negative" as const },
+      ];
+    }
     if (churnRevLoss > 0) items.push({ name: "Churn Loss", value: -churnRevLoss, type: "negative" });
 
     const net = items.reduce((s, i) => s + i.value, 0);
@@ -111,8 +122,12 @@ const WaterfallChart = ({ data }: WaterfallChartProps) => {
             <YAxis {...axisStyle} tickFormatter={(v: number) => formatCurrency(v)} />
             <Tooltip contentStyle={tooltipStyle} formatter={(val: number) => [formatCurrency(Math.abs(val), { compact: false }), "Value"]} />
             <ReferenceLine y={0} stroke="hsl(var(--border))" />
-            <Bar dataKey="bottom" stackId="waterfall" fill="transparent" />
-            <Bar dataKey="height" stackId="waterfall" radius={[4, 4, 0, 0]}>
+            <Bar dataKey="bottom" stackId="waterfall" fill="transparent" isAnimationActive={false} />
+            <Bar dataKey="height" stackId="waterfall" radius={[4, 4, 0, 0]} label={({ x, y, width, index }: any) => {
+              const entry = analysis![index];
+              if (!entry) return null;
+              return <text x={x + width / 2} y={y - 6} textAnchor="middle" fontSize={10} fill="hsl(var(--foreground))" opacity={0.7}>{formatCurrency(entry.value)}</text>;
+            }}>
               {analysis.map((entry, i) => (
                 <Cell key={i} fill={colors[entry.type]} fillOpacity={entry.type === "uncertain" ? 0.45 : 0.85} />
               ))}
