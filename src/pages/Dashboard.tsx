@@ -151,8 +151,8 @@ const Dashboard = () => {
 
   return (
     <>
-      {hasData && <GuidedTour />}
-      <WelcomeFlow hasData={hasData} displayName={displayName} />
+      {showGuidedTour && <GuidedTour />}
+      {showWelcomeFlow && <WelcomeFlow hasData={hasData} displayName={displayName} />}
         <IntelligenceStatusBar
           hasData={hasData}
           insights={insights}
