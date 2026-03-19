@@ -55,7 +55,22 @@ const FunnelChart = ({ metrics }: FunnelChartProps) => {
 
   return (
     <div className="glass-card p-6 rounded-xl">
-      <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">Acquisition Funnel</h3>
+      <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Acquisition Funnel</h3>
+      {/* Narrative: overall conversion */}
+      {stages.length >= 2 && (() => {
+        const overallConversion = ((stages[stages.length - 1].value / stages[0].value) * 100).toFixed(1);
+        const weakestIdx = stages.reduce((worst, s, i) => {
+          if (i === 0) return worst;
+          const rate = s.value / stages[i - 1].value;
+          return rate < (stages[worst]?.value ?? Infinity) / (stages[worst - 1]?.value ?? 1) ? i : worst;
+        }, 1);
+        return (
+          <p className="text-[11px] text-foreground/80 leading-relaxed mb-3">
+            Overall conversion: {overallConversion}% from {stages[0].label} to {stages[stages.length - 1].label}.
+            {weakestIdx > 0 && ` Biggest drop-off: ${stages[weakestIdx - 1].label} → ${stages[weakestIdx].label}.`}
+          </p>
+        );
+      })()}
       <div className="space-y-3 py-2">
         {stages.map((stage, i) => {
           const widthPct = Math.max(20, (stage.value / maxValue) * 100);

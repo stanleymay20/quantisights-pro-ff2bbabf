@@ -71,7 +71,21 @@ const WaterfallChart = ({ data }: WaterfallChartProps) => {
 
   return (
     <div className="glass-card p-6 rounded-xl">
-      <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">P&L Waterfall</h3>
+      <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">P&L Waterfall</h3>
+      {/* Narrative: explain the net position */}
+      {(() => {
+        const net = analysis[analysis.length - 1];
+        const rev = analysis[0];
+        if (!net || !rev) return null;
+        return (
+          <p className="text-[11px] text-foreground/80 leading-relaxed mb-3">
+            {net.value >= 0
+              ? `After all deductions, the business retains ${formatCurrency(net.value)} — ${((net.value / rev.value) * 100).toFixed(0)}% of revenue flows to the bottom line.`
+              : `The business is spending more than it earns, with a net loss of ${formatCurrency(Math.abs(net.value))}. Cost reduction is critical.`
+            }
+          </p>
+        );
+      })()}
       <div style={{ height: CHART_HEIGHT }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={analysis} margin={{ top: 8, right: 8, bottom: 0, left: 4 }}>
