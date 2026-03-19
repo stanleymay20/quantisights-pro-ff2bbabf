@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { AlertTriangle } from "lucide-react";
 import { Link } from "react-router-dom";
-import { formatNumber } from "@/lib/chart-config";
+import { formatNumber, CHART_COLORS, CHART_OPACITY } from "@/lib/chart-config";
 
 interface FunnelChartProps {
   metrics: { metric_type: string; value: number }[];
@@ -53,6 +53,9 @@ const FunnelChart = ({ metrics }: FunnelChartProps) => {
 
   const maxValue = stages[0]?.value || 1;
 
+  /** Funnel uses primary color with decreasing opacity per stage */
+  const stageOpacity = (i: number) => Math.max(CHART_OPACITY.uncertain, CHART_OPACITY.full - i * 0.15);
+
   return (
     <div className="glass-card p-6 rounded-xl">
       <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Acquisition Funnel</h3>
@@ -89,7 +92,8 @@ const FunnelChart = ({ metrics }: FunnelChartProps) => {
                     className="h-9 rounded-lg flex items-center justify-center transition-all"
                     style={{
                       width: `${widthPct}%`,
-                      backgroundColor: `hsl(var(--primary) / ${1 - i * 0.15})`,
+                      backgroundColor: CHART_COLORS.primary,
+                      opacity: stageOpacity(i),
                     }}
                   >
                     <span className="text-xs font-bold text-primary-foreground drop-shadow-sm">

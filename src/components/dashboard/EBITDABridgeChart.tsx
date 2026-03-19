@@ -4,7 +4,7 @@ import { ArrowRightLeft, AlertTriangle, Info } from "lucide-react";
 import { Link } from "react-router-dom";
 import { MetricRow } from "@/hooks/useMetrics";
 import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { formatCurrency, axisStyle, tooltipStyle, gridStyle, CHART_HEIGHT } from "@/lib/chart-config";
+import { formatCurrency, axisStyle, tooltipStyle, gridStyle, CHART_HEIGHT, CHART_COLORS, CHART_OPACITY } from "@/lib/chart-config";
 
 interface Props {
   metrics: MetricRow[];
@@ -31,11 +31,11 @@ const EBITDABridgeChart = ({ metrics, datasetLabel }: Props) => {
         title: "EBITDA Bridge",
         subtitle: "Revenue → EBITDA (from mapped data)",
         steps: [
-          { name: "Revenue", value: revenue, bottom: 0, height: revenue, type: "total" },
+          { name: "Revenue", value: revenue, bottom: 0, height: revenue, type: "positive" },
           { name: "COGS", value: -cogs, bottom: revenue - cogs, height: cogs, type: "negative" },
           { name: "Gross Profit", value: grossProfit, bottom: 0, height: grossProfit, type: "subtotal" },
           { name: "OpEx", value: -opex, bottom: grossProfit - opex, height: opex, type: "negative" },
-          { name: "EBITDA", value: ebitda, bottom: 0, height: Math.abs(ebitda), type: ebitda >= 0 ? "total" : "negative" },
+          { name: "EBITDA", value: ebitda, bottom: 0, height: Math.abs(ebitda), type: ebitda >= 0 ? "positive" : "negative" },
         ],
       };
     }
@@ -47,7 +47,7 @@ const EBITDABridgeChart = ({ metrics, datasetLabel }: Props) => {
         title: "Revenue vs Total Spend",
         subtitle: "Limited insight — cost data is not categorised",
         steps: [
-          { name: "Revenue", value: revenue, bottom: 0, height: revenue, type: "total" },
+          { name: "Revenue", value: revenue, bottom: 0, height: revenue, type: "positive" },
           { name: "Total Spend", value: cost, bottom: 0, height: cost, type: "uncertain" },
           { name: "Est. Net", value: Math.abs(net), bottom: 0, height: Math.abs(net), type: net >= 0 ? "subtotal" : "negative" },
         ],
@@ -62,11 +62,11 @@ const EBITDABridgeChart = ({ metrics, datasetLabel }: Props) => {
     return { revenue: types.has("revenue"), cogs: types.has("cogs"), opex: types.has("opex"), cost: types.has("cost") };
   }, [metrics]);
 
-  const colors: Record<string, string> = {
-    total: "hsl(var(--primary))",
-    subtotal: "hsl(var(--success))",
-    negative: "hsl(var(--destructive))",
-    uncertain: "hsl(var(--muted-foreground))",
+  const colorMap: Record<string, string> = {
+    positive: CHART_COLORS.positive,
+    subtotal: CHART_COLORS.subtotal,
+    negative: CHART_COLORS.negative,
+    uncertain: CHART_COLORS.uncertain,
   };
 
   if (analysis.mode === "empty") {
@@ -155,13 +155,14 @@ const EBITDABridgeChart = ({ metrics, datasetLabel }: Props) => {
         const net = analysis.steps[analysis.steps.length - 1];
         const rev = analysis.steps[0];
         if (!net || !rev || rev.value === 0) return null;
-        const marginPct = ((net.value / rev.value) * 100).toFixed(0);
-        const isHealthy = net.value > 0 && Number(marginPct) > 20;
+        const netValue = net.type === "negative" ? -net.value : net.value;
+        const marginPct = ((netValue / rev.value) * 100).toFixed(0);
+        const isHealthy = netValue > 0 && Number(marginPct) > 20;
         return (
           <p className="text-[11px] text-foreground/80 mb-3 leading-relaxed">
             {isHealthy
-              ? `The business retains ${marginPct}% of revenue as profit — a healthy operating position.`
-              : net.value > 0
+              ? `Revenue exceeds total spend by a significant margin, retaining ${marginPct}% as profit — a healthy operating position.`
+              : netValue > 0
               ? `Operating margin is ${marginPct}% — thin but positive. Cost optimization could meaningfully improve profitability.`
               : `The business is operating at a loss. Immediate cost review or revenue acceleration is recommended.`}
           </p>
@@ -170,20 +171,26 @@ const EBITDABridgeChart = ({ metrics, datasetLabel }: Props) => {
 
       <div style={{ height: CHART_HEIGHT }}>
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={analysis.steps!} barCategoryGap="20%" margin={{ top: 8, right: 8, bottom: 0, left: 4 }}>
+          <BarChart data={analysis.steps!} barCategoryGap="20%" margin={{ top: 16, right: 8, bottom: 0, left: 4 }}>
             <CartesianGrid {...gridStyle} vertical={false} />
             <XAxis dataKey="name" {...axisStyle} />
             <YAxis {...axisStyle} tickFormatter={(v) => formatCurrency(v)} />
             <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [formatCurrency(Math.abs(v), { compact: false }), "Amount"]} />
             <ReferenceLine y={0} stroke="hsl(var(--border))" />
             <Bar dataKey="bottom" stackId="bridge" fill="transparent" isAnimationActive={false} />
-             <Bar dataKey="height" stackId="bridge" radius={[4, 4, 0, 0]} label={({ x, y, width, value, index }: any) => {
-               const entry = analysis.steps![index];
-               if (!entry) return null;
-               return <text x={x + width / 2} y={y - 6} textAnchor="middle" fontSize={10} fill="hsl(var(--foreground))" opacity={0.7}>{formatCurrency(entry.value < 0 ? Math.abs(entry.value) : entry.value)}</text>;
-             }}>
+            <Bar dataKey="height" stackId="bridge" radius={[4, 4, 0, 0]} label={({ x, y, width, index }: any) => {
+              const entry = analysis.steps![index];
+              if (!entry) return null;
+              return <text x={x + width / 2} y={y - 6} textAnchor="middle" fontSize={10} fill="hsl(var(--foreground))" opacity={0.7}>{formatCurrency(Math.abs(entry.value))}</text>;
+            }}>
               {analysis.steps!.map((entry, i) => (
-                <Cell key={i} fill={colors[entry.type]} fillOpacity={entry.type === "uncertain" ? 0.45 : 0.85} strokeDasharray={entry.type === "uncertain" ? "4 2" : undefined} stroke={entry.type === "uncertain" ? colors.uncertain : undefined} />
+                <Cell
+                  key={i}
+                  fill={colorMap[entry.type]}
+                  fillOpacity={entry.type === "uncertain" ? CHART_OPACITY.uncertain : CHART_OPACITY.full}
+                  strokeDasharray={entry.type === "uncertain" ? "4 2" : undefined}
+                  stroke={entry.type === "uncertain" ? CHART_COLORS.uncertain : undefined}
+                />
               ))}
             </Bar>
           </BarChart>

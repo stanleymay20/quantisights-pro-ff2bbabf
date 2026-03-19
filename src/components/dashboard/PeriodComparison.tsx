@@ -1,6 +1,6 @@
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid } from "recharts";
 import { useMemo } from "react";
-import { formatCurrency, axisStyle, tooltipStyle, gridStyle, CHART_HEIGHT } from "@/lib/chart-config";
+import { formatCurrency, axisStyle, tooltipStyle, gridStyle, CHART_HEIGHT, CHART_COLORS, CHART_OPACITY } from "@/lib/chart-config";
 
 interface PeriodComparisonProps {
   data: { month: string; revenue: number }[];
@@ -61,8 +61,8 @@ const PeriodComparison = ({ data }: PeriodComparisonProps) => {
               wrapperStyle={{ fontSize: "11px" }}
               formatter={(value) => value === "previous" ? "Previous Period" : "Current Period"}
             />
-            <Bar dataKey="previous" fill="hsl(var(--muted-foreground))" fillOpacity={0.4} radius={[4, 4, 0, 0]} />
-            <Bar dataKey="current" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="previous" fill={CHART_COLORS.comparison} fillOpacity={CHART_OPACITY.muted} radius={[4, 4, 0, 0]} />
+            <Bar dataKey="current" fill={CHART_COLORS.primary} fillOpacity={CHART_OPACITY.full} radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>

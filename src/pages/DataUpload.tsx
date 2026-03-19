@@ -843,10 +843,10 @@ const DataUpload = () => {
                     {hasYearOnlyDates && !yearAutoFixed && (
                       <motion.div
                         initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}
-                        className="mt-4 p-4 rounded-lg border border-yellow-500/30 bg-yellow-500/5"
+                        className="mt-4 p-4 rounded-lg border border-warning/30 bg-warning/5"
                       >
                         <div className="flex items-start gap-3">
-                          <Wand2 className="w-4 h-4 text-yellow-600 mt-0.5 shrink-0" />
+                          <Wand2 className="w-4 h-4 text-warning mt-0.5 shrink-0" />
                           <div className="flex-1">
                             <p className="text-sm font-medium text-foreground">Year-only dates detected</p>
                             <p className="text-xs text-muted-foreground mt-0.5">
@@ -864,9 +864,9 @@ const DataUpload = () => {
                     )}
 
                     {yearAutoFixed && (
-                      <div className="mt-4 p-3 rounded-lg border border-green-500/30 bg-green-500/5 flex items-center gap-2 text-sm">
-                        <Check className="w-4 h-4 text-green-500" />
-                        <span className="text-green-700 dark:text-green-400">Year values converted to full dates.</span>
+                      <div className="mt-4 p-3 rounded-lg border border-success/30 bg-success/5 flex items-center gap-2 text-sm">
+                        <Check className="w-4 h-4 text-success" />
+                        <span className="text-success">Year values converted to full dates.</span>
                       </div>
                     )}
 
@@ -1060,7 +1060,7 @@ const DataUpload = () => {
                 <Card>
                   <CardContent className="p-6">
                     <div className="flex items-center gap-3 mb-6">
-                      <AlertTriangle className="w-6 h-6 text-yellow-500" />
+                      <AlertTriangle className="w-6 h-6 text-warning" />
                       <div>
                         <h2 className="text-lg font-semibold font-display">Data Issues Found</h2>
                         <p className="text-xs text-muted-foreground">
@@ -1082,7 +1082,7 @@ const DataUpload = () => {
                           <div key={title} className="rounded-lg border border-border overflow-hidden">
                             <div className="px-4 py-3 bg-muted/30 flex items-center justify-between">
                               <div className="flex items-center gap-2">
-                                <AlertTriangle className="w-4 h-4 text-yellow-500" />
+                                <AlertTriangle className="w-4 h-4 text-warning" />
                                 <span className="text-sm font-medium">{title}</span>
                                 <Badge variant="outline" className="text-xs">{errs.length} row{errs.length > 1 ? "s" : ""}</Badge>
                               </div>
@@ -1204,9 +1204,9 @@ const DataUpload = () => {
                         </p>
                         <p className="text-xs text-muted-foreground mt-0.5">Quality Score</p>
                         <Badge className={`mt-1 text-[10px] ${
-                          intelligence.qualityScore >= 80 ? "bg-green-500/10 text-green-500" :
-                          intelligence.qualityScore >= 50 ? "bg-yellow-500/10 text-yellow-500" :
-                          "bg-red-500/10 text-red-500"
+                          intelligence.qualityScore >= 80 ? "bg-success/10 text-success" :
+                          intelligence.qualityScore >= 50 ? "bg-warning/10 text-warning" :
+                          "bg-destructive/10 text-destructive"
                         } border-none`}>
                           {intelligence.qualityLabel}
                         </Badge>
@@ -1278,25 +1278,25 @@ const DataUpload = () => {
                       </div>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div className="p-3 rounded-lg bg-muted/30 border border-border/40">
-                          <p className={`text-lg font-bold ${diagnostics.missingValuesPct > 5 ? "text-yellow-500" : "text-green-500"}`}>
+                          <p className={`text-lg font-bold ${diagnostics.missingValuesPct > 5 ? "text-warning" : "text-success"}`}>
                             {diagnostics.missingValuesPct}%
                           </p>
                           <p className="text-xs text-muted-foreground">Missing values</p>
                         </div>
                         <div className="p-3 rounded-lg bg-muted/30 border border-border/40">
-                          <p className={`text-lg font-bold ${diagnostics.outlierCount > 5 ? "text-yellow-500" : "text-green-500"}`}>
+                          <p className={`text-lg font-bold ${diagnostics.outlierCount > 5 ? "text-warning" : "text-success"}`}>
                             {diagnostics.outlierCount}
                           </p>
                           <p className="text-xs text-muted-foreground">Outliers detected</p>
                         </div>
                         <div className="p-3 rounded-lg bg-muted/30 border border-border/40">
-                          <p className={`text-lg font-bold ${diagnostics.duplicateRows > 0 ? "text-yellow-500" : "text-green-500"}`}>
+                          <p className={`text-lg font-bold ${diagnostics.duplicateRows > 0 ? "text-warning" : "text-success"}`}>
                             {diagnostics.duplicateRows}
                           </p>
                           <p className="text-xs text-muted-foreground">Duplicate rows</p>
                         </div>
                         <div className="p-3 rounded-lg bg-muted/30 border border-border/40">
-                          <p className={`text-lg font-bold ${diagnostics.dateContinuity === "OK" ? "text-green-500" : diagnostics.dateContinuity === "Gaps detected" ? "text-yellow-500" : "text-muted-foreground"}`}>
+                          <p className={`text-lg font-bold ${diagnostics.dateContinuity === "OK" ? "text-success" : diagnostics.dateContinuity === "Gaps detected" ? "text-warning" : "text-muted-foreground"}`}>
                             {diagnostics.dateContinuity}
                           </p>
                           <p className="text-xs text-muted-foreground">
@@ -1310,8 +1310,8 @@ const DataUpload = () => {
 
                 {/* Errors summary */}
                 {validation.invalidRows > 0 && (
-                  <div className="p-3 rounded-lg border border-yellow-500/20 bg-yellow-500/5 flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4 text-yellow-500 shrink-0" />
+                  <div className="p-3 rounded-lg border border-warning/20 bg-warning/5 flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-warning shrink-0" />
                     <p className="text-xs text-muted-foreground">
                       {validation.invalidPoints.toLocaleString()} data point{validation.invalidPoints !== 1 ? "s" : ""} will be skipped.
                       <button onClick={() => setStep("validation")} className="text-primary ml-1 hover:underline">View details</button>
@@ -1350,29 +1350,69 @@ const DataUpload = () => {
               <motion.div
                 key="done"
                 initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
-                className="bg-card border border-border p-12 rounded-xl flex flex-col items-center justify-center min-h-[400px]"
+                className="space-y-6"
               >
-                <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center mb-4">
-                  <Check className="w-8 h-8 text-green-500" />
+                <div className="bg-card border border-border p-12 rounded-xl flex flex-col items-center justify-center">
+                  <div className="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center mb-4">
+                    <Check className="w-8 h-8 text-success" />
+                  </div>
+                  <h2 className="text-xl font-semibold font-display mb-2">Import Complete</h2>
+                  <p className="text-muted-foreground text-sm mb-6">
+                    {importCount.toLocaleString()} data points imported
+                    {importMode === "multi" ? " (multi-metric normalized)" : ""}
+                    {" · "}Intelligence signals generated
+                  </p>
+                  <div className="flex gap-3">
+                    <Button variant="outline" onClick={() => {
+                      setStep("upload"); setFile(null); setRows([]); setAllRows([]); setHeaders([]);
+                      setValidation(null); setDetectedSchema([]); setIntelligence(null); setYearAutoFixed(false);
+                      setDiagnostics(null); setClassification(null); setImportMode("single");
+                    }}>
+                      Upload Another
+                    </Button>
+                    <Button variant="outline" onClick={() => navigate("/dataset-explorer")} className="gap-2">
+                      <Eye className="w-4 h-4" /> Explore Dataset
+                    </Button>
+                    <Button onClick={() => navigate("/dashboard")} className="gap-2">
+                      View Dashboard <ArrowRight className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
-                <h2 className="text-xl font-semibold font-display mb-2">Import Complete</h2>
-                <p className="text-muted-foreground text-sm mb-6">
-                  {importCount.toLocaleString()} data points imported
-                  {importMode === "multi" ? " (multi-metric normalized)" : ""}
-                  {" · "}Intelligence signals generated
-                </p>
-                <div className="flex gap-3">
-                  <Button variant="outline" onClick={() => {
-                    setStep("upload"); setFile(null); setRows([]); setAllRows([]); setHeaders([]);
-                    setValidation(null); setDetectedSchema([]); setIntelligence(null); setYearAutoFixed(false);
-                    setDiagnostics(null); setClassification(null); setImportMode("single");
-                  }}>
-                    Upload Another
-                  </Button>
-                  <Button onClick={() => navigate("/dashboard")} className="gap-2">
-                    View Dashboard <ArrowRight className="w-4 h-4" />
-                  </Button>
-                </div>
+
+                {/* Dataset sample preview — user can verify data was imported correctly */}
+                {allRows.length > 0 && headers.length > 0 && (
+                  <div className="glass-card rounded-xl overflow-hidden">
+                    <div className="px-4 py-3 border-b border-border/30 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Eye className="w-4 h-4 text-primary" />
+                        <h3 className="text-sm font-semibold">Imported Data Sample</h3>
+                      </div>
+                      <span className="text-[10px] text-muted-foreground">
+                        Showing first {Math.min(10, allRows.length)} of {allRows.length.toLocaleString()} rows
+                      </span>
+                    </div>
+                    <div className="overflow-x-auto max-h-64 overflow-y-auto">
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr className="border-b border-border bg-muted/50 sticky top-0">
+                            {headers.map((h, idx) => (
+                              <th key={idx} className="text-left py-2 px-3 text-muted-foreground font-medium whitespace-nowrap">{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {allRows.slice(0, 10).map((row, i) => (
+                            <tr key={i} className="border-b border-border/50">
+                              {row.map((cell, j) => (
+                                <td key={j} className="py-1.5 px-3 text-foreground/80 whitespace-nowrap">{cell}</td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
               </motion.div>
             )}
           </AnimatePresence>

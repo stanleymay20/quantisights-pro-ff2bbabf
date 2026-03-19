@@ -1,12 +1,5 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
-
-const COLORS = [
-  "hsl(var(--primary))",
-  "hsl(var(--success, 142 71% 45%))",
-  "hsl(var(--warning, 38 92% 50%))",
-  "hsl(var(--accent-foreground))",
-  "hsl(var(--destructive))",
-];
+import { formatCurrency, tooltipStyle, CHART_CATEGORICAL } from "@/lib/chart-config";
 
 interface CustomerSegmentationProps {
   data: Record<string, number>;
@@ -16,7 +9,7 @@ const CustomerSegmentation = ({ data }: CustomerSegmentationProps) => {
   const entries = Object.entries(data).map(([name, value], i) => ({
     name,
     value,
-    color: COLORS[i % COLORS.length],
+    color: CHART_CATEGORICAL[i % CHART_CATEGORICAL.length],
   }));
 
   return (
@@ -35,14 +28,7 @@ const CustomerSegmentation = ({ data }: CustomerSegmentationProps) => {
                     <Cell key={i} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip
-                  contentStyle={{
-                    fontSize: 11,
-                    background: "hsl(var(--card))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: 8,
-                  }}
-                />
+                <Tooltip contentStyle={tooltipStyle} />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -50,7 +36,7 @@ const CustomerSegmentation = ({ data }: CustomerSegmentationProps) => {
             {entries.map((d) => (
               <div key={d.name} className="flex items-center gap-2 text-xs text-muted-foreground">
                 <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: d.color }} />
-                {d.name} €{d.value >= 1_000_000 ? `${(d.value / 1_000_000).toFixed(1)}M` : d.value.toLocaleString()}
+                {d.name} {formatCurrency(d.value)}
               </div>
             ))}
           </div>

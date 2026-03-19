@@ -178,9 +178,9 @@ const DatasetExplorer = () => {
                   </div>
                   <div className="flex items-center gap-2 mt-1 ml-5">
                     <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-                      ds.status === "ready" ? "bg-green-500/10 text-green-600" : "bg-yellow-500/10 text-yellow-600"
+                      ds.status === "ready" || ds.status === "completed" ? "bg-success/10 text-success" : "bg-warning/10 text-warning"
                     }`}>
-                      {ds.status}
+                      {ds.status === "completed" ? "ready" : ds.status}
                     </span>
                     {ds.row_count != null && (
                       <span className="text-[10px] text-muted-foreground">{ds.row_count.toLocaleString()} rows</span>

@@ -7,6 +7,7 @@
  * - Tooltip styling
  * - Chart dimensions
  * - Number abbreviation
+ * - Color palette (unified across all charts)
  */
 
 /** Default currency symbol — configurable per org in the future */
@@ -14,6 +15,49 @@ export const CURRENCY_SYMBOL = "€";
 
 /** Standard chart height in pixels */
 export const CHART_HEIGHT = 260;
+
+/**
+ * Unified chart color palette — semantic tokens only.
+ * Every chart MUST use these colors for consistency.
+ *
+ * Industry best practice: 2–6 core colors, high contrast, accessible.
+ */
+export const CHART_COLORS = {
+  /** Primary metric / positive values / revenue */
+  primary: "hsl(var(--primary))",
+  /** Success / profit / growth */
+  positive: "hsl(var(--success))",
+  /** Negative / loss / decline */
+  negative: "hsl(var(--destructive))",
+  /** Warning / caution */
+  warning: "hsl(var(--warning))",
+  /** Uncertain / unstructured / low-confidence data */
+  uncertain: "hsl(var(--muted-foreground))",
+  /** Subtotal / intermediate values */
+  subtotal: "hsl(var(--success))",
+  /** Muted comparison (e.g., previous period) */
+  comparison: "hsl(var(--muted-foreground))",
+} as const;
+
+/**
+ * Sequential palette for categorical data (segments, pie slices).
+ * Ordered by visual distinctiveness. Max 6 to avoid confusion.
+ */
+export const CHART_CATEGORICAL = [
+  "hsl(var(--primary))",
+  "hsl(var(--success))",
+  "hsl(var(--warning))",
+  "hsl(var(--destructive))",
+  "hsl(var(--muted-foreground))",
+  "hsl(var(--accent))",
+] as const;
+
+/** Opacity levels for data confidence encoding */
+export const CHART_OPACITY = {
+  full: 0.85,
+  muted: 0.55,
+  uncertain: 0.35,
+} as const;
 
 /** Format a number with currency and abbreviation */
 export function formatCurrency(value: number, opts?: { compact?: boolean }): string {
