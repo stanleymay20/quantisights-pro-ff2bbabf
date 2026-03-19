@@ -415,8 +415,6 @@ const Dashboard = () => {
                 )}
               </div>
             </motion.div>
-          ) : isLoading ? (
-            <DashboardSkeleton />
           ) : (
             <>
               <motion.div
