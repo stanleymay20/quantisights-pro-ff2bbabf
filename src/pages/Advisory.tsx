@@ -28,7 +28,7 @@ interface Advisory {
   action: string;
   expected_impact: string;
   timeframe: string;
-  confidence: unknown;
+  confidence: number | null;
   rationale: string;
   kpi_affected: string[];
   playbook_steps: string[];
