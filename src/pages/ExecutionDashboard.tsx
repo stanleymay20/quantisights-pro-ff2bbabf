@@ -13,7 +13,7 @@ import {
 import { useOrganization } from "@/hooks/useOrganization";
 import { useDecisionReplay } from "@/hooks/useDecisionReplay";
 import { supabase } from "@/integrations/supabase/client";
-import DatasetRequired from "@/components/layout/DatasetRequired";
+
 import IntelligenceDisclaimer from "@/components/IntelligenceDisclaimer";
 
 interface ExecutionSummary {
@@ -52,10 +52,10 @@ const ExecutionDashboard = () => {
     const fetchData = async () => {
       setLoading(true);
 
-      // Fetch execution plans summary
+      // Fetch ALL execution plans for this org in a single query (avoids N+1)
       const { data: plans } = await supabase
         .from("execution_plans")
-        .select("status, deadline")
+        .select("status, deadline, decision_id")
         .eq("organization_id", currentOrgId);
 
       if (plans) {
@@ -79,7 +79,7 @@ const ExecutionDashboard = () => {
         });
       }
 
-      // Fetch decisions with execution plans
+      // Fetch decisions
       const { data: ledger } = await supabase
         .from("decision_ledger")
         .select("id, recommended_action, decision_status, execution_status, confidence_at_decision, capped_confidence, prediction_accuracy_score, created_at")
@@ -88,22 +88,24 @@ const ExecutionDashboard = () => {
         .order("created_at", { ascending: false })
         .limit(20);
 
-      if (ledger) {
-        const withPlans = await Promise.all(
-          ledger.map(async (d: any) => {
-            const { data: dPlans } = await supabase
-              .from("execution_plans")
-              .select("status")
-              .eq("decision_id", d.id)
-              .eq("organization_id", currentOrgId);
+      if (ledger && plans) {
+        // Build plan counts from the already-fetched plans (batch approach)
+        const plansByDecision = new Map<string, { total: number; completed: number }>();
+        for (const p of plans) {
+          const entry = plansByDecision.get(p.decision_id) || { total: 0, completed: 0 };
+          entry.total++;
+          if (p.status === "completed") entry.completed++;
+          plansByDecision.set(p.decision_id, entry);
+        }
 
-            return {
-              ...d,
-              plan_count: dPlans?.length || 0,
-              completed_plans: dPlans?.filter((p: any) => p.status === "completed").length || 0,
-            };
-          })
-        );
+        const withPlans = ledger.map((d: any) => {
+          const counts = plansByDecision.get(d.id) || { total: 0, completed: 0 };
+          return {
+            ...d,
+            plan_count: counts.total,
+            completed_plans: counts.completed,
+          };
+        });
         setDecisions(withPlans);
       }
 
@@ -122,7 +124,7 @@ const ExecutionDashboard = () => {
   };
 
   return (
-    <DatasetRequired moduleName="Execution Dashboard">
+    <>
       <>
         <header className="h-14 border-b border-border/30 flex items-center px-8 shrink-0 bg-background/60 backdrop-blur-sm">
           <SidebarMobileToggle />
@@ -285,7 +287,7 @@ const ExecutionDashboard = () => {
           )}
         </main>
       </>
-    </DatasetRequired>
+    </>
   );
 };
 

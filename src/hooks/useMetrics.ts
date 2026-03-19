@@ -58,17 +58,29 @@ export const useMetrics = (orgId: string | null, datasetId: string | null) => {
 
     const fetchMetrics = async () => {
       setLoading(true);
-      const { data, error } = await supabase
-        .from("metrics")
-        .select("id, metric_type, value, date, region, segment, dataset_id, created_at")
-        .eq("organization_id", orgId)
-        .eq("dataset_id", datasetId)
-        .order("date", { ascending: true });
+      // Paginated fetch to avoid 1000-row default limit
+      const allMetrics: MetricRow[] = [];
+      const PAGE_SIZE = 1000;
+      let offset = 0;
+      let hasMore = true;
 
-      if (!error && data) {
-        setMetrics(data);
-        updateLastUpdated(data);
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from("metrics")
+          .select("id, metric_type, value, date, region, segment, dataset_id, created_at")
+          .eq("organization_id", orgId)
+          .eq("dataset_id", datasetId)
+          .order("date", { ascending: true })
+          .range(offset, offset + PAGE_SIZE - 1);
+
+        if (error || !data) break;
+        allMetrics.push(...data);
+        hasMore = data.length === PAGE_SIZE;
+        offset += PAGE_SIZE;
       }
+
+      setMetrics(allMetrics);
+      updateLastUpdated(allMetrics);
       setLoading(false);
     };
 
