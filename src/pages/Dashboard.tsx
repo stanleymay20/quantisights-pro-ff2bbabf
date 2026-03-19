@@ -134,7 +134,7 @@ const Dashboard = () => {
   // Demo users: treat as loading until context fully hydrates to prevent empty-state flash
   const isDemoHydrating = isDemoUser && (!currentWorkspaceId || !activeDatasetId);
   const showWelcomeFlow = !isDemoUser && !isContextLoading;
-  const showGuidedTour = hasData && !isContextLoading;
+  const showGuidedTour = !isDemoUser && hasData && !isContextLoading;
   const showEmptyState = !hasData && !isLoading && !isDemoHydrating;
 
   const demoContextLabel = currentWorkspaceId && currentProject
@@ -426,9 +426,11 @@ const Dashboard = () => {
                   {greeting()}, {displayName}
                 </h1>
                 <p className="text-sm text-muted-foreground mt-0.5">
-                  {hasAnomalies
-                    ? `${criticalInsights.length} signal${criticalInsights.length > 1 ? "s" : ""} require attention`
-                    : `${dataDescription} — all systems nominal`
+                  {isDemoUser
+                    ? `Intelligence ready — ${criticalInsights.length} signal${criticalInsights.length > 1 ? "s" : ""} detected across your demo data`
+                    : hasAnomalies
+                      ? `${criticalInsights.length} signal${criticalInsights.length > 1 ? "s" : ""} require attention`
+                      : `${dataDescription} — all systems nominal`
                   }
                 </p>
               </motion.div>

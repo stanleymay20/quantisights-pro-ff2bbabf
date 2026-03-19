@@ -45,7 +45,7 @@ const LEVEL_CONFIG: Record<ProtectionLevel, {
   },
   exposed: {
     label: "Exposed",
-    description: "Critical governance gaps. Unresolved signals and unclosed decisions increase board risk.",
+    description: "Open signals detected. Review and resolve to improve governance posture.",
     icon: ShieldAlert,
     containerClass: "border-destructive/30 bg-destructive/[0.03]",
     badgeClass: "bg-destructive/10 text-destructive",
@@ -157,7 +157,7 @@ const ProtectionStatus = memo(({ organizationId, calibrationScore, pendingDecisi
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="text-sm font-semibold">Decision Protection</h2>
+              <h2 className="text-sm font-semibold">Governance Status</h2>
               <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${config.badgeClass} flex items-center gap-1.5`}>
                 <span className={`w-1.5 h-1.5 rounded-full ${config.dotClass} animate-pulse`} />
                 {config.label}

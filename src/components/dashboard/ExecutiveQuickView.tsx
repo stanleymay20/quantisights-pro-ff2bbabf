@@ -100,9 +100,9 @@ const ExecutiveQuickView = memo(({
             <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Metrics</span>
           </div>
           <p className="text-2xl font-bold text-foreground">{quickMetrics.length}</p>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="text-xs text-muted-foreground mt-1 truncate">
             {metricTypesList.length > 0
-              ? metricTypesList.join(", ")
+              ? metricTypesList.map(t => t.replace(/_/g, " ")).join(", ")
               : "No metrics detected"
             }
           </p>
@@ -122,7 +122,7 @@ const ExecutiveQuickView = memo(({
                 : changePct >= 0 ? "text-success" : "text-destructive";
               return (
                 <div key={m.metricType} className="space-y-1">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider truncate">{m.metricType}</p>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider truncate">{m.metricType.replace(/_/g, " ")}</p>
                   <p className="text-xl font-bold">
                     {m.latest.toLocaleString(undefined, { maximumFractionDigits: 1 })}
                   </p>
@@ -154,9 +154,9 @@ const ExecutiveQuickView = memo(({
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium line-clamp-2">{insight.message}</p>
                 </div>
-                {insight.confidence_score != null && (
+                {(insight.capped_confidence ?? insight.confidence_score) != null && (
                   <span className="text-[10px] font-mono text-muted-foreground shrink-0">
-                    {Math.round(insight.confidence_score * 100)}%
+                    {Math.round((insight.capped_confidence ?? insight.confidence_score ?? 0))}%
                   </span>
                 )}
               </div>
