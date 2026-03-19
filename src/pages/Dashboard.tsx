@@ -131,9 +131,11 @@ const Dashboard = () => {
   const hasAnomalies = criticalInsights.length > 0;
   const isContextLoading = orgLoading || workspaceLoading || projectLoading;
   const isLoading = isContextLoading || metricsLoading || insightsLoading;
+  // Demo users: treat as loading until context fully hydrates to prevent empty-state flash
+  const isDemoHydrating = isDemoUser && (!currentWorkspaceId || !activeDatasetId);
   const showWelcomeFlow = !isDemoUser && !isContextLoading;
   const showGuidedTour = hasData && !isContextLoading;
-  const showEmptyState = !hasData && !isLoading;
+  const showEmptyState = !hasData && !isLoading && !isDemoHydrating;
 
   const demoContextLabel = currentWorkspaceId && currentProject
     ? `${currentProject.name} • ready in active workspace`
