@@ -21,6 +21,7 @@ interface AnalyticsPanelProps {
   insights: Insight[];
   latestChurn: number;
   latestCost: number;
+  isDemoMode?: boolean;
 }
 
 /**
@@ -33,34 +34,37 @@ interface AnalyticsPanelProps {
  *
  * Retained: only charts that either use real data or show honest empty states.
  */
-const AnalyticsPanel = ({ metrics, revenueByMonth, segmentData, insights, latestChurn, latestCost }: AnalyticsPanelProps) => {
+const AnalyticsPanel = ({ metrics, revenueByMonth, segmentData, insights, latestChurn, latestCost, isDemoMode }: AnalyticsPanelProps) => {
+  const hasSegments = Object.keys(segmentData).length > 0;
+  const hasFunnelData = metrics.some(m => m.metric_type === "leads" || m.metric_type === "qualified_leads");
+
   return (
     <div className="space-y-5">
       {/* Row 1: Core Revenue Intelligence */}
-      <div className="grid lg:grid-cols-3 gap-5">
-        <div className="lg:col-span-2">
+      <div className={`grid ${hasSegments ? "lg:grid-cols-3" : "lg:grid-cols-1"} gap-5`}>
+        <div className={hasSegments ? "lg:col-span-2" : ""}>
           <RevenueChart data={revenueByMonth} />
         </div>
-        <CustomerSegmentation data={segmentData} />
+        {hasSegments && <CustomerSegmentation data={segmentData} />}
       </div>
 
-      {/* Row 2: Financial Structure (data-honest — shows empty states when data missing) */}
+      {/* Row 2: Financial Structure — hide empty panels in demo mode */}
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
         <EBITDABridgeChart metrics={metrics} />
-        <RevenueVsPlanChart revenueByMonth={revenueByMonth} />
+        {!isDemoMode && <RevenueVsPlanChart revenueByMonth={revenueByMonth} />}
         <WaterfallChart data={metrics} />
       </div>
 
-      {/* Row 3: Forward-Looking (data-honest — shows empty states when simulation/cash data missing) */}
+      {/* Row 3: Forward-Looking — hide empty panels in demo mode */}
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-        <CashRunwayChart revenueByMonth={revenueByMonth} latestCost={latestCost} />
-        <ScenarioImpactChart insights={insights} />
+        {!isDemoMode && <CashRunwayChart revenueByMonth={revenueByMonth} latestCost={latestCost} />}
+        {!isDemoMode && <ScenarioImpactChart insights={insights} />}
         <PortfolioHealthRadar metrics={metrics} latestChurn={latestChurn} latestCost={latestCost} />
       </div>
 
       {/* Row 4: Conversion & Period Analysis */}
       <div className="grid md:grid-cols-2 gap-5">
-        <FunnelChart metrics={metrics} />
+        {(!isDemoMode || hasFunnelData) && <FunnelChart metrics={metrics} />}
         <PeriodComparison data={revenueByMonth} />
       </div>
 

@@ -34,6 +34,7 @@ interface CommandCenterProps {
   topMetrics?: MetricTypeSummary[];
   datasetId?: string;
   datasetName?: string | null;
+  isDemoMode?: boolean;
 }
 
 const CommandCenter = memo(({
@@ -53,6 +54,7 @@ const CommandCenter = memo(({
   topMetrics,
   datasetId,
   datasetName,
+  isDemoMode,
 }: CommandCenterProps) => {
   const [showAnalytics, setShowAnalytics] = useState(false);
 
@@ -152,6 +154,7 @@ const CommandCenter = memo(({
             insights={insights}
             latestChurn={churnRate}
             latestCost={latestCost}
+            isDemoMode={isDemoMode}
           />
         </Suspense>
       )}

@@ -455,6 +455,7 @@ const Dashboard = () => {
                   topMetrics={topMetrics}
                   datasetId={activeDatasetId ?? undefined}
                   datasetName={currentProject?.name}
+                  isDemoMode={isDemoUser}
                 />
               )}
             </>
