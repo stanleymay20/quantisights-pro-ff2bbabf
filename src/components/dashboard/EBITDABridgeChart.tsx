@@ -136,9 +136,27 @@ const EBITDABridgeChart = ({ metrics, datasetLabel }: Props) => {
       </div>
       {analysis.mode === "simplified" && (
         <p className="text-[11px] text-muted-foreground/80 mb-3 italic">
-          Costs are aggregated — unable to assess whether growth is efficient without COGS/OpEx split.
+          Costs are reported as a single total. We cannot identify whether spending is on production vs operations. To unlock full analysis, break costs into COGS and OpEx categories.
         </p>
       )}
+
+      {/* Narrative interpretation */}
+      {analysis.steps && (() => {
+        const net = analysis.steps[analysis.steps.length - 1];
+        const rev = analysis.steps[0];
+        if (!net || !rev || rev.value === 0) return null;
+        const marginPct = ((net.value / rev.value) * 100).toFixed(0);
+        const isHealthy = net.value > 0 && Number(marginPct) > 20;
+        return (
+          <p className="text-[11px] text-foreground/80 mb-3 leading-relaxed">
+            {isHealthy
+              ? `The business retains ${marginPct}% of revenue as profit — a healthy operating position.`
+              : net.value > 0
+              ? `Operating margin is ${marginPct}% — thin but positive. Cost optimization could meaningfully improve profitability.`
+              : `The business is operating at a loss. Immediate cost review or revenue acceleration is recommended.`}
+          </p>
+        );
+      })()}
 
       <div style={{ height: CHART_HEIGHT }}>
         <ResponsiveContainer width="100%" height="100%">

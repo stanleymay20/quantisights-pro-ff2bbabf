@@ -32,7 +32,21 @@ const PeriodComparison = ({ data }: PeriodComparisonProps) => {
 
   return (
     <div className="glass-card p-6 rounded-xl">
-      <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">Period Comparison</h3>
+      <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Period Comparison</h3>
+      {/* Narrative: period-over-period trend */}
+      {(() => {
+        const improving = comparisonData.filter(d => d.delta !== "—" && Number(d.delta) > 0).length;
+        const declining = comparisonData.filter(d => d.delta !== "—" && Number(d.delta) < 0).length;
+        return (
+          <p className="text-[11px] text-foreground/80 leading-relaxed mb-3">
+            {improving > declining
+              ? `${improving} of ${comparisonData.length} periods show improvement over prior periods — positive trajectory.`
+              : declining > improving
+              ? `${declining} of ${comparisonData.length} periods are below prior levels — a concerning trend.`
+              : "Performance is roughly consistent across periods."}
+          </p>
+        );
+      })()}
       <div style={{ height: CHART_HEIGHT }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={comparisonData} margin={{ top: 8, right: 8, bottom: 0, left: 4 }}>
