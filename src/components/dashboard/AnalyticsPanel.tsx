@@ -10,9 +10,6 @@ const WaterfallChart = lazy(() => import("./WaterfallChart"));
 const FunnelChart = lazy(() => import("./FunnelChart"));
 const PeriodComparison = lazy(() => import("./PeriodComparison"));
 const EBITDABridgeChart = lazy(() => import("./EBITDABridgeChart"));
-const CashRunwayChart = lazy(() => import("./CashRunwayChart"));
-const RevenueVsPlanChart = lazy(() => import("./RevenueVsPlanChart"));
-const ScenarioImpactChart = lazy(() => import("./ScenarioImpactChart"));
 const PortfolioHealthRadar = lazy(() => import("./PortfolioHealthRadar"));
 
 interface AnalyticsPanelProps {
@@ -28,20 +25,26 @@ interface AnalyticsPanelProps {
 /**
  * Analytics Panel — DATA-HONEST.
  *
- * Removed:
- * - GaugeChart: was fed fabricated values (100 - churn*100, 100 - cost*100,
- *   arbitrary "growth momentum" formula). These are not real gauge metrics.
- *   Gauges require defined targets and actuals — neither existed.
+ * Industrial-standard layout:
+ * - Narrative summary first (CEO-level interpretation)
+ * - Core revenue intelligence (area chart + segments)
+ * - Financial structure (EBITDA bridge + P&L waterfall)
+ * - Portfolio health radar (when ≥3 dimensions)
+ * - Conversion & period comparison (when data exists)
+ * - AI intelligence layer (insights + anomalies)
  *
- * Retained: only charts that either use real data or show honest empty states.
+ * Empty-state-only panels (CashRunway, RevVsPlan, ScenarioImpact)
+ * are excluded — they add clutter without value until real data is mapped.
  */
 const AnalyticsPanel = ({ metrics, revenueByMonth, segmentData, insights, latestChurn, latestCost, isDemoMode }: AnalyticsPanelProps) => {
   const hasSegments = Object.keys(segmentData).length > 0;
   const hasFunnelData = metrics.some(m => m.metric_type === "leads" || m.metric_type === "qualified_leads");
+  const hasRevenue = metrics.some(m => m.metric_type === "revenue");
+  const hasCostData = metrics.some(m => m.metric_type === "cost" || m.metric_type === "cogs");
 
   return (
     <div className="space-y-5">
-      {/* Human-readable narrative summary */}
+      {/* Row 0: Narrative intelligence summary */}
       <AnalyticsSummary
         revenueByMonth={revenueByMonth}
         metrics={metrics}
@@ -49,7 +52,7 @@ const AnalyticsPanel = ({ metrics, revenueByMonth, segmentData, insights, latest
         latestCost={latestCost}
       />
 
-      {/* Row 1: Core Revenue Intelligence */}
+      {/* Row 1: Revenue trend + segmentation */}
       <div className={`grid ${hasSegments ? "lg:grid-cols-3" : "lg:grid-cols-1"} gap-5`}>
         <div className={hasSegments ? "lg:col-span-2" : ""}>
           <RevenueChart data={revenueByMonth} />
@@ -57,27 +60,22 @@ const AnalyticsPanel = ({ metrics, revenueByMonth, segmentData, insights, latest
         {hasSegments && <CustomerSegmentation data={segmentData} />}
       </div>
 
-      {/* Row 2: Financial Structure — hide empty panels in demo mode */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-        <EBITDABridgeChart metrics={metrics} />
-        {!isDemoMode && <RevenueVsPlanChart revenueByMonth={revenueByMonth} />}
-        <WaterfallChart data={metrics} />
-      </div>
+      {/* Row 2: Financial structure — only show charts that have renderable data */}
+      {(hasRevenue || hasCostData) && (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <EBITDABridgeChart metrics={metrics} />
+          <WaterfallChart data={metrics} />
+          <PortfolioHealthRadar metrics={metrics} latestChurn={latestChurn} latestCost={latestCost} />
+        </div>
+      )}
 
-      {/* Row 3: Forward-Looking — hide empty panels in demo mode */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {!isDemoMode && <CashRunwayChart revenueByMonth={revenueByMonth} latestCost={latestCost} />}
-        {!isDemoMode && <ScenarioImpactChart insights={insights} />}
-        <PortfolioHealthRadar metrics={metrics} latestChurn={latestChurn} latestCost={latestCost} />
-      </div>
-
-      {/* Row 4: Conversion & Period Analysis */}
+      {/* Row 3: Conversion & period analysis */}
       <div className="grid md:grid-cols-2 gap-5">
-        {(!isDemoMode || hasFunnelData) && <FunnelChart metrics={metrics} />}
+        {hasFunnelData && <FunnelChart metrics={metrics} />}
         <PeriodComparison data={revenueByMonth} />
       </div>
 
-      {/* Row 5: AI Intelligence */}
+      {/* Row 4: AI intelligence */}
       <div className="grid lg:grid-cols-2 gap-5">
         <AIInsights insights={insights} />
         <AnomalyDetection insights={insights} />
