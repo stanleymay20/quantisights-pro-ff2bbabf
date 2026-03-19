@@ -40,7 +40,8 @@ const Forecasting = () => {
         .from("metrics")
         .select("metric_type")
         .eq("organization_id", orgId)
-        .eq("dataset_id", datasetId);
+        .eq("dataset_id", datasetId)
+        .limit(1000);
       if (rows) {
         const types = [...new Set(rows.map(r => r.metric_type))];
         setAvailableMetrics(types);
