@@ -277,7 +277,9 @@ const Dashboard = () => {
         {isDemoUser && hasData && <DemoBanner />}
 
         <main id="main-content" className="flex-1 p-3 sm:p-4 md:p-8 overflow-auto">
-          {!hasData && !isLoading ? (
+          {(isLoading || isDemoHydrating) && !hasData ? (
+            <DashboardSkeleton />
+          ) : showEmptyState ? (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
