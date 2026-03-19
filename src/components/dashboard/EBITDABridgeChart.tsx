@@ -80,7 +80,9 @@ const EBITDABridgeChart = ({ metrics, datasetLabel }: Props) => {
           </div>
           <div>
             <p className="text-sm font-medium mb-1">Insufficient data for EBITDA Bridge</p>
-            <p className="text-xs text-muted-foreground max-w-xs mx-auto">Map your columns to the required metric types to enable this chart.</p>
+            <p className="text-xs text-muted-foreground max-w-xs mx-auto">
+              This chart shows how revenue converts to profit. To enable it, ensure your data includes revenue and cost breakdowns.
+            </p>
           </div>
           <div className="text-left max-w-xs mx-auto space-y-1.5 pt-2">
             <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Required metric types:</p>
