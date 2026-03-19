@@ -137,12 +137,16 @@ const Dashboard = () => {
     ? `${currentProject.name} • ready in ${currentWorkspaceId ? "active workspace" : "selected workspace"}`
     : null;
 
+  useEffect(() => {
+    if (isDemoUser && hasData) {
+      sessionStorage.removeItem("quantivis_demo_mode");
+    }
+    if (!isDemoUser) {
+      sessionStorage.removeItem("quantivis_demo_mode");
+    }
+  }, [isDemoUser, hasData]);
+
   const greeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return "Good morning";
-    if (hour < 17) return "Good afternoon";
-    return "Good evening";
-  };
 
   /** Data-driven summary: show metric count and types instead of hardcoded SaaS terms */
   const dataDescription = metricTypes.length > 0
