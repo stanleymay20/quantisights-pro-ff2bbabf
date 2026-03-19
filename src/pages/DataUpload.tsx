@@ -1350,29 +1350,69 @@ const DataUpload = () => {
               <motion.div
                 key="done"
                 initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
-                className="bg-card border border-border p-12 rounded-xl flex flex-col items-center justify-center min-h-[400px]"
+                className="space-y-6"
               >
-                <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center mb-4">
-                  <Check className="w-8 h-8 text-green-500" />
+                <div className="bg-card border border-border p-12 rounded-xl flex flex-col items-center justify-center">
+                  <div className="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center mb-4">
+                    <Check className="w-8 h-8 text-success" />
+                  </div>
+                  <h2 className="text-xl font-semibold font-display mb-2">Import Complete</h2>
+                  <p className="text-muted-foreground text-sm mb-6">
+                    {importCount.toLocaleString()} data points imported
+                    {importMode === "multi" ? " (multi-metric normalized)" : ""}
+                    {" · "}Intelligence signals generated
+                  </p>
+                  <div className="flex gap-3">
+                    <Button variant="outline" onClick={() => {
+                      setStep("upload"); setFile(null); setRows([]); setAllRows([]); setHeaders([]);
+                      setValidation(null); setDetectedSchema([]); setIntelligence(null); setYearAutoFixed(false);
+                      setDiagnostics(null); setClassification(null); setImportMode("single");
+                    }}>
+                      Upload Another
+                    </Button>
+                    <Button variant="outline" onClick={() => navigate("/dataset-explorer")} className="gap-2">
+                      <Eye className="w-4 h-4" /> Explore Dataset
+                    </Button>
+                    <Button onClick={() => navigate("/dashboard")} className="gap-2">
+                      View Dashboard <ArrowRight className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
-                <h2 className="text-xl font-semibold font-display mb-2">Import Complete</h2>
-                <p className="text-muted-foreground text-sm mb-6">
-                  {importCount.toLocaleString()} data points imported
-                  {importMode === "multi" ? " (multi-metric normalized)" : ""}
-                  {" · "}Intelligence signals generated
-                </p>
-                <div className="flex gap-3">
-                  <Button variant="outline" onClick={() => {
-                    setStep("upload"); setFile(null); setRows([]); setAllRows([]); setHeaders([]);
-                    setValidation(null); setDetectedSchema([]); setIntelligence(null); setYearAutoFixed(false);
-                    setDiagnostics(null); setClassification(null); setImportMode("single");
-                  }}>
-                    Upload Another
-                  </Button>
-                  <Button onClick={() => navigate("/dashboard")} className="gap-2">
-                    View Dashboard <ArrowRight className="w-4 h-4" />
-                  </Button>
-                </div>
+
+                {/* Dataset sample preview — user can verify data was imported correctly */}
+                {allRows.length > 0 && headers.length > 0 && (
+                  <div className="glass-card rounded-xl overflow-hidden">
+                    <div className="px-4 py-3 border-b border-border/30 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Eye className="w-4 h-4 text-primary" />
+                        <h3 className="text-sm font-semibold">Imported Data Sample</h3>
+                      </div>
+                      <span className="text-[10px] text-muted-foreground">
+                        Showing first {Math.min(10, allRows.length)} of {allRows.length.toLocaleString()} rows
+                      </span>
+                    </div>
+                    <div className="overflow-x-auto max-h-64 overflow-y-auto">
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr className="border-b border-border bg-muted/50 sticky top-0">
+                            {headers.map((h, idx) => (
+                              <th key={idx} className="text-left py-2 px-3 text-muted-foreground font-medium whitespace-nowrap">{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {allRows.slice(0, 10).map((row, i) => (
+                            <tr key={i} className="border-b border-border/50">
+                              {row.map((cell, j) => (
+                                <td key={j} className="py-1.5 px-3 text-foreground/80 whitespace-nowrap">{cell}</td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
               </motion.div>
             )}
           </AnimatePresence>
