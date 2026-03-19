@@ -134,7 +134,7 @@ const Dashboard = () => {
   const showEmptyState = !hasData && !isLoading;
 
   const demoContextLabel = currentWorkspaceId && currentProject
-    ? `${currentProject.name} • ready in ${currentWorkspaceId ? "active workspace" : "selected workspace"}`
+    ? `${currentProject.name} • ready in active workspace`
     : null;
 
   useEffect(() => {
@@ -147,6 +147,11 @@ const Dashboard = () => {
   }, [isDemoUser, hasData]);
 
   const greeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good morning";
+    if (hour < 17) return "Good afternoon";
+    return "Good evening";
+  };
 
   /** Data-driven summary: show metric count and types instead of hardcoded SaaS terms */
   const dataDescription = metricTypes.length > 0
