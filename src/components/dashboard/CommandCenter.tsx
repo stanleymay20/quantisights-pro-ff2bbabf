@@ -54,6 +54,7 @@ const CommandCenter = memo(({
   topMetrics,
   datasetId,
   datasetName,
+  isDemoMode,
 }: CommandCenterProps) => {
   const [showAnalytics, setShowAnalytics] = useState(false);
 
