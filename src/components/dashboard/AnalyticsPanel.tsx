@@ -1,6 +1,7 @@
 import { lazy, useMemo } from "react";
 import type { Insight } from "@/hooks/useInsights";
 
+const AnalyticsSummary = lazy(() => import("./AnalyticsSummary"));
 const RevenueChart = lazy(() => import("./RevenueChart"));
 const CustomerSegmentation = lazy(() => import("./CustomerSegmentation"));
 const AIInsights = lazy(() => import("./AIInsights"));
