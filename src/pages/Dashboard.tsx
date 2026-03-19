@@ -431,6 +431,8 @@ const Dashboard = () => {
                 </p>
               </motion.div>
 
+              {hasAnomalies && <HeroInsight insights={insights} />}
+
               {dashboardView === "executive" ? (
                 <ExecutiveQuickView
                   organizationId={currentOrgId!}
