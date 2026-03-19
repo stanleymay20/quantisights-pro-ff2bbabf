@@ -51,6 +51,14 @@ Deno.serve(async (req) => {
       .single();
     const workspaceId = workspace?.id;
 
+    // CRITICAL: Add demo user as workspace member so WorkspaceContext can resolve
+    if (workspaceId) {
+      await admin.from("workspace_members").upsert(
+        { workspace_id: workspaceId, user_id: userId, role: "workspace_admin" },
+        { onConflict: "workspace_id,user_id" }
+      );
+    }
+
     await admin.from("organizations").update({
       name: "Acme Corp (Demo)",
       industry: "SaaS / B2B Software",
@@ -340,6 +348,9 @@ Deno.serve(async (req) => {
       access_token: session.session?.access_token,
       refresh_token: session.session?.refresh_token,
       email,
+      org_id: orgId,
+      workspace_id: workspaceId,
+      project_id: project.id,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

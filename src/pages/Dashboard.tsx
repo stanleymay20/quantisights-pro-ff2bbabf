@@ -131,9 +131,11 @@ const Dashboard = () => {
   const hasAnomalies = criticalInsights.length > 0;
   const isContextLoading = orgLoading || workspaceLoading || projectLoading;
   const isLoading = isContextLoading || metricsLoading || insightsLoading;
+  // Demo users: treat as loading until context fully hydrates to prevent empty-state flash
+  const isDemoHydrating = isDemoUser && (!currentWorkspaceId || !activeDatasetId);
   const showWelcomeFlow = !isDemoUser && !isContextLoading;
   const showGuidedTour = hasData && !isContextLoading;
-  const showEmptyState = !hasData && !isLoading;
+  const showEmptyState = !hasData && !isLoading && !isDemoHydrating;
 
   const demoContextLabel = currentWorkspaceId && currentProject
     ? `${currentProject.name} • ready in active workspace`
@@ -275,7 +277,9 @@ const Dashboard = () => {
         {isDemoUser && hasData && <DemoBanner />}
 
         <main id="main-content" className="flex-1 p-3 sm:p-4 md:p-8 overflow-auto">
-          {!hasData && !isLoading ? (
+          {(isLoading || isDemoHydrating) && !hasData ? (
+            <DashboardSkeleton />
+          ) : showEmptyState ? (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -411,8 +415,6 @@ const Dashboard = () => {
                 )}
               </div>
             </motion.div>
-          ) : isLoading ? (
-            <DashboardSkeleton />
           ) : (
             <>
               <motion.div
