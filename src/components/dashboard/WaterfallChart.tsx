@@ -122,8 +122,12 @@ const WaterfallChart = ({ data }: WaterfallChartProps) => {
             <YAxis {...axisStyle} tickFormatter={(v: number) => formatCurrency(v)} />
             <Tooltip contentStyle={tooltipStyle} formatter={(val: number) => [formatCurrency(Math.abs(val), { compact: false }), "Value"]} />
             <ReferenceLine y={0} stroke="hsl(var(--border))" />
-            <Bar dataKey="bottom" stackId="waterfall" fill="transparent" />
-            <Bar dataKey="height" stackId="waterfall" radius={[4, 4, 0, 0]}>
+            <Bar dataKey="bottom" stackId="waterfall" fill="transparent" isAnimationActive={false} />
+            <Bar dataKey="height" stackId="waterfall" radius={[4, 4, 0, 0]} label={({ x, y, width, index }: any) => {
+              const entry = analysis![index];
+              if (!entry) return null;
+              return <text x={x + width / 2} y={y - 6} textAnchor="middle" fontSize={10} fill="hsl(var(--foreground))" opacity={0.7}>{formatCurrency(entry.value)}</text>;
+            }}>
               {analysis.map((entry, i) => (
                 <Cell key={i} fill={colors[entry.type]} fillOpacity={entry.type === "uncertain" ? 0.45 : 0.85} />
               ))}

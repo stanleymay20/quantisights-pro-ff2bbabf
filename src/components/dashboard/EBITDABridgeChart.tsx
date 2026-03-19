@@ -176,8 +176,12 @@ const EBITDABridgeChart = ({ metrics, datasetLabel }: Props) => {
             <YAxis {...axisStyle} tickFormatter={(v) => formatCurrency(v)} />
             <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [formatCurrency(Math.abs(v), { compact: false }), "Amount"]} />
             <ReferenceLine y={0} stroke="hsl(var(--border))" />
-            <Bar dataKey="bottom" stackId="bridge" fill="transparent" />
-             <Bar dataKey="height" stackId="bridge" radius={[4, 4, 0, 0]}>
+            <Bar dataKey="bottom" stackId="bridge" fill="transparent" isAnimationActive={false} />
+             <Bar dataKey="height" stackId="bridge" radius={[4, 4, 0, 0]} label={({ x, y, width, value, index }: any) => {
+               const entry = analysis.steps![index];
+               if (!entry) return null;
+               return <text x={x + width / 2} y={y - 6} textAnchor="middle" fontSize={10} fill="hsl(var(--foreground))" opacity={0.7}>{formatCurrency(entry.value < 0 ? Math.abs(entry.value) : entry.value)}</text>;
+             }}>
               {analysis.steps!.map((entry, i) => (
                 <Cell key={i} fill={colors[entry.type]} fillOpacity={entry.type === "uncertain" ? 0.45 : 0.85} strokeDasharray={entry.type === "uncertain" ? "4 2" : undefined} stroke={entry.type === "uncertain" ? colors.uncertain : undefined} />
               ))}
