@@ -21,6 +21,7 @@ interface AnalyticsPanelProps {
   insights: Insight[];
   latestChurn: number;
   latestCost: number;
+  isDemoMode?: boolean;
 }
 
 /**
