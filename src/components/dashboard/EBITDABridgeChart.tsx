@@ -1,44 +1,27 @@
 import { useMemo } from "react";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, ReferenceLine } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, ReferenceLine, CartesianGrid } from "recharts";
 import { ArrowRightLeft, AlertTriangle, Info } from "lucide-react";
 import { MetricRow } from "@/hooks/useMetrics";
 import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { formatCurrency, axisStyle, tooltipStyle, gridStyle, CHART_HEIGHT } from "@/lib/chart-config";
 
 interface Props {
   metrics: MetricRow[];
   datasetLabel?: string;
 }
 
-/**
- * DATA-HONEST EBITDA Bridge.
- *
- * Mode 1: Full bridge when metric_types {revenue, cogs, opex} all exist.
- * Mode 2: Simplified "Revenue → Cost → Contribution" when only {revenue, cost}.
- * Mode 3: Empty state with guidance when data is insufficient.
- *
- * ZERO hardcoded percentages or assumed splits.
- */
 const EBITDABridgeChart = ({ metrics, datasetLabel }: Props) => {
   const analysis = useMemo(() => {
-    const revenue = metrics
-      .filter((d) => d.metric_type === "revenue")
-      .reduce((s, d) => s + Number(d.value), 0);
-    const cogs = metrics
-      .filter((d) => d.metric_type === "cogs")
-      .reduce((s, d) => s + Number(d.value), 0);
-    const opex = metrics
-      .filter((d) => d.metric_type === "opex")
-      .reduce((s, d) => s + Number(d.value), 0);
-    const cost = metrics
-      .filter((d) => d.metric_type === "cost")
-      .reduce((s, d) => s + Number(d.value), 0);
+    const revenue = metrics.filter((d) => d.metric_type === "revenue").reduce((s, d) => s + Number(d.value), 0);
+    const cogs = metrics.filter((d) => d.metric_type === "cogs").reduce((s, d) => s + Number(d.value), 0);
+    const opex = metrics.filter((d) => d.metric_type === "opex").reduce((s, d) => s + Number(d.value), 0);
+    const cost = metrics.filter((d) => d.metric_type === "cost").reduce((s, d) => s + Number(d.value), 0);
 
     const hasCogs = metrics.some((d) => d.metric_type === "cogs");
     const hasOpex = metrics.some((d) => d.metric_type === "opex");
     const hasCost = metrics.some((d) => d.metric_type === "cost");
     const hasRevenue = revenue > 0;
 
-    // Mode 1: Full EBITDA bridge
     if (hasRevenue && hasCogs && hasOpex) {
       const grossProfit = revenue - cogs;
       const ebitda = grossProfit - opex;
@@ -56,7 +39,6 @@ const EBITDABridgeChart = ({ metrics, datasetLabel }: Props) => {
       };
     }
 
-    // Mode 2: Simplified contribution margin
     if (hasRevenue && hasCost) {
       const contribution = revenue - cost;
       return {
@@ -71,8 +53,12 @@ const EBITDABridgeChart = ({ metrics, datasetLabel }: Props) => {
       };
     }
 
-    // Mode 3: Insufficient data
     return { mode: "empty" as const, title: null, subtitle: null, steps: null };
+  }, [metrics]);
+
+  const existingTypes = useMemo(() => {
+    const types = new Set(metrics.map((m) => m.metric_type));
+    return { revenue: types.has("revenue"), cogs: types.has("cogs"), opex: types.has("opex"), cost: types.has("cost") };
   }, [metrics]);
 
   const colors: Record<string, string> = {
@@ -81,17 +67,6 @@ const EBITDABridgeChart = ({ metrics, datasetLabel }: Props) => {
     negative: "hsl(var(--destructive))",
   };
 
-  const existingTypes = useMemo(() => {
-    const types = new Set(metrics.map((m) => m.metric_type));
-    return {
-      revenue: types.has("revenue"),
-      cogs: types.has("cogs"),
-      opex: types.has("opex"),
-      cost: types.has("cost"),
-    };
-  }, [metrics]);
-
-  // Mode 3: Empty state
   if (analysis.mode === "empty") {
     return (
       <div className="glass-card p-5 rounded-xl">
@@ -105,9 +80,7 @@ const EBITDABridgeChart = ({ metrics, datasetLabel }: Props) => {
           </div>
           <div>
             <p className="text-sm font-medium mb-1">Insufficient data for EBITDA Bridge</p>
-            <p className="text-xs text-muted-foreground max-w-xs mx-auto">
-              Map your columns to the required metric types to enable this chart.
-            </p>
+            <p className="text-xs text-muted-foreground max-w-xs mx-auto">Map your columns to the required metric types to enable this chart.</p>
           </div>
           <div className="text-left max-w-xs mx-auto space-y-1.5 pt-2">
             <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Required metric types:</p>
@@ -141,9 +114,7 @@ const EBITDABridgeChart = ({ metrics, datasetLabel }: Props) => {
           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{analysis.title}</h3>
         </div>
         {datasetLabel && (
-          <span className="text-[10px] text-muted-foreground truncate max-w-[120px]" title={datasetLabel}>
-            {datasetLabel}
-          </span>
+          <span className="text-[10px] text-muted-foreground truncate max-w-[120px]" title={datasetLabel}>{datasetLabel}</span>
         )}
       </div>
       <div className="flex items-center gap-1.5 mb-1">
@@ -167,28 +138,13 @@ const EBITDABridgeChart = ({ metrics, datasetLabel }: Props) => {
         </p>
       )}
 
-      <div className="h-[220px]">
+      <div style={{ height: CHART_HEIGHT }}>
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={analysis.steps!} barCategoryGap="20%">
-            <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} />
-            <YAxis
-              stroke="hsl(var(--muted-foreground))"
-              fontSize={10}
-              tickLine={false}
-              axisLine={false}
-              tickFormatter={(v) =>
-                v >= 1e6 ? `$${(v / 1e6).toFixed(0)}M` : v >= 1e3 ? `$${(v / 1e3).toFixed(0)}K` : `$${v}`
-              }
-            />
-            <Tooltip
-              contentStyle={{
-                fontSize: 11,
-                background: "hsl(var(--card))",
-                border: "1px solid hsl(var(--border))",
-                borderRadius: 8,
-              }}
-              formatter={(v: number) => [`$${Math.abs(v).toLocaleString()}`, "Amount"]}
-            />
+          <BarChart data={analysis.steps!} barCategoryGap="20%" margin={{ top: 8, right: 8, bottom: 0, left: 4 }}>
+            <CartesianGrid {...gridStyle} vertical={false} />
+            <XAxis dataKey="name" {...axisStyle} />
+            <YAxis {...axisStyle} tickFormatter={(v) => formatCurrency(v)} />
+            <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [formatCurrency(Math.abs(v), { compact: false }), "Amount"]} />
             <ReferenceLine y={0} stroke="hsl(var(--border))" />
             <Bar dataKey="bottom" stackId="bridge" fill="transparent" />
             <Bar dataKey="height" stackId="bridge" radius={[4, 4, 0, 0]}>

@@ -1,5 +1,6 @@
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid } from "recharts";
 import { useMemo } from "react";
+import { formatCurrency, axisStyle, tooltipStyle, gridStyle, CHART_HEIGHT } from "@/lib/chart-config";
 
 interface PeriodComparisonProps {
   data: { month: string; revenue: number }[];
@@ -24,7 +25,7 @@ const PeriodComparison = ({ data }: PeriodComparisonProps) => {
     return (
       <div className="glass-card p-6 rounded-xl">
         <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">Period Comparison</h3>
-        <div className="h-56 flex items-center justify-center text-muted-foreground text-sm">Needs ≥4 months of data</div>
+        <div style={{ height: CHART_HEIGHT }} className="flex items-center justify-center text-muted-foreground text-sm">Needs ≥4 months of data</div>
       </div>
     );
   }
@@ -32,25 +33,21 @@ const PeriodComparison = ({ data }: PeriodComparisonProps) => {
   return (
     <div className="glass-card p-6 rounded-xl">
       <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">Period Comparison</h3>
-      <div className="h-56">
+      <div style={{ height: CHART_HEIGHT }}>
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={comparisonData}>
-            <XAxis dataKey="period" stroke="hsl(var(--muted-foreground))" fontSize={11} />
-            <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} />
+          <BarChart data={comparisonData} margin={{ top: 8, right: 8, bottom: 0, left: 4 }}>
+            <CartesianGrid {...gridStyle} vertical={false} />
+            <XAxis dataKey="period" {...axisStyle} />
+            <YAxis {...axisStyle} tickFormatter={(v) => formatCurrency(v)} />
             <Tooltip
-              contentStyle={{
-                fontSize: 11,
-                background: "hsl(var(--card))",
-                border: "1px solid hsl(var(--border))",
-                borderRadius: 8,
-              }}
-              formatter={(val: number, name: string) => [`€${val.toLocaleString()}`, name === "previous" ? "Previous" : "Current"]}
+              contentStyle={tooltipStyle}
+              formatter={(val: number, name: string) => [formatCurrency(val, { compact: false }), name === "previous" ? "Previous Period" : "Current Period"]}
             />
             <Legend
               wrapperStyle={{ fontSize: "11px" }}
               formatter={(value) => value === "previous" ? "Previous Period" : "Current Period"}
             />
-            <Bar dataKey="previous" fill="hsl(var(--muted-foreground))" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="previous" fill="hsl(var(--muted-foreground))" fillOpacity={0.4} radius={[4, 4, 0, 0]} />
             <Bar dataKey="current" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>

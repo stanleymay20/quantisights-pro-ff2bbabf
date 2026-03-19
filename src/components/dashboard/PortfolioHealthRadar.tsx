@@ -3,6 +3,7 @@ import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Responsi
 import { Shield, AlertTriangle } from "lucide-react";
 import { MetricRow } from "@/hooks/useMetrics";
 import { Link } from "react-router-dom";
+import { tooltipStyle, CHART_HEIGHT } from "@/lib/chart-config";
 
 interface Props {
   metrics: MetricRow[];
@@ -12,24 +13,8 @@ interface Props {
 
 /**
  * Portfolio Health Radar — DATA-HONEST.
- *
- * Previous implementation used hardcoded fallback scores (85, 70, 60, 50)
- * when data was missing, creating a fabricated health picture.
- *
- * Now: only renders dimensions for which we have REAL data.
- * No fallbacks, no fabrication.
- */
-/**
- * Portfolio Health Radar — DATA-HONEST v2.
- *
- * Scoring methodology disclosed per dimension:
- * - Revenue Growth: raw % change, clamped 0-100 (50 = flat, >50 = growing)
- * - Retention: inverse churn mapped linearly (0% churn = 100, 10%+ churn = 0)
- * - Efficiency: inverse cost ratio (0 cost = 100, 100% cost = 0)
- * - Margin: direct (1 - costRatio) * 100
- * - Customer Growth: same as revenue growth methodology
- *
- * ALL scores are HEURISTIC PROXIES — labeled as such.
+ * Scoring methodology: heuristic proxies, disclosed per dimension.
+ * Minimum 3 real dimensions required.
  */
 const PortfolioHealthRadar = ({ metrics, latestChurn, latestCost }: Props) => {
   const { data, missingDimensions, scoringMethodology } = useMemo(() => {
@@ -42,62 +27,56 @@ const PortfolioHealthRadar = ({ metrics, latestChurn, latestCost }: Props) => {
     const missing: string[] = [];
     const methodology: string[] = [];
 
-    // Revenue Growth — only if we have ≥2 revenue data points
     if (revenue.length >= 2) {
       const growth = ((revenue[revenue.length - 1].value / (revenue[0].value || 1)) - 1) * 100;
       const score = Math.round(Math.min(100, Math.max(0, growth + 50)));
-      const method = `Growth ${growth >= 0 ? "+" : ""}${growth.toFixed(1)}% → score ${score}/100 (50 = flat baseline)`;
+      const method = `Growth ${growth >= 0 ? "+" : ""}${growth.toFixed(1)}% → ${score}/100`;
       dimensions.push({ dimension: "Revenue Growth", score, fullMark: 100, method });
       methodology.push(`Revenue Growth: ${method}`);
     } else {
-      missing.push("Revenue Growth (need ≥2 revenue points)");
+      missing.push("Revenue Growth (need ≥2 points)");
     }
 
-    // Retention — only if churn data exists and is > 0
     if (latestChurn > 0) {
       const score = Math.round(Math.max(0, 100 - latestChurn * 10));
-      const method = `Churn ${latestChurn.toFixed(1)}% → score ${score}/100 (linear: 10%+ churn = 0)`;
+      const method = `Churn ${latestChurn.toFixed(1)}% → ${score}/100`;
       dimensions.push({ dimension: "Retention", score, fullMark: 100, method });
       methodology.push(`Retention: ${method}`);
     } else {
       missing.push("Retention (need churn data)");
     }
 
-    // Cost Efficiency — only if cost data exists and is > 0
     if (latestCost > 0) {
       const score = Math.round(Math.max(0, 100 - latestCost * 100));
-      const method = `Cost ratio ${(latestCost * 100).toFixed(1)}% → score ${score}/100 (linear inverse)`;
+      const method = `Cost ratio ${(latestCost * 100).toFixed(1)}% → ${score}/100`;
       dimensions.push({ dimension: "Efficiency", score, fullMark: 100, method });
       methodology.push(`Efficiency: ${method}`);
     } else {
       missing.push("Efficiency (need cost data)");
     }
 
-    // Margin — only if both revenue and cost exist
     if (revenue.length > 0 && latestCost > 0) {
       const score = Math.round(Math.min(100, Math.max(0, (1 - latestCost) * 100)));
-      const method = `Margin ${((1 - latestCost) * 100).toFixed(1)}% → score ${score}/100`;
+      const method = `Margin ${((1 - latestCost) * 100).toFixed(1)}% → ${score}/100`;
       dimensions.push({ dimension: "Margin", score, fullMark: 100, method });
       methodology.push(`Margin: ${method}`);
     } else {
       missing.push("Margin (need revenue + cost)");
     }
 
-    // Customer Growth — only if ≥2 customer data points
     if (customers.length >= 2) {
       const growth = ((customers[customers.length - 1].value / (customers[0].value || 1)) - 1) * 100;
       const score = Math.round(Math.min(100, Math.max(0, growth + 50)));
-      const method = `Growth ${growth >= 0 ? "+" : ""}${growth.toFixed(1)}% → score ${score}/100 (50 = flat baseline)`;
+      const method = `Growth ${growth >= 0 ? "+" : ""}${growth.toFixed(1)}% → ${score}/100`;
       dimensions.push({ dimension: "Customer Growth", score, fullMark: 100, method });
       methodology.push(`Customer Growth: ${method}`);
     } else {
-      missing.push("Customer Growth (need ≥2 customer points)");
+      missing.push("Customer Growth (need ≥2 points)");
     }
 
     return { data: dimensions, missingDimensions: missing, scoringMethodology: methodology };
   }, [metrics, latestChurn, latestCost]);
 
-  // Need at least 3 dimensions for a meaningful radar
   if (data.length < 3) {
     return (
       <div className="glass-card p-5 rounded-xl">
@@ -145,25 +124,24 @@ const PortfolioHealthRadar = ({ metrics, latestChurn, latestCost }: Props) => {
             : avgScore >= 50 ? "bg-warning/10 text-warning"
             : "bg-destructive/10 text-destructive"
         }`}>
-          Score: {avgScore}/100 ({data.length} dimensions)
+          {avgScore}/100
         </span>
       </div>
-      <div className="flex items-center gap-1.5 mb-2">
-        <p className="text-[11px] text-muted-foreground">Based on {data.length} verified data dimensions</p>
-        <span className="text-[9px] font-bold uppercase tracking-wider text-warning bg-warning/10 px-1.5 py-0.5 rounded">Heuristic</span>
-      </div>
+      <p className="text-[11px] text-muted-foreground mb-2">
+        {data.length} dimensions · <span className="text-warning font-medium">Heuristic</span>
+      </p>
 
-      <div className="h-[220px]">
+      <div style={{ height: CHART_HEIGHT }}>
         <ResponsiveContainer width="100%" height="100%">
           <RadarChart data={data} cx="50%" cy="50%" outerRadius="70%">
             <PolarGrid stroke="hsl(var(--border))" strokeOpacity={0.4} />
-            <PolarAngleAxis dataKey="dimension" tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} />
+            <PolarAngleAxis dataKey="dimension" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
             <PolarRadiusAxis angle={90} domain={[0, 100]} tick={false} />
             <Tooltip
-              contentStyle={{ fontSize: 11, background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }}
+              contentStyle={tooltipStyle}
               formatter={(v: number, _: any, entry: any) => {
                 const dim = data.find(d => d.score === v);
-                return [`${v}/100`, dim?.method ? `${dim.dimension} — ${dim.method}` : "Score"];
+                return [`${v}/100`, dim?.method || "Score"];
               }}
             />
             <Radar dataKey="score" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.15} strokeWidth={2} />
@@ -171,16 +149,13 @@ const PortfolioHealthRadar = ({ metrics, latestChurn, latestCost }: Props) => {
         </ResponsiveContainer>
       </div>
 
-      {/* Scoring methodology disclosure */}
       {scoringMethodology.length > 0 && (
         <details className="mt-2 text-[10px] text-muted-foreground">
           <summary className="cursor-pointer font-semibold hover:text-foreground transition-colors">
-            Scoring methodology (heuristic proxies)
+            Scoring methodology
           </summary>
           <ul className="mt-1 space-y-0.5 pl-3">
-            {scoringMethodology.map((m, i) => (
-              <li key={i}>• {m}</li>
-            ))}
+            {scoringMethodology.map((m, i) => <li key={i}>• {m}</li>)}
           </ul>
         </details>
       )}
