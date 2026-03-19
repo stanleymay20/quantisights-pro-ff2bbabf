@@ -1204,9 +1204,9 @@ const DataUpload = () => {
                         </p>
                         <p className="text-xs text-muted-foreground mt-0.5">Quality Score</p>
                         <Badge className={`mt-1 text-[10px] ${
-                          intelligence.qualityScore >= 80 ? "bg-green-500/10 text-green-500" :
-                          intelligence.qualityScore >= 50 ? "bg-yellow-500/10 text-yellow-500" :
-                          "bg-red-500/10 text-red-500"
+                          intelligence.qualityScore >= 80 ? "bg-success/10 text-success" :
+                          intelligence.qualityScore >= 50 ? "bg-warning/10 text-warning" :
+                          "bg-destructive/10 text-destructive"
                         } border-none`}>
                           {intelligence.qualityLabel}
                         </Badge>
