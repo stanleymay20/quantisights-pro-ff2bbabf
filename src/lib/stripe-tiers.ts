@@ -110,7 +110,7 @@ export const FEATURE_MATRIX = [
     { label: "Data Lineage & Provenance", starter: false, growth: false, enterprise: true },
     { label: "OKR Alignment Engine", starter: false, growth: true, enterprise: true },
     { label: "Industry Benchmarking", starter: false, growth: true, enterprise: true },
-    { label: "Team Seats", starter: "2", growth: "10", enterprise: "Unlimited" },
+    { label: "Team Seats", starter: "3", growth: "10", enterprise: "Unlimited" },
     { label: "Multi-organization", starter: false, growth: false, enterprise: true },
     { label: "SSO & RBAC", starter: false, growth: false, enterprise: true },
     { label: "Full Audit Trail", starter: false, growth: false, enterprise: true },
