@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, ReferenceLine, CartesianGrid } from "recharts";
 import { AlertTriangle } from "lucide-react";
 import { Link } from "react-router-dom";
-import { formatCurrency, axisStyle, tooltipStyle, gridStyle, CHART_HEIGHT } from "@/lib/chart-config";
+import { formatCurrency, axisStyle, tooltipStyle, gridStyle, CHART_HEIGHT, CHART_COLORS, CHART_OPACITY } from "@/lib/chart-config";
 
 interface WaterfallChartProps {
   data: { metric_type: string; value: number }[];
@@ -22,13 +22,6 @@ const WaterfallChart = ({ data }: WaterfallChartProps) => {
 
     if (revenue === 0) return null;
 
-    const items: { name: string; value: number; type: "positive" | "negative" | "total" | "uncertain" }[] = [];
-    items.push({ name: "Revenue", value: revenue, type: "positive" });
-
-    if (cogs > 0) items.push({ name: "COGS", value: -cogs, type: "negative" });
-    if (opex > 0) items.push({ name: "OpEx", value: -opex, type: "negative" });
-    if (cogs === 0 && opex === 0 && cost > 0) items.push({ name: "Total Spend", value: -cost, type: "uncertain" });
-
     // If unsplit cost, use zero-baseline grouped bars instead of waterfall
     if (cogs === 0 && opex === 0 && cost > 0) {
       const net = revenue - cost - churnRevLoss;
@@ -36,17 +29,27 @@ const WaterfallChart = ({ data }: WaterfallChartProps) => {
         { name: "Revenue", value: revenue, bottom: 0, height: revenue, type: "positive" as const },
         { name: "Total Spend", value: cost, bottom: 0, height: cost, type: "uncertain" as const },
         ...(churnRevLoss > 0 ? [{ name: "Churn Loss", value: churnRevLoss, bottom: 0, height: churnRevLoss, type: "negative" as const }] : []),
-        { name: "Net", value: Math.abs(net), bottom: 0, height: Math.abs(net), type: net >= 0 ? "total" as const : "negative" as const },
+        { name: "Net", value: Math.abs(net), bottom: 0, height: Math.abs(net), type: net >= 0 ? "positive" as const : "negative" as const },
       ];
     }
+
+    const items: { name: string; value: number; type: "positive" | "negative" | "positive" | "uncertain" }[] = [];
+    items.push({ name: "Revenue", value: revenue, type: "positive" });
+
+    if (cogs > 0) items.push({ name: "COGS", value: -cogs, type: "negative" });
+    if (opex > 0) items.push({ name: "OpEx", value: -opex, type: "negative" });
     if (churnRevLoss > 0) items.push({ name: "Churn Loss", value: -churnRevLoss, type: "negative" });
 
     const net = items.reduce((s, i) => s + i.value, 0);
-    items.push({ name: "Net", value: net, type: "total" });
+    items.push({ name: "Net", value: net, type: "positive" });
 
     let running = 0;
     return items.map(item => {
-      if (item.type === "total") return { ...item, bottom: 0, height: Math.abs(item.value) };
+      if (item.name === "Net" || item.name === "Revenue") {
+        const result = { ...item, bottom: 0, height: Math.abs(item.value) };
+        running += item.value;
+        return result;
+      }
       const bottom = item.value >= 0 ? running : running + item.value;
       const height = Math.abs(item.value);
       running += item.value;
@@ -56,11 +59,10 @@ const WaterfallChart = ({ data }: WaterfallChartProps) => {
 
   const hasUncertain = analysis?.some(d => d.type === "uncertain");
 
-  const colors: Record<string, string> = {
-    positive: "hsl(var(--success))",
-    negative: "hsl(var(--destructive))",
-    total: "hsl(var(--primary))",
-    uncertain: "hsl(var(--muted-foreground))",
+  const colorMap: Record<string, string> = {
+    positive: CHART_COLORS.positive,
+    negative: CHART_COLORS.negative,
+    uncertain: CHART_COLORS.uncertain,
   };
 
   if (!analysis) {
@@ -116,7 +118,7 @@ const WaterfallChart = ({ data }: WaterfallChartProps) => {
       })()}
       <div style={{ height: CHART_HEIGHT }}>
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={analysis} margin={{ top: 8, right: 8, bottom: 0, left: 4 }}>
+          <BarChart data={analysis} margin={{ top: 16, right: 8, bottom: 0, left: 4 }}>
             <CartesianGrid {...gridStyle} vertical={false} />
             <XAxis dataKey="name" {...axisStyle} />
             <YAxis {...axisStyle} tickFormatter={(v: number) => formatCurrency(v)} />
@@ -126,10 +128,16 @@ const WaterfallChart = ({ data }: WaterfallChartProps) => {
             <Bar dataKey="height" stackId="waterfall" radius={[4, 4, 0, 0]} label={({ x, y, width, index }: any) => {
               const entry = analysis![index];
               if (!entry) return null;
-              return <text x={x + width / 2} y={y - 6} textAnchor="middle" fontSize={10} fill="hsl(var(--foreground))" opacity={0.7}>{formatCurrency(entry.value)}</text>;
+              return <text x={x + width / 2} y={y - 6} textAnchor="middle" fontSize={10} fill="hsl(var(--foreground))" opacity={0.7}>{formatCurrency(Math.abs(entry.value))}</text>;
             }}>
               {analysis.map((entry, i) => (
-                <Cell key={i} fill={colors[entry.type]} fillOpacity={entry.type === "uncertain" ? 0.45 : 0.85} />
+                <Cell
+                  key={i}
+                  fill={colorMap[entry.type]}
+                  fillOpacity={entry.type === "uncertain" ? CHART_OPACITY.uncertain : CHART_OPACITY.full}
+                  strokeDasharray={entry.type === "uncertain" ? "4 2" : undefined}
+                  stroke={entry.type === "uncertain" ? CHART_COLORS.uncertain : undefined}
+                />
               ))}
             </Bar>
           </BarChart>
