@@ -1296,7 +1296,7 @@ const DataUpload = () => {
                           <p className="text-xs text-muted-foreground">Duplicate rows</p>
                         </div>
                         <div className="p-3 rounded-lg bg-muted/30 border border-border/40">
-                          <p className={`text-lg font-bold ${diagnostics.dateContinuity === "OK" ? "text-green-500" : diagnostics.dateContinuity === "Gaps detected" ? "text-yellow-500" : "text-muted-foreground"}`}>
+                          <p className={`text-lg font-bold ${diagnostics.dateContinuity === "OK" ? "text-success" : diagnostics.dateContinuity === "Gaps detected" ? "text-warning" : "text-muted-foreground"}`}>
                             {diagnostics.dateContinuity}
                           </p>
                           <p className="text-xs text-muted-foreground">
