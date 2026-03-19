@@ -29,7 +29,7 @@ const Demo = () => {
         sessionStorage.removeItem("quantivis_workspace_id");
         sessionStorage.removeItem("quantivis_project_id");
 
-        localStorage.removeItem("quantivis_tour_completed");
+        // Don't reset tour — let it show once and stay dismissed
         localStorage.setItem("quantivis_welcome_completed", "true");
 
         if (cancelled) return;
