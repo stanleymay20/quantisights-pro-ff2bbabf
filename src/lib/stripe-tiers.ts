@@ -8,12 +8,12 @@ export const TIERS = {
     product_id: "prod_U4SdCda1dcZAtu",
     tagline: "Decision intelligence for teams replacing spreadsheet-driven strategy",
     features: [
-      "1 organization · 1 dataset",
+      "1 organization · 2 datasets",
       "Core KPI dashboard & analytics",
       "Basic scenario simulations (5/day)",
       "Manual data upload (CSV)",
       "Standard reporting",
-      "2 team seats",
+      "3 team seats",
     ],
   },
   growth: {
