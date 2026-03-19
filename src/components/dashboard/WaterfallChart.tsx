@@ -114,7 +114,7 @@ const WaterfallChart = ({ data }: WaterfallChartProps) => {
             <Bar dataKey="bottom" stackId="waterfall" fill="transparent" />
             <Bar dataKey="height" stackId="waterfall" radius={[4, 4, 0, 0]}>
               {analysis.map((entry, i) => (
-                <Cell key={i} fill={colors[entry.type]} fillOpacity={0.85} />
+                <Cell key={i} fill={colors[entry.type]} fillOpacity={entry.type === "uncertain" ? 0.45 : 0.85} />
               ))}
             </Bar>
           </BarChart>
