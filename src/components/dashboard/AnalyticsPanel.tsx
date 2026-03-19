@@ -1,6 +1,7 @@
 import { lazy, useMemo } from "react";
 import type { Insight } from "@/hooks/useInsights";
 
+const AnalyticsSummary = lazy(() => import("./AnalyticsSummary"));
 const RevenueChart = lazy(() => import("./RevenueChart"));
 const CustomerSegmentation = lazy(() => import("./CustomerSegmentation"));
 const AIInsights = lazy(() => import("./AIInsights"));
@@ -40,6 +41,14 @@ const AnalyticsPanel = ({ metrics, revenueByMonth, segmentData, insights, latest
 
   return (
     <div className="space-y-5">
+      {/* Human-readable narrative summary */}
+      <AnalyticsSummary
+        revenueByMonth={revenueByMonth}
+        metrics={metrics}
+        latestChurn={latestChurn}
+        latestCost={latestCost}
+      />
+
       {/* Row 1: Core Revenue Intelligence */}
       <div className={`grid ${hasSegments ? "lg:grid-cols-3" : "lg:grid-cols-1"} gap-5`}>
         <div className={hasSegments ? "lg:col-span-2" : ""}>

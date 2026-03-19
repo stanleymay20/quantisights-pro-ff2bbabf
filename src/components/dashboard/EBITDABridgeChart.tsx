@@ -146,7 +146,7 @@ const EBITDABridgeChart = ({ metrics, datasetLabel }: Props) => {
           </span>
         )}
       </div>
-      <div className="flex items-center gap-1.5 mb-4">
+      <div className="flex items-center gap-1.5 mb-1">
         <p className="text-[11px] text-muted-foreground">{analysis.subtitle}</p>
         {analysis.mode === "simplified" && (
           <TooltipProvider>
@@ -161,6 +161,11 @@ const EBITDABridgeChart = ({ metrics, datasetLabel }: Props) => {
           </TooltipProvider>
         )}
       </div>
+      {analysis.mode === "simplified" && (
+        <p className="text-[11px] text-muted-foreground/80 mb-3 italic">
+          Costs are aggregated — unable to assess whether growth is efficient without COGS/OpEx split.
+        </p>
+      )}
 
       <div className="h-[220px]">
         <ResponsiveContainer width="100%" height="100%">
