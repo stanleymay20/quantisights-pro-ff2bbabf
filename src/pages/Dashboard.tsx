@@ -11,12 +11,13 @@ import { useAuth } from "@/contexts/AuthContext";
 
 import { useOrganization } from "@/hooks/useOrganization";
 import { useProject } from "@/contexts/ProjectContext";
+import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { useMetrics } from "@/hooks/useMetrics";
 import { useInsights } from "@/hooks/useInsights";
 import { Bell, User, RefreshCw, Shield, Upload, Zap, TrendingUp, ArrowRight, Minimize2, Maximize2, Settings, CreditCard, Users, LogOut, ChevronDown } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
@@ -28,7 +29,8 @@ const VIEW_STORAGE_KEY = "quantivis_dashboard_view";
 const Dashboard = () => {
   const { user, signOut } = useAuth();
   const { organizations, currentOrgId, currentOrg, switchOrganization, loading: orgLoading } = useOrganization();
-  const { currentProject, activeDatasetId } = useProject();
+  const { currentWorkspaceId, loading: workspaceLoading } = useWorkspace();
+  const { currentProject, activeDatasetId, loading: projectLoading } = useProject();
   const {
     metrics, totalRevenue, totalCustomers, latestCost, latestChurn,
     revenueByMonth, segmentData, hasData, lastUpdated, loading: metricsLoading,
@@ -36,9 +38,9 @@ const Dashboard = () => {
   } = useMetrics(currentOrgId, activeDatasetId);
   const { insights, loading: insightsLoading } = useInsights(currentOrgId, activeDatasetId);
   const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "User";
+  const isDemoUser = Boolean(user?.user_metadata?.is_demo);
   const { toast } = useToast();
   const navigate = useNavigate();
-  const location = useLocation();
   const [recalculating, setRecalculating] = useState(false);
   const [openAdvisoryCount, setOpenAdvisoryCount] = useState(0);
   const [pendingDecisions, setPendingDecisions] = useState(0);
@@ -59,7 +61,7 @@ const Dashboard = () => {
         .from("organizations")
         .select("onboarding_completed")
         .eq("id", currentOrgId)
-        .single();
+        .maybeSingle();
       if (data && !data.onboarding_completed) {
         navigate("/onboarding", { replace: true });
       }
@@ -78,7 +80,6 @@ const Dashboard = () => {
       if (activeDatasetId) {
         advisoryQuery = advisoryQuery.eq("dataset_id", activeDatasetId);
       } else {
-        // No dataset selected — don't leak cross-workspace data
         setOpenAdvisoryCount(0);
         setPendingDecisions(0);
         return;
@@ -126,7 +127,15 @@ const Dashboard = () => {
 
   const criticalInsights = insights.filter(i => i.severity === "high" || i.severity === "medium");
   const hasAnomalies = criticalInsights.length > 0;
-  const isLoading = metricsLoading || insightsLoading;
+  const isContextLoading = orgLoading || workspaceLoading || projectLoading;
+  const isLoading = isContextLoading || metricsLoading || insightsLoading;
+  const showWelcomeFlow = !isDemoUser && !isContextLoading;
+  const showGuidedTour = hasData && !isContextLoading;
+  const showEmptyState = !hasData && !isLoading;
+
+  const demoContextLabel = currentWorkspaceId && currentProject
+    ? `${currentProject.name} • ready in ${currentWorkspaceId ? "active workspace" : "selected workspace"}`
+    : null;
 
   const greeting = () => {
     const hour = new Date().getHours();
