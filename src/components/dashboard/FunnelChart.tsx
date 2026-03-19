@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { AlertTriangle } from "lucide-react";
 import { Link } from "react-router-dom";
+import { formatNumber } from "@/lib/chart-config";
 
 interface FunnelChartProps {
   metrics: { metric_type: string; value: number }[];
@@ -8,15 +9,7 @@ interface FunnelChartProps {
 
 /**
  * Acquisition Funnel — DATA-HONEST.
- *
- * Previous implementation fabricated funnel stages by multiplying
- * customers × 3.5 for "leads" and × 2.1 for "qualified".
- * This produced fake conversion rates presented as real data.
- *
- * A real funnel requires actual stage-by-stage data:
- * leads → qualified → customers → retained.
- *
- * Now: only renders when real funnel data exists.
+ * Only renders when real funnel stage data exists (≥2 stages).
  */
 const FunnelChart = ({ metrics }: FunnelChartProps) => {
   const stages = useMemo(() => {
@@ -25,7 +18,6 @@ const FunnelChart = ({ metrics }: FunnelChartProps) => {
     const customers = metrics.filter(m => m.metric_type === "customers").reduce((s, m) => s + m.value, 0);
     const churn = metrics.filter(m => m.metric_type === "churn").slice(-1)[0]?.value ?? 0;
 
-    // Only render if we have at least 2 real funnel stages
     const realStages: { label: string; value: number }[] = [];
     if (leads > 0) realStages.push({ label: "Leads", value: leads });
     if (qualified > 0) realStages.push({ label: "Qualified", value: qualified });
@@ -51,10 +43,7 @@ const FunnelChart = ({ metrics }: FunnelChartProps) => {
               Map <strong>leads</strong>, <strong>qualified_leads</strong>, and <strong>customers</strong> metric types to enable the funnel.
             </p>
           </div>
-          <Link
-            to="/data-upload"
-            className="inline-flex text-xs font-semibold text-primary hover:underline"
-          >
+          <Link to="/data-upload" className="inline-flex text-xs font-semibold text-primary hover:underline">
             Upload Funnel Data →
           </Link>
         </div>
@@ -64,20 +53,13 @@ const FunnelChart = ({ metrics }: FunnelChartProps) => {
 
   const maxValue = stages[0]?.value || 1;
 
-  const stageColors = [
-    "hsl(var(--primary))",
-    "hsl(var(--accent-foreground))",
-    "hsl(var(--success))",
-    "hsl(var(--success))",
-  ];
-
   return (
     <div className="glass-card p-6 rounded-xl">
       <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">Acquisition Funnel</h3>
       <div className="space-y-3 py-2">
         {stages.map((stage, i) => {
           const widthPct = Math.max(20, (stage.value / maxValue) * 100);
-          const conversionRate = i > 0 ? ((stage.value / stages[i - 1].value) * 100).toFixed(0) : null;
+          const conversionRate = i > 0 ? ((stage.value / stages[i - 1].value) * 100).toFixed(1) : null;
           return (
             <div key={stage.label}>
               {conversionRate && (
@@ -89,15 +71,14 @@ const FunnelChart = ({ metrics }: FunnelChartProps) => {
                 <span className="text-xs text-muted-foreground w-20 text-right shrink-0">{stage.label}</span>
                 <div className="flex-1 flex justify-center">
                   <div
-                    className="h-8 rounded-lg flex items-center justify-center transition-all"
+                    className="h-9 rounded-lg flex items-center justify-center transition-all"
                     style={{
                       width: `${widthPct}%`,
-                      backgroundColor: stageColors[i % stageColors.length],
-                      opacity: 0.85,
+                      backgroundColor: `hsl(var(--primary) / ${1 - i * 0.15})`,
                     }}
                   >
-                    <span className="text-xs font-bold text-white drop-shadow-sm">
-                      {stage.value.toLocaleString()}
+                    <span className="text-xs font-bold text-primary-foreground drop-shadow-sm">
+                      {formatNumber(stage.value)}
                     </span>
                   </div>
                 </div>
