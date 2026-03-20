@@ -1847,4 +1847,79 @@ await exportToPowerPoint({
 | Best for | Compliance archives | Live board meetings |
     `,
   },
+  {
+    id: "decision-fitness",
+    title: "Decision Fitness & Maturity Assessment",
+    icon: Activity,
+    content: `
+## Decision Fitness Assessment
+
+The Decision Fitness module is a structured diagnostic tool based on the 7-dimension framework from *Decision Intelligence: The Operating System for Billion-Dollar Decisions*.
+
+### The 7 Dimensions
+| Dimension | Weight | What It Measures |
+|-----------|--------|-----------------|
+| **Strategic Clarity** | 20% | Mission alignment, objective specificity, stakeholder coherence |
+| **Structural Agility** | 15% | Org design for speed, escalation paths, decision rights |
+| **Systems & Tools** | 15% | Data infrastructure, decision support tooling, automation |
+| **Shared Decision Culture** | 15% | Psychological safety, dissent tolerance, learning orientation |
+| **Analytical Acumen** | 15% | Statistical literacy, evidence standards, analytical depth |
+| **Staff Enablement** | 10% | Training, empowerment, decision delegation patterns |
+| **Leadership Style** | 10% | Decision modeling, accountability, feedback culture |
+
+### Scoring
+Each dimension is scored 0–100 via weighted survey questions. The composite **Decision Fitness Score** is a weighted average across all 7 dimensions. Scores are classified:
+- **85–100**: Decision-Ready Organization
+- **65–84**: Developing — key gaps identified
+- **40–64**: Emerging — systematic improvement needed
+- **0–39**: At Risk — fundamental capability gaps
+
+### Decision Maturity Roadmap
+Organizations are mapped to a 3-phase maturity journey:
+
+| Phase | Focus | Duration | Key Activities |
+|-------|-------|----------|---------------|
+| **Foundation** (Phase 1) | Decision Ledger + Data Quality | Months 1–3 | Log decisions, establish data pipelines, baseline calibration |
+| **Expansion** (Phase 2) | Calibration + Intelligence | Months 4–8 | Activate calibration engine, deploy AI advisory, train teams |
+| **Strategic Embedding** (Phase 3) | Governance + Culture | Months 9–12 | Board integration, bias detection, institutional memory |
+
+## DROI & TCI Calculators
+
+### Decision Return on Investment (DROI)
+Quantifies the financial return from improving decision quality:
+\`\`\`
+DROI Multiplier = 1 + (False Positive Reduction / 100) + (Success Rate / 200)
+Improved Revenue = Revenue at Risk × DROI Multiplier
+Net Gain = Improved Revenue − Revenue at Risk
+\`\`\`
+
+### Total Cost of Inaction (TCI)
+Calculates the compounding cost of NOT making a decision:
+\`\`\`
+Direct Loss = Monthly Revenue Loss × Time Horizon
+Compounded Opportunity = Direct Loss × (1 + Growth Rate)^months − Direct Loss
+Competitive Multiplier = 1.0 – 2.0 (based on competitive pressure)
+Total TCI = (Direct Loss + Compounded Opportunity) × Competitive Multiplier
+\`\`\`
+
+The TCI includes a **Decision Entropy** metric — the rate at which strategic options narrow as time passes without action.
+
+## Decision Velocity Curve
+
+Analyzes the relationship between decision speed and accuracy:
+- **Sweet Spot Identification** — finds the optimal decision cycle time
+- **Paralysis Index** — percentage of decisions older than 30 days still pending
+- **Velocity Trend** — whether the organization is getting faster or slower over time
+- **Accuracy Correlation** — does faster deciding correlate with worse outcomes?
+
+## Free Strategy Session
+
+A conversion-oriented diagnostic that provides instant business intelligence:
+1. User inputs key metrics (revenue, costs, growth, churn) or uploads CSV
+2. AI generates a McKinsey-level diagnosis: Executive Summary, Key Findings, Hidden Loss Estimation, Root Cause Analysis, Priority Action Plan
+3. Soft conversion prompt to activate full platform
+
+This replaces the traditional "book a demo" funnel with an **instant-value diagnostic** that demonstrates platform capability before signup.
+    `,
+  },
 ];
