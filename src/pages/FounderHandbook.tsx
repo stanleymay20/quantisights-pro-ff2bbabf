@@ -243,6 +243,28 @@ Every threshold, weight, and multiplier is configurable via environment variable
 - Company-level detail panels
 - Correlated risk detection
 - Concentration analysis
+
+## Decision Fitness (/decision-fitness)
+**"The organizational readiness diagnostic"**
+- 7-dimension assessment: Strategic Clarity, Structural Agility, Systems & Tools, Shared Culture, Analytical Acumen, Staff Enablement, Leadership Style
+- Weighted scoring produces a composite Decision Fitness Score (0–100)
+- Actionable recommendations per dimension
+- Based on the book *Decision Intelligence: The Operating System for Billion-Dollar Decisions*
+
+## Decision Intelligence Suite (/decision-intelligence)
+**"Now with DROI, TCI, Velocity Curve, and Maturity Assessment"**
+- **DROI Calculator** — Quantifies financial return from improving decision quality
+- **TCI Calculator** — Calculates compounding cost of inaction with Decision Entropy metric
+- **Decision Velocity Curve** — Finds optimal speed-accuracy tradeoff with Paralysis Index
+- **Decision Maturity Assessment** — 15-question diagnostic mapping to 3-phase roadmap
+- Plus all existing: Monte Carlo, Bayesian, Regret Minimization, Sensitivity, Decision Trees
+
+## Free Strategy Session (/free-analysis)
+**"The conversion engine — instant value before signup"**
+- Paste business metrics or upload CSV
+- AI generates McKinsey-level diagnosis: Executive Summary, Key Findings, Hidden Loss Estimation, Root Cause Analysis, Priority Action Plan
+- Strategic Insight reframe + soft conversion CTA
+- No account required — demonstrates platform capability instantly
     `,
   },
   {
