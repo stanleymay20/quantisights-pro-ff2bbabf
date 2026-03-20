@@ -325,6 +325,24 @@ const chapters = [
     ]
   },
   {
+    id: 18.5,
+    title: "Decision Fitness & Organizational Maturity",
+    sections: [
+      {
+        heading: "The 7-Dimension Decision Fitness Framework",
+        content: `Based on the book *Decision Intelligence: The Operating System for Billion-Dollar Decisions*, the Decision Fitness Assessment evaluates organizations across seven critical dimensions:\n\n1. **Strategic Clarity** (20%) — Mission alignment, objective specificity, stakeholder coherence\n2. **Structural Agility** (15%) — Org design for speed, escalation paths, decision rights\n3. **Systems & Tools** (15%) — Data infrastructure, decision support tooling, automation\n4. **Shared Decision Culture** (15%) — Psychological safety, dissent tolerance, learning orientation\n5. **Analytical Acumen** (15%) — Statistical literacy, evidence standards, analytical depth\n6. **Staff Enablement** (10%) — Training, empowerment, decision delegation\n7. **Leadership Style** (10%) — Decision modeling, accountability, feedback culture\n\nThe composite score (0–100) classifies organizations as Decision-Ready (85+), Developing (65–84), Emerging (40–64), or At Risk (0–39).`
+      },
+      {
+        heading: "DROI & TCI: Quantifying Decision Value",
+        content: `Two proprietary calculators help executives quantify the value of better decisions:\n\n**Decision Return on Investment (DROI)**\nMeasures the financial return from improving decision quality:\n• DROI Multiplier = 1 + (False Positive Reduction / 100) + (Success Rate / 200)\n• Projects how much additional revenue is captured by reducing decision errors\n\n**Total Cost of Inaction (TCI)**\nCalculates the compounding cost of NOT deciding:\n• Direct revenue loss from delays\n• Compounded opportunity cost using growth rates\n• Competitive pressure multiplier (1.0x – 2.0x)\n• Decision Entropy metric — the rate at which options narrow over time\n\nBoth tools use real organizational data to produce concrete financial estimates, not theoretical projections.`
+      },
+      {
+        heading: "Decision Velocity & Maturity Roadmap",
+        content: `**Decision Velocity Curve**\nAnalyzes the speed-accuracy tradeoff in organizational decision-making:\n• Identifies the optimal decision cycle time ("sweet spot")\n• Calculates a Paralysis Index based on aging pending decisions\n• Tracks velocity trends over time\n• Correlates speed with outcome quality\n\n**3-Phase Maturity Roadmap**\nOrganizations progress through:\n\n1. **Foundation** (Months 1–3) — Decision Ledger, data quality baselines, initial calibration\n2. **Expansion** (Months 4–8) — Calibration engine activation, AI advisory deployment, team training\n3. **Strategic Embedding** (Months 9–12) — Board integration, cognitive bias detection, institutional memory\n\nEach phase has measurable milestones and a readiness assessment before progressing.`
+      }
+    ]
+  },
+  {
     id: 19,
     title: "Pricing & Subscription Model",
     sections: [
@@ -356,7 +374,7 @@ const chapters = [
       },
       {
         heading: "Roadmap",
-        content: `Upcoming capabilities on the development roadmap:\n\n• **Mobile app** — Executive decision queue on iOS/Android\n• **Slack bot** — Decision logging and morning briefs in Slack\n• **Advanced causal models** — Automated DAG discovery from data\n• **Multi-language AI** — Copilot in German, French, Arabic, Spanish\n• **SOC2 Type II** — Formal compliance certification\n• **On-premise deployment** — For regulated industries requiring data sovereignty\n• **API marketplace** — Third-party integrations and custom analytics modules\n\nThe core product philosophy remains unchanged: every feature must serve the Decision → Outcome → Learning loop. Analytics without accountability is just expensive distraction.`
+        content: `Recently shipped capabilities:\n\n✅ **Decision Fitness Assessment** — 7-dimension organizational readiness diagnostic\n✅ **DROI Calculator** — Decision Return on Investment quantification\n✅ **TCI Calculator** — Total Cost of Inaction with Decision Entropy metric\n✅ **Decision Velocity Curve** — Speed-accuracy tradeoff analysis with Paralysis Index\n✅ **Decision Maturity Assessment** — 15-question diagnostic with 3-phase roadmap\n✅ **Free Strategy Session** — Instant McKinsey-level business diagnosis (no signup)\n\nUpcoming capabilities on the development roadmap:\n\n• **Mobile app** — Executive decision queue on iOS/Android\n• **Slack bot** — Decision logging and morning briefs in Slack\n• **Advanced causal models** — Automated DAG discovery from data\n• **Multi-language AI** — Copilot in German, French, Arabic, Spanish\n• **SOC2 Type II** — Formal compliance certification\n• **On-premise deployment** — For regulated industries requiring data sovereignty\n• **API marketplace** — Third-party integrations and custom analytics modules\n\nThe core product philosophy remains unchanged: every feature must serve the Decision → Outcome → Learning loop. Analytics without accountability is just expensive distraction.`
       }
     ]
   }

@@ -180,14 +180,17 @@ Every threshold, weight, and multiplier is configurable via environment variable
 - This is the TABLE that proves governance to a board
 
 ## Decision Intelligence (/decision-intelligence)
-**"20+ quantitative frameworks"**
+**"20+ quantitative frameworks — now with Decision Economics"**
 - Monte Carlo simulation (10,000 iterations)
 - Bayesian Prior Visualization
 - Value of Information analysis
 - Regret Minimization framework
 - Sensitivity Analysis (tornado charts)
 - Decision Trees with probability nodes
-- Decision Velocity tracking
+- **NEW: DROI Calculator** — quantifies financial return from better decisions
+- **NEW: TCI Calculator** — calculates compounding cost of inaction with Decision Entropy
+- **NEW: Decision Velocity Curve** — optimal speed-accuracy tradeoff with Paralysis Index
+- **NEW: Decision Maturity Assessment** — 15-question diagnostic with 3-phase roadmap
 
 ## Simulations (/simulations)
 **"War Room for strategic modeling"**
@@ -243,6 +246,28 @@ Every threshold, weight, and multiplier is configurable via environment variable
 - Company-level detail panels
 - Correlated risk detection
 - Concentration analysis
+
+## Decision Fitness (/decision-fitness)
+**"The organizational readiness diagnostic"**
+- 7-dimension assessment: Strategic Clarity, Structural Agility, Systems & Tools, Shared Culture, Analytical Acumen, Staff Enablement, Leadership Style
+- Weighted scoring produces a composite Decision Fitness Score (0–100)
+- Actionable recommendations per dimension
+- Based on the book *Decision Intelligence: The Operating System for Billion-Dollar Decisions*
+
+## Decision Intelligence Suite (/decision-intelligence)
+**"Now with DROI, TCI, Velocity Curve, and Maturity Assessment"**
+- **DROI Calculator** — Quantifies financial return from improving decision quality
+- **TCI Calculator** — Calculates compounding cost of inaction with Decision Entropy metric
+- **Decision Velocity Curve** — Finds optimal speed-accuracy tradeoff with Paralysis Index
+- **Decision Maturity Assessment** — 15-question diagnostic mapping to 3-phase roadmap
+- Plus all existing: Monte Carlo, Bayesian, Regret Minimization, Sensitivity, Decision Trees
+
+## Free Strategy Session (/free-analysis)
+**"The conversion engine — instant value before signup"**
+- Paste business metrics or upload CSV
+- AI generates McKinsey-level diagnosis: Executive Summary, Key Findings, Hidden Loss Estimation, Root Cause Analysis, Priority Action Plan
+- Strategic Insight reframe + soft conversion CTA
+- No account required — demonstrates platform capability instantly
     `,
   },
   {
@@ -256,7 +281,13 @@ Every threshold, weight, and multiplier is configurable via environment variable
 ### 1. The Calibration Flywheel (Network Effect)
 Every decision an organization logs makes the system smarter. After 500+ decisions, the calibration engine produces correction factors that are unique to that organization. **Switching costs increase with every decision logged.** This is a data moat.
 
-### 2. Anti-Hallucination as a Feature
+### 2. Instant-Value Conversion Engine
+The Free Strategy Session (/free-analysis) lets any business get a McKinsey-level diagnosis in 60 seconds — no signup required. This creates a product-led growth flywheel:
+- Prospect experiences value BEFORE signing up
+- AI generates Executive Summary, Hidden Losses, Root Cause Analysis
+- Soft conversion: "To unlock continuous monitoring, activate Quantivis"
+
+### 3. Anti-Hallucination as a Feature
 Every AI tool hallucinates. We're the only platform that:
 - Caps confidence at 90% maximum
 - Classifies every output by evidence type
@@ -488,10 +519,13 @@ A: "Month 3: 5 paid pilot customers. Month 6: €50K ARR. Month 12: €150K ARR 
 
 ### Minute 4: Intelligence Depth
 *Show /decision-intelligence*
-> "For deeper analysis — Monte Carlo simulations running 10,000 iterations, Bayesian probability updating, Decision Trees, Sensitivity Analysis. This isn't generic AI — these are the same quantitative frameworks used by Goldman Sachs and Bridgewater, packaged for any executive team."
+> "For deeper analysis — Monte Carlo simulations, DROI and TCI calculators, Decision Velocity Curve, and a Decision Maturity Assessment. The DROI Calculator shows the financial return from improving decisions. The TCI Calculator shows the compounding cost of NOT deciding — including Decision Entropy, which measures how your options narrow every day you wait."
 
-*Show /strategy-pack briefly*
-> "And this is the Strategy Pack — the equivalent of a €200K McKinsey engagement, auto-generated from your actual data."
+*Show /free-analysis briefly*
+> "And this is the Free Strategy Session — any business can paste their metrics and get an instant McKinsey-level diagnosis. Executive Summary, Hidden Losses, Root Cause Analysis, Priority Actions. No signup required. This is how we convert prospects."
+
+*Show /decision-fitness briefly*
+> "The Decision Fitness Assessment evaluates your organization across 7 dimensions — from Strategic Clarity to Leadership Style — and maps you onto a maturity roadmap."
 
 ### Minute 5: The Close
 > "What you've just seen is the world's first Decision Governance platform. Every strategic call — documented, tracked, measured, and fed back into organizational learning. 
