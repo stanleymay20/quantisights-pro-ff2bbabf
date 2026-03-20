@@ -24,6 +24,7 @@ import DROICalculator from "@/components/decision-intelligence/DROICalculator";
 import TCICalculator from "@/components/decision-intelligence/TCICalculator";
 import DecisionVelocityCurve from "@/components/decision-intelligence/DecisionVelocityCurve";
 import DecisionMaturityAssessment from "@/components/decision-intelligence/DecisionMaturityAssessment";
+import { useDecisionPerformance } from "@/hooks/useDecisionPerformance";
 import {
   Brain, TrendingUp, AlertTriangle, GitCompare, BarChart3,
   Layers, RefreshCw, Target, Gauge, CheckCircle2
