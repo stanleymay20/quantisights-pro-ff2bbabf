@@ -357,8 +357,17 @@ const DecisionIntelligence = () => {
 
               <DecisionImpactAttribution decisions={decisions} />
 
-              {/* DROI — Decision Return on Investment */}
-              <DROICalculator performance={performanceData} loading={perfLoading} />
+              {/* DROI + TCI — Decision Economics (Ch. 3) */}
+              <div className="grid lg:grid-cols-2 gap-5">
+                <DROICalculator performance={performanceData} loading={perfLoading} />
+                <TCICalculator />
+              </div>
+
+              {/* Decision Velocity Curve (Ch. 1) */}
+              <DecisionVelocityCurve decisions={decisions} />
+
+              {/* Decision Maturity Assessment (Ch. 4) */}
+              <DecisionMaturityAssessment />
             </div>
           )}
         </main>
