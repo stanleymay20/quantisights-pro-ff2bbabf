@@ -4,21 +4,30 @@ import { Check, X } from "lucide-react";
 
 const comparisons = [
   {
-    category: "Decision Protection",
+    category: "Decision Intelligence (Ch. 4)",
     rows: [
-      { feature: "Overconfidence detection & correction", quantivis: true, mckinsey: false, tableau: false, mosaic: false },
+      { feature: "Causal inference (not just correlation)", quantivis: true, mckinsey: false, tableau: false, mosaic: false },
+      { feature: "Counterfactual simulation ('what if we hadn't acted?')", quantivis: true, mckinsey: false, tableau: false, mosaic: false },
+      { feature: "Prescriptive optimization (not just 'what happened')", quantivis: true, mckinsey: "Manual", tableau: false, mosaic: false },
       { feature: "Self-correcting confidence scores", quantivis: true, mckinsey: false, tableau: false, mosaic: false },
-      { feature: "Decision outcome tracking", quantivis: true, mckinsey: "Manual", tableau: false, mosaic: false },
-      { feature: "Cognitive bias detection", quantivis: true, mckinsey: "Manual", tableau: false, mosaic: false },
-      { feature: "Counterfactual analysis", quantivis: true, mckinsey: false, tableau: false, mosaic: false },
+      { feature: "Cognitive bias detection & mitigation", quantivis: true, mckinsey: "Manual", tableau: false, mosaic: false },
     ],
   },
   {
-    category: "Board Defensibility",
+    category: "Decision Governance (Ch. 3)",
     rows: [
+      { feature: "DROI / TCI quantification", quantivis: true, mckinsey: false, tableau: false, mosaic: false },
+      { feature: "Value of Information (VoI) analysis", quantivis: true, mckinsey: false, tableau: false, mosaic: false },
+      { feature: "Decision Velocity Curve optimization", quantivis: true, mckinsey: false, tableau: false, mosaic: false },
       { feature: "Audit-ready decision trail", quantivis: true, mckinsey: false, tableau: false, mosaic: false },
+      { feature: "Decision Maturity Assessment", quantivis: true, mckinsey: "Manual", tableau: false, mosaic: false },
+    ],
+  },
+  {
+    category: "Board Defensibility (Ch. 1)",
+    rows: [
+      { feature: "Decision Fitness Framework (7S adapted)", quantivis: true, mckinsey: true, tableau: false, mosaic: false },
       { feature: "Role-based risk scoring", quantivis: true, mckinsey: "Manual", tableau: false, mosaic: false },
-      { feature: "C-suite alignment index", quantivis: true, mckinsey: false, tableau: false, mosaic: false },
       { feature: "One-click board reports", quantivis: true, mckinsey: true, tableau: "Manual", mosaic: "Basic" },
       { feature: "Corrected probability disclosures", quantivis: true, mckinsey: false, tableau: false, mosaic: false },
     ],
@@ -49,12 +58,13 @@ const ComparisonSection = ({ inline = false }: { inline?: boolean }) => (
         viewport={{ once: true }}
         className="text-center mb-10"
       >
-        <p className="text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-3">Why Quantivis</p>
+        <p className="text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-3">Traditional BI vs Decision Intelligence</p>
         <h2 className="text-2xl md:text-3xl font-bold font-display mb-3">
-          Decision Protection, <span className="gradient-text">SaaS Pricing</span>
+          From Describing Data to <span className="gradient-text">Diagnosing Businesses</span>
         </h2>
         <p className="text-muted-foreground text-sm max-w-xl mx-auto">
-          The strategic defensibility of a top-tier consultancy with the speed, learning, and cost of modern software.
+          Traditional analytics answers "what happened." Quantivis answers "why it happened, what to do next, 
+          and how confident you should be." The strategic defensibility gap is measured in billions.
         </p>
       </motion.div>
 
