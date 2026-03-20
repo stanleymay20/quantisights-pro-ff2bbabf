@@ -146,3 +146,6 @@ verify_jwt = false
 
 [functions.decision-replay]
 verify_jwt = false
+
+[functions.strategy-session]
+verify_jwt = false

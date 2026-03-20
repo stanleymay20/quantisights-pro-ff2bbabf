@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { ArrowRight, ShieldCheck, Target, TrendingDown, BarChart3, Database, Cable } from "lucide-react";
+import { ArrowRight, ShieldCheck, Target, TrendingDown, BarChart3, Database, Cable, Sparkles } from "lucide-react";
 import heroVisual from "@/assets/hero-visual.png";
 
 const CAPABILITY_PILLS = [
@@ -83,16 +83,16 @@ const HeroSection = () => {
 
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
               <Link
-                to="/register"
+                to="/free-analysis"
                 className="inline-flex items-center justify-center gap-2 px-6 sm:px-10 py-3.5 sm:py-4 rounded-xl bg-primary text-primary-foreground font-semibold text-sm sm:text-base hover:brightness-110 transition-all shadow-lg shadow-primary/25"
               >
-                <Database className="w-4 h-4" /> Connect Your Data <ArrowRight className="w-4 h-4" />
+                <Sparkles className="w-4 h-4" /> Run Free Business Analysis <ArrowRight className="w-4 h-4" />
               </Link>
               <Link
-                to="/demo"
+                to="/register"
                 className="inline-flex items-center justify-center gap-2 px-6 sm:px-10 py-3.5 sm:py-4 rounded-xl border border-border bg-card/50 text-foreground font-semibold text-sm sm:text-base hover:border-primary/30 transition-all"
               >
-                Try with Sample Data
+                <Database className="w-4 h-4" /> Connect Your Data
               </Link>
             </div>
 

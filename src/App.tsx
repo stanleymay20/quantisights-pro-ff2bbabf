@@ -91,6 +91,7 @@ const GovernanceCommandView = lazy(() => import("./pages/GovernanceCommandView")
 const Ebook = lazy(() => import("./pages/Ebook"));
 const ExecutionDashboard = lazy(() => import("./pages/ExecutionDashboard"));
 const DecisionFitness = lazy(() => import("./pages/DecisionFitness"));
+const FreeAnalysis = lazy(() => import("./pages/FreeAnalysis"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -176,6 +177,7 @@ const App = () => (
               <Route path="/competitions" element={<Competitions />} />
               <Route path="/pitch-deck" element={<PitchDeck />} />
               <Route path="/ebook" element={<Ebook />} />
+              <Route path="/free-analysis" element={<FreeAnalysis />} />
               <Route path="*" element={<NotFound />} />
 
               {/* Standalone protected routes (no sidebar shell) */}

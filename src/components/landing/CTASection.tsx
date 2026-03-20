@@ -52,16 +52,16 @@ const CTASection = forwardRef<HTMLElement>((_, ref) => {
           {/* CTAs */}
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center mb-8">
             <Link
-              to="/register"
+              to="/free-analysis"
               className="inline-flex items-center justify-center gap-2 px-6 sm:px-10 py-3.5 sm:py-4 rounded-xl bg-primary text-primary-foreground font-semibold text-base sm:text-lg hover:brightness-110 transition-all shadow-lg shadow-primary/25"
             >
-              Start Tracking Strategic Decisions <ArrowRight className="w-5 h-5" />
+              Run Free Business Analysis <ArrowRight className="w-5 h-5" />
             </Link>
             <Link
-              to="/demo"
+              to="/register"
               className="inline-flex items-center justify-center gap-2 px-6 sm:px-10 py-3.5 sm:py-4 rounded-xl border border-border bg-card/50 text-foreground font-semibold text-base sm:text-lg hover:border-primary/30 transition-all"
             >
-              See a Sample Decision Audit Trail
+              Start Tracking Decisions
             </Link>
           </div>
 
