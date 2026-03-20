@@ -390,7 +390,9 @@ const Ebook = () => {
             <Book className="w-5 h-5 text-primary" />
             <div>
               <h1 className="text-sm font-bold text-foreground leading-tight">The Quantivis Handbook</h1>
-              <p className="text-xs text-muted-foreground">A Complete Guide to Decision Governance</p>
+              <p className="text-xs text-muted-foreground">
+                Companion guide to <em>"Decision Intelligence: The Operating System for Billion-Dollar Decisions"</em>
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-3">
