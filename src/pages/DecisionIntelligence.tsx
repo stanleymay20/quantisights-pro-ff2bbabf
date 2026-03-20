@@ -20,6 +20,8 @@ import CalibrationCurve from "@/components/decision-intelligence/CalibrationCurv
 import AdaptiveCalibrationEngine from "@/components/decision-intelligence/AdaptiveCalibrationEngine";
 import ScenarioComparison from "@/components/decision-intelligence/ScenarioComparison";
 import DecisionImpactAttribution from "@/components/decision-intelligence/DecisionImpactAttribution";
+import DROICalculator from "@/components/decision-intelligence/DROICalculator";
+import { useDecisionPerformance } from "@/hooks/useDecisionPerformance";
 import {
   Brain, TrendingUp, AlertTriangle, GitCompare, BarChart3,
   Layers, RefreshCw, Target, Gauge, CheckCircle2
