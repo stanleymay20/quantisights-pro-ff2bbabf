@@ -18,12 +18,12 @@ const METRICS = [
 const CATEGORY = "AI-Powered Decision Governance Infrastructure";
 
 const CAPABILITIES = [
-  { icon: Brain, title: "20+ Decision Frameworks", desc: "Monte Carlo, Bayesian Priors, Regret Minimization, Causal Inference, Value of Information" },
-  { icon: Target, title: "Calibration Engine", desc: "Learns from outcomes to correct systematic overconfidence in leadership teams" },
+  { icon: Brain, title: "20+ Decision Frameworks", desc: "Monte Carlo, Bayesian Priors, DROI/TCI Calculators, Decision Velocity Curve, Maturity Assessment" },
+  { icon: Target, title: "Decision Fitness Assessment", desc: "7-dimension diagnostic scoring Strategic Clarity, Analytical Acumen, Leadership Style & more" },
   { icon: Shield, title: "Evidence Contract", desc: "Every recommendation graded A–F with traceability, assumptions, and risk-if-wrong" },
-  { icon: Database, title: "Enterprise Connectors", desc: "Postgres, Snowflake, BigQuery — live connection to your institutional source of truth" },
+  { icon: Zap, title: "Free Strategy Diagnosis", desc: "Instant McKinsey-level business analysis — no signup required, instant value delivery" },
   { icon: Lock, title: "Enterprise Security", desc: "RLS on 100% of tables, immutable audit trails, PII redaction, GDPR-ready" },
-  { icon: Users, title: "Multi-Tenant RBAC", desc: "Workspace isolation, role-based access, SSO support, team invitations" },
+  { icon: Users, title: "Calibration Engine", desc: "Learns from outcomes to correct systematic overconfidence with DROI quantification" },
 ];
 
 const DIFFERENTIATORS = [
