@@ -91,6 +91,7 @@ const GovernanceCommandView = lazy(() => import("./pages/GovernanceCommandView")
 const Ebook = lazy(() => import("./pages/Ebook"));
 const ExecutionDashboard = lazy(() => import("./pages/ExecutionDashboard"));
 const DecisionFitness = lazy(() => import("./pages/DecisionFitness"));
+const FreeAnalysis = lazy(() => import("./pages/FreeAnalysis"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
