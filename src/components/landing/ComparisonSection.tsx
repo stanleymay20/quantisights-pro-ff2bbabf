@@ -58,12 +58,13 @@ const ComparisonSection = ({ inline = false }: { inline?: boolean }) => (
         viewport={{ once: true }}
         className="text-center mb-10"
       >
-        <p className="text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-3">Why Quantivis</p>
+        <p className="text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-3">Traditional BI vs Decision Intelligence</p>
         <h2 className="text-2xl md:text-3xl font-bold font-display mb-3">
-          Decision Protection, <span className="gradient-text">SaaS Pricing</span>
+          From Describing Data to <span className="gradient-text">Diagnosing Businesses</span>
         </h2>
         <p className="text-muted-foreground text-sm max-w-xl mx-auto">
-          The strategic defensibility of a top-tier consultancy with the speed, learning, and cost of modern software.
+          Traditional analytics answers "what happened." Quantivis answers "why it happened, what to do next, 
+          and how confident you should be." The strategic defensibility gap is measured in billions.
         </p>
       </motion.div>
 
