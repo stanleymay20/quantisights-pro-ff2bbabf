@@ -281,7 +281,13 @@ Every threshold, weight, and multiplier is configurable via environment variable
 ### 1. The Calibration Flywheel (Network Effect)
 Every decision an organization logs makes the system smarter. After 500+ decisions, the calibration engine produces correction factors that are unique to that organization. **Switching costs increase with every decision logged.** This is a data moat.
 
-### 2. Anti-Hallucination as a Feature
+### 2. Instant-Value Conversion Engine
+The Free Strategy Session (/free-analysis) lets any business get a McKinsey-level diagnosis in 60 seconds — no signup required. This creates a product-led growth flywheel:
+- Prospect experiences value BEFORE signing up
+- AI generates Executive Summary, Hidden Losses, Root Cause Analysis
+- Soft conversion: "To unlock continuous monitoring, activate Quantivis"
+
+### 3. Anti-Hallucination as a Feature
 Every AI tool hallucinates. We're the only platform that:
 - Caps confidence at 90% maximum
 - Classifies every output by evidence type
