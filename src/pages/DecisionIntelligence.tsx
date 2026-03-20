@@ -276,6 +276,7 @@ const DecisionIntelligence = () => {
   const [decisions, setDecisions] = useState<any[]>([]);
   const [simulations, setSimulations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const { performance: performanceData, loading: perfLoading } = useDecisionPerformance(currentOrgId);
 
   useEffect(() => {
     if (!currentOrgId) return;
