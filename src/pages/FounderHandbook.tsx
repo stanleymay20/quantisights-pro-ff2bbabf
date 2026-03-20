@@ -180,14 +180,17 @@ Every threshold, weight, and multiplier is configurable via environment variable
 - This is the TABLE that proves governance to a board
 
 ## Decision Intelligence (/decision-intelligence)
-**"20+ quantitative frameworks"**
+**"20+ quantitative frameworks — now with Decision Economics"**
 - Monte Carlo simulation (10,000 iterations)
 - Bayesian Prior Visualization
 - Value of Information analysis
 - Regret Minimization framework
 - Sensitivity Analysis (tornado charts)
 - Decision Trees with probability nodes
-- Decision Velocity tracking
+- **NEW: DROI Calculator** — quantifies financial return from better decisions
+- **NEW: TCI Calculator** — calculates compounding cost of inaction with Decision Entropy
+- **NEW: Decision Velocity Curve** — optimal speed-accuracy tradeoff with Paralysis Index
+- **NEW: Decision Maturity Assessment** — 15-question diagnostic with 3-phase roadmap
 
 ## Simulations (/simulations)
 **"War Room for strategic modeling"**
