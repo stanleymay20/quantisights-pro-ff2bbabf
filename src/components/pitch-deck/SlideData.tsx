@@ -115,12 +115,12 @@ export const SLIDES: Slide[] = [
           {[
             "Monte Carlo Simulation",
             "Bayesian Prior Calibration",
-            "Regret Minimization",
-            "Causal Inference Engine",
-            "Value of Information",
+            "DROI & TCI Calculators",
+            "Decision Fitness Assessment",
+            "Decision Velocity Curve",
             "Cognitive Bias Detection",
-            "AI Executive Copilot",
-            "Scenario War Room",
+            "Free Strategy Diagnosis",
+            "Decision Maturity Roadmap",
           ].map((f) => (
             <div key={f} className="flex items-center gap-1.5 text-xs">
               <CheckCircle2 className="w-3 h-3 text-primary shrink-0" />

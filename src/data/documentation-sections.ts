@@ -221,7 +221,7 @@ The formula engine uses a sandboxed evaluator — it does NOT use \`eval()\`. Op
     content: `
 ## 20+ Institutional-Grade Decision Frameworks
 
-Quantivis implements the most comprehensive decision intelligence suite available in any SaaS platform, based on the *Probabilistic Governance Framework for Institutional Capital*.
+Quantivis implements the most comprehensive decision intelligence suite available in any SaaS platform, based on the *Probabilistic Governance Framework for Institutional Capital* and the book *Decision Intelligence: The Operating System for Billion-Dollar Decisions*.
 
 ### Core Decision Lifecycle
 \`\`\`
@@ -244,10 +244,18 @@ AI Recommendation → Executive Review → Simulation → Approval → Execution
 | **Regret Minimization** | Minimax regret across scenarios | Regret matrix, minimum-maximum-regret ranking |
 | **Decision Trees & Option Value** | Branching outcome modeling with real options | Option value = max(act, defer, abandon) − act |
 | **Sensitivity Analysis** | Which inputs drive the most outcome variance? | Tornado charts, elasticity rankings |
-| **Decision Velocity** | How fast is the org deciding and executing? | Cycle time, trend direction, bottleneck identification |
+| **Decision Velocity Curve** | Speed-accuracy tradeoff analysis | Optimal cycle time, Paralysis Index, velocity trend |
 | **Decision Fatigue Index** | Is the org overwhelmed by pending decisions? | Score 0-100, stale decision count, queue depth |
 | **Scenario Comparison** | Side-by-side evaluation of strategic options | Multi-dimensional comparison matrix |
 | **Cost of Delay** | Financial exposure from inaction | Daily cost estimate, urgency classification |
+
+#### Decision Economics (NEW)
+| Framework | Purpose | Key Output |
+|-----------|---------|------------|
+| **DROI Calculator** | Quantify financial return from better decisions | DROI multiplier, net revenue gain, improvement % |
+| **TCI Calculator** | Compounding cost of NOT deciding | Direct loss, opportunity cost, Decision Entropy score |
+| **Decision Fitness Assessment** | 7-dimension organizational readiness | Composite score (0–100), per-dimension breakdown |
+| **Decision Maturity Assessment** | 15-question diagnostic with roadmap | Phase classification, actionable recommendations |
 
 #### Causal Science
 | Framework | Purpose | Key Output |
@@ -268,6 +276,9 @@ AI Recommendation → Executive Review → Simulation → Approval → Execution
 |-----------|---------|------------|
 | **Correlation-Adjusted Portfolio Risk** | Adjusted VaR accounting for inter-decision correlation | σ²_portfolio with Cholesky decomposition, concentration risk |
 | **Portfolio Health Radar** | Multi-dimensional org health visualization | Radar chart (requires ≥3 real data dimensions) |
+
+### Free Strategy Session (Conversion Engine)
+The \`/free-analysis\` endpoint provides instant McKinsey-level business diagnosis without requiring signup. Users paste metrics or upload CSV → AI generates Executive Summary, Key Findings, Hidden Loss Estimation, Root Cause Analysis, and Priority Action Plan. This replaces the traditional "book a demo" funnel with an instant-value diagnostic.
 
 ### Nuance: Model Calibration Loop
 After 10+ completed decisions with measured outcomes, the system computes rolling calibration error and automatically adjusts internal confidence scaling. This is stored in \`calibration_models\` with versioning — you can see how the model's accuracy has improved over time. The adjustment factor is applied multiplicatively to all future raw confidence scores.

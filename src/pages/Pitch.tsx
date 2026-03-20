@@ -28,9 +28,10 @@ const CAPABILITIES = [
 
 const DIFFERENTIATORS = [
   "Not another dashboard — a Decision Ledger that tracks Decision → Outcome → Learning",
-  "Confidence scores are capped using epistemic governance — no AI hallucination",
-  "Cost of Delay uses real revenue data, never fabricated currency values",
-  "Every insight classified: Observed Fact vs. Statistical Inference vs. AI Recommendation",
+  "Decision Fitness Assessment: 7-dimension organizational readiness diagnostic with maturity roadmap",
+  "DROI & TCI Calculators quantify both the return on better decisions AND the cost of inaction",
+  "Free Strategy Session delivers instant McKinsey-level diagnosis — no signup required",
+  "Decision Velocity Curve identifies optimal speed-accuracy tradeoff with Paralysis Index",
   "Enterprise-grade security: RLS on 100% of tables, immutable audit trails, PII redaction",
 ];
 

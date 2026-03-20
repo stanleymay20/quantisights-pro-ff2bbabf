@@ -519,10 +519,13 @@ A: "Month 3: 5 paid pilot customers. Month 6: €50K ARR. Month 12: €150K ARR 
 
 ### Minute 4: Intelligence Depth
 *Show /decision-intelligence*
-> "For deeper analysis — Monte Carlo simulations running 10,000 iterations, Bayesian probability updating, Decision Trees, Sensitivity Analysis. This isn't generic AI — these are the same quantitative frameworks used by Goldman Sachs and Bridgewater, packaged for any executive team."
+> "For deeper analysis — Monte Carlo simulations, DROI and TCI calculators, Decision Velocity Curve, and a Decision Maturity Assessment. The DROI Calculator shows the financial return from improving decisions. The TCI Calculator shows the compounding cost of NOT deciding — including Decision Entropy, which measures how your options narrow every day you wait."
 
-*Show /strategy-pack briefly*
-> "And this is the Strategy Pack — the equivalent of a €200K McKinsey engagement, auto-generated from your actual data."
+*Show /free-analysis briefly*
+> "And this is the Free Strategy Session — any business can paste their metrics and get an instant McKinsey-level diagnosis. Executive Summary, Hidden Losses, Root Cause Analysis, Priority Actions. No signup required. This is how we convert prospects."
+
+*Show /decision-fitness briefly*
+> "The Decision Fitness Assessment evaluates your organization across 7 dimensions — from Strategic Clarity to Leadership Style — and maps you onto a maturity roadmap."
 
 ### Minute 5: The Close
 > "What you've just seen is the world's first Decision Governance platform. Every strategic call — documented, tracked, measured, and fed back into organizational learning. 
