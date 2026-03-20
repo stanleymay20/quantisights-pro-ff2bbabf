@@ -80,6 +80,7 @@ const navSections: NavSection[] = [
       { icon: AlertOctagon, label: "Cognitive Bias", path: "/cognitive-bias" },
       { icon: RotateCcw, label: "Counterfactual", path: "/counterfactual" },
       { icon: Award, label: "Calibration", path: "/calibration" },
+      { icon: Crosshair, label: "Decision Fitness", path: "/decision-fitness" },
     ],
   },
   {
