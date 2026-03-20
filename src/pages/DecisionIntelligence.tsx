@@ -353,6 +353,9 @@ const DecisionIntelligence = () => {
               </div>
 
               <DecisionImpactAttribution decisions={decisions} />
+
+              {/* DROI — Decision Return on Investment */}
+              <DROICalculator performance={performanceData} loading={perfLoading} />
             </div>
           )}
         </main>
