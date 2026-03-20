@@ -20,6 +20,8 @@ import CalibrationCurve from "@/components/decision-intelligence/CalibrationCurv
 import AdaptiveCalibrationEngine from "@/components/decision-intelligence/AdaptiveCalibrationEngine";
 import ScenarioComparison from "@/components/decision-intelligence/ScenarioComparison";
 import DecisionImpactAttribution from "@/components/decision-intelligence/DecisionImpactAttribution";
+import DROICalculator from "@/components/decision-intelligence/DROICalculator";
+import { useDecisionPerformance } from "@/hooks/useDecisionPerformance";
 import {
   Brain, TrendingUp, AlertTriangle, GitCompare, BarChart3,
   Layers, RefreshCw, Target, Gauge, CheckCircle2
@@ -274,6 +276,7 @@ const DecisionIntelligence = () => {
   const [decisions, setDecisions] = useState<any[]>([]);
   const [simulations, setSimulations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const { performance: performanceData, loading: perfLoading } = useDecisionPerformance(currentOrgId);
 
   useEffect(() => {
     if (!currentOrgId) return;
@@ -351,6 +354,9 @@ const DecisionIntelligence = () => {
               </div>
 
               <DecisionImpactAttribution decisions={decisions} />
+
+              {/* DROI — Decision Return on Investment */}
+              <DROICalculator performance={performanceData} loading={perfLoading} />
             </div>
           )}
         </main>

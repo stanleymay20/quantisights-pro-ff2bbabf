@@ -37,6 +37,7 @@ const ITEM_HELP: Record<string, string> = {
   "Pilot Audit": "Pre-launch checklist ensuring your data and configuration are production-ready.",
   "Governance Maturity": "Score your organization across 6 data governance dimensions — strategy, quality, culture, and more.",
   "Governance": "Executive command view — KPIs, risks, steward coverage, and recommended actions in one place.",
+  "Decision Fitness": "Diagnose your organization's strategic decision-making capacity across 7 dimensions from the Decision Fitness Framework.",
 };
 
 interface NavItem {
@@ -80,6 +81,7 @@ const navSections: NavSection[] = [
       { icon: AlertOctagon, label: "Cognitive Bias", path: "/cognitive-bias" },
       { icon: RotateCcw, label: "Counterfactual", path: "/counterfactual" },
       { icon: Award, label: "Calibration", path: "/calibration" },
+      { icon: Crosshair, label: "Decision Fitness", path: "/decision-fitness" },
     ],
   },
   {

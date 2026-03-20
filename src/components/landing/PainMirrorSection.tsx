@@ -17,13 +17,14 @@ const PainMirrorSection = () => {
           viewport={{ once: true }}
           className="max-w-3xl mx-auto text-center mb-12 sm:mb-16"
         >
-          <p className="text-xs uppercase tracking-widest text-primary font-semibold mb-4">The hidden gap in enterprise intelligence</p>
+          <p className="text-xs uppercase tracking-widest text-primary font-semibold mb-4">The Decision Quality Gap</p>
           <h2 className="text-2xl sm:text-4xl font-bold font-display mb-5">
-            Most Strategic Decisions Leave No Institutional Memory
+            The Analytics-Action Gap Costs Fortune 500s $3 Trillion Annually
           </h2>
           <p className="text-muted-foreground text-base sm:text-lg leading-relaxed max-w-2xl mx-auto">
-            Organizations meticulously track financial data, customer data, and operational metrics.
-            But strategic decisions themselves are rarely tracked — so the same mistakes repeat.
+            Traditional BI answers "what happened." But strategic decisions require causal inference, 
+            counterfactual reasoning, and prescriptive guidance. Without Decision Intelligence, 
+            the same cognitive biases and overconfidence patterns repeat unchecked.
           </p>
         </motion.div>
 

@@ -44,19 +44,19 @@ const HeroSection = () => {
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary/20 bg-primary/5 text-xs font-semibold text-primary mb-6 sm:mb-8"
             >
               <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-              Decision Governance for Leadership Teams
+              The Decision Operating System for Leadership Teams
             </motion.div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold font-display leading-[1.05] mb-4 sm:mb-6">
-              Make Every Strategic Decision{" "}
+              The Operating System for{" "}
               <br className="hidden sm:block" />
-              <span className="gradient-text">Board-Defensible.</span>
+              <span className="gradient-text">Billion-Dollar Decisions.</span>
             </h1>
             <p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto mb-6 sm:mb-10 leading-relaxed">
-              Quantivis helps leadership teams track, evaluate, and continuously improve the accuracy of
-              strategic decisions — from budget forecasts to market expansion.{" "}
+              Organizations lose an estimated $3 trillion annually from suboptimal strategic decisions.
+              Quantivis closes the gap between data and decisive action — transforming raw intelligence into{" "}
               <span className="text-foreground font-medium">
-                Instead of just dashboards, your organization gains a decision ledger that learns from outcomes.
+                calibrated, board-defensible outcomes with a decision ledger that learns from every result.
               </span>
             </p>
 
