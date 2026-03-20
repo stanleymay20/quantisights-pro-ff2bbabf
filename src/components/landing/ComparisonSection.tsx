@@ -4,21 +4,30 @@ import { Check, X } from "lucide-react";
 
 const comparisons = [
   {
-    category: "Decision Protection",
+    category: "Decision Intelligence (Ch. 4)",
     rows: [
-      { feature: "Overconfidence detection & correction", quantivis: true, mckinsey: false, tableau: false, mosaic: false },
+      { feature: "Causal inference (not just correlation)", quantivis: true, mckinsey: false, tableau: false, mosaic: false },
+      { feature: "Counterfactual simulation ('what if we hadn't acted?')", quantivis: true, mckinsey: false, tableau: false, mosaic: false },
+      { feature: "Prescriptive optimization (not just 'what happened')", quantivis: true, mckinsey: "Manual", tableau: false, mosaic: false },
       { feature: "Self-correcting confidence scores", quantivis: true, mckinsey: false, tableau: false, mosaic: false },
-      { feature: "Decision outcome tracking", quantivis: true, mckinsey: "Manual", tableau: false, mosaic: false },
-      { feature: "Cognitive bias detection", quantivis: true, mckinsey: "Manual", tableau: false, mosaic: false },
-      { feature: "Counterfactual analysis", quantivis: true, mckinsey: false, tableau: false, mosaic: false },
+      { feature: "Cognitive bias detection & mitigation", quantivis: true, mckinsey: "Manual", tableau: false, mosaic: false },
     ],
   },
   {
-    category: "Board Defensibility",
+    category: "Decision Governance (Ch. 3)",
     rows: [
+      { feature: "DROI / TCI quantification", quantivis: true, mckinsey: false, tableau: false, mosaic: false },
+      { feature: "Value of Information (VoI) analysis", quantivis: true, mckinsey: false, tableau: false, mosaic: false },
+      { feature: "Decision Velocity Curve optimization", quantivis: true, mckinsey: false, tableau: false, mosaic: false },
       { feature: "Audit-ready decision trail", quantivis: true, mckinsey: false, tableau: false, mosaic: false },
+      { feature: "Decision Maturity Assessment", quantivis: true, mckinsey: "Manual", tableau: false, mosaic: false },
+    ],
+  },
+  {
+    category: "Board Defensibility (Ch. 1)",
+    rows: [
+      { feature: "Decision Fitness Framework (7S adapted)", quantivis: true, mckinsey: true, tableau: false, mosaic: false },
       { feature: "Role-based risk scoring", quantivis: true, mckinsey: "Manual", tableau: false, mosaic: false },
-      { feature: "C-suite alignment index", quantivis: true, mckinsey: false, tableau: false, mosaic: false },
       { feature: "One-click board reports", quantivis: true, mckinsey: true, tableau: "Manual", mosaic: "Basic" },
       { feature: "Corrected probability disclosures", quantivis: true, mckinsey: false, tableau: false, mosaic: false },
     ],
