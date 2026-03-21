@@ -4,10 +4,10 @@ import { TrendingDown, Clock, DollarSign, ShieldCheck, ArrowRight } from "lucide
 import { Link } from "react-router-dom";
 
 const ROI_METRICS = [
-  { icon: TrendingDown, value: "7–12pp", label: "Overconfidence reduction", detail: "Systematic bias correction via calibration" },
+  { icon: TrendingDown, value: "7–12pp", label: "Calibration improvement", detail: "Typical overconfidence reduction via adaptive scoring" },
   { icon: Clock, value: "90 days", label: "Time to calibrated decisions", detail: "From Decision Ledger to Calibration Active" },
-  { icon: DollarSign, value: "500×", label: "Less than consulting", detail: "vs. equivalent advisory engagement" },
-  { icon: ShieldCheck, value: "100%", label: "Decision traceability", detail: "Every recommendation auditable" },
+  { icon: DollarSign, value: "From €99/mo", label: "vs. €50K+ consulting projects", detail: "Automates 80% of recurring analytical work" },
+  { icon: ShieldCheck, value: "100%", label: "Decision traceability", detail: "For all logged decisions — fully auditable" },
 ];
 
 const CASE_STUDIES = [

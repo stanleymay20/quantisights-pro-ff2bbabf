@@ -4,7 +4,7 @@ import { Check, X } from "lucide-react";
 
 const comparisons = [
   {
-    category: "Decision Intelligence (Ch. 4)",
+    category: "Decision Intelligence",
     rows: [
       { feature: "Causal inference (not just correlation)", quantivis: true, mckinsey: false, tableau: false, mosaic: false },
       { feature: "Counterfactual simulation ('what if we hadn't acted?')", quantivis: true, mckinsey: false, tableau: false, mosaic: false },
@@ -14,7 +14,7 @@ const comparisons = [
     ],
   },
   {
-    category: "Decision Governance (Ch. 3)",
+    category: "Decision Governance",
     rows: [
       { feature: "DROI / TCI quantification", quantivis: true, mckinsey: false, tableau: false, mosaic: false },
       { feature: "Value of Information (VoI) analysis", quantivis: true, mckinsey: false, tableau: false, mosaic: false },
@@ -24,7 +24,7 @@ const comparisons = [
     ],
   },
   {
-    category: "Board Defensibility (Ch. 1)",
+    category: "Board Defensibility",
     rows: [
       { feature: "Decision Fitness Framework (7S adapted)", quantivis: true, mckinsey: true, tableau: false, mosaic: false },
       { feature: "Role-based risk scoring", quantivis: true, mckinsey: "Manual", tableau: false, mosaic: false },
@@ -33,9 +33,17 @@ const comparisons = [
     ],
   },
   {
+    category: "Data & Visualization",
+    rows: [
+      { feature: "Interactive dashboards & drag-drop charts", quantivis: "Basic", mckinsey: false, tableau: true, mosaic: true },
+      { feature: "SQL-level ad hoc queries", quantivis: false, mckinsey: false, tableau: true, mosaic: "Limited" },
+      { feature: "Polished pixel-perfect report design", quantivis: false, mckinsey: true, tableau: true, mosaic: false },
+    ],
+  },
+  {
     category: "Cost & Speed",
     rows: [
-      { feature: "Time to first insight", quantivis: "5 min", mckinsey: "4-6 weeks", tableau: "Days", mosaic: "Hours" },
+      { feature: "Time to first insight", quantivis: "5 min", mckinsey: "4–6 weeks", tableau: "Days", mosaic: "Hours" },
       { feature: "Monthly cost", quantivis: "From €99", mckinsey: "€50K+/project", tableau: "€70/user", mosaic: "€800+" },
       { feature: "No implementation required", quantivis: true, mckinsey: false, tableau: false, mosaic: false },
       { feature: "Continuously learning system", quantivis: true, mckinsey: false, tableau: false, mosaic: false },
