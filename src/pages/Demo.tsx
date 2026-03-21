@@ -12,6 +12,8 @@ const STEPS = [
   { label: "Initializing executive dashboard", icon: Target },
 ];
 
+const TIMEOUT_MS = 20_000;
+
 const Demo = () => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
@@ -19,6 +21,13 @@ const Demo = () => {
 
   useEffect(() => {
     let cancelled = false;
+
+    // Safety timeout — if provisioning hangs, show error with retry
+    const timeout = setTimeout(() => {
+      if (!cancelled && currentStep < STEPS.length - 1) {
+        setError("Provisioning is taking longer than expected. Please retry or contact support.");
+      }
+    }, TIMEOUT_MS);
 
     const initDemo = async () => {
       try {
@@ -73,7 +82,7 @@ const Demo = () => {
     };
 
     initDemo();
-    return () => { cancelled = true; };
+    return () => { cancelled = true; clearTimeout(timeout); };
   }, [navigate]);
 
   const progress = ((currentStep + 1) / STEPS.length) * 100;

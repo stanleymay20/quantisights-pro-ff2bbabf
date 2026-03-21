@@ -1,13 +1,13 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { ArrowRight, ShieldCheck, Target, TrendingDown, BarChart3, Database, Cable, Sparkles } from "lucide-react";
+import { ArrowRight, ShieldCheck, Target, AlertTriangle, BarChart3, Database, Cable, Sparkles } from "lucide-react";
 import heroVisual from "@/assets/hero-visual.png";
 
 const CAPABILITY_PILLS = [
   { icon: Cable, label: "Enterprise Data Connectors" },
   { icon: ShieldCheck, label: "Decision Audit Trails" },
   { icon: Target, label: "Forecast Calibration" },
-  { icon: TrendingDown, label: "Overconfidence Detection" },
+  { icon: AlertTriangle, label: "Overconfidence Detection" },
   { icon: BarChart3, label: "Board-Ready Defensibility" },
 ];
 
@@ -53,7 +53,7 @@ const HeroSection = () => {
               <span className="gradient-text">Billion-Dollar Decisions.</span>
             </h1>
             <p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto mb-6 sm:mb-10 leading-relaxed">
-              Organizations lose an estimated $3 trillion annually from suboptimal strategic decisions.
+              Organizations lose an estimated €2.8 trillion annually from suboptimal strategic decisions.
               Quantivis closes the gap between data and decisive action — transforming raw intelligence into{" "}
               <span className="text-foreground font-medium">
                 calibrated, board-defensible outcomes with a decision ledger that learns from every result.

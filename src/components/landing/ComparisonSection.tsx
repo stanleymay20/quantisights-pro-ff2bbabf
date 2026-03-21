@@ -4,7 +4,7 @@ import { Check, X } from "lucide-react";
 
 const comparisons = [
   {
-    category: "Decision Intelligence (Ch. 4)",
+    category: "Decision Intelligence",
     rows: [
       { feature: "Causal inference (not just correlation)", quantivis: true, mckinsey: false, tableau: false, mosaic: false },
       { feature: "Counterfactual simulation ('what if we hadn't acted?')", quantivis: true, mckinsey: false, tableau: false, mosaic: false },
@@ -14,7 +14,7 @@ const comparisons = [
     ],
   },
   {
-    category: "Decision Governance (Ch. 3)",
+    category: "Decision Governance",
     rows: [
       { feature: "DROI / TCI quantification", quantivis: true, mckinsey: false, tableau: false, mosaic: false },
       { feature: "Value of Information (VoI) analysis", quantivis: true, mckinsey: false, tableau: false, mosaic: false },
@@ -24,7 +24,7 @@ const comparisons = [
     ],
   },
   {
-    category: "Board Defensibility (Ch. 1)",
+    category: "Board Defensibility",
     rows: [
       { feature: "Decision Fitness Framework (7S adapted)", quantivis: true, mckinsey: true, tableau: false, mosaic: false },
       { feature: "Role-based risk scoring", quantivis: true, mckinsey: "Manual", tableau: false, mosaic: false },
@@ -33,9 +33,17 @@ const comparisons = [
     ],
   },
   {
+    category: "Data & Visualization",
+    rows: [
+      { feature: "Interactive dashboards & drag-drop charts", quantivis: "Basic", mckinsey: false, tableau: true, mosaic: true },
+      { feature: "SQL-level ad hoc queries", quantivis: false, mckinsey: false, tableau: true, mosaic: "Limited" },
+      { feature: "Polished pixel-perfect report design", quantivis: false, mckinsey: true, tableau: true, mosaic: false },
+    ],
+  },
+  {
     category: "Cost & Speed",
     rows: [
-      { feature: "Time to first insight", quantivis: "5 min", mckinsey: "4-6 weeks", tableau: "Days", mosaic: "Hours" },
+      { feature: "Time to first insight", quantivis: "5 min", mckinsey: "4–6 weeks", tableau: "Days", mosaic: "Hours" },
       { feature: "Monthly cost", quantivis: "From €99", mckinsey: "€50K+/project", tableau: "€70/user", mosaic: "€800+" },
       { feature: "No implementation required", quantivis: true, mckinsey: false, tableau: false, mosaic: false },
       { feature: "Continuously learning system", quantivis: true, mckinsey: false, tableau: false, mosaic: false },
@@ -115,6 +123,30 @@ const ComparisonSection = ({ inline = false }: { inline?: boolean }) => (
           </table>
         </div>
       </div>
+
+      {/* Honesty section — builds trust */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        className="mt-8 p-6 rounded-xl border border-border/40 bg-muted/20 max-w-3xl mx-auto"
+      >
+        <p className="text-xs uppercase tracking-widest text-muted-foreground font-semibold mb-3">Where Quantivis Is Not the Best Fit</p>
+        <ul className="space-y-2 text-sm text-muted-foreground">
+          <li className="flex items-start gap-2">
+            <X className="w-3.5 h-3.5 text-muted-foreground/50 mt-0.5 shrink-0" />
+            <span><strong className="text-foreground">Ad hoc data exploration</strong> — If you need SQL-level queries or pixel-perfect report design, a dedicated BI tool (Tableau, Looker) is stronger.</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <X className="w-3.5 h-3.5 text-muted-foreground/50 mt-0.5 shrink-0" />
+            <span><strong className="text-foreground">One-off decisions</strong> — Quantivis is built for teams making recurring strategic calls, not single isolated choices.</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <X className="w-3.5 h-3.5 text-muted-foreground/50 mt-0.5 shrink-0" />
+            <span><strong className="text-foreground">Unstructured data only</strong> — The platform requires structured operational data (CSV, database, or API) to deliver calibrated insights.</span>
+          </li>
+        </ul>
+      </motion.div>
     </div>
   </section>
 );

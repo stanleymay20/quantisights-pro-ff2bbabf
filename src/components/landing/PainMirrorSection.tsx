@@ -26,12 +26,17 @@ const PainMirrorSection = () => {
         >
           <p className="text-xs uppercase tracking-widest text-primary font-semibold mb-4">The Analytics-Action Gap</p>
           <h2 className="text-2xl sm:text-4xl font-bold font-display mb-5">
-            $3 Trillion Lost Annually to the{" "}
+            €2.8 Trillion Lost Annually to the{" "}
             <span className="gradient-text">Decision Quality Gap</span>
           </h2>
           <p className="text-muted-foreground text-base sm:text-lg leading-relaxed max-w-2xl mx-auto">
-            Organizations invest billions in data, yet only 24% describe themselves as data-driven. 
+            Organizations invest billions in data, yet only 24% describe themselves as data-driven
+            <span className="text-muted-foreground/60 text-xs align-super ml-0.5">¹</span>. 
             The problem isn't data — it's the gap between knowing what happened and knowing what to do next.
+          </p>
+          <p className="text-[10px] text-muted-foreground/40 mt-3 max-w-lg mx-auto">
+            ¹ NewVantage Partners / Wavestone, <em>Data and Analytics Leadership Annual Executive Survey</em>, 2024. 
+            Decision quality gap estimate from McKinsey & Company research on strategic decision effectiveness.
           </p>
         </motion.div>
 
