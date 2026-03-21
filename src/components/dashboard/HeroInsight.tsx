@@ -9,26 +9,27 @@ interface HeroInsightProps {
   insights: Insight[];
 }
 
-const CATEGORY_ACTIONS: Record<string, { action: string; impact: string }> = {
-  revenue: { action: "Reallocate budget to highest-converting segments and stabilize pipeline", impact: "Protect 5–15% of at-risk revenue within 60 days" },
-  churn: { action: "Activate retention playbook for at-risk cohort and review onboarding friction", impact: "Reduce churn rate by 2–4pp over next quarter" },
-  cost: { action: "Audit top-3 cost centers and eliminate spend with negative ROI", impact: "Recover 8–12% of operating margin within 90 days" },
-  growth: { action: "Double down on top-performing acquisition channel and cut underperformers", impact: "Accelerate growth trajectory by 10–20% in 60 days" },
-  margin: { action: "Reprice underperforming product lines and renegotiate supplier terms", impact: "Improve gross margin by 3–5pp within one quarter" },
-  conversion: { action: "Optimize conversion funnel at highest drop-off stage", impact: "Lift conversion rate by 15–25% in 30–60 days" },
-  operational: { action: "Identify and resolve top process bottleneck driving efficiency loss", impact: "Reduce cycle time by 20–30% within 60 days" },
+const CATEGORY_ACTIONS: Record<string, { high: string; medium: string; impact: string }> = {
+  revenue: { high: "Reallocate budget immediately to highest-converting segments and stabilize pipeline", medium: "Review budget allocation across segments and address underperforming channels", impact: "5–15% at-risk revenue recovery potential" },
+  churn: { high: "Activate retention playbook now for at-risk cohort and escalate onboarding friction", medium: "Review retention metrics for flagged cohort and assess onboarding improvements", impact: "2–4pp churn reduction potential over next quarter" },
+  cost: { high: "Audit top-3 cost centers immediately and cut spend with negative ROI", medium: "Review cost center efficiency and flag areas with declining returns", impact: "8–12% operating margin improvement potential" },
+  growth: { high: "Double down immediately on top-performing acquisition channel and cut underperformers", medium: "Assess acquisition channel performance and consider rebalancing spend", impact: "10–20% growth acceleration potential" },
+  margin: { high: "Reprice underperforming product lines and renegotiate supplier terms urgently", medium: "Review product line margins and identify renegotiation opportunities", impact: "3–5pp gross margin improvement potential" },
+  conversion: { high: "Optimize conversion funnel at highest drop-off stage — deploy fix within 2 weeks", medium: "Analyze conversion funnel drop-off points and prioritize optimization", impact: "15–25% conversion lift potential" },
+  operational: { high: "Resolve top process bottleneck driving efficiency loss within 30 days", medium: "Investigate process bottlenecks and model efficiency improvement scenarios", impact: "20–30% cycle time reduction potential" },
 };
 
-const DEFAULT_ACTION = { action: "Resolve root cause identified in signal and apply corrective measures", impact: "Mitigate downside exposure within 30–60 days" };
+const DEFAULT_ACTION = { high: "Apply corrective measures to root cause identified in signal", medium: "Assess root cause and evaluate corrective options", impact: "Downside exposure mitigation within 30–60 days" };
 
 function deriveAction(category: string | null, severity: string): { action: string; impact: string } {
+  const isHigh = severity === "high";
   if (category) {
     const key = category.toLowerCase();
     for (const [k, v] of Object.entries(CATEGORY_ACTIONS)) {
-      if (key.includes(k)) return v;
+      if (key.includes(k)) return { action: isHigh ? v.high : v.medium, impact: v.impact };
     }
   }
-  return DEFAULT_ACTION;
+  return { action: isHigh ? DEFAULT_ACTION.high : DEFAULT_ACTION.medium, impact: DEFAULT_ACTION.impact };
 }
 
 const HeroInsight = memo(({ insights }: HeroInsightProps) => {
@@ -72,8 +73,8 @@ const HeroInsight = memo(({ insights }: HeroInsightProps) => {
         <p className="text-xs text-primary font-medium mt-1.5 line-clamp-1">
           → {derived.action}
         </p>
-        <p className="text-[11px] text-muted-foreground mt-0.5">
-          Expected impact: {derived.impact}
+        <p className="text-[11px] text-muted-foreground mt-0.5" title="Modeled estimate based on signal category and observed performance patterns">
+          Estimated impact: {derived.impact}
         </p>
         {topInsight.category && (
           <div className="flex items-center gap-1.5 mt-2">
