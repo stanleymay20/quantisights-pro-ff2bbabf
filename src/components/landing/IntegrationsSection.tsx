@@ -69,6 +69,8 @@ const IntegrationsSection = forwardRef<HTMLElement>((_, ref) => (
       </motion.p>
     </div>
   </section>
-);
+));
+
+IntegrationsSection.displayName = "IntegrationsSection";
 
 export default IntegrationsSection;

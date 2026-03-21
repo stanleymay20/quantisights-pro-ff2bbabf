@@ -229,6 +229,8 @@ const FeaturesSection = () => {
       </section>
     </>
   );
-};
+});
+
+FeaturesSection.displayName = "FeaturesSection";
 
 export default FeaturesSection;
