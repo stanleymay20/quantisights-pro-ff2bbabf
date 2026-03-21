@@ -42,6 +42,16 @@ const HeroInsight = memo(({ insights }: HeroInsightProps) => {
           )}
         </div>
         <p className="text-sm font-semibold text-foreground leading-snug line-clamp-2">{topInsight.message}</p>
+        {topInsight.action && (
+          <p className="text-xs text-primary font-medium mt-1.5 line-clamp-1">
+            → {topInsight.action}
+          </p>
+        )}
+        {topInsight.expected_impact && (
+          <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-1">
+            Expected impact: {topInsight.expected_impact}
+          </p>
+        )}
         {topInsight.category && (
           <div className="flex items-center gap-1.5 mt-2">
             <TrendingDown className="w-3 h-3 text-muted-foreground" />

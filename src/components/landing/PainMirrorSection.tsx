@@ -36,7 +36,7 @@ const PainMirrorSection = () => {
           </p>
           <p className="text-[10px] text-muted-foreground/40 mt-3 max-w-lg mx-auto">
             ¹ NewVantage Partners / Wavestone, <em>Data and Analytics Leadership Annual Executive Survey</em>, 2024. 
-            Decision quality gap estimate from McKinsey & Company research on strategic decision effectiveness.
+            Decision quality gap estimate (~$3T) from McKinsey & Company research on strategic decision effectiveness, reported in USD.
           </p>
         </motion.div>
 
