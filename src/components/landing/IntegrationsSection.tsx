@@ -13,8 +13,8 @@ const INTEGRATIONS = [
   { name: "Salesforce", desc: "CRM pipeline, closed-won, lead metrics", status: "soon" as const },
 ];
 
-const IntegrationsSection = () => (
-  <section className="py-24 relative">
+const IntegrationsSection = forwardRef<HTMLElement>((_, ref) => (
+  <section ref={ref} className="py-24 relative">
     <div className="container mx-auto px-6">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
