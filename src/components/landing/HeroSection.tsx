@@ -7,7 +7,7 @@ const CAPABILITY_PILLS = [
   { icon: Cable, label: "Enterprise Data Connectors" },
   { icon: ShieldCheck, label: "Decision Audit Trails" },
   { icon: Target, label: "Forecast Calibration" },
-  { icon: TrendingDown, label: "Overconfidence Detection" },
+  { icon: AlertTriangle, label: "Overconfidence Detection" },
   { icon: BarChart3, label: "Board-Ready Defensibility" },
 ];
 
