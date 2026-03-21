@@ -2,7 +2,7 @@ import { forwardRef } from "react";
 import { motion } from "framer-motion";
 import { User, BarChart3, TrendingUp, AlertTriangle, CheckCircle2 } from "lucide-react";
 
-const DecisionAuditTrailSection = () => {
+const DecisionAuditTrailSection = forwardRef<HTMLElement>((_, ref) => {
   return (
     <section className="py-20 sm:py-28 relative bg-muted/30">
       <div className="container mx-auto px-6">
