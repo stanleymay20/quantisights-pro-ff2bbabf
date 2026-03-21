@@ -26,7 +26,7 @@ const PainMirrorSection = () => {
         >
           <p className="text-xs uppercase tracking-widest text-primary font-semibold mb-4">The Analytics-Action Gap</p>
           <h2 className="text-2xl sm:text-4xl font-bold font-display mb-5">
-            €2.8 Trillion Lost Annually to the{" "}
+            An Estimated $3 Trillion+ Lost Annually to the{" "}
             <span className="gradient-text">Decision Quality Gap</span>
           </h2>
           <p className="text-muted-foreground text-base sm:text-lg leading-relaxed max-w-2xl mx-auto">
@@ -36,7 +36,7 @@ const PainMirrorSection = () => {
           </p>
           <p className="text-[10px] text-muted-foreground/40 mt-3 max-w-lg mx-auto">
             ¹ NewVantage Partners / Wavestone, <em>Data and Analytics Leadership Annual Executive Survey</em>, 2024. 
-            Decision quality gap estimate from McKinsey & Company research on strategic decision effectiveness.
+            Decision quality gap estimate (~$3T) from McKinsey & Company research on strategic decision effectiveness, reported in USD.
           </p>
         </motion.div>
 

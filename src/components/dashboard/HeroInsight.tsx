@@ -42,17 +42,20 @@ const HeroInsight = memo(({ insights }: HeroInsightProps) => {
           )}
         </div>
         <p className="text-sm font-semibold text-foreground leading-snug line-clamp-2">{topInsight.message}</p>
+        <p className="text-xs text-primary font-medium mt-1.5 line-clamp-1">
+          → {topInsight.severity === "high" ? "Requires immediate investigation and action plan" : "Review root cause and assess mitigation options"}
+        </p>
         {topInsight.category && (
           <div className="flex items-center gap-1.5 mt-2">
             <TrendingDown className="w-3 h-3 text-muted-foreground" />
             <span className="text-[11px] text-muted-foreground">
-              {topInsight.category} · Investigate &amp; act
+              {topInsight.category} · Open diagnostics for full analysis
             </span>
           </div>
         )}
       </div>
       <span className={`shrink-0 flex items-center gap-1 text-[11px] font-semibold mt-1 opacity-70 group-hover:opacity-100 transition-opacity ${accentColor}`}>
-        Investigate <ArrowRight className="w-3.5 h-3.5" />
+        Diagnose <ArrowRight className="w-3.5 h-3.5" />
       </span>
     </motion.div>
   );
