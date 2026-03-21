@@ -213,6 +213,8 @@ const ProductPreview = forwardRef<HTMLElement>((_, ref) => {
       </div>
     </section>
   );
-};
+});
+
+ProductPreview.displayName = "ProductPreview";
 
 export default ProductPreview;

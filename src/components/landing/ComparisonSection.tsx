@@ -149,6 +149,8 @@ const ComparisonSection = forwardRef<HTMLElement, { inline?: boolean }>(({ inlin
       </motion.div>
     </div>
   </section>
-);
+));
+
+ComparisonSection.displayName = "ComparisonSection";
 
 export default ComparisonSection;
