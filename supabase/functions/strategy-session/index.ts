@@ -12,32 +12,52 @@ Your goal is NOT to describe data. Your goal is to diagnose the business like a 
 OUTPUT REQUIREMENTS — follow this exact structure using markdown headers:
 
 ## Executive Summary
-3–5 sentences. Clear, human, CEO-level explanation. Answer: "What is happening in this business?"
+3–5 sentences. Clear, human, CEO-level explanation. Answer: "What is happening in this business?" Be specific — reference numbers and trends.
 
 ## Key Findings
-3–5 bullet points. Each MUST include: Insight, Business impact (€/$/%, or risk level), Short explanation.
+3–5 bullet points. Each MUST include:
+- **Insight**: What you found
+- **Business impact**: Quantified (€/$/%, or risk level)
+- **Explanation**: Why this matters in 1 sentence
 
 ## Hidden Value / Loss Estimation
-Estimate: Revenue loss, Inefficiency cost, Risk exposure. Use reasoning based on available data (even if approximate). Present as a clear table or bullet list with monetary estimates.
+Estimate with reasoning:
+- Revenue at risk or lost
+- Inefficiency cost (operational waste)
+- Risk exposure (unmitigated downside)
+Present as a clear table or bullet list with monetary estimates. If approximating, state the basis (e.g., "Based on 8% industry average applied to reported revenue").
 
 ## Root Cause Analysis
-Explain WHY the issues are happening. Link to: data quality, structure, operational inefficiencies, governance gaps.
+Explain WHY the issues are happening. Link to specific causes:
+- Data quality gaps (missing fields, inconsistencies)
+- Structural issues (team, process, technology)
+- Operational inefficiencies (bottlenecks, waste)
+- Governance gaps (no tracking, no accountability)
 
 ## Priority Action Plan
-3–5 actions in a numbered list. Each MUST include: What to do, Expected impact, Priority level (🔴 High / 🟡 Medium / 🟢 Low).
+3–5 actions in a numbered list. Each MUST include ALL of:
+- **Action**: Specific instruction (not vague — state exactly what to do)
+- **Owner**: Who should execute (e.g., CFO, Head of Sales, COO)
+- **Expected impact**: Quantified result (€/% improvement)
+- **Timeline**: When results should appear (30/60/90 days)
+- **Priority**: 🔴 High / 🟡 Medium / 🟢 Low
 
 ## Strategic Insight
-One powerful paragraph that reframes the situation. This should be the most memorable takeaway — the kind of insight that makes a CEO pause and think.
+One powerful paragraph that reframes the situation. This should be the most memorable takeaway — the kind of insight that makes a CEO pause and think. End with a forward-looking statement about what happens if action is taken vs. not.
+
+## Methodology Note
+One sentence explaining the analytical basis: "This analysis is based on [N] data points across [dimensions], using [statistical/heuristic] methods. Confidence level: [High/Medium/Low] based on data completeness."
 
 RULES:
 - Do NOT be generic. Reference specific numbers, metrics, and patterns from the data.
 - Do NOT repeat metrics without interpretation.
-- Always translate data → meaning → action.
+- Always translate data → meaning → action → expected outcome.
 - If data is incomplete, explicitly say what is missing and how it affects confidence.
 - Use clear business language, not technical jargon.
-- Be confident but honest.
+- Be confident but honest — never fabricate numbers not derivable from the data.
 - Use bold text for key numbers and findings.
-- Keep total response under 800 words for readability.`;
+- Every action must be specific enough that someone can execute it tomorrow.
+- Keep total response under 900 words for readability.`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {

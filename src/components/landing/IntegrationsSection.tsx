@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import { motion } from "framer-motion";
 import { CheckCircle2, Clock, Upload, Webhook } from "lucide-react";
 
@@ -12,8 +13,8 @@ const INTEGRATIONS = [
   { name: "Salesforce", desc: "CRM pipeline, closed-won, lead metrics", status: "soon" as const },
 ];
 
-const IntegrationsSection = () => (
-  <section className="py-24 relative">
+const IntegrationsSection = forwardRef<HTMLElement>((_, ref) => (
+  <section ref={ref} className="py-24 relative">
     <div className="container mx-auto px-6">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -68,6 +69,8 @@ const IntegrationsSection = () => (
       </motion.p>
     </div>
   </section>
-);
+));
+
+IntegrationsSection.displayName = "IntegrationsSection";
 
 export default IntegrationsSection;

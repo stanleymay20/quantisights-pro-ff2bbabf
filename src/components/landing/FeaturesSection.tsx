@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import { motion } from "framer-motion";
 import {
   Brain, Zap, Shield, TrendingUp, FileText, Users,
@@ -93,7 +94,7 @@ const CAPABILITIES = [
   },
 ];
 
-const FeaturesSection = () => {
+const FeaturesSection = forwardRef<HTMLElement>((_, ref) => {
   return (
     <>
       {/* How It Works */}
@@ -228,6 +229,8 @@ const FeaturesSection = () => {
       </section>
     </>
   );
-};
+});
+
+FeaturesSection.displayName = "FeaturesSection";
 
 export default FeaturesSection;
