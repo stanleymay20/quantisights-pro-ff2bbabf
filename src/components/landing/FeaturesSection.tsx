@@ -94,7 +94,7 @@ const CAPABILITIES = [
   },
 ];
 
-const FeaturesSection = () => {
+const FeaturesSection = forwardRef<HTMLElement>((_, ref) => {
   return (
     <>
       {/* How It Works */}
