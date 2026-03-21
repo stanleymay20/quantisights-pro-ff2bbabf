@@ -53,7 +53,7 @@ const HeroSection = () => {
               <span className="gradient-text">Billion-Dollar Decisions.</span>
             </h1>
             <p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto mb-6 sm:mb-10 leading-relaxed">
-              Organizations lose an estimated €2.8 trillion annually from suboptimal strategic decisions.
+              Organizations lose an estimated $3 trillion+ annually from suboptimal strategic decisions.
               Quantivis closes the gap between data and decisive action — transforming raw intelligence into{" "}
               <span className="text-foreground font-medium">
                 calibrated, board-defensible outcomes with a decision ledger that learns from every result.

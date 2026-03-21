@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import { motion } from "framer-motion";
 import { User, BarChart3, TrendingUp, AlertTriangle, CheckCircle2 } from "lucide-react";
 

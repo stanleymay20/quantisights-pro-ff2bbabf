@@ -1,4 +1,4 @@
-import { Fragment } from "react";
+import { forwardRef, Fragment } from "react";
 import { motion } from "framer-motion";
 import { Check, X } from "lucide-react";
 
