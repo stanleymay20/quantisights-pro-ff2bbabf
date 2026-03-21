@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import { motion } from "framer-motion";
 import { Monitor, Smartphone, ArrowRight, Play, Shield, Brain, TrendingUp, Zap, BarChart3, Network } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -41,7 +42,7 @@ const MOCK_KPIS = [
   { label: "Churn", value: "3.8%", change: "+0.4%", positive: false },
 ];
 
-const ProductPreview = () => {
+const ProductPreview = forwardRef<HTMLElement>((_, ref) => {
   return (
     <section className="py-16 relative overflow-hidden -mt-8">
       {/* Background glow */}
@@ -212,6 +213,8 @@ const ProductPreview = () => {
       </div>
     </section>
   );
-};
+});
+
+ProductPreview.displayName = "ProductPreview";
 
 export default ProductPreview;

@@ -1,4 +1,4 @@
-import { Fragment } from "react";
+import { forwardRef, Fragment } from "react";
 import { motion } from "framer-motion";
 import { Check, X } from "lucide-react";
 
@@ -57,7 +57,7 @@ const renderCellIcon = (value: boolean | string) => {
   return <span className="text-xs font-medium text-foreground">{value}</span>;
 };
 
-const ComparisonSection = ({ inline = false }: { inline?: boolean }) => (
+const ComparisonSection = forwardRef<HTMLElement, { inline?: boolean }>(({ inline = false }, ref) => (
   <section className={inline ? "max-w-5xl mx-auto" : "py-20"}>
     <div className={inline ? "" : "container mx-auto px-6"}>
       <motion.div
@@ -149,6 +149,8 @@ const ComparisonSection = ({ inline = false }: { inline?: boolean }) => (
       </motion.div>
     </div>
   </section>
-);
+));
+
+ComparisonSection.displayName = "ComparisonSection";
 
 export default ComparisonSection;

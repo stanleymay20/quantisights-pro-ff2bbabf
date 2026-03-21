@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import { motion } from "framer-motion";
 import { TrendingDown, TrendingUp } from "lucide-react";
 
@@ -14,7 +15,7 @@ const INSIGHTS = [
   "Retention initiatives outperform projections by 6%.",
 ];
 
-const CalibrationProofSection = () => {
+const CalibrationProofSection = forwardRef<HTMLElement>((_, ref) => {
   return (
     <section className="py-20 sm:py-28 relative">
       <div className="container mx-auto px-6">
@@ -103,6 +104,8 @@ const CalibrationProofSection = () => {
       </div>
     </section>
   );
-};
+});
+
+CalibrationProofSection.displayName = "CalibrationProofSection";
 
 export default CalibrationProofSection;
