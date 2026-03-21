@@ -15,7 +15,7 @@ const INSIGHTS = [
   "Retention initiatives outperform projections by 6%.",
 ];
 
-const CalibrationProofSection = () => {
+const CalibrationProofSection = forwardRef<HTMLElement>((_, ref) => {
   return (
     <section className="py-20 sm:py-28 relative">
       <div className="container mx-auto px-6">
