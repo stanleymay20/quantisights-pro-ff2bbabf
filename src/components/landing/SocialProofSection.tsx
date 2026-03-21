@@ -89,6 +89,9 @@ const SocialProofSection = forwardRef<HTMLDivElement>((_, ref) => {
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
               Composite scenarios showing how self-correcting intelligence transforms strategic operations and reduces costly overconfidence.
             </p>
+            <p className="text-[10px] text-muted-foreground/40 mt-2 max-w-md mx-auto">
+              These are representative scenarios based on platform modeling — not claims from specific client engagements.
+            </p>
           </motion.div>
 
           <div className="grid lg:grid-cols-3 gap-5">
