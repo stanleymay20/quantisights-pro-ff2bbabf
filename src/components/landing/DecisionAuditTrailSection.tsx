@@ -110,6 +110,8 @@ const DecisionAuditTrailSection = forwardRef<HTMLElement>((_, ref) => {
       </div>
     </section>
   );
-};
+});
+
+DecisionAuditTrailSection.displayName = "DecisionAuditTrailSection";
 
 export default DecisionAuditTrailSection;

@@ -104,6 +104,8 @@ const CalibrationProofSection = forwardRef<HTMLElement>((_, ref) => {
       </div>
     </section>
   );
-};
+});
+
+CalibrationProofSection.displayName = "CalibrationProofSection";
 
 export default CalibrationProofSection;
