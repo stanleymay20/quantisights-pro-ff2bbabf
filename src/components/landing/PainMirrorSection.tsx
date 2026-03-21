@@ -26,7 +26,7 @@ const PainMirrorSection = () => {
         >
           <p className="text-xs uppercase tracking-widest text-primary font-semibold mb-4">The Analytics-Action Gap</p>
           <h2 className="text-2xl sm:text-4xl font-bold font-display mb-5">
-            €2.8 Trillion Lost Annually to the{" "}
+            An Estimated $3 Trillion+ Lost Annually to the{" "}
             <span className="gradient-text">Decision Quality Gap</span>
           </h2>
           <p className="text-muted-foreground text-base sm:text-lg leading-relaxed max-w-2xl mx-auto">
