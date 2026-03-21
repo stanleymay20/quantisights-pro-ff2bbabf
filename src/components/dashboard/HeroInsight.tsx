@@ -73,8 +73,8 @@ const HeroInsight = memo(({ insights }: HeroInsightProps) => {
         <p className="text-xs text-primary font-medium mt-1.5 line-clamp-1">
           → {derived.action}
         </p>
-        <p className="text-[11px] text-muted-foreground mt-0.5">
-          Expected impact: {derived.impact}
+        <p className="text-[11px] text-muted-foreground mt-0.5" title="Modeled estimate based on signal category and observed performance patterns">
+          Estimated impact: {derived.impact}
         </p>
         {topInsight.category && (
           <div className="flex items-center gap-1.5 mt-2">
