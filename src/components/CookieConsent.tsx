@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, forwardRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Cookie, X, Shield } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -7,7 +7,7 @@ const CONSENT_KEY = "quantivis_cookie_consent";
 
 type ConsentChoice = "accepted" | "essential_only";
 
-const CookieConsent = () => {
+const CookieConsent = forwardRef<HTMLDivElement>((_, _ref) => {
   const [visible, setVisible] = useState(false);
   const [exiting, setExiting] = useState(false);
 
@@ -76,6 +76,8 @@ const CookieConsent = () => {
       </div>
     </div>
   );
-};
+});
+
+CookieConsent.displayName = "CookieConsent";
 
 export default CookieConsent;
