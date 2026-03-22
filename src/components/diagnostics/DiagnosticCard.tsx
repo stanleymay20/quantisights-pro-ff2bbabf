@@ -181,6 +181,11 @@ const DiagnosticCard = ({ diagnostic: d, index, isExpanded, onToggle }: Diagnost
                   )}
                 </div>
               </div>
+
+              {/* Evidence Chain — full traceability */}
+              <div className="pt-4 border-t border-border/30">
+                <EvidenceChain diagnostic={d} />
+              </div>
             </motion.div>
           )}
         </CardContent>
