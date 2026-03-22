@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, FileQuestion, Brain, TrendingUp, AlertTriangle, Zap } from "lucide-react";
 
