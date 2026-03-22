@@ -18,8 +18,9 @@ interface RecentDecision {
 
 const STATUS_CONFIG: Record<string, { icon: typeof CheckCircle2; color: string; label: string }> = {
   approved: { icon: CheckCircle2, color: "text-success", label: "Approved" },
+  executed: { icon: CheckCircle2, color: "text-success", label: "Executed" },
   dismissed: { icon: XCircle, color: "text-muted-foreground", label: "Dismissed" },
-  pending: { icon: Clock, color: "text-warning", label: "Pending" },
+  pending_review: { icon: Clock, color: "text-warning", label: "Pending" },
   modified: { icon: TrendingUp, color: "text-primary", label: "Modified" },
 };
 
