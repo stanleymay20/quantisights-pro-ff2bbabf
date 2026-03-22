@@ -124,6 +124,8 @@ const HeroSection = forwardRef<HTMLElement>((_, ref) => {
       </div>
     </header>
   );
-};
+});
+
+HeroSection.displayName = "HeroSection";
 
 export default HeroSection;
