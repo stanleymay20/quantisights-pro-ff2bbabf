@@ -52,7 +52,7 @@ const DecisionMemoryWidget = memo(({ organizationId }: DecisionMemoryWidgetProps
           .eq("organization_id", organizationId),
       ]);
 
-      if (decRes.data) setDecisions(decRes.data as RecentDecision[]);
+      if (decRes.data) setDecisions(decRes.data as unknown as RecentDecision[]);
       if (calRes.data && calRes.data.length > 0) {
         setCalibrationTrend({
           current: calRes.data[0]?.overall_calibration_score ?? null,
