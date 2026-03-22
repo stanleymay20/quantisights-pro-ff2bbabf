@@ -76,6 +76,8 @@ const CookieConsent = forwardRef<HTMLDivElement>((_, _ref) => {
       </div>
     </div>
   );
-};
+});
+
+CookieConsent.displayName = "CookieConsent";
 
 export default CookieConsent;
