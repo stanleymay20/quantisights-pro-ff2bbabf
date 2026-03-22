@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import ConfidenceBadge from "@/components/ConfidenceBadge";
 import OutputClassificationBadge from "@/components/dashboard/OutputClassificationBadge";
+import EvidenceChain from "@/components/diagnostics/EvidenceChain";
 import {
   Activity, AlertTriangle, TrendingUp, TrendingDown, Minus, Zap,
   Search, ChevronRight,
@@ -179,6 +180,11 @@ const DiagnosticCard = ({ diagnostic: d, index, isExpanded, onToggle }: Diagnost
                     <span>Calibration: v{d.calibration_model_version} ({(d.calibration_correction_applied_pp ?? 0) > 0 ? "+" : ""}{d.calibration_correction_applied_pp}pp)</span>
                   )}
                 </div>
+              </div>
+
+              {/* Evidence Chain — full traceability */}
+              <div className="pt-4 border-t border-border/30">
+                <EvidenceChain diagnostic={d} />
               </div>
             </motion.div>
           )}

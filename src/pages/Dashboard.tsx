@@ -25,6 +25,7 @@ import GuidedTour from "@/components/dashboard/GuidedTour";
 import WelcomeFlow from "@/components/dashboard/WelcomeFlow";
 import DemoBanner from "@/components/dashboard/DemoBanner";
 import HeroInsight from "@/components/dashboard/HeroInsight";
+import DecisionMemoryWidget from "@/components/dashboard/DecisionMemoryWidget";
 
 const VIEW_STORAGE_KEY = "quantivis_dashboard_view";
 
@@ -436,6 +437,7 @@ const Dashboard = () => {
               </motion.div>
 
               {hasAnomalies && <HeroInsight insights={insights} />}
+              {currentOrgId && <DecisionMemoryWidget organizationId={currentOrgId} />}
 
               {dashboardView === "executive" ? (
                 <ExecutiveQuickView
