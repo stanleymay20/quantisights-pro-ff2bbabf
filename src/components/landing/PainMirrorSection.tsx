@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, FileQuestion, Brain, TrendingUp, AlertTriangle, Zap } from "lucide-react";
 
@@ -14,9 +15,9 @@ const ANALYTICS_HIERARCHY = [
   { level: "Prescriptive", question: '"What should we do?"', tool: "Decision Intelligence", gap: false },
 ];
 
-const PainMirrorSection = () => {
+const PainMirrorSection = forwardRef<HTMLElement>((_, ref) => {
   return (
-    <section className="py-20 sm:py-28 relative">
+    <section ref={ref} className="py-20 sm:py-28 relative">
       <div className="container mx-auto px-6">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
@@ -140,6 +141,8 @@ const PainMirrorSection = () => {
       </div>
     </section>
   );
-};
+});
+
+PainMirrorSection.displayName = "PainMirrorSection";
 
 export default PainMirrorSection;
