@@ -10,12 +10,10 @@ interface DecisionMemoryWidgetProps {
 
 interface RecentDecision {
   id: string;
-  title: string;
-  status: string;
-  confidence_score: number | null;
+  recommended_action: string;
+  decision_status: string;
+  confidence_at_decision: number | null;
   created_at: string;
-  outcome_delta?: number | null;
-  prediction_accuracy_score?: number | null;
 }
 
 const STATUS_CONFIG: Record<string, { icon: typeof CheckCircle2; color: string; label: string }> = {
