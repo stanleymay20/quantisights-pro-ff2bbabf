@@ -141,6 +141,8 @@ const PainMirrorSection = forwardRef<HTMLElement>((_, ref) => {
       </div>
     </section>
   );
-};
+});
+
+PainMirrorSection.displayName = "PainMirrorSection";
 
 export default PainMirrorSection;
