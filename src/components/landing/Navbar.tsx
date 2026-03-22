@@ -11,13 +11,14 @@ const NAV_LINKS: { label: string; href?: string; to?: string }[] = [
   { href: "#contact", label: "Contact" },
 ];
 
-const NavItem = ({ link, onClick }: { link: typeof NAV_LINKS[number]; onClick?: () => void }) => {
+const NavItem = forwardRef<HTMLAnchorElement, { link: typeof NAV_LINKS[number]; onClick?: () => void }>(({ link, onClick }, ref) => {
   const className = "text-sm text-muted-foreground hover:text-foreground transition-colors";
   if (link.to) {
-    return <Link to={link.to} className={className} onClick={onClick}>{link.label}</Link>;
+    return <Link to={link.to} className={className} onClick={onClick} ref={ref}>{link.label}</Link>;
   }
-  return <a href={link.href} className={className} onClick={onClick}>{link.label}</a>;
-};
+  return <a href={link.href} className={className} onClick={onClick} ref={ref}>{link.label}</a>;
+});
+NavItem.displayName = "NavItem";
 
 const Navbar = forwardRef<HTMLElement>((_, ref) => {
   const [mobileOpen, setMobileOpen] = useState(false);
