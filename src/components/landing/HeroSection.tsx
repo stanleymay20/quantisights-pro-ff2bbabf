@@ -12,9 +12,9 @@ const CAPABILITY_PILLS = [
   { icon: BarChart3, label: "Board-Ready Defensibility" },
 ];
 
-const HeroSection = () => {
+const HeroSection = forwardRef<HTMLElement>((_, ref) => {
   return (
-    <header className="relative min-h-[85vh] min-h-[85dvh] flex items-center overflow-hidden pt-20" role="banner">
+    <header ref={ref} className="relative min-h-[85vh] min-h-[85dvh] flex items-center overflow-hidden pt-20" role="banner">
       <img
         src={heroVisual}
         alt=""
