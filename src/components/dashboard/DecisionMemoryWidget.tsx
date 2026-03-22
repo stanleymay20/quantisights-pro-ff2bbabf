@@ -118,7 +118,7 @@ const DecisionMemoryWidget = memo(({ organizationId }: DecisionMemoryWidgetProps
       {decisions.length > 0 && (
         <div className="space-y-1.5">
           {decisions.slice(0, 4).map((d) => {
-            const cfg = STATUS_CONFIG[d.status] || STATUS_CONFIG.pending;
+            const cfg = STATUS_CONFIG[d.decision_status] || STATUS_CONFIG.pending_review;
             const StatusIcon = cfg.icon;
             const daysAgo = Math.floor((Date.now() - new Date(d.created_at).getTime()) / 86400000);
 
@@ -126,10 +126,10 @@ const DecisionMemoryWidget = memo(({ organizationId }: DecisionMemoryWidgetProps
               <div key={d.id} className="flex items-center gap-2.5 py-1.5 px-2 rounded-lg hover:bg-muted/30 transition-colors group">
                 <StatusIcon className={`w-3.5 h-3.5 shrink-0 ${cfg.color}`} />
                 <div className="flex-1 min-w-0">
-                  <p className="text-[12px] font-medium truncate">{d.title}</p>
+                  <p className="text-[12px] font-medium truncate">{d.recommended_action}</p>
                 </div>
-                {d.confidence_score != null && (
-                  <span className="text-[10px] font-mono text-muted-foreground">{d.confidence_score}%</span>
+                {d.confidence_at_decision != null && (
+                  <span className="text-[10px] font-mono text-muted-foreground">{d.confidence_at_decision}%</span>
                 )}
                 <span className="text-[10px] text-muted-foreground/60 shrink-0">
                   {daysAgo === 0 ? "today" : `${daysAgo}d`}
