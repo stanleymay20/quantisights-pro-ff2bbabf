@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import ConfidenceBadge from "@/components/ConfidenceBadge";
 import OutputClassificationBadge from "@/components/dashboard/OutputClassificationBadge";
+import EvidenceChain from "@/components/diagnostics/EvidenceChain";
 import {
   Activity, AlertTriangle, TrendingUp, TrendingDown, Minus, Zap,
   Search, ChevronRight,
