@@ -27,7 +27,7 @@ export const useAuth = () => {
   return ctx;
 };
 
-export const AuthProvider = forwardRef<HTMLDivElement, { children: ReactNode }>(({ children }, _ref) => {
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
@@ -97,6 +97,4 @@ export const AuthProvider = forwardRef<HTMLDivElement, { children: ReactNode }>(
       {children}
     </AuthContext.Provider>
   );
-});
-
-AuthProvider.displayName = "AuthProvider";
+};

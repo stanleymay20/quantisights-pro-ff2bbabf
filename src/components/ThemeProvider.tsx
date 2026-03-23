@@ -21,7 +21,7 @@ function getSystemTheme(): "light" | "dark" {
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
-export const ThemeProvider = forwardRef<HTMLDivElement, { children: ReactNode }>(({ children }, _ref) => {
+export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   const [theme, setThemeState] = useState<Theme>(() => {
     if (typeof window === "undefined") return "light";
     return (localStorage.getItem("quantivis-theme") as Theme) || "light";
@@ -55,6 +55,4 @@ export const ThemeProvider = forwardRef<HTMLDivElement, { children: ReactNode }>
       {children}
     </ThemeContext.Provider>
   );
-});
-
-ThemeProvider.displayName = "ThemeProvider";
+};
