@@ -7,7 +7,7 @@ const CONSENT_KEY = "quantivis_cookie_consent";
 
 type ConsentChoice = "accepted" | "essential_only";
 
-const CookieConsent = forwardRef<HTMLDivElement>((_, _ref) => {
+const CookieConsent = () => {
   const [visible, setVisible] = useState(false);
   const [exiting, setExiting] = useState(false);
 
