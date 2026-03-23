@@ -170,11 +170,11 @@ const Pricing = () => {
             className="max-w-5xl mx-auto mb-16 text-center"
           >
             <div className="inline-flex flex-wrap items-center justify-center gap-2 sm:gap-3 px-4 sm:px-6 py-3 rounded-2xl sm:rounded-full border border-border/50 bg-card/30">
-              <span className="text-xs sm:text-sm text-muted-foreground">Typical consulting engagement:</span>
-              <span className="text-xs sm:text-sm font-bold line-through text-muted-foreground/60">€50,000+</span>
+              <span className="text-xs sm:text-sm text-muted-foreground">Typical consulting project:</span>
+              <span className="text-xs sm:text-sm font-bold line-through text-muted-foreground/60">€50,000+ one-time</span>
               <span className="text-xs text-muted-foreground">→</span>
-              <span className="text-xs sm:text-sm font-bold text-primary">From €99/mo</span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold">500x less</span>
+              <span className="text-xs sm:text-sm font-bold text-primary">From €99/mo continuous</span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold">Ongoing vs one-off</span>
             </div>
           </motion.div>
 

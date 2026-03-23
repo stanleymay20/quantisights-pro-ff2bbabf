@@ -110,7 +110,7 @@ const HeroSection = forwardRef<HTMLElement>((_, ref) => {
                   { month: "Month 1", label: "Decision Ledger" },
                   { month: "Month 2", label: "Outcome Tracking" },
                   { month: "Month 3", label: "Calibration Active" },
-                ].map((step, i) => (
+                ].map((step) => (
                   <span key={step.month} className="text-xs sm:text-sm text-muted-foreground/60">
                     <span className="text-primary font-semibold">{step.month}</span>
                     <span className="mx-1.5 text-border">→</span>
