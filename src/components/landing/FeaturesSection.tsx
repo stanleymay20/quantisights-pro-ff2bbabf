@@ -18,7 +18,7 @@ const TOP_DIFFERENTIATORS = [
     icon: AlertTriangle,
     title: "Overconfidence Detection",
     description: "Automatically identifies when your team systematically overestimates success on mid-range strategic bets — the most expensive blind spot in executive decision-making.",
-    tag: "Only Platform",
+    tag: "Core",
     category: "Protection",
   },
   {
@@ -152,7 +152,8 @@ const FeaturesSection = forwardRef<HTMLElement>((_, ref) => {
           >
             <p className="text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-3">Why This Is Different</p>
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold font-display mb-4">
-              Three Capabilities <span className="gradient-text">No One Else Has</span>
+
+              Three Capabilities That <span className="gradient-text">Set Us Apart</span>
             </h2>
             <p className="text-muted-foreground text-sm sm:text-base max-w-2xl mx-auto mb-8 sm:mb-10">
               Most platforms show you what happened. Quantivis measures how wrong you were — and makes you less wrong next time.

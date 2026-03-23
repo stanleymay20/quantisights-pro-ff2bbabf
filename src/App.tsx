@@ -1,4 +1,4 @@
-import { lazy, Suspense, forwardRef } from "react";
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -138,7 +138,7 @@ const PMinimal = ({ children }: { children: React.ReactNode }) => (
   </Providers>
 );
 
-const App = forwardRef<HTMLDivElement>((_, _ref) => (
+const App = () => (
   <ErrorBoundary>
     <ThemeProvider>
     <QueryClientProvider client={queryClient}>
@@ -237,8 +237,6 @@ const App = forwardRef<HTMLDivElement>((_, _ref) => (
     </QueryClientProvider>
     </ThemeProvider>
   </ErrorBoundary>
-));
-
-App.displayName = "App";
+);
 
 export default App;

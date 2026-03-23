@@ -7,7 +7,7 @@ const ROI_METRICS = [
   { icon: TrendingDown, value: "7–12pp", label: "Calibration improvement", detail: "Typical overconfidence reduction via adaptive scoring" },
   { icon: Clock, value: "90 days", label: "Time to calibrated decisions", detail: "From Decision Ledger to Calibration Active" },
   { icon: DollarSign, value: "From €99/mo", label: "vs. €50K+ consulting projects", detail: "Automates 80% of recurring analytical work" },
-  { icon: ShieldCheck, value: "100%", label: "Decision traceability", detail: "For all logged decisions — fully auditable" },
+  { icon: ShieldCheck, value: "100%", label: "Logged decision traceability", detail: "Every recorded decision is fully auditable" },
 ];
 
 const CASE_STUDIES = [
