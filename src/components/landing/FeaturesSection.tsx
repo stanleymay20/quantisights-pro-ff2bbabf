@@ -18,7 +18,7 @@ const TOP_DIFFERENTIATORS = [
     icon: AlertTriangle,
     title: "Overconfidence Detection",
     description: "Automatically identifies when your team systematically overestimates success on mid-range strategic bets — the most expensive blind spot in executive decision-making.",
-    tag: "Only Platform",
+    tag: "Core",
     category: "Protection",
   },
   {

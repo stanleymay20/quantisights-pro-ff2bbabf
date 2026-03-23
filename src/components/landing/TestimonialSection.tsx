@@ -31,7 +31,7 @@ const PLATFORM_FACTS = [
   { value: "20+", label: "Decision science frameworks" },
   { value: "90 days", label: "Time to calibrated decisions" },
   { value: "<5 min", label: "Time to first strategic insight" },
-  { value: "100%", label: "Decision traceability" },
+  { value: "100%", label: "Logged decision traceability" },
 ];
 
 const TestimonialSection = forwardRef<HTMLElement>((_, ref) => {

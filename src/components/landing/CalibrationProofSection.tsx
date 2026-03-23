@@ -10,9 +10,9 @@ const CALIBRATION_DATA = [
 ];
 
 const INSIGHTS = [
-  "Pricing decisions are consistently overestimated by 9%.",
-  "Market entry forecasts are too optimistic by 12%.",
-  "Retention initiatives outperform projections by 6%.",
+  "Pricing decisions are consistently overestimated by 8pp.",
+  "Expansion project forecasts are too optimistic by 11pp.",
+  "Retention initiatives outperform projections by 6pp.",
 ];
 
 const CalibrationProofSection = forwardRef<HTMLElement>((_, ref) => {
