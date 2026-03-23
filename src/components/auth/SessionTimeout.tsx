@@ -11,7 +11,7 @@ const WARNING_BEFORE_MS = 2 * 60 * 1000; // warn 2 min before
 
 const ACTIVITY_EVENTS = ["mousedown", "keydown", "scroll", "touchstart"] as const;
 
-const SessionTimeout = forwardRef<HTMLDivElement>((_, _ref) => {
+const SessionTimeout = () => {
   const { user, signOut } = useAuth();
   const [showWarning, setShowWarning] = useState(false);
   const [countdown, setCountdown] = useState(120);
