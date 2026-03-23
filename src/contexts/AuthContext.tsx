@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useCallback, forwardRef, ReactNode } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -27,7 +27,7 @@ export const useAuth = () => {
   return ctx;
 };
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
+export const AuthProvider = forwardRef<HTMLDivElement, { children: ReactNode }>(({ children }, _ref) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
@@ -97,4 +97,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       {children}
     </AuthContext.Provider>
   );
-};
+});
+
+AuthProvider.displayName = "AuthProvider";
