@@ -138,7 +138,7 @@ const PMinimal = ({ children }: { children: React.ReactNode }) => (
   </Providers>
 );
 
-const App = forwardRef<HTMLDivElement>((_, _ref) => (
+const App = () => (
   <ErrorBoundary>
     <ThemeProvider>
     <QueryClientProvider client={queryClient}>
@@ -237,8 +237,6 @@ const App = forwardRef<HTMLDivElement>((_, _ref) => (
     </QueryClientProvider>
     </ThemeProvider>
   </ErrorBoundary>
-));
-
-App.displayName = "App";
+);
 
 export default App;
