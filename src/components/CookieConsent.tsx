@@ -76,8 +76,6 @@ const CookieConsent = () => {
       </div>
     </div>
   );
-});
-
-CookieConsent.displayName = "CookieConsent";
+};
 
 export default CookieConsent;
