@@ -46,6 +46,28 @@ const CalibrationProgress = ({ organizationId }: CalibrationProgressProps) => {
         ? previous.mean_absolute_error - current.mean_absolute_error
         : null;
 
+      // Derive learning narrative from model comparison
+      let learningNarrative: string | null = null;
+      let biasShift: string | null = null;
+
+      if (previous) {
+        const prevBias = previous.overall_bias_direction;
+        const curBias = current.overall_bias_direction;
+        if (prevBias && curBias && prevBias !== curBias) {
+          biasShift = `Bias corrected from ${prevBias} → ${curBias}`;
+        }
+        if (improvement != null && improvement > 0) {
+          learningNarrative = `Model accuracy improved by ${improvement.toFixed(1)}pp after analyzing ${current.total_decisions_analyzed ?? 0} decisions. ${curBias === "overconfident" ? "Confidence scores adjusted downward for high-uncertainty signals." : curBias === "underconfident" ? "Confidence scores adjusted upward where historical outcomes exceeded expectations." : "Predictions are now well-calibrated across signal classes."}`;
+        } else if (improvement != null && improvement < 0) {
+          learningNarrative = `Model accuracy declined by ${Math.abs(improvement).toFixed(1)}pp — likely due to distribution shift in recent outcomes. System is collecting more data to stabilize.`;
+        }
+      } else if (current.total_decisions_analyzed && current.total_decisions_analyzed >= 5) {
+        learningNarrative = `Initial calibration established from ${current.total_decisions_analyzed} decisions. ${current.overall_bias_direction === "overconfident" ? "Early pattern: team tends to overestimate — confidence will be adjusted." : current.overall_bias_direction === "underconfident" ? "Early pattern: team tends to underestimate — confidence will be boosted." : "No significant bias detected yet."}`;
+      }
+
+      // Use AI narrative from calibration model if available
+      const narrative = (current.ai_narrative as string | null) || learningNarrative;
+
       setData({
         overallScore: current.overall_calibration_score,
         biasDirection: current.overall_bias_direction,
@@ -53,6 +75,8 @@ const CalibrationProgress = ({ organizationId }: CalibrationProgressProps) => {
         totalDecisions: current.total_decisions_analyzed ?? 0,
         mae: current.mean_absolute_error,
         improvementPp: improvement,
+        learningNarrative: narrative,
+        biasShift,
       });
       setLoading(false);
     };
