@@ -15,6 +15,8 @@ interface CalibrationData {
   totalDecisions: number;
   mae: number | null;
   improvementPp: number | null;
+  learningNarrative: string | null;
+  biasShift: string | null;
 }
 
 const CalibrationProgress = ({ organizationId }: CalibrationProgressProps) => {
@@ -27,7 +29,7 @@ const CalibrationProgress = ({ organizationId }: CalibrationProgressProps) => {
       setLoading(true);
       const { data: models } = await supabase
         .from("calibration_models")
-        .select("overall_calibration_score, overall_bias_direction, model_version, total_decisions_analyzed, mean_absolute_error")
+        .select("overall_calibration_score, overall_bias_direction, model_version, total_decisions_analyzed, mean_absolute_error, ai_narrative, band_corrections")
         .eq("organization_id", organizationId)
         .order("computed_at", { ascending: false })
         .limit(2);
@@ -44,6 +46,28 @@ const CalibrationProgress = ({ organizationId }: CalibrationProgressProps) => {
         ? previous.mean_absolute_error - current.mean_absolute_error
         : null;
 
+      // Derive learning narrative from model comparison
+      let learningNarrative: string | null = null;
+      let biasShift: string | null = null;
+
+      if (previous) {
+        const prevBias = previous.overall_bias_direction;
+        const curBias = current.overall_bias_direction;
+        if (prevBias && curBias && prevBias !== curBias) {
+          biasShift = `Bias corrected from ${prevBias} → ${curBias}`;
+        }
+        if (improvement != null && improvement > 0) {
+          learningNarrative = `Model accuracy improved by ${improvement.toFixed(1)}pp after analyzing ${current.total_decisions_analyzed ?? 0} decisions. ${curBias === "overconfident" ? "Confidence scores adjusted downward for high-uncertainty signals." : curBias === "underconfident" ? "Confidence scores adjusted upward where historical outcomes exceeded expectations." : "Predictions are now well-calibrated across signal classes."}`;
+        } else if (improvement != null && improvement < 0) {
+          learningNarrative = `Model accuracy declined by ${Math.abs(improvement).toFixed(1)}pp — likely due to distribution shift in recent outcomes. System is collecting more data to stabilize.`;
+        }
+      } else if (current.total_decisions_analyzed && current.total_decisions_analyzed >= 5) {
+        learningNarrative = `Initial calibration established from ${current.total_decisions_analyzed} decisions. ${current.overall_bias_direction === "overconfident" ? "Early pattern: team tends to overestimate — confidence will be adjusted." : current.overall_bias_direction === "underconfident" ? "Early pattern: team tends to underestimate — confidence will be boosted." : "No significant bias detected yet."}`;
+      }
+
+      // Use AI narrative from calibration model if available
+      const narrative = (current.ai_narrative as string | null) || learningNarrative;
+
       setData({
         overallScore: current.overall_calibration_score,
         biasDirection: current.overall_bias_direction,
@@ -51,6 +75,8 @@ const CalibrationProgress = ({ organizationId }: CalibrationProgressProps) => {
         totalDecisions: current.total_decisions_analyzed ?? 0,
         mae: current.mean_absolute_error,
         improvementPp: improvement,
+        learningNarrative: narrative,
+        biasShift,
       });
       setLoading(false);
     };
@@ -141,8 +167,19 @@ const CalibrationProgress = ({ organizationId }: CalibrationProgressProps) => {
         </div>
       </div>
 
+      {/* What the system learned */}
+      {data.learningNarrative && (
+        <div className="mt-4 pt-3 border-t border-border/30">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">What the system learned</p>
+          <p className="text-[11px] text-muted-foreground leading-relaxed">{data.learningNarrative}</p>
+          {data.biasShift && (
+            <p className="text-[10px] text-primary mt-1 font-medium">↳ {data.biasShift}</p>
+          )}
+        </div>
+      )}
+
       {/* Learning status */}
-      <div className="mt-4 pt-3 border-t border-border/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+      <div className="mt-3 pt-3 border-t border-border/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Target className="w-3 h-3 text-muted-foreground shrink-0" />
           <span className="text-[11px] text-muted-foreground">
