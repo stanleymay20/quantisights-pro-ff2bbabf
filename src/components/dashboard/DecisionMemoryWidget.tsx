@@ -87,10 +87,10 @@ const DecisionMemoryWidget = memo(({ organizationId }: DecisionMemoryWidgetProps
       const [decRes, calRes, countRes] = await Promise.all([
         supabase
           .from("decision_ledger")
-          .select("id, recommended_action, decision_status, confidence_at_decision, created_at")
+          .select("id, recommended_action, decision_status, confidence_at_decision, created_at, outcome_delta, predicted_net_impact, prediction_accuracy_score, outcome_measured_at, execution_status, calibration_error")
           .eq("organization_id", organizationId)
           .order("created_at", { ascending: false })
-          .limit(5),
+          .limit(6),
         supabase
           .from("calibration_models")
           .select("overall_calibration_score, computed_at")
