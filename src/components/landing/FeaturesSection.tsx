@@ -7,10 +7,10 @@ import {
 } from "lucide-react";
 
 const HOW_IT_WORKS = [
-  { step: "01", title: "Log", desc: "Record a strategic decision in 3 clicks — confidence level, expected outcome, time horizon. That's it." },
-  { step: "02", title: "Calibrate", desc: "The system measures your actual accuracy against your predicted confidence — revealing systematic blind spots." },
-  { step: "03", title: "Correct", desc: "Adaptive algorithms learn from your outcomes and automatically adjust future confidence scores across the platform." },
-  { step: "04", title: "Defend", desc: "Board-ready reports show corrected probabilities, decision trails, and governance-grade audit evidence." },
+  { step: "01", title: "Log", desc: "Record a strategic decision in 3 clicks — confidence level, expected outcome, time horizon. That's all the system needs." },
+  { step: "02", title: "Measure", desc: "When outcomes arrive, the system compares what you predicted vs what actually happened — revealing systematic accuracy patterns." },
+  { step: "03", title: "Correct", desc: "Bayesian calibration learns from your outcomes and automatically adjusts future confidence scores across the platform. Every decision makes the next one better." },
+  { step: "04", title: "Defend", desc: "Board-ready reports show corrected probabilities, full decision trails, and governance-grade evidence chains. No prep needed." },
 ];
 
 const TOP_DIFFERENTIATORS = [
