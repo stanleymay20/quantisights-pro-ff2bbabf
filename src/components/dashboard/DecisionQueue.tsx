@@ -340,15 +340,19 @@ const DecisionQueue = memo(({
                   onClick={() => setFocusIndex(index)}
                 >
                   <div className="flex flex-col sm:flex-row items-start gap-3">
-                    <div className="flex items-start gap-3 flex-1 min-w-0">
-                      <div className="flex flex-col items-center gap-1.5 pt-0.5 shrink-0">
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${style.badge}`}>
-                          <Icon className="w-4 h-4" />
+                      <div className="flex items-start gap-3 flex-1 min-w-0">
+                        {/* Priority rank number */}
+                        <div className="flex flex-col items-center gap-1.5 pt-0.5 shrink-0">
+                          <span className="text-[9px] font-bold text-muted-foreground/60 uppercase tracking-widest">
+                            #{index + 1}
+                          </span>
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${style.badge}`}>
+                            <Icon className="w-4 h-4" />
+                          </div>
+                          <span className={`text-[9px] font-bold uppercase tracking-widest ${style.badge} px-1.5 py-0.5 rounded`}>
+                            {decision.urgency}
+                          </span>
                         </div>
-                        <span className={`text-[9px] font-bold uppercase tracking-widest ${style.badge} px-1.5 py-0.5 rounded`}>
-                          {decision.urgency}
-                        </span>
-                      </div>
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
