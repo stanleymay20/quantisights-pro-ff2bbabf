@@ -1,6 +1,6 @@
 import { memo, useMemo } from "react";
 import { motion } from "framer-motion";
-import { AlertTriangle, ArrowRight, TrendingDown, Info, Clock } from "lucide-react";
+import { AlertTriangle, ArrowRight, TrendingDown, Info, Clock, User, CalendarDays, Gauge } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ConfidenceBadge from "@/components/ConfidenceBadge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -19,6 +19,7 @@ const CATEGORY_INTEL: Record<string, {
   strength: "strong" | "moderate";
   confidenceDrivers: string[];
   confidenceLimiters: string[];
+  owner: string;
 }> = {
   revenue: {
     high: "Shift 15–20% spend from lowest-converting channels → top-2 segments showing 3× ROI delta",
@@ -28,6 +29,7 @@ const CATEGORY_INTEL: Record<string, {
     strength: "strong",
     confidenceDrivers: ["multi-period revenue trend", "segment-level conversion data"],
     confidenceLimiters: ["attribution model completeness", "channel-level granularity"],
+    owner: "VP Revenue / CRO",
   },
   churn: {
     high: "Activate retention playbook for top-decile risk cohort — onboarding friction is primary driver",
@@ -37,6 +39,7 @@ const CATEGORY_INTEL: Record<string, {
     strength: "strong",
     confidenceDrivers: ["cohort survival data", "onboarding completion rates"],
     confidenceLimiters: ["customer feedback data availability"],
+    owner: "VP Customer Success",
   },
   cost: {
     high: "Audit top-3 cost centers by ROI rank — cut or pause spend lines with negative marginal return",
@@ -46,6 +49,7 @@ const CATEGORY_INTEL: Record<string, {
     strength: "moderate",
     confidenceDrivers: ["cost center allocation data", "ROI tracking"],
     confidenceLimiters: ["indirect cost attribution accuracy"],
+    owner: "VP Finance / CFO",
   },
   growth: {
     high: "Double investment in top-performing acquisition channel (2.8× avg CAC efficiency) and cut bottom-2",
@@ -55,6 +59,7 @@ const CATEGORY_INTEL: Record<string, {
     strength: "strong",
     confidenceDrivers: ["CAC-to-LTV ratios", "channel performance history"],
     confidenceLimiters: ["market saturation data"],
+    owner: "VP Growth / CGO",
   },
   margin: {
     high: "Reprice bottom-quartile product lines and renegotiate top-3 supplier contracts by volume leverage",
@@ -64,6 +69,7 @@ const CATEGORY_INTEL: Record<string, {
     strength: "moderate",
     confidenceDrivers: ["product-level margin data", "supplier contract terms"],
     confidenceLimiters: ["competitive pricing intelligence"],
+    owner: "CFO / VP Finance",
   },
   conversion: {
     high: "Deploy targeted fix at Stage 3 drop-off (highest volume loss) — A/B test within 2 weeks",
@@ -73,6 +79,7 @@ const CATEGORY_INTEL: Record<string, {
     strength: "strong",
     confidenceDrivers: ["funnel stage tracking", "volume-per-stage data"],
     confidenceLimiters: ["user behavior tracking depth"],
+    owner: "VP Growth / Head of Product",
   },
   operational: {
     high: "Resolve primary bottleneck in processing pipeline (37% of total cycle time) within 30 days",
@@ -82,6 +89,7 @@ const CATEGORY_INTEL: Record<string, {
     strength: "moderate",
     confidenceDrivers: ["process stage timing data", "throughput measurements"],
     confidenceLimiters: ["upstream dependency visibility"],
+    owner: "COO / VP Operations",
   },
 };
 
@@ -93,6 +101,7 @@ const DEFAULT_INTEL = {
   strength: "moderate" as const,
   confidenceDrivers: ["pattern analysis"],
   confidenceLimiters: ["data completeness"],
+  owner: "Decision Owner (assign)",
 };
 
 interface DerivedIntel {
@@ -102,10 +111,13 @@ interface DerivedIntel {
   strength: "strong" | "moderate";
   confidenceDrivers: string[];
   confidenceLimiters: string[];
+  owner: string;
+  timeframeDays: number;
 }
 
 function deriveIntel(category: string | null, severity: string): DerivedIntel {
   const isHigh = severity === "high";
+  const timeframeDays = isHigh ? 7 : 14;
   if (category) {
     const key = category.toLowerCase();
     for (const [k, v] of Object.entries(CATEGORY_INTEL)) {
@@ -116,6 +128,8 @@ function deriveIntel(category: string | null, severity: string): DerivedIntel {
         strength: isHigh ? v.strength : "moderate",
         confidenceDrivers: v.confidenceDrivers,
         confidenceLimiters: v.confidenceLimiters,
+        owner: v.owner,
+        timeframeDays,
       };
     }
   }
@@ -126,6 +140,8 @@ function deriveIntel(category: string | null, severity: string): DerivedIntel {
     strength: DEFAULT_INTEL.strength,
     confidenceDrivers: DEFAULT_INTEL.confidenceDrivers,
     confidenceLimiters: DEFAULT_INTEL.confidenceLimiters,
+    owner: DEFAULT_INTEL.owner,
+    timeframeDays,
   };
 }
 
@@ -151,6 +167,25 @@ function buildConfidenceExplanation(confidence: number, intel: DerivedIntel, ins
   return `${confidence}% — Driven by: ${drivers}${limiterStr}`;
 }
 
+/** Derive execution readiness from data quality signals */
+function deriveExecutionReadiness(insight: Insight, confidence: number): { level: string; reason: string } {
+  const sample = insight.sample_size ?? 0;
+  const dqi = insight.data_quality_index ?? 0.5;
+  if (confidence >= 70 && sample >= 30 && dqi >= 0.7) return { level: "High", reason: "Strong data foundation" };
+  const gaps: string[] = [];
+  if (confidence < 70) gaps.push("moderate confidence");
+  if (sample < 30) gaps.push("limited sample");
+  if (dqi < 0.7) gaps.push("data quality gaps");
+  if (gaps.length <= 1) return { level: "Moderate", reason: `Actionable, limited by: ${gaps[0] ?? "data coverage"}` };
+  return { level: "Low", reason: `Requires: ${gaps.join(", ")}` };
+}
+
+const READINESS_STYLES: Record<string, string> = {
+  High: "text-success",
+  Moderate: "text-warning",
+  Low: "text-destructive",
+};
+
 const HeroInsight = memo(({ insights }: HeroInsightProps) => {
   const navigate = useNavigate();
   const topInsight = insights.find(i => i.severity === "high") || insights.find(i => i.severity === "medium");
@@ -165,6 +200,7 @@ const HeroInsight = memo(({ insights }: HeroInsightProps) => {
   const confidence = topInsight.capped_confidence ?? topInsight.raw_confidence ?? topInsight.confidence_score ?? 0;
   const reasoning = deriveReasoning(topInsight);
   const confidenceExplanation = buildConfidenceExplanation(confidence, intel, topInsight);
+  const readiness = deriveExecutionReadiness(topInsight, confidence);
 
   const severityStyles = topInsight.severity === "high"
     ? "border-destructive/30 bg-destructive/[0.05] hover:bg-destructive/[0.08] hover:border-destructive/40"
@@ -228,6 +264,27 @@ const HeroInsight = memo(({ insights }: HeroInsightProps) => {
           <p className="text-[11px] text-muted-foreground/70 italic leading-snug">
             If unaddressed: {intel.inaction}
           </p>
+        </div>
+
+        {/* Execution metadata — owner, timeframe, readiness */}
+        <div className="flex items-center gap-3 flex-wrap mt-2 pt-2 border-t border-border/20">
+          <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+            <User className="w-2.5 h-2.5" /> <span className="font-semibold text-foreground">{intel.owner}</span>
+          </span>
+          <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+            <CalendarDays className="w-2.5 h-2.5" /> Within {intel.timeframeDays}d
+          </span>
+          <span className={`text-[10px] flex items-center gap-1 ${READINESS_STYLES[readiness.level] ?? "text-muted-foreground"}`}>
+            <Gauge className="w-2.5 h-2.5" />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="font-semibold cursor-help">Readiness: {readiness.level}</span>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-xs text-xs">
+                {readiness.reason}
+              </TooltipContent>
+            </Tooltip>
+          </span>
         </div>
 
         <p className="text-[10px] text-muted-foreground/50 mt-1.5">{reasoning}</p>

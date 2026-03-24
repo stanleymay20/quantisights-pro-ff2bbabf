@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Brain, AlertTriangle, TrendingDown, Clock, Sparkles, CheckCircle2, XCircle, Pencil, Loader2, ShieldCheck, FileCheck, Crosshair, Flame, Zap, User, CalendarDays, Target } from "lucide-react";
+import { Brain, AlertTriangle, TrendingDown, Clock, Sparkles, CheckCircle2, XCircle, Pencil, Loader2, ShieldCheck, FileCheck, Crosshair, Flame, Zap, User, CalendarDays, Target, Gauge } from "lucide-react";
 import ConfidenceBadge from "@/components/ConfidenceBadge";
 import MissionAlignmentBadge from "./MissionAlignmentBadge";
 import { supabase } from "@/integrations/supabase/client";
@@ -340,15 +340,19 @@ const DecisionQueue = memo(({
                   onClick={() => setFocusIndex(index)}
                 >
                   <div className="flex flex-col sm:flex-row items-start gap-3">
-                    <div className="flex items-start gap-3 flex-1 min-w-0">
-                      <div className="flex flex-col items-center gap-1.5 pt-0.5 shrink-0">
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${style.badge}`}>
-                          <Icon className="w-4 h-4" />
+                      <div className="flex items-start gap-3 flex-1 min-w-0">
+                        {/* Priority rank number */}
+                        <div className="flex flex-col items-center gap-1.5 pt-0.5 shrink-0">
+                          <span className="text-[9px] font-bold text-muted-foreground/60 uppercase tracking-widest">
+                            #{index + 1}
+                          </span>
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${style.badge}`}>
+                            <Icon className="w-4 h-4" />
+                          </div>
+                          <span className={`text-[9px] font-bold uppercase tracking-widest ${style.badge} px-1.5 py-0.5 rounded`}>
+                            {decision.urgency}
+                          </span>
                         </div>
-                        <span className={`text-[9px] font-bold uppercase tracking-widest ${style.badge} px-1.5 py-0.5 rounded`}>
-                          {decision.urgency}
-                        </span>
-                      </div>
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -503,6 +507,12 @@ const DecisionQueue = memo(({
                             </span>
                             <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                               <Target className="w-2.5 h-2.5" /> <span className="font-semibold text-foreground">Success:</span> {rec.successMetrics.slice(0, 2).join("; ")}
+                            </span>
+                            <span className={`text-[10px] flex items-center gap-1 ${
+                              rec.executionReadiness.level === "high" ? "text-success" :
+                              rec.executionReadiness.level === "moderate" ? "text-warning" : "text-destructive"
+                            }`}>
+                              <Gauge className="w-2.5 h-2.5" /> <span className="font-semibold">Readiness: {rec.executionReadiness.label}</span>
                             </span>
                           </div>
                         </div>
