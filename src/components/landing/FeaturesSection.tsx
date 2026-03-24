@@ -41,7 +41,7 @@ const CAPABILITIES = [
   {
     icon: Sparkles,
     title: "Executive Intelligence Copilot",
-    description: "Ask strategic questions in plain English. Get answers grounded in your actual data, corrected for your historical bias patterns.",
+    description: "Ask strategic questions in plain English. Get answers grounded in your actual data, corrected for your historical accuracy patterns. Not generic AI — your organization's intelligence.",
     category: "Intelligence",
   },
   {
