@@ -14,9 +14,9 @@ const PREVIEW_FEATURES = [
   },
   {
     icon: Brain,
-    title: "Prescriptive Advisory",
-    desc: "AI-generated strategic playbooks with confidence scoring & bias checks",
-    metric: "3 open advisories",
+    title: "Decision Memory",
+    desc: "Every strategic call is recorded with confidence, outcome, and calibration correction — the system learns",
+    metric: "12 decisions tracked",
     status: "active",
   },
   {
@@ -28,9 +28,9 @@ const PREVIEW_FEATURES = [
   },
   {
     icon: TrendingUp,
-    title: "Monte Carlo Simulation",
-    desc: "10,000-run probabilistic modeling with P10/P50/P90 impact projections",
-    metric: "P(ROI>0): 78%",
+    title: "Calibration Engine",
+    desc: "Bayesian model compares past predictions to actual outcomes and auto-corrects future confidence scores",
+    metric: "Accuracy: +8pp",
     status: "positive",
   },
 ];

@@ -58,7 +58,8 @@ const HeroSection = forwardRef<HTMLElement>((_, ref) => {
               Quantivis closes the gap between data and decisive action — transforming raw intelligence into{" "}
               <span className="text-foreground font-medium">
                 calibrated, board-defensible outcomes with a decision ledger that learns from every result.
-              </span>
+              </span>{" "}
+              Not a dashboard. Not a chatbot. A closed-loop system that gets smarter with every decision your team makes.
             </p>
 
             {/* Capability pills */}
