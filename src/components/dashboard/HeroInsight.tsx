@@ -117,7 +117,7 @@ interface DerivedIntel {
 
 function deriveIntel(category: string | null, severity: string): DerivedIntel {
   const isHigh = severity === "high";
-  const timeframeDays = isHigh ? (severity === "critical" ? 3 : 7) : 14;
+  const timeframeDays = isHigh ? 7 : 14;
   if (category) {
     const key = category.toLowerCase();
     for (const [k, v] of Object.entries(CATEGORY_INTEL)) {
