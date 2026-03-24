@@ -508,6 +508,12 @@ const DecisionQueue = memo(({
                             <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                               <Target className="w-2.5 h-2.5" /> <span className="font-semibold text-foreground">Success:</span> {rec.successMetrics.slice(0, 2).join("; ")}
                             </span>
+                            <span className={`text-[10px] flex items-center gap-1 ${
+                              rec.executionReadiness.level === "high" ? "text-success" :
+                              rec.executionReadiness.level === "moderate" ? "text-warning" : "text-destructive"
+                            }`}>
+                              <Gauge className="w-2.5 h-2.5" /> <span className="font-semibold">Readiness: {rec.executionReadiness.label}</span>
+                            </span>
                           </div>
                         </div>
 
