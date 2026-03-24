@@ -149,11 +149,14 @@ const DecisionMemoryWidget = memo(({ organizationId }: DecisionMemoryWidgetProps
       {isEmpty ? (
         <div className="p-4 rounded-lg bg-muted/20 border border-border/20 text-center">
           <p className="text-xs text-muted-foreground leading-relaxed">
-            When you approve, modify, or dismiss signals, Quantivis records the decision with its confidence level.
-            Over time, actual outcomes are compared to predictions — enabling the calibration engine to correct future confidence scores automatically.
+            Quantivis records every decision with its confidence level and expected outcome.
+            When results arrive, the system compares predictions to reality — automatically correcting future recommendations.
           </p>
           <p className="text-[10px] text-muted-foreground/50 mt-2 italic">
-            Decision → Outcome → Calibration → Better future recommendations
+            Signal → Decision → Outcome → Calibration → Improved future accuracy
+          </p>
+          <p className="text-[10px] text-primary mt-2 font-medium">
+            Each decision makes the system more accurate. Start building your organization's decision memory.
           </p>
         </div>
       ) : (

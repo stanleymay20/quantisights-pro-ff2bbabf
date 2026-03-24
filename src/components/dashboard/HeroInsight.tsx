@@ -289,10 +289,15 @@ const HeroInsight = memo(({ insights }: HeroInsightProps) => {
 
         <p className="text-[10px] text-muted-foreground/50 mt-1.5">{reasoning}</p>
         {topInsight.category && (
-          <div className="flex items-center gap-1.5 mt-2">
-            <TrendingDown className="w-3 h-3 text-muted-foreground" />
-            <span className="text-[11px] text-muted-foreground">
-              {topInsight.category.replace(/_/g, " ")} · Full evidence chain available
+          <div className="flex items-center justify-between mt-2">
+            <div className="flex items-center gap-1.5">
+              <TrendingDown className="w-3 h-3 text-muted-foreground" />
+              <span className="text-[11px] text-muted-foreground">
+                {topInsight.category.replace(/_/g, " ")} · Full evidence chain available
+              </span>
+            </div>
+            <span className="text-[9px] text-muted-foreground/40 italic">
+              Recommendation improves with each measured outcome
             </span>
           </div>
         )}

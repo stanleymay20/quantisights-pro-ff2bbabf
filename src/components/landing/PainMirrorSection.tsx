@@ -95,32 +95,39 @@ const PainMirrorSection = forwardRef<HTMLElement>((_, ref) => {
           transition={{ delay: 0.15 }}
           className="max-w-3xl mx-auto mb-12"
         >
-          <div className="rounded-xl border border-border bg-card/80 backdrop-blur-sm p-6 sm:p-8">
-            <p className="text-[11px] uppercase tracking-widest text-muted-foreground/50 mb-4">How most companies operate today</p>
-            <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mb-6">
-              {["Data", "Dashboards", "Meetings", "Opinions", "PowerPoint", "Decision"].map((step, i) => (
-                <div key={step} className="flex items-center gap-2 sm:gap-3">
-                  <span className="px-3 py-1.5 rounded-lg bg-muted text-xs sm:text-sm font-medium text-foreground/70">{step}</span>
-                  {i < 5 && <ArrowRight className="w-3 h-3 text-muted-foreground/30 shrink-0" />}
-                </div>
-              ))}
-            </div>
-            <div className="flex justify-center mb-6">
-              <div className="px-4 py-2 rounded-lg border border-destructive/20 bg-destructive/5 text-xs sm:text-sm font-medium text-destructive">
-                ✗ No record of accuracy. No institutional learning. Decision entropy increases.
+          <div className="grid md:grid-cols-2 gap-4">
+            {/* Without */}
+            <div className="rounded-xl border border-destructive/20 bg-destructive/[0.03] p-6">
+              <p className="text-[10px] uppercase tracking-widest text-destructive/60 font-bold mb-4">Without a Decision OS</p>
+              <div className="space-y-2.5">
+                {[
+                  "Decisions made from opinion, not evidence",
+                  "No record of prediction accuracy",
+                  "Same mistakes repeated across cycles",
+                  "No institutional learning from outcomes",
+                  "Board prep takes days of manual work",
+                ].map(item => (
+                  <div key={item} className="flex items-start gap-2">
+                    <span className="text-destructive/60 text-xs mt-0.5">✗</span>
+                    <span className="text-sm text-foreground/70">{item}</span>
+                  </div>
+                ))}
               </div>
             </div>
-
-            <div className="border-t border-border/50 pt-6">
-              <p className="text-xs text-muted-foreground/60 mb-3">The cognitive biases that go unchecked:</p>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {BLIND_SPOTS.map((item) => (
-                  <div
-                    key={item.text}
-                    className="flex items-start gap-2.5 p-3 rounded-lg bg-muted/50"
-                  >
-                    <item.icon className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-                    <span className="text-sm text-foreground/70">{item.text}</span>
+            {/* With */}
+            <div className="rounded-xl border border-success/20 bg-success/[0.03] p-6">
+              <p className="text-[10px] uppercase tracking-widest text-success/60 font-bold mb-4">With Quantivis</p>
+              <div className="space-y-2.5">
+                {[
+                  "Every decision logged with confidence + context",
+                  "Predicted vs actual compared automatically",
+                  "Calibration corrects systematic overconfidence",
+                  "System improves with every measured outcome",
+                  "Board reports generated in one click",
+                ].map(item => (
+                  <div key={item} className="flex items-start gap-2">
+                    <span className="text-success/60 text-xs mt-0.5">✓</span>
+                    <span className="text-sm text-foreground/70">{item}</span>
                   </div>
                 ))}
               </div>
