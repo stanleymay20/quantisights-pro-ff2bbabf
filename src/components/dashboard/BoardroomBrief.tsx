@@ -90,7 +90,7 @@ const BoardroomBrief = memo(({ insights, pendingDecisions, calibrationScore, top
           </div>
           <div>
             <h2 className="text-sm font-semibold font-display">Boardroom Brief</h2>
-            <p className="text-[10px] text-muted-foreground">What leadership needs to know now</p>
+            <p className="text-[10px] text-muted-foreground">Closed-Loop Decision Operating System</p>
           </div>
         </div>
         <span className={`text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full flex items-center gap-1.5 ${cfg.accent} bg-background/60 border border-current/20`}>

@@ -183,7 +183,7 @@ const CalibrationProgress = ({ organizationId }: CalibrationProgressProps) => {
         <div className="flex items-center gap-2">
           <Target className="w-3 h-3 text-muted-foreground shrink-0" />
           <span className="text-[11px] text-muted-foreground">
-            {data.totalDecisions} decisions analyzed · Model v{data.modelVersion || 1}
+            {data.totalDecisions} decisions analyzed · Model v{data.modelVersion || 1} · Intelligence compounds with every outcome
           </span>
         </div>
         {data.totalDecisions < 12 && (
