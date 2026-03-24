@@ -15,6 +15,8 @@ interface CalibrationData {
   totalDecisions: number;
   mae: number | null;
   improvementPp: number | null;
+  learningNarrative: string | null;
+  biasShift: string | null;
 }
 
 const CalibrationProgress = ({ organizationId }: CalibrationProgressProps) => {
