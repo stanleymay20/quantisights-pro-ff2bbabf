@@ -27,7 +27,7 @@ const CalibrationProgress = ({ organizationId }: CalibrationProgressProps) => {
       setLoading(true);
       const { data: models } = await supabase
         .from("calibration_models")
-        .select("overall_calibration_score, overall_bias_direction, model_version, total_decisions_analyzed, mean_absolute_error")
+        .select("overall_calibration_score, overall_bias_direction, model_version, total_decisions_analyzed, mean_absolute_error, ai_narrative, band_corrections")
         .eq("organization_id", organizationId)
         .order("computed_at", { ascending: false })
         .limit(2);

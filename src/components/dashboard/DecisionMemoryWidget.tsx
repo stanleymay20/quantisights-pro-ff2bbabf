@@ -179,35 +179,72 @@ const DecisionMemoryWidget = memo(({ organizationId }: DecisionMemoryWidgetProps
             </div>
           )}
 
-          {/* Recent Decisions */}
+          {/* Recent Decisions with Lifecycle + Outcome */}
           {decisions.length > 0 && (
-            <div className="space-y-1.5">
-              {decisions.slice(0, 4).map((d) => {
+            <div className="space-y-1">
+              {decisions.slice(0, 5).map((d) => {
                 const cfg = STATUS_CONFIG[d.decision_status] || STATUS_CONFIG.pending_review;
                 const StatusIcon = cfg.icon;
                 const daysAgo = Math.floor((Date.now() - new Date(d.created_at).getTime()) / 86400000);
+                const lifecycle = deriveLifecycleState(d);
+                const learning = deriveLearning(d);
+                const hasOutcome = d.outcome_delta != null && d.outcome_measured_at != null;
 
                 return (
-                  <div key={d.id} className="flex items-center gap-2.5 py-1.5 px-2 rounded-lg hover:bg-muted/30 transition-colors group">
-                    <StatusIcon className={`w-3.5 h-3.5 shrink-0 ${cfg.color}`} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[12px] font-medium truncate">{d.recommended_action}</p>
+                  <div key={d.id} className="py-2 px-2.5 rounded-lg hover:bg-muted/30 transition-colors group">
+                    <div className="flex items-center gap-2.5">
+                      <StatusIcon className={`w-3.5 h-3.5 shrink-0 ${cfg.color}`} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[12px] font-medium truncate">{d.recommended_action}</p>
+                      </div>
+                      <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${lifecycle.color} bg-muted/40`}>
+                        {lifecycle.label}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground/60 shrink-0">
+                        {daysAgo === 0 ? "today" : `${daysAgo}d`}
+                      </span>
                     </div>
-                    {d.confidence_at_decision != null && (
-                      <span className="text-[10px] font-mono text-muted-foreground">{d.confidence_at_decision}%</span>
+
+                    {/* Outcome comparison row */}
+                    {hasOutcome && (
+                      <div className="mt-1.5 ml-6 flex items-center gap-3 text-[10px]">
+                        {d.predicted_net_impact != null && (
+                          <span className="text-muted-foreground">
+                            Predicted: <span className="font-mono font-semibold">{d.predicted_net_impact > 0 ? "+" : ""}{d.predicted_net_impact.toFixed(1)}%</span>
+                          </span>
+                        )}
+                        <span className={`font-mono font-semibold ${(d.outcome_delta ?? 0) >= 0 ? "text-success" : "text-destructive"}`}>
+                          Actual: {(d.outcome_delta ?? 0) > 0 ? "+" : ""}{(d.outcome_delta ?? 0).toFixed(1)}%
+                        </span>
+                        {d.prediction_accuracy_score != null && (
+                          <span className={`${d.prediction_accuracy_score >= 70 ? "text-success" : d.prediction_accuracy_score >= 40 ? "text-warning" : "text-destructive"}`}>
+                            Accuracy: {d.prediction_accuracy_score}%
+                          </span>
+                        )}
+                      </div>
                     )}
-                    <span className="text-[10px] text-muted-foreground/60 shrink-0">
-                      {daysAgo === 0 ? "today" : `${daysAgo}d`}
-                    </span>
+
+                    {/* Learning line */}
+                    {learning && (
+                      <p className="mt-1 ml-6 text-[10px] text-muted-foreground italic leading-relaxed">
+                        ↳ {learning}
+                      </p>
+                    )}
                   </div>
                 );
               })}
             </div>
           )}
 
-          <p className="text-[10px] text-muted-foreground/50 mt-3 text-center italic">
-            Calibration improves as more decisions reach outcome measurement
-          </p>
+          {/* Lifecycle legend */}
+          <div className="flex items-center gap-2 mt-3 pt-2.5 border-t border-border/20 flex-wrap">
+            {["Recommended", "Approved", "Outcome Recorded", "Recalibrated"].map((stage, i) => (
+              <div key={stage} className="flex items-center gap-1">
+                {i > 0 && <span className="text-[8px] text-muted-foreground/40">→</span>}
+                <span className="text-[9px] text-muted-foreground/60">{stage}</span>
+              </div>
+            ))}
+          </div>
         </>
       )}
     </motion.div>
