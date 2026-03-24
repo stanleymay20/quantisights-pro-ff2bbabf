@@ -82,6 +82,13 @@ const CommandCenter = memo(({
         onArchiveContext={archiveContext}
       />
 
+      <BoardroomBrief
+        insights={insights}
+        pendingDecisions={pendingDecisions}
+        calibrationScore={calibrationScore}
+        topMetrics={topMetrics}
+      />
+
       <ProtectionStatus
         organizationId={organizationId}
         calibrationScore={calibrationScore}

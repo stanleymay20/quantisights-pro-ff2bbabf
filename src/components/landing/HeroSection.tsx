@@ -59,7 +59,7 @@ const HeroSection = forwardRef<HTMLElement>((_, ref) => {
               <span className="text-foreground font-medium">
                 calibrated, board-defensible outcomes with a decision ledger that learns from every result.
               </span>{" "}
-              Not a dashboard. Not a chatbot. A closed-loop system that gets smarter with every decision your team makes.
+              Not a dashboard. Not a chatbot. A closed-loop decision system that measures its own accuracy — and improves with every outcome.
             </p>
 
             {/* Capability pills */}

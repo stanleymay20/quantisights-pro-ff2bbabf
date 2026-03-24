@@ -108,7 +108,7 @@ const FeaturesSection = forwardRef<HTMLElement>((_, ref) => {
           >
             <p className="text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-3">How It Works</p>
             <h2 className="text-3xl sm:text-4xl font-bold font-display mb-4">
-              Log. Calibrate. <span className="gradient-text">Improve.</span>
+              Decide. Measure. <span className="gradient-text">Improve.</span>
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
               The system learns from every decision your team makes — and gets smarter with each outcome.

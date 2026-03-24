@@ -118,7 +118,7 @@ const CalibrationProgress = ({ organizationId }: CalibrationProgressProps) => {
         <div className="flex items-center gap-2">
           <Brain className="w-4 h-4 text-primary" />
           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Decision Intelligence
+            Calibration Engine
           </h3>
         </div>
         <Link
