@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Brain, AlertTriangle, TrendingDown, Clock, Sparkles, CheckCircle2, XCircle, Pencil, Loader2, ShieldCheck, FileCheck, Crosshair, Flame, Zap, User, CalendarDays, Target } from "lucide-react";
+import { Brain, AlertTriangle, TrendingDown, Clock, Sparkles, CheckCircle2, XCircle, Pencil, Loader2, ShieldCheck, FileCheck, Crosshair, Flame, Zap, User, CalendarDays, Target, Gauge } from "lucide-react";
 import ConfidenceBadge from "@/components/ConfidenceBadge";
 import MissionAlignmentBadge from "./MissionAlignmentBadge";
 import { supabase } from "@/integrations/supabase/client";
