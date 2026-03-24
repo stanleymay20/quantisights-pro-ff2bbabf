@@ -61,6 +61,12 @@ export interface ClassifiedSection {
   content: string;
 }
 
+export interface ExecutionReadiness {
+  level: "high" | "moderate" | "low";
+  label: string;
+  reason: string;
+}
+
 export interface StructuredRecommendation {
   /** Classified sections — no mixed unlabeled prose */
   sections: ClassifiedSection[];
@@ -80,6 +86,8 @@ export interface StructuredRecommendation {
   traceability: TraceabilityRecord;
   /** If not decision-grade, the original action is suppressed and this contains the gate message */
   decisionGateMessage: string | null;
+  /** Execution readiness assessment */
+  executionReadiness: ExecutionReadiness;
 }
 
 // Ordered longest-first to prevent partial matches (e.g. "cost_of_revenue" matching "cost" before "revenue")
