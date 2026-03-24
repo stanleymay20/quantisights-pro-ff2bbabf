@@ -382,6 +382,9 @@ export function generateRecommendation(input: RecommendationInput): StructuredRe
     limitations: sampleSize < 12 ? ["Insufficient data for statistical significance"] : [],
   });
 
+  // --- Execution Readiness ---
+  const executionReadiness = assessExecutionReadiness(conf, sampleSize, isDecisionGrade, input.calibrationApplied ?? false);
+
   return {
     sections,
     whatHappened,
@@ -398,7 +401,23 @@ export function generateRecommendation(input: RecommendationInput): StructuredRe
     isDecisionGrade,
     traceability,
     decisionGateMessage,
+    executionReadiness,
   };
+}
+
+function assessExecutionReadiness(confidence: number, sampleSize: number, isDecisionGrade: boolean, calibrationApplied: boolean): ExecutionReadiness {
+  if (!isDecisionGrade) {
+    return { level: "low", label: "Low", reason: "Insufficient evidence for confident execution" };
+  }
+  const factors: string[] = [];
+  let score = 0;
+  if (confidence >= 70) { score += 3; } else if (confidence >= 50) { score += 2; factors.push("moderate confidence"); } else { score += 1; factors.push("low confidence"); }
+  if (sampleSize >= 30) { score += 3; } else if (sampleSize >= 12) { score += 2; factors.push("limited sample"); } else { score += 1; factors.push("insufficient sample size"); }
+  if (calibrationApplied) { score += 2; } else { score += 1; factors.push("uncalibrated"); }
+
+  if (score >= 7) return { level: "high", label: "High", reason: "Strong data foundation and calibrated confidence" };
+  if (score >= 5) return { level: "moderate", label: "Moderate", reason: factors.length > 0 ? `Actionable, limited by: ${factors.join(", ")}` : "Actionable with standard data coverage" };
+  return { level: "low", label: "Low", reason: `Requires: ${factors.join(", ")}` };
 }
 
 function inferSuccessMetrics(category: string, metricType: string): string[] {
