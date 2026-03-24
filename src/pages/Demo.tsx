@@ -40,7 +40,6 @@ const Demo = () => {
 
         localStorage.setItem("quantivis_welcome_completed", "true");
         localStorage.setItem("quantivis_cookie_consent", JSON.stringify({ choice: "accepted", timestamp: new Date().toISOString() }));
-        localStorage.setItem("quantivis_cookie_consent", JSON.stringify({ choice: "accepted", timestamp: new Date().toISOString() }));
 
         if (cancelled) return;
         setCurrentStep(1);

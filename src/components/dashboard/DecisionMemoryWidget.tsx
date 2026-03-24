@@ -85,65 +85,79 @@ const DecisionMemoryWidget = memo(({ organizationId }: DecisionMemoryWidgetProps
           </div>
           <div>
             <h3 className="text-sm font-semibold font-display">Decision Memory</h3>
-            <p className="text-[10px] text-muted-foreground">System learns from every decision</p>
+            <p className="text-[10px] text-muted-foreground">
+              {isEmpty ? "Start logging decisions to activate calibration" : "System learns from every decision"}
+            </p>
           </div>
         </div>
         <Link to="/decisions" className="text-[11px] font-semibold text-primary hover:underline flex items-center gap-0.5">
-          Full ledger <ArrowRight className="w-3 h-3" />
+          {isEmpty ? "Log first decision" : "Full ledger"} <ArrowRight className="w-3 h-3" />
         </Link>
       </div>
 
-      {/* Calibration Score */}
-      {calibrationTrend.current != null && (
-        <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 mb-3">
-          <div className="flex-1">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Calibration Score</p>
-            <div className="flex items-baseline gap-2 mt-0.5">
-              <span className="text-xl font-bold font-mono">{calibrationTrend.current}%</span>
-              {calDelta != null && calDelta !== 0 && (
-                <span className={`text-[11px] font-medium ${calDelta > 0 ? "text-success" : "text-destructive"}`}>
-                  {calDelta > 0 ? "+" : ""}{calDelta.toFixed(1)}pp
-                </span>
-              )}
-            </div>
-          </div>
-          <div className="text-right">
-            <p className="text-[10px] text-muted-foreground">Total decisions</p>
-            <p className="text-sm font-semibold font-mono">{totalDecisions}</p>
-          </div>
+      {isEmpty ? (
+        <div className="p-4 rounded-lg bg-muted/20 border border-border/20 text-center">
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            When you approve, modify, or dismiss signals, Quantivis records the decision with its confidence level.
+            Over time, actual outcomes are compared to predictions — enabling the calibration engine to correct future confidence scores automatically.
+          </p>
+          <p className="text-[10px] text-muted-foreground/50 mt-2 italic">
+            Decision → Outcome → Calibration → Better future recommendations
+          </p>
         </div>
-      )}
-
-      {/* Recent Decisions */}
-      {decisions.length > 0 && (
-        <div className="space-y-1.5">
-          {decisions.slice(0, 4).map((d) => {
-            const cfg = STATUS_CONFIG[d.decision_status] || STATUS_CONFIG.pending_review;
-            const StatusIcon = cfg.icon;
-            const daysAgo = Math.floor((Date.now() - new Date(d.created_at).getTime()) / 86400000);
-
-            return (
-              <div key={d.id} className="flex items-center gap-2.5 py-1.5 px-2 rounded-lg hover:bg-muted/30 transition-colors group">
-                <StatusIcon className={`w-3.5 h-3.5 shrink-0 ${cfg.color}`} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-[12px] font-medium truncate">{d.recommended_action}</p>
+      ) : (
+        <>
+          {/* Calibration Score */}
+          {calibrationTrend.current != null && (
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 mb-3">
+              <div className="flex-1">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Calibration Score</p>
+                <div className="flex items-baseline gap-2 mt-0.5">
+                  <span className="text-xl font-bold font-mono">{calibrationTrend.current}%</span>
+                  {calDelta != null && calDelta !== 0 && (
+                    <span className={`text-[11px] font-medium ${calDelta > 0 ? "text-success" : "text-destructive"}`}>
+                      {calDelta > 0 ? "+" : ""}{calDelta.toFixed(1)}pp
+                    </span>
+                  )}
                 </div>
-                {d.confidence_at_decision != null && (
-                  <span className="text-[10px] font-mono text-muted-foreground">{d.confidence_at_decision}%</span>
-                )}
-                <span className="text-[10px] text-muted-foreground/60 shrink-0">
-                  {daysAgo === 0 ? "today" : `${daysAgo}d`}
-                </span>
               </div>
-            );
-          })}
-        </div>
-      )}
+              <div className="text-right">
+                <p className="text-[10px] text-muted-foreground">Total decisions</p>
+                <p className="text-sm font-semibold font-mono">{totalDecisions}</p>
+              </div>
+            </div>
+          )}
 
-      {totalDecisions > 0 && (
-        <p className="text-[10px] text-muted-foreground/50 mt-3 text-center italic">
-          Calibration improves as more decisions reach outcome measurement
-        </p>
+          {/* Recent Decisions */}
+          {decisions.length > 0 && (
+            <div className="space-y-1.5">
+              {decisions.slice(0, 4).map((d) => {
+                const cfg = STATUS_CONFIG[d.decision_status] || STATUS_CONFIG.pending_review;
+                const StatusIcon = cfg.icon;
+                const daysAgo = Math.floor((Date.now() - new Date(d.created_at).getTime()) / 86400000);
+
+                return (
+                  <div key={d.id} className="flex items-center gap-2.5 py-1.5 px-2 rounded-lg hover:bg-muted/30 transition-colors group">
+                    <StatusIcon className={`w-3.5 h-3.5 shrink-0 ${cfg.color}`} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[12px] font-medium truncate">{d.recommended_action}</p>
+                    </div>
+                    {d.confidence_at_decision != null && (
+                      <span className="text-[10px] font-mono text-muted-foreground">{d.confidence_at_decision}%</span>
+                    )}
+                    <span className="text-[10px] text-muted-foreground/60 shrink-0">
+                      {daysAgo === 0 ? "today" : `${daysAgo}d`}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          <p className="text-[10px] text-muted-foreground/50 mt-3 text-center italic">
+            Calibration improves as more decisions reach outcome measurement
+          </p>
+        </>
       )}
     </motion.div>
   );

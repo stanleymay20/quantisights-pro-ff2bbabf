@@ -428,7 +428,7 @@ const Dashboard = () => {
                 </h1>
                 <p className="text-sm text-muted-foreground mt-0.5">
                   {isDemoUser
-                    ? `Intelligence ready — ${criticalInsights.length} signal${criticalInsights.length > 1 ? "s" : ""} detected across your demo data`
+                    ? `${criticalInsights.length} signal${criticalInsights.length !== 1 ? "s" : ""} detected · calibration engine active · decision memory recording`
                     : hasAnomalies
                       ? `${criticalInsights.length} signal${criticalInsights.length > 1 ? "s" : ""} require attention`
                       : `${dataDescription} — all systems nominal`
