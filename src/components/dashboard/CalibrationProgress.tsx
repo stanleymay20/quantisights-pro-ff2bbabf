@@ -167,8 +167,19 @@ const CalibrationProgress = ({ organizationId }: CalibrationProgressProps) => {
         </div>
       </div>
 
+      {/* What the system learned */}
+      {data.learningNarrative && (
+        <div className="mt-4 pt-3 border-t border-border/30">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">What the system learned</p>
+          <p className="text-[11px] text-muted-foreground leading-relaxed">{data.learningNarrative}</p>
+          {data.biasShift && (
+            <p className="text-[10px] text-primary mt-1 font-medium">↳ {data.biasShift}</p>
+          )}
+        </div>
+      )}
+
       {/* Learning status */}
-      <div className="mt-4 pt-3 border-t border-border/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+      <div className="mt-3 pt-3 border-t border-border/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Target className="w-3 h-3 text-muted-foreground shrink-0" />
           <span className="text-[11px] text-muted-foreground">
