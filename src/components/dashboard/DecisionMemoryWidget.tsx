@@ -14,6 +14,57 @@ interface RecentDecision {
   decision_status: string;
   confidence_at_decision: number | null;
   created_at: string;
+  outcome_delta: number | null;
+  predicted_net_impact: number | null;
+  prediction_accuracy_score: number | null;
+  outcome_measured_at: string | null;
+  execution_status: string;
+  calibration_error: number | null;
+}
+
+const LIFECYCLE_STATES: Record<string, { label: string; color: string }> = {
+  pending_review: { label: "Recommended", color: "text-muted-foreground" },
+  approved: { label: "Approved", color: "text-primary" },
+  executed: { label: "In Progress", color: "text-warning" },
+  completed: { label: "Outcome Recorded", color: "text-success" },
+  dismissed: { label: "Dismissed", color: "text-muted-foreground" },
+};
+
+function deriveLifecycleState(d: RecentDecision): { label: string; color: string } {
+  if (d.outcome_measured_at && d.outcome_delta != null) {
+    return d.calibration_error != null
+      ? { label: "Recalibrated", color: "text-success" }
+      : { label: "Outcome Recorded", color: "text-success" };
+  }
+  if (d.execution_status === "completed") return LIFECYCLE_STATES.completed;
+  if (d.execution_status === "in_progress") return LIFECYCLE_STATES.executed;
+  return LIFECYCLE_STATES[d.decision_status] ?? LIFECYCLE_STATES.pending_review;
+}
+
+function deriveLearning(d: RecentDecision): string | null {
+  if (d.outcome_delta == null || d.outcome_measured_at == null) return null;
+  const predicted = d.predicted_net_impact;
+  const actual = d.outcome_delta;
+  const accuracy = d.prediction_accuracy_score;
+
+  if (predicted != null && actual != null) {
+    const withinRange = Math.abs(actual - predicted) <= Math.abs(predicted) * 0.3;
+    if (withinRange) {
+      return `Outcome within modeled range (predicted ${predicted > 0 ? "+" : ""}${predicted.toFixed(1)}%, actual ${actual > 0 ? "+" : ""}${actual.toFixed(1)}%). Confidence reinforced for similar signals.`;
+    }
+    if (actual < predicted) {
+      return `Model overestimated impact (predicted ${predicted > 0 ? "+" : ""}${predicted.toFixed(1)}%, actual ${actual > 0 ? "+" : ""}${actual.toFixed(1)}%). Confidence adjusted downward for this signal class.`;
+    }
+    return `Outcome exceeded prediction (predicted ${predicted > 0 ? "+" : ""}${predicted.toFixed(1)}%, actual ${actual > 0 ? "+" : ""}${actual.toFixed(1)}%). Model updated to recognize stronger effect patterns.`;
+  }
+
+  if (accuracy != null) {
+    if (accuracy >= 70) return `Prediction accuracy ${accuracy}% — model confidence reinforced.`;
+    if (accuracy >= 40) return `Prediction accuracy ${accuracy}% — model recalibrating for this signal class.`;
+    return `Prediction accuracy ${accuracy}% — confidence reduced for similar future cases until more outcome data collected.`;
+  }
+
+  return `Outcome recorded (${actual > 0 ? "+" : ""}${actual.toFixed(1)}%). Feeding into calibration engine.`;
 }
 
 const STATUS_CONFIG: Record<string, { icon: typeof CheckCircle2; color: string; label: string }> = {
