@@ -137,7 +137,7 @@ const DecisionMemoryWidget = memo(({ organizationId }: DecisionMemoryWidgetProps
           <div>
             <h3 className="text-sm font-semibold font-display">Decision Memory</h3>
             <p className="text-[10px] text-muted-foreground">
-              {isEmpty ? "Start logging decisions to activate calibration" : "System learns from every decision"}
+              {isEmpty ? "Log your first decision to activate the learning loop" : "Signal → Decision → Outcome → Calibration"}
             </p>
           </div>
         </div>

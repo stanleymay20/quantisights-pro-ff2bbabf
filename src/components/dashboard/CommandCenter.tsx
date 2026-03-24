@@ -10,6 +10,7 @@ import ExecutiveIntelligencePanel from "./ExecutiveIntelligencePanel";
 import CrossContextAnalytics from "./CrossContextAnalytics";
 import DecisionContextPanel from "./DecisionContextPanel";
 import DataQualityScorecard from "./DataQualityScorecard";
+import BoardroomBrief from "./BoardroomBrief";
 import { useDecisionContexts, type DecisionContext } from "@/hooks/useDecisionContexts";
 import type { Insight } from "@/hooks/useInsights";
 import type { MetricTypeSummary } from "@/hooks/useMetrics";
@@ -79,6 +80,13 @@ const CommandCenter = memo(({
         contexts={contexts}
         onCreateContext={createContext}
         onArchiveContext={archiveContext}
+      />
+
+      <BoardroomBrief
+        insights={insights}
+        pendingDecisions={pendingDecisions}
+        calibrationScore={calibrationScore}
+        topMetrics={topMetrics}
       />
 
       <ProtectionStatus
