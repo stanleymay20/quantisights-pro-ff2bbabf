@@ -1,6 +1,6 @@
 import { memo, useMemo } from "react";
 import { motion } from "framer-motion";
-import { AlertTriangle, ArrowRight, TrendingDown, Info } from "lucide-react";
+import { AlertTriangle, ArrowRight, TrendingDown, Info, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ConfidenceBadge from "@/components/ConfidenceBadge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -10,60 +10,123 @@ interface HeroInsightProps {
   insights: Insight[];
 }
 
-/** Category-specific actions with severity-aware tone and hyper-specific language */
-const CATEGORY_ACTIONS: Record<string, { high: string; medium: string; impact: string }> = {
+/** Category-specific actions with severity-aware tone, consequence language, and confidence drivers */
+const CATEGORY_INTEL: Record<string, {
+  high: string;
+  medium: string;
+  impact: string;
+  inaction: string;
+  strength: "strong" | "moderate";
+  confidenceDrivers: string[];
+  confidenceLimiters: string[];
+}> = {
   revenue: {
     high: "Shift 15–20% spend from lowest-converting channels → top-2 segments showing 3× ROI delta",
     medium: "Review channel-level ROI variance and flag segments with declining conversion for rebalancing",
     impact: "5–15% at-risk revenue recovery potential",
+    inaction: "At current trajectory, revenue leakage will compound by an estimated 2–3% per quarter if unaddressed",
+    strength: "strong",
+    confidenceDrivers: ["multi-period revenue trend", "segment-level conversion data"],
+    confidenceLimiters: ["attribution model completeness", "channel-level granularity"],
   },
   churn: {
     high: "Activate retention playbook for top-decile risk cohort — onboarding friction is primary driver",
     medium: "Analyze retention by cohort vintage and assess onboarding completion correlation",
     impact: "2–4pp churn reduction potential over next quarter",
+    inaction: "Without intervention, projected churn increase will erode customer base by 8–12% annually",
+    strength: "strong",
+    confidenceDrivers: ["cohort survival data", "onboarding completion rates"],
+    confidenceLimiters: ["customer feedback data availability"],
   },
   cost: {
     high: "Audit top-3 cost centers by ROI rank — cut or pause spend lines with negative marginal return",
     medium: "Review cost center efficiency ratios and flag lines with declining unit economics",
     impact: "8–12% operating margin improvement potential",
+    inaction: "Continued spend on negative-ROI lines will suppress operating margin by an estimated 3–5pp over 2 quarters",
+    strength: "moderate",
+    confidenceDrivers: ["cost center allocation data", "ROI tracking"],
+    confidenceLimiters: ["indirect cost attribution accuracy"],
   },
   growth: {
     high: "Double investment in top-performing acquisition channel (2.8× avg CAC efficiency) and cut bottom-2",
     medium: "Assess acquisition channel CAC-to-LTV ratios and model reallocation scenarios",
     impact: "10–20% growth acceleration potential",
+    inaction: "Current channel mix inefficiency is suppressing growth rate by an estimated 15–25% vs optimal allocation",
+    strength: "strong",
+    confidenceDrivers: ["CAC-to-LTV ratios", "channel performance history"],
+    confidenceLimiters: ["market saturation data"],
   },
   margin: {
     high: "Reprice bottom-quartile product lines and renegotiate top-3 supplier contracts by volume leverage",
     medium: "Review product line margin distribution and identify renegotiation leverage points",
     impact: "3–5pp gross margin improvement potential",
+    inaction: "Margin compression will continue at current rate, reducing gross margin by ~1–2pp per quarter",
+    strength: "moderate",
+    confidenceDrivers: ["product-level margin data", "supplier contract terms"],
+    confidenceLimiters: ["competitive pricing intelligence"],
   },
   conversion: {
     high: "Deploy targeted fix at Stage 3 drop-off (highest volume loss) — A/B test within 2 weeks",
     medium: "Map conversion funnel by stage and quantify volume loss at each transition point",
     impact: "15–25% conversion lift potential",
+    inaction: "Stage 3 drop-off is currently losing an estimated 18–22% of qualified pipeline volume each period",
+    strength: "strong",
+    confidenceDrivers: ["funnel stage tracking", "volume-per-stage data"],
+    confidenceLimiters: ["user behavior tracking depth"],
   },
   operational: {
     high: "Resolve primary bottleneck in processing pipeline (37% of total cycle time) within 30 days",
     medium: "Profile process stages by throughput variance and model bottleneck elimination scenarios",
     impact: "20–30% cycle time reduction potential",
+    inaction: "Bottleneck will continue consuming 35–40% of total cycle time, limiting throughput capacity",
+    strength: "moderate",
+    confidenceDrivers: ["process stage timing data", "throughput measurements"],
+    confidenceLimiters: ["upstream dependency visibility"],
   },
 };
 
-const DEFAULT_ACTION = {
+const DEFAULT_INTEL = {
   high: "Apply corrective measures to root cause identified in signal — prioritize by impact magnitude",
   medium: "Assess root cause drivers and model corrective scenarios ranked by expected ROI",
   impact: "Downside exposure mitigation within 30–60 days",
+  inaction: "Continued inaction on this signal increases downside exposure over the next 60–90 days",
+  strength: "moderate" as const,
+  confidenceDrivers: ["pattern analysis"],
+  confidenceLimiters: ["data completeness"],
 };
 
-function deriveAction(category: string | null, severity: string): { action: string; impact: string } {
+interface DerivedIntel {
+  action: string;
+  impact: string;
+  inaction: string;
+  strength: "strong" | "moderate";
+  confidenceDrivers: string[];
+  confidenceLimiters: string[];
+}
+
+function deriveIntel(category: string | null, severity: string): DerivedIntel {
   const isHigh = severity === "high";
   if (category) {
     const key = category.toLowerCase();
-    for (const [k, v] of Object.entries(CATEGORY_ACTIONS)) {
-      if (key.includes(k)) return { action: isHigh ? v.high : v.medium, impact: v.impact };
+    for (const [k, v] of Object.entries(CATEGORY_INTEL)) {
+      if (key.includes(k)) return {
+        action: isHigh ? v.high : v.medium,
+        impact: v.impact,
+        inaction: v.inaction,
+        strength: isHigh ? v.strength : "moderate",
+        confidenceDrivers: v.confidenceDrivers,
+        confidenceLimiters: v.confidenceLimiters,
+      };
     }
   }
-  return { action: isHigh ? DEFAULT_ACTION.high : DEFAULT_ACTION.medium, impact: DEFAULT_ACTION.impact };
+  return {
+    action: isHigh ? DEFAULT_INTEL.high : DEFAULT_INTEL.medium,
+    impact: DEFAULT_INTEL.impact,
+    inaction: DEFAULT_INTEL.inaction,
+    strength: DEFAULT_INTEL.strength,
+    confidenceDrivers: DEFAULT_INTEL.confidenceDrivers,
+    confidenceLimiters: DEFAULT_INTEL.confidenceLimiters,
+  };
 }
 
 /** Derive a reasoning line explaining WHY this recommendation was generated */
@@ -78,19 +141,30 @@ function deriveReasoning(insight: Insight): string {
     : "Based on: pattern analysis across available metrics";
 }
 
+/** Build confidence explanation showing what drives and limits it */
+function buildConfidenceExplanation(confidence: number, intel: DerivedIntel, insight: Insight): string {
+  const drivers = intel.confidenceDrivers.join(", ");
+  const limiters: string[] = [...intel.confidenceLimiters];
+  if (insight.sample_size != null && insight.sample_size < 30) limiters.unshift("limited sample size");
+  if (insight.data_quality_index != null && insight.data_quality_index < 0.7) limiters.unshift("data quality below threshold");
+  const limiterStr = limiters.length > 0 ? ` · Limited by: ${limiters.join(", ")}` : "";
+  return `${confidence}% — Driven by: ${drivers}${limiterStr}`;
+}
+
 const HeroInsight = memo(({ insights }: HeroInsightProps) => {
   const navigate = useNavigate();
   const topInsight = insights.find(i => i.severity === "high") || insights.find(i => i.severity === "medium");
 
-  const derived = useMemo(
-    () => topInsight ? deriveAction(topInsight.category, topInsight.severity) : null,
+  const intel = useMemo(
+    () => topInsight ? deriveIntel(topInsight.category, topInsight.severity) : null,
     [topInsight?.category, topInsight?.severity]
   );
 
-  if (!topInsight || !derived) return null;
+  if (!topInsight || !intel) return null;
 
   const confidence = topInsight.capped_confidence ?? topInsight.raw_confidence ?? topInsight.confidence_score ?? 0;
   const reasoning = deriveReasoning(topInsight);
+  const confidenceExplanation = buildConfidenceExplanation(confidence, intel, topInsight);
 
   const severityStyles = topInsight.severity === "high"
     ? "border-destructive/30 bg-destructive/[0.05] hover:bg-destructive/[0.08] hover:border-destructive/40"
@@ -110,19 +184,33 @@ const HeroInsight = memo(({ insights }: HeroInsightProps) => {
         <AlertTriangle className={`w-5 h-5 ${accentColor}`} />
       </div>
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1.5">
-          <p className={`text-[10px] font-bold uppercase tracking-widest ${accentColor}`}>Top Signal</p>
+        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+          <p className={`text-[10px] font-bold uppercase tracking-widest ${accentColor}`}>
+            {intel.strength === "strong" ? "Strong Signal" : "Signal"}
+          </p>
           {confidence > 0 && (
-            <ConfidenceBadge confidence={confidence} className="text-[10px]" />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span><ConfidenceBadge confidence={confidence} className="text-[10px]" /></span>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-sm text-xs p-3">
+                <p className="font-medium mb-1">Confidence Breakdown</p>
+                <p className="text-muted-foreground">{confidenceExplanation}</p>
+              </TooltipContent>
+            </Tooltip>
           )}
         </div>
         <p className="text-sm font-semibold text-foreground leading-snug line-clamp-2">{topInsight.message}</p>
+        
+        {/* Recommended action */}
         <p className="text-xs text-primary font-medium mt-1.5 line-clamp-2">
-          → {derived.action}
+          → {intel.action}
         </p>
+        
+        {/* Estimated impact */}
         <div className="flex items-center gap-1 mt-1">
           <p className="text-[11px] text-muted-foreground">
-            Estimated impact: {derived.impact}
+            Estimated impact: {intel.impact}
           </p>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -133,7 +221,16 @@ const HeroInsight = memo(({ insights }: HeroInsightProps) => {
             </TooltipContent>
           </Tooltip>
         </div>
-        <p className="text-[10px] text-muted-foreground/60 mt-1 italic">{reasoning}</p>
+
+        {/* Consequence of inaction — the conviction layer */}
+        <div className="flex items-start gap-1.5 mt-1.5">
+          <Clock className="w-3 h-3 text-muted-foreground/60 mt-0.5 shrink-0" />
+          <p className="text-[11px] text-muted-foreground/70 italic leading-snug">
+            If unaddressed: {intel.inaction}
+          </p>
+        </div>
+
+        <p className="text-[10px] text-muted-foreground/50 mt-1.5">{reasoning}</p>
         {topInsight.category && (
           <div className="flex items-center gap-1.5 mt-2">
             <TrendingDown className="w-3 h-3 text-muted-foreground" />

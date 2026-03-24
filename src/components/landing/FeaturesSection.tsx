@@ -47,7 +47,7 @@ const CAPABILITIES = [
   {
     icon: Brain,
     title: "Prescriptive Advisory Engine",
-    description: "Every recommendation comes with confidence scoring, epistemic guardrails, actionable playbooks, and full lifecycle tracking.",
+    description: "Every recommendation includes confidence scoring, consequence of inaction, evidence chain, and full lifecycle tracking from signal to measured outcome.",
     category: "Advisory",
   },
   {
