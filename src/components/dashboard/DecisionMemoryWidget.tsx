@@ -65,7 +65,7 @@ const DecisionMemoryWidget = memo(({ organizationId }: DecisionMemoryWidgetProps
     fetchData();
   }, [organizationId]);
 
-  if (decisions.length === 0 && !calibrationTrend.current) return null;
+  const isEmpty = decisions.length === 0 && calibrationTrend.current == null;
 
   const calDelta = calibrationTrend.current != null && calibrationTrend.previous != null
     ? calibrationTrend.current - calibrationTrend.previous
