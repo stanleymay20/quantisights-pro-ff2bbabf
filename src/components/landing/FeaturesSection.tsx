@@ -110,8 +110,11 @@ const FeaturesSection = forwardRef<HTMLElement>((_, ref) => {
             <h2 className="text-3xl sm:text-4xl font-bold font-display mb-4">
               Decide. Measure. <span className="gradient-text">Improve.</span>
             </h2>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto mb-2">
               The system learns from every decision your team makes — and gets smarter with each outcome.
+            </p>
+            <p className="text-xs text-muted-foreground/60">
+              Used by strategy and finance teams in decision-heavy environments
             </p>
           </motion.div>
 
