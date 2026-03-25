@@ -36,10 +36,10 @@ const PREVIEW_FEATURES = [
 ];
 
 const MOCK_KPIS = [
-  { label: "Revenue", value: "€2.4M", change: "+12.3%", positive: true },
-  { label: "Customers", value: "1,847", change: "+8.1%", positive: true },
-  { label: "Cost Rate", value: "34.2%", change: "-2.1%", positive: true },
-  { label: "Churn", value: "3.8%", change: "+0.4%", positive: false },
+  { label: "ARR", value: "€4.2M", change: "+12.3%", positive: true },
+  { label: "Customers", value: "420", change: "+8.1%", positive: true },
+  { label: "Conversion", value: "2.8%", change: "-1.2%", positive: false },
+  { label: "Churn", value: "4.1%", change: "+0.6%", positive: false },
 ];
 
 const ProductPreview = forwardRef<HTMLElement>((_, ref) => {
