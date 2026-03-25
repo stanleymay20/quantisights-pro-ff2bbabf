@@ -64,10 +64,13 @@ const Pricing = () => {
           >
             <p className="text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-3">Pricing</p>
             <h1 className="text-3xl sm:text-5xl font-bold font-display mb-4">
-              Intelligence That <span className="gradient-text">Scales</span> With You
+              Decision Intelligence That <span className="gradient-text">Pays for Itself</span>
             </h1>
-            <p className="text-muted-foreground text-lg max-w-xl mx-auto">
-              From first dataset to enterprise-wide decision intelligence. Every plan includes full data traceability and GDPR compliance.
+            <p className="text-muted-foreground text-lg max-w-xl mx-auto mb-3">
+              If this prevents a single 5% revenue leak, the system pays for itself in one decision.
+            </p>
+            <p className="text-xs text-muted-foreground/60 max-w-md mx-auto">
+              Built for scaling B2B teams with recurring strategic decisions. Every plan includes full audit trail and GDPR compliance.
             </p>
           </motion.div>
 

@@ -36,10 +36,10 @@ const PREVIEW_FEATURES = [
 ];
 
 const MOCK_KPIS = [
-  { label: "Revenue", value: "€2.4M", change: "+12.3%", positive: true },
-  { label: "Customers", value: "1,847", change: "+8.1%", positive: true },
-  { label: "Cost Rate", value: "34.2%", change: "-2.1%", positive: true },
-  { label: "Churn", value: "3.8%", change: "+0.4%", positive: false },
+  { label: "ARR", value: "€4.2M", change: "+12.3%", positive: true },
+  { label: "Customers", value: "420", change: "+8.1%", positive: true },
+  { label: "Conversion", value: "2.8%", change: "-1.2%", positive: false },
+  { label: "Churn", value: "4.1%", change: "+0.6%", positive: false },
 ];
 
 const ProductPreview = forwardRef<HTMLElement>((_, ref) => {
@@ -59,10 +59,10 @@ const ProductPreview = forwardRef<HTMLElement>((_, ref) => {
         >
           <p className="text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-3">See It In Action</p>
           <h2 className="text-2xl sm:text-4xl font-bold font-display mb-4">
-            The Closed-Loop Decision OS, <span className="gradient-text">Live</span>
+            Revenue Leakage Detection, <span className="gradient-text">Live</span>
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Every decision tracked. Every outcome measured. Every prediction corrected. A system that compounds intelligence with every strategic call.
+            Scenario: B2B SaaS company at €4.2M ARR — conversion declining, churn rising. The system identifies root cause, recommends action, and tracks the outcome.
           </p>
         </motion.div>
 
@@ -97,12 +97,12 @@ const ProductPreview = forwardRef<HTMLElement>((_, ref) => {
             {/* Status bar mock */}
             <div className="flex items-center justify-between px-3 sm:px-6 py-2.5 border-b border-border/50 bg-card/40 overflow-x-auto scrollbar-hide gap-2">
               <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
                   <span className="text-[10px] font-semibold text-success">INTELLIGENCE ACTIVE</span>
                 </div>
                 <span className="text-[10px] text-muted-foreground">·</span>
-                <span className="text-[10px] text-muted-foreground">Convergence: Aligned (87)</span>
+                <span className="text-[10px] text-muted-foreground">47 decisions tracked · 12 outcomes measured · 3 recalibrations</span>
               </div>
               <span className="text-[10px] text-muted-foreground">Last updated: 2 min ago</span>
             </div>

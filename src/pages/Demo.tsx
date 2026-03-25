@@ -6,8 +6,8 @@ import { motion, AnimatePresence } from "framer-motion";
 
 const STEPS = [
   { label: "Authenticating secure session", icon: Shield },
-  { label: "Provisioning Acme Corp workspace", icon: BarChart3 },
-  { label: "Ingesting 15 months of intelligence data", icon: Zap },
+  { label: "Provisioning Acme Corp workspace (B2B SaaS · €4.2M ARR)", icon: BarChart3 },
+  { label: "Ingesting 15 months of revenue + conversion data", icon: Zap },
   { label: "Running diagnostic & advisory engines", icon: Brain },
   { label: "Initializing executive dashboard", icon: Target },
 ];
@@ -178,10 +178,13 @@ const Demo = () => {
             <div className="p-4 rounded-xl bg-card/60 border border-border/40">
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                <span className="text-xs font-semibold text-foreground">Acme Corp · B2B SaaS</span>
+                <span className="text-xs font-semibold text-foreground">Acme Corp · B2B SaaS · €4.2M ARR</span>
               </div>
-              <p className="text-[11px] text-muted-foreground leading-relaxed">
-                $850K+ revenue · 420 customers · 6 metric types · 5 decisions · 3 advisories · executive briefs
+              <p className="text-[11px] text-muted-foreground leading-relaxed mb-2">
+                Scenario: Declining conversion rate with rising churn. The system will identify root cause, recommend reallocation, and track the outcome.
+              </p>
+              <p className="text-[10px] text-muted-foreground/50">
+                420 customers · 6 metric types · 5 decisions logged · 2 outcomes measured · 1 recalibration applied
               </p>
             </div>
           </motion.div>
