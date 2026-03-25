@@ -97,12 +97,12 @@ const ProductPreview = forwardRef<HTMLElement>((_, ref) => {
             {/* Status bar mock */}
             <div className="flex items-center justify-between px-3 sm:px-6 py-2.5 border-b border-border/50 bg-card/40 overflow-x-auto scrollbar-hide gap-2">
               <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
                   <span className="text-[10px] font-semibold text-success">INTELLIGENCE ACTIVE</span>
                 </div>
                 <span className="text-[10px] text-muted-foreground">·</span>
-                <span className="text-[10px] text-muted-foreground">Convergence: Aligned (87)</span>
+                <span className="text-[10px] text-muted-foreground">47 decisions tracked · 12 outcomes measured · 3 recalibrations</span>
               </div>
               <span className="text-[10px] text-muted-foreground">Last updated: 2 min ago</span>
             </div>

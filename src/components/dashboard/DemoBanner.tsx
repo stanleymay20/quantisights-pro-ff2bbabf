@@ -36,7 +36,7 @@ const DemoBanner = () => {
                 </span>
               </div>
               <p className="text-[11px] text-muted-foreground truncate">
-                Acme Corp · 15 months of simulated data · Calibration engine active
+                Acme Corp · B2B SaaS · €4.2M ARR · Declining conversion scenario · 15 months of data
               </p>
             </div>
           </div>

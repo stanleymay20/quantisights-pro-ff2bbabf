@@ -53,13 +53,15 @@ const HeroSection = forwardRef<HTMLElement>((_, ref) => {
               <br className="hidden sm:block" />
               <span className="gradient-text">Billion-Dollar Decisions.</span>
             </h1>
-            <p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto mb-6 sm:mb-10 leading-relaxed">
-              Organizations lose an estimated $3 trillion+ annually from suboptimal strategic decisions.
-              Quantivis closes the gap between data and decisive action — transforming raw intelligence into{" "}
+            <p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto mb-3 sm:mb-5 leading-relaxed">
+              Scaling B2B companies lose millions each year to revenue leakage, misallocated budgets, and overconfident forecasts.
+              Quantivis replaces fragmented analytics with{" "}
               <span className="text-foreground font-medium">
-                calibrated, board-defensible outcomes with a decision ledger that learns from every result.
-              </span>{" "}
-              Not a dashboard. Not a chatbot. A closed-loop decision system that measures its own accuracy — and improves with every outcome.
+                a closed-loop system that tracks every decision, measures every outcome, and corrects its own confidence over time.
+              </span>
+            </p>
+            <p className="text-xs sm:text-sm text-muted-foreground/70 max-w-xl mx-auto mb-6 sm:mb-10">
+              Built for VPs of Finance, Revenue, and Strategy at companies doing €1M–€50M ARR.
             </p>
 
             {/* Capability pills */}

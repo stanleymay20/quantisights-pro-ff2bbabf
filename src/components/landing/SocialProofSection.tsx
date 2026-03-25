@@ -6,7 +6,7 @@ import { Link } from "react-router-dom";
 const ROI_METRICS = [
   { icon: TrendingDown, value: "7–12pp", label: "Calibration improvement", detail: "Typical overconfidence reduction via adaptive scoring" },
   { icon: Clock, value: "90 days", label: "Time to calibrated decisions", detail: "From Decision Ledger to Calibration Active" },
-  { icon: DollarSign, value: "From €99/mo", label: "vs. €50K+ consulting projects", detail: "Automates 80% of recurring analytical work" },
+  { icon: DollarSign, value: "From €99/mo", label: "vs. €50K+ consulting projects", detail: "If this prevents a 5% revenue leak, the system pays for itself in one decision" },
   { icon: ShieldCheck, value: "100%", label: "Logged decision traceability", detail: "Every recorded decision is fully auditable" },
 ];
 
