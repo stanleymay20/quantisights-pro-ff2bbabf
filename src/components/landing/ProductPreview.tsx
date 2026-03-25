@@ -59,10 +59,10 @@ const ProductPreview = forwardRef<HTMLElement>((_, ref) => {
         >
           <p className="text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-3">See It In Action</p>
           <h2 className="text-2xl sm:text-4xl font-bold font-display mb-4">
-            The Closed-Loop Decision OS, <span className="gradient-text">Live</span>
+            Revenue Leakage Detection, <span className="gradient-text">Live</span>
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Every decision tracked. Every outcome measured. Every prediction corrected. A system that compounds intelligence with every strategic call.
+            Scenario: B2B SaaS company at €4.2M ARR — conversion declining, churn rising. The system identifies root cause, recommends action, and tracks the outcome.
           </p>
         </motion.div>
 
