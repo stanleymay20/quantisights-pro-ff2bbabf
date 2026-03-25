@@ -6,8 +6,8 @@ import { motion, AnimatePresence } from "framer-motion";
 
 const STEPS = [
   { label: "Authenticating secure session", icon: Shield },
-  { label: "Provisioning Acme Corp workspace", icon: BarChart3 },
-  { label: "Ingesting 15 months of intelligence data", icon: Zap },
+  { label: "Provisioning Acme Corp workspace (B2B SaaS · €4.2M ARR)", icon: BarChart3 },
+  { label: "Ingesting 15 months of revenue + conversion data", icon: Zap },
   { label: "Running diagnostic & advisory engines", icon: Brain },
   { label: "Initializing executive dashboard", icon: Target },
 ];
