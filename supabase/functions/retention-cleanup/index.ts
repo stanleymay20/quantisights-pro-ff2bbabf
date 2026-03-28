@@ -1,10 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+import { getCorsHeaders, corsPreflightResponse } from "../_shared/cors.ts";
+  const corsHeaders = getCorsHeaders(req);
 
 // Mapping from retention data_category to the table(s) that should be cleaned
 const CATEGORY_TABLE_MAP: Record<string, { table: string; dateColumn: string }[]> = {
@@ -20,9 +16,7 @@ const CATEGORY_TABLE_MAP: Record<string, { table: string; dateColumn: string }[]
 };
 
 Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  if (req.method === "OPTIONS") return corsPreflightResponse(req);
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;

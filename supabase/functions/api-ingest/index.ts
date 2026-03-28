@@ -1,10 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-api-key, x-request-id, x-dataset-id",
-};
+import { getCorsHeaders, corsPreflightResponse } from "../_shared/cors.ts";
+  const corsHeaders = getCorsHeaders(req);
 
 /**
  * Enterprise API Ingestion Endpoint
@@ -25,9 +22,7 @@ const BATCH_SIZE = 1000;
 const MAX_VALUE = 1e12;
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  if (req.method === "OPTIONS") return corsPreflightResponse(req);
 
   const startTime = Date.now();
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;

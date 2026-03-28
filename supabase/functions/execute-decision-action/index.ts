@@ -1,10 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { authenticateRequest, verifyOrgMembership } from "../_shared/auth-guard.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+import { getCorsHeaders, corsPreflightResponse } from "../_shared/cors.ts";
+  const corsHeaders = getCorsHeaders(req);
 
 /** Require owner/admin role for sensitive execution actions */
 async function requirePrivilegedRole(
@@ -86,9 +83,7 @@ async function validateWebhookUrl(
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  if (req.method === "OPTIONS") return corsPreflightResponse(req);
 
   const auth = await authenticateRequest(req);
   if (auth.response) return auth.response;
