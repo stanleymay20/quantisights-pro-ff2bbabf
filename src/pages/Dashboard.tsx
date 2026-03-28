@@ -439,6 +439,7 @@ const Dashboard = () => {
 
               {hasAnomalies && <HeroInsight insights={insights} />}
               {currentOrgId && <DecisionMemoryWidget organizationId={currentOrgId} />}
+              {currentOrgId && <SystemHealthDashboard orgId={currentOrgId} />}
 
               {dashboardView === "executive" ? (
                 <ExecutiveQuickView
