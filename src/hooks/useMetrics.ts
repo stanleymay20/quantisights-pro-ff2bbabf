@@ -58,9 +58,10 @@ export const useMetrics = (orgId: string | null, datasetId: string | null) => {
 
     const fetchMetrics = async () => {
       setLoading(true);
-      // Paginated fetch to avoid 1000-row default limit
+      // Paginated fetch with safety cap to prevent client-side memory crashes
       const allMetrics: MetricRow[] = [];
       const PAGE_SIZE = 1000;
+      const MAX_CLIENT_ROWS = 50_000; // Safety cap: ~50K rows ≈ 10MB in memory
       let offset = 0;
       let hasMore = true;
 
@@ -75,8 +76,12 @@ export const useMetrics = (orgId: string | null, datasetId: string | null) => {
 
         if (error || !data) break;
         allMetrics.push(...data);
-        hasMore = data.length === PAGE_SIZE;
+        hasMore = data.length === PAGE_SIZE && allMetrics.length < MAX_CLIENT_ROWS;
         offset += PAGE_SIZE;
+      }
+
+      if (allMetrics.length >= MAX_CLIENT_ROWS) {
+        console.warn(`[useMetrics] Dataset ${datasetId} capped at ${MAX_CLIENT_ROWS} rows to prevent memory issues. Consider server-side aggregation.`);
       }
 
       setMetrics(allMetrics);

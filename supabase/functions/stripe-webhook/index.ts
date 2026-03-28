@@ -38,6 +38,34 @@ serve(async (req) => {
 
     logStep("Event received", { type: event.type, id: event.id });
 
+    // Idempotency: check if this Stripe event was already processed
+    const { data: existingEvent } = await supabase
+      .from("audit_log")
+      .select("id")
+      .eq("resource_type", "stripe_event")
+      .eq("resource_id", event.id)
+      .maybeSingle();
+
+    if (existingEvent) {
+      logStep("Duplicate event, skipping", { eventId: event.id });
+      return new Response(JSON.stringify({ received: true, duplicate: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
+    // Record event processing in audit log for idempotency
+    await supabase.from("audit_log").insert({
+      organization_id: "00000000-0000-0000-0000-000000000000", // system event, org resolved later
+      actor_type: "system",
+      action_type: "stripe_webhook",
+      resource_type: "stripe_event",
+      resource_id: event.id,
+      payload: { event_type: event.type },
+    }).then(({ error }) => {
+      if (error) logStep("Audit log insert warning", { error: error.message });
+    });
+
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
