@@ -4,6 +4,8 @@
  * Note: Resets on function cold-start. For production-critical
  * rate limiting, consider a database-backed solution.
  */
+import { getCorsHeaders } from "./cors.ts";
+
 const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
 
 export function checkRateLimit(
@@ -28,11 +30,7 @@ export function checkRateLimit(
 }
 
 export function rateLimitResponse(retryAfterMs: number, req?: Request): Response {
-  const { getCorsHeaders } = await import("./cors.ts") as any;
-  const headers = req ? getCorsHeaders(req) : {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  };
+  const headers = req ? getCorsHeaders(req) : getCorsHeaders();
 
   return new Response(
     JSON.stringify({ error: "Rate limit exceeded", retry_after_ms: retryAfterMs }),
