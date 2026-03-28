@@ -274,7 +274,7 @@ Deno.serve(async (req) => {
         }
 
         // Require admin/owner for webhook triggers
-        const roleCheck = await requirePrivilegedRole(supabase, userId, organization_id, ["owner", "admin"]);
+        const roleCheck = await requirePrivilegedRole(supabase, userId, organization_id, corsHeaders, ["owner", "admin"]);
         if (roleCheck) return roleCheck;
 
         // Validate webhook URL (SSRF prevention + allowlist)
