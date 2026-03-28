@@ -181,6 +181,12 @@ serve(async (req) => {
 
         if (error) logStep("Delete-update error", error);
         else logStep("Subscription canceled", { subId: sub.id });
+        const { data: cancelledSub } = await supabase
+          .from("subscriptions")
+          .select("organization_id")
+          .eq("stripe_subscription_id", sub.id)
+          .maybeSingle();
+        await markEventProcessed(cancelledSub?.organization_id);
         break;
       }
 
