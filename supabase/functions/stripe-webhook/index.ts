@@ -161,6 +161,13 @@ serve(async (req) => {
 
         if (error) logStep("Update error", error);
         else logStep("Subscription updated", { tier, status: sub.status });
+        // Resolve org from subscription record
+        const { data: subRecord } = await supabase
+          .from("subscriptions")
+          .select("organization_id")
+          .eq("stripe_subscription_id", sub.id)
+          .maybeSingle();
+        await markEventProcessed(subRecord?.organization_id);
         break;
       }
 
