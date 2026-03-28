@@ -346,7 +346,7 @@ Deno.serve(async (req) => {
         const { plan_id, channel, message } = params;
 
         // Require admin/owner for Slack triggers
-        const roleCheck = await requirePrivilegedRole(supabase, userId, organization_id, ["owner", "admin"]);
+        const roleCheck = await requirePrivilegedRole(supabase, userId, organization_id, corsHeaders, ["owner", "admin"]);
         if (roleCheck) return roleCheck;
 
         // Channel is REQUIRED — no defaults
