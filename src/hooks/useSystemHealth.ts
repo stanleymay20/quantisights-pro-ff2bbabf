@@ -35,12 +35,15 @@ export const useSystemHealth = (orgId: string | null) => {
       ] = await Promise.all([
         supabase
           .from("decision_ledger")
-          .select("id, execution_status, capped_confidence")
-          .eq("organization_id", orgId),
+          .select("id, execution_status, capped_confidence", { count: "exact", head: false })
+          .eq("organization_id", orgId)
+          .order("created_at", { ascending: false })
+          .limit(1000),
         supabase
           .from("decision_outcomes")
-          .select("id, outcome_status")
-          .eq("organization_id", orgId),
+          .select("id, outcome_status", { count: "exact", head: false })
+          .eq("organization_id", orgId)
+          .limit(1000),
         supabase
           .from("calibration_models")
           .select("overall_calibration_score, model_version, overall_bias_direction, computed_at")

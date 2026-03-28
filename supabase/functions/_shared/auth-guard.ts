@@ -26,10 +26,9 @@ export async function authenticateRequest(
     { global: { headers: { Authorization: authHeader } } }
   );
 
-  const token = authHeader.replace("Bearer ", "");
-  const { data, error } = await supabase.auth.getClaims(token);
+  const { data: { user }, error } = await supabase.auth.getUser();
 
-  if (error || !data?.claims?.sub) {
+  if (error || !user?.id) {
     return {
       response: new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
@@ -38,7 +37,7 @@ export async function authenticateRequest(
     };
   }
 
-  return { userId: data.claims.sub as string };
+  return { userId: user.id };
 }
 
 /**

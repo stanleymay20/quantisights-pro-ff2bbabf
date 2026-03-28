@@ -7,6 +7,7 @@ async function requirePrivilegedRole(
   supabase: any,
   userId: string,
   organizationId: string,
+  corsHdrs: Record<string, string>,
   allowedRoles: string[] = ["owner", "admin"]
 ): Promise<Response | null> {
   const { data } = await supabase
@@ -19,7 +20,7 @@ async function requirePrivilegedRole(
   if (!data || !allowedRoles.includes(data.role)) {
     return new Response(JSON.stringify({ error: "Insufficient permissions. Requires: " + allowedRoles.join(", ") }), {
       status: 403,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...corsHdrs, "Content-Type": "application/json" },
     });
   }
   return null;
@@ -273,7 +274,7 @@ Deno.serve(async (req) => {
         }
 
         // Require admin/owner for webhook triggers
-        const roleCheck = await requirePrivilegedRole(supabase, userId, organization_id, ["owner", "admin"]);
+        const roleCheck = await requirePrivilegedRole(supabase, userId, organization_id, corsHeaders, ["owner", "admin"]);
         if (roleCheck) return roleCheck;
 
         // Validate webhook URL (SSRF prevention + allowlist)
@@ -345,7 +346,7 @@ Deno.serve(async (req) => {
         const { plan_id, channel, message } = params;
 
         // Require admin/owner for Slack triggers
-        const roleCheck = await requirePrivilegedRole(supabase, userId, organization_id, ["owner", "admin"]);
+        const roleCheck = await requirePrivilegedRole(supabase, userId, organization_id, corsHeaders, ["owner", "admin"]);
         if (roleCheck) return roleCheck;
 
         // Channel is REQUIRED — no defaults

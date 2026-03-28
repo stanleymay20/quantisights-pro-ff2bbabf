@@ -50,16 +50,28 @@ serve(async (req) => {
     }
 
     // Record event processing in audit log for idempotency
-    await supabase.from("audit_log").insert({
-      organization_id: "00000000-0000-0000-0000-000000000000", // system event, org resolved later
-      actor_type: "system",
-      action_type: "stripe_webhook",
-      resource_type: "stripe_event",
-      resource_id: event.id,
-      payload: { event_type: event.type },
-    }).then(({ error }) => {
-      if (error) logStep("Audit log insert warning", { error: error.message });
-    });
+    // Resolve org from event metadata when possible; use system org as fallback
+    let auditOrgId: string | null = null;
+    const eventObj = event.data?.object as any;
+    if (eventObj?.metadata?.organization_id) {
+      auditOrgId = eventObj.metadata.organization_id;
+    }
+
+    // Defer audit_log insert until org is resolved (after processing)
+    const markEventProcessed = async (resolvedOrgId?: string) => {
+      const orgId = resolvedOrgId || auditOrgId;
+      if (!orgId) return; // Skip audit if no org can be resolved — idempotency still handled by check above
+      await supabase.from("audit_log").insert({
+        organization_id: orgId,
+        actor_type: "system",
+        action_type: "stripe_webhook",
+        resource_type: "stripe_event",
+        resource_id: event.id,
+        payload: { event_type: event.type },
+      }).then(({ error }) => {
+        if (error) logStep("Audit log insert warning", { error: error.message });
+      });
+    };
 
     switch (event.type) {
       case "checkout.session.completed": {
@@ -124,6 +136,7 @@ serve(async (req) => {
 
         if (error) logStep("Upsert error", error);
         else logStep("Subscription upserted", { tier, orgId: userProfile.organization_id });
+        await markEventProcessed(userProfile.organization_id);
         break;
       }
 
@@ -148,6 +161,13 @@ serve(async (req) => {
 
         if (error) logStep("Update error", error);
         else logStep("Subscription updated", { tier, status: sub.status });
+        // Resolve org from subscription record
+        const { data: subRecord } = await supabase
+          .from("subscriptions")
+          .select("organization_id")
+          .eq("stripe_subscription_id", sub.id)
+          .maybeSingle();
+        await markEventProcessed(subRecord?.organization_id);
         break;
       }
 
@@ -161,6 +181,12 @@ serve(async (req) => {
 
         if (error) logStep("Delete-update error", error);
         else logStep("Subscription canceled", { subId: sub.id });
+        const { data: cancelledSub } = await supabase
+          .from("subscriptions")
+          .select("organization_id")
+          .eq("stripe_subscription_id", sub.id)
+          .maybeSingle();
+        await markEventProcessed(cancelledSub?.organization_id);
         break;
       }
 
