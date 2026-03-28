@@ -32,6 +32,11 @@ Deno.serve(async (req) => {
         if (!pending?.length) continue;
 
         const now = new Date();
+
+        // Collect all dataset_ids and metric types to batch-fetch metrics
+        const metricQueries = new Map<string, { datasetId: string; metricType: string; outcomes: typeof pending }>();
+        const immediateUpdates: Array<{ id: string; update: Record<string, unknown> }> = [];
+
         for (const outcome of pending) {
           const decidedAt = new Date((outcome as any).decision_ledger?.decided_at);
           if (isNaN(decidedAt.getTime())) continue;
@@ -39,85 +44,133 @@ Deno.serve(async (req) => {
           if (now < windowEnd) continue;
 
           if (!outcome.dataset_id) {
-            await supabase.from("decision_outcomes").update({
-              outcome_status: "not_evaluable",
-              evaluation_date: now.toISOString(),
-              notes: "No dataset_id linked — cannot measure outcome.",
-            }).eq("id", outcome.id);
+            immediateUpdates.push({
+              id: outcome.id,
+              update: {
+                outcome_status: "not_evaluable",
+                evaluation_date: now.toISOString(),
+                notes: "No dataset_id linked — cannot measure outcome.",
+              },
+            });
             totalEvaluated++;
             continue;
           }
 
-          const beforeStart = new Date(decidedAt.getTime() - 30 * 86400000);
-          const { data: beforeMetrics } = await supabase
-            .from("metrics").select("value")
-            .eq("organization_id", org.id).eq("dataset_id", outcome.dataset_id)
-            .eq("metric_type", outcome.expected_metric)
-            .gte("date", beforeStart.toISOString().slice(0, 10))
-            .lte("date", decidedAt.toISOString().slice(0, 10))
-            .order("date", { ascending: false }).limit(50);
+          const key = `${outcome.dataset_id}:${outcome.expected_metric}`;
+          if (!metricQueries.has(key)) {
+            metricQueries.set(key, { datasetId: outcome.dataset_id, metricType: outcome.expected_metric, outcomes: [] });
+          }
+          metricQueries.get(key)!.outcomes.push(outcome);
+        }
 
-          const { data: afterMetrics } = await supabase
-            .from("metrics").select("value")
-            .eq("organization_id", org.id).eq("dataset_id", outcome.dataset_id)
-            .eq("metric_type", outcome.expected_metric)
-            .gte("date", decidedAt.toISOString().slice(0, 10))
-            .lte("date", windowEnd.toISOString().slice(0, 10))
-            .order("date", { ascending: false }).limit(50);
+        // Apply immediate updates (not_evaluable)
+        for (const item of immediateUpdates) {
+          await supabase.from("decision_outcomes").update(item.update).eq("id", item.id);
+        }
 
-          if (!beforeMetrics?.length || !afterMetrics?.length) {
-            await supabase.from("decision_outcomes").update({
-              outcome_status: "not_evaluable",
-              evaluation_date: now.toISOString(),
-              notes: `Insufficient ${outcome.expected_metric} data for evaluation period.`,
-            }).eq("id", outcome.id);
-            totalEvaluated++;
-            continue;
+        // Batch-fetch metrics per (dataset_id, metric_type) — eliminates N+1
+        for (const [, { datasetId, metricType, outcomes: groupOutcomes }] of metricQueries) {
+          // Find earliest and latest date range across all outcomes in this group
+          let earliestBefore = new Date();
+          let latestAfter = new Date(0);
+          for (const outcome of groupOutcomes) {
+            const decidedAt = new Date((outcome as any).decision_ledger?.decided_at);
+            const beforeStart = new Date(decidedAt.getTime() - 30 * 86400000);
+            const windowEnd = new Date(decidedAt.getTime() + outcome.evaluation_window_days * 86400000);
+            if (beforeStart < earliestBefore) earliestBefore = beforeStart;
+            if (windowEnd > latestAfter) latestAfter = windowEnd;
           }
 
-          const avgBefore = beforeMetrics.reduce((s: number, m: any) => s + Number(m.value), 0) / beforeMetrics.length;
-          const avgAfter = afterMetrics.reduce((s: number, m: any) => s + Number(m.value), 0) / afterMetrics.length;
-          const observedChange = avgBefore !== 0 ? ((avgAfter - avgBefore) / Math.abs(avgBefore)) * 100 : 0;
+          // Single query for all metrics in this group's date range
+          const { data: allMetrics } = await supabase
+            .from("metrics").select("value, date")
+            .eq("organization_id", org.id)
+            .eq("dataset_id", datasetId)
+            .eq("metric_type", metricType)
+            .gte("date", earliestBefore.toISOString().slice(0, 10))
+            .lte("date", latestAfter.toISOString().slice(0, 10))
+            .order("date", { ascending: true })
+            .limit(5000);
 
-          let outcomeStatus = "no_effect";
-          const expectedDir = outcome.expected_direction;
-          const directionMatch = (expectedDir === "increase" && observedChange > 1) ||
-                                  (expectedDir === "decrease" && observedChange < -1);
-          if (directionMatch) {
-            if (outcome.expected_change !== null) {
-              const observedMagnitude = Math.abs(observedChange);
-              if (observedMagnitude >= Math.abs(Number(outcome.expected_change)) * 0.8) outcomeStatus = "success";
-              else if (observedMagnitude >= Math.abs(Number(outcome.expected_change)) * 0.3) outcomeStatus = "partial_success";
-            } else {
-              outcomeStatus = "success";
+          if (!allMetrics?.length) {
+            for (const outcome of groupOutcomes) {
+              await supabase.from("decision_outcomes").update({
+                outcome_status: "not_evaluable",
+                evaluation_date: now.toISOString(),
+                notes: `Insufficient ${metricType} data for evaluation period.`,
+              }).eq("id", outcome.id);
+              totalEvaluated++;
             }
-          } else if ((expectedDir === "increase" && observedChange < -5) || (expectedDir === "decrease" && observedChange > 5)) {
-            outcomeStatus = "negative_outcome";
+            continue;
           }
 
-          let accuracyScore: number | null = null;
-          if (outcome.expected_change !== null && Number(outcome.expected_change) !== 0) {
-            accuracyScore = Math.max(0, Math.min(100, 100 - Math.abs(observedChange - Number(outcome.expected_change)) * 2));
+          // Process each outcome using the pre-fetched metrics
+          for (const outcome of groupOutcomes) {
+            const decidedAt = new Date((outcome as any).decision_ledger?.decided_at);
+            const windowEnd = new Date(decidedAt.getTime() + outcome.evaluation_window_days * 86400000);
+            const beforeStart = new Date(decidedAt.getTime() - 30 * 86400000);
+            const decidedDateStr = decidedAt.toISOString().slice(0, 10);
+            const windowEndStr = windowEnd.toISOString().slice(0, 10);
+            const beforeStartStr = beforeStart.toISOString().slice(0, 10);
+
+            const beforeMetrics = allMetrics.filter(m => m.date >= beforeStartStr && m.date <= decidedDateStr);
+            const afterMetrics = allMetrics.filter(m => m.date >= decidedDateStr && m.date <= windowEndStr);
+
+            if (!beforeMetrics.length || !afterMetrics.length) {
+              await supabase.from("decision_outcomes").update({
+                outcome_status: "not_evaluable",
+                evaluation_date: now.toISOString(),
+                notes: `Insufficient ${metricType} data for evaluation period.`,
+              }).eq("id", outcome.id);
+              totalEvaluated++;
+              continue;
+            }
+
+            const avgBefore = beforeMetrics.reduce((s: number, m: any) => s + Number(m.value), 0) / beforeMetrics.length;
+            const avgAfter = afterMetrics.reduce((s: number, m: any) => s + Number(m.value), 0) / afterMetrics.length;
+            const observedChange = avgBefore !== 0 ? ((avgAfter - avgBefore) / Math.abs(avgBefore)) * 100 : 0;
+
+            let outcomeStatus = "no_effect";
+            const expectedDir = outcome.expected_direction;
+            const directionMatch = (expectedDir === "increase" && observedChange > 1) ||
+                                    (expectedDir === "decrease" && observedChange < -1);
+            if (directionMatch) {
+              if (outcome.expected_change !== null) {
+                const observedMagnitude = Math.abs(observedChange);
+                if (observedMagnitude >= Math.abs(Number(outcome.expected_change)) * 0.8) outcomeStatus = "success";
+                else if (observedMagnitude >= Math.abs(Number(outcome.expected_change)) * 0.3) outcomeStatus = "partial_success";
+              } else {
+                outcomeStatus = "success";
+              }
+            } else if ((expectedDir === "increase" && observedChange < -5) || (expectedDir === "decrease" && observedChange > 5)) {
+              outcomeStatus = "negative_outcome";
+            }
+
+            let accuracyScore: number | null = null;
+            if (outcome.expected_change !== null && Number(outcome.expected_change) !== 0) {
+              accuracyScore = Math.max(0, Math.min(100, 100 - Math.abs(observedChange - Number(outcome.expected_change)) * 2));
+            }
+
+            await supabase.from("decision_outcomes").update({
+              observed_metric: outcome.expected_metric,
+              observed_value_before: avgBefore,
+              observed_value_after: avgAfter,
+              outcome_status: outcomeStatus,
+              evaluation_date: now.toISOString(),
+              accuracy_score: accuracyScore,
+              notes: `Observed ${observedChange.toFixed(2)}% change. Before avg: ${avgBefore.toFixed(2)}, After avg: ${avgAfter.toFixed(2)}.`,
+            }).eq("id", outcome.id);
+
+            await supabase.from("decision_ledger").update({
+              actual_value: avgAfter,
+              outcome_delta: observedChange,
+              outcome_measured_at: now.toISOString(),
+              prediction_accuracy_score: accuracyScore,
+            }).eq("id", outcome.decision_id);
+
+            totalEvaluated++;
           }
-
-          await supabase.from("decision_outcomes").update({
-            observed_metric: outcome.expected_metric,
-            observed_value_before: avgBefore,
-            observed_value_after: avgAfter,
-            outcome_status: outcomeStatus,
-            evaluation_date: now.toISOString(),
-            accuracy_score: accuracyScore,
-            notes: `Observed ${observedChange.toFixed(2)}% change. Before avg: ${avgBefore.toFixed(2)}, After avg: ${avgAfter.toFixed(2)}.`,
-          }).eq("id", outcome.id);
-
-          await supabase.from("decision_ledger").update({
-            actual_value: avgAfter,
-            outcome_delta: observedChange,
-            outcome_measured_at: now.toISOString(),
-            prediction_accuracy_score: accuracyScore,
-          }).eq("id", outcome.decision_id);
-
-          totalEvaluated++;
+        }
         }
       }
 
