@@ -1,6 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { applyAdaptiveConfidence, fetchCalibrationModel } from "../_shared/adaptive-confidence.ts";
+import { getCorsHeaders, corsPreflightResponse } from "../_shared/cors.ts";
+import { createLogger } from "../_shared/logger.ts";
+import { validateInsightArray } from "../_shared/ai-validation.ts";
+import { withRetry } from "../_shared/retry.ts";
 
 // ── Inline industry detection for Edge Function ──
 function detectIndustryFromMetrics(metricTypes: string[], segments: string[], regions: string[], datasetName: string) {
@@ -97,15 +101,12 @@ function detectIndustryFromMetrics(metricTypes: string[], segments: string[], re
   };
 }
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
-
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
+  const log = createLogger("generate-insights", req);
+
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return corsPreflightResponse(req);
   }
 
   try {
@@ -448,7 +449,11 @@ Rules:
             const jsonMatch = content.match(/\[[\s\S]*\]/);
             if (jsonMatch) {
               try {
-                const rawInsights = JSON.parse(jsonMatch[0]);
+                const rawParsed = JSON.parse(jsonMatch[0]);
+                // Schema validation first
+                const schemaValid = validateInsightArray(rawParsed);
+                log.info("AI schema validation", { raw: rawParsed.length, valid: schemaValid.length, model });
+                
                 // POST-GENERATION VALIDATION: reject hallucinated insights
                 const knownMetrics = new Set(Object.keys(metricsByType));
                 const knownRegions = new Set<string>();
@@ -458,31 +463,31 @@ Rules:
                   d.segments.forEach(s => knownSegments.add(s.toLowerCase()));
                 });
 
-                for (const insight of rawInsights) {
+                for (const insight of schemaValid) {
                   const msg = (insight.message || "").toLowerCase();
                   const refsDataset = msg.includes(datasetName.toLowerCase());
                   const refsMetric = [...knownMetrics].some(m => msg.includes(m.replace(/_/g, " ").toLowerCase()) || msg.includes(m.toLowerCase()));
                   
                   if (refsDataset && refsMetric) {
-                    insight._validated = true;
+                    (insight as any)._validated = true;
                     aiInsights.push(insight);
                   } else if (refsMetric && !refsDataset) {
                     insight.message = `In ${datasetName}, ${insight.message}`;
-                    insight._validated = true;
-                    insight._salvaged = true;
+                    (insight as any)._validated = true;
+                    (insight as any)._salvaged = true;
                     aiInsights.push(insight);
                   } else {
-                    console.warn(`Rejected hallucinated insight (model=${model}):`, insight.message?.substring(0, 100));
+                    log.warn("Rejected hallucinated insight", { model, snippet: insight.message?.substring(0, 100) });
                   }
                 }
 
                 if (aiInsights.length > 0) {
                   modelUsed = model;
-                  console.log(`AI insights generated via ${model}: ${aiInsights.length} validated`);
+                  log.info("AI insights accepted", { model, count: aiInsights.length });
                   break; // Success — exit failover chain
                 }
               } catch {
-                console.error(`Failed to parse AI insights JSON from ${model}`);
+                log.error("Failed to parse AI JSON", { model });
               }
             }
           } else {
@@ -591,6 +596,7 @@ Rules:
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err: any) {
+    log.error("generate-insights failed", { error: err.message });
     return new Response(JSON.stringify({ error: err.message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -2,12 +2,9 @@
  * Active Data Contract enforcement for Edge Functions.
  * Validates dataset_id is present, belongs to the org, and optionally supports dry_run mode.
  */
+import { getCorsHeaders } from "./cors.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+const corsHeaders = getCorsHeaders();
 
 export interface DatasetContractResult {
   valid: boolean;

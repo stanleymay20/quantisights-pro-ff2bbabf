@@ -1,10 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-api-key, x-request-id",
-};
+import { getCorsHeaders, corsPreflightResponse } from "../_shared/cors.ts";
 
 const MAX_RECORDS_PER_REQUEST = 10_000;
 const MAX_RECORDS_PER_HOUR = 50_000;
@@ -27,9 +23,8 @@ function structuredLog(step: string, details: Record<string, unknown>) {
 }
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  if (req.method === "OPTIONS") return corsPreflightResponse(req);
+  const corsHeaders = getCorsHeaders(req);
 
   const startTime = Date.now();
   const supabase = createClient(

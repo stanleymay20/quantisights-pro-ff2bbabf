@@ -1,20 +1,133 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+import { getCorsHeaders, corsPreflightResponse } from "../_shared/cors.ts";
+import { createLogger } from "../_shared/logger.ts";
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  const corsHeaders = getCorsHeaders(req);
+  const log = createLogger("evaluate-outcomes", req);
+
+  if (req.method === "OPTIONS") return corsPreflightResponse(req);
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceKey);
 
-    // Auth via JWT claims (enterprise standard — avoids session propagation delay)
+    const body = await req.json();
+    const { action, organization_id, dataset_id, decision_id, outcome_id } = body;
+
+    // ── CRON: evaluate_all processes all orgs without user auth ──
+    if (action === "evaluate_all" && body.cron === true) {
+      log.info("Cron-triggered batch evaluation starting");
+      const { data: orgs } = await supabase.from("organizations").select("id");
+      let totalEvaluated = 0;
+
+      for (const org of (orgs || [])) {
+        const { data: pending } = await supabase
+          .from("decision_outcomes")
+          .select("*, decision_ledger!inner(decided_at, organization_id)")
+          .eq("organization_id", org.id)
+          .eq("outcome_status", "pending");
+
+        if (!pending?.length) continue;
+
+        const now = new Date();
+        for (const outcome of pending) {
+          const decidedAt = new Date((outcome as any).decision_ledger?.decided_at);
+          if (isNaN(decidedAt.getTime())) continue;
+          const windowEnd = new Date(decidedAt.getTime() + outcome.evaluation_window_days * 86400000);
+          if (now < windowEnd) continue;
+
+          if (!outcome.dataset_id) {
+            await supabase.from("decision_outcomes").update({
+              outcome_status: "not_evaluable",
+              evaluation_date: now.toISOString(),
+              notes: "No dataset_id linked — cannot measure outcome.",
+            }).eq("id", outcome.id);
+            totalEvaluated++;
+            continue;
+          }
+
+          const beforeStart = new Date(decidedAt.getTime() - 30 * 86400000);
+          const { data: beforeMetrics } = await supabase
+            .from("metrics").select("value")
+            .eq("organization_id", org.id).eq("dataset_id", outcome.dataset_id)
+            .eq("metric_type", outcome.expected_metric)
+            .gte("date", beforeStart.toISOString().slice(0, 10))
+            .lte("date", decidedAt.toISOString().slice(0, 10))
+            .order("date", { ascending: false }).limit(50);
+
+          const { data: afterMetrics } = await supabase
+            .from("metrics").select("value")
+            .eq("organization_id", org.id).eq("dataset_id", outcome.dataset_id)
+            .eq("metric_type", outcome.expected_metric)
+            .gte("date", decidedAt.toISOString().slice(0, 10))
+            .lte("date", windowEnd.toISOString().slice(0, 10))
+            .order("date", { ascending: false }).limit(50);
+
+          if (!beforeMetrics?.length || !afterMetrics?.length) {
+            await supabase.from("decision_outcomes").update({
+              outcome_status: "not_evaluable",
+              evaluation_date: now.toISOString(),
+              notes: `Insufficient ${outcome.expected_metric} data for evaluation period.`,
+            }).eq("id", outcome.id);
+            totalEvaluated++;
+            continue;
+          }
+
+          const avgBefore = beforeMetrics.reduce((s: number, m: any) => s + Number(m.value), 0) / beforeMetrics.length;
+          const avgAfter = afterMetrics.reduce((s: number, m: any) => s + Number(m.value), 0) / afterMetrics.length;
+          const observedChange = avgBefore !== 0 ? ((avgAfter - avgBefore) / Math.abs(avgBefore)) * 100 : 0;
+
+          let outcomeStatus = "no_effect";
+          const expectedDir = outcome.expected_direction;
+          const directionMatch = (expectedDir === "increase" && observedChange > 1) ||
+                                  (expectedDir === "decrease" && observedChange < -1);
+          if (directionMatch) {
+            if (outcome.expected_change !== null) {
+              const observedMagnitude = Math.abs(observedChange);
+              if (observedMagnitude >= Math.abs(Number(outcome.expected_change)) * 0.8) outcomeStatus = "success";
+              else if (observedMagnitude >= Math.abs(Number(outcome.expected_change)) * 0.3) outcomeStatus = "partial_success";
+            } else {
+              outcomeStatus = "success";
+            }
+          } else if ((expectedDir === "increase" && observedChange < -5) || (expectedDir === "decrease" && observedChange > 5)) {
+            outcomeStatus = "negative_outcome";
+          }
+
+          let accuracyScore: number | null = null;
+          if (outcome.expected_change !== null && Number(outcome.expected_change) !== 0) {
+            accuracyScore = Math.max(0, Math.min(100, 100 - Math.abs(observedChange - Number(outcome.expected_change)) * 2));
+          }
+
+          await supabase.from("decision_outcomes").update({
+            observed_metric: outcome.expected_metric,
+            observed_value_before: avgBefore,
+            observed_value_after: avgAfter,
+            outcome_status: outcomeStatus,
+            evaluation_date: now.toISOString(),
+            accuracy_score: accuracyScore,
+            notes: `Observed ${observedChange.toFixed(2)}% change. Before avg: ${avgBefore.toFixed(2)}, After avg: ${avgAfter.toFixed(2)}.`,
+          }).eq("id", outcome.id);
+
+          await supabase.from("decision_ledger").update({
+            actual_value: avgAfter,
+            outcome_delta: observedChange,
+            outcome_measured_at: now.toISOString(),
+            prediction_accuracy_score: accuracyScore,
+          }).eq("id", outcome.decision_id);
+
+          totalEvaluated++;
+        }
+      }
+
+      log.info("Cron batch evaluation complete", { totalEvaluated });
+      return new Response(JSON.stringify({ success: true, evaluated: totalEvaluated }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ── Standard auth flow for user-initiated actions ──
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
@@ -30,13 +143,12 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
     }
     const userId = claimsData.claims.sub as string;
-
-    const body = await req.json();
-    const { action, organization_id, dataset_id, decision_id, outcome_id } = body;
+    log.setUser(userId);
 
     if (!organization_id) {
       return new Response(JSON.stringify({ error: "organization_id required" }), { status: 400, headers: corsHeaders });
     }
+    log.setOrg(organization_id);
 
     // Verify org membership
     const { data: isMember } = await supabase.rpc("is_org_member", {

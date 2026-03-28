@@ -1,12 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { applyRateLimit } from "../_shared/rate-guard.ts";
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
-
+import { getCorsHeaders, corsPreflightResponse } from "../_shared/cors.ts";
 /** Server-side confidence cap based on data volume (epistemic integrity) */
 function capConfidence(rawScore: number, dataPointCount: number): number {
   let maxAllowed = 90;
@@ -16,9 +11,8 @@ function capConfidence(rawScore: number, dataPointCount: number): number {
 }
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  if (req.method === "OPTIONS") return corsPreflightResponse(req);
+  const corsHeaders = getCorsHeaders(req);
 
   try {
     const authHeader = req.headers.get("authorization");

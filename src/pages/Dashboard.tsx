@@ -26,6 +26,7 @@ import WelcomeFlow from "@/components/dashboard/WelcomeFlow";
 import DemoBanner from "@/components/dashboard/DemoBanner";
 import HeroInsight from "@/components/dashboard/HeroInsight";
 import DecisionMemoryWidget from "@/components/dashboard/DecisionMemoryWidget";
+import SystemHealthDashboard from "@/components/dashboard/SystemHealthDashboard";
 
 const VIEW_STORAGE_KEY = "quantivis_dashboard_view";
 
@@ -438,6 +439,7 @@ const Dashboard = () => {
 
               {hasAnomalies && <HeroInsight insights={insights} />}
               {currentOrgId && <DecisionMemoryWidget organizationId={currentOrgId} />}
+              {currentOrgId && <SystemHealthDashboard orgId={currentOrgId} />}
 
               {dashboardView === "executive" ? (
                 <ExecutiveQuickView

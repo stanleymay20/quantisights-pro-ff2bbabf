@@ -2,12 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { checkRateLimit, rateLimitResponse } from "../_shared/rate-limiter.ts";
 import { applyAIBoundary } from "../_shared/ai-redaction.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+import { getCorsHeaders, corsPreflightResponse } from "../_shared/cors.ts";
 
 const TIER_LIMITS: Record<string, number> = {
   starter: 20,
@@ -53,9 +48,8 @@ When asked "what if" / scenario questions:
 - Label ALL projections as ESTIMATED`;
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  if (req.method === "OPTIONS") return corsPreflightResponse(req);
+  const corsHeaders = getCorsHeaders(req);
 
   try {
     const clientIp = req.headers.get("x-forwarded-for") || "unknown";
