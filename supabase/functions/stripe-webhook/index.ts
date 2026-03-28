@@ -136,6 +136,7 @@ serve(async (req) => {
 
         if (error) logStep("Upsert error", error);
         else logStep("Subscription upserted", { tier, orgId: userProfile.organization_id });
+        await markEventProcessed(userProfile.organization_id);
         break;
       }
 
