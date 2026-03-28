@@ -3,7 +3,6 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { fetchCalibrationModel } from "../_shared/adaptive-confidence.ts";
 import { enforceDatasetContract } from "../_shared/dataset-contract.ts";
 import { getCorsHeaders, corsPreflightResponse } from "../_shared/cors.ts";
-  const corsHeaders = getCorsHeaders(req);
 
 const TIER_LIMITS: Record<string, number> = {
   starter: 5,
@@ -375,6 +374,7 @@ function computeProjectedRisk(
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return corsPreflightResponse(req);
+  const corsHeaders = getCorsHeaders(req);
 
   try {
     const authHeader = req.headers.get("authorization");

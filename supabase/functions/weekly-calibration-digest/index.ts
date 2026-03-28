@@ -1,6 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders, corsPreflightResponse } from "../_shared/cors.ts";
-  const corsHeaders = getCorsHeaders(req);
 
 function getWeekStart(date: Date): Date {
   const d = new Date(date);
@@ -13,6 +12,7 @@ function getWeekStart(date: Date): Date {
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return corsPreflightResponse(req);
+  const corsHeaders = getCorsHeaders(req);
 
   try {
     const supabase = createClient(

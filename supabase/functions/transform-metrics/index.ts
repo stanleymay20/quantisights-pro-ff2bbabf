@@ -3,7 +3,6 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { authenticateRequest, verifyOrgMembership } from "../_shared/auth-guard.ts";
 import { enforceDatasetContract } from "../_shared/dataset-contract.ts";
 import { getCorsHeaders, corsPreflightResponse } from "../_shared/cors.ts";
-  const corsHeaders = getCorsHeaders(req);
 
 const MAX_VALUE = 1e12;
 
@@ -31,6 +30,7 @@ function normalizeDate(val: string | undefined | null): string | null {
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return corsPreflightResponse(req);
+  const corsHeaders = getCorsHeaders(req);
 
   try {
     // Auth guard: verify caller identity

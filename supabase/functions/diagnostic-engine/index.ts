@@ -4,7 +4,6 @@ import { applyAdaptiveConfidenceWithFetch } from "../_shared/adaptive-confidence
 import type { AdaptiveConfidenceMeta } from "../_shared/adaptive-confidence.ts";
 import { enforceDatasetContract } from "../_shared/dataset-contract.ts";
 import { getCorsHeaders, corsPreflightResponse } from "../_shared/cors.ts";
-  const corsHeaders = getCorsHeaders(req);
 
 interface MetricRow {
   metric_type: string;
@@ -302,6 +301,7 @@ function fallbackDiagnostics(stats: MetricStats[]): any[] {
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return corsPreflightResponse(req);const auth = await authenticateRequest(req);
+  const corsHeaders = getCorsHeaders(req);
   if (auth.response) return auth.response;
 
   try {

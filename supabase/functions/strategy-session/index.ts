@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getCorsHeaders, corsPreflightResponse } from "../_shared/cors.ts";
-  const corsHeaders = getCorsHeaders(req);
 
 const SYSTEM_PROMPT = `You are Quantivis — an AI Decision Intelligence System designed to analyze business performance, identify hidden losses, and recommend high-impact strategic actions.
 
@@ -58,6 +57,7 @@ RULES:
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return corsPreflightResponse(req);
+  const corsHeaders = getCorsHeaders(req);
 
   try {
     const { metrics, companyContext } = await req.json();

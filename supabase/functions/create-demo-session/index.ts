@@ -1,10 +1,10 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { checkRateLimit, rateLimitResponse } from "../_shared/rate-limiter.ts";
 import { getCorsHeaders, corsPreflightResponse } from "../_shared/cors.ts";
-  const corsHeaders = getCorsHeaders(req);
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return corsPreflightResponse(req);
+  const corsHeaders = getCorsHeaders(req);
 
   // Rate limit: 5 demo sessions per IP per hour
   const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";

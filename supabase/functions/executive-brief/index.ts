@@ -1,7 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders, corsPreflightResponse } from "../_shared/cors.ts";
-  const corsHeaders = getCorsHeaders(req);
 
 const ROLE_CONFIGS: Record<string, { label: string; focusAreas: string[]; defaultMetrics: string[] }> = {
   ceo: {
@@ -30,6 +29,7 @@ const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return corsPreflightResponse(req);
+  const corsHeaders = getCorsHeaders(req);
 
   const startTime = Date.now();
 

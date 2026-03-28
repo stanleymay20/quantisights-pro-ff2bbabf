@@ -3,7 +3,6 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { checkRateLimit, rateLimitResponse } from "../_shared/rate-limiter.ts";
 import { applyAIBoundary } from "../_shared/ai-redaction.ts";
 import { getCorsHeaders, corsPreflightResponse } from "../_shared/cors.ts";
-  const corsHeaders = getCorsHeaders(req);
 
 const TIER_LIMITS: Record<string, number> = {
   starter: 20,
@@ -50,6 +49,7 @@ When asked "what if" / scenario questions:
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return corsPreflightResponse(req);
+  const corsHeaders = getCorsHeaders(req);
 
   try {
     const clientIp = req.headers.get("x-forwarded-for") || "unknown";

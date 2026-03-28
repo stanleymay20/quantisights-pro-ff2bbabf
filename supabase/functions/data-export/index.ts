@@ -2,10 +2,10 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { authenticateRequest, verifyOrgMembership } from "../_shared/auth-guard.ts";
 import { checkRateLimit, rateLimitResponse } from "../_shared/rate-limiter.ts";
 import { getCorsHeaders, corsPreflightResponse } from "../_shared/cors.ts";
-  const corsHeaders = getCorsHeaders(req);
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return corsPreflightResponse(req);const auth = await authenticateRequest(req);
+  const corsHeaders = getCorsHeaders(req);
   if (auth.response) return auth.response;
 
   try {
