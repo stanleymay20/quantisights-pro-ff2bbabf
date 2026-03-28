@@ -1,6 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { applyAdaptiveConfidence, fetchCalibrationModel } from "../_shared/adaptive-confidence.ts";
+import { getCorsHeaders, corsPreflightResponse } from "../_shared/cors.ts";
+import { createLogger } from "../_shared/logger.ts";
+import { validateInsightArray } from "../_shared/ai-validation.ts";
+import { withRetry } from "../_shared/retry.ts";
 
 // ── Inline industry detection for Edge Function ──
 function detectIndustryFromMetrics(metricTypes: string[], segments: string[], regions: string[], datasetName: string) {
