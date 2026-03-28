@@ -166,6 +166,70 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return corsPreflightResponse(req);
 
   try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
+    const svc = createClient(supabaseUrl, serviceKey);
+
+    const body = await req.json();
+
+    // ── CRON: calibrate_all processes all orgs without user auth ──
+    if (body.action === "calibrate_all" && body.cron === true) {
+      log.info("Cron-triggered batch calibration starting");
+      const { data: orgs } = await svc.from("organizations").select("id");
+      let calibrated = 0;
+
+      for (const org of (orgs || [])) {
+        const { data: decisions } = await svc
+          .from("decision_ledger")
+          .select(DECISION_COLUMNS)
+          .eq("organization_id", org.id)
+          .eq("execution_status", "completed")
+          .order("created_at", { ascending: false })
+          .limit(WINDOW_SIZE);
+
+        if (!decisions?.length) continue;
+
+        const result = computeCalibrationModel(decisions);
+        if (result.insufficient) continue;
+
+        const { data: existing } = await svc
+          .from("calibration_models")
+          .select("model_version")
+          .eq("organization_id", org.id)
+          .order("computed_at", { ascending: false })
+          .limit(1);
+
+        const nextVersion = (existing?.[0]?.model_version ?? 0) + 1;
+
+        await svc.from("calibration_models").insert({
+          organization_id: org.id,
+          band_corrections: result.band_corrections,
+          band_sample_sizes: result.band_sample_sizes,
+          overall_calibration_score: result.overall_calibration_score,
+          overall_bias_direction: result.overall_bias_direction,
+          total_decisions_analyzed: result.total_decisions_analyzed,
+          model_version: nextVersion,
+          confidence_bands_count: result.confidence_bands_count,
+          mean_absolute_error: result.mean_absolute_error,
+          success_metric: result.success_metric,
+          window_start: result.window_start,
+          window_end: result.window_end,
+          window_decisions_count: result.window_decisions_count,
+          smoothing_alpha: result.smoothing_alpha,
+          smoothing_beta: result.smoothing_beta,
+          low_sample_bands: result.low_sample_bands,
+        });
+        calibrated++;
+      }
+
+      log.info("Cron batch calibration complete", { calibrated });
+      return new Response(JSON.stringify({ success: true, calibrated }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ── Standard auth flow for user-initiated calibration ──
     const authHeader = req.headers.get("authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -174,14 +238,9 @@ serve(async (req) => {
       });
     }
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
-
     const userClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
       global: { headers: { Authorization: authHeader } },
     });
-    const svc = createClient(supabaseUrl, serviceKey);
 
     const { data: { user }, error: userError } = await userClient.auth.getUser();
     if (userError || !user) {
@@ -191,7 +250,7 @@ serve(async (req) => {
       });
     }
 
-    const { organization_id } = await req.json();
+    const { organization_id } = body;
     if (!organization_id) {
       return new Response(JSON.stringify({ error: "organization_id required" }), {
         status: 400,
