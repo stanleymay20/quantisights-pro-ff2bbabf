@@ -47,7 +47,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [user?.id, fetchProfile]);
 
   useEffect(() => {
+    // Flag to prevent duplicate profile fetches from race between getSession and onAuthStateChange
+    let initialSessionResolved = false;
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      // Skip if this is the initial event that duplicates getSession
+      if (!initialSessionResolved) return;
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
@@ -59,6 +64,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
+      initialSessionResolved = true;
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {

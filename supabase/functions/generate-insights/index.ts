@@ -573,7 +573,11 @@ Rules:
       };
     });
 
-    // Clean old insights for this dataset
+    // ATOMIC: Insert new insights FIRST, then clean old ones (prevents data loss on insert failure)
+    const { error: insertError } = await serviceSupabase.from("insights").insert(insightRows);
+    if (insertError) throw insertError;
+
+    // Only clean old insights AFTER successful insertion
     const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     await serviceSupabase
       .from("insights")
@@ -581,9 +585,6 @@ Rules:
       .eq("organization_id", organization_id)
       .eq("dataset_id", dataset_id)
       .lt("created_at", yesterday);
-
-    const { error: insertError } = await serviceSupabase.from("insights").insert(insightRows);
-    if (insertError) throw insertError;
 
     return new Response(
       JSON.stringify({ message: "Insights generated", count: insightRows.length }),
