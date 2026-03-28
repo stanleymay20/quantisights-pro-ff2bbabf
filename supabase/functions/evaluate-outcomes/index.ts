@@ -171,7 +171,6 @@ Deno.serve(async (req) => {
             totalEvaluated++;
           }
         }
-        }
       }
 
       log.info("Cron batch evaluation complete", { totalEvaluated });
