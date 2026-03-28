@@ -160,7 +160,10 @@ function computeCalibrationModel(decisions: any[]) {
 }
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  const corsHeaders = getCorsHeaders(req);
+  const log = createLogger("adaptive-calibration", req);
+
+  if (req.method === "OPTIONS") return corsPreflightResponse(req);
 
   try {
     const authHeader = req.headers.get("authorization");
