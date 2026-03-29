@@ -95,8 +95,14 @@ Deno.serve(async (req) => {
   const body = await req.json();
   const { action, organization_id, decision_id, ...params } = body;
 
-  if (!organization_id || typeof organization_id !== "string") {
-    return new Response(JSON.stringify({ error: "organization_id required" }), {
+  if (!isValidUUID(organization_id)) {
+    return new Response(JSON.stringify({ error: "organization_id must be a valid UUID" }), {
+      status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  if (!isValidString(action, 50)) {
+    return new Response(JSON.stringify({ error: "action is required" }), {
       status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
