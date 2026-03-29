@@ -130,15 +130,15 @@ Deno.serve(async (req) => {
         const { data: plan, error } = await supabase
           .from("execution_plans")
           .insert({
-            decision_id,
+            decision_id: validated.data!.decision_id,
             organization_id,
-            action_title: action_title.trim().slice(0, 500),
-            action_description: action_description ? String(action_description).trim().slice(0, 2000) : null,
+            action_title,
+            action_description,
             owner_user_id: owner_user_id || userId,
-            priority: safePriority,
-            deadline: deadline || null,
-            trigger_type: trigger_type || "manual",
-            trigger_config: trigger_config || {},
+            priority,
+            deadline,
+            trigger_type,
+            trigger_config,
             status: "pending",
           })
           .select()
