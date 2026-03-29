@@ -121,22 +121,11 @@ Deno.serve(async (req) => {
   try {
     switch (action) {
       case "create_plan": {
-        const { action_title, action_description, owner_user_id, priority, deadline, trigger_type, trigger_config } = params;
-        if (!decision_id || !action_title || typeof action_title !== "string") {
-          return new Response(JSON.stringify({ error: "decision_id and action_title required" }), {
-            status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
+        const validated = validateCreatePlan({ ...params, decision_id });
+        if (!validated.success) {
+          return validationErrorResponse(validated.errors!, corsHeaders);
         }
-
-        // Validate input lengths
-        if (action_title.length > 500) {
-          return new Response(JSON.stringify({ error: "action_title must be under 500 characters" }), {
-            status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        }
-
-        const validPriorities = ["critical", "high", "medium", "low"];
-        const safePriority = validPriorities.includes(priority) ? priority : "medium";
+        const { action_title, action_description, owner_user_id, priority, deadline, trigger_type, trigger_config } = validated.data!;
 
         const { data: plan, error } = await supabase
           .from("execution_plans")
