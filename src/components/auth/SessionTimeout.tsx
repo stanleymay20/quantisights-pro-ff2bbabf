@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, forwardRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   AlertDialog, AlertDialogAction, AlertDialogContent,
@@ -11,7 +11,7 @@ const WARNING_BEFORE_MS = 2 * 60 * 1000; // warn 2 min before
 
 const ACTIVITY_EVENTS = ["mousedown", "keydown", "scroll", "touchstart"] as const;
 
-const SessionTimeout = () => {
+const SessionTimeout = forwardRef<HTMLDivElement>(function SessionTimeout(_props, ref) {
   const { user, signOut } = useAuth();
   const [showWarning, setShowWarning] = useState(false);
   const [countdown, setCountdown] = useState(120);
