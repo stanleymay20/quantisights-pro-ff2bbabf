@@ -1,6 +1,8 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { authenticateRequest, verifyOrgMembership } from "../_shared/auth-guard.ts";
 import { getCorsHeaders, corsPreflightResponse } from "../_shared/cors.ts";
+import { isValidUUID, isValidString, isValidEnum, validateCreatePlan, validationErrorResponse } from "../_shared/input-validation.ts";
+import { getCorsHeaders, corsPreflightResponse } from "../_shared/cors.ts";
 
 /** Require owner/admin role for sensitive execution actions */
 async function requirePrivilegedRole(
@@ -93,8 +95,14 @@ Deno.serve(async (req) => {
   const body = await req.json();
   const { action, organization_id, decision_id, ...params } = body;
 
-  if (!organization_id || typeof organization_id !== "string") {
-    return new Response(JSON.stringify({ error: "organization_id required" }), {
+  if (!isValidUUID(organization_id)) {
+    return new Response(JSON.stringify({ error: "organization_id must be a valid UUID" }), {
+      status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  if (!isValidString(action, 50)) {
+    return new Response(JSON.stringify({ error: "action is required" }), {
       status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
@@ -113,35 +121,24 @@ Deno.serve(async (req) => {
   try {
     switch (action) {
       case "create_plan": {
-        const { action_title, action_description, owner_user_id, priority, deadline, trigger_type, trigger_config } = params;
-        if (!decision_id || !action_title || typeof action_title !== "string") {
-          return new Response(JSON.stringify({ error: "decision_id and action_title required" }), {
-            status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
+        const validated = validateCreatePlan({ ...params, decision_id });
+        if (!validated.success) {
+          return validationErrorResponse(validated.errors!, corsHeaders);
         }
-
-        // Validate input lengths
-        if (action_title.length > 500) {
-          return new Response(JSON.stringify({ error: "action_title must be under 500 characters" }), {
-            status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        }
-
-        const validPriorities = ["critical", "high", "medium", "low"];
-        const safePriority = validPriorities.includes(priority) ? priority : "medium";
+        const { action_title, action_description, owner_user_id, priority, deadline, trigger_type, trigger_config } = validated.data!;
 
         const { data: plan, error } = await supabase
           .from("execution_plans")
           .insert({
-            decision_id,
+            decision_id: validated.data!.decision_id,
             organization_id,
-            action_title: action_title.trim().slice(0, 500),
-            action_description: action_description ? String(action_description).trim().slice(0, 2000) : null,
+            action_title,
+            action_description,
             owner_user_id: owner_user_id || userId,
-            priority: safePriority,
-            deadline: deadline || null,
-            trigger_type: trigger_type || "manual",
-            trigger_config: trigger_config || {},
+            priority,
+            deadline,
+            trigger_type,
+            trigger_config,
             status: "pending",
           })
           .select()
@@ -154,7 +151,7 @@ Deno.serve(async (req) => {
           organization_id,
           event_type: "plan_created",
           actor_id: userId,
-          metadata: { action_title: plan.action_title, priority: safePriority },
+          metadata: { action_title: plan.action_title, priority },
         });
 
         await supabase.from("audit_log").insert({
