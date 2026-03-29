@@ -73,7 +73,7 @@ const SessionTimeout = forwardRef<HTMLDivElement>(function SessionTimeout(_props
 
   return (
     <AlertDialog open={showWarning}>
-      <AlertDialogContent className="max-w-sm">
+      <AlertDialogContent ref={ref} className="max-w-sm">
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2">
             <Clock className="w-5 h-5 text-destructive" />
@@ -90,6 +90,6 @@ const SessionTimeout = forwardRef<HTMLDivElement>(function SessionTimeout(_props
       </AlertDialogContent>
     </AlertDialog>
   );
-};
+});
 
 export default SessionTimeout;
