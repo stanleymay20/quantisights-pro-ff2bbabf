@@ -151,7 +151,7 @@ Deno.serve(async (req) => {
           organization_id,
           event_type: "plan_created",
           actor_id: userId,
-          metadata: { action_title: plan.action_title, priority: safePriority },
+          metadata: { action_title: plan.action_title, priority },
         });
 
         await supabase.from("audit_log").insert({
