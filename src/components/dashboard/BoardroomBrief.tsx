@@ -81,7 +81,7 @@ const BoardroomBrief = memo(({ insights, pendingDecisions, calibrationScore, top
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`rounded-xl border ${cfg.border} ${cfg.bg} p-5`}
+      className={`rounded-xl border ${cfg.border} ${cfg.bg} p-3 sm:p-5`}
     >
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2.5">
