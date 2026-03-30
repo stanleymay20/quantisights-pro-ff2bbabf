@@ -4,9 +4,9 @@ import {
   LayoutDashboard, Upload, FileText, TrendingUp, Settings, CreditCard, LogOut,
   Database, BarChart3, Shuffle, Users, Building2, Search, Zap, Menu, X,
   BookOpen, Target, Brain, MessageSquare, GitBranch, Globe,
-  Sparkles, GitCommitVertical, Crosshair, Bell, Cable,
+  Sparkles, Crosshair, Cable,
   Briefcase, ChevronDown, Shield, Eye, Compass, FlaskConical,
-  ClipboardCheck, AlertOctagon, RotateCcw, Award, Layers, Activity,
+  AlertOctagon, RotateCcw, Award, Activity,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
