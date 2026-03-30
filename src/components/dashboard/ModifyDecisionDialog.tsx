@@ -14,6 +14,7 @@ import type { EnrichedDecision } from "./DecisionQueue";
 interface ModifyDecisionDialogProps {
   decision: EnrichedDecision | null;
   organizationId: string;
+  datasetId?: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSaved: (updated: Partial<EnrichedDecision>) => void;
