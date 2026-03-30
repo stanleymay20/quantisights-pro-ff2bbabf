@@ -190,6 +190,10 @@ serve(async (req) => {
         }
       }
 
+      // Advisory lock — prevent overlapping cron runs
+      const guard = await cronGuard("adaptive-calibration");
+      if (!guard.acquired) return guard.earlyResponse(corsHeaders);
+
       log.info("Cron-triggered batch calibration starting");
       const { data: orgs } = await svc.from("organizations").select("id");
       let calibrated = 0;
