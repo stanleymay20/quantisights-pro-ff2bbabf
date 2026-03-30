@@ -5,11 +5,11 @@ import { ArrowRight, ShieldCheck, Target, AlertTriangle, BarChart3, Database, Ca
 import heroVisual from "@/assets/hero-visual.png";
 
 const CAPABILITY_PILLS = [
-  { icon: Cable, label: "Enterprise Data Connectors" },
-  { icon: ShieldCheck, label: "Decision Audit Trails" },
-  { icon: Target, label: "Forecast Calibration" },
-  { icon: AlertTriangle, label: "Overconfidence Detection" },
-  { icon: BarChart3, label: "Board-Ready Defensibility" },
+  { icon: Cable, label: "Data Connectors" },
+  { icon: ShieldCheck, label: "Audit Trails" },
+  { icon: Target, label: "Calibration" },
+  { icon: AlertTriangle, label: "Bias Detection" },
+  { icon: BarChart3, label: "Board-Ready" },
 ];
 
 const HeroSection = forwardRef<HTMLElement>((_, ref) => {
@@ -48,7 +48,7 @@ const HeroSection = forwardRef<HTMLElement>((_, ref) => {
               The Closed-Loop Decision Operating System
             </motion.div>
 
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold font-display leading-[1.05] mb-4 sm:mb-6">
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold font-display leading-[1.08] mb-4 sm:mb-6">
               The Operating System for{" "}
               <br className="hidden sm:block" />
               <span className="gradient-text">Billion-Dollar Decisions.</span>
@@ -77,7 +77,7 @@ const HeroSection = forwardRef<HTMLElement>((_, ref) => {
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.5 + i * 0.08 }}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg border border-border bg-card/60 backdrop-blur-sm text-sm font-medium text-foreground/80"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-card/60 backdrop-blur-sm text-xs sm:text-sm font-medium text-foreground/80"
                 >
                   <pill.icon className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
                   {pill.label}
