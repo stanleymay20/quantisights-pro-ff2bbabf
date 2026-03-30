@@ -1,15 +1,14 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders } from "./cors.ts";
 
-const corsHeaders = getCorsHeaders();
-
 /**
  * Validates the caller's JWT and returns their user ID.
- * Returns null + sends 401 response if auth fails.
+ * Accepts the original request to produce correct CORS headers.
  */
 export async function authenticateRequest(
   req: Request
 ): Promise<{ userId: string; response?: never } | { userId?: never; response: Response }> {
+  const corsHeaders = getCorsHeaders(req);
   const authHeader = req.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) {
     return {
@@ -42,7 +41,7 @@ export async function authenticateRequest(
 
 /**
  * Verifies that the authenticated user is a member of the given organization.
- * Uses service role to check org membership.
+ * Uses service role to check org membership via RPC for safety.
  */
 export async function verifyOrgMembership(
   userId: string,
@@ -50,17 +49,12 @@ export async function verifyOrgMembership(
 ): Promise<boolean> {
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const svc = createClient(supabaseUrl, serviceKey);
 
-  const resp = await fetch(
-    `${supabaseUrl}/rest/v1/organization_members?user_id=eq.${userId}&organization_id=eq.${organizationId}&select=id&limit=1`,
-    {
-      headers: {
-        apikey: serviceKey,
-        Authorization: `Bearer ${serviceKey}`,
-      },
-    }
-  );
+  const { data } = await svc.rpc("is_org_member", {
+    _user_id: userId,
+    _org_id: organizationId,
+  });
 
-  const members = await resp.json();
-  return Array.isArray(members) && members.length > 0;
+  return data === true;
 }
