@@ -256,6 +256,7 @@ const App = () => (
               <Route path="/counterfactual" element={<P><CounterfactualExplanation /></P>} />
               <Route path="/causal-inference" element={<P><CausalInference /></P>} />
               <Route path="/misses" element={<P><Misses /></P>} />
+              <Route path="/decision-accuracy" element={<P><DecisionAccuracy /></P>} />
 
               {/* ══════ Scenarios & Simulations ══════ */}
               <Route path="/scenarios" element={<P><Scenarios /></P>} />
