@@ -173,8 +173,22 @@ serve(async (req) => {
 
     const body = await req.json();
 
-    // ── CRON: calibrate_all processes all orgs without user auth ──
+    // ── CRON: calibrate_all processes all orgs — requires service-role auth ──
     if (body.action === "calibrate_all" && body.cron === true) {
+      // Verify caller is service-role (cron) — reject anon/user tokens
+      const authHeader = req.headers.get("authorization") || req.headers.get("Authorization");
+      if (!authHeader || !authHeader.includes(serviceKey)) {
+        const callerClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
+          global: { headers: { Authorization: authHeader || "" } },
+        });
+        const { data: { user: cronUser } } = await callerClient.auth.getUser();
+        if (cronUser) {
+          return new Response(JSON.stringify({ error: "Forbidden: cron endpoint requires service-role" }), {
+            status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      }
+
       log.info("Cron-triggered batch calibration starting");
       const { data: orgs } = await svc.from("organizations").select("id");
       let calibrated = 0;

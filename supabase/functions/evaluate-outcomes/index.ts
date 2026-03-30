@@ -16,8 +16,25 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const { action, organization_id, dataset_id, decision_id, outcome_id } = body;
 
-    // ── CRON: evaluate_all processes all orgs without user auth ──
+    // ── CRON: evaluate_all processes all orgs — requires service-role auth ──
     if (action === "evaluate_all" && body.cron === true) {
+      // Verify caller is service-role (cron) — reject anon/user tokens
+      const authHeader = req.headers.get("Authorization");
+      const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      if (!authHeader || !authHeader.includes(serviceKey)) {
+        // Fallback: verify the token decodes to service_role
+        const callerClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
+          global: { headers: { Authorization: authHeader || "" } },
+        });
+        const { data: { user: cronUser } } = await callerClient.auth.getUser();
+        // If a real user is calling with cron:true, reject
+        if (cronUser) {
+          return new Response(JSON.stringify({ error: "Forbidden: cron endpoint requires service-role" }), {
+            status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      }
+
       log.info("Cron-triggered batch evaluation starting");
       const { data: orgs } = await supabase.from("organizations").select("id");
       let totalEvaluated = 0;
