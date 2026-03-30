@@ -259,6 +259,19 @@ const DecisionAccuracy = () => {
                 </ResponsiveContainer>
               </CardContent>
             </Card>
+            {/* Sample Decision Trace */}
+            {evaluated.length > 0 && currentOrgId && (
+              <div>
+                <h2 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                  <ArrowRight className="w-4 h-4 text-primary" />
+                  Sample Trace — Most Recent Evaluated Decision
+                </h2>
+                <DecisionTraceView
+                  decisionId={evaluated[evaluated.length - 1].id}
+                  organizationId={currentOrgId}
+                />
+              </div>
+            )}
           </>
         )}
 
