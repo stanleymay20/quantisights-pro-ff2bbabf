@@ -118,6 +118,10 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return corsPreflightResponse(req);
   const corsHeaders = getCorsHeaders(req);
 
+  // Advisory lock — prevent overlapping cron runs
+  const guard = await cronGuard("convergence-reconcile");
+  if (!guard.acquired) return guard.earlyResponse(corsHeaders);
+
   const startTime = Date.now();
   const cfg = getConvergenceConfig();
 
