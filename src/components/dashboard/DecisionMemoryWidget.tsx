@@ -122,12 +122,16 @@ const DecisionMemoryWidget = memo(({ organizationId }: DecisionMemoryWidgetProps
     ? calibrationTrend.current - calibrationTrend.previous
     : null;
 
+  const [expanded, setExpanded] = useState(false);
+  const measuredCount = decisions.filter(d => d.outcome_measured_at != null).length;
+  const recalibratedCount = decisions.filter(d => d.calibration_error != null).length;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.3, duration: 0.4 }}
-      className="glass-card rounded-xl p-5 border border-border/30"
+      className="glass-card rounded-xl p-3 sm:p-5 border border-border/30"
     >
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
