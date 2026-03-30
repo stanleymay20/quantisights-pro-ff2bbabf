@@ -99,7 +99,15 @@ serve(async (req) => {
     const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "noreply@quantivis.com";
 
     if (resendKey) {
-      const origin = req.headers.get("origin") || "https://quantisights-pro.lovable.app";
+      const rawOrigin = req.headers.get("origin") || "https://quantisights-pro.lovable.app";
+      // Validate origin against allowlist to prevent open redirect
+      const allowedOrigins = [
+        "https://quantisights-pro.lovable.app",
+        "https://quantivis.com",
+        "http://localhost:5173",
+        "http://localhost:8080",
+      ];
+      const origin = allowedOrigins.find(o => rawOrigin.startsWith(o)) || "https://quantisights-pro.lovable.app";
       const inviteUrl = `${origin}/accept-invite?token=${invitation.token}`;
 
       await fetch("https://api.resend.com/emails", {
