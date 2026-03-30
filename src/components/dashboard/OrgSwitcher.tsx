@@ -26,7 +26,7 @@ const OrgSwitcher = ({ organizations, currentOrg, onSwitch }: OrgSwitcherProps) 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" className="gap-2 text-sm font-medium max-w-[200px]">
+        <Button variant="ghost" size="sm" className="gap-1.5 text-xs sm:text-sm font-medium max-w-[120px] sm:max-w-[200px] h-8 px-2">
           <Building2 className="w-4 h-4 shrink-0 text-muted-foreground" />
           <span className="truncate">{currentOrg?.name}</span>
           <ChevronDown className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />

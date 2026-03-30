@@ -247,19 +247,17 @@ const HeroInsight = memo(({ insights }: HeroInsightProps) => {
             </Tooltip>
           )}
         </div>
-        <p className="text-sm font-semibold text-foreground leading-snug line-clamp-2">{topInsight.message}</p>
+        <p className="text-[13px] sm:text-sm font-semibold text-foreground leading-snug line-clamp-2">{topInsight.message}</p>
         
         {/* Recommended action */}
-        <p className="text-xs text-primary font-medium mt-1.5 line-clamp-2">
+        <p className="text-[11px] sm:text-xs text-primary font-medium mt-1 sm:mt-1.5 line-clamp-2">
           → {intel.action}
         </p>
         
-        {/* Estimated impact */}
-        <div className="flex items-center gap-1 mt-1">
-          <p className="text-[11px] text-muted-foreground">
-            Impact: {intel.impact}
-          </p>
-        </div>
+        {/* Estimated impact — single line */}
+        <p className="text-[11px] text-muted-foreground mt-1">
+          Impact: {intel.impact}
+        </p>
 
         {/* Consequence of inaction — hidden on mobile */}
         <div className="hidden sm:flex items-start gap-1.5 mt-1.5">

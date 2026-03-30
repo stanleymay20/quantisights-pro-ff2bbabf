@@ -46,10 +46,10 @@ const ProjectSwitcher = () => {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-all border border-border/30">
-            <FolderOpen className="w-3.5 h-3.5" />
-            <span className="max-w-[140px] truncate">{currentProject?.name || "No project"}</span>
-            <ChevronDown className="w-3 h-3 opacity-50" />
+          <button className="flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2.5 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-all border border-border/30">
+            <FolderOpen className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
+            <span className="max-w-[80px] sm:max-w-[140px] truncate">{currentProject?.name || "No project"}</span>
+            <ChevronDown className="w-2.5 h-2.5 sm:w-3 sm:h-3 opacity-50 shrink-0" />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-56">
