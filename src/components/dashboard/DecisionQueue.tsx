@@ -14,6 +14,7 @@ import OutputClassificationBadge from "./OutputClassificationBadge";
 import TraceabilityPanel from "./TraceabilityPanel";
 import DismissReasonDialog from "./DismissReasonDialog";
 import { useBuildDecisionQueue, type EnrichedDecision } from "@/hooks/useBuildDecisionQueue";
+import { onDecisionApproved, onDecisionDismissed } from "@/lib/decision-lifecycle";
 import type { Insight } from "@/hooks/useInsights";
 
 export type { EnrichedDecision };
@@ -170,15 +171,18 @@ const DecisionQueue = memo(({
       }).select("id").single();
       if (ledgerError) throw ledgerError;
 
-      // Auto-create decision_outcome for learning loop activation
-      if (ledgerRow?.id && datasetId && decision.recommendation.successMetrics?.length > 0) {
-        await supabase.from("decision_outcomes").insert({
-          decision_id: ledgerRow.id,
-          organization_id: organizationId,
-          dataset_id: datasetId,
-          expected_metric: decision.recommendation.successMetrics[0],
-          expected_direction: "increase",
-          evaluation_window_days: decision.costOfDelayResult.recommendedActionWindowDays || 30,
+      // Lifecycle side effects: audit log + execution plan + outcome
+      if (ledgerRow?.id) {
+        await onDecisionApproved({
+          decisionId: ledgerRow.id,
+          organizationId,
+          userId: user?.id ?? null,
+          recommendedAction: decision.recommendation.recommendedAction,
+          confidence: decision.cappedConfidence ?? decision.confidence ?? 50,
+          datasetId: datasetId ?? null,
+          expectedMetric: decision.recommendation.successMetrics?.[0] ?? null,
+          evaluationWindowDays: decision.costOfDelayResult.recommendedActionWindowDays || 30,
+          suggestedOwner: decision.recommendation.suggestedOwner ?? null,
         });
       }
 
@@ -206,7 +210,7 @@ const DecisionQueue = memo(({
       if (decision.type === "signal" && decision.sourceId) {
         await supabase.from("insights").update({ is_read: true }).eq("id", decision.sourceId).eq("organization_id", organizationId);
       }
-      await supabase.from("decision_ledger").insert({
+      const { data: ledgerRow } = await supabase.from("decision_ledger").insert({
         organization_id: organizationId,
         recommended_action: decision.recommendation.recommendedAction,
         chosen_action: "Dismissed",
@@ -220,7 +224,18 @@ const DecisionQueue = memo(({
         decision_type: "strategic",
         decision_context_id: activeContextId ?? null,
         notes: reason ? `Dismiss reason: ${reason}` : "Dismissed without reason",
-      });
+      }).select("id").single();
+
+      // Audit trail for dismissal
+      if (ledgerRow?.id) {
+        await onDecisionDismissed({
+          decisionId: ledgerRow.id,
+          organizationId,
+          userId: user?.id ?? null,
+          reason,
+          recommendedAction: decision.recommendation.recommendedAction,
+        });
+      }
       setDecisions(prev => prev.filter(d => d.id !== decision.id));
       setConfirmation({ decisionTitle: decision.title, action: "dismissed" });
     } catch {
