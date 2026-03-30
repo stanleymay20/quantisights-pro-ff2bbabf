@@ -92,11 +92,13 @@ Deno.serve(async (req: Request) => {
       .eq("auto_cleanup", true)
       .is("last_cleanup_at", null);
 
+    await guard.succeed({ results });
     return new Response(
       JSON.stringify({ success: true, results }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err: unknown) {
+    await guard.fail(err);
     return new Response(
       JSON.stringify({ error: err instanceof Error ? err.message : String(err) }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

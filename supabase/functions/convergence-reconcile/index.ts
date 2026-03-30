@@ -230,11 +230,13 @@ serve(async (req) => {
 
     console.log(JSON.stringify(summary));
 
+    await guard.succeed(summary);
     return new Response(JSON.stringify(summary), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
     console.error("convergence-reconcile error:", e);
+    await guard.fail(e);
     return new Response(
       JSON.stringify({ error: e instanceof Error ? e.message : "Internal error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

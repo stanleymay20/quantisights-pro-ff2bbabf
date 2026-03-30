@@ -243,6 +243,7 @@ serve(async (req) => {
       }
 
       log.info("Cron batch calibration complete", { calibrated });
+      await guard.succeed({ calibrated });
       return new Response(JSON.stringify({ success: true, calibrated }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
