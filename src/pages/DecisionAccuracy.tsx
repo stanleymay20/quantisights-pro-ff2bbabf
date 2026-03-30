@@ -261,7 +261,7 @@ const DecisionAccuracy = () => {
           </>
         )}
 
-        <IntelligenceDisclaimer context="decision-accuracy" />
+        <IntelligenceDisclaimer context="general" />
       </div>
     </div>
   );

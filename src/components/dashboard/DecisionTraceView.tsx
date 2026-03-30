@@ -130,7 +130,7 @@ const DecisionTraceView = ({ decisionId, organizationId }: DecisionTraceViewProp
           : outcome
             ? `Pending evaluation (window: ${outcome.evaluation_window_days}d)`
             : "No outcome record yet",
-        timestamp: outcome?.evaluated_at,
+        timestamp: outcome?.evaluation_date,
       });
 
       // 6. Calibration
