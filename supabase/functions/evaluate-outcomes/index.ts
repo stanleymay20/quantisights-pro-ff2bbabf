@@ -194,6 +194,7 @@ Deno.serve(async (req) => {
       }
 
       log.info("Cron batch evaluation complete", { totalEvaluated });
+      await guard.succeed({ evaluated: totalEvaluated });
       return new Response(JSON.stringify({ success: true, evaluated: totalEvaluated }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
