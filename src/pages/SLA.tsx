@@ -261,7 +261,7 @@ const SLA = () => {
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-sm">
                   <Mail className="w-4 h-4 text-primary" />
-                  <a href={`mailto:${CONTACT.supportEmail}`} className="text-primary hover:underline">{CONTACT.supportEmail}</a>
+                  <a href={`mailto:${CONTACT.email.general}`} className="text-primary hover:underline">{CONTACT.email.general}</a>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <FileText className="w-4 h-4 text-primary" />

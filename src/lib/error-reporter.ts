@@ -52,8 +52,8 @@ async function flushErrors(): Promise<void> {
 
     // Best-effort log to audit trail — don't block app
     for (const err of batch) {
-      await supabase.from("audit_log").insert({
-        organization_id: "00000000-0000-0000-0000-000000000000", // Will be overridden by RLS context
+      await supabase.from("audit_log").insert([{
+        organization_id: "00000000-0000-0000-0000-000000000000",
         action_type: "client_error",
         resource_type: "frontend",
         actor_type: "system",
@@ -65,7 +65,7 @@ async function flushErrors(): Promise<void> {
           stack: err.stack?.substring(0, 500),
           url: typeof window !== "undefined" ? window.location.href : undefined,
         } as Record<string, unknown>,
-      }).then(() => {/* ignore result */});
+      }]).then(() => {/* ignore result */});
     }
   } catch {
     // Silent — error reporting should never crash the app
