@@ -5,11 +5,11 @@ import { ArrowRight, ShieldCheck, Target, AlertTriangle, BarChart3, Database, Ca
 import heroVisual from "@/assets/hero-visual.png";
 
 const CAPABILITY_PILLS = [
-  { icon: Cable, label: "Enterprise Data Connectors" },
-  { icon: ShieldCheck, label: "Decision Audit Trails" },
-  { icon: Target, label: "Forecast Calibration" },
-  { icon: AlertTriangle, label: "Overconfidence Detection" },
-  { icon: BarChart3, label: "Board-Ready Defensibility" },
+  { icon: Cable, label: "Data Connectors" },
+  { icon: ShieldCheck, label: "Audit Trails" },
+  { icon: Target, label: "Calibration" },
+  { icon: AlertTriangle, label: "Bias Detection" },
+  { icon: BarChart3, label: "Board-Ready" },
 ];
 
 const HeroSection = forwardRef<HTMLElement>((_, ref) => {
