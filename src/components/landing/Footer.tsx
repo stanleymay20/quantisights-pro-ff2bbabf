@@ -15,9 +15,17 @@ const FOOTER_SECTIONS = [
     ],
   },
   {
+    title: "Enterprise Trust",
+    links: [
+      { label: "System Status", to: "/status" },
+      { label: "SLA & Incident Response", to: "/sla" },
+      { label: "Security", to: "/security" },
+      { label: "Documentation", to: "/docs" },
+    ],
+  },
+  {
     title: "Legal & Compliance",
     links: [
-      { label: "Security", to: "/security" },
       { label: "Privacy Policy", to: "/privacy" },
       { label: "Terms of Service", to: "/terms" },
       { label: "Cookie Policy", to: "/cookies" },

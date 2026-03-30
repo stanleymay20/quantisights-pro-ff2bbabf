@@ -78,6 +78,7 @@ const navSections: NavSection[] = [
       { icon: Sparkles, label: "Forecasting", path: "/forecasting" },
       { icon: Target, label: "Benchmarking", path: "/benchmarking" },
       { icon: Award, label: "Calibration", path: "/calibration" },
+      { icon: Target, label: "Decision Accuracy", path: "/decision-accuracy" },
       { icon: MessageSquare, label: "Ask Quantivis", path: "/ask" },
     ],
   },

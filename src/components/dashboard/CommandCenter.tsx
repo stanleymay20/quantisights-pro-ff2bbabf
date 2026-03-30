@@ -11,6 +11,7 @@ import CrossContextAnalytics from "./CrossContextAnalytics";
 import DecisionContextPanel from "./DecisionContextPanel";
 import DataQualityScorecard from "./DataQualityScorecard";
 import BoardroomBrief from "./BoardroomBrief";
+import WhatChangedWidget from "./WhatChangedWidget";
 import { useDecisionContexts, type DecisionContext } from "@/hooks/useDecisionContexts";
 import type { Insight } from "@/hooks/useInsights";
 import type { MetricTypeSummary } from "@/hooks/useMetrics";
@@ -81,6 +82,8 @@ const CommandCenter = memo(({
         onCreateContext={createContext}
         onArchiveContext={archiveContext}
       />
+
+      <WhatChangedWidget organizationId={organizationId} />
 
       <BoardroomBrief
         insights={insights}
