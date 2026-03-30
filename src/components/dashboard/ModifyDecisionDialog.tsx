@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2, Save } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { onDecisionApproved } from "@/lib/decision-lifecycle";
 import { useToast } from "@/hooks/use-toast";
 import type { EnrichedDecision } from "./DecisionQueue";
 

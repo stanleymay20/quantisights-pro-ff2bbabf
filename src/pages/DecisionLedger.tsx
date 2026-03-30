@@ -27,6 +27,7 @@ import LazyInputWarning from "@/components/dashboard/LazyInputWarning";
 import DatasetRequired from "@/components/layout/DatasetRequired";
 import ExecutionTimeline from "@/components/execution/ExecutionTimeline";
 import DecisionReplayPanel from "@/components/execution/DecisionReplayPanel";
+import { onDecisionApproved, onExecutionStatusChanged } from "@/lib/decision-lifecycle";
 
 interface Decision {
   id: string;

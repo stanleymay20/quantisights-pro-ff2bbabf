@@ -14,6 +14,7 @@ import OutputClassificationBadge from "./OutputClassificationBadge";
 import TraceabilityPanel from "./TraceabilityPanel";
 import DismissReasonDialog from "./DismissReasonDialog";
 import { useBuildDecisionQueue, type EnrichedDecision } from "@/hooks/useBuildDecisionQueue";
+import { onDecisionApproved } from "@/lib/decision-lifecycle";
 import type { Insight } from "@/hooks/useInsights";
 
 export type { EnrichedDecision };
