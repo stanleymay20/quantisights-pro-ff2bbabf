@@ -19,6 +19,10 @@ Deno.serve(async (req: Request) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") return corsPreflightResponse(req);
 
+  // Advisory lock — prevent overlapping cron runs
+  const guard = await cronGuard("retention-cleanup");
+  if (!guard.acquired) return guard.earlyResponse(corsHeaders);
+
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
