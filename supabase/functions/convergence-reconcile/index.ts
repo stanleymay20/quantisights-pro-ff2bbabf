@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders, corsPreflightResponse } from "../_shared/cors.ts";
+import { cronGuard } from "../_shared/cron-guard.ts";
 
 // --- Configurable thresholds via env vars ---
 function envFloat(key: string, fallback: number): number {
@@ -117,6 +118,10 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return corsPreflightResponse(req);
   const corsHeaders = getCorsHeaders(req);
 
+  // Advisory lock — prevent overlapping cron runs
+  const guard = await cronGuard("convergence-reconcile");
+  if (!guard.acquired) return guard.earlyResponse(corsHeaders);
+
   const startTime = Date.now();
   const cfg = getConvergenceConfig();
 
@@ -225,11 +230,13 @@ serve(async (req) => {
 
     console.log(JSON.stringify(summary));
 
+    await guard.succeed(summary);
     return new Response(JSON.stringify(summary), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
     console.error("convergence-reconcile error:", e);
+    await guard.fail(e);
     return new Response(
       JSON.stringify({ error: e instanceof Error ? e.message : "Internal error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders, corsPreflightResponse } from "../_shared/cors.ts";
 import { createLogger } from "../_shared/logger.ts";
+import { cronGuard } from "../_shared/cron-guard.ts";
 
 /**
  * Health Check Endpoint
@@ -20,6 +21,10 @@ serve(async (req) => {
   if (req.method === "OPTIONS") {
     return corsPreflightResponse(req);
   }
+
+  // Advisory lock — prevent overlapping cron runs
+  const guard = await cronGuard("health-check");
+  if (!guard.acquired) return guard.earlyResponse(corsHeaders);
 
   const start = Date.now();
   const checks: Record<string, { status: string; latency_ms?: number }> = {};
@@ -81,22 +86,8 @@ serve(async (req) => {
   const overallStatus = allHealthy ? "healthy" : "degraded";
   const httpStatus = allHealthy ? 200 : 503;
 
-  // Log cron run for observability
-  try {
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-      { auth: { persistSession: false } }
-    );
-    await supabase.from("cron_run_log").insert({
-      job_name: "health-check",
-      status: overallStatus,
-      duration_ms: Date.now() - start,
-      metadata: checks,
-    });
-  } catch {
-    // Non-critical — don't fail health check if logging fails
-  }
+  // Log to cron_run_log via guard
+  await guard.succeed({ status: overallStatus, checks });
 
   return new Response(
     JSON.stringify({

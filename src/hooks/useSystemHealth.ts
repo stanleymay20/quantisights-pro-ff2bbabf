@@ -1,6 +1,16 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
+export interface CronJobHealth {
+  job_name: string;
+  last_status: string;
+  last_completed_at: string | null;
+  last_duration_ms: number | null;
+  last_error: string | null;
+  runs_last_24h: number;
+  failures_last_24h: number;
+}
+
 export interface SystemHealthMetrics {
   totalDecisions: number;
   completedDecisions: number;
@@ -14,7 +24,18 @@ export interface SystemHealthMetrics {
   openAdvisories: number;
   insightsLast24h: number;
   avgConfidence: number | null;
+  cronJobs: CronJobHealth[];
 }
+
+const CRITICAL_JOBS = [
+  "evaluate-outcomes",
+  "adaptive-calibration",
+  "retention-cleanup",
+  "morning-brief",
+  "convergence-reconcile",
+  "health-check",
+  "pipeline-orchestrator",
+];
 
 export const useSystemHealth = (orgId: string | null) => {
   const [health, setHealth] = useState<SystemHealthMetrics | null>(null);
@@ -25,6 +46,8 @@ export const useSystemHealth = (orgId: string | null) => {
     setLoading(true);
 
     try {
+      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
       // Batch all queries in parallel
       const [
         decisionsRes,
@@ -32,6 +55,7 @@ export const useSystemHealth = (orgId: string | null) => {
         calibrationRes,
         advisoriesRes,
         insightsRes,
+        cronLogsRes,
       ] = await Promise.all([
         supabase
           .from("decision_ledger")
@@ -59,12 +83,19 @@ export const useSystemHealth = (orgId: string | null) => {
           .from("insights")
           .select("id")
           .eq("organization_id", orgId)
-          .gte("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()),
+          .gte("created_at", twentyFourHoursAgo),
+        supabase
+          .from("cron_run_log")
+          .select("job_name, status, completed_at, duration_ms, error_message, started_at")
+          .gte("started_at", twentyFourHoursAgo)
+          .order("started_at", { ascending: false })
+          .limit(500),
       ]);
 
       const decisions = decisionsRes.data || [];
       const outcomes = outcomesRes.data || [];
       const calModel = calibrationRes.data?.[0];
+      const cronLogs = cronLogsRes.data || [];
 
       const totalDecisions = decisions.length;
       const completedDecisions = decisions.filter(d => d.execution_status === "completed").length;
@@ -82,6 +113,23 @@ export const useSystemHealth = (orgId: string | null) => {
         ? confidenceValues.reduce((s, v) => s + v, 0) / confidenceValues.length
         : null;
 
+      // Build cron job health from logs
+      const cronJobs: CronJobHealth[] = CRITICAL_JOBS.map(jobName => {
+        const jobLogs = cronLogs.filter(l => l.job_name === jobName);
+        const latest = jobLogs[0];
+        const failures = jobLogs.filter(l => l.status === "failed").length;
+
+        return {
+          job_name: jobName,
+          last_status: latest?.status || "no_data",
+          last_completed_at: latest?.completed_at || null,
+          last_duration_ms: latest?.duration_ms || null,
+          last_error: latest?.status === "failed" ? latest?.error_message || null : null,
+          runs_last_24h: jobLogs.filter(l => l.status !== "skipped_overlap").length,
+          failures_last_24h: failures,
+        };
+      });
+
       setHealth({
         totalDecisions,
         completedDecisions,
@@ -95,6 +143,7 @@ export const useSystemHealth = (orgId: string | null) => {
         openAdvisories: advisoriesRes.data?.length ?? 0,
         insightsLast24h: insightsRes.data?.length ?? 0,
         avgConfidence: avgConfidence ? Math.round(avgConfidence * 10) / 10 : null,
+        cronJobs,
       });
     } catch (err) {
       console.error("System health fetch error:", err);

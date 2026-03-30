@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders, corsPreflightResponse } from "../_shared/cors.ts";
+import { cronGuard } from "../_shared/cron-guard.ts";
 
 // Mapping from retention data_category to the table(s) that should be cleaned
 const CATEGORY_TABLE_MAP: Record<string, { table: string; dateColumn: string }[]> = {
@@ -17,6 +18,10 @@ const CATEGORY_TABLE_MAP: Record<string, { table: string; dateColumn: string }[]
 Deno.serve(async (req: Request) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") return corsPreflightResponse(req);
+
+  // Advisory lock — prevent overlapping cron runs
+  const guard = await cronGuard("retention-cleanup");
+  if (!guard.acquired) return guard.earlyResponse(corsHeaders);
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -87,11 +92,13 @@ Deno.serve(async (req: Request) => {
       .eq("auto_cleanup", true)
       .is("last_cleanup_at", null);
 
+    await guard.succeed({ results });
     return new Response(
       JSON.stringify({ success: true, results }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err: unknown) {
+    await guard.fail(err);
     return new Response(
       JSON.stringify({ error: err instanceof Error ? err.message : String(err) }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

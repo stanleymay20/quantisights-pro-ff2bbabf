@@ -1,9 +1,14 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { getCorsHeaders, corsPreflightResponse } from "../_shared/cors.ts";
+import { cronGuard } from "../_shared/cron-guard.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return corsPreflightResponse(req);
   const corsHeaders = getCorsHeaders(req);
+
+  // Advisory lock — prevent overlapping cron runs
+  const guard = await cronGuard("morning-brief");
+  if (!guard.acquired) return guard.earlyResponse(corsHeaders);
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -190,12 +195,14 @@ Deno.serve(async (req) => {
       }
     }
 
+    await guard.succeed({ sent: totalSent });
     return new Response(
       JSON.stringify({ success: true, sent: totalSent }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error: unknown) {
     console.error("Morning brief error:", error);
+    await guard.fail(error);
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : String(error) }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

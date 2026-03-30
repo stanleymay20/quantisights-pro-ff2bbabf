@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders, corsPreflightResponse } from "../_shared/cors.ts";
 import { createLogger } from "../_shared/logger.ts";
+import { cronGuard } from "../_shared/cron-guard.ts";
 
 /**
  * Adaptive Calibration Engine v2
@@ -189,6 +190,10 @@ serve(async (req) => {
         }
       }
 
+      // Advisory lock — prevent overlapping cron runs
+      const guard = await cronGuard("adaptive-calibration");
+      if (!guard.acquired) return guard.earlyResponse(corsHeaders);
+
       log.info("Cron-triggered batch calibration starting");
       const { data: orgs } = await svc.from("organizations").select("id");
       let calibrated = 0;
@@ -238,6 +243,7 @@ serve(async (req) => {
       }
 
       log.info("Cron batch calibration complete", { calibrated });
+      await guard.succeed({ calibrated });
       return new Response(JSON.stringify({ success: true, calibrated }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

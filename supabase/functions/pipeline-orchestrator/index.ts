@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders, corsPreflightResponse } from "../_shared/cors.ts";
+import { cronGuard } from "../_shared/cron-guard.ts";
 
 /**
  * Pipeline Orchestrator — Enterprise Scheduled Sync Engine
@@ -29,6 +30,10 @@ interface SyncSchedule {
 serve(async (req) => {
   if (req.method === "OPTIONS") return corsPreflightResponse(req);
   const corsHeaders = getCorsHeaders(req);
+
+  // Advisory lock — prevent overlapping cron runs
+  const guard = await cronGuard("pipeline-orchestrator");
+  if (!guard.acquired) return guard.earlyResponse(corsHeaders);
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -157,6 +162,12 @@ serve(async (req) => {
       .eq("status", "failed")
       .gte("created_at", new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString());
 
+    await guard.succeed({ syncs_processed: results.length, pipeline_health: {
+      active_schedules: totalActive || 0,
+      failed_last_24h: totalFailed || 0,
+      health_status: (totalFailed || 0) === 0 ? "healthy" : (totalFailed || 0) < 3 ? "degraded" : "critical",
+    }});
+
     return new Response(JSON.stringify({
       success: true,
       executed_at: now.toISOString(),
@@ -172,6 +183,7 @@ serve(async (req) => {
     });
   } catch (err: unknown) {
     console.error("pipeline-orchestrator error:", err);
+    await guard.fail(err);
     return new Response(JSON.stringify({ error: err instanceof Error ? err.message : String(err) }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
