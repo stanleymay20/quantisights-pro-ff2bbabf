@@ -146,33 +146,34 @@ const SystemHealthDashboard = ({ orgId }: Props) => {
         </Card>
       </div>
 
-      {/* Pipeline Status */}
-      <Card className="border border-border/50">
-        <CardContent className="pt-3 pb-2 px-3">
-          <div className="flex items-center gap-1.5 mb-2">
-            <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
-            <span className="text-xs font-medium text-foreground">Decision Pipeline</span>
-          </div>
-          <div className="space-y-1.5 text-xs">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Total Decisions</span>
-              <span className="font-medium text-foreground">{health.totalDecisions}</span>
+        {/* Pipeline Status */}
+        <Card className="border border-border/50">
+          <CardContent className="pt-3 pb-2 px-3">
+            <div className="flex items-center gap-1.5 mb-2">
+              <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
+              <span className="text-xs font-medium text-foreground">Decision Pipeline</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Completed</span>
-              <span className="font-medium text-foreground">{health.completedDecisions}</span>
+            <div className="space-y-1.5 text-xs">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Total Decisions</span>
+                <span className="font-medium text-foreground">{health.totalDecisions}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Completed</span>
+                <span className="font-medium text-foreground">{health.completedDecisions}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Outcomes Measured</span>
+                <span className="font-medium text-emerald-500">{health.evaluatedOutcomes}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Pending Evaluation</span>
+                <span className="font-medium text-amber-500">{health.pendingOutcomes}</span>
+              </div>
             </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Outcomes Measured</span>
-              <span className="font-medium text-emerald-500">{health.evaluatedOutcomes}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Pending Evaluation</span>
-              <span className="font-medium text-amber-500">{health.pendingOutcomes}</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

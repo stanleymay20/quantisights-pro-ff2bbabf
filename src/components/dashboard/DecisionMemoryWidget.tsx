@@ -273,6 +273,7 @@ const DecisionMemoryWidget = memo(({ organizationId }: DecisionMemoryWidgetProps
               </div>
             ))}
           </div>
+          </div>
         </>
       )}
     </motion.div>

@@ -213,14 +213,25 @@ const HeroInsight = memo(({ insights }: HeroInsightProps) => {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2, duration: 0.5, ease: "easeOut" }}
-      className={`rounded-xl border p-5 flex items-start gap-4 cursor-pointer transition-all shadow-sm hover:shadow-md group ${severityStyles}`}
+      className={`rounded-xl border p-3 sm:p-5 flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4 cursor-pointer transition-all shadow-sm hover:shadow-md group ${severityStyles}`}
       onClick={() => navigate("/diagnostics")}
     >
-      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5 transition-colors ${iconBg}`}>
-        <AlertTriangle className={`w-5 h-5 ${accentColor}`} />
+      <div className="flex items-start gap-3 sm:contents">
+        <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5 transition-colors ${iconBg}`}>
+          <AlertTriangle className={`w-4 h-4 sm:w-5 sm:h-5 ${accentColor}`} />
+        </div>
+        <div className="flex-1 min-w-0 sm:hidden">
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className={`text-[10px] font-bold uppercase tracking-widest ${accentColor}`}>
+              {intel.strength === "strong" ? "Strong Signal" : "Signal"}
+            </p>
+            {confidence > 0 && <ConfidenceBadge confidence={confidence} className="text-[10px]" />}
+          </div>
+        </div>
       </div>
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+        {/* Desktop header */}
+        <div className="hidden sm:flex items-center gap-2 mb-1.5 flex-wrap">
           <p className={`text-[10px] font-bold uppercase tracking-widest ${accentColor}`}>
             {intel.strength === "strong" ? "Strong Signal" : "Signal"}
           </p>
@@ -246,50 +257,36 @@ const HeroInsight = memo(({ insights }: HeroInsightProps) => {
         {/* Estimated impact */}
         <div className="flex items-center gap-1 mt-1">
           <p className="text-[11px] text-muted-foreground">
-            Estimated impact: {intel.impact}
+            Impact: {intel.impact}
           </p>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Info className="w-3 h-3 text-muted-foreground/50 cursor-help shrink-0" />
-            </TooltipTrigger>
-            <TooltipContent side="top" className="max-w-xs text-xs">
-              Impact ranges are modeled estimates based on signal category and observed performance patterns. Actual results depend on implementation context and data completeness.
-            </TooltipContent>
-          </Tooltip>
         </div>
 
-        {/* Consequence of inaction — the conviction layer */}
-        <div className="flex items-start gap-1.5 mt-1.5">
+        {/* Consequence of inaction — hidden on mobile */}
+        <div className="hidden sm:flex items-start gap-1.5 mt-1.5">
           <Clock className="w-3 h-3 text-muted-foreground/60 mt-0.5 shrink-0" />
           <p className="text-[11px] text-muted-foreground/70 italic leading-snug">
             If unaddressed: {intel.inaction}
           </p>
         </div>
 
-        {/* Execution metadata — owner, timeframe, readiness */}
-        <div className="flex items-center gap-3 flex-wrap mt-2 pt-2 border-t border-border/20">
+        {/* Execution metadata — compact on mobile */}
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap mt-2 pt-2 border-t border-border/20">
           <span className="text-[10px] text-muted-foreground flex items-center gap-1">
             <User className="w-2.5 h-2.5" /> <span className="font-semibold text-foreground">{intel.owner}</span>
           </span>
           <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-            <CalendarDays className="w-2.5 h-2.5" /> Within {intel.timeframeDays}d
+            <CalendarDays className="w-2.5 h-2.5" /> {intel.timeframeDays}d
           </span>
           <span className={`text-[10px] flex items-center gap-1 ${READINESS_STYLES[readiness.level] ?? "text-muted-foreground"}`}>
             <Gauge className="w-2.5 h-2.5" />
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span className="font-semibold cursor-help">Readiness: {readiness.level}</span>
-              </TooltipTrigger>
-              <TooltipContent side="top" className="max-w-xs text-xs">
-                {readiness.reason}
-              </TooltipContent>
-            </Tooltip>
+            <span className="font-semibold">{readiness.level}</span>
           </span>
         </div>
 
-        <p className="text-[10px] text-muted-foreground/50 mt-1.5">{reasoning}</p>
+        {/* Reasoning + evidence — hidden on mobile */}
+        <p className="text-[10px] text-muted-foreground/50 mt-1.5 hidden sm:block">{reasoning}</p>
         {topInsight.category && (
-          <div className="flex items-center justify-between mt-2">
+          <div className="hidden sm:flex items-center justify-between mt-2">
             <div className="flex items-center gap-1.5">
               <TrendingDown className="w-3 h-3 text-muted-foreground" />
               <span className="text-[11px] text-muted-foreground">
@@ -302,9 +299,13 @@ const HeroInsight = memo(({ insights }: HeroInsightProps) => {
           </div>
         )}
       </div>
-      <span className={`shrink-0 flex items-center gap-1 text-[11px] font-semibold mt-1 opacity-70 group-hover:opacity-100 transition-opacity ${accentColor}`}>
+      {/* Resolve: bottom CTA on mobile, side on desktop */}
+      <span className={`hidden sm:flex shrink-0 items-center gap-1 text-[11px] font-semibold mt-1 opacity-70 group-hover:opacity-100 transition-opacity ${accentColor}`}>
         Resolve <ArrowRight className="w-3.5 h-3.5" />
       </span>
+      <div className={`sm:hidden flex items-center justify-center gap-1.5 py-2 rounded-lg font-semibold text-xs ${accentColor} bg-background/60 border border-current/20 mt-1`}>
+        Resolve <ArrowRight className="w-3.5 h-3.5" />
+      </div>
     </motion.div>
   );
 });

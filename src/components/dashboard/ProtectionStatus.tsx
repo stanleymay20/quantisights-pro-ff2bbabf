@@ -168,11 +168,11 @@ const ProtectionStatus = memo(({ organizationId, calibrationScore, pendingDecisi
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="flex overflow-x-auto gap-2 sm:grid sm:grid-cols-2 md:grid-cols-4 sm:gap-3 pb-1 sm:pb-0 scrollbar-hide">
         {drivers.map(driver => (
           <div
             key={driver.label}
-            className="flex items-center gap-2.5 p-2.5 rounded-lg bg-background/50 border border-border/20"
+            className="flex items-center gap-2 sm:gap-2.5 p-2 sm:p-2.5 rounded-lg bg-background/50 border border-border/20 shrink-0 min-w-[120px] sm:min-w-0"
           >
             <driver.icon className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
             <div className="min-w-0">
