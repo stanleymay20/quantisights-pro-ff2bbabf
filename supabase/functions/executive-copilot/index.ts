@@ -80,8 +80,7 @@ serve(async (req) => {
     });
     const serviceClient = createClient(supabaseUrl, serviceKey);
 
-    // Use getClaims() for secure JWT validation
-    const token = authHeader.replace("Bearer ", "");
+    // Secure JWT validation via getUser()
     const { data: { user }, error: authErr } = await userClient.auth.getUser();
     if (authErr || !user?.id) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -89,7 +88,7 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    const user = { id: user?.id as string };
+    const userId = user.id;
 
     const { message, session_id, role_type, organization_id, dataset_id, dataset_name } = await req.json();
 
