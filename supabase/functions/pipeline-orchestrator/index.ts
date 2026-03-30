@@ -19,6 +19,8 @@ interface SyncSchedule {
   is_active: boolean;
   next_run_at: string;
   last_run_at: string | null;
+  last_error: string | null;
+  run_count: number;
   retry_count: number;
   max_retries: number;
   backoff_minutes: number;

@@ -81,6 +81,23 @@ serve(async (req) => {
   const overallStatus = allHealthy ? "healthy" : "degraded";
   const httpStatus = allHealthy ? 200 : 503;
 
+  // Log cron run for observability
+  try {
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+      { auth: { persistSession: false } }
+    );
+    await supabase.from("cron_run_log").insert({
+      job_name: "health-check",
+      status: overallStatus,
+      duration_ms: Date.now() - start,
+      metadata: checks,
+    });
+  } catch {
+    // Non-critical — don't fail health check if logging fails
+  }
+
   return new Response(
     JSON.stringify({
       status: overallStatus,
