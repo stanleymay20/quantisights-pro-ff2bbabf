@@ -85,8 +85,8 @@ serve(async (req) => {
       .from("team_invitations")
       .insert({
         organization_id,
-        email,
-        role: role || "viewer",
+        email: email.toLowerCase().trim(),
+        role: sanitizedRole,
         invited_by: user.id,
       })
       .select("id, token")
