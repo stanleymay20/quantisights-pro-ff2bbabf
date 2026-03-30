@@ -77,7 +77,7 @@ const HeroSection = forwardRef<HTMLElement>((_, ref) => {
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.5 + i * 0.08 }}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg border border-border bg-card/60 backdrop-blur-sm text-sm font-medium text-foreground/80"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-card/60 backdrop-blur-sm text-xs sm:text-sm font-medium text-foreground/80"
                 >
                   <pill.icon className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
                   {pill.label}
