@@ -126,7 +126,7 @@ const DecisionTraceView = ({ decisionId, organizationId }: DecisionTraceViewProp
             ? "pending"
             : "missing",
         detail: outcome?.outcome_status === "evaluated"
-          ? `Δ = ${outcome.actual_change?.toFixed(2) ?? "?"} | Accuracy: ${outcome.accuracy_score?.toFixed(0) ?? "?"}%`
+          ? `Accuracy: ${outcome.accuracy_score?.toFixed(0) ?? "?"}% | Expected Δ: ${outcome.expected_change?.toFixed(2) ?? "?"}`
           : outcome
             ? `Pending evaluation (window: ${outcome.evaluation_window_days}d)`
             : "No outcome record yet",
