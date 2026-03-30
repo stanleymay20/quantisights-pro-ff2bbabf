@@ -1,6 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders, corsPreflightResponse } from "../_shared/cors.ts";
-  const corsHeaders = getCorsHeaders(req);
 
 // Mapping from retention data_category to the table(s) that should be cleaned
 const CATEGORY_TABLE_MAP: Record<string, { table: string; dateColumn: string }[]> = {
