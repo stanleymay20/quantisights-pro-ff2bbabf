@@ -22,8 +22,25 @@ serve(async (req) => {
     const user = userData.user;
     if (!user?.email) throw new Error("Not authenticated");
 
-    const { email, role, organization_id } = await req.json();
+    const body = await req.json();
+    const { email, role, organization_id } = body;
     if (!email || !organization_id) throw new Error("email and organization_id required");
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (typeof email !== "string" || !emailRegex.test(email) || email.length > 255) {
+      throw new Error("Invalid email format");
+    }
+
+    // Validate role is an allowed value
+    const allowedRoles = ["owner", "admin", "analyst", "executive", "viewer"];
+    const sanitizedRole = role && allowedRoles.includes(role) ? role : "viewer";
+
+    // Validate organization_id is UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (typeof organization_id !== "string" || !uuidRegex.test(organization_id)) {
+      throw new Error("Invalid organization_id format");
+    }
 
     // Verify caller is admin/owner
     const { data: callerRole } = await supabase.rpc("get_user_org_role", {
