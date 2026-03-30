@@ -81,7 +81,7 @@ const BoardroomBrief = memo(({ insights, pendingDecisions, calibrationScore, top
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`rounded-xl border ${cfg.border} ${cfg.bg} p-5`}
+      className={`rounded-xl border ${cfg.border} ${cfg.bg} p-3 sm:p-5`}
     >
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2.5">
@@ -99,13 +99,13 @@ const BoardroomBrief = memo(({ insights, pendingDecisions, calibrationScore, top
         </span>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-1.5 sm:space-y-2">
         <p className="text-sm font-medium text-foreground leading-snug">{brief.signalLine}</p>
         <p className="text-xs text-muted-foreground leading-relaxed">{brief.actionLine}</p>
         {brief.riskLine && (
-          <p className="text-xs text-muted-foreground/80 leading-relaxed italic">{brief.riskLine}</p>
+          <p className="text-xs text-muted-foreground/80 leading-relaxed italic hidden sm:block">{brief.riskLine}</p>
         )}
-        <p className="text-[11px] text-muted-foreground/60">{brief.calLine}</p>
+        <p className="text-[11px] text-muted-foreground/60 hidden sm:block">{brief.calLine}</p>
       </div>
 
       <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/20">

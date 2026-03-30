@@ -39,9 +39,9 @@ const IntelligenceStatusBar = ({ hasData, insights, openAdvisories = 0, riskLeve
   const statusColor = signals === 0 ? "text-success" : signals <= 2 ? "text-warning" : "text-destructive";
 
   return (
-    <div className="h-9 border-b border-border/30 bg-card/40 backdrop-blur-sm flex items-center px-3 md:px-8 gap-3 md:gap-6 shrink-0 overflow-x-auto scrollbar-hide">
+    <div className="h-7 sm:h-9 border-b border-border/30 bg-card/40 backdrop-blur-sm flex items-center px-3 md:px-8 gap-2 sm:gap-3 md:gap-6 shrink-0 overflow-x-auto scrollbar-hide">
       {/* System status */}
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
         <div className={`w-1.5 h-1.5 rounded-full ${signals === 0 ? "bg-success" : signals <= 2 ? "bg-warning" : "bg-destructive"}`} />
         <span className={`text-[11px] font-semibold uppercase tracking-wider ${statusColor}`}>
           {systemStatus}
@@ -53,24 +53,21 @@ const IntelligenceStatusBar = ({ hasData, insights, openAdvisories = 0, riskLeve
       {/* Risk level */}
       <div className="flex items-center gap-1.5 shrink-0">
         <Shield className={`w-3 h-3 ${riskStyle.color}`} />
-        <span className="text-[11px] text-muted-foreground hidden sm:inline">Risk:</span>
         <span className={`text-[11px] font-semibold ${riskStyle.color}`}>{riskStyle.label}</span>
       </div>
 
-      <span className="w-px h-3.5 bg-border/50 shrink-0" />
-
-      {/* Signals */}
-      <div className="flex items-center gap-1.5 shrink-0">
+      {/* Signals — hidden on mobile */}
+      <span className="w-px h-3.5 bg-border/50 shrink-0 hidden sm:block" />
+      <div className="hidden sm:flex items-center gap-1.5 shrink-0">
         <AlertTriangle className="w-3 h-3 text-muted-foreground" />
-        <span className="text-[11px] text-muted-foreground hidden sm:inline">Signals:</span>
+        <span className="text-[11px] text-muted-foreground">Signals:</span>
         <span className={`text-[11px] font-semibold ${signals > 0 ? "text-warning" : "text-muted-foreground"}`}>
           {signals}
         </span>
       </div>
 
+      {/* Advisories — hidden on mobile */}
       <span className="w-px h-3.5 bg-border/50 shrink-0 hidden sm:block" />
-
-      {/* Open advisories - hidden on mobile */}
       <div className="hidden sm:flex items-center gap-1.5 shrink-0">
         <Lightbulb className="w-3 h-3 text-muted-foreground" />
         <span className="text-[11px] text-muted-foreground">Advisories:</span>
@@ -79,16 +76,15 @@ const IntelligenceStatusBar = ({ hasData, insights, openAdvisories = 0, riskLeve
         </span>
       </div>
 
+      {/* Insights — hidden on mobile */}
       <span className="w-px h-3.5 bg-border/50 shrink-0 hidden sm:block" />
-
-      {/* Insights - hidden on mobile */}
       <div className="hidden sm:flex items-center gap-1.5 shrink-0">
         <Activity className="w-3 h-3 text-muted-foreground" />
         <span className="text-[11px] text-muted-foreground">Insights:</span>
         <span className="text-[11px] font-semibold text-muted-foreground">{infoCount}</span>
       </div>
 
-      {/* Data Freshness */}
+      {/* Data Freshness — hidden on mobile */}
       {lastUpdated && (
         <>
           <span className="w-px h-3.5 bg-border/50 shrink-0 hidden md:block" />

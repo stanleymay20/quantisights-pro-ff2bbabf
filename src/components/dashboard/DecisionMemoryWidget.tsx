@@ -122,12 +122,16 @@ const DecisionMemoryWidget = memo(({ organizationId }: DecisionMemoryWidgetProps
     ? calibrationTrend.current - calibrationTrend.previous
     : null;
 
+  const [expanded, setExpanded] = useState(false);
+  const measuredCount = decisions.filter(d => d.outcome_measured_at != null).length;
+  const recalibratedCount = decisions.filter(d => d.calibration_error != null).length;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.3, duration: 0.4 }}
-      className="glass-card rounded-xl p-5 border border-border/30"
+      className="glass-card rounded-xl p-3 sm:p-5 border border-border/30"
     >
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
@@ -147,20 +151,41 @@ const DecisionMemoryWidget = memo(({ organizationId }: DecisionMemoryWidgetProps
       </div>
 
       {isEmpty ? (
-        <div className="p-4 rounded-lg bg-muted/20 border border-border/20 text-center">
+        <div className="p-3 sm:p-4 rounded-lg bg-muted/20 border border-border/20 text-center">
           <p className="text-xs text-muted-foreground leading-relaxed">
-            Quantivis records every decision with its confidence level and expected outcome.
-            When results arrive, the system compares predictions to reality — automatically correcting future recommendations.
-          </p>
-          <p className="text-[10px] text-muted-foreground/50 mt-2 italic">
-            Signal → Decision → Outcome → Calibration → Improved future accuracy
+            Records every decision with confidence and expected outcome, then compares predictions to reality.
           </p>
           <p className="text-[10px] text-primary mt-2 font-medium">
-            Each decision makes the system more accurate. Start building your organization's decision memory.
+            Start building your organization's decision memory.
           </p>
         </div>
       ) : (
         <>
+          {/* Mobile compact summary */}
+          <div className="sm:hidden">
+            <div className="flex items-center justify-between p-2.5 rounded-lg bg-muted/30">
+              <div className="text-xs">
+                <span className="font-semibold">{totalDecisions}</span> <span className="text-muted-foreground">decisions</span>
+                {measuredCount > 0 && <> · <span className="font-semibold text-success">{measuredCount}</span> <span className="text-muted-foreground">measured</span></>}
+                {recalibratedCount > 0 && <> · <span className="font-semibold text-primary">{recalibratedCount}</span> <span className="text-muted-foreground">recalibrated</span></>}
+              </div>
+              <button onClick={() => setExpanded(!expanded)} className="text-[10px] text-primary font-medium">{expanded ? "Less" : "More"}</button>
+            </div>
+            {calibrationTrend.current != null && (
+              <div className="flex items-center gap-2 mt-2 text-xs">
+                <span className="text-muted-foreground">Calibration:</span>
+                <span className="font-bold font-mono">{calibrationTrend.current}%</span>
+                {calDelta != null && calDelta !== 0 && (
+                  <span className={`text-[11px] font-medium ${calDelta > 0 ? "text-success" : "text-destructive"}`}>
+                    {calDelta > 0 ? "+" : ""}{calDelta.toFixed(1)}pp
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Desktop full view / mobile expanded */}
+          <div className={`${expanded ? "block" : "hidden"} sm:block`}>
           {/* Calibration Score */}
           {calibrationTrend.current != null && (
             <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 mb-3">
@@ -247,6 +272,7 @@ const DecisionMemoryWidget = memo(({ organizationId }: DecisionMemoryWidgetProps
                 <span className="text-[9px] text-muted-foreground/60">{stage}</span>
               </div>
             ))}
+          </div>
           </div>
         </>
       )}

@@ -53,7 +53,7 @@ const GlobalContextBar = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="h-7 border-b border-border/20 bg-muted/20 flex items-center px-3 md:px-8 gap-1 shrink-0 overflow-x-auto scrollbar-hide">
+    <div className="h-7 border-b border-border/20 bg-muted/20 hidden md:flex items-center px-3 md:px-8 gap-1 shrink-0 overflow-x-auto scrollbar-hide">
       <ContextChip
         icon={Building2}
         label={currentOrg?.name ?? null}

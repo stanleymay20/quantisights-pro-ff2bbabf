@@ -34,12 +34,12 @@ const CookieConsent = () => {
 
   return (
     <div
-      className={`fixed bottom-0 left-0 right-0 z-[100] p-4 md:p-6 transition-all duration-300 ease-out ${
+      className={`fixed bottom-0 left-0 right-0 z-[100] p-2 sm:p-4 md:p-6 pb-[env(safe-area-inset-bottom,8px)] transition-all duration-300 ease-out ${
         exiting ? "translate-y-full opacity-0" : "translate-y-0 opacity-100 animate-[slide-up_0.4s_ease-out]"
       }`}
       style={{ "--slide-up-from": "100px" } as React.CSSProperties}
     >
-      <div className="max-w-3xl mx-auto bg-card border border-border/60 rounded-2xl shadow-2xl backdrop-blur-xl p-5 md:p-6">
+      <div className="max-w-3xl mx-auto bg-card border border-border/60 rounded-2xl shadow-2xl backdrop-blur-xl p-3 sm:p-5 md:p-6">
         <div className="flex items-start gap-4">
           <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
             <Cookie className="w-5 h-5 text-primary" />
