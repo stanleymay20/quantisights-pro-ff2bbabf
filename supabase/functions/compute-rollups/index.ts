@@ -14,8 +14,10 @@ import { getCorsHeaders, corsPreflightResponse } from "../_shared/cors.ts";
  */
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") return corsPreflightResponse(req);try {
   const corsHeaders = getCorsHeaders(req);
+  if (req.method === "OPTIONS") return corsPreflightResponse(req);
+
+  try {
     const authHeader = req.headers.get("authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
