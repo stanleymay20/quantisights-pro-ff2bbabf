@@ -58,13 +58,13 @@ async function flushErrors(): Promise<void> {
         resource_type: "frontend",
         actor_type: "system",
         actor_id: session.user.id,
-        payload: {
+        payload: JSON.parse(JSON.stringify({
           message: err.message,
           severity: err.severity,
           context: err.context,
           stack: err.stack?.substring(0, 500),
           url: typeof window !== "undefined" ? window.location.href : undefined,
-        } as Record<string, unknown>,
+        })),
       }]).then(() => {/* ignore result */});
     }
   } catch {
