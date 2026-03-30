@@ -20,7 +20,7 @@ interface ModifyDecisionDialogProps {
   onSaved: (updated: Partial<EnrichedDecision>) => void;
 }
 
-const ModifyDecisionDialog = ({ decision, organizationId, open, onOpenChange, onSaved }: ModifyDecisionDialogProps) => {
+const ModifyDecisionDialog = ({ decision, organizationId, datasetId, open, onOpenChange, onSaved }: ModifyDecisionDialogProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
