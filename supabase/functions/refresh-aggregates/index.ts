@@ -42,13 +42,13 @@ serve(async (req) => {
       const userClient = createClient(supabaseUrl, anonKey, {
         global: { headers: { Authorization: authHeader } },
       });
-      const { data, error } = await userClient.auth.getClaims(token);
-      if (error || !data?.claims?.sub) {
+      const { data: { user }, error } = await userClient.auth.getUser();
+      if (error || !user?.id) {
         return new Response(JSON.stringify({ error: "Unauthorized" }), {
           status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      const userId = data.claims.sub as string;
+      const userId = user.id;
       // Verify org membership
       const { data: membership } = await supabase
         .from("organization_members")

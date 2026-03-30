@@ -20,13 +20,12 @@ serve(async (req) => {
       global: { headers: { Authorization: authHeader } },
     });
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data, error: authError } = await userClient.auth.getClaims(token);
-    if (authError || !data?.claims?.sub) {
+    const { data: { user }, error: authError } = await userClient.auth.getUser();
+    if (authError || !user?.id) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const user = { id: data.claims.sub as string, user_metadata: data.claims.user_metadata || {} };
+    const userInfo = { id: user.id, user_metadata: user.user_metadata || {} };
 
     const { ip_address, user_agent } = await req.json();
 

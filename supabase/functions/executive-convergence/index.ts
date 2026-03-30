@@ -180,13 +180,13 @@ serve(async (req) => {
 
     // Use getClaims() for secure JWT validation
     const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: authErr } = await userClient.auth.getClaims(token);
-    if (authErr || !claimsData?.claims?.sub) {
+    const { data: { user }, error: authErr } = await userClient.auth.getUser();
+    if (authErr || !user?.id) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    const userId = claimsData.claims.sub as string;
+    const userId = user?.id as string;
 
     const { organization_id, trigger } = await req.json();
 

@@ -22,8 +22,25 @@ serve(async (req) => {
     const user = userData.user;
     if (!user?.email) throw new Error("Not authenticated");
 
-    const { email, role, organization_id } = await req.json();
+    const body = await req.json();
+    const { email, role, organization_id } = body;
     if (!email || !organization_id) throw new Error("email and organization_id required");
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (typeof email !== "string" || !emailRegex.test(email) || email.length > 255) {
+      throw new Error("Invalid email format");
+    }
+
+    // Validate role is an allowed value
+    const allowedRoles = ["owner", "admin", "analyst", "executive", "viewer"];
+    const sanitizedRole = role && allowedRoles.includes(role) ? role : "viewer";
+
+    // Validate organization_id is UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (typeof organization_id !== "string" || !uuidRegex.test(organization_id)) {
+      throw new Error("Invalid organization_id format");
+    }
 
     // Verify caller is admin/owner
     const { data: callerRole } = await supabase.rpc("get_user_org_role", {
@@ -68,8 +85,8 @@ serve(async (req) => {
       .from("team_invitations")
       .insert({
         organization_id,
-        email,
-        role: role || "viewer",
+        email: email.toLowerCase().trim(),
+        role: sanitizedRole,
         invited_by: user.id,
       })
       .select("id, token")
@@ -82,7 +99,15 @@ serve(async (req) => {
     const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "noreply@quantivis.com";
 
     if (resendKey) {
-      const origin = req.headers.get("origin") || "https://quantisights-pro.lovable.app";
+      const rawOrigin = req.headers.get("origin") || "https://quantisights-pro.lovable.app";
+      // Validate origin against allowlist to prevent open redirect
+      const allowedOrigins = [
+        "https://quantisights-pro.lovable.app",
+        "https://quantivis.com",
+        "http://localhost:5173",
+        "http://localhost:8080",
+      ];
+      const origin = allowedOrigins.find(o => rawOrigin.startsWith(o)) || "https://quantisights-pro.lovable.app";
       const inviteUrl = `${origin}/accept-invite?token=${invitation.token}`;
 
       await fetch("https://api.resend.com/emails", {
@@ -99,7 +124,7 @@ serve(async (req) => {
             <div style="font-family: Inter, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
               <h1 style="color: #0ea5e9; font-size: 24px;">You're Invited</h1>
               <p style="color: #94a3b8; font-size: 16px;">
-                ${user.email} has invited you to join <strong>${org?.name || "their organization"}</strong> on Quantivis as a <strong>${role || "viewer"}</strong>.
+                ${user.email} has invited you to join <strong>${org?.name || "their organization"}</strong> on Quantivis as a <strong>${sanitizedRole}</strong>.
               </p>
               <a href="${inviteUrl}" style="display: inline-block; background: #0ea5e9; color: white; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-top: 20px;">
                 Accept Invitation

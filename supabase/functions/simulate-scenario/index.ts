@@ -124,14 +124,14 @@ serve(async (req) => {
 
     // Auth via JWT claims (enterprise standard)
     const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await userClient.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims?.sub) {
+    const { data: { user }, error: claimsError } = await userClient.auth.getUser();
+    if (claimsError || !user?.id) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    const userId = claimsData.claims.sub as string;
+    const userId = user?.id as string;
 
     const { scenario_id } = await req.json();
     if (!scenario_id) {

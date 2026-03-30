@@ -31,14 +31,14 @@ serve(async (req) => {
     const serviceClient = createClient(supabaseUrl, serviceKey);
 
     const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await userClient.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
+    const { data: { user }, error: claimsError } = await userClient.auth.getUser();
+    if (claimsError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    const userId = claimsData.claims.sub as string;
+    const userId = user?.id as string;
 
     const { kpi_id, dataset_id } = await req.json();
     if (!kpi_id) {
