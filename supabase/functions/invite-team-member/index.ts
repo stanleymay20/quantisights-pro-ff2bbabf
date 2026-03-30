@@ -124,7 +124,7 @@ serve(async (req) => {
             <div style="font-family: Inter, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
               <h1 style="color: #0ea5e9; font-size: 24px;">You're Invited</h1>
               <p style="color: #94a3b8; font-size: 16px;">
-                ${user.email} has invited you to join <strong>${org?.name || "their organization"}</strong> on Quantivis as a <strong>${role || "viewer"}</strong>.
+                ${user.email} has invited you to join <strong>${org?.name || "their organization"}</strong> on Quantivis as a <strong>${sanitizedRole}</strong>.
               </p>
               <a href="${inviteUrl}" style="display: inline-block; background: #0ea5e9; color: white; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-top: 20px;">
                 Accept Invitation
