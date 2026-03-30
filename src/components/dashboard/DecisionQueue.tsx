@@ -210,7 +210,7 @@ const DecisionQueue = memo(({
       if (decision.type === "signal" && decision.sourceId) {
         await supabase.from("insights").update({ is_read: true }).eq("id", decision.sourceId).eq("organization_id", organizationId);
       }
-      await supabase.from("decision_ledger").insert({
+      const { data: ledgerRow } = await supabase.from("decision_ledger").insert({
         organization_id: organizationId,
         recommended_action: decision.recommendation.recommendedAction,
         chosen_action: "Dismissed",
@@ -224,7 +224,18 @@ const DecisionQueue = memo(({
         decision_type: "strategic",
         decision_context_id: activeContextId ?? null,
         notes: reason ? `Dismiss reason: ${reason}` : "Dismissed without reason",
-      });
+      }).select("id").single();
+
+      // Audit trail for dismissal
+      if (ledgerRow?.id) {
+        await onDecisionDismissed({
+          decisionId: ledgerRow.id,
+          organizationId,
+          userId: user?.id ?? null,
+          reason,
+          recommendedAction: decision.recommendation.recommendedAction,
+        });
+      }
       setDecisions(prev => prev.filter(d => d.id !== decision.id));
       setConfirmation({ decisionTitle: decision.title, action: "dismissed" });
     } catch {
