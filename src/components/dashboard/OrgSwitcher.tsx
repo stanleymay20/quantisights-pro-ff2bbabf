@@ -18,7 +18,7 @@ const OrgSwitcher = ({ organizations, currentOrg, onSwitch }: OrgSwitcherProps) 
     return (
       <div className="flex items-center gap-1.5 text-sm min-w-0">
         <Building2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground shrink-0" />
-        <span className="font-medium truncate max-w-[100px] sm:max-w-[160px] text-xs sm:text-sm">{currentOrg?.name ?? "No Organization"}</span>
+        <span className="font-medium truncate max-w-[120px] sm:max-w-[160px] text-xs sm:text-sm">{currentOrg?.name ?? "No Organization"}</span>
       </div>
     );
   }
