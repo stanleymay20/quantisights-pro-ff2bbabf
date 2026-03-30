@@ -107,7 +107,8 @@ const Ebook = lazy(() => import("./pages/Ebook"));
 const FreeAnalysis = lazy(() => import("./pages/FreeAnalysis"));
 const EmbedDashboard = lazy(() => import("./pages/EmbedDashboard"));
 const PilotAudit = lazy(() => import("./pages/PilotAudit"));
-
+const SystemStatus = lazy(() => import("./pages/SystemStatus"));
+const SLA = lazy(() => import("./pages/SLA"));
 // ── Legal ──
 const Terms = lazy(() => import("./pages/Terms"));
 const Privacy = lazy(() => import("./pages/Privacy"));
@@ -210,6 +211,8 @@ const App = () => (
               <Route path="/pricing" element={<SafeRoute><Pricing /></SafeRoute>} />
               <Route path="/calibration" element={<SafeRoute><CalibrationAssessment /></SafeRoute>} />
               <Route path="/free-analysis" element={<SafeRoute><FreeAnalysis /></SafeRoute>} />
+              <Route path="/status" element={<SafeRoute><SystemStatus /></SafeRoute>} />
+              <Route path="/sla" element={<SafeRoute><SLA /></SafeRoute>} />
 
               {/* ══════ Marketing / Trust ══════ */}
               <Route path="/business-model" element={<SafeRoute><BusinessModel /></SafeRoute>} />
