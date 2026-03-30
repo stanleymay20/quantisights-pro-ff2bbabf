@@ -37,11 +37,11 @@ interface SyncJob {
 
 const CONNECTOR_TYPES = [
   { value: "stripe", label: "Stripe", desc: "Revenue, MRR, churn, subscriptions", secrets: ["STRIPE_SECRET_KEY"] },
-  { value: "ga4", label: "Google Analytics 4", desc: "Sessions, users, conversions, channels — Coming Soon", secrets: ["GA4_SERVICE_ACCOUNT_JSON", "GA4_PROPERTY_ID"] },
-  { value: "hubspot", label: "HubSpot", desc: "Pipeline, deals, contacts — Coming Soon", secrets: ["HUBSPOT_API_KEY"] },
-  { value: "quickbooks", label: "QuickBooks", desc: "P&L, cash flow, net income — Coming Soon", secrets: ["QUICKBOOKS_ACCESS_TOKEN", "QUICKBOOKS_REALM_ID"] },
-  { value: "xero", label: "Xero", desc: "Revenue, expenses, bank balances — Coming Soon", secrets: ["XERO_ACCESS_TOKEN", "XERO_TENANT_ID"] },
-  { value: "salesforce", label: "Salesforce", desc: "Closed-won revenue, pipeline, leads — Coming Soon", secrets: ["SALESFORCE_ACCESS_TOKEN", "SALESFORCE_INSTANCE_URL"] },
+  { value: "ga4", label: "Google Analytics 4", desc: "Sessions, users, conversions, channels", secrets: ["GA4_SERVICE_ACCOUNT_JSON", "GA4_PROPERTY_ID"] },
+  { value: "hubspot", label: "HubSpot", desc: "Pipeline, deals, contacts", secrets: ["HUBSPOT_API_KEY"] },
+  { value: "quickbooks", label: "QuickBooks", desc: "P&L, cash flow, net income", secrets: ["QUICKBOOKS_ACCESS_TOKEN", "QUICKBOOKS_REALM_ID"] },
+  { value: "xero", label: "Xero", desc: "Revenue, expenses, bank balances", secrets: ["XERO_ACCESS_TOKEN", "XERO_TENANT_ID"] },
+  { value: "salesforce", label: "Salesforce", desc: "Closed-won revenue, pipeline, leads", secrets: ["SALESFORCE_ACCESS_TOKEN", "SALESFORCE_INSTANCE_URL"] },
 ] as const;
 
 const SOURCE_TYPES: { value: SourceType; label: string; icon: typeof Database; description: string; tierRequired?: string }[] = [
