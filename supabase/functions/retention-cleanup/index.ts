@@ -15,6 +15,7 @@ const CATEGORY_TABLE_MAP: Record<string, { table: string; dateColumn: string }[]
 };
 
 Deno.serve(async (req: Request) => {
+  const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") return corsPreflightResponse(req);
 
   try {
