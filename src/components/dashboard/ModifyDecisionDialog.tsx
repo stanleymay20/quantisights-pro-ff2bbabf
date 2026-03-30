@@ -75,19 +75,20 @@ const ModifyDecisionDialog = ({ decision, organizationId, datasetId, open, onOpe
       }).select("id").single();
       if (error) throw error;
 
-      // Auto-create decision_outcome for learning loop activation
-      if (ledgerRow?.id && datasetId && successMetrics) {
-        const primaryMetric = successMetrics.split(",")[0].trim().toLowerCase().replace(/\s+/g, "_");
-        if (primaryMetric) {
-          await supabase.from("decision_outcomes").insert({
-            decision_id: ledgerRow.id,
-            organization_id: organizationId,
-            dataset_id: datasetId,
-            expected_metric: primaryMetric,
-            expected_direction: "increase",
-            evaluation_window_days: parseInt(dueDays) || 30,
-          });
-        }
+      // Lifecycle side effects: audit log + execution plan + outcome
+      if (ledgerRow?.id) {
+        const primaryMetric = successMetrics ? successMetrics.split(",")[0].trim().toLowerCase().replace(/\s+/g, "_") : null;
+        await onDecisionApproved({
+          decisionId: ledgerRow.id,
+          organizationId,
+          userId: user?.id ?? null,
+          recommendedAction: recommendation,
+          confidence: decision.cappedConfidence ?? decision.confidence ?? 50,
+          datasetId: datasetId ?? null,
+          expectedMetric: primaryMetric,
+          evaluationWindowDays: parseInt(dueDays) || 30,
+          suggestedOwner: owner,
+        });
       }
 
       // If source is an advisory, update it too

@@ -219,9 +219,9 @@ const DecisionLedgerPage = () => {
 
   const updateDecision = async (id: string, updates: Record<string, any>) => {
     setUpdatingId(id);
+    const decision = decisions.find(d => d.id === id);
 
     if (updates.execution_status === "completed") {
-      const decision = decisions.find(d => d.id === id);
       if (decision) {
         const conf = decision.confidence_at_decision || decision.capped_confidence || 50;
         const hasOutcome = decision.outcome_delta !== null;
@@ -240,6 +240,27 @@ const DecisionLedgerPage = () => {
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
+      // Post-update lifecycle side effects
+      if (updates.decision_status === "approved" && decision) {
+        await onDecisionApproved({
+          decisionId: id,
+          organizationId: decision.organization_id,
+          userId: user?.id ?? null,
+          recommendedAction: decision.recommended_action,
+          confidence: decision.capped_confidence ?? decision.confidence_at_decision ?? 50,
+          datasetId: null,
+          expectedMetric: decision.recommended_action?.substring(0, 30) ?? "metric",
+          evaluationWindowDays: 30,
+        });
+      }
+      if (updates.execution_status) {
+        await onExecutionStatusChanged({
+          decisionId: id,
+          organizationId: decision?.organization_id ?? "",
+          userId: user?.id ?? null,
+          newStatus: updates.execution_status,
+        });
+      }
       fetchDecisions();
     }
     setUpdatingId(null);
