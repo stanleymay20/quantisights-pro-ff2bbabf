@@ -607,6 +607,7 @@ const DecisionQueue = memo(({
       <ModifyDecisionDialog
         decision={modifyTarget}
         organizationId={organizationId}
+        datasetId={datasetId}
         open={!!modifyTarget}
         onOpenChange={(open) => { if (!open) setModifyTarget(null); }}
         onSaved={handleModifySaved}
