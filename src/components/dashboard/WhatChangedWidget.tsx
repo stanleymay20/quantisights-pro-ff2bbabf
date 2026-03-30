@@ -88,11 +88,11 @@ const WhatChangedWidget = memo(({ organizationId }: WhatChangedWidgetProps) => {
       text: `${changes.newDecisions} new decision${changes.newDecisions > 1 ? "s" : ""}`,
     },
     changes.newOutcomes > 0 && {
-      icon: <Brain className="w-3.5 h-3.5 text-emerald-500" />,
+      icon: <Brain className="w-3.5 h-3.5 text-primary" />,
       text: `${changes.newOutcomes} outcome${changes.newOutcomes > 1 ? "s" : ""} evaluated`,
     },
     changes.calibrationUpdated && {
-      icon: <Brain className="w-3.5 h-3.5 text-amber-500" />,
+      icon: <Brain className="w-3.5 h-3.5 text-accent-foreground" />,
       text: "Calibration model updated",
     },
     changes.criticalAlerts > 0 && {
