@@ -90,6 +90,6 @@ const SessionTimeout = () => {
       </AlertDialogContent>
     </AlertDialog>
   );
-});
+};
 
 export default SessionTimeout;
