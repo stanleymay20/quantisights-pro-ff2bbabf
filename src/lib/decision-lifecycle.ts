@@ -18,15 +18,15 @@ interface AuditLogEntry {
 /** Write an immutable audit log entry */
 export async function writeAuditLog(entry: AuditLogEntry) {
   try {
-    await supabase.from("audit_log").insert({
+    await supabase.from("audit_log").insert([{
       organization_id: entry.organization_id,
       actor_id: entry.actor_id,
       actor_type: "user",
       action_type: entry.action_type,
       resource_type: entry.resource_type,
       resource_id: entry.resource_id,
-      payload: entry.payload ?? null,
-    });
+      payload: (entry.payload ?? null) as any,
+    }]);
   } catch (err) {
     console.error("[audit] Failed to write audit log:", err);
   }
