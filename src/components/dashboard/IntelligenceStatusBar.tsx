@@ -43,8 +43,9 @@ const IntelligenceStatusBar = ({ hasData, insights, openAdvisories = 0, riskLeve
       {/* System status */}
       <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
         <div className={`w-1.5 h-1.5 rounded-full ${signals === 0 ? "bg-success" : signals <= 2 ? "bg-warning" : "bg-destructive"}`} />
-        <span className={`text-[11px] font-semibold uppercase tracking-wider ${statusColor}`}>
-          {systemStatus}
+        <span className={`text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider ${statusColor}`}>
+          <span className="sm:hidden">{signals === 0 ? "OK" : signals <= 2 ? "Active" : "Attn"}</span>
+          <span className="hidden sm:inline">{systemStatus}</span>
         </span>
       </div>
 
