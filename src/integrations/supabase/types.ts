@@ -959,6 +959,42 @@ export type Database = {
           },
         ]
       }
+      cron_run_log: {
+        Row: {
+          completed_at: string | null
+          duration_ms: number | null
+          error_message: string | null
+          id: string
+          job_name: string
+          metadata: Json | null
+          records_processed: number | null
+          started_at: string
+          status: string
+        }
+        Insert: {
+          completed_at?: string | null
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          job_name: string
+          metadata?: Json | null
+          records_processed?: number | null
+          started_at?: string
+          status?: string
+        }
+        Update: {
+          completed_at?: string | null
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          job_name?: string
+          metadata?: Json | null
+          records_processed?: number | null
+          started_at?: string
+          status?: string
+        }
+        Relationships: []
+      }
       data_quality_checks: {
         Row: {
           check_type: string
@@ -4767,6 +4803,7 @@ export type Database = {
       }
       sync_schedules: {
         Row: {
+          backoff_minutes: number
           created_at: string
           data_source_id: string
           frequency: string
@@ -4774,12 +4811,15 @@ export type Database = {
           is_active: boolean | null
           last_error: string | null
           last_run_at: string | null
+          max_retries: number
           next_run_at: string | null
           organization_id: string
+          retry_count: number
           run_count: number | null
           updated_at: string
         }
         Insert: {
+          backoff_minutes?: number
           created_at?: string
           data_source_id: string
           frequency?: string
@@ -4787,12 +4827,15 @@ export type Database = {
           is_active?: boolean | null
           last_error?: string | null
           last_run_at?: string | null
+          max_retries?: number
           next_run_at?: string | null
           organization_id: string
+          retry_count?: number
           run_count?: number | null
           updated_at?: string
         }
         Update: {
+          backoff_minutes?: number
           created_at?: string
           data_source_id?: string
           frequency?: string
@@ -4800,8 +4843,10 @@ export type Database = {
           is_active?: boolean | null
           last_error?: string | null
           last_run_at?: string | null
+          max_retries?: number
           next_run_at?: string | null
           organization_id?: string
+          retry_count?: number
           run_count?: number | null
           updated_at?: string
         }
@@ -5239,6 +5284,10 @@ export type Database = {
         Args: { _user_id: string; _workspace_id: string }
         Returns: boolean
       }
+      release_cron_advisory_lock: {
+        Args: { _lock_id: number }
+        Returns: undefined
+      }
       resolve_sso_for_email: {
         Args: { _email: string }
         Returns: {
@@ -5248,6 +5297,7 @@ export type Database = {
           provider_type: string
         }[]
       }
+      try_cron_advisory_lock: { Args: { _lock_id: number }; Returns: boolean }
       update_dataset_staleness: { Args: never; Returns: undefined }
       validate_embed_token: { Args: { _token: string }; Returns: Json }
     }

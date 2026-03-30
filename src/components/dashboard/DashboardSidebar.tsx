@@ -55,18 +55,19 @@ interface NavSection {
 
 const navSections: NavSection[] = [
   {
-    label: "Portfolio",
+    label: "Operate",
     icon: Briefcase,
     defaultOpen: true,
     items: [
-      { icon: Briefcase, label: "Overview", path: "/portfolio" },
       { icon: LayoutDashboard, label: "Command Center", path: "/dashboard" },
+      { icon: Briefcase, label: "Portfolio", path: "/portfolio" },
       { icon: BarChart3, label: "KPI Builder", path: "/kpis" },
       { icon: Compass, label: "Executive View", path: "/executive" },
+      { icon: FileText, label: "Reports", path: "/reports" },
     ],
   },
   {
-    label: "Intelligence",
+    label: "Decide",
     icon: Brain,
     items: [
       { icon: Search, label: "Diagnostics", path: "/diagnostics" },
@@ -76,33 +77,22 @@ const navSections: NavSection[] = [
       { icon: Zap, label: "Execution", path: "/execution" },
       { icon: Sparkles, label: "Forecasting", path: "/forecasting" },
       { icon: Target, label: "Benchmarking", path: "/benchmarking" },
+      { icon: Award, label: "Calibration", path: "/calibration" },
       { icon: MessageSquare, label: "Ask Quantivis", path: "/ask" },
     ],
   },
   {
-    label: "Advanced",
-    icon: FlaskConical,
-    items: [
-      { icon: FlaskConical, label: "Causal Inference", path: "/causal-inference" },
-      { icon: AlertOctagon, label: "Cognitive Bias", path: "/cognitive-bias" },
-      { icon: RotateCcw, label: "Counterfactual", path: "/counterfactual" },
-      { icon: Award, label: "Calibration", path: "/calibration" },
-      { icon: Crosshair, label: "Decision Fitness", path: "/decision-fitness" },
-      { icon: Eye, label: "Misses Analysis", path: "/misses" },
-    ],
-  },
-  {
-    label: "Strategy",
+    label: "Strategize",
     icon: TrendingUp,
     items: [
       { icon: Shuffle, label: "Scenarios", path: "/scenarios" },
       { icon: GitBranch, label: "What-If Branching", path: "/branching" },
       { icon: TrendingUp, label: "Simulations", path: "/simulations" },
       { icon: Globe, label: "Market Intelligence", path: "/market-intelligence" },
-      { icon: Bell, label: "Alert Playbooks", path: "/alert-playbooks" },
-      { icon: FileText, label: "Reports", path: "/reports" },
-      { icon: Crosshair, label: "OKR Alignment", path: "/okrs" },
-      { icon: Shield, label: "Strategy Pack", path: "/strategy-pack" },
+      { icon: FlaskConical, label: "Causal Inference", path: "/causal-inference" },
+      { icon: AlertOctagon, label: "Cognitive Bias", path: "/cognitive-bias" },
+      { icon: RotateCcw, label: "Counterfactual", path: "/counterfactual" },
+      { icon: Eye, label: "Misses Analysis", path: "/misses" },
     ],
   },
   {
@@ -111,9 +101,7 @@ const navSections: NavSection[] = [
     items: [
       { icon: Cable, label: "Data Connectors", path: "/data-connectors" },
       { icon: Database, label: "Data Sources", path: "/data-sources" },
-      { icon: Layers, label: "Data Catalog", path: "/data-catalog" },
       { icon: Upload, label: "CSV Upload", path: "/data-upload" },
-      { icon: GitCommitVertical, label: "Data Lineage", path: "/lineage" },
       { icon: Activity, label: "Pipeline Monitor", path: "/pipeline" },
     ],
   },
@@ -122,9 +110,9 @@ const navSections: NavSection[] = [
     icon: Building2,
     items: [
       { icon: Users, label: "Team", path: "/team" },
-      { icon: Building2, label: "Clients", path: "/clients" },
-      { icon: CreditCard, label: "Billing", path: "/billing" },
       { icon: Shield, label: "Governance", path: "/governance" },
+      { icon: Crosshair, label: "Decision Fitness", path: "/decision-fitness" },
+      { icon: CreditCard, label: "Billing", path: "/billing" },
       { icon: Settings, label: "Settings", path: "/settings" },
     ],
   },
