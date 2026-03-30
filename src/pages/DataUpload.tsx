@@ -589,12 +589,15 @@ const DataUpload = () => {
       // TIER 3: ANALYTICAL LAYER — Compute aggregates + insights
       // ═══════════════════════════════════════════════════════
 
-      // Fire aggregates + insights in parallel (non-blocking)
+      // Fire aggregates + insights + data profiling in parallel (non-blocking)
       const [aggResult] = await Promise.allSettled([
         supabase.functions.invoke("refresh-aggregates", {
           body: { organization_id: currentOrgId, dataset_id: dataset.id, pipeline_run_id: pipelineRunId },
         }),
         supabase.functions.invoke("generate-insights", {
+          body: { organization_id: currentOrgId, dataset_id: dataset.id },
+        }),
+        supabase.functions.invoke("data-profiler", {
           body: { organization_id: currentOrgId, dataset_id: dataset.id },
         }),
       ]);
