@@ -48,7 +48,7 @@ const HeroSection = forwardRef<HTMLElement>((_, ref) => {
               The Closed-Loop Decision Operating System
             </motion.div>
 
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold font-display leading-[1.05] mb-4 sm:mb-6">
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold font-display leading-[1.08] mb-4 sm:mb-6">
               The Operating System for{" "}
               <br className="hidden sm:block" />
               <span className="gradient-text">Billion-Dollar Decisions.</span>
