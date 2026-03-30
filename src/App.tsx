@@ -50,6 +50,7 @@ const CounterfactualExplanation = lazy(() => import("./pages/CounterfactualExpla
 const CausalInference = lazy(() => import("./pages/CausalInference"));
 const CalibrationAssessment = lazy(() => import("./pages/CalibrationAssessment"));
 const Misses = lazy(() => import("./pages/Misses"));
+const DecisionAccuracy = lazy(() => import("./pages/DecisionAccuracy"));
 
 // ── Scenarios & Simulations ──
 const Scenarios = lazy(() => import("./pages/Scenarios"));
