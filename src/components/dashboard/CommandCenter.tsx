@@ -83,6 +83,8 @@ const CommandCenter = memo(({
         onArchiveContext={archiveContext}
       />
 
+      <WhatChangedWidget organizationId={organizationId} />
+
       <BoardroomBrief
         insights={insights}
         pendingDecisions={pendingDecisions}
