@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import IntelligenceDisclaimer from "@/components/IntelligenceDisclaimer";
+import DecisionTraceView from "@/components/dashboard/DecisionTraceView";
 import {
   Target, TrendingUp, TrendingDown, RefreshCw, CheckCircle2,
   XCircle, AlertTriangle, BarChart3, Brain, ArrowRight,
