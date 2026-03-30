@@ -211,6 +211,8 @@ const App = () => (
               <Route path="/pricing" element={<SafeRoute><Pricing /></SafeRoute>} />
               <Route path="/calibration" element={<SafeRoute><CalibrationAssessment /></SafeRoute>} />
               <Route path="/free-analysis" element={<SafeRoute><FreeAnalysis /></SafeRoute>} />
+              <Route path="/status" element={<SafeRoute><SystemStatus /></SafeRoute>} />
+              <Route path="/sla" element={<SafeRoute><SLA /></SafeRoute>} />
 
               {/* ══════ Marketing / Trust ══════ */}
               <Route path="/business-model" element={<SafeRoute><BusinessModel /></SafeRoute>} />
