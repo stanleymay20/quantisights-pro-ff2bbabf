@@ -51,7 +51,7 @@ const ModifyDecisionDialog = ({ decision, organizationId, open, onOpenChange, on
     setSaving(true);
     try {
       // Persist to decision_ledger as a modified decision — including full confidence lineage
-      const { error } = await supabase.from("decision_ledger").insert({
+      const { data: ledgerRow, error } = await supabase.from("decision_ledger").insert({
         organization_id: organizationId,
         recommended_action: recommendation,
         chosen_action: recommendation,
@@ -71,8 +71,23 @@ const ModifyDecisionDialog = ({ decision, organizationId, open, onOpenChange, on
           successMetrics ? `Success metrics: ${successMetrics}` : null,
           `Modified from: ${decision.title}`,
         ].filter(Boolean).join(" | "),
-      });
+      }).select("id").single();
       if (error) throw error;
+
+      // Auto-create decision_outcome for learning loop activation
+      if (ledgerRow?.id && datasetId && successMetrics) {
+        const primaryMetric = successMetrics.split(",")[0].trim().toLowerCase().replace(/\s+/g, "_");
+        if (primaryMetric) {
+          await supabase.from("decision_outcomes").insert({
+            decision_id: ledgerRow.id,
+            organization_id: organizationId,
+            dataset_id: datasetId,
+            expected_metric: primaryMetric,
+            expected_direction: "increase",
+            evaluation_window_days: parseInt(dueDays) || 30,
+          });
+        }
+      }
 
       // If source is an advisory, update it too
       if (decision.type === "advisory" && decision.sourceId) {
