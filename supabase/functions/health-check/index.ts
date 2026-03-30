@@ -22,6 +22,10 @@ serve(async (req) => {
     return corsPreflightResponse(req);
   }
 
+  // Advisory lock — prevent overlapping cron runs
+  const guard = await cronGuard("health-check");
+  if (!guard.acquired) return guard.earlyResponse(corsHeaders);
+
   const start = Date.now();
   const checks: Record<string, { status: string; latency_ms?: number }> = {};
 
