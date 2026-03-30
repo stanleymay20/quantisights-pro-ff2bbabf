@@ -242,6 +242,11 @@ const Settings = () => {
     threshold_changed: "Threshold Changed",
     settings_updated: "Settings Updated",
     data_uploaded: "Data Uploaded",
+    data_upload: "Data Uploaded",
+    connector_pull: "Connector Sync",
+    decision_approved: "Decision Approved",
+    decision_dismissed: "Decision Dismissed",
+    execution_status_changed: "Execution Updated",
     onboarding_completed: "Onboarding Completed",
   };
 
