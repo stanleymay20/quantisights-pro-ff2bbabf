@@ -16,9 +16,9 @@ interface OrgSwitcherProps {
 const OrgSwitcher = ({ organizations, currentOrg, onSwitch }: OrgSwitcherProps) => {
   if (organizations.length <= 1) {
     return (
-      <div className="flex items-center gap-2 text-sm">
-        <Building2 className="w-4 h-4 text-muted-foreground" />
-        <span className="font-medium truncate max-w-[160px]">{currentOrg?.name ?? "No Organization"}</span>
+      <div className="flex items-center gap-1.5 text-sm min-w-0">
+        <Building2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground shrink-0" />
+        <span className="font-medium truncate max-w-[100px] sm:max-w-[160px] text-xs sm:text-sm">{currentOrg?.name ?? "No Organization"}</span>
       </div>
     );
   }
@@ -26,7 +26,7 @@ const OrgSwitcher = ({ organizations, currentOrg, onSwitch }: OrgSwitcherProps) 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" className="gap-2 text-sm font-medium max-w-[200px]">
+        <Button variant="ghost" size="sm" className="gap-1.5 text-xs sm:text-sm font-medium max-w-[120px] sm:max-w-[200px] h-8 px-2">
           <Building2 className="w-4 h-4 shrink-0 text-muted-foreground" />
           <span className="truncate">{currentOrg?.name}</span>
           <ChevronDown className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />

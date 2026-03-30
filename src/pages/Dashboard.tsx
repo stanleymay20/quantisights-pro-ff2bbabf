@@ -175,8 +175,8 @@ const Dashboard = () => {
           lastUpdated={lastUpdated}
         />
 
-        <header className="h-12 sm:h-14 border-b border-border/30 flex items-center justify-between px-2 sm:px-4 md:px-8 shrink-0 bg-background/60 backdrop-blur-sm">
-          <div className="flex items-center gap-2 min-w-0">
+        <header className="h-11 sm:h-14 border-b border-border/30 flex items-center justify-between px-2 sm:px-4 md:px-8 shrink-0 bg-background/60 backdrop-blur-sm">
+          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 overflow-hidden">
             <SidebarMobileToggle />
             <OrgSwitcher organizations={organizations} currentOrg={currentOrg} onSwitch={switchOrganization} />
             <ProjectSwitcher />
@@ -422,17 +422,17 @@ const Dashboard = () => {
               <motion.div
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="mb-6 max-w-[1400px]"
+                className="mb-4 sm:mb-6 max-w-[1400px]"
               >
-                <h1 className="text-2xl font-bold font-display tracking-tight">
-                  {greeting()}, {displayName}
+                <h1 className="text-lg sm:text-2xl font-bold font-display tracking-tight">
+                  {greeting()}, {displayName.split(" ")[0]}
                 </h1>
-                <p className="text-sm text-muted-foreground mt-0.5">
+                <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
                   {isDemoUser
-                    ? `${criticalInsights.length} signal${criticalInsights.length !== 1 ? "s" : ""} detected · calibration engine active · decision memory recording`
+                    ? `${criticalInsights.length} signal${criticalInsights.length !== 1 ? "s" : ""} · calibration active · memory recording`
                     : hasAnomalies
                       ? `${criticalInsights.length} signal${criticalInsights.length > 1 ? "s" : ""} require attention`
-                      : `${dataDescription} — all systems nominal`
+                      : `${dataDescription}`
                   }
                 </p>
               </motion.div>
