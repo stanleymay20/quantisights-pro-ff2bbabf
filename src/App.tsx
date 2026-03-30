@@ -107,7 +107,8 @@ const Ebook = lazy(() => import("./pages/Ebook"));
 const FreeAnalysis = lazy(() => import("./pages/FreeAnalysis"));
 const EmbedDashboard = lazy(() => import("./pages/EmbedDashboard"));
 const PilotAudit = lazy(() => import("./pages/PilotAudit"));
-
+const SystemStatus = lazy(() => import("./pages/SystemStatus"));
+const SLA = lazy(() => import("./pages/SLA"));
 // ── Legal ──
 const Terms = lazy(() => import("./pages/Terms"));
 const Privacy = lazy(() => import("./pages/Privacy"));
