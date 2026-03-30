@@ -162,6 +162,12 @@ serve(async (req) => {
       .eq("status", "failed")
       .gte("created_at", new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString());
 
+    await guard.succeed({ syncs_processed: results.length, pipeline_health: {
+      active_schedules: totalActive || 0,
+      failed_last_24h: totalFailed || 0,
+      health_status: (totalFailed || 0) === 0 ? "healthy" : (totalFailed || 0) < 3 ? "degraded" : "critical",
+    }});
+
     return new Response(JSON.stringify({
       success: true,
       executed_at: now.toISOString(),
@@ -177,6 +183,7 @@ serve(async (req) => {
     });
   } catch (err: unknown) {
     console.error("pipeline-orchestrator error:", err);
+    await guard.fail(err);
     return new Response(JSON.stringify({ error: err instanceof Error ? err.message : String(err) }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
