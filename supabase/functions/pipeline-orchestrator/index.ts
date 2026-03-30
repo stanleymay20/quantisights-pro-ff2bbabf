@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders, corsPreflightResponse } from "../_shared/cors.ts";
+import { cronGuard } from "../_shared/cron-guard.ts";
 
 /**
  * Pipeline Orchestrator — Enterprise Scheduled Sync Engine
