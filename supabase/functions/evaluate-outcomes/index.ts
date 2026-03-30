@@ -556,8 +556,9 @@ Deno.serve(async (req) => {
     });
   } catch (err) {
     console.error("evaluate-outcomes error:", err);
+    // If guard was acquired in a cron path but threw, the catch in the cron block handles it
     return new Response(JSON.stringify({ error: (err as Error).message }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
     });
   }
 });
