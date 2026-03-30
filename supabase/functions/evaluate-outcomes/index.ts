@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders, corsPreflightResponse } from "../_shared/cors.ts";
 import { createLogger } from "../_shared/logger.ts";
+import { cronGuard } from "../_shared/cron-guard.ts";
 
 Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
@@ -22,18 +23,20 @@ Deno.serve(async (req) => {
       const authHeader = req.headers.get("Authorization");
       const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
       if (!authHeader || !authHeader.includes(serviceKey)) {
-        // Fallback: verify the token decodes to service_role
         const callerClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
           global: { headers: { Authorization: authHeader || "" } },
         });
         const { data: { user: cronUser } } = await callerClient.auth.getUser();
-        // If a real user is calling with cron:true, reject
         if (cronUser) {
           return new Response(JSON.stringify({ error: "Forbidden: cron endpoint requires service-role" }), {
             status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
       }
+
+      // Advisory lock — prevent overlapping cron runs
+      const guard = await cronGuard("evaluate-outcomes");
+      if (!guard.acquired) return guard.earlyResponse(corsHeaders);
 
       log.info("Cron-triggered batch evaluation starting");
       const { data: orgs } = await supabase.from("organizations").select("id");
