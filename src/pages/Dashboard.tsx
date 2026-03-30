@@ -175,8 +175,8 @@ const Dashboard = () => {
           lastUpdated={lastUpdated}
         />
 
-        <header className="h-12 sm:h-14 border-b border-border/30 flex items-center justify-between px-2 sm:px-4 md:px-8 shrink-0 bg-background/60 backdrop-blur-sm">
-          <div className="flex items-center gap-2 min-w-0">
+        <header className="h-11 sm:h-14 border-b border-border/30 flex items-center justify-between px-2 sm:px-4 md:px-8 shrink-0 bg-background/60 backdrop-blur-sm">
+          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 overflow-hidden">
             <SidebarMobileToggle />
             <OrgSwitcher organizations={organizations} currentOrg={currentOrg} onSwitch={switchOrganization} />
             <ProjectSwitcher />
