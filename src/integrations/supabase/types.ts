@@ -1530,6 +1530,47 @@ export type Database = {
           },
         ]
       }
+      decision_embeddings: {
+        Row: {
+          content_text: string
+          created_at: string
+          embedding: string
+          entity_id: string
+          entity_type: string
+          id: string
+          metadata: Json | null
+          organization_id: string
+        }
+        Insert: {
+          content_text: string
+          created_at?: string
+          embedding: string
+          entity_id: string
+          entity_type: string
+          id?: string
+          metadata?: Json | null
+          organization_id: string
+        }
+        Update: {
+          content_text?: string
+          created_at?: string
+          embedding?: string
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          metadata?: Json | null
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "decision_embeddings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       decision_ledger: {
         Row: {
           actual_value: number | null
@@ -3767,6 +3808,60 @@ export type Database = {
           size_band?: string | null
         }
         Relationships: []
+      }
+      outcome_predictions: {
+        Row: {
+          confidence_factors: Json | null
+          created_at: string
+          decision_id: string
+          id: string
+          model_version: number
+          organization_id: string
+          predicted_success_probability: number
+          similar_decisions_avg_outcome: number | null
+          similar_decisions_count: number
+          similar_decisions_success_rate: number | null
+        }
+        Insert: {
+          confidence_factors?: Json | null
+          created_at?: string
+          decision_id: string
+          id?: string
+          model_version?: number
+          organization_id: string
+          predicted_success_probability: number
+          similar_decisions_avg_outcome?: number | null
+          similar_decisions_count?: number
+          similar_decisions_success_rate?: number | null
+        }
+        Update: {
+          confidence_factors?: Json | null
+          created_at?: string
+          decision_id?: string
+          id?: string
+          model_version?: number
+          organization_id?: string
+          predicted_success_probability?: number
+          similar_decisions_avg_outcome?: number | null
+          similar_decisions_count?: number
+          similar_decisions_success_rate?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "outcome_predictions_decision_id_fkey"
+            columns: ["decision_id"]
+            isOneToOne: false
+            referencedRelation: "decision_ledger"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outcome_predictions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pipeline_runs: {
         Row: {
