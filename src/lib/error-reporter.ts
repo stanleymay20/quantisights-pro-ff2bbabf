@@ -50,10 +50,20 @@ async function flushErrors(): Promise<void> {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return; // Can't log without auth
 
+    // Resolve actual org_id from user profile
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("organization_id")
+      .eq("user_id", session.user.id)
+      .single();
+
+    const orgId = profile?.organization_id;
+    if (!orgId) return; // Can't log without org context
+
     // Best-effort log to audit trail — don't block app
     for (const err of batch) {
       await supabase.from("audit_log").insert([{
-        organization_id: "00000000-0000-0000-0000-000000000000",
+        organization_id: orgId,
         action_type: "client_error",
         resource_type: "frontend",
         actor_type: "system",
