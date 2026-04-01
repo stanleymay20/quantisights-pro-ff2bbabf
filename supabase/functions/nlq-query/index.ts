@@ -25,8 +25,7 @@ serve(async (req) => {
     });
     const svc = createClient(supabaseUrl, serviceKey);
 
-    // Use getClaims() for secure JWT validation
-    const token = authHeader.replace("Bearer ", "");
+    // Validate JWT via getUser() for secure identity verification
     const { data: { user }, error: claimsError } = await userClient.auth.getUser();
     if (claimsError || !user?.id) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
