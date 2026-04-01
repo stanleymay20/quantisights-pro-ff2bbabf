@@ -128,7 +128,8 @@ const Footer = forwardRef<HTMLElement>((_, ref) => (
         <p className="text-xs text-muted-foreground">
           © {new Date().getFullYear()} {CONTACT.company}. All rights reserved.
         </p>
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-6 flex-wrap">
+          <Link to="/impressum" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Impressum</Link>
           <Link to="/privacy" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Privacy</Link>
           <Link to="/terms" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Terms</Link>
           <Link to="/cookies" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Cookies</Link>
