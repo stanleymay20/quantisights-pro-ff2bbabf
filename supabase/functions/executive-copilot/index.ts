@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { checkRateLimit, rateLimitResponse } from "../_shared/rate-limiter.ts";
 import { applyAIBoundary } from "../_shared/ai-redaction.ts";
+import { generateEmbedding, searchSimilar, buildRAGContext } from "../_shared/embeddings.ts";
 import { getCorsHeaders, corsPreflightResponse } from "../_shared/cors.ts";
 
 const TIER_LIMITS: Record<string, number> = {
