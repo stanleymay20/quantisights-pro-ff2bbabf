@@ -5379,6 +5379,22 @@ export type Database = {
         Args: { _user_id: string; _workspace_id: string }
         Returns: boolean
       }
+      match_decision_embeddings: {
+        Args: {
+          filter_entity_types: string[]
+          filter_org_id: string
+          match_count: number
+          match_threshold: number
+          query_embedding: string
+        }
+        Returns: {
+          content_text: string
+          distance: number
+          entity_id: string
+          entity_type: string
+          metadata: Json
+        }[]
+      }
       release_cron_advisory_lock: {
         Args: { _lock_id: number }
         Returns: undefined
