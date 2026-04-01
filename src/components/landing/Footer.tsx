@@ -26,6 +26,7 @@ const FOOTER_SECTIONS = [
   {
     title: "Legal & Compliance",
     links: [
+      { label: "Impressum", to: "/impressum" },
       { label: "Privacy Policy", to: "/privacy" },
       { label: "Terms of Service", to: "/terms" },
       { label: "Cookie Policy", to: "/cookies" },
