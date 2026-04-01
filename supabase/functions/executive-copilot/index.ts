@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { checkRateLimit, rateLimitResponse } from "../_shared/rate-limiter.ts";
 import { applyAIBoundary } from "../_shared/ai-redaction.ts";
+import { generateEmbedding, searchSimilar, buildRAGContext } from "../_shared/embeddings.ts";
 import { getCorsHeaders, corsPreflightResponse } from "../_shared/cors.ts";
 
 const TIER_LIMITS: Record<string, number> = {
@@ -343,11 +344,32 @@ When stating confidence levels, apply these learned corrections.`);
 
     const aiRawTextEnabled = orgSettings?.ai_raw_text_enabled ?? false;
 
+    // ══════════════════════════════════════════════════════════════════
+    // RAG: Retrieve semantically similar past decisions/outcomes
+    // This is what makes the copilot genuinely intelligent — it learns
+    // from the organization's own decision history, not just prompts.
+    // ══════════════════════════════════════════════════════════════════
+    let ragContext = "";
+    try {
+      const queryEmbedding = await generateEmbedding(message, lovableApiKey);
+      const similar = await searchSimilar(supabaseUrl, serviceKey, organization_id, queryEmbedding, {
+        entityTypes: ["decision", "outcome", "insight"],
+        limit: 8,
+        minSimilarity: 0.3,
+      });
+      ragContext = buildRAGContext(similar);
+    } catch (ragErr) {
+      console.warn("RAG retrieval failed (non-fatal):", ragErr);
+      ragContext = "INSTITUTIONAL MEMORY: Retrieval unavailable for this query.";
+    }
+
+    contextParts.push(ragContext);
+
     // Apply redaction
     const { text: safeContext } = applyAIBoundary(contextParts.join("\n\n"), aiRawTextEnabled);
     const { text: safeMessage } = applyAIBoundary(message, aiRawTextEnabled);
 
-    // Build messages array
+    // Build messages array with agent tools
     const aiMessages: { role: string; content: string }[] = [
       { role: "system", content: SYSTEM_PROMPT + "\n\n--- LIVE DATA CONTEXT ---\n" + safeContext },
     ];
@@ -361,7 +383,7 @@ When stating confidence levels, apply these learned corrections.`);
     }
     aiMessages.push({ role: "user", content: safeMessage });
 
-    // Call AI with streaming
+    // Call AI with streaming + agent tool definitions
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -372,6 +394,52 @@ When stating confidence levels, apply these learned corrections.`);
         model: "google/gemini-3-flash-preview",
         messages: aiMessages,
         stream: true,
+        tools: [
+          {
+            type: "function",
+            function: {
+              name: "query_metric_data",
+              description: "Query specific metric data from the organization's dataset. Use when the user asks about specific numbers, trends, or comparisons not in the context.",
+              parameters: {
+                type: "object",
+                properties: {
+                  metric_type: { type: "string", description: "The metric type to query" },
+                  date_range: { type: "string", description: "Date range filter (e.g. 'last_30_days', 'last_quarter')" },
+                },
+                required: ["metric_type"],
+              },
+            },
+          },
+          {
+            type: "function",
+            function: {
+              name: "find_similar_decisions",
+              description: "Search for similar past decisions and their outcomes. Use when the user asks 'have we tried this before' or wants to learn from history.",
+              parameters: {
+                type: "object",
+                properties: {
+                  query: { type: "string", description: "Description of the decision to search for" },
+                },
+                required: ["query"],
+              },
+            },
+          },
+          {
+            type: "function",
+            function: {
+              name: "calculate_risk_score",
+              description: "Calculate a risk score for a proposed action based on historical outcomes. Use when assessing risk or probability of success.",
+              parameters: {
+                type: "object",
+                properties: {
+                  action_description: { type: "string", description: "Description of the proposed action" },
+                  confidence_level: { type: "number", description: "Stated confidence level (0-100)" },
+                },
+                required: ["action_description"],
+              },
+            },
+          },
+        ],
       }),
     });
 

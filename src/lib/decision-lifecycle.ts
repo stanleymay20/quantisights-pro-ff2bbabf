@@ -112,6 +112,19 @@ export async function onDecisionApproved(params: PostApprovalParams) {
       console.error("[lifecycle] Failed to create decision outcome:", err);
     }
   }
+
+  // 4. Trigger async embedding + prediction (non-blocking)
+  try {
+    supabase.functions.invoke("embed-decisions", {
+      body: { organization_id: organizationId, mode: "specific", entity_ids: [decisionId] },
+    }).catch(() => {}); // fire-and-forget
+
+    supabase.functions.invoke("predict-outcome", {
+      body: { organization_id: organizationId, decision_id: decisionId },
+    }).catch(() => {}); // fire-and-forget
+  } catch {
+    // Non-critical — embedding/prediction failures should not block approval
+  }
 }
 
 /**
