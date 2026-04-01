@@ -117,6 +117,7 @@ const CookiePolicy = lazy(() => import("./pages/CookiePolicy"));
 const DataProcessing = lazy(() => import("./pages/DataProcessing"));
 const DataRetention = lazy(() => import("./pages/DataRetention"));
 const Subprocessors = lazy(() => import("./pages/Subprocessors"));
+const Impressum = lazy(() => import("./pages/Impressum"));
 
 const NotFound = lazy(() => import("./pages/NotFound"));
 
