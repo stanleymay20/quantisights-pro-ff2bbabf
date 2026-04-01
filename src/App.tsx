@@ -117,6 +117,7 @@ const CookiePolicy = lazy(() => import("./pages/CookiePolicy"));
 const DataProcessing = lazy(() => import("./pages/DataProcessing"));
 const DataRetention = lazy(() => import("./pages/DataRetention"));
 const Subprocessors = lazy(() => import("./pages/Subprocessors"));
+const Impressum = lazy(() => import("./pages/Impressum"));
 
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -233,6 +234,7 @@ const App = () => (
               <Route path="/dpa" element={<SafeRoute><DataProcessing /></SafeRoute>} />
               <Route path="/data-retention" element={<SafeRoute><DataRetention /></SafeRoute>} />
               <Route path="/subprocessors" element={<SafeRoute><Subprocessors /></SafeRoute>} />
+              <Route path="/impressum" element={<SafeRoute><Impressum /></SafeRoute>} />
 
               {/* ══════ Standalone protected (no sidebar) ══════ */}
               <Route path="/onboarding" element={<PMinimal><Onboarding /></PMinimal>} />

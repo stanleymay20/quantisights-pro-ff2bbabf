@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Cookie, X, Shield } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -10,6 +11,8 @@ type ConsentChoice = "accepted" | "essential_only";
 const CookieConsent = () => {
   const [visible, setVisible] = useState(false);
   const [exiting, setExiting] = useState(false);
+  const { t, i18n } = useTranslation();
+  const isGerman = i18n.language?.startsWith("de");
 
   useEffect(() => {
     const stored = localStorage.getItem(CONSENT_KEY);
@@ -45,30 +48,36 @@ const CookieConsent = () => {
             <Cookie className="w-5 h-5 text-primary" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-sm font-semibold text-foreground mb-1">Cookie Preferences</h3>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              We use <strong>essential cookies</strong> for authentication and security. 
-              Optional <strong>preference cookies</strong> remember your settings (theme, sidebar state). 
-              We never use advertising or tracking cookies.{" "}
-              <Link to="/cookies" className="text-primary hover:underline">Learn more</Link>
-            </p>
+            <h3 className="text-sm font-semibold text-foreground mb-1">
+              {isGerman ? "Cookie-Einstellungen" : "Cookie Preferences"}
+            </h3>
+            <p
+              className="text-xs text-muted-foreground leading-relaxed"
+              dangerouslySetInnerHTML={{
+                __html: isGerman
+                  ? `Wir verwenden <strong>notwendige Cookies</strong> für Authentifizierung und Sicherheit. Optionale <strong>Präferenz-Cookies</strong> speichern Ihre Einstellungen. Wir verwenden keine Werbe- oder Tracking-Cookies. <a href="/cookies" class="text-primary hover:underline">Mehr erfahren</a>`
+                  : `We use <strong>essential cookies</strong> for authentication and security. Optional <strong>preference cookies</strong> remember your settings (theme, sidebar state). We never use advertising or tracking cookies. <a href="/cookies" class="text-primary hover:underline">Learn more</a>`,
+              }}
+            />
             <div className="flex flex-wrap gap-2 mt-4">
               <Button size="sm" onClick={() => handleChoice("accepted")} className="text-xs">
-                Accept All
+                {isGerman ? "Alle akzeptieren" : "Accept All"}
               </Button>
               <Button size="sm" variant="outline" onClick={() => handleChoice("essential_only")} className="text-xs">
-                Essential Only
+                {isGerman ? "Nur notwendige" : "Essential Only"}
               </Button>
             </div>
             <p className="text-[10px] text-muted-foreground/50 mt-2 flex items-center gap-1">
               <Shield className="w-2.5 h-2.5" />
-              No third-party tracking · GDPR & CCPA compliant
+              {isGerman
+                ? "Kein Tracking durch Dritte · DSGVO-konform"
+                : "No third-party tracking · GDPR & CCPA compliant"}
             </p>
           </div>
           <button
             onClick={() => handleChoice("essential_only")}
             className="text-muted-foreground/40 hover:text-muted-foreground transition-colors shrink-0"
-            aria-label="Dismiss"
+            aria-label={isGerman ? "Schließen" : "Dismiss"}
           >
             <X className="w-4 h-4" />
           </button>
