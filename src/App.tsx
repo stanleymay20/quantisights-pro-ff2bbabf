@@ -234,6 +234,7 @@ const App = () => (
               <Route path="/dpa" element={<SafeRoute><DataProcessing /></SafeRoute>} />
               <Route path="/data-retention" element={<SafeRoute><DataRetention /></SafeRoute>} />
               <Route path="/subprocessors" element={<SafeRoute><Subprocessors /></SafeRoute>} />
+              <Route path="/impressum" element={<SafeRoute><Impressum /></SafeRoute>} />
 
               {/* ══════ Standalone protected (no sidebar) ══════ */}
               <Route path="/onboarding" element={<PMinimal><Onboarding /></PMinimal>} />
