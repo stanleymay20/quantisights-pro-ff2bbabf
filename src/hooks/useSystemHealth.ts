@@ -34,7 +34,6 @@ const CRITICAL_JOBS = [
   "morning-brief",
   "convergence-reconcile",
   "health-check",
-  "pipeline-orchestrator",
 ];
 
 export const useSystemHealth = (orgId: string | null) => {
