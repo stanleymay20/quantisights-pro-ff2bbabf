@@ -5,6 +5,7 @@
  */
 
 import { supabase } from "@/integrations/supabase/client";
+import { captureError } from "@/lib/sentry";
 
 interface ErrorReport {
   message: string;
@@ -29,6 +30,15 @@ export function reportError(report: ErrorReport): void {
 
   // Always log structured to console
   console.error(`[ErrorReporter:${report.severity}]`, enriched.message, enriched);
+
+  // Forward to Sentry (no-op if DSN not configured)
+  try {
+    captureError(new Error(report.message), {
+      severity: report.severity,
+      context: report.context,
+      stack: report.stack,
+    });
+  } catch { /* Sentry should never crash the app */ }
 
   // Queue for batch flush
   ERROR_QUEUE.push(report);
