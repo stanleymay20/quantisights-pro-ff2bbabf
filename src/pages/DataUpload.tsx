@@ -358,7 +358,44 @@ const DataUpload = () => {
       }).select("id").single();
 
       // ═══════════════════════════════════════════════════════
-      // TIER 1: RAW LAYER — Write immutable raw records
+      // SCHEMA EVOLUTION & DATA LINEAGE — Automated tracking
+      // ═══════════════════════════════════════════════════════
+
+      // Record schema evolution (what columns were detected and mapped)
+      const schemaColumns = Object.entries(storedMapping).map(([key, target]) => ({
+        column: key.split(":")[1] || key,
+        mappedAs: target,
+      }));
+      
+      await supabase.from("schema_evolution_log" as any).insert({
+        organization_id: currentOrgId,
+        dataset_id: dataset.id,
+        change_type: "initial_upload",
+        previous_schema: null,
+        new_schema: { columns: schemaColumns, row_count: allRows.length, import_mode: importMode },
+        changed_by: user.id,
+      }).then(({ error }) => {
+        if (error) console.warn("[SchemaEvolution] Failed to log:", error.message);
+      });
+
+      // Record data lineage: CSV file → dataset → metrics
+      await supabase.from("data_lineage" as any).insert({
+        organization_id: currentOrgId,
+        source_type: "file",
+        source_id: dataset.id,
+        source_name: file.name,
+        target_type: "dataset",
+        target_id: dataset.id,
+        target_name: datasetName,
+        transformation: "csv_import",
+        transformation_details: { 
+          columns_mapped: Object.keys(storedMapping).length,
+          rows: allRows.length,
+          import_mode: importMode,
+        },
+      }).then(({ error }) => {
+        if (error) console.warn("[DataLineage] Failed to log:", error.message);
+      });
       // ═══════════════════════════════════════════════════════
 
       // Create pipeline run for observability
