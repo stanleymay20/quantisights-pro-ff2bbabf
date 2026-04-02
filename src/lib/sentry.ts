@@ -27,12 +27,11 @@ function detectRelease(): string {
   if (explicit) return `quantivis@${explicit}`;
 
   const sha = import.meta.env.VITE_GIT_SHA;
-  if (sha) return `quantivis@${sha}`;
+  if (sha) return `quantivis@${String(sha).slice(0, 7)}`;
 
-  // Date-based fallback from build time
   const d = new Date();
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `quantivis@${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())}`;
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `quantivis@${d.getFullYear()}.${p(d.getMonth() + 1)}.${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}`;
 }
 
 const SENTRY_ENV = detectEnvironment();
