@@ -141,6 +141,19 @@ export async function embedInsightsBatch(organizationId: string) {
 }
 
 /**
+ * Trigger embedding for advisories after generation
+ */
+export async function embedAdvisoriesBatch(organizationId: string) {
+  try {
+    supabase.functions.invoke("embed-decisions", {
+      body: { organization_id: organizationId, mode: "advisories" },
+    }).catch(() => {});
+  } catch {
+    // Non-critical
+  }
+}
+
+/**
  * Log a decision dismissal to audit trail
  */
 export async function onDecisionDismissed(params: {
