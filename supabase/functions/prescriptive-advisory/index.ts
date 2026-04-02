@@ -137,6 +137,57 @@ serve(async (req) => {
       category: i.category,
     }));
 
+    // ── RAG: Retrieve similar past decisions and outcomes ──
+    let ragContextBlock = "";
+    let ragMetadata: { similar_count: number; avg_similarity: number; historical_success_rate: number | null; confidence_adjustment: number } = {
+      similar_count: 0, avg_similarity: 0, historical_success_rate: null, confidence_adjustment: 0,
+    };
+    try {
+      const { generateEmbedding, searchSimilar, buildRAGContext } = await import("../_shared/embeddings.ts");
+      
+      // Build a query from the top metric summaries
+      const queryText = metricSummaries.slice(0, 5).map(m => 
+        `${m.metric_type} ${m.total_change_pct > 0 ? 'increasing' : 'declining'} ${Math.abs(m.total_change_pct).toFixed(0)}% volatility ${m.volatility_pct.toFixed(0)}%`
+      ).join(". ");
+      
+      const queryEmbedding = await generateEmbedding(queryText);
+      const similar = await searchSimilar(supabaseUrl, serviceKey, organization_id, queryEmbedding, {
+        entityTypes: ["decision", "outcome"],
+        limit: 8,
+        minSimilarity: 0.25,
+      });
+      
+      if (similar.length > 0) {
+        ragContextBlock = "\n" + buildRAGContext(similar) + "\n";
+        ragMetadata.similar_count = similar.length;
+        ragMetadata.avg_similarity = similar.reduce((s, r) => s + r.similarity, 0) / similar.length;
+        
+        // Compute historical success rate from retrieved outcomes
+        const outcomes = similar.filter(r => r.entity_type === "outcome");
+        if (outcomes.length >= 2) {
+          const successCount = outcomes.filter(r => {
+            const delta = (r.metadata as any)?.outcome_delta;
+            return delta != null && delta > 0;
+          }).length;
+          ragMetadata.historical_success_rate = (successCount / outcomes.length) * 100;
+          
+          // Adjust confidence based on historical accuracy
+          const avgAccuracy = outcomes
+            .map(r => (r.metadata as any)?.accuracy_score)
+            .filter((a): a is number => a != null);
+          if (avgAccuracy.length > 0) {
+            const meanAccuracy = avgAccuracy.reduce((s, v) => s + v, 0) / avgAccuracy.length;
+            // If past similar decisions had low accuracy, reduce confidence
+            if (meanAccuracy < 50) ragMetadata.confidence_adjustment = -10;
+            else if (meanAccuracy < 70) ragMetadata.confidence_adjustment = -5;
+            else if (meanAccuracy > 85) ragMetadata.confidence_adjustment = 5;
+          }
+        }
+      }
+    } catch (ragErr) {
+      console.warn("RAG retrieval skipped:", ragErr instanceof Error ? ragErr.message : "unknown");
+    }
+
     // Fetch decision context if provided
     let contextBlock = "";
     if (decision_context_id) {
