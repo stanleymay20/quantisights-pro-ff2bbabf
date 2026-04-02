@@ -26,7 +26,7 @@ export function useSchemaEvolution(organizationId: string | undefined, datasetId
     queryFn: async () => {
       if (!organizationId) return [];
       let query = supabase
-        .from("schema_evolution_log" as any)
+        .from("schema_evolution_log")
         .select("*")
         .eq("organization_id", organizationId)
         .order("detected_at", { ascending: false })
