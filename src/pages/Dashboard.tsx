@@ -121,6 +121,8 @@ const Dashboard = () => {
       await supabase.functions.invoke("generate-insights", {
         body: { organization_id: currentOrgId, dataset_id: activeDatasetId },
       });
+      // Embed new insights into institutional memory (non-blocking)
+      embedInsightsBatch(currentOrgId);
       toast({ title: "Intelligence refreshed" });
       navigate(0);
     } catch {

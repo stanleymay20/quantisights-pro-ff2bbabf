@@ -636,6 +636,9 @@ const DataUpload = () => {
         }),
       ]);
 
+      // Embed new insights into institutional memory (non-blocking)
+      embedInsightsBatch(currentOrgId);
+
       if (aggResult.status === "rejected") {
         console.warn("[Pipeline] Aggregate refresh failed:", aggResult.reason);
       }

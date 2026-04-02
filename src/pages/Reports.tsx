@@ -84,6 +84,8 @@ const Reports = () => {
       await supabase.functions.invoke("generate-insights", {
         body: { organization_id: currentOrgId, dataset_id: activeDatasetId },
       });
+      // Embed new insights into institutional memory (non-blocking)
+      embedInsightsBatch(currentOrgId);
 
       const { data, error } = await supabase.functions.invoke("generate-report", {
         body: { organization_id: currentOrgId, dataset_id: activeDatasetId, report_type: selectedType },
