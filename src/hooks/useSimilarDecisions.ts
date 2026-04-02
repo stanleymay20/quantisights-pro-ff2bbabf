@@ -1,5 +1,5 @@
 /**
- * Hook to fetch similar past decisions with match quality tiers and rationale.
+ * Hook to fetch similar past decisions with hybrid retrieval and match quality.
  */
 import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,6 +14,7 @@ export interface SimilarDecision {
   query_category: string;
   match_category: string;
   overlapping_keywords: string[];
+  retrieval_source: "deterministic" | "neural_fallback";
   metadata: {
     decision_type?: string;
     confidence?: number;
@@ -25,9 +26,12 @@ export interface SimilarDecision {
 }
 
 export type RetrievalQuality = "high" | "moderate" | "low" | "none";
+export type PrecedentType = "strong_precedent" | "partial_precedent" | "semantic_fallback" | "weak_signal" | "novel_decision";
 
 export interface MatchSummary {
   total_candidates: number;
+  deterministic_strong: number;
+  neural_strong: number;
   strong: number;
   moderate: number;
   weak: number;
@@ -41,7 +45,10 @@ export interface SimilarDecisionsResult {
   avgAccuracy: number | null;
   confidenceAdjustment: number;
   retrievalQuality: RetrievalQuality;
+  precedentType: PrecedentType;
   queryCategory: string | null;
+  neuralFallbackUsed: boolean;
+  neuralConcepts: string[];
   matchSummary: MatchSummary | null;
   fetch: (queryText: string) => Promise<void>;
 }
@@ -54,7 +61,10 @@ export const useSimilarDecisions = (organizationId: string | null): SimilarDecis
   const [avgAccuracy, setAvgAccuracy] = useState<number | null>(null);
   const [confidenceAdjustment, setConfidenceAdjustment] = useState(0);
   const [retrievalQuality, setRetrievalQuality] = useState<RetrievalQuality>("none");
+  const [precedentType, setPrecedentType] = useState<PrecedentType>("novel_decision");
   const [queryCategory, setQueryCategory] = useState<string | null>(null);
+  const [neuralFallbackUsed, setNeuralFallbackUsed] = useState(false);
+  const [neuralConcepts, setNeuralConcepts] = useState<string[]>([]);
   const [matchSummary, setMatchSummary] = useState<MatchSummary | null>(null);
 
   const fetchSimilar = useCallback(async (queryText: string) => {
@@ -83,7 +93,10 @@ export const useSimilarDecisions = (organizationId: string | null): SimilarDecis
         setAvgAccuracy(data.avg_accuracy ?? null);
         setConfidenceAdjustment(data.confidence_adjustment ?? 0);
         setRetrievalQuality(data.retrieval_quality ?? "none");
+        setPrecedentType(data.precedent_type ?? "novel_decision");
         setQueryCategory(data.query_category ?? null);
+        setNeuralFallbackUsed(data.neural_fallback_used ?? false);
+        setNeuralConcepts(data.neural_concepts ?? []);
         setMatchSummary(data.match_summary ?? null);
       }
     } catch (e) {
@@ -93,15 +106,8 @@ export const useSimilarDecisions = (organizationId: string | null): SimilarDecis
   }, [organizationId]);
 
   return {
-    similar,
-    loading,
-    error,
-    historicalSuccessRate,
-    avgAccuracy,
-    confidenceAdjustment,
-    retrievalQuality,
-    queryCategory,
-    matchSummary,
-    fetch: fetchSimilar,
+    similar, loading, error, historicalSuccessRate, avgAccuracy,
+    confidenceAdjustment, retrievalQuality, precedentType, queryCategory,
+    neuralFallbackUsed, neuralConcepts, matchSummary, fetch: fetchSimilar,
   };
 };
