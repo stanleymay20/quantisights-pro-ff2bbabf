@@ -367,22 +367,21 @@ const DataUpload = () => {
         mappedAs: target,
       }));
       
-      await supabase.from("schema_evolution_log").insert([{
+      const { error: schemaErr } = await supabase.from("schema_evolution_log").insert([{
         organization_id: currentOrgId,
         dataset_id: dataset.id,
         change_type: "initial_upload",
         detected_by: user.id,
-        metadata: { columns: schemaColumns, row_count: allRows.length, import_mode: importMode } as any,
-      }]).then(({ error }) => {
-        if (error) console.warn("[SchemaEvolution] Failed to log:", error.message);
-      });
+        metadata: { columns: schemaColumns, row_count: allRows.length, import_mode: importMode },
+      }]);
+      if (schemaErr) console.error("[SchemaEvolution] Failed to log:", schemaErr.message, schemaErr.details);
 
       // Record data lineage: CSV file → dataset → metrics
-      await supabase.from("data_lineage").insert([{
+      const { error: lineageErr } = await supabase.from("data_lineage").insert([{
         organization_id: currentOrgId,
         source_type: "file",
         source_id: dataset.id,
-        source_name: file.name,
+        source_name: file?.name ?? "unknown",
         target_type: "dataset",
         target_id: dataset.id,
         target_name: datasetName,
@@ -391,10 +390,9 @@ const DataUpload = () => {
           columns_mapped: Object.keys(storedMapping).length,
           rows: allRows.length,
           import_mode: importMode,
-        } as any,
-      }]).then(({ error }) => {
-        if (error) console.warn("[DataLineage] Failed to log:", error.message);
-      });
+        },
+      }]);
+      if (lineageErr) console.error("[DataLineage] Failed to log:", lineageErr.message, lineageErr.details);
       // ═══════════════════════════════════════════════════════
 
       // Create pipeline run for observability
