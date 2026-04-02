@@ -643,7 +643,7 @@ const DataUpload = () => {
       }
 
       // Record lineage: dataset → metrics → aggregates
-      await supabase.from("data_lineage" as any).insert([
+      await supabase.from("data_lineage").insert([
         {
           organization_id: currentOrgId,
           source_type: "dataset",
@@ -653,7 +653,7 @@ const DataUpload = () => {
           target_id: dataset.id,
           target_name: `${datasetName} metrics`,
           transformation: "normalize_clean",
-          transformation_details: { records_inserted: verifiedCount ?? inserted },
+          transformation_details: { records_inserted: verifiedCount ?? inserted } as any,
         },
         {
           organization_id: currentOrgId,
@@ -664,7 +664,7 @@ const DataUpload = () => {
           target_id: dataset.id,
           target_name: `${datasetName} aggregates`,
           transformation: "refresh_aggregates",
-          transformation_details: { period_types: ["monthly", "quarterly", "yearly"] },
+          transformation_details: { period_types: ["monthly", "quarterly", "yearly"] } as any,
         },
       ]).then(({ error }) => {
         if (error) console.warn("[DataLineage] Post-import lineage failed:", error.message);
