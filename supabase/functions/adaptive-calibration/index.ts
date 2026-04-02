@@ -203,11 +203,12 @@ serve(async (req) => {
       let calibrated = 0;
 
       for (const org of (orgs || [])) {
+        // Fetch ALL decided decisions (not just "completed") to maximize calibration coverage
         const { data: decisions } = await svc
           .from("decision_ledger")
           .select(DECISION_COLUMNS)
           .eq("organization_id", org.id)
-          .eq("execution_status", "completed")
+          .not("decided_at", "is", null)
           .order("created_at", { ascending: false })
           .limit(WINDOW_SIZE);
 
