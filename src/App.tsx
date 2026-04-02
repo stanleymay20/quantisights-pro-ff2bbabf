@@ -80,6 +80,7 @@ const GovernanceCommandView = lazy(() => import("./pages/GovernanceCommandView")
 const GovernanceMaturity = lazy(() => import("./pages/GovernanceMaturity"));
 const Compliance = lazy(() => import("./pages/Compliance"));
 const AlertPlaybooks = lazy(() => import("./pages/AlertPlaybooks"));
+const SystemHealth = lazy(() => import("./pages/SystemHealth"));
 
 // ── Organization & Admin ──
 const Team = lazy(() => import("./pages/Team"));
@@ -287,6 +288,7 @@ const App = () => (
               <Route path="/governance-maturity" element={<P><GovernanceMaturity /></P>} />
               <Route path="/compliance" element={<P><Compliance /></P>} />
               <Route path="/alert-playbooks" element={<P><AlertPlaybooks /></P>} />
+              <Route path="/system-health" element={<P><SystemHealth /></P>} />
 
               {/* ══════ Organization & Admin ══════ */}
               <Route path="/team" element={<P><Team /></P>} />
