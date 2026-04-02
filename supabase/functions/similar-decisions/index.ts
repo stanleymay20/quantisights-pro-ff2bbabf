@@ -35,7 +35,7 @@ serve(async (req) => {
     const results = await searchSimilar(supabaseUrl, serviceKey, organization_id, queryEmbedding, {
       entityTypes: ["decision", "outcome", "insight"],
       limit: 10,
-      minSimilarity: 0.2,
+      minSimilarity: 0.35,
     });
 
     // Compute historical performance from outcomes
