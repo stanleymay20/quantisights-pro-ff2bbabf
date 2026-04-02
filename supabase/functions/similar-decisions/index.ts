@@ -1,20 +1,22 @@
 /**
- * similar-decisions — Retrieve similar past decisions using deterministic embeddings.
- * Returns similar decisions/outcomes with match quality tiers, rationale, and historical metadata.
+ * similar-decisions — Hybrid retrieval: deterministic + neural fallback.
  * 
- * v2: Adds match quality classification (strong/moderate/weak/none),
- *     keyword overlap analysis for match rationale, and domain category tagging.
+ * v3: When deterministic retrieval yields only weak matches, triggers neural
+ * embedding via Lovable AI to extract semantic concepts and re-search.
+ * Compares both result sets and returns the stronger one.
  */
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { authenticateRequest, verifyOrgMembership } from "../_shared/auth-guard.ts";
 import { getCorsHeaders, corsPreflightResponse } from "../_shared/cors.ts";
 import { generateEmbedding, searchSimilar } from "../_shared/embeddings.ts";
+import { generateNeuralEmbedding } from "../_shared/neural-fallback.ts";
 
 // ═══════════════════════════════════════════════════════
-// MATCH QUALITY & RATIONALE
+// MATCH QUALITY & DOMAIN CLASSIFICATION
 // ═══════════════════════════════════════════════════════
 
 type MatchTier = "strong" | "moderate" | "weak";
+type RetrievalSource = "deterministic" | "neural_fallback";
 
 const DOMAIN_CATEGORIES: Record<string, string[]> = {
   sales: ["sales", "revenue", "pipeline", "deal", "acv", "quota", "enterprise", "account", "ae", "booking"],
@@ -53,15 +55,13 @@ function classifyMatch(similarity: number, keywordOverlap: number, categoryMatch
 }
 
 function buildMatchRationale(
-  tier: MatchTier,
-  similarity: number,
-  overlappingKeywords: string[],
-  queryCategory: string,
-  matchCategory: string,
+  tier: MatchTier, similarity: number, overlappingKeywords: string[],
+  queryCategory: string, matchCategory: string, source: RetrievalSource,
 ): string {
   const simPct = Math.round(similarity * 100);
+  const prefix = source === "neural_fallback" ? "[Semantic] " : "";
   if (tier === "strong") {
-    return `Strong match (${simPct}% similar) — shared keywords: ${overlappingKeywords.slice(0, 4).join(", ")}`;
+    return `${prefix}Strong match (${simPct}%) — shared keywords: ${overlappingKeywords.slice(0, 4).join(", ")}`;
   }
   if (tier === "moderate") {
     const reason = overlappingKeywords.length > 0
@@ -69,9 +69,45 @@ function buildMatchRationale(
       : queryCategory === matchCategory
         ? `same domain (${queryCategory})`
         : `related domain (${matchCategory})`;
-    return `Moderate match (${simPct}%) — ${reason}`;
+    return `${prefix}Moderate match (${simPct}%) — ${reason}`;
   }
-  return `Weak match (${simPct}%) — limited overlap${queryCategory !== matchCategory ? `, different domain (${matchCategory} vs ${queryCategory})` : ""}`;
+  return `${prefix}Weak match (${simPct}%) — limited overlap${queryCategory !== matchCategory ? `, different domain (${matchCategory} vs ${queryCategory})` : ""}`;
+}
+
+interface EnrichedResult {
+  entity_type: string;
+  entity_id: string;
+  content_text: string;
+  metadata: Record<string, unknown>;
+  similarity: number;
+  match_tier: MatchTier;
+  match_rationale: string;
+  query_category: string;
+  match_category: string;
+  overlapping_keywords: string[];
+  retrieval_source: RetrievalSource;
+}
+
+function enrichResults(
+  results: Array<{ entity_type: string; entity_id: string; content_text: string; metadata: Record<string, unknown>; similarity: number }>,
+  queryText: string, queryCategory: string, source: RetrievalSource,
+): EnrichedResult[] {
+  return results.map(r => {
+    const overlappingKeywords = computeKeywordOverlap(queryText, r.content_text);
+    const matchCategory = detectCategory(r.content_text);
+    const categoryMatch = queryCategory === matchCategory;
+    const tier = classifyMatch(r.similarity, overlappingKeywords.length, categoryMatch);
+    const rationale = buildMatchRationale(tier, r.similarity, overlappingKeywords, queryCategory, matchCategory, source);
+    return {
+      ...r,
+      match_tier: tier,
+      match_rationale: rationale,
+      query_category: queryCategory,
+      match_category: matchCategory,
+      overlapping_keywords: overlappingKeywords,
+      retrieval_source: source,
+    };
+  });
 }
 
 serve(async (req) => {
@@ -97,41 +133,89 @@ serve(async (req) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-
-    const queryEmbedding = await generateEmbedding(query_text);
     const queryCategory = detectCategory(query_text);
 
-    // Use a lower floor to gather candidates, then classify quality
-    const results = await searchSimilar(supabaseUrl, serviceKey, organization_id, queryEmbedding, {
+    // ═══════════════════════════════════════════════════
+    // LAYER 1: Deterministic retrieval (always runs)
+    // ═══════════════════════════════════════════════════
+    const deterministicEmb = await generateEmbedding(query_text);
+    const deterministicResults = await searchSimilar(supabaseUrl, serviceKey, organization_id, deterministicEmb, {
       entityTypes: ["decision", "outcome", "insight", "advisory"],
       limit: 15,
       minSimilarity: 0.30,
     });
+    const deterministicEnriched = enrichResults(deterministicResults, query_text, queryCategory, "deterministic");
+    const deterministicStrong = deterministicEnriched.filter(r => r.match_tier !== "weak");
 
-    // Enrich each result with match quality metadata
-    const enriched = results.map(r => {
-      const overlappingKeywords = computeKeywordOverlap(query_text, r.content_text);
-      const matchCategory = detectCategory(r.content_text);
-      const categoryMatch = queryCategory === matchCategory;
-      const tier = classifyMatch(r.similarity, overlappingKeywords.length, categoryMatch);
-      const rationale = buildMatchRationale(tier, r.similarity, overlappingKeywords, queryCategory, matchCategory);
+    // ═══════════════════════════════════════════════════
+    // LAYER 2: Neural fallback (only if deterministic is weak)
+    // ═══════════════════════════════════════════════════
+    let neuralEnriched: EnrichedResult[] = [];
+    let neuralConcepts: string[] = [];
+    let neuralFallbackUsed = false;
 
-      return {
-        ...r,
-        match_tier: tier,
-        match_rationale: rationale,
-        query_category: queryCategory,
-        match_category: matchCategory,
-        overlapping_keywords: overlappingKeywords,
-      };
-    });
+    if (deterministicStrong.length === 0) {
+      const apiKey = Deno.env.get("LOVABLE_API_KEY");
+      if (apiKey) {
+        try {
+          const { embedding: neuralEmb, concepts } = await generateNeuralEmbedding(query_text, apiKey);
+          neuralConcepts = concepts;
 
-    // Filter: only return strong + moderate by default; include weak only if no strong/moderate exist
-    const strongOrModerate = enriched.filter(r => r.match_tier !== "weak");
-    const finalResults = strongOrModerate.length > 0 ? strongOrModerate.slice(0, 10) : enriched.slice(0, 5);
+          if (neuralEmb.length === 768) {
+            const neuralResults = await searchSimilar(supabaseUrl, serviceKey, organization_id, neuralEmb, {
+              entityTypes: ["decision", "outcome", "insight", "advisory"],
+              limit: 15,
+              minSimilarity: 0.25, // Lower threshold for neural — concepts are more targeted
+            });
+            neuralEnriched = enrichResults(neuralResults, query_text, queryCategory, "neural_fallback");
+            neuralFallbackUsed = true;
+          }
+        } catch (e) {
+          console.error("Neural fallback error:", e);
+          // Continue with deterministic results only
+        }
+      }
+    }
+
+    // ═══════════════════════════════════════════════════
+    // MERGE: Pick the stronger result set
+    // ═══════════════════════════════════════════════════
+    const neuralStrong = neuralEnriched.filter(r => r.match_tier !== "weak");
+    let finalEnriched: EnrichedResult[];
+    let selectedSource: "deterministic" | "neural_fallback" | "merged";
+
+    if (neuralStrong.length > deterministicStrong.length) {
+      // Neural found better matches — use neural but deduplicate
+      const seenIds = new Set<string>();
+      const merged = [...neuralStrong, ...deterministicStrong].filter(r => {
+        if (seenIds.has(r.entity_id)) return false;
+        seenIds.add(r.entity_id);
+        return true;
+      });
+      finalEnriched = merged;
+      selectedSource = "neural_fallback";
+    } else if (deterministicStrong.length > 0) {
+      finalEnriched = deterministicStrong;
+      selectedSource = "deterministic";
+    } else {
+      // Both weak — show weak results with proper labeling
+      const all = [...deterministicEnriched, ...neuralEnriched];
+      const seenIds = new Set<string>();
+      finalEnriched = all.filter(r => {
+        if (seenIds.has(r.entity_id)) return false;
+        seenIds.add(r.entity_id);
+        return true;
+      }).slice(0, 5);
+      selectedSource = neuralFallbackUsed ? "merged" : "deterministic";
+    }
+
+    const finalResults = finalEnriched.slice(0, 10);
     const hasStrongMatch = finalResults.some(r => r.match_tier === "strong");
+    const hasModerateMatch = finalResults.some(r => r.match_tier === "moderate");
 
-    // Compute historical performance from outcomes (only from strong/moderate matches)
+    // ═══════════════════════════════════════════════════
+    // HISTORICAL PERFORMANCE (from strong/moderate only)
+    // ═══════════════════════════════════════════════════
     const outcomes = finalResults.filter(r => r.entity_type === "outcome" && r.match_tier !== "weak");
     let historicalSuccessRate: number | null = null;
     let avgAccuracy: number | null = null;
@@ -149,27 +233,36 @@ serve(async (req) => {
         .filter((a): a is number => a != null);
       if (accuracies.length > 0) {
         avgAccuracy = Math.round(accuracies.reduce((s, v) => s + v, 0) / accuracies.length);
-        // Only adjust confidence if we have strong matches
         if (hasStrongMatch) {
           if (avgAccuracy < 50) confidenceAdjustment = -10;
           else if (avgAccuracy < 70) confidenceAdjustment = -5;
           else if (avgAccuracy > 85) confidenceAdjustment = 5;
         } else {
-          // Weak evidence → halve any adjustment
           if (avgAccuracy < 50) confidenceAdjustment = -5;
           else if (avgAccuracy < 70) confidenceAdjustment = -2;
         }
       }
     }
 
-    // Determine overall retrieval quality
+    // Retrieval quality classification
     const retrievalQuality = hasStrongMatch
       ? "high"
-      : strongOrModerate.length > 0
+      : hasModerateMatch
         ? "moderate"
         : finalResults.length > 0
           ? "low"
           : "none";
+
+    // Precedent type for UI
+    const precedentType = hasStrongMatch
+      ? "strong_precedent"
+      : hasModerateMatch
+        ? "partial_precedent"
+        : finalResults.length > 0 && neuralFallbackUsed
+          ? "semantic_fallback"
+          : finalResults.length > 0
+            ? "weak_signal"
+            : "novel_decision";
 
     return new Response(JSON.stringify({
       similar: finalResults,
@@ -178,11 +271,17 @@ serve(async (req) => {
       confidence_adjustment: confidenceAdjustment,
       retrieval_quality: retrievalQuality,
       query_category: queryCategory,
+      precedent_type: precedentType,
+      neural_fallback_used: neuralFallbackUsed,
+      neural_concepts: neuralConcepts,
+      retrieval_source: selectedSource,
       match_summary: {
-        total_candidates: results.length,
-        strong: enriched.filter(r => r.match_tier === "strong").length,
-        moderate: enriched.filter(r => r.match_tier === "moderate").length,
-        weak: enriched.filter(r => r.match_tier === "weak").length,
+        total_candidates: deterministicResults.length + (neuralFallbackUsed ? neuralEnriched.length : 0),
+        deterministic_strong: deterministicStrong.length,
+        neural_strong: neuralStrong.length,
+        strong: finalResults.filter(r => r.match_tier === "strong").length,
+        moderate: finalResults.filter(r => r.match_tier === "moderate").length,
+        weak: finalResults.filter(r => r.match_tier === "weak").length,
       },
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
