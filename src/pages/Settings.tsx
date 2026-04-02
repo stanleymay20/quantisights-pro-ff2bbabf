@@ -580,49 +580,81 @@ const Settings = () => {
                           ⚠ Temporary testing tool — remove after verification.
                         </p>
                       </CardHeader>
-                      <CardContent className="space-y-3">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={async () => {
-                            Sentry.captureMessage("Quantivis real monitoring test", "error");
-                            if (currentOrgId && user?.id) {
-                              await supabase.from("audit_log").insert({
-                                organization_id: currentOrgId,
-                                actor_id: user.id,
-                                actor_type: "user",
-                                action_type: "monitoring_test_triggered",
-                                resource_type: "sentry",
-                                payload: { method: "captureMessage" } as any,
-                              });
-                            }
-                            toast({ title: "Sentry message sent", description: "Check your Sentry dashboard for the event." });
-                          }}
-                        >
-                          Send Sentry test message
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={async () => {
-                            const err = new Error("Quantivis frontend real test error");
-                            Sentry.captureException(err);
-                            if (currentOrgId && user?.id) {
-                              await supabase.from("audit_log").insert({
-                                organization_id: currentOrgId,
-                                actor_id: user.id,
-                                actor_type: "user",
-                                action_type: "monitoring_test_triggered",
-                                resource_type: "sentry",
-                                payload: { method: "captureException" } as any,
-                              });
-                            }
-                            toast({ title: "Sentry exception sent", description: "An async throw will also trigger the global error handler." });
-                            setTimeout(() => { throw err; }, 100);
-                          }}
-                        >
-                          Throw test frontend error
-                        </Button>
+                        <CardContent className="space-y-3">
+                        {(() => {
+                          const sentryEnv = import.meta.env.DEV ? "development"
+                            : typeof window !== "undefined" && (window.location.hostname.includes("preview") || window.location.hostname.includes("localhost")) ? "development"
+                            : typeof window !== "undefined" && (window.location.hostname.includes("staging") || window.location.hostname.includes("beta")) ? "staging"
+                            : "production";
+                          const buildCtx = {
+                            route: typeof window !== "undefined" ? window.location.pathname : "/",
+                            environment: sentryEnv,
+                            release: (Sentry.getClient?.()?.getOptions?.()?.release) || "unknown",
+                            user_id: user?.id,
+                            organization_id: currentOrgId,
+                            organization_name: currentOrg?.name ?? null,
+                          };
+                          const auditPayload = (method: string) => ({
+                            method,
+                            ...buildCtx,
+                          });
+                          return (
+                            <>
+                              <p className="text-xs text-muted-foreground">
+                                env=<span className="font-mono font-semibold text-foreground">{sentryEnv}</span>{" "}
+                                release=<span className="font-mono font-semibold text-foreground">{buildCtx.release}</span>
+                              </p>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={async () => {
+                                  Sentry.withScope((scope) => {
+                                    scope.setExtras(buildCtx as any);
+                                    Sentry.captureMessage("Quantivis monitoring verification", "error");
+                                  });
+                                  if (currentOrgId && user?.id) {
+                                    await supabase.from("audit_log").insert({
+                                      organization_id: currentOrgId,
+                                      actor_id: user.id,
+                                      actor_type: "user",
+                                      action_type: "monitoring_test_triggered",
+                                      resource_type: "sentry",
+                                      payload: auditPayload("captureMessage") as any,
+                                    });
+                                  }
+                                  toast({ title: "Sentry message sent", description: `env=${sentryEnv} release=${buildCtx.release}` });
+                                }}
+                              >
+                                Send Sentry test message
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={async () => {
+                                  const err = new Error("Quantivis frontend verification error");
+                                  Sentry.withScope((scope) => {
+                                    scope.setExtras(buildCtx as any);
+                                    Sentry.captureException(err);
+                                  });
+                                  if (currentOrgId && user?.id) {
+                                    await supabase.from("audit_log").insert({
+                                      organization_id: currentOrgId,
+                                      actor_id: user.id,
+                                      actor_type: "user",
+                                      action_type: "monitoring_test_triggered",
+                                      resource_type: "sentry",
+                                      payload: auditPayload("captureException") as any,
+                                    });
+                                  }
+                                  toast({ title: "Sentry exception sent", description: `env=${sentryEnv} release=${buildCtx.release}` });
+                                  setTimeout(() => { throw err; }, 100);
+                                }}
+                              >
+                                Throw test frontend error
+                              </Button>
+                            </>
+                          );
+                        })()}
                       </CardContent>
                     </Card>
                   </motion.div>
