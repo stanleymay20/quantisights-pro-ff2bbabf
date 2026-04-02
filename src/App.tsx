@@ -80,6 +80,7 @@ const GovernanceCommandView = lazy(() => import("./pages/GovernanceCommandView")
 const GovernanceMaturity = lazy(() => import("./pages/GovernanceMaturity"));
 const Compliance = lazy(() => import("./pages/Compliance"));
 const AlertPlaybooks = lazy(() => import("./pages/AlertPlaybooks"));
+const SystemHealth = lazy(() => import("./pages/SystemHealth"));
 
 // ── Organization & Admin ──
 const Team = lazy(() => import("./pages/Team"));
