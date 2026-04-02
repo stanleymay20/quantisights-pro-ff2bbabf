@@ -340,23 +340,44 @@ function linearTrend(series: number[]): { slope: number; intercept: number } {
   return { slope, intercept };
 }
 
-/** Auto-select ARIMA order using AIC */
+/** Auto-select ARIMA order using stationarity tests */
 function selectOrder(series: number[]): { p: number; d: number; q: number } {
-  // Test stationarity via ADF approximation (variance ratio)
-  // Also check if trend is significant (needs d=1)
   let d = 0;
   let current = [...series];
   
-  const trend = linearTrend(current);
-  const trendSignificance = Math.abs(trend.slope) / (stdDev(current) / Math.sqrt(current.length) || 1);
-  
+  // Use both ACF decay AND linear trend significance to detect non-stationarity
   for (let i = 0; i < 2; i++) {
-    const ac = acf(current, Math.min(10, Math.floor(current.length / 3)));
-    // Series is non-stationary if ACF decays slowly OR significant trend exists
-    const isStationary = Math.abs(ac[1] || 0) < 0.8 && (i > 0 || trendSignificance < 2.0);
-    if (isStationary) break;
+    const trend = linearTrend(current);
+    const n = current.length;
+    const se = stdDev(current) / Math.sqrt(n) || 1;
+    const tStat = Math.abs(trend.slope * (n - 1) / 2) / se; // approximate t-stat for slope
+    
+    const ac = acf(current, Math.min(10, Math.floor(n / 3)));
+    const acfDecaysSlow = Math.abs(ac[1] || 0) > 0.5;
+    const hasTrend = tStat > 1.5; // More sensitive trend detection
+    
+    if (!acfDecaysSlow && !hasTrend) break;
     current = difference(current, 1);
     d++;
+  }
+  
+  // Ensure at least d=1 if strong monotonic trend exists
+  if (d === 0) {
+    const trend = linearTrend(series);
+    const r2 = (() => {
+      const n = series.length;
+      const m = mean(series);
+      let ssTot = 0, ssRes = 0;
+      for (let i = 0; i < n; i++) {
+        ssTot += (series[i] - m) ** 2;
+        ssRes += (series[i] - (trend.intercept + trend.slope * i)) ** 2;
+      }
+      return ssTot > 0 ? 1 - ssRes / ssTot : 0;
+    })();
+    if (r2 > 0.5) {
+      d = 1;
+      current = difference(series, 1);
+    }
   }
 
   // Select p from PACF cutoff
