@@ -269,8 +269,7 @@ const Settings = () => {
                 <TabsTrigger value="organization" className="gap-1 text-xs sm:text-sm sm:gap-2"><Building2 className="w-4 h-4 hidden sm:block" /> Organization</TabsTrigger>
                 <TabsTrigger value="identity" className="gap-1 text-xs sm:text-sm sm:gap-2"><Compass className="w-4 h-4 hidden sm:block" /> Identity</TabsTrigger>
                 <TabsTrigger value="notifications" className="gap-1 text-xs sm:text-sm sm:gap-2"><Bell className="w-4 h-4 hidden sm:block" /> Notifications</TabsTrigger>
-
-
+                <TabsTrigger value="audit" className="gap-1 text-xs sm:text-sm sm:gap-2" onClick={() => fetchAuditLog()}><ScrollText className="w-4 h-4 hidden sm:block" /> Audit Log</TabsTrigger>
               </TabsList>
 
               {/* Profile */}
