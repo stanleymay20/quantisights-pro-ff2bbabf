@@ -112,7 +112,7 @@ serve(async (req) => {
     if (embedMode === "all" || embedMode === "insights") {
       const { data: insights } = await svc
         .from("insights")
-        .select("id, message, category, severity, confidence")
+        .select("id, message, category, severity, confidence_score")
         .eq("organization_id", organization_id)
         .order("created_at", { ascending: false })
         .limit(500);
