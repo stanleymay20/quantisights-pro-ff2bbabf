@@ -14,8 +14,8 @@ import { useProject } from "@/contexts/ProjectContext";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { useMetrics } from "@/hooks/useMetrics";
 import { useInsights } from "@/hooks/useInsights";
-import { Bell, User, RefreshCw, Shield, Upload, Zap, TrendingUp, ArrowRight, Minimize2, Maximize2, Settings, CreditCard, Users, LogOut, ChevronDown, Bug } from "lucide-react";
-import * as Sentry from "@sentry/react"; // TEMP: Sentry test
+import { Bell, User, RefreshCw, Shield, Upload, Zap, TrendingUp, ArrowRight, Minimize2, Maximize2, Settings, CreditCard, Users, LogOut, ChevronDown } from "lucide-react";
+
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useNavigate } from "react-router-dom";
