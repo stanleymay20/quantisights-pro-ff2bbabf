@@ -61,7 +61,7 @@ export function useDataLineage(organizationId: string | undefined) {
         target_id: entry.targetId,
         target_name: entry.targetName,
         transformation: entry.transformation,
-        transformation_details: entry.details || {},
+        transformation_details: (entry.details || {}) as any,
         confidence_impact: entry.confidenceImpact,
       }]);
       if (error) throw error;

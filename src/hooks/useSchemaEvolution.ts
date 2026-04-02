@@ -64,7 +64,7 @@ export function useSchemaEvolution(organizationId: string | undefined, datasetId
         old_type: entry.oldType,
         new_type: entry.newType,
         detected_by: entry.detectedBy || "system",
-        metadata: entry.metadata || {},
+        metadata: (entry.metadata || {}) as any,
       }]);
       if (error) throw error;
     },
