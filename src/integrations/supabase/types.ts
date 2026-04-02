@@ -14,6 +14,90 @@ export type Database = {
   }
   public: {
     Tables: {
+      ab_experiments: {
+        Row: {
+          alpha: number
+          control_group_filter: Json | null
+          created_at: string
+          created_by: string
+          dataset_id: string | null
+          description: string | null
+          ended_at: string | null
+          hypothesis: string | null
+          id: string
+          minimum_detectable_effect: number | null
+          name: string
+          organization_id: string
+          primary_metric: string
+          results: Json | null
+          secondary_metrics: string[] | null
+          started_at: string | null
+          status: string
+          target_sample_size: number | null
+          treatment_group_filter: Json | null
+          updated_at: string
+        }
+        Insert: {
+          alpha?: number
+          control_group_filter?: Json | null
+          created_at?: string
+          created_by: string
+          dataset_id?: string | null
+          description?: string | null
+          ended_at?: string | null
+          hypothesis?: string | null
+          id?: string
+          minimum_detectable_effect?: number | null
+          name: string
+          organization_id: string
+          primary_metric: string
+          results?: Json | null
+          secondary_metrics?: string[] | null
+          started_at?: string | null
+          status?: string
+          target_sample_size?: number | null
+          treatment_group_filter?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          alpha?: number
+          control_group_filter?: Json | null
+          created_at?: string
+          created_by?: string
+          dataset_id?: string | null
+          description?: string | null
+          ended_at?: string | null
+          hypothesis?: string | null
+          id?: string
+          minimum_detectable_effect?: number | null
+          name?: string
+          organization_id?: string
+          primary_metric?: string
+          results?: Json | null
+          secondary_metrics?: string[] | null
+          started_at?: string | null
+          status?: string
+          target_sample_size?: number | null
+          treatment_group_filter?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ab_experiments_dataset_id_fkey"
+            columns: ["dataset_id"]
+            isOneToOne: false
+            referencedRelation: "datasets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ab_experiments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       advisory_instances: {
         Row: {
           action: string
@@ -686,6 +770,75 @@ export type Database = {
           },
           {
             foreignKeyName: "cognitive_bias_detections_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cohort_definitions: {
+        Row: {
+          activity_field: string
+          cached_results: Json | null
+          cohort_field: string
+          created_at: string
+          created_by: string
+          dataset_id: string | null
+          description: string | null
+          entity_field: string
+          filters: Json | null
+          id: string
+          last_computed_at: string | null
+          name: string
+          organization_id: string
+          period_type: string
+          updated_at: string
+        }
+        Insert: {
+          activity_field: string
+          cached_results?: Json | null
+          cohort_field: string
+          created_at?: string
+          created_by: string
+          dataset_id?: string | null
+          description?: string | null
+          entity_field?: string
+          filters?: Json | null
+          id?: string
+          last_computed_at?: string | null
+          name: string
+          organization_id: string
+          period_type?: string
+          updated_at?: string
+        }
+        Update: {
+          activity_field?: string
+          cached_results?: Json | null
+          cohort_field?: string
+          created_at?: string
+          created_by?: string
+          dataset_id?: string | null
+          description?: string | null
+          entity_field?: string
+          filters?: Json | null
+          id?: string
+          last_computed_at?: string | null
+          name?: string
+          organization_id?: string
+          period_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cohort_definitions_dataset_id_fkey"
+            columns: ["dataset_id"]
+            isOneToOne: false
+            referencedRelation: "datasets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cohort_definitions_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -5394,6 +5547,10 @@ export type Database = {
           entity_type: string
           metadata: Json
         }[]
+      }
+      refresh_metric_aggregates: {
+        Args: { _dataset_id?: string; _org_id: string; _period_type?: string }
+        Returns: number
       }
       release_cron_advisory_lock: {
         Args: { _lock_id: number }
