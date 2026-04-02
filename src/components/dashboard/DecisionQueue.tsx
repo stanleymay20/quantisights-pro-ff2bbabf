@@ -553,6 +553,12 @@ const DecisionQueue = memo(({
                           confidenceBasis={rec.confidenceBasis}
                           assumptions={rec.assumptions}
                         />
+
+                        {/* Similar Past Decisions (Institutional Memory) */}
+                        <SimilarDecisionsPanel
+                          organizationId={organizationId}
+                          queryText={rec.recommendedAction}
+                        />
                       </div>
                     </div>
 
