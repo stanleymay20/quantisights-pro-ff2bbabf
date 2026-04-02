@@ -1,6 +1,5 @@
 /**
- * Hook to fetch similar past decisions for a given decision context.
- * Uses the embed-decisions function with a similarity search.
+ * Hook to fetch similar past decisions with match quality tiers and rationale.
  */
 import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,6 +9,11 @@ export interface SimilarDecision {
   entity_id: string;
   content_text: string;
   similarity: number;
+  match_tier: "strong" | "moderate" | "weak";
+  match_rationale: string;
+  query_category: string;
+  match_category: string;
+  overlapping_keywords: string[];
   metadata: {
     decision_type?: string;
     confidence?: number;
@@ -20,6 +24,15 @@ export interface SimilarDecision {
   };
 }
 
+export type RetrievalQuality = "high" | "moderate" | "low" | "none";
+
+export interface MatchSummary {
+  total_candidates: number;
+  strong: number;
+  moderate: number;
+  weak: number;
+}
+
 export interface SimilarDecisionsResult {
   similar: SimilarDecision[];
   loading: boolean;
@@ -27,6 +40,9 @@ export interface SimilarDecisionsResult {
   historicalSuccessRate: number | null;
   avgAccuracy: number | null;
   confidenceAdjustment: number;
+  retrievalQuality: RetrievalQuality;
+  queryCategory: string | null;
+  matchSummary: MatchSummary | null;
   fetch: (queryText: string) => Promise<void>;
 }
 
@@ -37,6 +53,9 @@ export const useSimilarDecisions = (organizationId: string | null): SimilarDecis
   const [historicalSuccessRate, setHistoricalSuccessRate] = useState<number | null>(null);
   const [avgAccuracy, setAvgAccuracy] = useState<number | null>(null);
   const [confidenceAdjustment, setConfidenceAdjustment] = useState(0);
+  const [retrievalQuality, setRetrievalQuality] = useState<RetrievalQuality>("none");
+  const [queryCategory, setQueryCategory] = useState<string | null>(null);
+  const [matchSummary, setMatchSummary] = useState<MatchSummary | null>(null);
 
   const fetchSimilar = useCallback(async (queryText: string) => {
     if (!organizationId || !queryText) return;
@@ -63,6 +82,9 @@ export const useSimilarDecisions = (organizationId: string | null): SimilarDecis
         setHistoricalSuccessRate(data.historical_success_rate ?? null);
         setAvgAccuracy(data.avg_accuracy ?? null);
         setConfidenceAdjustment(data.confidence_adjustment ?? 0);
+        setRetrievalQuality(data.retrieval_quality ?? "none");
+        setQueryCategory(data.query_category ?? null);
+        setMatchSummary(data.match_summary ?? null);
       }
     } catch (e) {
       setError((e as Error).message);
@@ -77,6 +99,9 @@ export const useSimilarDecisions = (organizationId: string | null): SimilarDecis
     historicalSuccessRate,
     avgAccuracy,
     confidenceAdjustment,
+    retrievalQuality,
+    queryCategory,
+    matchSummary,
     fetch: fetchSimilar,
   };
 };
