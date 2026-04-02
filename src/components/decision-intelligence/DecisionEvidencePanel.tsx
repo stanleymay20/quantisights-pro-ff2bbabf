@@ -159,8 +159,8 @@ const DecisionEvidencePanel = ({ decisionId, organizationId, decisionText }: Dec
   }, [decisionId, organizationId]);
 
   const statusColors = {
-    complete: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
-    pending: "bg-amber-500/10 text-amber-600 border-amber-500/20",
+    complete: "bg-success/10 text-success border-success/20",
+    pending: "bg-warning/10 text-warning border-warning/20",
     missing: "bg-muted text-muted-foreground border-border/50",
   };
 
