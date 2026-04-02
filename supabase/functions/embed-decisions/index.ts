@@ -124,7 +124,7 @@ serve(async (req) => {
           await storeEmbedding(supabaseUrl, serviceKey, organization_id, "insight", i.id, text, embedding, {
             category: i.category,
             severity: i.severity,
-            confidence: i.confidence,
+            confidence: i.confidence_score,
           });
           embedded++;
         } catch (e) {
