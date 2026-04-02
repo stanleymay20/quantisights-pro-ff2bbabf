@@ -8,9 +8,9 @@ const FOOTER_SECTIONS = [
   {
     title: "Platform",
     links: [
-      { label: "How It Works", href: "#how-it-works" },
-      { label: "Capabilities", href: "#features" },
-      { label: "Case Studies", href: "#case-studies" },
+      { label: "How It Works", to: "/#how-it-works" },
+      { label: "Capabilities", to: "/#features" },
+      { label: "Case Studies", to: "/#case-studies" },
       { label: "Pricing", to: "/pricing" },
     ],
   },
