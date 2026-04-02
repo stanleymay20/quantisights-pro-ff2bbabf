@@ -288,6 +288,7 @@ const App = () => (
               <Route path="/governance-maturity" element={<P><GovernanceMaturity /></P>} />
               <Route path="/compliance" element={<P><Compliance /></P>} />
               <Route path="/alert-playbooks" element={<P><AlertPlaybooks /></P>} />
+              <Route path="/system-health" element={<P><SystemHealth /></P>} />
 
               {/* ══════ Organization & Admin ══════ */}
               <Route path="/team" element={<P><Team /></P>} />
