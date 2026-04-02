@@ -429,12 +429,15 @@ export function arimaForecast(
     current = difference(current, 1);
   }
 
-  // Fit AR parameters via Yule-Walker
-  const ac = acf(current, Math.max(p, q) + 1);
+  // Mean-center the (possibly differenced) series for stable AR fitting
+  const seriesMean = mean(current);
+  const centered = current.map(v => v - seriesMean);
+
+  // Fit AR parameters via Yule-Walker on centered series
+  const ac = acf(centered, Math.max(p, q) + 1);
   const arCoeffs: number[] = [];
 
   if (p > 0) {
-    // Solve Yule-Walker equations via Levinson-Durbin
     const r = ac.slice(1, p + 1);
     const R: number[][] = [];
     for (let i = 0; i < p; i++) {
@@ -444,7 +447,6 @@ export function arimaForecast(
       }
     }
     
-    // Simple Gaussian elimination
     const augmented = R.map((row, i) => [...row, r[i]]);
     for (let col = 0; col < p; col++) {
       let maxRow = col;
@@ -452,67 +454,69 @@ export function arimaForecast(
         if (Math.abs(augmented[row][col]) > Math.abs(augmented[maxRow][col])) maxRow = row;
       }
       [augmented[col], augmented[maxRow]] = [augmented[maxRow], augmented[col]];
-      
       if (Math.abs(augmented[col][col]) < 1e-10) continue;
-      
       for (let row = col + 1; row < p; row++) {
         const factor = augmented[row][col] / augmented[col][col];
-        for (let j = col; j <= p; j++) {
-          augmented[row][j] -= factor * augmented[col][j];
-        }
+        for (let j = col; j <= p; j++) augmented[row][j] -= factor * augmented[col][j];
       }
     }
     
-    // Back substitution
     const solution = new Array(p).fill(0);
     for (let i = p - 1; i >= 0; i--) {
       let sum = augmented[i][p];
-      for (let j = i + 1; j < p; j++) {
-        sum -= augmented[i][j] * solution[j];
-      }
+      for (let j = i + 1; j < p; j++) sum -= augmented[i][j] * solution[j];
       solution[i] = Math.abs(augmented[i][i]) > 1e-10 ? sum / augmented[i][i] : 0;
     }
+    
+    // Stability check: ensure AR polynomial roots are inside unit circle
+    // Simple check: sum of absolute AR coefficients < 1
+    const arSum = solution.reduce((s, c) => s + Math.abs(c), 0);
+    if (arSum >= 1.0) {
+      // Scale down to ensure stability
+      const scale = 0.95 / arSum;
+      for (let i = 0; i < solution.length; i++) solution[i] *= scale;
+    }
+    
     arCoeffs.push(...solution);
   }
 
-  // Compute residuals
+  // Compute residuals on centered series
   const residuals: number[] = [];
-  for (let t = p; t < current.length; t++) {
+  for (let t = p; t < centered.length; t++) {
     let predicted = 0;
-    for (let i = 0; i < p; i++) {
-      predicted += arCoeffs[i] * current[t - i - 1];
-    }
-    residuals.push(current[t] - predicted);
+    for (let i = 0; i < p; i++) predicted += arCoeffs[i] * centered[t - i - 1];
+    residuals.push(centered[t] - predicted);
   }
 
-  // Fit MA coefficients from residual autocorrelation
+  // Fit MA coefficients
   const maCoeffs: number[] = [];
   if (q > 0 && residuals.length > q) {
     const resAc = acf(residuals, q);
-    for (let i = 1; i <= q; i++) {
-      maCoeffs.push(-resAc[i] * 0.5); // Dampened MA estimation
-    }
+    for (let i = 1; i <= q; i++) maCoeffs.push(-resAc[i] * 0.5);
   }
 
-  // Generate forecast on differenced series
-  const forecastDiff: number[] = [];
-  const extendedSeries = [...current];
+  // Generate forecast on centered series, then add mean back
+  const forecastCentered: number[] = [];
+  const extendedCentered = [...centered];
   const extendedResiduals = [...residuals];
 
   for (let h = 0; h < horizons; h++) {
     let pred = 0;
     for (let i = 0; i < p; i++) {
-      const idx = extendedSeries.length - i - 1;
-      if (idx >= 0) pred += arCoeffs[i] * extendedSeries[idx];
+      const idx = extendedCentered.length - i - 1;
+      if (idx >= 0) pred += arCoeffs[i] * extendedCentered[idx];
     }
     for (let i = 0; i < q; i++) {
       const idx = extendedResiduals.length - i - 1;
       if (idx >= 0) pred += maCoeffs[i] * extendedResiduals[idx];
     }
-    forecastDiff.push(pred);
-    extendedSeries.push(pred);
+    forecastCentered.push(pred);
+    extendedCentered.push(pred);
     extendedResiduals.push(0);
   }
+
+  // Add mean back to get forecast on differenced (or raw) scale
+  const forecastDiff = forecastCentered.map(v => v + seriesMean);
 
   // Undifference
   const forecast = undifference(forecastDiff, lastValues, d);
