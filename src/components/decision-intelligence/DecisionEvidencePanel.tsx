@@ -249,7 +249,7 @@ const DecisionEvidencePanel = ({ decisionId, organizationId, decisionText }: Dec
                   {outcome.accuracy_score != null && (
                     <div>
                       <span className="text-muted-foreground">Accuracy:</span>
-                      <span className={`ml-1 font-mono font-bold ${outcome.accuracy_score >= 70 ? "text-emerald-600" : outcome.accuracy_score >= 40 ? "text-amber-600" : "text-destructive"}`}>
+                      <span className={`ml-1 font-mono font-bold ${outcome.accuracy_score >= 70 ? "text-success" : outcome.accuracy_score >= 40 ? "text-warning" : "text-destructive"}`}>
                         {outcome.accuracy_score.toFixed(0)}%
                       </span>
                     </div>
