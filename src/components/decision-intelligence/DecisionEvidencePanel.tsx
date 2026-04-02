@@ -205,8 +205,8 @@ const DecisionEvidencePanel = ({ decisionId, organizationId, decisionText }: Dec
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-semibold">{step.label}</span>
-                      {step.status === "complete" && <CheckCircle2 className="w-3 h-3 text-emerald-500" />}
-                      {step.status === "pending" && <Clock className="w-3 h-3 text-amber-500" />}
+                      {step.status === "complete" && <CheckCircle2 className="w-3 h-3 text-success" />}
+                      {step.status === "pending" && <Clock className="w-3 h-3 text-warning" />}
                       {step.status === "missing" && <XCircle className="w-3 h-3 text-muted-foreground" />}
                     </div>
                     <p className="text-[10px] opacity-80 truncate">{step.detail}</p>
