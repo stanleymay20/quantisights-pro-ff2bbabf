@@ -15,8 +15,9 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import {
-  User, Building2, Bell, Save, Loader2, Mail, X, ScrollText, Clock, Shield, Trash2, AlertTriangle, ShieldCheck, Sun, Moon, Monitor, Activity, Lock, Compass,
+  User, Building2, Bell, Save, Loader2, Mail, X, ScrollText, Clock, Shield, Trash2, AlertTriangle, ShieldCheck, Sun, Moon, Monitor, Activity, Lock, Compass, Bug,
 } from "lucide-react";
+import { Sentry } from "@/lib/sentry";
 import OrganizationalIdentitySettings from "@/components/settings/OrganizationalIdentitySettings";
 import RetentionPolicySettings from "@/components/settings/RetentionPolicySettings";
 import GovernanceKPIs from "@/components/dashboard/GovernanceKPIs";
