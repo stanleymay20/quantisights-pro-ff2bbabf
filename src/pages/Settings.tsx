@@ -271,6 +271,9 @@ const Settings = () => {
                 <TabsTrigger value="identity" className="gap-1 text-xs sm:text-sm sm:gap-2"><Compass className="w-4 h-4 hidden sm:block" /> Identity</TabsTrigger>
                 <TabsTrigger value="notifications" className="gap-1 text-xs sm:text-sm sm:gap-2"><Bell className="w-4 h-4 hidden sm:block" /> Notifications</TabsTrigger>
                 <TabsTrigger value="audit" className="gap-1 text-xs sm:text-sm sm:gap-2" onClick={fetchAuditLog}><ScrollText className="w-4 h-4 hidden sm:block" /> Audit</TabsTrigger>
+                {(orgRole === "owner" || orgRole === "admin") && (
+                  <TabsTrigger value="monitoring-test" className="gap-1 text-xs sm:text-sm sm:gap-2 text-destructive"><Bug className="w-4 h-4 hidden sm:block" /> Monitoring</TabsTrigger>
+                )}
               </TabsList>
 
               {/* Profile */}
