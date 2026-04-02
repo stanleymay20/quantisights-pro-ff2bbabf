@@ -615,7 +615,7 @@ const DecisionLedgerPage = () => {
                         </div>
                         <DecisionComments decisionId={d.id} />
 
-                        {/* Execution & Replay panels */}
+                        {/* Execution, Replay & Evidence panels */}
                         <div className="mt-4 flex gap-2">
                           <Button
                             size="sm"
@@ -623,21 +623,28 @@ const DecisionLedgerPage = () => {
                             onClick={() => setExpandedDecision(expandedDecision === d.id ? null : d.id)}
                             className="gap-1.5 text-xs"
                           >
-                            <ArrowRight className="w-3 h-3" /> Execution & Replay
+                            <ArrowRight className="w-3 h-3" /> Evidence & Execution
                           </Button>
                         </div>
                         {expandedDecision === d.id && currentOrgId && (
-                          <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
-                            <ExecutionTimeline
-                              organizationId={currentOrgId}
+                          <div className="mt-4 space-y-4">
+                            <DecisionEvidencePanel
                               decisionId={d.id}
-                              decisionTitle={d.recommended_action}
-                            />
-                            <DecisionReplayPanel
                               organizationId={currentOrgId}
-                              decisionId={d.id}
-                              decisionTitle={d.recommended_action}
+                              decisionText={d.recommended_action}
                             />
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                              <ExecutionTimeline
+                                organizationId={currentOrgId}
+                                decisionId={d.id}
+                                decisionTitle={d.recommended_action}
+                              />
+                              <DecisionReplayPanel
+                                organizationId={currentOrgId}
+                                decisionId={d.id}
+                                decisionTitle={d.recommended_action}
+                              />
+                            </div>
                           </div>
                         )}
                       </CardContent>
