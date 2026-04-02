@@ -103,9 +103,11 @@ const Demo = () => {
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
             <div className="flex items-center justify-center gap-2 text-destructive mb-3">
               <AlertCircle className="w-5 h-5" />
-              <h2 className="text-lg font-semibold">Provisioning Failed</h2>
+              <h2 className="text-lg font-semibold">Demo Temporarily Unavailable</h2>
             </div>
-            <p className="text-sm text-muted-foreground mb-6 max-w-sm mx-auto">{error}</p>
+            <p className="text-sm text-muted-foreground mb-6 max-w-sm mx-auto">
+              The demo environment is being updated. Please try again in a moment or contact us for a guided walkthrough.
+            </p>
             <button
               onClick={() => window.location.reload()}
               className="px-6 py-2.5 rounded-lg bg-primary text-primary-foreground font-medium text-sm hover:brightness-110 transition-all"
