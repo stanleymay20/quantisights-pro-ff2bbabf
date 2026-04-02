@@ -115,7 +115,11 @@ const navSections: NavSection[] = [
     items: [
       { icon: Users, label: "Team", path: "/team" },
       { icon: Shield, label: "Governance", path: "/governance" },
+      { icon: Target, label: "OKR Alignment", path: "/okrs" },
+      { icon: Shield, label: "Compliance", path: "/compliance" },
       { icon: Crosshair, label: "Decision Fitness", path: "/decision-fitness" },
+      { icon: Eye, label: "Governance Maturity", path: "/governance-maturity" },
+      { icon: Activity, label: "System Health", path: "/system-health" },
       { icon: CreditCard, label: "Billing", path: "/billing" },
       { icon: Settings, label: "Settings", path: "/settings" },
     ],
