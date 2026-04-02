@@ -323,14 +323,37 @@ function pacf(series: number[], maxLag: number): number[] {
   return result;
 }
 
+/** Detect linear trend in a series */
+function linearTrend(series: number[]): { slope: number; intercept: number } {
+  const n = series.length;
+  if (n < 2) return { slope: 0, intercept: series[0] || 0 };
+  let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+  for (let i = 0; i < n; i++) {
+    sumX += i;
+    sumY += series[i];
+    sumXY += i * series[i];
+    sumX2 += i * i;
+  }
+  const denom = n * sumX2 - sumX * sumX;
+  const slope = denom !== 0 ? (n * sumXY - sumX * sumY) / denom : 0;
+  const intercept = (sumY - slope * sumX) / n;
+  return { slope, intercept };
+}
+
 /** Auto-select ARIMA order using AIC */
 function selectOrder(series: number[]): { p: number; d: number; q: number } {
   // Test stationarity via ADF approximation (variance ratio)
+  // Also check if trend is significant (needs d=1)
   let d = 0;
   let current = [...series];
+  
+  const trend = linearTrend(current);
+  const trendSignificance = Math.abs(trend.slope) / (stdDev(current) / Math.sqrt(current.length) || 1);
+  
   for (let i = 0; i < 2; i++) {
     const ac = acf(current, Math.min(10, Math.floor(current.length / 3)));
-    const isStationary = Math.abs(ac[1] || 0) < 0.8;
+    // Series is non-stationary if ACF decays slowly OR significant trend exists
+    const isStationary = Math.abs(ac[1] || 0) < 0.8 && (i > 0 || trendSignificance < 2.0);
     if (isStationary) break;
     current = difference(current, 1);
     d++;
