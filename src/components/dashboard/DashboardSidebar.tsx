@@ -105,7 +105,7 @@ const navSections: NavSection[] = [
       { icon: Upload, label: "CSV Upload", path: "/data-upload" },
       { icon: Search, label: "Dataset Explorer", path: "/dataset-explorer" },
       { icon: Database, label: "Data Catalog", path: "/data-catalog" },
-      { icon: GitBranch, label: "Data Lineage", path: "/data-lineage" },
+      { icon: GitBranch, label: "Data Lineage", path: "/lineage" },
       { icon: Activity, label: "Pipeline Monitor", path: "/pipeline" },
     ],
   },
