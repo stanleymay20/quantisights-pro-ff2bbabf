@@ -1,12 +1,42 @@
 /**
  * Sentry integration for enterprise-grade frontend observability.
- * 
+ *
  * To activate: set VITE_SENTRY_DSN in your environment.
  * Without a DSN, Sentry is a no-op — the app runs normally.
  */
 import * as Sentry from "@sentry/react";
 
 const SENTRY_DSN = import.meta.env.VITE_SENTRY_DSN || "https://5635ca5fa91da3f54c611bd47fc7723b@o4511149684228096.ingest.de.sentry.io/4511149708869712";
+
+function detectEnvironment(): string {
+  const explicit = import.meta.env.VITE_SENTRY_ENVIRONMENT;
+  if (explicit) return explicit;
+
+  if (import.meta.env.DEV) return "development";
+
+  const host = typeof window !== "undefined" ? window.location.hostname : "";
+  if (host.includes("preview") || host.includes("localhost") || host.includes("127.0.0.1"))
+    return "development";
+  if (host.includes("staging") || host.includes("beta"))
+    return "staging";
+  return "production";
+}
+
+function detectRelease(): string {
+  const explicit = import.meta.env.VITE_APP_RELEASE;
+  if (explicit) return `quantivis@${explicit}`;
+
+  const sha = import.meta.env.VITE_GIT_SHA;
+  if (sha) return `quantivis@${sha}`;
+
+  // Date-based fallback from build time
+  const d = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `quantivis@${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())}`;
+}
+
+const SENTRY_ENV = detectEnvironment();
+const SENTRY_RELEASE = detectRelease();
 
 export function initSentry(): void {
   if (!SENTRY_DSN) {
@@ -16,13 +46,13 @@ export function initSentry(): void {
 
   Sentry.init({
     dsn: SENTRY_DSN,
-    environment: import.meta.env.MODE || "production",
-    release: `quantivis@${import.meta.env.VITE_APP_VERSION || "0.0.0"}`,
+    environment: SENTRY_ENV,
+    release: SENTRY_RELEASE,
 
     // Performance
-    tracesSampleRate: 0.1, // 10% of transactions
-    replaysSessionSampleRate: 0.0, // Don't record sessions by default
-    replaysOnErrorSampleRate: 1.0, // Record 100% of sessions with errors
+    tracesSampleRate: 0.1,
+    replaysSessionSampleRate: 0.0,
+    replaysOnErrorSampleRate: 1.0,
 
     // Filtering
     ignoreErrors: [
@@ -33,7 +63,6 @@ export function initSentry(): void {
     ],
 
     beforeSend(event) {
-      // Strip PII from breadcrumbs
       if (event.breadcrumbs) {
         event.breadcrumbs = event.breadcrumbs.map((bc) => {
           if (bc.data?.url) {
@@ -59,13 +88,13 @@ export function initSentry(): void {
     ],
   });
 
-  console.info("[Sentry] Initialized with DSN:", SENTRY_DSN.substring(0, 20) + "...");
+  console.info(`[Sentry] env=${SENTRY_ENV} release=${SENTRY_RELEASE}`);
 }
 
 /** Set user context after authentication */
 export function setSentryUser(userId: string, email?: string, orgId?: string): void {
   if (!SENTRY_DSN) return;
-  Sentry.setUser({ id: userId, email, });
+  Sentry.setUser({ id: userId, email });
   if (orgId) Sentry.setTag("organization_id", orgId);
 }
 
