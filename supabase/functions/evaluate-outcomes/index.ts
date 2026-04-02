@@ -63,18 +63,40 @@ Deno.serve(async (req) => {
           const windowEnd = new Date(decidedAt.getTime() + outcome.evaluation_window_days * 86400000);
           if (now < windowEnd) continue;
 
-          if (!outcome.dataset_id) {
-            immediateUpdates.push({
-              id: outcome.id,
-              update: {
-                outcome_status: "not_evaluable",
-                evaluation_date: now.toISOString(),
-                notes: "No dataset_id linked — cannot measure outcome.",
-              },
-            });
-            totalEvaluated++;
-            continue;
+          // If no dataset_id, try to find the most recent active dataset for this org
+          let effectiveDatasetId = outcome.dataset_id;
+          if (!effectiveDatasetId) {
+            const { data: latestDataset } = await supabase
+              .from("datasets")
+              .select("id")
+              .eq("organization_id", org.id)
+              .eq("status", "active")
+              .order("created_at", { ascending: false })
+              .limit(1)
+              .maybeSingle();
+
+            if (latestDataset?.id) {
+              effectiveDatasetId = latestDataset.id;
+              // Also update the outcome record with the resolved dataset_id
+              await supabase.from("decision_outcomes")
+                .update({ dataset_id: effectiveDatasetId })
+                .eq("id", outcome.id);
+            } else {
+              immediateUpdates.push({
+                id: outcome.id,
+                update: {
+                  outcome_status: "not_evaluable",
+                  evaluation_date: now.toISOString(),
+                  notes: "No dataset found in organization — cannot measure outcome.",
+                },
+              });
+              totalEvaluated++;
+              continue;
+            }
           }
+
+          // Use effectiveDatasetId from here on
+          outcome.dataset_id = effectiveDatasetId;
 
           const key = `${outcome.dataset_id}:${outcome.expected_metric}`;
           if (!metricQueries.has(key)) {

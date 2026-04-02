@@ -53,12 +53,16 @@ function computeSuccess(d: any): { value: number; metric: "prediction_accuracy_s
 }
 
 function computeCalibrationModel(decisions: any[]) {
-  // Filter to completed decisions with at least one success signal
+  // Include decisions that have been decided AND have at least one measurable signal.
+  // Previously required execution_status === "completed" which excluded 100% of decisions.
+  // Now: any decision with a decided status and confidence data is eligible.
+  // Success is still computed from prediction_accuracy_score or outcome_delta when available.
   const calibrated = decisions.filter(
     (d) =>
-      d.execution_status === "completed" &&
       d.capped_confidence != null &&
-      (d.prediction_accuracy_score != null || d.outcome_delta != null)
+      (d.execution_status === "completed" ||
+       d.prediction_accuracy_score != null ||
+       d.outcome_delta != null)
   );
 
   if (calibrated.length < MIN_DECISIONS) {
@@ -199,11 +203,12 @@ serve(async (req) => {
       let calibrated = 0;
 
       for (const org of (orgs || [])) {
+        // Fetch ALL decided decisions (not just "completed") to maximize calibration coverage
         const { data: decisions } = await svc
           .from("decision_ledger")
           .select(DECISION_COLUMNS)
           .eq("organization_id", org.id)
-          .eq("execution_status", "completed")
+          .not("decided_at", "is", null)
           .order("created_at", { ascending: false })
           .limit(WINDOW_SIZE);
 

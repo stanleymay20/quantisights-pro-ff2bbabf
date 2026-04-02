@@ -100,12 +100,14 @@ export async function searchSimilar(
     return [];
   }
 
+  // NOTE: match_decision_embeddings returns (1 - cosine_distance) as "distance",
+  // which is actually the similarity score (0–1). Use it directly.
   return (data || []).map((row: any) => ({
     entity_type: row.entity_type,
     entity_id: row.entity_id,
     content_text: row.content_text,
     metadata: row.metadata || {},
-    similarity: 1 - (row.distance || 0),
+    similarity: row.distance || 0,
   }));
 }
 
