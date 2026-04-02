@@ -83,7 +83,7 @@ export async function searchSimilar(
 }>> {
   const svc = createClient(supabaseUrl, serviceKey);
   const limit = opts.limit || 10;
-  const minSimilarity = opts.minSimilarity || 0.3;
+  const minSimilarity = opts.minSimilarity || 0.35;
   const entityTypes = opts.entityTypes || ["decision", "outcome", "insight", "advisory"];
   const vectorStr = `[${queryEmbedding.join(",")}]`;
 
