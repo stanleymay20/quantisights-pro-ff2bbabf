@@ -12,6 +12,7 @@ import DecisionResponsibilityDialog from "@/components/DecisionResponsibilityDia
 import ModifyDecisionDialog from "./ModifyDecisionDialog";
 import OutputClassificationBadge from "./OutputClassificationBadge";
 import TraceabilityPanel from "./TraceabilityPanel";
+import SimilarDecisionsPanel from "./SimilarDecisionsPanel";
 import DismissReasonDialog from "./DismissReasonDialog";
 import { useBuildDecisionQueue, type EnrichedDecision } from "@/hooks/useBuildDecisionQueue";
 import { onDecisionApproved, onDecisionDismissed } from "@/lib/decision-lifecycle";
@@ -551,6 +552,12 @@ const DecisionQueue = memo(({
                           traceability={rec.traceability}
                           confidenceBasis={rec.confidenceBasis}
                           assumptions={rec.assumptions}
+                        />
+
+                        {/* Similar Past Decisions (Institutional Memory) */}
+                        <SimilarDecisionsPanel
+                          organizationId={organizationId}
+                          queryText={rec.recommendedAction}
                         />
                       </div>
                     </div>

@@ -21,13 +21,7 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
-
-    if (!lovableApiKey) {
-      return new Response(JSON.stringify({ error: "AI not configured" }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    // Note: LOVABLE_API_KEY no longer needed — embeddings are deterministic (no LLM)
 
     // Accept service-role calls (from cron/other functions) or authenticated users
     const authHeader = req.headers.get("authorization");

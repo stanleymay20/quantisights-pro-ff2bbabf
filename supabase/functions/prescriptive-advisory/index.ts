@@ -137,6 +137,57 @@ serve(async (req) => {
       category: i.category,
     }));
 
+    // ── RAG: Retrieve similar past decisions and outcomes ──
+    let ragContextBlock = "";
+    let ragMetadata: { similar_count: number; avg_similarity: number; historical_success_rate: number | null; confidence_adjustment: number } = {
+      similar_count: 0, avg_similarity: 0, historical_success_rate: null, confidence_adjustment: 0,
+    };
+    try {
+      const { generateEmbedding, searchSimilar, buildRAGContext } = await import("../_shared/embeddings.ts");
+      
+      // Build a query from the top metric summaries
+      const queryText = metricSummaries.slice(0, 5).map(m => 
+        `${m.metric_type} ${m.total_change_pct > 0 ? 'increasing' : 'declining'} ${Math.abs(m.total_change_pct).toFixed(0)}% volatility ${m.volatility_pct.toFixed(0)}%`
+      ).join(". ");
+      
+      const queryEmbedding = await generateEmbedding(queryText);
+      const similar = await searchSimilar(supabaseUrl, serviceKey, organization_id, queryEmbedding, {
+        entityTypes: ["decision", "outcome"],
+        limit: 8,
+        minSimilarity: 0.25,
+      });
+      
+      if (similar.length > 0) {
+        ragContextBlock = "\n" + buildRAGContext(similar) + "\n";
+        ragMetadata.similar_count = similar.length;
+        ragMetadata.avg_similarity = similar.reduce((s, r) => s + r.similarity, 0) / similar.length;
+        
+        // Compute historical success rate from retrieved outcomes
+        const outcomes = similar.filter(r => r.entity_type === "outcome");
+        if (outcomes.length >= 2) {
+          const successCount = outcomes.filter(r => {
+            const delta = (r.metadata as any)?.outcome_delta;
+            return delta != null && delta > 0;
+          }).length;
+          ragMetadata.historical_success_rate = (successCount / outcomes.length) * 100;
+          
+          // Adjust confidence based on historical accuracy
+          const avgAccuracy = outcomes
+            .map(r => (r.metadata as any)?.accuracy_score)
+            .filter((a): a is number => a != null);
+          if (avgAccuracy.length > 0) {
+            const meanAccuracy = avgAccuracy.reduce((s, v) => s + v, 0) / avgAccuracy.length;
+            // If past similar decisions had low accuracy, reduce confidence
+            if (meanAccuracy < 50) ragMetadata.confidence_adjustment = -10;
+            else if (meanAccuracy < 70) ragMetadata.confidence_adjustment = -5;
+            else if (meanAccuracy > 85) ragMetadata.confidence_adjustment = 5;
+          }
+        }
+      }
+    } catch (ragErr) {
+      console.warn("RAG retrieval skipped:", ragErr instanceof Error ? ragErr.message : "unknown");
+    }
+
     // Fetch decision context if provided
     let contextBlock = "";
     if (decision_context_id) {
@@ -175,6 +226,7 @@ IMPORTANT: Generate advisories specifically relevant to this "${ctx.decision_typ
           role: "user",
           content: `You are an enterprise decision intelligence advisor for a $1B+ company.
 ${contextBlock}
+${ragContextBlock}
 Analyze the following dataset metrics and generate strategic advisories.
 
 METRIC SUMMARIES:
@@ -246,20 +298,29 @@ Rules:
       }
     }
 
-    // Apply confidence capping to each advisory
-    const advisories = aiAdvisories.map((a: any, i: number) => ({
-      id: `adv-${i + 1}`,
-      title: a.title || "Strategic Advisory",
-      category: a.category || "strategic",
-      priority: a.priority || "medium",
-      action: a.action || "",
-      expected_impact: a.expected_impact || "",
-      timeframe: a.timeframe || "30-90 days",
-      confidence: capConfidence(a.raw_confidence || 70, totalSampleSize, undefined, calibrationModel),
-      rationale: a.rationale || "",
-      kpi_affected: a.kpi_affected || [],
-      playbook_steps: a.playbook_steps || [],
-    }));
+    // Apply confidence capping to each advisory (with historical RAG adjustment)
+    const advisories = aiAdvisories.map((a: any, i: number) => {
+      const baseConfidence = (a.raw_confidence || 70) + ragMetadata.confidence_adjustment;
+      const clampedConfidence = Math.max(30, Math.min(95, baseConfidence));
+      return {
+        id: `adv-${i + 1}`,
+        title: a.title || "Strategic Advisory",
+        category: a.category || "strategic",
+        priority: a.priority || "medium",
+        action: a.action || "",
+        expected_impact: a.expected_impact || "",
+        timeframe: a.timeframe || "30-90 days",
+        confidence: capConfidence(clampedConfidence, totalSampleSize, undefined, calibrationModel),
+        rationale: a.rationale || "",
+        kpi_affected: a.kpi_affected || [],
+        playbook_steps: a.playbook_steps || [],
+        rag_adjustment: ragMetadata.confidence_adjustment !== 0 ? {
+          adjustment_pp: ragMetadata.confidence_adjustment,
+          similar_outcomes: ragMetadata.similar_count,
+          historical_success_rate: ragMetadata.historical_success_rate,
+        } : undefined,
+      };
+    });
 
     // Add risk-based advisories from risk index (these are always relevant)
     for (const risk of (riskIndices || [])) {
@@ -350,6 +411,12 @@ Rules:
       confidence_ceiling: totalSampleSize < 12 ? 60 : totalSampleSize < 30 ? 75 : 90,
       adaptive_calibration_applied: !!calibrationModel,
       calibration_model_version: calibrationModel?.model_version ?? null,
+      rag_context: {
+        similar_decisions_retrieved: ragMetadata.similar_count,
+        avg_similarity: ragMetadata.avg_similarity,
+        historical_success_rate: ragMetadata.historical_success_rate,
+        confidence_adjustment_pp: ragMetadata.confidence_adjustment,
+      },
       generated_at: new Date().toISOString(),
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
