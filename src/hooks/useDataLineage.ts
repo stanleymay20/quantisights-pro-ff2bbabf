@@ -28,7 +28,7 @@ export function useDataLineage(organizationId: string | undefined) {
     queryFn: async () => {
       if (!organizationId) return [];
       const { data, error } = await supabase
-        .from("data_lineage" as any)
+        .from("data_lineage")
         .select("*")
         .eq("organization_id", organizationId)
         .order("created_at", { ascending: false })
