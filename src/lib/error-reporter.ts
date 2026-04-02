@@ -5,6 +5,7 @@
  */
 
 import { supabase } from "@/integrations/supabase/client";
+import { captureError } from "@/lib/sentry";
 
 interface ErrorReport {
   message: string;
