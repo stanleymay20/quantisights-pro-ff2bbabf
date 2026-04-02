@@ -26,7 +26,7 @@ export function useSchemaEvolution(organizationId: string | undefined, datasetId
     queryFn: async () => {
       if (!organizationId) return [];
       let query = supabase
-        .from("schema_evolution_log" as any)
+        .from("schema_evolution_log")
         .select("*")
         .eq("organization_id", organizationId)
         .order("detected_at", { ascending: false })
@@ -55,7 +55,7 @@ export function useSchemaEvolution(organizationId: string | undefined, datasetId
       metadata?: Record<string, unknown>;
     }) => {
       if (!organizationId) throw new Error("No organization context");
-      const { error } = await supabase.from("schema_evolution_log" as any).insert({
+      const { error } = await supabase.from("schema_evolution_log").insert([{
         organization_id: organizationId,
         dataset_id: entry.datasetId,
         version_number: entry.versionNumber,
@@ -64,8 +64,8 @@ export function useSchemaEvolution(organizationId: string | undefined, datasetId
         old_type: entry.oldType,
         new_type: entry.newType,
         detected_by: entry.detectedBy || "system",
-        metadata: entry.metadata || {},
-      });
+        metadata: (entry.metadata || {}) as any,
+      }]);
       if (error) throw error;
     },
     onSuccess: () => {

@@ -367,19 +367,18 @@ const DataUpload = () => {
         mappedAs: target,
       }));
       
-      await supabase.from("schema_evolution_log" as any).insert({
+      await supabase.from("schema_evolution_log").insert([{
         organization_id: currentOrgId,
         dataset_id: dataset.id,
         change_type: "initial_upload",
-        previous_schema: null,
-        new_schema: { columns: schemaColumns, row_count: allRows.length, import_mode: importMode },
-        changed_by: user.id,
-      }).then(({ error }) => {
+        detected_by: user.id,
+        metadata: { columns: schemaColumns, row_count: allRows.length, import_mode: importMode } as any,
+      }]).then(({ error }) => {
         if (error) console.warn("[SchemaEvolution] Failed to log:", error.message);
       });
 
       // Record data lineage: CSV file → dataset → metrics
-      await supabase.from("data_lineage" as any).insert({
+      await supabase.from("data_lineage").insert([{
         organization_id: currentOrgId,
         source_type: "file",
         source_id: dataset.id,
@@ -392,8 +391,8 @@ const DataUpload = () => {
           columns_mapped: Object.keys(storedMapping).length,
           rows: allRows.length,
           import_mode: importMode,
-        },
-      }).then(({ error }) => {
+        } as any,
+      }]).then(({ error }) => {
         if (error) console.warn("[DataLineage] Failed to log:", error.message);
       });
       // ═══════════════════════════════════════════════════════
@@ -644,7 +643,7 @@ const DataUpload = () => {
       }
 
       // Record lineage: dataset → metrics → aggregates
-      await supabase.from("data_lineage" as any).insert([
+      await supabase.from("data_lineage").insert([
         {
           organization_id: currentOrgId,
           source_type: "dataset",
@@ -654,7 +653,7 @@ const DataUpload = () => {
           target_id: dataset.id,
           target_name: `${datasetName} metrics`,
           transformation: "normalize_clean",
-          transformation_details: { records_inserted: verifiedCount ?? inserted },
+          transformation_details: { records_inserted: verifiedCount ?? inserted } as any,
         },
         {
           organization_id: currentOrgId,
@@ -665,7 +664,7 @@ const DataUpload = () => {
           target_id: dataset.id,
           target_name: `${datasetName} aggregates`,
           transformation: "refresh_aggregates",
-          transformation_details: { period_types: ["monthly", "quarterly", "yearly"] },
+          transformation_details: { period_types: ["monthly", "quarterly", "yearly"] } as any,
         },
       ]).then(({ error }) => {
         if (error) console.warn("[DataLineage] Post-import lineage failed:", error.message);

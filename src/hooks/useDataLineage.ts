@@ -28,7 +28,7 @@ export function useDataLineage(organizationId: string | undefined) {
     queryFn: async () => {
       if (!organizationId) return [];
       const { data, error } = await supabase
-        .from("data_lineage" as any)
+        .from("data_lineage")
         .select("*")
         .eq("organization_id", organizationId)
         .order("created_at", { ascending: false })
@@ -52,7 +52,7 @@ export function useDataLineage(organizationId: string | undefined) {
       details?: Record<string, unknown>;
       confidenceImpact?: number;
     }) => {
-      const { error } = await supabase.from("data_lineage" as any).insert({
+      const { error } = await supabase.from("data_lineage").insert([{
         organization_id: entry.organizationId,
         source_type: entry.sourceType,
         source_id: entry.sourceId,
@@ -61,9 +61,9 @@ export function useDataLineage(organizationId: string | undefined) {
         target_id: entry.targetId,
         target_name: entry.targetName,
         transformation: entry.transformation,
-        transformation_details: entry.details || {},
+        transformation_details: (entry.details || {}) as any,
         confidence_impact: entry.confidenceImpact,
-      });
+      }]);
       if (error) throw error;
     },
     onSuccess: () => {
