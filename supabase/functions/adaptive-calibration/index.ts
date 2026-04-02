@@ -295,11 +295,12 @@ serve(async (req) => {
     }
 
     // Minimal select — only columns we actually use
+    // Match cron path: include all decided decisions, not just "completed"
     const { data: decisions } = await svc
       .from("decision_ledger")
       .select(DECISION_COLUMNS)
       .eq("organization_id", organization_id)
-      .eq("execution_status", "completed")
+      .not("decided_at", "is", null)
       .order("created_at", { ascending: false })
       .limit(WINDOW_SIZE);
 
