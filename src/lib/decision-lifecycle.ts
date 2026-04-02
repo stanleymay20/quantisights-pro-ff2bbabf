@@ -128,6 +128,19 @@ export async function onDecisionApproved(params: PostApprovalParams) {
 }
 
 /**
+ * Trigger embedding for a batch of insights after generation
+ */
+export async function embedInsightsBatch(organizationId: string) {
+  try {
+    supabase.functions.invoke("embed-decisions", {
+      body: { organization_id: organizationId, mode: "insights" },
+    }).catch(() => {});
+  } catch {
+    // Non-critical
+  }
+}
+
+/**
  * Log a decision dismissal to audit trail
  */
 export async function onDecisionDismissed(params: {

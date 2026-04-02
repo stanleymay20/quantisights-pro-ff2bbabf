@@ -226,6 +226,7 @@ IMPORTANT: Generate advisories specifically relevant to this "${ctx.decision_typ
           role: "user",
           content: `You are an enterprise decision intelligence advisor for a $1B+ company.
 ${contextBlock}
+${ragContextBlock}
 Analyze the following dataset metrics and generate strategic advisories.
 
 METRIC SUMMARIES:
