@@ -52,7 +52,7 @@ export function useDataLineage(organizationId: string | undefined) {
       details?: Record<string, unknown>;
       confidenceImpact?: number;
     }) => {
-      const { error } = await supabase.from("data_lineage").insert({
+      const { error } = await supabase.from("data_lineage").insert([{
         organization_id: entry.organizationId,
         source_type: entry.sourceType,
         source_id: entry.sourceId,
@@ -63,7 +63,7 @@ export function useDataLineage(organizationId: string | undefined) {
         transformation: entry.transformation,
         transformation_details: entry.details || {},
         confidence_impact: entry.confidenceImpact,
-      });
+      }]);
       if (error) throw error;
     },
     onSuccess: () => {
