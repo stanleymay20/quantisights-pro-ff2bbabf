@@ -411,6 +411,12 @@ Rules:
       confidence_ceiling: totalSampleSize < 12 ? 60 : totalSampleSize < 30 ? 75 : 90,
       adaptive_calibration_applied: !!calibrationModel,
       calibration_model_version: calibrationModel?.model_version ?? null,
+      rag_context: {
+        similar_decisions_retrieved: ragMetadata.similar_count,
+        avg_similarity: ragMetadata.avg_similarity,
+        historical_success_rate: ragMetadata.historical_success_rate,
+        confidence_adjustment_pp: ragMetadata.confidence_adjustment,
+      },
       generated_at: new Date().toISOString(),
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
