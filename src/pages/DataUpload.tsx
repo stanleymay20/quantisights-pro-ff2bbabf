@@ -643,6 +643,34 @@ const DataUpload = () => {
         console.warn("[Pipeline] Aggregate refresh failed:", aggResult.reason);
       }
 
+      // Record lineage: dataset → metrics → aggregates
+      await supabase.from("data_lineage" as any).insert([
+        {
+          organization_id: currentOrgId,
+          source_type: "dataset",
+          source_id: dataset.id,
+          source_name: datasetName,
+          target_type: "metrics",
+          target_id: dataset.id,
+          target_name: `${datasetName} metrics`,
+          transformation: "normalize_clean",
+          transformation_details: { records_inserted: verifiedCount ?? inserted },
+        },
+        {
+          organization_id: currentOrgId,
+          source_type: "metrics",
+          source_id: dataset.id,
+          source_name: `${datasetName} metrics`,
+          target_type: "aggregates",
+          target_id: dataset.id,
+          target_name: `${datasetName} aggregates`,
+          transformation: "refresh_aggregates",
+          transformation_details: { period_types: ["monthly", "quarterly", "yearly"] },
+        },
+      ]).then(({ error }) => {
+        if (error) console.warn("[DataLineage] Post-import lineage failed:", error.message);
+      });
+
       // Finalize pipeline run
       if (pipelineRunId) {
         await supabase.from("pipeline_runs").update({
