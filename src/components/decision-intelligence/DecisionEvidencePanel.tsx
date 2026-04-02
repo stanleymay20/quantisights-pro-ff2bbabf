@@ -318,7 +318,7 @@ const DecisionEvidencePanel = ({ decisionId, organizationId, decisionText }: Dec
                 <Badge className="bg-primary/10 text-primary border-primary/20 text-[10px]">Statistical Engine</Badge>
                 <Badge className="bg-primary/10 text-primary border-primary/20 text-[10px]">Deterministic Rules</Badge>
                 {outcome?.accuracy_score != null && (
-                  <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-[10px]">Outcome-Verified</Badge>
+                  <Badge className="bg-success/10 text-success border-success/20 text-[10px]">Outcome-Verified</Badge>
                 )}
               </div>
               <p className="text-[9px] text-muted-foreground mt-1.5">
