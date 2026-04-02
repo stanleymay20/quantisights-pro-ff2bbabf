@@ -14,7 +14,8 @@ import { useProject } from "@/contexts/ProjectContext";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { useMetrics } from "@/hooks/useMetrics";
 import { useInsights } from "@/hooks/useInsights";
-import { Bell, User, RefreshCw, Shield, Upload, Zap, TrendingUp, ArrowRight, Minimize2, Maximize2, Settings, CreditCard, Users, LogOut, ChevronDown } from "lucide-react";
+import { Bell, User, RefreshCw, Shield, Upload, Zap, TrendingUp, ArrowRight, Minimize2, Maximize2, Settings, CreditCard, Users, LogOut, ChevronDown, Bug } from "lucide-react";
+import * as Sentry from "@sentry/react"; // TEMP: Sentry test
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useNavigate } from "react-router-dom";
@@ -208,8 +209,21 @@ const Dashboard = () => {
                 >
                   <RefreshCw className={`w-4 h-4 text-muted-foreground ${recalculating ? "animate-spin" : ""}`} />
                 </button>
-              </>
-            )}
+               </>
+             )}
+             {/* TEMP: Sentry test */}
+             <button
+               onClick={() => {
+                 console.log("Sentry test triggered");
+                 Sentry.captureException(new Error("Manual Sentry Capture Test"));
+                 throw new Error("Quantivis Sentry Test Error");
+               }}
+               className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-destructive hover:bg-destructive/10 transition-all"
+               title="Test Sentry Error Monitoring"
+             >
+               <Bug className="w-3 h-3" />
+               Test Sentry Error
+             </button>
             <Popover>
               <PopoverTrigger asChild>
                 <button className="p-2 rounded-lg hover:bg-secondary/60 transition-colors relative" aria-label="Notifications">
