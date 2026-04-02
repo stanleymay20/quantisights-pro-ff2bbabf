@@ -298,20 +298,29 @@ Rules:
       }
     }
 
-    // Apply confidence capping to each advisory
-    const advisories = aiAdvisories.map((a: any, i: number) => ({
-      id: `adv-${i + 1}`,
-      title: a.title || "Strategic Advisory",
-      category: a.category || "strategic",
-      priority: a.priority || "medium",
-      action: a.action || "",
-      expected_impact: a.expected_impact || "",
-      timeframe: a.timeframe || "30-90 days",
-      confidence: capConfidence(a.raw_confidence || 70, totalSampleSize, undefined, calibrationModel),
-      rationale: a.rationale || "",
-      kpi_affected: a.kpi_affected || [],
-      playbook_steps: a.playbook_steps || [],
-    }));
+    // Apply confidence capping to each advisory (with historical RAG adjustment)
+    const advisories = aiAdvisories.map((a: any, i: number) => {
+      const baseConfidence = (a.raw_confidence || 70) + ragMetadata.confidence_adjustment;
+      const clampedConfidence = Math.max(30, Math.min(95, baseConfidence));
+      return {
+        id: `adv-${i + 1}`,
+        title: a.title || "Strategic Advisory",
+        category: a.category || "strategic",
+        priority: a.priority || "medium",
+        action: a.action || "",
+        expected_impact: a.expected_impact || "",
+        timeframe: a.timeframe || "30-90 days",
+        confidence: capConfidence(clampedConfidence, totalSampleSize, undefined, calibrationModel),
+        rationale: a.rationale || "",
+        kpi_affected: a.kpi_affected || [],
+        playbook_steps: a.playbook_steps || [],
+        rag_adjustment: ragMetadata.confidence_adjustment !== 0 ? {
+          adjustment_pp: ragMetadata.confidence_adjustment,
+          similar_outcomes: ragMetadata.similar_count,
+          historical_success_rate: ragMetadata.historical_success_rate,
+        } : undefined,
+      };
+    });
 
     // Add risk-based advisories from risk index (these are always relevant)
     for (const risk of (riskIndices || [])) {
