@@ -15,8 +15,9 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import {
-  User, Building2, Bell, Save, Loader2, Mail, X, ScrollText, Clock, Shield, Trash2, AlertTriangle, ShieldCheck, Sun, Moon, Monitor, Activity, Lock, Compass,
+  User, Building2, Bell, Save, Loader2, Mail, X, ScrollText, Clock, Shield, Trash2, AlertTriangle, ShieldCheck, Sun, Moon, Monitor, Activity, Lock, Compass, Bug,
 } from "lucide-react";
+import { Sentry } from "@/lib/sentry";
 import OrganizationalIdentitySettings from "@/components/settings/OrganizationalIdentitySettings";
 import RetentionPolicySettings from "@/components/settings/RetentionPolicySettings";
 import GovernanceKPIs from "@/components/dashboard/GovernanceKPIs";
@@ -270,6 +271,9 @@ const Settings = () => {
                 <TabsTrigger value="identity" className="gap-1 text-xs sm:text-sm sm:gap-2"><Compass className="w-4 h-4 hidden sm:block" /> Identity</TabsTrigger>
                 <TabsTrigger value="notifications" className="gap-1 text-xs sm:text-sm sm:gap-2"><Bell className="w-4 h-4 hidden sm:block" /> Notifications</TabsTrigger>
                 <TabsTrigger value="audit" className="gap-1 text-xs sm:text-sm sm:gap-2" onClick={fetchAuditLog}><ScrollText className="w-4 h-4 hidden sm:block" /> Audit</TabsTrigger>
+                {(orgRole === "owner" || orgRole === "admin") && (
+                  <TabsTrigger value="monitoring-test" className="gap-1 text-xs sm:text-sm sm:gap-2 text-destructive"><Bug className="w-4 h-4 hidden sm:block" /> Monitoring</TabsTrigger>
+                )}
               </TabsList>
 
               {/* Profile */}
@@ -561,6 +565,69 @@ const Settings = () => {
                   <OrganizationalIdentitySettings organizationId={currentOrgId} />
                 </motion.div>
               </TabsContent>
+
+              {/* Admin-only Monitoring Test */}
+              {(orgRole === "owner" || orgRole === "admin") && (
+                <TabsContent value="monitoring-test">
+                  <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
+                    <Card className="border-destructive/30">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-base">
+                          <Bug className="h-4 w-4 text-destructive" />
+                          Test Monitoring
+                        </CardTitle>
+                        <p className="text-xs text-destructive font-medium">
+                          ⚠ Temporary testing tool — remove after verification.
+                        </p>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={async () => {
+                            Sentry.captureMessage("Quantivis real monitoring test", "error");
+                            if (currentOrgId && user?.id) {
+                              await supabase.from("audit_log").insert({
+                                organization_id: currentOrgId,
+                                actor_id: user.id,
+                                actor_type: "user",
+                                action_type: "monitoring_test_triggered",
+                                resource_type: "sentry",
+                                payload: { method: "captureMessage" } as any,
+                              });
+                            }
+                            toast({ title: "Sentry message sent", description: "Check your Sentry dashboard for the event." });
+                          }}
+                        >
+                          Send Sentry test message
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={async () => {
+                            const err = new Error("Quantivis frontend real test error");
+                            Sentry.captureException(err);
+                            if (currentOrgId && user?.id) {
+                              await supabase.from("audit_log").insert({
+                                organization_id: currentOrgId,
+                                actor_id: user.id,
+                                actor_type: "user",
+                                action_type: "monitoring_test_triggered",
+                                resource_type: "sentry",
+                                payload: { method: "captureException" } as any,
+                              });
+                            }
+                            toast({ title: "Sentry exception sent", description: "An async throw will also trigger the global error handler." });
+                            setTimeout(() => { throw err; }, 100);
+                          }}
+                        >
+                          Throw test frontend error
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                </TabsContent>
+              )}
             </Tabs>
           </div>
         </main>
