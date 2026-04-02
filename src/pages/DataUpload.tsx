@@ -7,6 +7,7 @@ import { useProject } from "@/contexts/ProjectContext";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
+import { embedInsightsBatch } from "@/lib/decision-lifecycle";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -635,6 +636,9 @@ const DataUpload = () => {
           body: { organization_id: currentOrgId, dataset_id: dataset.id },
         }),
       ]);
+
+      // Embed new insights into institutional memory (non-blocking)
+      embedInsightsBatch(currentOrgId);
 
       if (aggResult.status === "rejected") {
         console.warn("[Pipeline] Aggregate refresh failed:", aggResult.reason);

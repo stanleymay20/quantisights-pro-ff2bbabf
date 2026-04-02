@@ -20,6 +20,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { embedInsightsBatch } from "@/lib/decision-lifecycle";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import GuidedTour from "@/components/dashboard/GuidedTour";
@@ -121,6 +122,8 @@ const Dashboard = () => {
       await supabase.functions.invoke("generate-insights", {
         body: { organization_id: currentOrgId, dataset_id: activeDatasetId },
       });
+      // Embed new insights into institutional memory (non-blocking)
+      embedInsightsBatch(currentOrgId);
       toast({ title: "Intelligence refreshed" });
       navigate(0);
     } catch {

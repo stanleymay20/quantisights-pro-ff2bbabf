@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useOrganization } from "@/hooks/useOrganization";
 import { useProject } from "@/contexts/ProjectContext";
 import { supabase } from "@/integrations/supabase/client";
+import { embedInsightsBatch } from "@/lib/decision-lifecycle";
 import { useToast } from "@/hooks/use-toast";
 import { FileText, Download, Loader2, Plus, BarChart3, Shield, TrendingUp, Crown } from "lucide-react";
 import IntelligenceDisclaimer from "@/components/IntelligenceDisclaimer";
@@ -84,6 +85,8 @@ const Reports = () => {
       await supabase.functions.invoke("generate-insights", {
         body: { organization_id: currentOrgId, dataset_id: activeDatasetId },
       });
+      // Embed new insights into institutional memory (non-blocking)
+      embedInsightsBatch(currentOrgId);
 
       const { data, error } = await supabase.functions.invoke("generate-report", {
         body: { organization_id: currentOrgId, dataset_id: activeDatasetId, report_type: selectedType },

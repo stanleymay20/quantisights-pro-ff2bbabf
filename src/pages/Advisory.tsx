@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useActiveDataContext } from "@/hooks/useActiveDataContext";
 import DatasetRequired from "@/components/layout/DatasetRequired";
 import { supabase } from "@/integrations/supabase/client";
+import { embedAdvisoriesBatch } from "@/lib/decision-lifecycle";
 import { useToast } from "@/hooks/use-toast";
 import {
   Lightbulb, AlertTriangle, TrendingUp, DollarSign, Shield, Target,
@@ -125,6 +126,8 @@ const AdvisoryPage = () => {
       setSampleSize(data.sample_size || 0);
       // Refetch instances since the edge function inserts new ones
       fetchInstances();
+      // Embed new advisories into institutional memory (non-blocking)
+      if (currentOrgId) embedAdvisoriesBatch(currentOrgId);
     } catch (err: any) {
       toast({ title: "Failed to load advisories", description: err.message, variant: "destructive" });
     } finally {
