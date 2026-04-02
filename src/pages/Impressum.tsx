@@ -42,14 +42,14 @@ const Impressum = () => (
         <section>
           <h2 className="text-lg font-semibold mb-2">Registereintrag</h2>
           <p>
-            Registergericht: [Amtsgericht — wird bei Eintragung ergänzt]<br />
-            Registernummer: [HRB — wird bei Eintragung ergänzt]
+            Registergericht: Eintragung beantragt<br />
+            Registernummer: Eintragung beantragt
           </p>
         </section>
 
         <section>
           <h2 className="text-lg font-semibold mb-2">Umsatzsteuer-Identifikationsnummer</h2>
-          <p>USt-IdNr. gemäß § 27a UStG: [wird bei Erteilung ergänzt]</p>
+          <p>USt-IdNr. gemäß § 27a UStG: Erteilung beantragt</p>
         </section>
 
         <section>
