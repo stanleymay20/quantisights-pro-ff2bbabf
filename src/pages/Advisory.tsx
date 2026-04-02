@@ -126,6 +126,8 @@ const AdvisoryPage = () => {
       setSampleSize(data.sample_size || 0);
       // Refetch instances since the edge function inserts new ones
       fetchInstances();
+      // Embed new advisories into institutional memory (non-blocking)
+      if (currentOrgId) embedAdvisoriesBatch(currentOrgId);
     } catch (err: any) {
       toast({ title: "Failed to load advisories", description: err.message, variant: "destructive" });
     } finally {
