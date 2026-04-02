@@ -378,7 +378,7 @@ const DataUpload = () => {
       });
 
       // Record data lineage: CSV file → dataset → metrics
-      await supabase.from("data_lineage" as any).insert({
+      await supabase.from("data_lineage").insert([{
         organization_id: currentOrgId,
         source_type: "file",
         source_id: dataset.id,
@@ -391,8 +391,8 @@ const DataUpload = () => {
           columns_mapped: Object.keys(storedMapping).length,
           rows: allRows.length,
           import_mode: importMode,
-        },
-      }).then(({ error }) => {
+        } as any,
+      }]).then(({ error }) => {
         if (error) console.warn("[DataLineage] Failed to log:", error.message);
       });
       // ═══════════════════════════════════════════════════════
