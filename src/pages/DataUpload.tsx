@@ -367,14 +367,13 @@ const DataUpload = () => {
         mappedAs: target,
       }));
       
-      await supabase.from("schema_evolution_log" as any).insert({
+      await supabase.from("schema_evolution_log").insert([{
         organization_id: currentOrgId,
         dataset_id: dataset.id,
         change_type: "initial_upload",
-        previous_schema: null,
-        new_schema: { columns: schemaColumns, row_count: allRows.length, import_mode: importMode },
-        changed_by: user.id,
-      }).then(({ error }) => {
+        detected_by: user.id,
+        metadata: { columns: schemaColumns, row_count: allRows.length, import_mode: importMode } as any,
+      }]).then(({ error }) => {
         if (error) console.warn("[SchemaEvolution] Failed to log:", error.message);
       });
 
