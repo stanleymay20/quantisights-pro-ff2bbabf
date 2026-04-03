@@ -148,14 +148,13 @@ Deno.serve(async (req) => {
     ]);
 
     // ─── Decision Ledger ───
-    await admin.from("decision_ledger").insert([
+    const { error: dlErr } = await admin.from("decision_ledger").insert([
       {
         organization_id: orgId, recommended_action: "Expand enterprise sales team by 4 AEs focused on $100K+ ACV deals",
         decision_type: "growth", decision_status: "approved", execution_status: "in_progress",
         chosen_action: "Approved with modified timeline — hiring 3 AEs in Q2, 1 in Q3",
         capped_confidence: 68, raw_confidence: 82, predicted_net_impact: 420000,
         confidence_cap_reason: "Limited historical data on enterprise segment conversion rates",
-        dataset_id: datasetId,
       },
       {
         organization_id: orgId, recommended_action: "Implement automated onboarding reducing time-to-value from 14 days to 3 days",
@@ -164,16 +163,15 @@ Deno.serve(async (req) => {
         capped_confidence: 74, raw_confidence: 88, predicted_net_impact: 180000,
         outcome_delta: 145000, actual_value: 995000, baseline_value: 850000, prediction_accuracy_score: 80,
         confidence_cap_reason: "Churn attribution model has moderate variance",
-        dataset_id: datasetId,
       },
       {
         organization_id: orgId, recommended_action: "Reduce infrastructure costs by migrating to serverless architecture",
         decision_type: "cost_optimization", decision_status: "pending", execution_status: "not_started",
         capped_confidence: 55, raw_confidence: 71, predicted_net_impact: 95000,
         confidence_cap_reason: "Migration complexity estimates based on comparable companies",
-        dataset_id: datasetId,
       },
     ]);
+    if (dlErr) console.error("Decision ledger seed error:", dlErr.message);
 
     // ─── Advisory Instances ───
     await admin.from("advisory_instances").insert([
