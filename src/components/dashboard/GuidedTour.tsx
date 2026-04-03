@@ -40,12 +40,12 @@ const GuidedTour = ({ onComplete }: GuidedTourProps) => {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    const completed = localStorage.getItem(TOUR_STORAGE_KEY);
-    if (!completed) {
-      // Small delay so dashboard renders first
-      const timer = setTimeout(() => setVisible(true), 800);
-      return () => clearTimeout(timer);
-    }
+    const tourCompleted = localStorage.getItem(TOUR_STORAGE_KEY);
+    const welcomeCompleted = localStorage.getItem("quantivis_welcome_completed");
+    // Skip tour if already completed OR if the welcome flow was shown (it covers onboarding)
+    if (tourCompleted || welcomeCompleted) return;
+    const timer = setTimeout(() => setVisible(true), 800);
+    return () => clearTimeout(timer);
   }, []);
 
   const handleNext = () => {
