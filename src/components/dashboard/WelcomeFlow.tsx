@@ -78,6 +78,8 @@ const WelcomeFlow = ({ hasData, displayName }: WelcomeFlowProps) => {
 
   const handleComplete = () => {
     localStorage.setItem(WELCOME_KEY, "true");
+    // Also mark the guided tour as completed so users never see two onboarding flows
+    localStorage.setItem("quantivis_tour_completed", "true");
     setVisible(false);
   };
 
