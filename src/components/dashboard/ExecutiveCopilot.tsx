@@ -59,7 +59,7 @@ const ExecutiveCopilot = ({ organizationId, roleType, riskScore, tier, datasetId
   }, [messages]);
 
   const sendMessage = useCallback(async (text: string) => {
-    if (!text.trim() || isLoading) return;
+    if (!text.trim() || isLoading || isThrottled) return;
     setError(null);
 
     const userMsg: CopilotMessage = { role: "user", content: text.trim() };
