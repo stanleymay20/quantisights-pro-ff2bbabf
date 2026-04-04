@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import type { Insight } from "@/hooks/useInsights";
 import type { MetricTypeSummary } from "@/hooks/useMetrics";
+import { filterCriticalInsights } from "@/lib/insight-filters";
 import CrossWorkspaceIntelligence from "./CrossWorkspaceIntelligence";
 
 interface ExecutiveQuickViewProps {
