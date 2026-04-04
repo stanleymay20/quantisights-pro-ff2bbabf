@@ -1,5 +1,6 @@
 import { Activity, AlertTriangle, Clock, Lightbulb, Shield } from "lucide-react";
 import type { Insight } from "@/hooks/useInsights";
+import { countCriticalSignals } from "@/lib/insight-filters";
 
 interface IntelligenceStatusBarProps {
   hasData: boolean;
