@@ -70,7 +70,7 @@ const CommandCenter = memo(({
   } = useDecisionContexts(organizationId);
 
   const criticalInsights = useMemo(
-    () => insights.filter(i => i.severity === "high" || i.severity === "medium"),
+    () => filterCriticalInsights(insights),
     [insights]
   );
 

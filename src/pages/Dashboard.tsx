@@ -21,6 +21,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { embedInsightsBatch } from "@/lib/decision-lifecycle";
+import { filterCriticalInsights } from "@/lib/insight-filters";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 
