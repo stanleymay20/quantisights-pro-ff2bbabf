@@ -106,8 +106,7 @@ const RISK_DIMENSIONS = ["deviation", "trend", "volatility", "forecast"] as cons
 const ROLES = ["ceo", "cfo", "cmo", "coo"];
 
 const StrategyPack = () => {
-  const { currentOrgId } = useOrganization();
-  const { datasetId: activeDatasetId } = useActiveDataContext();
+  const { orgId: currentOrgId, datasetId: activeDatasetId } = useActiveDataContext();
   const [loading, setLoading] = useState(true);
   const [orgName, setOrgName] = useState("");
 
