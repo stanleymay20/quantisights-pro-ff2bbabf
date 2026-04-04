@@ -90,6 +90,8 @@ const SessionTimeout = forwardRef<HTMLDivElement>((_, _ref) => {
       </AlertDialogContent>
     </AlertDialog>
   );
-};
+});
+
+SessionTimeout.displayName = "SessionTimeout";
 
 export default SessionTimeout;
