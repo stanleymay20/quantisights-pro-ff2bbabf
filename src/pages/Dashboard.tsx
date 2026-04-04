@@ -23,7 +23,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { embedInsightsBatch } from "@/lib/decision-lifecycle";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
-import GuidedTour from "@/components/dashboard/GuidedTour";
+
 import WelcomeFlow from "@/components/dashboard/WelcomeFlow";
 import DemoBanner from "@/components/dashboard/DemoBanner";
 import HeroInsight from "@/components/dashboard/HeroInsight";
@@ -140,7 +140,7 @@ const Dashboard = () => {
   // Demo users: treat as loading until context fully hydrates to prevent empty-state flash
   const isDemoHydrating = isDemoUser && (!currentWorkspaceId || !activeDatasetId);
   const showWelcomeFlow = !isDemoUser && !isContextLoading;
-  const showGuidedTour = !isDemoUser && hasData && !isContextLoading;
+  
   const showEmptyState = !hasData && !isLoading && !isDemoHydrating;
 
   const demoContextLabel = currentWorkspaceId && currentProject
@@ -170,7 +170,7 @@ const Dashboard = () => {
 
   return (
     <>
-      {showGuidedTour && <GuidedTour />}
+      
       {showWelcomeFlow && <WelcomeFlow hasData={hasData} displayName={displayName} />}
         <IntelligenceStatusBar
           hasData={hasData}
