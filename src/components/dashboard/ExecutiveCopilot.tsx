@@ -165,14 +165,15 @@ const ExecutiveCopilot = ({ organizationId, roleType, riskScore, tier, datasetId
       }
     } catch (e: any) {
       console.error("Copilot error:", e);
-      setError(e.message);
+      const wasRateLimited = handleRateLimitError(e);
+      if (!wasRateLimited) setError(e.message);
       if (!assistantSoFar) {
         setMessages(prev => prev.slice(0, -1));
       }
     } finally {
       setIsLoading(false);
     }
-  }, [isLoading, sessionId, roleType, organizationId, datasetId, datasetName]);
+  }, [isLoading, isThrottled, sessionId, roleType, organizationId, datasetId, datasetName, handleRateLimitError]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
