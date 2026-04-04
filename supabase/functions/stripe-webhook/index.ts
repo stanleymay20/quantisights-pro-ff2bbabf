@@ -5,7 +5,7 @@ import { getCorsHeaders, corsPreflightResponse } from "../_shared/cors.ts";
 
 const TIERS: Record<string, string> = {
   "prod_U4SdCda1dcZAtu": "starter",
-  "prod_U4SdjQfflN6R1d": "growth",
+  "prod_UB202T0yfALsxx": "growth",
   "prod_U1oN5CDeptb9uY": "enterprise",
 };
 
