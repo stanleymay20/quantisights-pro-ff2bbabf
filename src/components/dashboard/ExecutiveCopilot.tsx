@@ -50,6 +50,7 @@ const ExecutiveCopilot = ({ organizationId, roleType, riskScore, tier, datasetId
   const [error, setError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const { isThrottled, remainingCooldown, handleError: handleRateLimitError } = useRateLimitFeedback();
 
   useEffect(() => {
     if (scrollRef.current) {
