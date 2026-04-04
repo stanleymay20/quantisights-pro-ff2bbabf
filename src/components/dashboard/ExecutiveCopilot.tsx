@@ -303,20 +303,27 @@ const ExecutiveCopilot = ({ organizationId, roleType, riskScore, tier, datasetId
             </div>
           )}
 
+          {isThrottled && (
+            <div className="flex-none mt-2 p-3 rounded-lg bg-warning/10 border border-warning/20 text-sm text-warning flex items-center gap-2">
+              <Clock className="w-4 h-4 shrink-0" />
+              Rate limit reached — please wait {remainingCooldown}s
+            </div>
+          )}
+
           <div className="flex-none mt-3 flex gap-2">
             <Textarea
               ref={textareaRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Ask a strategic question…"
+              placeholder={isThrottled ? `Rate limited — wait ${remainingCooldown}s…` : "Ask a strategic question…"}
               className="min-h-[44px] max-h-[120px] resize-none"
               rows={1}
-              disabled={isLoading}
+              disabled={isLoading || isThrottled}
             />
             <Button
               onClick={() => sendMessage(input)}
-              disabled={!input.trim() || isLoading}
+              disabled={!input.trim() || isLoading || isThrottled}
               size="icon"
               className="shrink-0 h-[44px] w-[44px]"
             >
