@@ -133,7 +133,7 @@ const Dashboard = () => {
     }
   };
 
-  const criticalInsights = insights.filter(i => i.severity === "high" || i.severity === "medium");
+  const criticalInsights = filterCriticalInsights(insights);
   const hasAnomalies = criticalInsights.length > 0;
   const isContextLoading = orgLoading || workspaceLoading || projectLoading;
   const isLoading = isContextLoading || metricsLoading || insightsLoading;
