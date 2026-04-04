@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from "react";
-import { useOrganization } from "@/hooks/useOrganization";
 import { useActiveDataContext } from "@/hooks/useActiveDataContext";
 import { supabase } from "@/integrations/supabase/client";
 import { SidebarMobileToggle } from "@/components/layout/ProtectedShell";
