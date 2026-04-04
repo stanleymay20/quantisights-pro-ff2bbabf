@@ -5,10 +5,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  Brain, Send, Loader2, Sparkles, RotateCcw, Activity, Database,
+  Brain, Send, Loader2, Sparkles, RotateCcw, Activity, Database, Clock,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { supabase } from "@/integrations/supabase/client";
+import { useRateLimitFeedback } from "@/hooks/useRateLimitFeedback";
 
 interface CopilotMessage {
   role: "user" | "assistant";
