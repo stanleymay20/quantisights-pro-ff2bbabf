@@ -41,9 +41,7 @@ const ExecutiveQuickView = memo(({
   const metricTypesList = quickMetrics.map(m => m.metricType);
 
   // Top 3 insights
-  const topInsights = insights
-    .filter(i => i.severity === "high" || i.severity === "medium")
-    .slice(0, 3);
+  const topInsights = filterCriticalInsights(insights).slice(0, 3);
 
   return (
     <motion.div
