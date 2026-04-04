@@ -1,4 +1,5 @@
 import { useState, lazy, Suspense, memo, useMemo } from "react";
+import { filterCriticalInsights } from "@/lib/insight-filters";
 import { BarChart3, ArrowRight } from "lucide-react";
 import ProtectionStatus from "./ProtectionStatus";
 import DecisionQueue from "./DecisionQueue";
@@ -69,7 +70,7 @@ const CommandCenter = memo(({
   } = useDecisionContexts(organizationId);
 
   const criticalInsights = useMemo(
-    () => insights.filter(i => i.severity === "high" || i.severity === "medium"),
+    () => filterCriticalInsights(insights),
     [insights]
   );
 

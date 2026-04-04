@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { useOrganization } from "@/hooks/useOrganization";
 import { useActiveDataContext } from "@/hooks/useActiveDataContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
@@ -186,8 +185,7 @@ const RiskDial = ({ score, lastUpdated }: { score: number; lastUpdated?: string 
 
 const Executive = () => {
   const { user } = useAuth();
-  const { currentOrgId } = useOrganization();
-  const { datasetId: activeDatasetId, datasetName: activeDatasetName } = useActiveDataContext();
+  const { orgId: currentOrgId, datasetId: activeDatasetId, datasetName: activeDatasetName } = useActiveDataContext();
   const { tier } = useSubscription();
   const { toast } = useToast();
   const navigate = useNavigate();

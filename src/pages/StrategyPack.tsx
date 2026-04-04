@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from "react";
-import { useOrganization } from "@/hooks/useOrganization";
 import { useActiveDataContext } from "@/hooks/useActiveDataContext";
 import { supabase } from "@/integrations/supabase/client";
 import { SidebarMobileToggle } from "@/components/layout/ProtectedShell";
@@ -107,8 +106,7 @@ const RISK_DIMENSIONS = ["deviation", "trend", "volatility", "forecast"] as cons
 const ROLES = ["ceo", "cfo", "cmo", "coo"];
 
 const StrategyPack = () => {
-  const { currentOrgId } = useOrganization();
-  const { datasetId: activeDatasetId } = useActiveDataContext();
+  const { orgId: currentOrgId, datasetId: activeDatasetId } = useActiveDataContext();
   const [loading, setLoading] = useState(true);
   const [orgName, setOrgName] = useState("");
 

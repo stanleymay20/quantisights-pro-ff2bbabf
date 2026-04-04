@@ -1,6 +1,7 @@
 import { AlertTriangle, TrendingDown, DollarSign, ArrowRight, Shield } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { Insight } from "@/hooks/useInsights";
+import { filterCriticalInsights } from "@/lib/insight-filters";
 
 const ICONS = [TrendingDown, DollarSign, AlertTriangle];
 
@@ -9,7 +10,7 @@ interface AnomalyDetectionProps {
 }
 
 const AnomalyDetection = ({ insights }: AnomalyDetectionProps) => {
-  const anomalies = insights.filter((i) => i.severity === "high" || i.severity === "medium").slice(0, 4);
+  const anomalies = filterCriticalInsights(insights).slice(0, 4);
 
   return (
     <div className="glass-card p-6 rounded-xl">
