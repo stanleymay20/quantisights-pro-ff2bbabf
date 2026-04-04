@@ -1,6 +1,7 @@
 import { AlertTriangle, TrendingDown, DollarSign, ArrowRight, Shield } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { Insight } from "@/hooks/useInsights";
+import { filterCriticalInsights } from "@/lib/insight-filters";
 
 const ICONS = [TrendingDown, DollarSign, AlertTriangle];
 
