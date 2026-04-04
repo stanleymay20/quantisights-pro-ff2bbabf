@@ -1,4 +1,5 @@
 import { useState, lazy, Suspense, memo, useMemo } from "react";
+import { filterCriticalInsights } from "@/lib/insight-filters";
 import { BarChart3, ArrowRight } from "lucide-react";
 import ProtectionStatus from "./ProtectionStatus";
 import DecisionQueue from "./DecisionQueue";
