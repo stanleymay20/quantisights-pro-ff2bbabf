@@ -143,11 +143,12 @@ const queryClient = new QueryClient({
   },
 });
 
-const PageLoader = () => (
-  <div className="flex min-h-screen items-center justify-center bg-background">
+const PageLoader = forwardRef<HTMLDivElement>((_, ref) => (
+  <div ref={ref} className="flex min-h-screen items-center justify-center bg-background">
     <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
   </div>
-);
+));
+PageLoader.displayName = "PageLoader";
 
 /** Route-level error boundary wrapper */
 const SafeRoute = ({ children }: { children: ReactNode }) => (
