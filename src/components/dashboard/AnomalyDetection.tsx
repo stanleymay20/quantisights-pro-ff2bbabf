@@ -10,7 +10,7 @@ interface AnomalyDetectionProps {
 }
 
 const AnomalyDetection = ({ insights }: AnomalyDetectionProps) => {
-  const anomalies = insights.filter((i) => i.severity === "high" || i.severity === "medium").slice(0, 4);
+  const anomalies = filterCriticalInsights(insights).slice(0, 4);
 
   return (
     <div className="glass-card p-6 rounded-xl">
