@@ -170,7 +170,7 @@ const Dashboard = () => {
 
   return (
     <>
-      {showGuidedTour && <GuidedTour />}
+      
       {showWelcomeFlow && <WelcomeFlow hasData={hasData} displayName={displayName} />}
         <IntelligenceStatusBar
           hasData={hasData}
