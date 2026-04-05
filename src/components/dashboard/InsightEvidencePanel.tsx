@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { ChevronDown, ChevronUp, Database, TrendingUp, Brain, GitBranch, BarChart3 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import ConfidenceBadge from "@/components/ConfidenceBadge";
 import { getSeverityStyle } from "@/lib/severity-colors";
+import TrendSparkline from "./TrendSparkline";
 import type { Insight } from "@/hooks/useInsights";
 
 interface InsightEvidencePanelProps {
