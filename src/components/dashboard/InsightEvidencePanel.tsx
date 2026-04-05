@@ -64,7 +64,7 @@ const InsightEvidencePanel = ({ insight }: InsightEvidencePanelProps) => {
             </div>
             <p className="text-sm text-foreground leading-relaxed">{insight.message}</p>
 
-            {/* Evidence summary row */}
+            {/* Evidence summary row with sparkline */}
             <div className="flex items-center gap-3 mt-2 flex-wrap">
               <ConfidenceBadge
                 confidence={insight.capped_confidence ?? insight.confidence_score ?? null}
@@ -76,6 +76,14 @@ const InsightEvidencePanel = ({ insight }: InsightEvidencePanelProps) => {
               <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
                 <BarChart3 className="w-3 h-3" /> Variance: {varianceLabel}
               </span>
+              {/* Mini trend sparkline — synthesized from available data points */}
+              {insight.sample_size && insight.sample_size >= 3 && (
+                <TrendSparkline
+                  data={synthesizeTrend(insight)}
+                  width={80}
+                  height={24}
+                />
+              )}
             </div>
 
             {/* Expandable evidence detail */}
