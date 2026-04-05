@@ -2,6 +2,7 @@ import { AlertTriangle, TrendingDown, DollarSign, ArrowRight, Shield } from "luc
 import { Link } from "react-router-dom";
 import type { Insight } from "@/hooks/useInsights";
 import { filterCriticalInsights } from "@/lib/insight-filters";
+import { getSeverityStyle } from "@/lib/severity-colors";
 
 const ICONS = [TrendingDown, DollarSign, AlertTriangle];
 
