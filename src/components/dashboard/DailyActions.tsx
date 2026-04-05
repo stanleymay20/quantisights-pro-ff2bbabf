@@ -32,7 +32,7 @@ const PRIORITY_STYLES = {
 const DailyActions = ({ insights, hasData, churnRate, revenue, pendingDecisions = 0, calibrationScore }: DailyActionsProps) => {
   if (!hasData) return null;
 
-  const criticalInsights = insights.filter(i => i.severity === "high");
+  const criticalInsights = filterCriticalInsights(insights);
   const warningInsights = insights.filter(i => i.severity === "medium");
 
   const actions: Action[] = [];

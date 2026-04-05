@@ -33,18 +33,14 @@ const AnomalyDetection = ({ insights }: AnomalyDetectionProps) => {
         <div className="space-y-2">
           {anomalies.map((a, i) => {
             const Icon = ICONS[i % ICONS.length];
-            const isCritical = a.severity === "high";
+            const style = getSeverityStyle(a.severity);
             return (
               <div
                 key={a.id}
-                className={`group p-2.5 rounded-lg transition-all ${
-                  isCritical
-                    ? "bg-destructive/[0.05] border border-destructive/10"
-                    : "bg-warning/[0.05] border border-warning/10"
-                }`}
+                className={`group p-2.5 rounded-lg transition-all ${style.bg} border ${style.border}`}
               >
                 <div className="flex items-start gap-2.5">
-                  <Icon className={`w-3.5 h-3.5 shrink-0 mt-0.5 ${isCritical ? "text-destructive" : "text-warning"}`} />
+                  <Icon className={`w-3.5 h-3.5 shrink-0 mt-0.5 ${style.text}`} />
                   <span className="text-[12px] leading-snug flex-1">{a.message}</span>
                 </div>
                 {/* Decision shortcuts */}
