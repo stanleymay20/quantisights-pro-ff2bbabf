@@ -32,7 +32,7 @@ import DecisionMemoryWidget from "@/components/dashboard/DecisionMemoryWidget";
 import SystemHealthDashboard from "@/components/dashboard/SystemHealthDashboard";
 import ProofBar from "@/components/dashboard/ProofBar";
 import DecisionOutcomeIntegrity from "@/components/dashboard/DecisionOutcomeIntegrity";
-
+import ExecutivePriorityStack from "@/components/dashboard/ExecutivePriorityStack";
 const VIEW_STORAGE_KEY = "quantivis_dashboard_view";
 
 const Dashboard = () => {
@@ -430,12 +430,12 @@ const Dashboard = () => {
               <motion.div
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="mb-4 sm:mb-6 max-w-[1400px]"
+                className="mb-5 sm:mb-7 max-w-[1400px]"
               >
-                <h1 className="text-lg sm:text-2xl font-bold font-display tracking-tight">
+                <h1 className="text-xl sm:text-2xl font-bold font-display tracking-tight">
                   {greeting()}, {displayName.split(" ")[0]}
                 </h1>
-                <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                <p className="text-xs sm:text-sm text-muted-foreground mt-1 leading-relaxed">
                   {isDemoUser
                     ? `${criticalInsights.length} signal${criticalInsights.length !== 1 ? "s" : ""} · calibration active · memory recording`
                     : hasAnomalies
@@ -445,10 +445,16 @@ const Dashboard = () => {
                 </p>
               </motion.div>
 
-              {hasAnomalies && <HeroInsight insights={insights} />}
-              {currentOrgId && <DecisionMemoryWidget organizationId={currentOrgId} />}
-              {currentOrgId && <SystemHealthDashboard orgId={currentOrgId} />}
-              {currentOrgId && <DecisionOutcomeIntegrity organizationId={currentOrgId} />}
+              {/* Signal-first: Priority Actions → Hero Insight → then context */}
+              <ExecutivePriorityStack insights={insights} />
+
+              {hasAnomalies && <div className="mt-4"><HeroInsight insights={insights} /></div>}
+
+              <div className="mt-6 space-y-5">
+                {currentOrgId && <DecisionMemoryWidget organizationId={currentOrgId} />}
+                {currentOrgId && <SystemHealthDashboard orgId={currentOrgId} />}
+                {currentOrgId && <DecisionOutcomeIntegrity organizationId={currentOrgId} />}
+              </div>
 
               {dashboardView === "executive" ? (
                 <ExecutiveQuickView

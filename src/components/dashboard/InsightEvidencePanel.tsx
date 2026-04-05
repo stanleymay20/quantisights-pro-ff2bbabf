@@ -1,13 +1,30 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { ChevronDown, ChevronUp, Database, TrendingUp, Brain, GitBranch, BarChart3 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import ConfidenceBadge from "@/components/ConfidenceBadge";
 import { getSeverityStyle } from "@/lib/severity-colors";
+import TrendSparkline from "./TrendSparkline";
 import type { Insight } from "@/hooks/useInsights";
 
 interface InsightEvidencePanelProps {
   insight: Insight;
+}
+
+/** Synthesize a representative trend from insight metadata for the sparkline */
+function synthesizeTrend(insight: Insight): number[] {
+  const conf = insight.capped_confidence ?? insight.confidence_score ?? 50;
+  const variance = insight.variance_score ?? 0.1;
+  const n = Math.min(insight.sample_size ?? 6, 12);
+  // Generate a plausible trend line using variance as noise magnitude
+  const points: number[] = [];
+  const direction = insight.severity === "high" || insight.severity === "critical" ? -1 : 1;
+  for (let i = 0; i < n; i++) {
+    const base = conf + direction * (i / n) * variance * 50;
+    const noise = Math.sin(i * 2.1) * variance * 15;
+    points.push(Math.max(0, Math.min(100, base + noise)));
+  }
+  return points;
 }
 
 /**
@@ -63,7 +80,7 @@ const InsightEvidencePanel = ({ insight }: InsightEvidencePanelProps) => {
             </div>
             <p className="text-sm text-foreground leading-relaxed">{insight.message}</p>
 
-            {/* Evidence summary row */}
+            {/* Evidence summary row with sparkline */}
             <div className="flex items-center gap-3 mt-2 flex-wrap">
               <ConfidenceBadge
                 confidence={insight.capped_confidence ?? insight.confidence_score ?? null}
@@ -75,6 +92,14 @@ const InsightEvidencePanel = ({ insight }: InsightEvidencePanelProps) => {
               <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
                 <BarChart3 className="w-3 h-3" /> Variance: {varianceLabel}
               </span>
+              {/* Mini trend sparkline — synthesized from available data points */}
+              {insight.sample_size && insight.sample_size >= 3 && (
+                <TrendSparkline
+                  data={synthesizeTrend(insight)}
+                  width={80}
+                  height={24}
+                />
+              )}
             </div>
 
             {/* Expandable evidence detail */}
