@@ -7,6 +7,7 @@ import {
 import type { Insight } from "@/hooks/useInsights";
 import type { MetricTypeSummary } from "@/hooks/useMetrics";
 import { filterCriticalInsights } from "@/lib/insight-filters";
+import { getSeverityStyle } from "@/lib/severity-colors";
 import CrossWorkspaceIntelligence from "./CrossWorkspaceIntelligence";
 
 interface ExecutiveQuickViewProps {
@@ -147,9 +148,7 @@ const ExecutiveQuickView = memo(({
                 key={insight.id}
                 className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 border border-border/30"
               >
-                <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${
-                  insight.severity === "high" ? "bg-destructive" : "bg-warning"
-                }`} />
+                <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${getSeverityStyle(insight.severity).dot}`} />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium line-clamp-2">{insight.message}</p>
                 </div>

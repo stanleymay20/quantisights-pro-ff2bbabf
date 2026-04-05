@@ -257,9 +257,7 @@ const AnalystInsights = ({ insights, metrics, topMetrics, datasetName, datasetId
               
               return (
                 <div key={insight.id} className="flex items-start gap-3">
-                  <div className={`w-1.5 h-1.5 rounded-full mt-2 shrink-0 ${
-                    insight.severity === "high" ? "bg-destructive" : insight.severity === "medium" ? "bg-yellow-500" : "bg-primary"
-                  }`} />
+                  <div className={`w-1.5 h-1.5 rounded-full mt-2 shrink-0 ${getSeverityStyle(insight.severity).dot}`} />
                   <div className="flex-1">
                     <p className="text-[13px] text-foreground/80 leading-relaxed">
                       {v?.sanitized || insight.message}
