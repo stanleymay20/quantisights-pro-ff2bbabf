@@ -2,6 +2,7 @@ import { memo, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Crosshair, AlertTriangle, TrendingUp, Shield, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
+import { filterCriticalInsights } from "@/lib/insight-filters";
 import type { Insight } from "@/hooks/useInsights";
 import type { MetricTypeSummary } from "@/hooks/useMetrics";
 
