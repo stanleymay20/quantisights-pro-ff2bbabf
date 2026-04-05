@@ -7,6 +7,7 @@ import {
 import type { Insight } from "@/hooks/useInsights";
 import type { MetricTypeSummary } from "@/hooks/useMetrics";
 import { filterCriticalInsights } from "@/lib/insight-filters";
+import { getSeverityStyle } from "@/lib/severity-colors";
 import CrossWorkspaceIntelligence from "./CrossWorkspaceIntelligence";
 
 interface ExecutiveQuickViewProps {
