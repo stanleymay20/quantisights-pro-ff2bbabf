@@ -2,7 +2,7 @@ import { ArrowRight, Zap, TrendingDown, Eye, AlertTriangle, BookOpen, Brain } fr
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import type { Insight } from "@/hooks/useInsights";
-
+import { filterCriticalInsights } from "@/lib/insight-filters";
 interface DailyActionsProps {
   insights: Insight[];
   hasData: boolean;
