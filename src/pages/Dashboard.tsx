@@ -174,6 +174,7 @@ const Dashboard = () => {
     <>
       
       {showWelcomeFlow && <WelcomeFlow hasData={hasData} displayName={displayName} />}
+        {hasData && <ProofBar organizationId={currentOrgId} />}
         <IntelligenceStatusBar
           hasData={hasData}
           insights={insights}
