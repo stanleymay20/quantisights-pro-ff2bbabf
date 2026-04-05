@@ -120,6 +120,7 @@ const navSections: NavSection[] = [
       { icon: Crosshair, label: "Decision Fitness", path: "/decision-fitness" },
       { icon: Eye, label: "Governance Maturity", path: "/governance-maturity" },
       { icon: Activity, label: "System Health", path: "/system-health" },
+      { icon: Shield, label: "Trust Center", path: "/trust-center" },
       { icon: CreditCard, label: "Billing", path: "/billing" },
       { icon: Settings, label: "Settings", path: "/settings" },
     ],
