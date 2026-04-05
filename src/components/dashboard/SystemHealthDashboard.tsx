@@ -198,6 +198,37 @@ const SystemHealthDashboard = ({ orgId }: Props) => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Autonomous Jobs Health */}
+        {health.cronJobs.length > 0 && (
+          <Card className="border border-border/50">
+            <CardContent className="pt-3 pb-2 px-3">
+              <div className="flex items-center gap-1.5 mb-2">
+                <Activity className="h-3.5 w-3.5 text-primary" />
+                <span className="text-xs font-medium text-foreground">Autonomous Jobs</span>
+              </div>
+              <div className="space-y-1.5">
+                {health.cronJobs.map((job) => (
+                  <div key={job.job_name} className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-1.5">
+                      <div className={`w-1.5 h-1.5 rounded-full ${
+                        job.last_status === "completed" ? "bg-green-500" :
+                        job.last_status === "failed" ? "bg-red-500" :
+                        "bg-muted-foreground/40"
+                      }`} />
+                      <span className="text-muted-foreground capitalize">{job.job_name.replace(/-/g, " ")}</span>
+                    </div>
+                    <span className="text-[10px] text-muted-foreground">
+                      {job.last_completed_at
+                        ? formatDistanceToNow(new Date(job.last_completed_at), { addSuffix: true })
+                        : "no runs"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
