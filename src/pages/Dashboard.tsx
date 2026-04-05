@@ -30,6 +30,7 @@ import DemoBanner from "@/components/dashboard/DemoBanner";
 import HeroInsight from "@/components/dashboard/HeroInsight";
 import DecisionMemoryWidget from "@/components/dashboard/DecisionMemoryWidget";
 import SystemHealthDashboard from "@/components/dashboard/SystemHealthDashboard";
+import ProofBar from "@/components/dashboard/ProofBar";
 
 const VIEW_STORAGE_KEY = "quantivis_dashboard_view";
 
