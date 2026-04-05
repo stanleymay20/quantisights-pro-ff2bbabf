@@ -16,7 +16,7 @@ interface BoardroomBriefProps {
 /** Boardroom Brief — 3-5 line executive summary distilling the entire system state */
 const BoardroomBrief = memo(({ insights, pendingDecisions, calibrationScore, topMetrics }: BoardroomBriefProps) => {
   const brief = useMemo(() => {
-    const critical = insights.filter(i => i.severity === "high");
+    const critical = filterCriticalInsights(insights);
     const medium = insights.filter(i => i.severity === "medium");
     const totalSignals = critical.length + medium.length;
 
