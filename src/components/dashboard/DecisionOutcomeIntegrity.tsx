@@ -3,8 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronUp, Target, TrendingUp, CheckCircle2, XCircle, Minus, BarChart3 } from "lucide-react";
-import { getSeverityStyle } from "@/lib/severity-colors";
+import { ChevronDown, ChevronUp, Target, TrendingUp, CheckCircle2, XCircle, Minus } from "lucide-react";
 import ConfidenceBadge from "@/components/ConfidenceBadge";
 
 interface DecisionOutcome {
@@ -12,15 +11,19 @@ interface DecisionOutcome {
   decision_id: string;
   outcome_status: string;
   accuracy_score: number | null;
-  actual_outcome: string | null;
-  expected_outcome: string | null;
-  measured_at: string | null;
-  variance_explanation: string | null;
+  expected_metric: string;
+  expected_direction: string;
+  expected_change: number | null;
+  observed_metric: string | null;
+  observed_value_before: number | null;
+  observed_value_after: number | null;
+  evaluation_date: string | null;
+  notes: string | null;
 }
 
 interface LedgerDecision {
   id: string;
-  title: string;
+  recommended_action: string;
   decision_type: string;
   execution_status: string;
   capped_confidence: number | null;
@@ -54,13 +57,13 @@ const DecisionOutcomeIntegrity = ({ organizationId }: Props) => {
       const [outcomesRes, decisionsRes] = await Promise.all([
         supabase
           .from("decision_outcomes")
-          .select("*")
+          .select("id, decision_id, outcome_status, accuracy_score, expected_metric, expected_direction, expected_change, observed_metric, observed_value_before, observed_value_after, evaluation_date, notes")
           .eq("organization_id", organizationId)
           .order("created_at", { ascending: false })
           .limit(50),
         supabase
           .from("decision_ledger")
-          .select("id, title, decision_type, execution_status, capped_confidence, created_at")
+          .select("id, recommended_action, decision_type, execution_status, capped_confidence, created_at")
           .eq("organization_id", organizationId)
           .limit(200),
       ]);
@@ -119,7 +122,7 @@ const DecisionOutcomeIntegrity = ({ organizationId }: Props) => {
                 <div className="flex items-center gap-2 flex-1 min-w-0">
                   <StatusIcon className={`w-4 h-4 shrink-0 ${statusCfg.color}`} />
                   <span className="text-sm font-medium truncate">
-                    {outcome.decision?.title || "Decision"}
+                    {outcome.decision?.recommended_action || outcome.expected_metric}
                   </span>
                   <Badge variant="outline" className={`text-[10px] ${statusCfg.color} shrink-0`}>
                     {statusCfg.label}
@@ -142,27 +145,33 @@ const DecisionOutcomeIntegrity = ({ organizationId }: Props) => {
 
               {isExpanded && (
                 <div className="mt-3 pt-3 border-t border-border/20 space-y-2 text-xs">
-                  {outcome.expected_outcome && (
+                  <div className="grid grid-cols-2 gap-2">
                     <div>
                       <span className="font-semibold text-foreground">Expected: </span>
-                      <span className="text-muted-foreground">{outcome.expected_outcome}</span>
+                      <span className="text-muted-foreground">
+                        {outcome.expected_metric} {outcome.expected_direction}
+                        {outcome.expected_change != null ? ` by ${outcome.expected_change}%` : ""}
+                      </span>
                     </div>
-                  )}
-                  {outcome.actual_outcome && (
                     <div>
-                      <span className="font-semibold text-foreground">Actual: </span>
-                      <span className="text-muted-foreground">{outcome.actual_outcome}</span>
+                      <span className="font-semibold text-foreground">Observed: </span>
+                      <span className="text-muted-foreground">
+                        {outcome.observed_metric || "—"}
+                        {outcome.observed_value_before != null && outcome.observed_value_after != null
+                          ? ` (${outcome.observed_value_before} → ${outcome.observed_value_after})`
+                          : ""}
+                      </span>
                     </div>
-                  )}
-                  {outcome.variance_explanation && (
+                  </div>
+                  {outcome.notes && (
                     <div>
-                      <span className="font-semibold text-foreground">Variance: </span>
-                      <span className="text-muted-foreground">{outcome.variance_explanation}</span>
+                      <span className="font-semibold text-foreground">Notes: </span>
+                      <span className="text-muted-foreground">{outcome.notes}</span>
                     </div>
                   )}
-                  {outcome.measured_at && (
+                  {outcome.evaluation_date && (
                     <div className="text-muted-foreground/60">
-                      Measured: {new Date(outcome.measured_at).toLocaleDateString("de-DE")}
+                      Evaluated: {new Date(outcome.evaluation_date).toLocaleDateString("de-DE")}
                     </div>
                   )}
                 </div>
