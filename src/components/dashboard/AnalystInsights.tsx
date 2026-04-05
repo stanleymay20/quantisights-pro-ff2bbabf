@@ -35,12 +35,11 @@ const typeIcon = (type: string) => {
   }
 };
 
+import { getSeverityStyle } from "@/lib/severity-colors";
+
 const sevColor = (sev: string) => {
-  switch (sev) {
-    case "high": return "text-destructive bg-destructive/10 border-destructive/20";
-    case "medium": return "text-yellow-600 bg-yellow-500/10 border-yellow-500/20";
-    default: return "text-primary bg-primary/10 border-primary/20";
-  }
+  const style = getSeverityStyle(sev);
+  return `${style.text} ${style.bg} ${style.border}`;
 };
 
 const FindingCard = ({ finding }: { finding: AnalystFinding }) => {
