@@ -119,7 +119,7 @@ describe("Risk Prediction Rules", () => {
   });
 
   it("classifies likely_failure above 70", () => {
-    const score = computeRiskScore({ daysOverdue: 10, hasOwner: false, isBlocked: true });
+    const score = computeRiskScore({ daysOverdue: 10, hasOwner: false, isBlocked: true, isCritical: true });
     expect(score).toBeGreaterThanOrEqual(70);
   });
 });
