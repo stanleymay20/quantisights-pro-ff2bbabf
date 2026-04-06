@@ -26,9 +26,8 @@ Deno.serve(async (req) => {
 
   try {
     switch (action) {
-      // ─── INTERVENTION ENGINE ───
+      // ─── INTERVENTION ENGINE (batched, no N+1) ───
       case "scan_interventions": {
-        // Find overdue/failing plans and auto-create interventions
         const { data: plans } = await supabase
           .from("execution_plans")
           .select("id, status, deadline, owner_user_id, decision_id, priority, action_title")
@@ -38,26 +37,53 @@ Deno.serve(async (req) => {
 
         if (!plans || plans.length === 0) return json({ interventions_created: 0, scanned: 0 });
 
+        const planIds = plans.map(p => p.id);
+
+        // BATCH: Fetch all unresolved interventions for these plans in ONE query
+        const { data: existingInterventions } = await supabase
+          .from("execution_interventions")
+          .select("execution_plan_id")
+          .in("execution_plan_id", planIds)
+          .eq("resolved", false);
+
+        const plansWithOpenIntervention = new Set(
+          (existingInterventions || []).map(i => i.execution_plan_id)
+        );
+
+        // BATCH: Fetch latest event per plan for stale detection in ONE query
+        // We get the most recent event for each in-progress plan
+        const inProgressIds = plans.filter(p => p.status === "in_progress").map(p => p.id);
+        const latestEventByPlan = new Map<string, string>();
+
+        if (inProgressIds.length > 0) {
+          const { data: recentEvents } = await supabase
+            .from("execution_events")
+            .select("execution_plan_id, created_at")
+            .in("execution_plan_id", inProgressIds)
+            .order("created_at", { ascending: false })
+            .limit(1000);
+
+          // Keep only the latest per plan
+          for (const evt of recentEvents || []) {
+            if (!latestEventByPlan.has(evt.execution_plan_id)) {
+              latestEventByPlan.set(evt.execution_plan_id, evt.created_at);
+            }
+          }
+        }
+
         const now = new Date();
         const interventions: Array<Record<string, unknown>> = [];
 
         for (const plan of plans) {
-          // Check if intervention already exists (avoid duplicates)
-          const { data: existing } = await supabase
-            .from("execution_interventions")
-            .select("id")
-            .eq("execution_plan_id", plan.id)
-            .eq("resolved", false)
-            .limit(1);
-
-          if (existing && existing.length > 0) continue;
+          // Skip if already has open intervention
+          if (plansWithOpenIntervention.has(plan.id)) continue;
 
           // Overdue detection
           if (plan.deadline && new Date(plan.deadline) < now) {
             const daysOverdue = Math.floor((now.getTime() - new Date(plan.deadline).getTime()) / 86400000);
             let type = "escalation";
             let reason = `Plan "${plan.action_title}" is ${daysOverdue} day(s) overdue`;
-            let corrective = `Review and either extend deadline or reassign ownership`;
+            let corrective = "Review and either extend deadline or reassign ownership";
 
             if (daysOverdue > 7) {
               type = "auto_cancel";
@@ -78,18 +104,12 @@ Deno.serve(async (req) => {
               corrective_action: corrective,
               auto_triggered: true,
             });
+            continue; // One intervention per plan per scan
           }
 
-          // Stale in_progress (no activity for > 5 days — check events)
+          // Stale in_progress detection (no N+1 — uses pre-fetched map)
           if (plan.status === "in_progress") {
-            const { data: recentEvents } = await supabase
-              .from("execution_events")
-              .select("created_at")
-              .eq("execution_plan_id", plan.id)
-              .order("created_at", { ascending: false })
-              .limit(1);
-
-            const lastActivity = recentEvents?.[0]?.created_at;
+            const lastActivity = latestEventByPlan.get(plan.id);
             if (lastActivity) {
               const daysSinceActivity = Math.floor((now.getTime() - new Date(lastActivity).getTime()) / 86400000);
               if (daysSinceActivity > 5) {
@@ -107,20 +127,21 @@ Deno.serve(async (req) => {
           }
         }
 
+        // BULK INSERT: all interventions at once
         if (interventions.length > 0) {
           await supabase.from("execution_interventions").insert(interventions);
-          // Log to audit
-          for (const iv of interventions) {
-            await supabase.from("audit_log").insert({
-              organization_id,
-              actor_id: null,
-              actor_type: "system",
-              action_type: "auto_intervention_created",
-              resource_type: "execution_plan",
-              resource_id: iv.execution_plan_id,
-              payload: { intervention_type: iv.intervention_type, reason: iv.trigger_reason },
-            });
-          }
+
+          // BULK INSERT: all audit entries at once
+          const auditEntries = interventions.map(iv => ({
+            organization_id,
+            actor_id: null,
+            actor_type: "system",
+            action_type: "auto_intervention_created",
+            resource_type: "execution_plan",
+            resource_id: iv.execution_plan_id as string,
+            payload: { intervention_type: iv.intervention_type, reason: iv.trigger_reason },
+          }));
+          await supabase.from("audit_log").insert(auditEntries);
         }
 
         return json({ interventions_created: interventions.length, scanned: plans.length });
@@ -155,28 +176,29 @@ Deno.serve(async (req) => {
 
         if (!plan) return json({ error: "Plan not found" }, 404);
 
-        await supabase.from("execution_plans").update({ owner_user_id: new_owner_id }).eq("id", plan_id);
-
-        await supabase.from("execution_interventions").insert({
-          execution_plan_id: plan_id,
-          organization_id,
-          intervention_type: "reassignment",
-          trigger_reason: reason || "Manual reassignment",
-          previous_owner: plan.owner_user_id,
-          new_owner: new_owner_id,
-          auto_triggered: false,
-          resolved: true,
-          resolved_at: new Date().toISOString(),
-          resolved_by: userId,
-        });
-
-        await supabase.from("execution_events").insert({
-          execution_plan_id: plan_id,
-          organization_id,
-          event_type: "reassigned",
-          actor_id: userId,
-          metadata: { previous_owner: plan.owner_user_id, new_owner: new_owner_id, reason },
-        });
+        // Parallel: update plan + insert intervention + insert event
+        await Promise.all([
+          supabase.from("execution_plans").update({ owner_user_id: new_owner_id }).eq("id", plan_id),
+          supabase.from("execution_interventions").insert({
+            execution_plan_id: plan_id,
+            organization_id,
+            intervention_type: "reassignment",
+            trigger_reason: reason || "Manual reassignment",
+            previous_owner: plan.owner_user_id,
+            new_owner: new_owner_id,
+            auto_triggered: false,
+            resolved: true,
+            resolved_at: new Date().toISOString(),
+            resolved_by: userId,
+          }),
+          supabase.from("execution_events").insert({
+            execution_plan_id: plan_id,
+            organization_id,
+            event_type: "reassigned",
+            actor_id: userId,
+            metadata: { previous_owner: plan.owner_user_id, new_owner: new_owner_id, reason },
+          }),
+        ]);
 
         return json({ success: true });
       }
@@ -192,7 +214,7 @@ Deno.serve(async (req) => {
         return json(data || []);
       }
 
-      // ─── EXECUTION SCORING ───
+      // ─── EXECUTION SCORING (append-only history) ───
       case "compute_scores": {
         const { data: plans } = await supabase
           .from("execution_plans")
@@ -205,11 +227,12 @@ Deno.serve(async (req) => {
         const now = new Date();
         const completed = plans.filter(p => p.status === "completed");
         const failed = plans.filter(p => p.status === "failed");
+        const cancelled = plans.filter(p => p.status === "cancelled");
         const total = plans.length;
 
         const successRate = total > 0 ? completed.length / total : 0;
         const failureRate = total > 0 ? failed.length / total : 0;
-        const reliabilityRate = total > 0 ? (completed.length + plans.filter(p => p.status === "cancelled").length) / total : 0;
+        const reliabilityRate = total > 0 ? (completed.length + cancelled.length) / total : 0;
 
         // Avg delay for completed plans with deadlines
         const completedWithDeadline = completed.filter(p => p.deadline);
@@ -218,21 +241,16 @@ Deno.serve(async (req) => {
           const totalDelay = completedWithDeadline.reduce((sum, p) => {
             const deadline = new Date(p.deadline!);
             const completedAt = new Date(p.updated_at);
-            const delay = Math.max(0, (completedAt.getTime() - deadline.getTime()) / 86400000);
-            return sum + delay;
+            return sum + Math.max(0, (completedAt.getTime() - deadline.getTime()) / 86400000);
           }, 0);
           avgDelay = totalDelay / completedWithDeadline.length;
         }
 
-        // Composite score (0-100)
+        // Composite score (0-100): success(40) + no-failure(25) + timeliness(20) + reliability(15)
         const score = Math.round(
-          (successRate * 40) + 
-          ((1 - failureRate) * 25) + 
-          (Math.max(0, 1 - avgDelay / 14) * 20) + 
-          (reliabilityRate * 15)
-        ) * 100 / 100;
+          (successRate * 40 + (1 - failureRate) * 25 + Math.max(0, 1 - avgDelay / 14) * 20 + reliabilityRate * 15)
+        );
 
-        // Upsert org-level score
         const orgScore = {
           organization_id,
           scope_type: "organization",
@@ -246,15 +264,6 @@ Deno.serve(async (req) => {
           scoring_model_version: 1,
           computed_at: now.toISOString(),
         };
-
-        // Delete old and insert fresh
-        await supabase.from("execution_scores")
-          .delete()
-          .eq("organization_id", organization_id)
-          .eq("scope_type", "organization")
-          .eq("scope_id", organization_id);
-
-        await supabase.from("execution_scores").insert(orgScore);
 
         // Per-user scores
         const userMap = new Map<string, typeof plans>();
@@ -272,7 +281,7 @@ Deno.serve(async (req) => {
           const uTotal = userPlans.length;
           const uSuccessRate = uTotal > 0 ? uCompleted / uTotal : 0;
           const uFailureRate = uTotal > 0 ? uFailed / uTotal : 0;
-          const uScore = Math.round((uSuccessRate * 50 + (1 - uFailureRate) * 30 + 20) * 100) / 100;
+          const uScore = Math.round(uSuccessRate * 50 + (1 - uFailureRate) * 30 + 20);
 
           userScores.push({
             organization_id,
@@ -287,19 +296,15 @@ Deno.serve(async (req) => {
           });
         }
 
-        if (userScores.length > 0) {
-          await supabase.from("execution_scores")
-            .delete()
-            .eq("organization_id", organization_id)
-            .eq("scope_type", "user");
-          await supabase.from("execution_scores").insert(userScores);
-        }
+        // APPEND-ONLY: Insert new scores (history preserved, no delete)
+        const allScores = [orgScore, ...userScores];
+        await supabase.from("execution_scores").insert(allScores);
 
         return json({ org_score: orgScore, user_scores: userScores });
       }
 
       case "get_scores": {
-        const { scope_type } = body;
+        const { scope_type, include_history } = body;
         let query = supabase
           .from("execution_scores")
           .select("*")
@@ -308,7 +313,36 @@ Deno.serve(async (req) => {
 
         if (scope_type) query = query.eq("scope_type", scope_type);
 
-        const { data } = await query.limit(50);
+        // Default: latest only (one per scope). History: last 30.
+        const limit = include_history ? 100 : 20;
+        const { data } = await query.limit(limit);
+
+        if (!include_history && data) {
+          // Dedupe to latest per scope_id
+          const latestByScope = new Map<string, (typeof data)[0]>();
+          for (const row of data) {
+            const key = `${row.scope_type}:${row.scope_id}`;
+            if (!latestByScope.has(key)) latestByScope.set(key, row);
+          }
+          return json(Array.from(latestByScope.values()));
+        }
+
+        return json(data || []);
+      }
+
+      case "get_score_trend": {
+        const { scope_type: st, scope_id: si, limit: trendLimit } = body;
+        if (!st || !isValidUUID(si)) return json({ error: "scope_type and scope_id required" }, 400);
+
+        const { data } = await supabase
+          .from("execution_scores")
+          .select("score, success_rate, failure_rate, avg_delay_days, plans_evaluated, computed_at")
+          .eq("organization_id", organization_id)
+          .eq("scope_type", st)
+          .eq("scope_id", si)
+          .order("computed_at", { ascending: false })
+          .limit(Math.min(trendLimit || 30, 100));
+
         return json(data || []);
       }
 
@@ -323,25 +357,37 @@ Deno.serve(async (req) => {
 
         if (!activePlans || activePlans.length === 0) return json({ predictions: [] });
 
-        // Get historical patterns for risk modeling
+        // BATCH: historical patterns in ONE query
         const { data: historicalPlans } = await supabase
           .from("execution_plans")
-          .select("status, deadline, priority, created_at, updated_at")
+          .select("status, deadline, priority, created_at, updated_at, owner_user_id")
           .eq("organization_id", organization_id)
           .in("status", ["completed", "failed"])
           .limit(500);
 
         // Compute historical failure rates by priority
         const histByPriority: Record<string, { total: number; failed: number; avgDays: number }> = {};
+        // Also compute per-owner failure rates
+        const histByOwner: Record<string, { total: number; failed: number }> = {};
+
         for (const hp of historicalPlans || []) {
-          const entry = histByPriority[hp.priority] || { total: 0, failed: 0, avgDays: 0 };
-          entry.total++;
-          if (hp.status === "failed") entry.failed++;
+          // By priority
+          const pe = histByPriority[hp.priority] || { total: 0, failed: 0, avgDays: 0 };
+          pe.total++;
+          if (hp.status === "failed") pe.failed++;
           if (hp.deadline && hp.updated_at) {
             const days = (new Date(hp.updated_at).getTime() - new Date(hp.created_at).getTime()) / 86400000;
-            entry.avgDays = (entry.avgDays * (entry.total - 1) + days) / entry.total;
+            pe.avgDays = (pe.avgDays * (pe.total - 1) + days) / pe.total;
           }
-          histByPriority[hp.priority] = entry;
+          histByPriority[hp.priority] = pe;
+
+          // By owner
+          if (hp.owner_user_id) {
+            const oe = histByOwner[hp.owner_user_id] || { total: 0, failed: 0 };
+            oe.total++;
+            if (hp.status === "failed") oe.failed++;
+            histByOwner[hp.owner_user_id] = oe;
+          }
         }
 
         const now = new Date();
@@ -355,8 +401,9 @@ Deno.serve(async (req) => {
           if (plan.deadline) {
             const daysToDeadline = (new Date(plan.deadline).getTime() - now.getTime()) / 86400000;
             if (daysToDeadline < 0) {
-              riskScore += 35;
-              riskFactors.push({ factor: `Overdue by ${Math.abs(Math.round(daysToDeadline))} days`, weight: 35 });
+              const w = Math.min(40, 25 + Math.abs(Math.round(daysToDeadline)));
+              riskScore += w;
+              riskFactors.push({ factor: `Overdue by ${Math.abs(Math.round(daysToDeadline))} days`, weight: w });
             } else if (daysToDeadline < 2) {
               riskScore += 20;
               riskFactors.push({ factor: "Deadline imminent (< 2 days)", weight: 20 });
@@ -370,41 +417,57 @@ Deno.serve(async (req) => {
           const hist = histByPriority[plan.priority];
           if (hist && hist.total >= 3) {
             const failRate = hist.failed / hist.total;
-            const contribution = Math.round(failRate * 25);
-            riskScore += contribution;
-            if (contribution > 5) {
-              riskFactors.push({ factor: `Historical ${plan.priority} priority failure rate: ${Math.round(failRate * 100)}%`, weight: contribution });
+            const w = Math.round(failRate * 25);
+            if (w > 5) {
+              riskScore += w;
+              riskFactors.push({ factor: `Historical ${plan.priority} failure rate: ${Math.round(failRate * 100)}%`, weight: w });
             }
           }
 
-          // Factor 3: No owner assigned
+          // Factor 3: Owner-based historical failure rate
+          if (plan.owner_user_id && histByOwner[plan.owner_user_id]) {
+            const ow = histByOwner[plan.owner_user_id];
+            if (ow.total >= 3) {
+              const ownerFailRate = ow.failed / ow.total;
+              const w = Math.round(ownerFailRate * 15);
+              if (w > 3) {
+                riskScore += w;
+                riskFactors.push({ factor: `Owner historical failure rate: ${Math.round(ownerFailRate * 100)}%`, weight: w });
+              }
+            }
+          }
+
+          // Factor 4: No owner assigned
           if (!plan.owner_user_id) {
             riskScore += 15;
             riskFactors.push({ factor: "No owner assigned", weight: 15 });
           }
 
-          // Factor 4: Age of plan (stale plans fail more)
+          // Factor 5: Age/staleness
           const ageDays = (now.getTime() - new Date(plan.created_at).getTime()) / 86400000;
           if (ageDays > 14 && plan.status === "pending") {
             riskScore += 20;
             riskFactors.push({ factor: `Pending for ${Math.round(ageDays)} days without starting`, weight: 20 });
+          } else if (ageDays > 7 && plan.status === "pending") {
+            riskScore += 10;
+            riskFactors.push({ factor: `Pending for ${Math.round(ageDays)} days`, weight: 10 });
           }
 
-          // Factor 5: Critical priority amplifier
+          // Factor 6: Critical priority amplifier
           if (plan.priority === "critical") {
             riskScore = Math.min(100, Math.round(riskScore * 1.2));
-            riskFactors.push({ factor: "Critical priority amplifier", weight: 5 });
+            riskFactors.push({ factor: "Critical priority amplifier (+20%)", weight: 5 });
           }
 
           riskScore = Math.min(100, Math.max(0, riskScore));
 
           let predictedOutcome = "on_track";
-          let recommendation = "No action needed";
+          let recommendation = "No action needed — plan is progressing normally.";
           let delayPredicted = 0;
 
           if (riskScore >= 70) {
             predictedOutcome = "likely_failure";
-            recommendation = "Immediate intervention required. Consider reassignment or scope reduction.";
+            recommendation = "Immediate intervention required. Consider reassignment, scope reduction, or executive escalation.";
             delayPredicted = Math.round(ageDays * 0.5 + 7);
           } else if (riskScore >= 50) {
             predictedOutcome = "at_risk";
@@ -424,11 +487,11 @@ Deno.serve(async (req) => {
             delay_days_predicted: delayPredicted,
             risk_factors: riskFactors,
             recommendation,
-            model_version: 1,
+            model_version: 2,
           });
         }
 
-        // Upsert predictions (delete old, insert new)
+        // BULK: delete old predictions and insert new ones
         const planIds = activePlans.map(p => p.id);
         await supabase.from("execution_predictions").delete().in("execution_plan_id", planIds);
         if (predictions.length > 0) {
@@ -451,31 +514,51 @@ Deno.serve(async (req) => {
 
       // ─── EXECUTIVE COMMAND SUMMARY ───
       case "command_summary": {
-        // Aggregate everything for the executive control layer
+        // Parallel: all summary queries at once
         const [
           { data: scores },
           { data: predictions },
           { data: interventions },
           { data: activePlans },
         ] = await Promise.all([
-          supabase.from("execution_scores").select("*").eq("organization_id", organization_id).eq("scope_type", "organization").order("computed_at", { ascending: false }).limit(1),
-          supabase.from("execution_predictions").select("risk_score, predicted_outcome, execution_plan_id").eq("organization_id", organization_id).order("risk_score", { ascending: false }).limit(100),
-          supabase.from("execution_interventions").select("id, intervention_type, resolved").eq("organization_id", organization_id).eq("resolved", false).limit(50),
-          supabase.from("execution_plans").select("id, status, priority, decision_id").eq("organization_id", organization_id).in("status", ["pending", "in_progress"]).limit(500),
+          supabase.from("execution_scores")
+            .select("*")
+            .eq("organization_id", organization_id)
+            .eq("scope_type", "organization")
+            .order("computed_at", { ascending: false })
+            .limit(1),
+          supabase.from("execution_predictions")
+            .select("risk_score, predicted_outcome, execution_plan_id")
+            .eq("organization_id", organization_id)
+            .order("risk_score", { ascending: false })
+            .limit(200),
+          supabase.from("execution_interventions")
+            .select("id, intervention_type, resolved")
+            .eq("organization_id", organization_id)
+            .eq("resolved", false)
+            .limit(50),
+          supabase.from("execution_plans")
+            .select("id, status, priority, decision_id")
+            .eq("organization_id", organization_id)
+            .in("status", ["pending", "in_progress"])
+            .limit(500),
         ]);
 
         const orgScore = scores?.[0] || null;
-        const atRiskCount = (predictions || []).filter(p => p.predicted_outcome === "at_risk" || p.predicted_outcome === "likely_failure").length;
+        const preds = predictions || [];
+        const atRiskCount = preds.filter(p => p.predicted_outcome === "at_risk" || p.predicted_outcome === "likely_failure").length;
         const openInterventions = (interventions || []).length;
-        const criticalPlans = (activePlans || []).filter(p => p.priority === "critical").length;
+        const active = activePlans || [];
+        const criticalPlans = active.filter(p => p.priority === "critical").length;
 
-        // Cross-decision dependency: group active plans by decision
+        // Cross-decision grouping
         const decisionGroups = new Map<string, number>();
-        for (const p of activePlans || []) {
+        for (const p of active) {
           decisionGroups.set(p.decision_id, (decisionGroups.get(p.decision_id) || 0) + 1);
         }
         const multiPlanDecisions = Array.from(decisionGroups.entries())
           .filter(([, count]) => count > 1)
+          .sort((a, b) => b[1] - a[1])
           .map(([decisionId, count]) => ({ decision_id: decisionId, plan_count: count }));
 
         return json({
@@ -483,13 +566,13 @@ Deno.serve(async (req) => {
           at_risk_plans: atRiskCount,
           open_interventions: openInterventions,
           critical_active: criticalPlans,
-          total_active: (activePlans || []).length,
+          total_active: active.length,
           multi_plan_decisions: multiPlanDecisions,
           risk_distribution: {
-            likely_failure: (predictions || []).filter(p => p.predicted_outcome === "likely_failure").length,
-            at_risk: (predictions || []).filter(p => p.predicted_outcome === "at_risk").length,
-            delayed: (predictions || []).filter(p => p.predicted_outcome === "delayed").length,
-            on_track: (predictions || []).filter(p => p.predicted_outcome === "on_track").length,
+            likely_failure: preds.filter(p => p.predicted_outcome === "likely_failure").length,
+            at_risk: preds.filter(p => p.predicted_outcome === "at_risk").length,
+            delayed: preds.filter(p => p.predicted_outcome === "delayed").length,
+            on_track: preds.filter(p => p.predicted_outcome === "on_track").length,
           },
         });
       }
