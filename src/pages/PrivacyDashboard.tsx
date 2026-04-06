@@ -60,7 +60,7 @@ const PrivacyDashboard = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
-      const { data: res, error: resErr } = await invokeWithRetry<Record<string, unknown>>("data-export", {
+      const { data: res, error: resErr } = await invokeWithRetry<any>("data-export", {
         body: { organization_id: currentOrgId, format: "csv" },
       });
       if (resErr) throw resErr;

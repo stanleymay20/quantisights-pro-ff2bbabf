@@ -15,7 +15,7 @@ import BoardroomBrief from "./BoardroomBrief";
 import WhatChangedWidget from "./WhatChangedWidget";
 import { useDecisionContexts, type DecisionContext } from "@/hooks/useDecisionContexts";
 import type { Insight } from "@/hooks/useInsights";
-import type { MetricTypeSummary } from "@/hooks/useMetrics";
+import type { MetricTypeSummary, MetricRow } from "@/hooks/useMetrics";
 
 const AnalyticsPanel = lazy(() => import("./AnalyticsPanel"));
 
@@ -29,8 +29,8 @@ interface CommandCenterProps {
   latestCost: number;
   pendingDecisions: number;
   calibrationScore: number | null;
-  metrics: Array<Record<string, unknown>>;
-  revenueByMonth: Array<Record<string, unknown>>;
+  metrics: MetricRow[];
+  revenueByMonth: Array<{ month: string; revenue: number }>;
   segmentData: Record<string, number>;
   onDecisionLogged: () => void;
   /** Dynamic metric summaries — domain-agnostic */

@@ -40,7 +40,7 @@ const DataLineage = () => {
   const [decisions, setDecisions] = useState<any[]>([]);
   const [metricTypes, setMetricTypes] = useState<string[]>([]);
   const [rawCount, setRawCount] = useState(0);
-  const [datasetInfo, setDatasetInfo] = useState<{ name: string; row_count: number | null; column_mapping: Record<string, unknown> | null } | null>(null);
+  const [datasetInfo, setDatasetInfo] = useState<{ name: string; row_count: number | null; column_mapping: any | null } | null>(null);
 
   useEffect(() => {
     if (!currentOrgId) return;

@@ -1,5 +1,6 @@
 import { lazy, useMemo } from "react";
 import type { Insight } from "@/hooks/useInsights";
+import type { MetricRow } from "@/hooks/useMetrics";
 
 const AnalyticsSummary = lazy(() => import("./AnalyticsSummary"));
 const RevenueChart = lazy(() => import("./RevenueChart"));
@@ -13,8 +14,8 @@ const EBITDABridgeChart = lazy(() => import("./EBITDABridgeChart"));
 const PortfolioHealthRadar = lazy(() => import("./PortfolioHealthRadar"));
 
 interface AnalyticsPanelProps {
-  metrics: Array<Record<string, unknown>>;
-  revenueByMonth: Array<Record<string, unknown>>;
+  metrics: MetricRow[];
+  revenueByMonth: Array<{ month: string; revenue: number }>;
   segmentData: Record<string, number>;
   insights: Insight[];
   latestChurn: number;

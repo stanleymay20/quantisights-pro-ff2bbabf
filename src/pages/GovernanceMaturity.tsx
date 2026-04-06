@@ -385,7 +385,7 @@ const GovernanceMaturity = () => {
                 <div>
                   <p className="text-[10px] text-muted-foreground font-semibold mb-2">ASSESSMENT HISTORY</p>
                   <div className="flex items-end gap-2">
-                    {[...assessmentHistory].reverse().map((a: Record<string, unknown>, i: number) => {
+                    {[...assessmentHistory].reverse().map((a: any, i: number) => {
                       const score = Number(a.overall_score);
                       const lvl = getLevel(score);
                       return (

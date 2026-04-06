@@ -30,7 +30,7 @@ const GovernanceKPIs = () => {
       if (!currentOrgId) return null;
 
       const [datasets, quality, decisions, members, policies, retentionPolicies] = await Promise.all([
-        supabase.from("datasets").select("id, uploaded_by, steward_user_id").eq("organization_id", currentOrgId).eq("status", "active"),
+        supabase.from("datasets").select("id, uploaded_by, steward_user_id, workspace_id").eq("organization_id", currentOrgId).eq("status", "active"),
         supabase.from("data_quality_checks").select("score, dataset_id").eq("organization_id", currentOrgId).order("created_at", { ascending: false }).limit(10),
         supabase.from("decision_ledger").select("id, outcome_measured_at", { count: "exact" }).eq("organization_id", currentOrgId),
         supabase.from("organization_members").select("role, user_id").eq("organization_id", currentOrgId),
@@ -55,11 +55,12 @@ const GovernanceKPIs = () => {
       const qualityDatasetIds = new Set((quality.data ?? []).map((q: { dataset_id?: string | null }) => q.dataset_id).filter(Boolean));
       const hasDatasetRetention = (retentionPolicies.data ?? []).some((p: { data_category: string }) => p.data_category === "datasets");
       const allDatasets = datasets.data ?? [];
-      const governedCount = allDatasets.filter((d: { id: string; workspace_id?: string | null }) =>
-        qualityDatasetIds.has(d.id) &&
-        (d.steward_user_id != null || stewardUserIds.has(d.uploaded_by)) &&
-        hasDatasetRetention
-      ).length;
+      const governedCount = allDatasets.filter((d) => {
+        const ds = d as { id: string; uploaded_by?: string; steward_user_id?: string | null; workspace_id?: string };
+        return qualityDatasetIds.has(ds.id) &&
+        (ds.steward_user_id != null || stewardUserIds.has(ds.uploaded_by ?? "")) &&
+        hasDatasetRetention;
+      }).length;
 
       return {
         datasetCount: allDatasets.length,

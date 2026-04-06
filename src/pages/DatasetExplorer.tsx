@@ -17,7 +17,7 @@ interface DatasetRecord {
   row_count: number | null;
   created_at: string;
   file_path: string | null;
-  column_mapping: Record<string, unknown> | null;
+  column_mapping: any | null;
   is_stale: boolean | null;
   organization_id: string;
   data_source_id: string | null;

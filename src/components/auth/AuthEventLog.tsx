@@ -48,7 +48,7 @@ const AuthEventLog = () => {
         .eq("organization_id", currentOrgId)
         .order("created_at", { ascending: false })
         .limit(100);
-      return (data ?? []) as Record<string, unknown>[];
+      return (data ?? []) as Array<{ id: string; event_type: string; risk_score: number | null; created_at: string; ip_address: string | null; metadata: any | null }>;
     },
     enabled: !!currentOrgId,
     refetchInterval: 30000,
@@ -81,8 +81,8 @@ const AuthEventLog = () => {
         ) : (
           <ScrollArea className="h-[400px]">
             <div className="space-y-2">
-              {events.map((event: Record<string, unknown>) => {
-                const config = EVENT_CONFIG[event.event_type] || {
+              {events.map((event) => {
+                const config = EVENT_CONFIG[event.event_type as string] || {
                   icon: Shield, label: event.event_type, severity: "secondary" as const,
                 };
                 const Icon = config.icon;

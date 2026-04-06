@@ -52,22 +52,27 @@ const StewardDrillDown = () => {
       const profiles = (profilesRes.data ?? []) as { user_id: string; full_name: string | null }[];
       const profileMap = new Map(profiles.map((p) => [p.user_id, p.full_name]));
 
-      const members: MemberWithProfile[] = (membersRes.data ?? []).map((m: Record<string, unknown>) => ({
-        user_id: m.user_id,
-        role: m.role,
-        full_name: profileMap.get(m.user_id) ?? "Unknown",
+      const members: MemberWithProfile[] = (membersRes.data ?? []).map((m) => ({
+        user_id: String((m as any).user_id ?? ""),
+        role: String((m as any).role ?? ""),
+        full_name: profileMap.get(String((m as any).user_id ?? "")) ?? "Unknown",
       }));
 
       const qualityDatasetIds = new Set((qualityRes.data ?? []).map((q: { dataset_id?: string | null }) => q.dataset_id).filter(Boolean));
 
-      const datasets: DatasetOwnership[] = (datasetsRes.data ?? []).map((d: Record<string, unknown>) => ({
-        id: d.id,
-        name: d.name,
-        uploaded_by: d.uploaded_by,
-        steward_user_id: d.steward_user_id,
-        has_quality_check: qualityDatasetIds.has(d.id),
-        steward_name: d.steward_user_id ? (profileMap.get(d.steward_user_id) ?? "Unknown") : null,
-      }));
+      const datasets: DatasetOwnership[] = (datasetsRes.data ?? []).map((d) => {
+        const row = d as any;
+        const id = String(row.id ?? "");
+        const stewardId = row.steward_user_id ? String(row.steward_user_id) : null;
+        return {
+          id,
+          name: String(row.name ?? ""),
+          uploaded_by: String(row.uploaded_by ?? ""),
+          steward_user_id: stewardId,
+          has_quality_check: qualityDatasetIds.has(id),
+          steward_name: stewardId ? (profileMap.get(stewardId) ?? "Unknown") : null,
+        };
+      });
 
       const stewards = members.filter((m) => m.role === "steward");
 

@@ -16,7 +16,8 @@ const COLORS = [
   "hsl(262, 83%, 58%)",
 ];
 
-const CustomNode = (props: Record<string, unknown>) => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const CustomNode = (props: any) => {
   const { x, y, width, height, index, payload } = props;
   return (
     <Layer key={`node-${index}`}>
