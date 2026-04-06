@@ -245,8 +245,9 @@ const Scenarios = () => {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       setAnalysis(data.analysis);
-    } catch (e: any) {
-      toast({ title: "AI analysis failed", description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "AI analysis failed";
+      toast({ title: "AI analysis failed", description: msg, variant: "destructive" });
     } finally {
       setAnalyzing(false);
     }

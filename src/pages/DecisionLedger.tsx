@@ -221,7 +221,7 @@ const DecisionLedgerPage = () => {
     }
   };
 
-  const updateDecision = async (id: string, updates: Record<string, any>) => {
+  const updateDecision = async (id: string, updates: Record<string, unknown>) => {
     setUpdatingId(id);
     const decision = decisions.find(d => d.id === id);
 

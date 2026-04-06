@@ -65,8 +65,8 @@ const AdaptiveCalibrationEngine = ({ orgId, decisions }: Props) => {
       } else if (data?.insufficient_data) {
         setError(data.message || "Insufficient data");
       }
-    } catch (e: any) {
-      setError(e.message || "Failed to compute calibration model");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Failed to compute calibration model");
     }
     setComputing(false);
   };

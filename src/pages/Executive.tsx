@@ -364,8 +364,9 @@ const Executive = () => {
         toast({ title: "Cached brief loaded", description: "Recent brief returned (< 6 hours old)" });
       }
       fetchSignalData();
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message || "Failed to generate brief", variant: "destructive" });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      toast({ title: "Error", description: msg || "Failed to generate brief", variant: "destructive" });
     } finally {
       setLoading(false);
     }
