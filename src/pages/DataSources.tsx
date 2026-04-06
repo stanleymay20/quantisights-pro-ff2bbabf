@@ -139,7 +139,7 @@ const DataSources = () => {
       .select("*")
       .eq("organization_id", currentOrgId)
       .order("created_at", { ascending: false });
-    setSources((data as any) || []);
+    setSources((data as DataSource[]) || []);
     setLoading(false);
   };
 
