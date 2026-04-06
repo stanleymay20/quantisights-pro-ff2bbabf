@@ -144,7 +144,23 @@ const ExecutionDashboard = () => {
         <IntelligenceDisclaimer variant="banner" context="advisory" />
 
         <main className="flex-1 p-8 overflow-auto space-y-6">
-          {loading ? (
+          <Tabs defaultValue="command" className="w-full">
+            <TabsList className="mb-4">
+              <TabsTrigger value="command" className="gap-1.5">
+                <Shield className="w-3.5 h-3.5" /> Command Center
+              </TabsTrigger>
+              <TabsTrigger value="operations" className="gap-1.5">
+                <Activity className="w-3.5 h-3.5" /> Operations
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="command">
+              {currentOrgId && (
+                <ExecutionCommandCenter organizationId={currentOrgId} />
+              )}
+            </TabsContent>
+
+            <TabsContent value="operations">
             <div className="flex items-center justify-center py-20">
               <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
             </div>
