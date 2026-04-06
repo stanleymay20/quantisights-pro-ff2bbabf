@@ -79,9 +79,9 @@ const DataLineage = () => {
       setSources(srcRes.data || []);
       setKpis(kpiRes.data || []);
       setDecisions(decRes.data || []);
-      const uniqueTypes: string[] = [...new Set((metRes.data || []).map((m: any) => m.metric_type as string))];
+      const uniqueTypes: string[] = [...new Set((metRes.data || []).map((m: { metric_type: string }) => m.metric_type))];
       setMetricTypes(uniqueTypes);
-      setRawCount((rawRes as any).count ?? 0);
+      setRawCount((rawRes as { count?: number }).count ?? 0);
       setDatasetInfo(dsInfo);
       setLoading(false);
     };

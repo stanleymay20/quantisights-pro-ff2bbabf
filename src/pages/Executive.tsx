@@ -227,7 +227,7 @@ const Executive = () => {
     if (risk) {
       setRiskIndex({
         score: risk.score,
-        components: risk.components as any,
+        components: risk.components as RiskIndex["components"],
         last_updated: risk.last_updated,
         escalation_required: risk.escalation_required,
         escalation_reason: risk.escalation_reason ?? undefined,
@@ -247,8 +247,8 @@ const Executive = () => {
     if (prefs) {
       setNotifPrefs({
         email_enabled: prefs.email_enabled,
-        email_recipients: (prefs as any).email_recipients || [],
-        slack_webhook_url: (prefs as any).slack_webhook_url || "",
+        email_recipients: ((prefs as Record<string, unknown>).email_recipients as string[]) || [],
+        slack_webhook_url: ((prefs as Record<string, unknown>).slack_webhook_url as string) || "",
         slack_enabled: prefs.slack_enabled,
         alert_threshold: prefs.alert_threshold,
         weekly_brief_enabled: prefs.weekly_brief_enabled,
@@ -265,7 +265,7 @@ const Executive = () => {
       .eq("status", "active")
       .order("created_at", { ascending: false });
 
-    setDbAlerts((alerts as any) || []);
+    setDbAlerts((alerts as DbAlert[]) || []);
 
     // Fetch brief history
     const { data: history } = await supabase
@@ -276,7 +276,7 @@ const Executive = () => {
       .order("generated_at", { ascending: false })
       .limit(10);
 
-    setBriefHistory((history as any) || []);
+    setBriefHistory((history as Array<{ id: string; role_type: string; risk_score: number; generated_by: string; generated_at: string }>) || []);
   }, [currentOrgId, activeRole, isGated]);
 
   // Reset state when dataset changes

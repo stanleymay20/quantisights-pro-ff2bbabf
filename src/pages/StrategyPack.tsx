@@ -136,8 +136,8 @@ const StrategyPack = () => {
       ]);
 
       setOrgName(orgRes.data?.name || "Organization");
-      setRoleRisks((riskRes.data || []).map((r: any) => ({ ...r, components: r.components || {} })));
-      setConvergence(eciRes.data as any);
+      setRoleRisks((riskRes.data || []).map((r: Record<string, unknown>) => ({ ...r, components: (r.components as RoleRisk["components"]) || {} })) as RoleRisk[]);
+      setConvergence(eciRes.data as unknown as Convergence | null);
       setConflicts(conflictRes.data || []);
       setDecisions((decRes.data || []) as unknown as DecisionRow[]);
       setSimulations((simRes.data || []) as unknown as SimResult[]);

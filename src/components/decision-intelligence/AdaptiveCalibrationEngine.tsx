@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { invokeWithRetry } from "@/lib/edge-function-retry";
 import { Brain, Zap, TrendingDown, TrendingUp, Minus, RefreshCw, Sparkles, AlertTriangle } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Cell } from "recharts";
 
@@ -37,14 +38,14 @@ const AdaptiveCalibrationEngine = ({ orgId, decisions }: Props) => {
     const fetchModel = async () => {
       setLoading(true);
       const { data, error: fetchErr } = await supabase
-        .from("calibration_models" as any)
+        .from("calibration_models")
         .select("*")
         .eq("organization_id", orgId)
         .order("computed_at", { ascending: false })
         .limit(1);
 
-      if (!fetchErr && data && (data as any[]).length > 0) {
-        setModel((data as any[])[0] as CalibrationModel);
+      if (!fetchErr && data && data.length > 0) {
+        setModel(data[0] as unknown as CalibrationModel);
       }
       setLoading(false);
     };
@@ -56,7 +57,7 @@ const AdaptiveCalibrationEngine = ({ orgId, decisions }: Props) => {
     setComputing(true);
     setError(null);
     try {
-      const { data, error: fnErr } = await supabase.functions.invoke("adaptive-calibration", {
+      const { data, error: fnErr } = await invokeWithRetry<{ model?: CalibrationModel; insufficient_data?: boolean; message?: string }>("adaptive-calibration", {
         body: { organization_id: orgId },
       });
       if (fnErr) throw fnErr;

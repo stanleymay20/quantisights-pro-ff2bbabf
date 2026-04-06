@@ -5,6 +5,7 @@ import { TIERS, TierKey, FEATURE_MATRIX } from "@/lib/stripe-tiers";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
+import { invokeWithRetry } from "@/lib/edge-function-retry";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -30,7 +31,7 @@ const Pricing = () => {
     if (!user) { navigate("/login"); return; }
     setLoadingTier(tierKey);
     try {
-      const { data, error } = await supabase.functions.invoke("create-checkout", {
+      const { data, error } = await invokeWithRetry<{ url?: string }>("create-checkout", {
         body: { priceId: TIERS[tierKey].price_id },
       });
       if (error) throw error;
@@ -44,7 +45,7 @@ const Pricing = () => {
 
   const handleManage = async () => {
     try {
-      const { data, error } = await supabase.functions.invoke("customer-portal");
+      const { data, error } = await invokeWithRetry<{ url?: string }>("customer-portal");
       if (error) throw error;
       if (data?.url) window.location.href = data.url;
     } catch (err: unknown) {

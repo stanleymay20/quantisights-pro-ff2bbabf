@@ -97,7 +97,7 @@ const DecisionEvidencePanel = ({ decisionId, organizationId, decisionText }: Dec
         return;
       }
 
-      const advisory = d.advisory_instances as any;
+      const advisory = d.advisory_instances as { id: string; title: string; category: string; created_at: string } | null;
       const steps: TraceStep[] = [
         {
           stage: "data",

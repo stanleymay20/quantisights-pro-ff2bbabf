@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOrganization } from "@/hooks/useOrganization";
 import { supabase } from "@/integrations/supabase/client";
+import { invokeWithRetry } from "@/lib/edge-function-retry";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -101,7 +102,7 @@ const Onboarding = () => {
       .from("kpi_templates")
       .select("*")
       .then(({ data }) => {
-        if (data) setTemplates(data as any);
+        if (data) setTemplates(data as unknown as KpiTemplate[]);
       });
   }, []);
 
@@ -146,7 +147,7 @@ const Onboarding = () => {
     try {
       await saveOrgProfile();
 
-      const { data, error } = await supabase.functions.invoke("complete-onboarding", {
+      const { data, error } = await invokeWithRetry<Record<string, unknown>>("complete-onboarding", {
         body: {
           organization_id: currentOrgId,
           roles: selectedRoles,
@@ -155,7 +156,7 @@ const Onboarding = () => {
       });
 
       if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+      if (data?.error) throw new Error(String(data.error));
 
       toast({
         title: "Onboarding complete!",

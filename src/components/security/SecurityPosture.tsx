@@ -61,7 +61,7 @@ const SecurityPosture = () => {
       });
 
       // 4. AI Data Boundary
-      const aiEnabled = (currentOrg as any)?.ai_raw_text_enabled ?? false;
+      const aiEnabled = (currentOrg as unknown as Record<string, unknown>)?.ai_raw_text_enabled ?? false;
       checks.push({
         label: "AI Data Boundary",
         status: aiEnabled ? "warning" : "pass",

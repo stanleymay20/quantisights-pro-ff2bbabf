@@ -7,6 +7,7 @@ import {
   Users, TrendingUp,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { invokeWithRetry } from "@/lib/edge-function-retry";
 import { useToast } from "@/hooks/use-toast";
 
 interface Conflict {
@@ -108,7 +109,7 @@ const ExecutiveConvergence = ({ organizationId, tier }: Props) => {
   const runConvergence = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("executive-convergence", {
+      const { data, error } = await invokeWithRetry<ConvergenceResult & { error?: string; message?: string }>("executive-convergence", {
         body: { organization_id: organizationId, trigger: "manual" },
       });
       if (error) throw error;

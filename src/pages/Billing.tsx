@@ -9,6 +9,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { useOrganization } from "@/hooks/useOrganization";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { invokeWithRetry } from "@/lib/edge-function-retry";
 import { useToast } from "@/hooks/use-toast";
 import { TIERS, TierKey, FEATURE_MATRIX } from "@/lib/stripe-tiers";
 import {
@@ -68,7 +69,7 @@ const Billing = () => {
   const openPortal = async () => {
     setPortalLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("customer-portal");
+      const { data, error } = await invokeWithRetry<{ url?: string }>("customer-portal");
       if (error) throw error;
       if (data?.url) window.location.href = data.url;
     } catch (err: unknown) {

@@ -246,7 +246,7 @@ export default function DataCatalog() {
                         {qc && (
                           <Dialog>
                             <DialogTrigger asChild>
-                              <Button size="sm" variant="ghost" onClick={() => setSelectedProfile((qc.details as any)?.profile || qc.details)}>
+                              <Button size="sm" variant="ghost" onClick={() => setSelectedProfile((qc.details as Record<string, unknown>)?.profile || qc.details)}>
                                 <Eye className="h-3 w-3" />
                               </Button>
                             </DialogTrigger>

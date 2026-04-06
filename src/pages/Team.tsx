@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOrganization } from "@/hooks/useOrganization";
 import { supabase } from "@/integrations/supabase/client";
+import { invokeWithRetry } from "@/lib/edge-function-retry";
 import { SidebarMobileToggle } from "@/components/layout/ProtectedShell";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -106,11 +107,11 @@ const Team = () => {
     if (!inviteEmail || !currentOrgId) return;
     setInviting(true);
     try {
-      const { data, error } = await supabase.functions.invoke("invite-team-member", {
+      const { data, error } = await invokeWithRetry<Record<string, unknown>>("invite-team-member", {
         body: { email: inviteEmail, role: inviteRole, organization_id: currentOrgId },
       });
       if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+      if (data?.error) throw new Error(String(data.error));
 
       toast({ title: "Invitation sent", description: `Invited ${inviteEmail} as ${inviteRole}` });
       setInviteEmail("");

@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useOrganization } from "@/hooks/useOrganization";
 import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
+import { invokeWithRetry } from "@/lib/edge-function-retry";
 import { useToast } from "@/hooks/use-toast";
 import {
   Database, Globe, Webhook, FileSpreadsheet, Plus, Copy, Check,
@@ -61,9 +62,9 @@ const SyncButton = ({ source, organizationId, onComplete }: { source: DataSource
     setSyncing(true);
     setResult(null);
     try {
-      const { data, error } = await supabase.functions.invoke("connector-pull", {
+      const { data, error } = await invokeWithRetry<{ records?: number; errors?: string[] }>("connector-pull", {
         body: {
-          connector_type: (source.config as any)?.connector_type || "stripe",
+          connector_type: (source.config as Record<string, unknown>)?.connector_type || "stripe",
           data_source_id: source.id,
           organization_id: organizationId,
         },
@@ -138,7 +139,7 @@ const DataSources = () => {
       .select("*")
       .eq("organization_id", currentOrgId)
       .order("created_at", { ascending: false });
-    setSources((data as any) || []);
+    setSources((data as DataSource[]) || []);
     setLoading(false);
   };
 
@@ -149,7 +150,7 @@ const DataSources = () => {
       .eq("data_source_id", sourceId)
       .order("created_at", { ascending: false })
       .limit(10);
-    setSyncJobs((prev) => ({ ...prev, [sourceId]: (data as any) || [] }));
+    setSyncJobs((prev) => ({ ...prev, [sourceId]: (data as SyncJob[]) || [] }));
   };
 
   useEffect(() => { fetchSources(); }, [currentOrgId]);
