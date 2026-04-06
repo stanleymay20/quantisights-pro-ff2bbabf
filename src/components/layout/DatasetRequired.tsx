@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, forwardRef } from "react";
 import { useActiveDataContext } from "@/hooks/useActiveDataContext";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -15,8 +15,8 @@ interface DatasetRequiredProps {
  * Shows a clear empty state with navigation to Data Upload when no dataset is active.
  * Use this around any module that requires dataset-scoped data to function.
  */
-const DatasetRequired = ({ children, moduleName = "This module" }: DatasetRequiredProps) => {
-  const { hasOrg, hasProject, hasDataset, projectName, datasetName } = useActiveDataContext();
+const DatasetRequired = forwardRef<HTMLDivElement, DatasetRequiredProps>(({ children, moduleName = "This module" }, ref) => {
+  const { hasOrg, hasProject, hasDataset, projectName } = useActiveDataContext();
   const navigate = useNavigate();
 
   if (!hasOrg) {
@@ -62,7 +62,9 @@ const DatasetRequired = ({ children, moduleName = "This module" }: DatasetRequir
   }
 
   return <>{children}</>;
-};
+});
+
+DatasetRequired.displayName = "DatasetRequired";
 
 function EmptyState({
   icon,
