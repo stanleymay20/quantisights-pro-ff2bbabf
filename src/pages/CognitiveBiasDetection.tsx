@@ -53,12 +53,12 @@ const CognitiveBiasDetection = () => {
     if (!currentOrgId || !activeDatasetId) return;
     setLoading(true);
     try {
-      const { data, error } = await invokeWithRetry<BiasResult>("cognitive-bias-detect", {
+      const { data, error } = await invokeWithRetry<BiasResult & { error?: string }>("cognitive-bias-detect", {
         body: { organization_id: currentOrgId, dataset_id: activeDatasetId },
       });
       if (error) throw error;
-      if (data?.error) throw new Error((data as Record<string, unknown>).error as string);
-      setResult(data);
+      if (data?.error) throw new Error(data.error);
+      if (data) setResult(data);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Scan failed";
       toast({ title: "Scan failed", description: msg, variant: "destructive" });

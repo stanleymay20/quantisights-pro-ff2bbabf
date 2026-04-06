@@ -48,12 +48,12 @@ const CausalInference = () => {
     if (!currentOrgId || !activeDatasetId) return;
     setLoading(true);
     try {
-      const { data, error } = await invokeWithRetry<CausalResult>("causal-inference", {
+      const { data, error } = await invokeWithRetry<CausalResult & { error?: string }>("causal-inference", {
         body: { organization_id: currentOrgId, dataset_id: activeDatasetId },
       });
       if (error) throw error;
-      if (data?.error) throw new Error((data as Record<string, unknown>).error as string);
-      setResult(data);
+      if (data?.error) throw new Error(data.error);
+      if (data) setResult(data);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Analysis failed";
       toast({ title: "Analysis failed", description: msg, variant: "destructive" });

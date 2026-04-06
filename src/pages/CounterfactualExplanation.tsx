@@ -83,12 +83,12 @@ const CounterfactualExplanation = () => {
     if (!currentOrgId || !datasetId || !entityId) return;
     setLoading(true);
     try {
-      const { data, error } = await invokeWithRetry<CounterfactualResult>("counterfactual-explain", {
+      const { data, error } = await invokeWithRetry<CounterfactualResult & { error?: string }>("counterfactual-explain", {
         body: { organization_id: currentOrgId, dataset_id: datasetId, entity_type: entityType, entity_id: entityId },
       });
       if (error) throw error;
-      if ((data as Record<string, unknown>)?.error) throw new Error((data as Record<string, unknown>).error as string);
-      setResult(data);
+      if (data?.error) throw new Error(data.error);
+      if (data) setResult(data);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Analysis failed";
       toast({ title: "Analysis failed", description: msg, variant: "destructive" });

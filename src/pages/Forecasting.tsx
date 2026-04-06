@@ -59,12 +59,12 @@ const Forecasting = () => {
     }
     setLoading(true);
     try {
-      const { data: result, error } = await invokeWithRetry<ForecastData>("predictive-forecast", {
+      const { data: result, error } = await invokeWithRetry<ForecastData & { error?: string }>("predictive-forecast", {
         body: { organization_id: orgId, dataset_id: datasetId, metric_type: metricType, horizon_months: horizon },
       });
       if (error) throw error;
-      if ((result as Record<string, unknown>)?.error) throw new Error((result as Record<string, unknown>).error as string);
-      setData(result);
+      if (result?.error) throw new Error(result.error);
+      if (result) setData(result);
       toast({ title: "Forecast generated" });
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Forecast failed";
