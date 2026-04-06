@@ -225,19 +225,19 @@ const KPIs = () => {
     }
     setAnalyzing(true);
     try {
-      const { data, error } = await supabase.functions.invoke("ai-kpi-analysis", {
+      const { data, error } = await invokeWithRetry<Record<string, unknown>>("ai-kpi-analysis", {
         body: { kpi_id: kpiId, dataset_id: activeDatasetId, organization_id: currentOrgId },
       });
       if (error) throw error;
       if (data?.error) {
-        if (data.error.includes("minimum 2 data points")) {
+        if (String(data.error).includes("minimum 2 data points")) {
           toast({ title: "Not enough data", description: "Compute KPI values first (need at least 2 data points) before running AI analysis.", variant: "destructive" });
         } else {
-          throw new Error(data.error);
+          throw new Error(String(data.error));
         }
         return;
       }
-      setAnalysis(data.analysis);
+      setAnalysis(data?.analysis as string);
     } catch (e: unknown) {
       toast({ title: "Analysis failed", description: e instanceof Error ? e.message : "Unknown error", variant: "destructive" });
     } finally {
