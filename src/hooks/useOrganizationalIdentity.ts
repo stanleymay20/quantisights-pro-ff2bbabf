@@ -4,6 +4,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import type { Database } from "@/integrations/supabase/types";
 
 type OrgIdentityRow = Database["public"]["Tables"]["organizational_identity"]["Row"];
+type OrgIdentityInsert = Database["public"]["Tables"]["organizational_identity"]["Insert"];
+type OrgIdentityUpdate = Database["public"]["Tables"]["organizational_identity"]["Update"];
 
 export interface OrganizationalIdentity {
   id: string;
