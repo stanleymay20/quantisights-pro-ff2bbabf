@@ -5935,6 +5935,10 @@ export type Database = {
         Returns: Json
       }
       cleanup_old_copilot_messages: { Args: never; Returns: undefined }
+      exec_compute_scores_idempotent: {
+        Args: { _cooldown_minutes?: number; _org_id: string; _scores: Json }
+        Returns: Json
+      }
       exec_create_interventions_atomic: {
         Args: { _interventions: Json; _org_id: string }
         Returns: Json
@@ -5947,17 +5951,29 @@ export type Database = {
           latest_event_at: string
         }[]
       }
-      exec_infer_blockers: {
-        Args: { _org_id: string }
-        Returns: {
-          blocker_action_title: string
-          blocker_status: string
-          inferred_blocker_id: string
-          plan_action_title: string
-          plan_id: string
-          reason: string
-        }[]
-      }
+      exec_infer_blockers:
+        | {
+            Args: { _org_id: string }
+            Returns: {
+              blocker_action_title: string
+              blocker_status: string
+              inferred_blocker_id: string
+              plan_action_title: string
+              plan_id: string
+              reason: string
+            }[]
+          }
+        | {
+            Args: { _limit?: number; _org_id: string }
+            Returns: {
+              blocker_action_title: string
+              blocker_status: string
+              inferred_blocker_id: string
+              plan_action_title: string
+              plan_id: string
+              reason: string
+            }[]
+          }
       exec_log_override: {
         Args: {
           _actor_id: string
@@ -5996,6 +6012,10 @@ export type Database = {
           _predictions: Json
         }
         Returns: Json
+      }
+      exec_verify_step_up_auth: {
+        Args: { _org_id: string; _user_id: string; _validity_minutes?: number }
+        Returns: boolean
       }
       get_user_org_role: {
         Args: { _org_id: string; _user_id: string }
