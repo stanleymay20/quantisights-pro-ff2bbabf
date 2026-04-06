@@ -307,7 +307,7 @@ const Executive = () => {
         last_updated: data?.computed_at as string,
       });
       setDbAlerts((data?.triggered_alerts as Array<Record<string, unknown>>) || []);
-      toast({ title: "Signals computed", description: `Risk score: ${data.overall_score}/100` });
+      toast({ title: "Signals computed", description: `Risk score: ${data?.overall_score}/100` });
       fetchSignalData();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Unknown error";
