@@ -335,7 +335,7 @@ const ScenarioBranching = () => {
                         <td className="py-2 px-3 text-xs text-muted-foreground">Escalation</td>
                         {simulatedBranches.map(b => (
                           <td key={b.id} className="text-center py-2 px-3">
-                            {(b.results as any)?.escalation_triggered ? (
+                            {b.results?.escalation_triggered ? (
                               <Badge variant="destructive" className="text-[10px]">Yes</Badge>
                             ) : (
                               <Badge variant="outline" className="text-[10px] text-success">No</Badge>
