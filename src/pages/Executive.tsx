@@ -247,8 +247,8 @@ const Executive = () => {
     if (prefs) {
       setNotifPrefs({
         email_enabled: prefs.email_enabled,
-        email_recipients: (prefs as any).email_recipients || [],
-        slack_webhook_url: (prefs as any).slack_webhook_url || "",
+        email_recipients: ((prefs as Record<string, unknown>).email_recipients as string[]) || [],
+        slack_webhook_url: ((prefs as Record<string, unknown>).slack_webhook_url as string) || "",
         slack_enabled: prefs.slack_enabled,
         alert_threshold: prefs.alert_threshold,
         weekly_brief_enabled: prefs.weekly_brief_enabled,
