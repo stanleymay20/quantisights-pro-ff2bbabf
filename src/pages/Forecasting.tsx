@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useActiveDataContext } from "@/hooks/useActiveDataContext";
 import DatasetRequired from "@/components/layout/DatasetRequired";
 import { supabase } from "@/integrations/supabase/client";
+import { invokeWithRetry } from "@/lib/edge-function-retry";
 import { useToast } from "@/hooks/use-toast";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, ComposedChart } from "recharts";
 import { TrendingUp, TrendingDown, Minus, Loader2, Sparkles, BarChart3, Activity } from "lucide-react";
