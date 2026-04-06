@@ -9,6 +9,7 @@ import AddPortfolioCompanyDialog from "@/components/portfolio/AddPortfolioCompan
 import DatasetRequired from "@/components/layout/DatasetRequired";
 import { Briefcase, AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 
 const Portfolio = () => {
   const { orgId, datasetId } = useActiveDataContext();
