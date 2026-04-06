@@ -93,7 +93,7 @@ const Team = () => {
       );
     }
 
-    setInvitations((invitesRes.data as any) || []);
+    setInvitations((invitesRes.data as unknown as typeof invitations) || []);
     setUserRole(roleRes.data as string | null);
     setLoading(false);
   }, [currentOrgId, user]);
@@ -116,8 +116,8 @@ const Team = () => {
       setInviteEmail("");
       setInviteOpen(false);
       fetchData();
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "Error", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
     } finally {
       setInviting(false);
     }
@@ -132,8 +132,8 @@ const Team = () => {
       if (error) throw error;
       toast({ title: "Role updated" });
       fetchData();
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "Error", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
     }
   };
 
@@ -150,8 +150,8 @@ const Team = () => {
       if (error) throw error;
       toast({ title: "Member removed" });
       fetchData();
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "Error", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
     }
   };
 
@@ -164,8 +164,8 @@ const Team = () => {
       if (error) throw error;
       toast({ title: "Invitation cancelled" });
       fetchData();
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "Error", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
     }
   };
 

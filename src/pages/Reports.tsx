@@ -100,8 +100,8 @@ const Reports = () => {
 
       toast({ title: "Report generated successfully!" });
       fetchReports();
-    } catch (err: any) {
-      toast({ title: "Failed to generate report", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "Failed to generate report", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
     } finally {
       setGenerating(false);
     }

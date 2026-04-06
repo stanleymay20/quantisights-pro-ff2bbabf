@@ -35,8 +35,8 @@ const Pricing = () => {
       });
       if (error) throw error;
       if (data?.url) window.location.href = data.url;
-    } catch (err: any) {
-      toast({ title: "Checkout failed", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "Checkout failed", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
     } finally {
       setLoadingTier(null);
     }
@@ -47,8 +47,8 @@ const Pricing = () => {
       const { data, error } = await supabase.functions.invoke("customer-portal");
       if (error) throw error;
       if (data?.url) window.location.href = data.url;
-    } catch (err: any) {
-      toast({ title: "Could not open portal", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "Could not open portal", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
     }
   };
 

@@ -123,11 +123,11 @@ const PasskeyManagement = () => {
       toast({ title: "Passkey enrolled", description: "Your passkey has been registered successfully." });
       setEnrollOpen(false);
       setDeviceName("");
-    } catch (err: any) {
-      if (err.name === "NotAllowedError") {
+    } catch (err: unknown) {
+      if (err instanceof DOMException && err.name === "NotAllowedError") {
         toast({ title: "Registration cancelled", variant: "destructive" });
       } else {
-        toast({ title: "Passkey enrollment failed", description: err.message, variant: "destructive" });
+        toast({ title: "Passkey enrollment failed", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
       }
     } finally {
       setEnrolling(false);

@@ -223,8 +223,8 @@ const DataConnectors = () => {
       const data = await res.json();
       setTestResult(data);
       if (data.success) setStep("testing");
-    } catch (err: any) {
-      setTestResult({ success: false, message: err.message });
+    } catch (err: unknown) {
+      setTestResult({ success: false, message: err instanceof Error ? err.message : "Unknown error" });
     } finally {
       setTesting(false);
     }
@@ -241,8 +241,8 @@ const DataConnectors = () => {
       const data = await res.json();
       setTables(data.tables || []);
       setStep("schema");
-    } catch (err: any) {
-      toast({ title: "Schema discovery failed", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "Schema discovery failed", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
     } finally {
       setDiscovering(false);
     }
@@ -259,8 +259,8 @@ const DataConnectors = () => {
       );
       const data = await res.json();
       setPreviewData(data);
-    } catch (err: any) {
-      toast({ title: "Preview failed", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "Preview failed", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
     }
   };
 
@@ -381,9 +381,10 @@ const DataConnectors = () => {
       const syncData = await res.json();
       setSyncResult(syncData);
       setStep("done");
-    } catch (err: any) {
-      toast({ title: "Sync failed", description: err.message, variant: "destructive" });
-      setSyncResult({ records: 0, errors: [err.message] });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      toast({ title: "Sync failed", description: msg, variant: "destructive" });
+      setSyncResult({ records: 0, errors: [msg] });
       setStep("done");
     } finally {
       setSyncing(false);

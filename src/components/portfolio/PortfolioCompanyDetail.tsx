@@ -78,8 +78,8 @@ const PortfolioCompanyDetail = ({ company, onClose, onUpdate, onDelete }: Props)
       });
       setEditing(false);
       toast({ title: "Company updated" });
-    } catch (err: any) {
-      toast({ title: "Update failed", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "Update failed", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
     } finally {
       setSaving(false);
     }
@@ -90,8 +90,8 @@ const PortfolioCompanyDetail = ({ company, onClose, onUpdate, onDelete }: Props)
     try {
       await onDelete();
       toast({ title: "Company removed from portfolio" });
-    } catch (err: any) {
-      toast({ title: "Delete failed", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "Delete failed", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
     } finally {
       setDeleting(false);
     }

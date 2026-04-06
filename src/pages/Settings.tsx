@@ -118,7 +118,7 @@ const Settings = () => {
         setWeeklyBrief(prefs.weekly_brief_enabled);
         setAlertThreshold(prefs.alert_threshold);
         setEscalationThreshold(prefs.escalation_threshold);
-        const recipients = (prefs as any).email_recipients || [];
+        const recipients = ((prefs as Record<string, unknown>).email_recipients as string[]) || [];
         setEmailRecipients(recipients);
         savedNotif.current = {
           emailEnabled: prefs.email_enabled,
@@ -169,8 +169,8 @@ const Settings = () => {
       setFullName(trimmed);
       await refreshProfile();
       toast({ title: "Profile updated" });
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "Error", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
     } finally { setSavingProfile(false); }
   };
 
@@ -189,8 +189,8 @@ const Settings = () => {
       if (error) throw error;
       savedOrg.current = { name: trimmedName, industry: trimmedIndustry || "" };
       toast({ title: "Organization updated" });
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "Error", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
     } finally { setSavingOrg(false); }
   };
 
@@ -210,8 +210,8 @@ const Settings = () => {
       if (error) throw error;
       savedNotif.current = { emailEnabled, weeklyBrief, alertThreshold: safeAlert, escalationThreshold: safeEsc, emailRecipients: [...emailRecipients] };
       toast({ title: "Notification preferences saved" });
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "Error", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
     } finally { setSavingNotif(false); }
   };
 
@@ -325,8 +325,8 @@ const Settings = () => {
                                   if (error) throw error;
                                   await signOut();
                                   toast({ title: "Account deleted", description: "Your data has been permanently removed." });
-                                } catch (err: any) {
-                                  toast({ title: "Error", description: err.message, variant: "destructive" });
+                                } catch (err: unknown) {
+                                  toast({ title: "Error", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
                                 } finally {
                                   setDeletingAccount(false);
                                 }
@@ -443,8 +443,8 @@ const Settings = () => {
                                 title: "Demo data loaded",
                                 description: `${data.summary.metrics} metrics, ${data.summary.decisions} decisions, ${data.summary.advisories} advisories seeded.`,
                               });
-                            } catch (err: any) {
-                              toast({ title: "Error", description: err.message, variant: "destructive" });
+                            } catch (err: unknown) {
+                              toast({ title: "Error", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
                             } finally {
                               setSeedingDemo(false);
                             }

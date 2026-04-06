@@ -12,6 +12,7 @@ import {
   BarChart3, TrendingUp, TrendingDown, Minus, Loader2, Building2, Target, Award, RefreshCw,
 } from "lucide-react";
 import DatasetRequired from "@/components/layout/DatasetRequired";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 
 interface BenchmarkScore {
   id: string;
@@ -173,8 +174,8 @@ const BenchmarkingPage = () => {
         .limit(50);
 
       if (data) setScores(data as unknown as BenchmarkScore[]);
-    } catch (err: any) {
-      toast({ title: "Computation failed", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "Computation failed", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
     } finally {
       setComputing(false);
     }
@@ -188,6 +189,7 @@ const BenchmarkingPage = () => {
 
   return (
     <DatasetRequired moduleName="Benchmarking">
+    <SectionErrorBoundary sectionName="Benchmarking">
     <>
         <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
           <div className="flex items-center gap-3">
@@ -325,6 +327,7 @@ const BenchmarkingPage = () => {
           )}
         </main>
     </>
+    </SectionErrorBoundary>
     </DatasetRequired>
   );
 };

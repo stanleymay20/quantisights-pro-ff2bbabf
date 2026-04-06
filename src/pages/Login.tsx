@@ -106,9 +106,10 @@ const Login = forwardRef<HTMLDivElement>((_, ref) => {
 
       logAuthEvent({ eventType: "login", metadata: { method: "password" } });
       navigate(redirectTo);
-    } catch (err: any) {
-      logAuthEvent({ eventType: "failed_login", metadata: { email, reason: err.message } });
-      toast({ title: "Login failed", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      logAuthEvent({ eventType: "failed_login", metadata: { email, reason: msg } });
+      toast({ title: "Login failed", description: msg, variant: "destructive" });
     } finally {
       setIsLoading(false);
     }

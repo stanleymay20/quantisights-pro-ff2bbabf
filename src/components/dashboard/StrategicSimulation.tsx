@@ -124,8 +124,8 @@ const StrategicSimulation = ({ organizationId, datasetId, roleType, tier }: Prop
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       setResult(data);
-    } catch (err: any) {
-      toast({ title: "Simulation Error", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "Simulation Error", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
     } finally {
       setLoading(false);
     }

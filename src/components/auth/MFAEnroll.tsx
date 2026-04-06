@@ -55,8 +55,8 @@ const MFAEnroll = ({ onStatusChange }: MFAEnrollProps) => {
       setSecret(data.totp.secret);
       setFactorId(data.id);
       setStep("enrolling");
-    } catch (err: any) {
-      toast({ title: "Enrollment failed", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "Enrollment failed", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -81,8 +81,8 @@ const MFAEnroll = ({ onStatusChange }: MFAEnrollProps) => {
       setMfaEnabled(true);
       onStatusChange?.();
       toast({ title: "2FA Enabled", description: "Two-factor authentication is now active on your account." });
-    } catch (err: any) {
-      toast({ title: "Verification failed", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "Verification failed", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -100,8 +100,8 @@ const MFAEnroll = ({ onStatusChange }: MFAEnrollProps) => {
       setStep("idle");
       onStatusChange?.();
       toast({ title: "2FA Disabled", description: "Two-factor authentication has been removed." });
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "Error", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
     } finally {
       setLoading(false);
     }

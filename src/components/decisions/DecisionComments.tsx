@@ -117,8 +117,8 @@ const DecisionComments = ({ decisionId }: DecisionCommentsProps) => {
           description: "They'll see this in their activity feed.",
         });
       }
-    } catch (err: any) {
-      toast({ title: "Failed to post comment", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "Failed to post comment", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
     } finally {
       setSubmitting(false);
     }

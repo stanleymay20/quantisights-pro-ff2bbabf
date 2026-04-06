@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useActiveDataContext } from "@/hooks/useActiveDataContext";
 import DatasetRequired from "@/components/layout/DatasetRequired";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 import { supabase } from "@/integrations/supabase/client";
 import { invokeWithRetry } from "@/lib/edge-function-retry";
 import { useToast } from "@/hooks/use-toast";
@@ -89,6 +90,7 @@ const Forecasting = () => {
 
   return (
     <DatasetRequired moduleName="Forecasting">
+      <SectionErrorBoundary sectionName="Forecasting">
       <>
         <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
           <div className="flex items-center gap-3">
@@ -194,6 +196,7 @@ const Forecasting = () => {
           )}
         </main>
       </>
+      </SectionErrorBoundary>
     </DatasetRequired>
   );
 };

@@ -46,8 +46,8 @@ const Register = forwardRef<HTMLDivElement>((_, ref) => {
       await signUp(email, password, fullName);
       toast({ title: "Account created!", description: "Check your email to verify your account." });
       navigate("/login");
-    } catch (err: any) {
-      toast({ title: "Registration failed", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "Registration failed", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }

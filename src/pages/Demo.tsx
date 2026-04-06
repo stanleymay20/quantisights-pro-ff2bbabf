@@ -71,11 +71,11 @@ const Demo = () => {
         await new Promise(r => setTimeout(r, 600));
 
         navigate("/dashboard", { replace: true });
-      } catch (err: any) {
+      } catch (err: unknown) {
         sessionStorage.removeItem("quantivis_demo_mode");
         if (!cancelled) {
           console.error("Demo init error:", err);
-          setError(err.message || "Failed to create demo session");
+          setError(err instanceof Error ? err.message : "Failed to create demo session");
         }
       }
     };
