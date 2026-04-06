@@ -37,7 +37,7 @@ const AdaptiveCalibrationEngine = ({ orgId, decisions }: Props) => {
     const fetchModel = async () => {
       setLoading(true);
       const { data, error: fetchErr } = await supabase
-        .from("calibration_models" as any)
+        .from("calibration_models")
         .select("*")
         .eq("organization_id", orgId)
         .order("computed_at", { ascending: false })
