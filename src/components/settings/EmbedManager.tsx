@@ -90,7 +90,9 @@ export const EmbedManager = () => {
           <p className="text-sm text-muted-foreground text-center py-8">No embed tokens yet</p>
         ) : (
           <div className="space-y-3">
-            {tokens.map((t: Record<string, unknown>) => (
+            {tokens.map((t) => {
+              const token = t as { id: string; is_active: boolean; dashboard_type: string; token: string };
+              return (
               <div key={t.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/10 border border-border/20">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
