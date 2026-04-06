@@ -656,6 +656,16 @@ Deno.serve(async (req) => {
           return json({ error: "Executive overrides require owner or admin role. This action has been denied and logged." }, 403);
         }
 
+        // ENFORCED: Server-side step-up auth verification — must have re-authenticated within 5 min
+        const { data: stepUpValid } = await supabase.rpc("exec_verify_step_up_auth", {
+          _user_id: userId,
+          _org_id: orgId,
+          _validity_minutes: 5,
+        });
+        if (!stepUpValid) {
+          return json({ error: "Step-up re-authentication required. Please re-enter your password before performing executive overrides." }, 403);
+        }
+
         const { data: result } = await supabase.rpc("exec_log_override", {
           _plan_id: ovPlanId,
           _org_id: orgId,
