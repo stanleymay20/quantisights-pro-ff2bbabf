@@ -104,8 +104,8 @@ const MarketIntelligence = () => {
       setData(result);
       fetchStoredSignals();
       toast({ title: "Market signals updated" });
-    } catch (e: any) {
-      toast({ title: "Failed to fetch signals", description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: "Failed to fetch signals", description: e instanceof Error ? e.message : "Unknown error", variant: "destructive" });
     } finally {
       setLoading(false);
     }

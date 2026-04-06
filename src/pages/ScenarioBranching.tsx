@@ -124,13 +124,13 @@ const ScenarioBranching = () => {
       if (data?.error) throw new Error(data.error);
 
       await supabase.from("scenario_branches")
-        .update({ results: data, status: "simulated" } as any)
+        .update({ results: data, status: "simulated" } as Record<string, unknown>)
         .eq("id", branch.id);
 
       toast({ title: "Simulation complete" });
       fetchBranches();
-    } catch (e: any) {
-      toast({ title: "Simulation failed", description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: "Simulation failed", description: e instanceof Error ? e.message : "Unknown error", variant: "destructive" });
     } finally {
       setSimulating(null);
     }

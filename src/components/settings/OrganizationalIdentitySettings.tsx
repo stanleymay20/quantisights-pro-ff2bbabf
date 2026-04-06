@@ -128,8 +128,8 @@ const OrganizationalIdentitySettings = ({ organizationId }: Props) => {
     try {
       await saveIdentity(updates);
       toast({ title: "Identity profile saved", description: "Organizational identity updated — this will influence all future decision intelligence." });
-    } catch (err: any) {
-      toast({ title: "Error saving", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "Error saving", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
     }
   }, [vision, mission, coreValues, strategicPriorities, riskAppetite, innovationPosture, decisionSpeed, stakeholderOrientation, decisionPrinciples, ethicalBoundaries, governanceModel, competitivePosition, regulatoryEnv, marketStage, industryContext, stakeholders, saveIdentity, toast]);
 

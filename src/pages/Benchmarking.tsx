@@ -173,8 +173,8 @@ const BenchmarkingPage = () => {
         .limit(50);
 
       if (data) setScores(data as unknown as BenchmarkScore[]);
-    } catch (err: any) {
-      toast({ title: "Computation failed", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "Computation failed", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
     } finally {
       setComputing(false);
     }

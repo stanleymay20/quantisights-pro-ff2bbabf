@@ -33,17 +33,17 @@ const AcceptInvite = () => {
         const { data, error } = await supabase.rpc("accept_invitation", { _token: token });
         if (error) throw error;
 
-        const result = data as any;
+        const result = data as Record<string, unknown> | null;
         if (result?.error) {
           setStatus("error");
-          setMessage(result.error);
+          setMessage(result.error as string);
         } else {
           setStatus("success");
-          setMessage(result.message || "You have joined the organization!");
+          setMessage((result?.message as string) || "You have joined the organization!");
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         setStatus("error");
-        setMessage(err.message);
+        setMessage(err instanceof Error ? err.message : "Unknown error");
       }
     };
 

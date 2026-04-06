@@ -443,8 +443,8 @@ const Settings = () => {
                                 title: "Demo data loaded",
                                 description: `${data.summary.metrics} metrics, ${data.summary.decisions} decisions, ${data.summary.advisories} advisories seeded.`,
                               });
-                            } catch (err: any) {
-                              toast({ title: "Error", description: err.message, variant: "destructive" });
+                            } catch (err: unknown) {
+                              toast({ title: "Error", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
                             } finally {
                               setSeedingDemo(false);
                             }

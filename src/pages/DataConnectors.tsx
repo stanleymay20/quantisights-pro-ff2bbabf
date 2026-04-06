@@ -381,9 +381,10 @@ const DataConnectors = () => {
       const syncData = await res.json();
       setSyncResult(syncData);
       setStep("done");
-    } catch (err: any) {
-      toast({ title: "Sync failed", description: err.message, variant: "destructive" });
-      setSyncResult({ records: 0, errors: [err.message] });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      toast({ title: "Sync failed", description: msg, variant: "destructive" });
+      setSyncResult({ records: 0, errors: [msg] });
       setStep("done");
     } finally {
       setSyncing(false);

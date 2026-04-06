@@ -48,14 +48,14 @@ const BoardReport = () => {
     const fetchReport = async () => {
       if (!currentOrgId || !activeDatasetId) return;
       try {
-        const { data, error: fnError } = await supabase.functions.invoke("generate-board-report", {
+        const { data, error: fnError } = await invokeWithRetry<ReportData & { error?: string }>("generate-board-report", {
           body: { organization_id: currentOrgId, dataset_id: activeDatasetId },
         });
         if (fnError) throw fnError;
         if (data?.error) throw new Error(data.error);
-        setReport(data);
-      } catch (err: any) {
-        setError(err.message || "Failed to generate report");
+        if (data) setReport(data);
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : "Failed to generate report");
       } finally {
         setLoading(false);
       }

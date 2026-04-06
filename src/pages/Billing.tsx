@@ -78,7 +78,7 @@ const Billing = () => {
     }
   };
 
-  const UsageBar = ({ label, current, max, icon: Icon }: { label: string; current: number; max: number; icon: any }) => {
+  const UsageBar = ({ label, current, max, icon: Icon }: { label: string; current: number; max: number; icon: React.ElementType }) => {
     const isUnlimited = max === -1;
     const pct = isUnlimited ? 10 : max > 0 ? Math.min((current / max) * 100, 100) : 0;
     const atLimit = !isUnlimited && current >= max;
