@@ -135,7 +135,8 @@ const Dashboard = () => {
       toast({ title: "Intelligence refreshed" });
       // Invalidate queries to refresh data without destroying state
       queryClient.invalidateQueries();
-    } catch {
+    } catch (e: unknown) {
+      console.error("[Dashboard] Intelligence refresh failed:", e instanceof Error ? e.message : e);
       toast({ title: "Refresh failed", variant: "destructive" });
     } finally {
       setRecalculating(false);

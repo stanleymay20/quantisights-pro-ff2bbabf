@@ -64,7 +64,8 @@ const PrivacyDashboard = () => {
       });
       if (resErr) throw resErr;
       toast({ title: "Export initiated", description: "Your data export is being prepared. You'll receive it shortly." });
-    } catch {
+    } catch (e: unknown) {
+      console.error("[PrivacyDashboard] Data export failed:", e instanceof Error ? e.message : e);
       toast({ title: "Export failed", description: "Please try again or contact support.", variant: "destructive" });
     } finally {
       setExporting(false);
