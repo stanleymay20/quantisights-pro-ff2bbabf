@@ -61,7 +61,7 @@ const SCIMTokenManager = () => {
       const hashBuffer = await crypto.subtle.digest("SHA-256", encoder.encode(token));
       const tokenHash = btoa(String.fromCharCode(...new Uint8Array(hashBuffer)));
 
-      await supabase.from("scim_tokens" as any).insert({
+      await supabase.from("scim_tokens").insert({
         organization_id: currentOrgId,
         token_hash: tokenHash,
         description: description || "SCIM Token",
