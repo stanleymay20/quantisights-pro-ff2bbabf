@@ -48,8 +48,8 @@ interface AdvisoryInstance {
   timeframe: string | null;
   confidence: number | null;
   rationale: string | null;
-  kpi_affected: any;
-  playbook_steps: any;
+  kpi_affected: string[] | null;
+  playbook_steps: string[] | null;
   status: string;
   assigned_to: string | null;
   resolved_at: string | null;
