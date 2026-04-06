@@ -100,8 +100,8 @@ const MFAEnroll = ({ onStatusChange }: MFAEnrollProps) => {
       setStep("idle");
       onStatusChange?.();
       toast({ title: "2FA Disabled", description: "Two-factor authentication has been removed." });
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "Error", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
     } finally {
       setLoading(false);
     }

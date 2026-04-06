@@ -79,9 +79,10 @@ const SyncButton = ({ source, organizationId, onComplete }: { source: DataSource
         variant: syncResult.errors.length > 0 && syncResult.records === 0 ? "destructive" : "default",
       });
       onComplete();
-    } catch (err: any) {
-      setResult({ records: 0, errors: [err.message] });
-      toast({ title: "Sync failed", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      setResult({ records: 0, errors: [msg] });
+      toast({ title: "Sync failed", description: msg, variant: "destructive" });
     } finally {
       setSyncing(false);
     }

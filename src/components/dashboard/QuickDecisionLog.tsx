@@ -47,8 +47,8 @@ const QuickDecisionLog = ({ organizationId, onLogged }: QuickDecisionLogProps) =
         setConfidence([65]);
         onLogged?.();
       }, 1500);
-    } catch (e: any) {
-      toast({ title: "Error", description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: "Error", description: e instanceof Error ? e.message : "Unknown error", variant: "destructive" });
     } finally {
       setSubmitting(false);
     }

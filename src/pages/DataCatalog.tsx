@@ -98,8 +98,8 @@ export default function DataCatalog() {
       toast.success("Profile generated successfully");
       setSelectedProfile(result.profile);
       await loadCatalog();
-    } catch (err: any) {
-      toast.error(err.message || "Failed to profile dataset");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to profile dataset");
     } finally {
       setProfileLoading(null);
     }
