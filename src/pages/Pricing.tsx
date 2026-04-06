@@ -31,7 +31,7 @@ const Pricing = () => {
     if (!user) { navigate("/login"); return; }
     setLoadingTier(tierKey);
     try {
-      const { data, error } = await supabase.functions.invoke("create-checkout", {
+      const { data, error } = await invokeWithRetry<{ url?: string }>("create-checkout", {
         body: { priceId: TIERS[tierKey].price_id },
       });
       if (error) throw error;
