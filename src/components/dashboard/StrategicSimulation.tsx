@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { invokeWithRetry } from "@/lib/edge-function-retry";
 
 interface SimulationResult {
   baseline_risk: number;

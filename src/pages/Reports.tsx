@@ -96,7 +96,7 @@ const Reports = () => {
       if (error) throw error;
 
       if (data?.download_url) {
-        window.open(data.download_url, "_blank");
+        window.open(String(data.download_url), "_blank");
       }
 
       toast({ title: "Report generated successfully!" });
