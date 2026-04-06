@@ -295,18 +295,18 @@ const Executive = () => {
     if (!currentOrgId) return;
     setSignalsLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("compute-executive-signals", {
+      const { data, error } = await invokeWithRetry<Record<string, unknown>>("compute-executive-signals", {
         body: { role_type: activeRole, organization_id: currentOrgId, dataset_id: activeDatasetId },
       });
       if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+      if (data?.error) throw new Error(String(data.error));
 
       setRiskIndex({
-        score: data.overall_score,
-        components: data.components,
-        last_updated: data.computed_at,
+        score: data?.overall_score as number,
+        components: data?.components as Record<string, number>,
+        last_updated: data?.computed_at as string,
       });
-      setDbAlerts(data.triggered_alerts || []);
+      setDbAlerts((data?.triggered_alerts as Array<Record<string, unknown>>) || []);
       toast({ title: "Signals computed", description: `Risk score: ${data.overall_score}/100` });
       fetchSignalData();
     } catch (err: unknown) {
