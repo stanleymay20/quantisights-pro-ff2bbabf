@@ -59,14 +59,17 @@ export const useMetrics = (orgId: string | null, datasetId: string | null) => {
 
     const fetchMetrics = async () => {
       setLoading(true);
+      setLoadingProgress({ loaded: 0, total: null });
       // Paginated fetch with safety cap to prevent client-side memory crashes
       const allMetrics: MetricRow[] = [];
       const PAGE_SIZE = 1000;
       const MAX_CLIENT_ROWS = 50_000; // Safety cap: ~50K rows ≈ 10MB in memory
       let offset = 0;
       let hasMore = true;
+      let pageNum = 0;
 
       while (hasMore) {
+        pageNum++;
         const { data, error } = await supabase
           .from("metrics")
           .select("id, metric_type, value, date, region, segment, dataset_id, created_at")
@@ -77,6 +80,7 @@ export const useMetrics = (orgId: string | null, datasetId: string | null) => {
 
         if (error || !data) break;
         allMetrics.push(...data);
+        setLoadingProgress({ loaded: allMetrics.length, total: data.length === PAGE_SIZE ? null : allMetrics.length });
         hasMore = data.length === PAGE_SIZE && allMetrics.length < MAX_CLIENT_ROWS;
         offset += PAGE_SIZE;
       }
