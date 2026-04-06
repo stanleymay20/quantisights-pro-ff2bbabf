@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { useActiveDataContext } from "@/hooks/useActiveDataContext";
 import DatasetRequired from "@/components/layout/DatasetRequired";
 import { supabase } from "@/integrations/supabase/client";
+import { invokeWithRetry } from "@/lib/edge-function-retry";
 import { useToast } from "@/hooks/use-toast";
 import { MessageSquare, Loader2, Sparkles, ArrowRight, Database, HelpCircle } from "lucide-react";
 
