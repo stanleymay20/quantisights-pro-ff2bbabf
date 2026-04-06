@@ -73,6 +73,12 @@ export const useSimilarDecisions = (organizationId: string | null): SimilarDecis
     setError(null);
 
     try {
+      const { data: { user }, error: authErr } = await supabase.auth.getUser();
+      if (authErr || !user) {
+        setError("Not authenticated");
+        setLoading(false);
+        return;
+      }
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) {
         setError("Not authenticated");

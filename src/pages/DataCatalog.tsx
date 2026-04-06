@@ -77,6 +77,8 @@ export default function DataCatalog() {
     if (!organizationId) return;
     setProfileLoading(datasetId);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Not authenticated");
 
