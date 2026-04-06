@@ -207,7 +207,8 @@ const DecisionLedgerPage = () => {
         },
       });
       if (error) throw error;
-      if ((data as Record<string, unknown>)?.error) throw new Error(String((data as Record<string, unknown>).error));
+      const rawData = data as unknown as Record<string, unknown> | null;
+      if (rawData?.error) throw new Error(String(rawData.error));
       setSimResult(data);
       toast({ title: "Impact simulation complete" });
       fetchDecisions();

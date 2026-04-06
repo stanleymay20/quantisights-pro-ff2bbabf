@@ -108,7 +108,7 @@ const StrategicSimulation = ({ organizationId, datasetId, roleType, tier }: Prop
     setLoading(true);
     setResult(null);
     try {
-      const { data, error } = await invokeWithRetry<Record<string, unknown>>("strategic-simulation", {
+      const { data, error } = await invokeWithRetry<SimulationResult>("strategic-simulation", {
         body: {
           organization_id: organizationId,
           dataset_id: datasetId,
@@ -123,8 +123,8 @@ const StrategicSimulation = ({ organizationId, datasetId, roleType, tier }: Prop
         },
       });
       if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      setResult(data);
+      if ((data as Record<string, unknown> | null)?.error) throw new Error(String((data as Record<string, unknown>).error));
+      if (data) setResult(data);
     } catch (err: unknown) {
       toast({ title: "Simulation Error", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
     } finally {
