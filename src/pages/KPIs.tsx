@@ -199,17 +199,17 @@ const KPIs = () => {
   const handleCompute = async (kpiId: string) => {
     setComputing(true);
     try {
-      const { data, error } = await supabase.functions.invoke("compute-kpi", {
+      const { data, error } = await invokeWithRetry<Record<string, unknown>>("compute-kpi", {
         body: { kpi_id: kpiId, dataset_id: activeDatasetId, organization_id: currentOrgId },
       });
       if (error) throw error;
       if (data?.error) {
         const hint = data?.hint || data?.available_metric_types
-          ? `\n\nAvailable metrics: ${(data.available_metric_types || []).join(", ")}\n${data.hint || ""}`
+          ? `\n\nAvailable metrics: ${(data.available_metric_types as string[] || []).join(", ")}\n${data.hint || ""}`
           : "";
-        throw new Error(data.error + hint);
+        throw new Error(String(data.error) + hint);
       }
-      toast({ title: `Computed ${data.count} data points` });
+      toast({ title: `Computed ${data?.count} data points` });
       fetchKpiData(kpiId);
     } catch (e: unknown) {
       toast({ title: "Compute failed", description: e instanceof Error ? e.message : "Unknown error", variant: "destructive" });
