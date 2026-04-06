@@ -26,6 +26,7 @@ import SessionManagement from "@/components/auth/SessionManagement";
 import AuthEventLog from "@/components/auth/AuthEventLog";
 import PasskeyManagement from "@/components/auth/PasskeyManagement";
 import SCIMTokenManager from "@/components/auth/SCIMTokenManager";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
