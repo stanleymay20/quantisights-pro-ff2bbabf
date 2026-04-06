@@ -280,6 +280,7 @@ const DecisionAccuracy = () => {
         <IntelligenceDisclaimer context="general" />
       </div>
     </div>
+    </SectionErrorBoundary>
   );
 };
 
