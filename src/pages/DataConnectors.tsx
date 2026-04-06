@@ -241,8 +241,8 @@ const DataConnectors = () => {
       const data = await res.json();
       setTables(data.tables || []);
       setStep("schema");
-    } catch (err: any) {
-      toast({ title: "Schema discovery failed", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "Schema discovery failed", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
     } finally {
       setDiscovering(false);
     }
