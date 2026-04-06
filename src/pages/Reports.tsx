@@ -134,6 +134,7 @@ const Reports = () => {
           </button>
         </header>
         <IntelligenceDisclaimer variant="banner" context="report" />
+        <SectionErrorBoundary sectionName="Reports">
         <main className="flex-1 p-8 overflow-auto space-y-6">
           {/* Report Type Selector */}
           <div>
@@ -223,6 +224,7 @@ const Reports = () => {
             </div>
           )}
         </main>
+        </SectionErrorBoundary>
     </>
     </DatasetRequired>
   );

@@ -82,6 +82,7 @@ const CausalInference = () => {
           </Button>
         </header>
 
+        <SectionErrorBoundary sectionName="Causal Inference">
         <main className="flex-1 p-8 overflow-auto space-y-6">
           {!result && !loading && (
             <Card className="border-dashed border-border/50">
@@ -221,6 +222,7 @@ const CausalInference = () => {
             </>
           )}
         </main>
+        </SectionErrorBoundary>
     </>
     </DatasetRequired>
   );

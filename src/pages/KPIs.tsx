@@ -416,6 +416,7 @@ const KPIs = () => {
           </div>
         </header>
 
+        <SectionErrorBoundary sectionName="KPI Builder">
         <main className="flex-1 p-8 overflow-auto">
           <div className="grid lg:grid-cols-3 gap-6">
             {/* KPI List */}
@@ -662,6 +663,7 @@ const KPIs = () => {
             </div>
           </div>
         </main>
+        </SectionErrorBoundary>
     </div>
     </DatasetRequired>
   );

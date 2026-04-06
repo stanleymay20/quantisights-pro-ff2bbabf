@@ -189,6 +189,7 @@ const AlertPlaybooks = () => {
           </Dialog>
         </header>
 
+        <SectionErrorBoundary sectionName="Alert Playbooks">
         <main className="flex-1 p-8 overflow-auto space-y-6">
           {/* Stats */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -269,6 +270,7 @@ const AlertPlaybooks = () => {
             </div>
           )}
         </main>
+        </SectionErrorBoundary>
     </>
   );
 };

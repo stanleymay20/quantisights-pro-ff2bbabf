@@ -368,6 +368,7 @@ const Scenarios = () => {
           </Dialog>
         </header>
 
+        <SectionErrorBoundary sectionName="Scenario Simulation">
         <main className="flex-1 p-8 overflow-auto">
           {!canSimulate ? (
             <div className="glass-card p-12 rounded-xl flex flex-col items-center justify-center min-h-[400px]">
@@ -644,6 +645,7 @@ const Scenarios = () => {
             </div>
           )}
         </main>
+        </SectionErrorBoundary>
     </>
     </DatasetRequired>
   );

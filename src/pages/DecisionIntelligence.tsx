@@ -308,6 +308,7 @@ const DecisionIntelligence = () => {
           </div>
         </header>
 
+        <SectionErrorBoundary sectionName="Decision Intelligence">
         <main className="flex-1 p-8 overflow-auto">
           <IntelligenceDisclaimer variant="banner" context="advisory" />
 
@@ -373,6 +374,7 @@ const DecisionIntelligence = () => {
             </div>
           )}
         </main>
+        </SectionErrorBoundary>
     </>
     </DatasetRequired>
   );

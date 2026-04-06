@@ -103,6 +103,7 @@ const Diagnostics = () => {
           </Button>
         </header>
 
+        <SectionErrorBoundary sectionName="Diagnostics">
         <main className="flex-1 p-8 overflow-auto space-y-6">
           <DiagnosticSummaryCards
             analyzedCount={analyzedCount}
@@ -133,6 +134,7 @@ const Diagnostics = () => {
 
           <IntelligenceDisclaimer variant="footer" context="advisory" />
         </main>
+        </SectionErrorBoundary>
       </ErrorBoundary>
     </DatasetRequired>
   );

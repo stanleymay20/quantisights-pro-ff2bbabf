@@ -228,6 +228,7 @@ const Team = () => {
           )}
         </header>
 
+        <SectionErrorBoundary sectionName="Team Management">
         <main className="flex-1 p-8 overflow-auto">
           <div className="max-w-4xl mx-auto space-y-8">
             <p className="text-sm text-muted-foreground">
@@ -411,6 +412,7 @@ const Team = () => {
             )}
           </div>
         </main>
+        </SectionErrorBoundary>
     </>
   );
 };

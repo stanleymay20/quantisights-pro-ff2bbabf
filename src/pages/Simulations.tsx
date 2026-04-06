@@ -92,7 +92,8 @@ const Simulations = () => {
 
   return (
     <DatasetRequired moduleName="Simulations">
-    <main className="flex-1 overflow-y-auto">
+    <SectionErrorBoundary sectionName="Monte Carlo Simulations">
+        <main className="flex-1 overflow-y-auto">
         <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-lg border-b border-border px-6 py-4">
           <div className="flex items-center gap-3">
             <SidebarMobileToggle />
@@ -255,6 +256,7 @@ const Simulations = () => {
           </Card>
         </div>
     </main>
+        </SectionErrorBoundary>
     </DatasetRequired>
   );
 };

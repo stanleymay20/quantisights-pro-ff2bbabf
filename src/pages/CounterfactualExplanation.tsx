@@ -113,6 +113,7 @@ const CounterfactualExplanation = () => {
           </div>
         </header>
 
+        <SectionErrorBoundary sectionName="Counterfactual Explanation">
         <main className="flex-1 p-8 overflow-auto space-y-6">
           {/* Selection Controls */}
           <Card>
@@ -269,6 +270,7 @@ const CounterfactualExplanation = () => {
             </>
           )}
         </main>
+        </SectionErrorBoundary>
     </>
     </DatasetRequired>
   );

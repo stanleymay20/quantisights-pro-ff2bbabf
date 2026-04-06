@@ -84,6 +84,7 @@ const CognitiveBiasDetection = () => {
           </Button>
         </header>
 
+        <SectionErrorBoundary sectionName="Cognitive Bias Detection">
         <main className="flex-1 p-8 overflow-auto space-y-6">
           {!result && !loading && (
             <Card className="border-dashed border-border/50">
@@ -226,6 +227,7 @@ const CognitiveBiasDetection = () => {
             </>
           )}
         </main>
+        </SectionErrorBoundary>
     </>
     </DatasetRequired>
   );

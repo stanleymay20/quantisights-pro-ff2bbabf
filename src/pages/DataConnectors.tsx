@@ -622,7 +622,8 @@ import SectionErrorBoundary from "@/components/SectionErrorBoundary";
         )}
       </header>
 
-      <main className="flex-1 p-8 overflow-auto">
+      <SectionErrorBoundary sectionName="Data Connectors">
+        <main className="flex-1 p-8 overflow-auto">
         {/* Progress bar */}
         {step !== "select" && (
           <div className="mb-8">
@@ -1092,6 +1093,7 @@ import SectionErrorBoundary from "@/components/SectionErrorBoundary";
           </motion.div>
         </AnimatePresence>
       </main>
+        </SectionErrorBoundary>
     </>
   );
 };

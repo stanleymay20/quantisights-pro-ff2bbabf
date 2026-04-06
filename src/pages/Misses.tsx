@@ -150,6 +150,7 @@ const MissesPage = () => {
           </div>
         </header>
 
+        <SectionErrorBoundary sectionName="Prediction Accuracy">
         <main className="flex-1 p-8 overflow-auto space-y-6">
           {/* Summary */}
           <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
@@ -295,6 +296,7 @@ const MissesPage = () => {
             </CardContent>
           </Card>
         </main>
+        </SectionErrorBoundary>
     </>
     </DatasetRequired>
   );

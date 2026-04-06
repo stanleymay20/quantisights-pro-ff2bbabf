@@ -116,6 +116,7 @@ const Billing = () => {
           </div>
         </header>
 
+        <SectionErrorBoundary sectionName="Billing">
         <main className="flex-1 p-8 overflow-auto space-y-8">
           {/* Current Plan */}
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
@@ -367,6 +368,7 @@ const Billing = () => {
             </Card>
           </motion.div>
         </main>
+        </SectionErrorBoundary>
     </>
   );
 };

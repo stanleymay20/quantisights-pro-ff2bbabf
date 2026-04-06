@@ -133,6 +133,7 @@ const MarketIntelligence = () => {
           </div>
         </header>
 
+        <SectionErrorBoundary sectionName="Market Intelligence">
         <main className="flex-1 p-8 overflow-auto space-y-6">
           {/* Controls */}
           <Card>
@@ -276,6 +277,7 @@ const MarketIntelligence = () => {
             </Card>
           )}
         </main>
+        </SectionErrorBoundary>
     </>
     </DatasetRequired>
   );
