@@ -137,7 +137,7 @@ const DataConnectors = () => {
   const fetchExisting = async () => {
     if (!currentOrgId) return;
     setLoading(true);
-    const { data } = await (supabase.from("connector_configs") as any)
+    const { data } = await supabase.from("connector_configs")
       .select("*, data_sources(*)")
       .eq("organization_id", currentOrgId)
       .order("created_at", { ascending: false });
