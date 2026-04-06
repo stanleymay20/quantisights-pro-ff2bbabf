@@ -419,5 +419,6 @@ export default function PipelineObservability() {
         </TabsContent>
       </Tabs>
     </div>
+    </SectionErrorBoundary>
   );
 }

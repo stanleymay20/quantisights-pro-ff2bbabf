@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 import { useNavigate } from "react-router-dom";
 import { SidebarMobileToggle } from "@/components/layout/ProtectedShell";
 import { useAuth } from "@/contexts/AuthContext";

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Brain, ArrowRight, ArrowLeft, Target, TrendingDown, TrendingUp, AlertTriangle, Zap, Share2, BookOpen, LogIn } from "lucide-react";
