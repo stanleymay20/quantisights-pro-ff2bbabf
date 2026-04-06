@@ -77,7 +77,8 @@ function clearMLCache() {
   try {
     // Dispatch a custom event that useMLEngine listens to
     window.dispatchEvent(new CustomEvent("quantivis:org-switch"));
-  } catch {
-    // Ignore if window is not available
+  } catch (e: unknown) {
+    // Non-critical: SSR or test environment where window is unavailable
+    console.error("[useOrganization] ML cache clear failed:", e instanceof Error ? e.message : e);
   }
 }
