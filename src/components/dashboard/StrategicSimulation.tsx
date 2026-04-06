@@ -107,7 +107,7 @@ const StrategicSimulation = ({ organizationId, datasetId, roleType, tier }: Prop
     setLoading(true);
     setResult(null);
     try {
-      const { data, error } = await supabase.functions.invoke("strategic-simulation", {
+      const { data, error } = await invokeWithRetry<Record<string, unknown>>("strategic-simulation", {
         body: {
           organization_id: organizationId,
           dataset_id: datasetId,

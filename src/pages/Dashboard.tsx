@@ -118,6 +118,8 @@ const Dashboard = () => {
     fetchCount();
   }, [currentOrgId, activeDatasetId]);
 
+  const queryClient = useQueryClient();
+
   const handleRecalculate = async () => {
     if (!currentOrgId || !activeDatasetId) {
       toast({ title: "Select a dataset first", variant: "destructive" });
@@ -125,13 +127,14 @@ const Dashboard = () => {
     }
     setRecalculating(true);
     try {
-      await supabase.functions.invoke("generate-insights", {
+      await invokeWithRetry("generate-insights", {
         body: { organization_id: currentOrgId, dataset_id: activeDatasetId },
       });
       // Embed new insights into institutional memory (non-blocking)
       embedInsightsBatch(currentOrgId);
       toast({ title: "Intelligence refreshed" });
-      navigate(0);
+      // Invalidate queries to refresh data without destroying state
+      queryClient.invalidateQueries();
     } catch {
       toast({ title: "Refresh failed", variant: "destructive" });
     } finally {

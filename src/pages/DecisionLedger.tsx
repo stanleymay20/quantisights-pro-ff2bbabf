@@ -197,20 +197,17 @@ const DecisionLedgerPage = () => {
     setSimRunning(true);
     setSimResult(null);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      const { data: { session } } = await supabase.auth.getSession();
-      const { data, error } = await supabase.functions.invoke("decision-impact-sim", {
+      const { data, error } = await invokeWithRetry<ImpactSim>("decision-impact-sim", {
         body: {
           organization_id: currentOrgId,
           dataset_id: activeDatasetId,
           decision_id: decisionId,
           ...impactForm,
         },
-        ...(session?.access_token ? { headers: { Authorization: `Bearer ${session.access_token}` } } : {}),
       });
       if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      setSimResult(data as ImpactSim);
+      if ((data as Record<string, unknown>)?.error) throw new Error(String((data as Record<string, unknown>).error));
+      setSimResult(data);
       toast({ title: "Impact simulation complete" });
       fetchDecisions();
     } catch (e: unknown) {

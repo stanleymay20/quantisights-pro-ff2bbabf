@@ -112,7 +112,7 @@ const ScenarioBranching = () => {
     if (!currentOrgId || !activeDatasetId) return;
     setSimulating(branch.id);
     try {
-      const { data, error } = await supabase.functions.invoke("strategic-simulation", {
+      const { data, error } = await invokeWithRetry<Record<string, unknown>>("strategic-simulation", {
         body: {
           organization_id: currentOrgId,
           dataset_id: activeDatasetId,
