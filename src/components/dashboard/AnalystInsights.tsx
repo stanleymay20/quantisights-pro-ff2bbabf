@@ -249,7 +249,7 @@ const AnalystInsights = ({ insights, metrics, topMetrics, datasetName, datasetId
           </div>
           <div className="space-y-2">
             {validatedInsights.slice(0, 3).map(insight => {
-              const v = (insight as Record<string, unknown>)._validation as { flags?: Array<{ severity: string }> } | undefined;
+              const v = (insight as Record<string, unknown>)._validation as { sanitized?: string; score?: number; flags?: Array<{ severity: string }> } | undefined;
               const criticalFlags = v?.flags?.filter((f) => f.severity === "critical").length || 0;
               
               // Skip insights with critical hallucination flags

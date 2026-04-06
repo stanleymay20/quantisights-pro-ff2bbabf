@@ -156,7 +156,7 @@ const Onboarding = () => {
       });
 
       if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+      if (data?.error) throw new Error(String(data.error));
 
       toast({
         title: "Onboarding complete!",

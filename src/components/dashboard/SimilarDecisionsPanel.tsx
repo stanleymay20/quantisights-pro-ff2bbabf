@@ -267,7 +267,7 @@ const SimilarDecisionsPanel = memo(({ organizationId, queryText, onConfidenceAdj
                     </span>
                     {meta.accuracy_score != null && (
                       <span className="text-muted-foreground">
-                        Accuracy: <span className="font-mono font-semibold">{Math.round(meta.accuracy_score)}%</span>
+                        Accuracy: <span className="font-mono font-semibold">{Math.round(Number(meta.accuracy_score))}%</span>
                       </span>
                     )}
                   </div>

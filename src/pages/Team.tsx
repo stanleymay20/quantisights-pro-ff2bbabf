@@ -111,7 +111,7 @@ const Team = () => {
         body: { email: inviteEmail, role: inviteRole, organization_id: currentOrgId },
       });
       if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+      if (data?.error) throw new Error(String(data.error));
 
       toast({ title: "Invitation sent", description: `Invited ${inviteEmail} as ${inviteRole}` });
       setInviteEmail("");

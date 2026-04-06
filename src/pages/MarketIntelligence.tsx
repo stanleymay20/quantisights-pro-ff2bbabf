@@ -261,7 +261,7 @@ const MarketIntelligence = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {storedSignals.slice(0, 10).map((s: StoredSignal) => (
+                  {storedSignals.slice(0, 10).map((s) => (
                     <div key={s.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/30">
                       <div>
                         <p className="text-sm font-medium">{(s.data as Record<string, unknown>)?.title as string || s.signal_type}</p>
