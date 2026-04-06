@@ -8,6 +8,7 @@ import { invokeWithRetry } from "@/lib/edge-function-retry";
 import { SidebarMobileToggle } from "@/components/layout/ProtectedShell";
 import ExecutiveCopilot from "@/components/dashboard/ExecutiveCopilot";
 import StrategicSimulation from "@/components/dashboard/StrategicSimulation";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 import ExecutiveConvergence from "@/components/dashboard/ExecutiveConvergence";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
