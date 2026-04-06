@@ -59,8 +59,11 @@ const HeroSection = forwardRef<HTMLElement>((_, ref) => {
                 one system that tracks every decision, measures every outcome, and corrects its own confidence over time.
               </span>
             </p>
-            <p className="text-xs sm:text-sm text-muted-foreground/70 max-w-xl mx-auto mb-6 sm:mb-10">
+            <p className="text-xs sm:text-sm text-muted-foreground/70 max-w-xl mx-auto mb-2 sm:mb-4">
               Built for VPs of Finance, Revenue, and Strategy at companies doing €1M–€50M ARR.
+            </p>
+            <p className="text-[11px] sm:text-xs text-primary/80 font-semibold max-w-lg mx-auto mb-6 sm:mb-10">
+              Replaces: Tableau/Power BI dashboards + McKinsey engagements + Excel forecasting → one self-correcting system.
             </p>
 
             {/* Capability pills */}
