@@ -265,7 +265,7 @@ const Executive = () => {
       .eq("status", "active")
       .order("created_at", { ascending: false });
 
-    setDbAlerts((alerts as any) || []);
+    setDbAlerts((alerts as DbAlert[]) || []);
 
     // Fetch brief history
     const { data: history } = await supabase
