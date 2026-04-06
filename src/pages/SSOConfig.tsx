@@ -111,18 +111,17 @@ const SSOConfig = () => {
         is_active: samlEnabled,
       };
 
+      // Schema-gap: sso_configs table not in auto-generated types — use dynamic from()
+      const ssoFrom = (supabase.from as (table: string) => ReturnType<typeof supabase.from>)("sso_configs");
+
       if (existingConfig) {
-        // Schema-gap cast: sso_configs not in generated types
-        const { error } = await supabase
-          .from("sso_configs" as "audit_log")
+        const { error } = await ssoFrom
           .update(payload)
           .eq("id", existingConfig.id);
         if (error) throw error;
       } else {
-        // Schema-gap cast: sso_configs not in generated types
-        const { error } = await supabase
-          .from("sso_configs" as "audit_log")
-          .insert(payload);
+        const { error } = await ssoFrom
+          .insert(payload as Record<string, unknown>);
         if (error) throw error;
       }
 
