@@ -247,14 +247,19 @@ const Compliance = () => {
 
   return (
     <div className="p-4 md:p-6 space-y-6 max-w-7xl mx-auto">
-      <div className="flex items-center gap-3">
-        <SidebarMobileToggle />
-        <div>
-          <h1 className="text-2xl font-bold">Compliance & Governance</h1>
-          <p className="text-sm text-muted-foreground">
-            SOC 2 · ISO 27001 · EU AI Act · GDPR readiness assessment
-          </p>
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-3">
+          <SidebarMobileToggle />
+          <div>
+            <h1 className="text-2xl font-bold">Compliance & Governance</h1>
+            <p className="text-sm text-muted-foreground">
+              SOC 2 · ISO 27001 · EU AI Act · GDPR readiness assessment
+            </p>
+          </div>
         </div>
+        <Button variant="outline" size="sm" className="gap-2" onClick={downloadCompliancePack}>
+          <Download className="w-4 h-4" /> Download Compliance Pack
+        </Button>
       </div>
 
       {/* Score Overview */}
