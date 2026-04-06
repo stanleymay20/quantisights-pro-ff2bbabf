@@ -240,12 +240,12 @@ const Scenarios = () => {
     if (!selectedId || !canUseAI || !activeDatasetId) return;
     setAnalyzing(true);
     try {
-      const { data, error } = await supabase.functions.invoke("ai-scenario-analysis", {
+      const { data, error } = await invokeWithRetry<Record<string, unknown>>("ai-scenario-analysis", {
         body: { scenario_id: selectedId, dataset_id: activeDatasetId },
       });
       if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      setAnalysis(data.analysis);
+      if (data?.error) throw new Error(String(data.error));
+      setAnalysis(data?.analysis as string);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "AI analysis failed";
       toast({ title: "AI analysis failed", description: msg, variant: "destructive" });

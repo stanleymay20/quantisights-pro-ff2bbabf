@@ -355,13 +355,14 @@ const Executive = () => {
     setLoading(true);
     setBrief(null);
     try {
-      const { data, error } = await supabase.functions.invoke("executive-brief", {
+      const { data, error } = await invokeWithRetry<Brief>("executive-brief", {
         body: { role_type: activeRole, organization_id: currentOrgId, dataset_id: activeDatasetId },
       });
       if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      setBrief(data as Brief);
-      if (data.cached) {
+      const rawData = data as unknown as Record<string, unknown> | null;
+      if (rawData?.error) throw new Error(String(rawData.error));
+      if (data) setBrief(data);
+      if (rawData?.cached) {
         toast({ title: "Cached brief loaded", description: "Recent brief returned (< 6 hours old)" });
       }
       fetchSignalData();
