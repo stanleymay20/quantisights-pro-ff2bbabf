@@ -5947,6 +5947,17 @@ export type Database = {
           latest_event_at: string
         }[]
       }
+      exec_infer_blockers: {
+        Args: { _org_id: string }
+        Returns: {
+          blocker_action_title: string
+          blocker_status: string
+          inferred_blocker_id: string
+          plan_action_title: string
+          plan_id: string
+          reason: string
+        }[]
+      }
       exec_log_override: {
         Args: {
           _actor_id: string
@@ -5958,6 +5969,7 @@ export type Database = {
         }
         Returns: Json
       }
+      exec_operational_metrics: { Args: { _org_id: string }; Returns: Json }
       exec_reassign_plan_atomic: {
         Args: {
           _actor_id: string
@@ -5967,6 +5979,10 @@ export type Database = {
           _reason?: string
         }
         Returns: Json
+      }
+      exec_require_elevated_role: {
+        Args: { _org_id: string; _user_id: string }
+        Returns: boolean
       }
       exec_resolve_intervention_atomic: {
         Args: { _actor_id: string; _intervention_id: string; _org_id: string }
