@@ -261,11 +261,11 @@ const MarketIntelligence = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {storedSignals.slice(0, 10).map((s: any) => (
+                  {storedSignals.slice(0, 10).map((s: StoredSignal) => (
                     <div key={s.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/30">
                       <div>
-                        <p className="text-sm font-medium">{(s.data as any)?.title || s.signal_type}</p>
-                        <p className="text-xs text-muted-foreground">{(s.data as any)?.summary?.slice(0, 100)}</p>
+                        <p className="text-sm font-medium">{(s.data as Record<string, unknown>)?.title as string || s.signal_type}</p>
+                        <p className="text-xs text-muted-foreground">{((s.data as Record<string, unknown>)?.summary as string)?.slice(0, 100)}</p>
                       </div>
                       <span className="text-[10px] text-muted-foreground">{new Date(s.fetched_at).toLocaleDateString()}</span>
                     </div>

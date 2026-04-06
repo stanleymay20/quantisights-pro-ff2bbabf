@@ -107,7 +107,7 @@ const Team = () => {
     if (!inviteEmail || !currentOrgId) return;
     setInviting(true);
     try {
-      const { data, error } = await supabase.functions.invoke("invite-team-member", {
+      const { data, error } = await invokeWithRetry<Record<string, unknown>>("invite-team-member", {
         body: { email: inviteEmail, role: inviteRole, organization_id: currentOrgId },
       });
       if (error) throw error;

@@ -62,7 +62,7 @@ const PrivacyDashboard = () => {
       const { data: res, error: resErr } = await invokeWithRetry<Record<string, unknown>>("data-export", {
         body: { organization_id: currentOrgId, format: "csv" },
       });
-      if (res.error) throw res.error;
+      if (resErr) throw resErr;
       toast({ title: "Export initiated", description: "Your data export is being prepared. You'll receive it shortly." });
     } catch {
       toast({ title: "Export failed", description: "Please try again or contact support.", variant: "destructive" });

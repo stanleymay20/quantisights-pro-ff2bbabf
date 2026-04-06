@@ -85,7 +85,7 @@ const Footer = forwardRef<HTMLElement>((_, ref) => (
                       {link.label}
                     </Link>
                   ) : (
-                    <a href={(link as any).href} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                    <a href={(link as { label: string; href: string }).href} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                       {link.label}
                     </a>
                   )}

@@ -147,7 +147,7 @@ const Onboarding = () => {
     try {
       await saveOrgProfile();
 
-      const { data, error } = await supabase.functions.invoke("complete-onboarding", {
+      const { data, error } = await invokeWithRetry<Record<string, unknown>>("complete-onboarding", {
         body: {
           organization_id: currentOrgId,
           roles: selectedRoles,

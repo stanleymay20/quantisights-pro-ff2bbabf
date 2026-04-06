@@ -109,7 +109,7 @@ const ExecutiveConvergence = ({ organizationId, tier }: Props) => {
   const runConvergence = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("executive-convergence", {
+      const { data, error } = await invokeWithRetry<ConvergenceResult & { error?: string; message?: string }>("executive-convergence", {
         body: { organization_id: organizationId, trigger: "manual" },
       });
       if (error) throw error;

@@ -217,7 +217,7 @@ const SimilarDecisionsPanel = memo(({ organizationId, queryText, onConfidenceAdj
       <div className="space-y-1.5 max-h-52 overflow-y-auto">
         <AnimatePresence>
           {similar.slice(0, 6).map((item, i) => {
-            const meta = item.metadata as any;
+            const meta = item.metadata as Record<string, unknown>;
             const isOutcome = item.entity_type === "outcome";
             const relevance = Math.round(item.similarity * 100);
             const tierStyle = TIER_STYLES[item.match_tier] || TIER_STYLES.weak;

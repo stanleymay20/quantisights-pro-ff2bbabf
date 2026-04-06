@@ -150,7 +150,7 @@ const DataSources = () => {
       .eq("data_source_id", sourceId)
       .order("created_at", { ascending: false })
       .limit(10);
-    setSyncJobs((prev) => ({ ...prev, [sourceId]: (data as any) || [] }));
+    setSyncJobs((prev) => ({ ...prev, [sourceId]: (data as SyncJob[]) || [] }));
   };
 
   useEffect(() => { fetchSources(); }, [currentOrgId]);

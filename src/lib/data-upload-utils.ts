@@ -352,7 +352,7 @@ export function inferSchema(headers: string[], rows: string[][]): DetectedSchema
           d.confidence = 65;
           d.rulesApplied = [...d.rulesApplied, "single_date_rule:demoted_to_value"];
         } else {
-          (d as any).inferredType = "skip";
+          (d as { inferredType: string }).inferredType = "skip";
           d.reason = "Multiple date columns detected — demoted";
           d.confidence = 40;
           d.rulesApplied = [...d.rulesApplied, "single_date_rule:demoted_to_skip"];

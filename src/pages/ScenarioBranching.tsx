@@ -348,13 +348,13 @@ const ScenarioBranching = () => {
                 </div>
 
                 {/* AI Summaries */}
-                {simulatedBranches.some(b => (b.results as any)?.ai_board_summary) && (
+                {simulatedBranches.some(b => b.results?.ai_board_summary) && (
                   <div className="mt-4 space-y-3">
                     <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">AI Analysis per Branch</h4>
-                    {simulatedBranches.filter(b => (b.results as any)?.ai_board_summary).map(b => (
+                    {simulatedBranches.filter(b => b.results?.ai_board_summary).map(b => (
                       <div key={b.id} className="p-3 rounded-lg bg-muted/30 border border-border/20">
                         <p className="text-xs font-semibold text-primary mb-1">{b.name}</p>
-                        <p className="text-xs text-muted-foreground leading-relaxed">{(b.results as any).ai_board_summary}</p>
+                        <p className="text-xs text-muted-foreground leading-relaxed">{b.results?.ai_board_summary}</p>
                       </div>
                     ))}
                   </div>

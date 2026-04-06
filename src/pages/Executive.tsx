@@ -276,7 +276,7 @@ const Executive = () => {
       .order("generated_at", { ascending: false })
       .limit(10);
 
-    setBriefHistory((history as any) || []);
+    setBriefHistory((history as Array<{ id: string; role_type: string; risk_score: number; generated_by: string; generated_at: string }>) || []);
   }, [currentOrgId, activeRole, isGated]);
 
   // Reset state when dataset changes
