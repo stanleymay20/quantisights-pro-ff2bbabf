@@ -49,7 +49,8 @@ export const useSubscription = () => {
         trialEnd: data?.trial_end ?? null,
         loading: false,
       });
-    } catch {
+    } catch (err) {
+      console.error("[useSubscription] Failed to check subscription:", err instanceof Error ? err.message : err);
       setState((s) => ({ ...s, loading: false }));
     }
   }, [user, currentOrgId]);

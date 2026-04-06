@@ -1,4 +1,5 @@
 import { useState } from "react";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 import { motion } from "framer-motion";
 import { SidebarMobileToggle } from "@/components/layout/ProtectedShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -311,7 +312,7 @@ const GovernanceMaturity = () => {
 
       {/* Executive Summary + Trend */}
       {lastAssessment && (
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+        <SectionErrorBoundary sectionName="Governance Executive Summary">
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm flex items-center gap-2">
@@ -405,7 +406,7 @@ const GovernanceMaturity = () => {
               )}
             </CardContent>
           </Card>
-        </motion.div>
+        </SectionErrorBoundary>
       )}
     </div>
   );

@@ -8,6 +8,7 @@ import { invokeWithRetry } from "@/lib/edge-function-retry";
 import { SidebarMobileToggle } from "@/components/layout/ProtectedShell";
 import ExecutiveCopilot from "@/components/dashboard/ExecutiveCopilot";
 import StrategicSimulation from "@/components/dashboard/StrategicSimulation";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 import ExecutiveConvergence from "@/components/dashboard/ExecutiveConvergence";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -900,6 +901,7 @@ const Executive = () => {
               </TabsContent>
 
               <TabsContent value="copilot">
+                <SectionErrorBoundary sectionName="Executive Copilot">
                 <ExecutiveCopilot
                   organizationId={currentOrgId!}
                   roleType={activeRole}
@@ -908,22 +910,27 @@ const Executive = () => {
                   datasetId={activeDatasetId ?? undefined}
                   datasetName={activeDatasetName}
                 />
+                </SectionErrorBoundary>
               </TabsContent>
 
               <TabsContent value="simulation">
+                <SectionErrorBoundary sectionName="Strategic Simulation">
                 <StrategicSimulation
                   organizationId={currentOrgId!}
                   datasetId={activeDatasetId!}
                   roleType={activeRole}
                   tier={tier}
                 />
+                </SectionErrorBoundary>
               </TabsContent>
 
               <TabsContent value="convergence">
+                <SectionErrorBoundary sectionName="Executive Convergence">
                 <ExecutiveConvergence
                   organizationId={currentOrgId!}
                   tier={tier}
                 />
+                </SectionErrorBoundary>
               </TabsContent>
             </Tabs>
           )}

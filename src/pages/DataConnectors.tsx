@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useOrganization } from "@/hooks/useOrganization";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { supabase } from "@/integrations/supabase/client";
+import { getVerifiedAuth, authHeaders } from "@/lib/auth-helpers";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -117,7 +118,7 @@ const DataConnectors = () => {
   const [tables, setTables] = useState<DiscoveredTable[]>([]);
   const [discovering, setDiscovering] = useState(false);
   const [selectedTables, setSelectedTables] = useState<string[]>([]);
-  const [previewData, setPreviewData] = useState<{ rows: any[]; count: number } | null>(null);
+  const [previewData, setPreviewData] = useState<{ rows: Record<string, unknown>[]; count: number } | null>(null);
   const [previewTable, setPreviewTable] = useState<string | null>(null);
 
   const [mappings, setMappings] = useState<MetricMapping[]>([]);
@@ -126,7 +127,7 @@ const DataConnectors = () => {
   const [syncResult, setSyncResult] = useState<{ records: number; errors: string[] } | null>(null);
 
   const [dataSourceId, setDataSourceId] = useState<string | null>(null);
-  const [existingConnectors, setExistingConnectors] = useState<any[]>([]);
+  const [existingConnectors, setExistingConnectors] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -145,11 +146,10 @@ const DataConnectors = () => {
   };
 
   const getAuthHeaders = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Not authenticated");
-    const { data: { session } } = await supabase.auth.getSession();
+    const auth = await getVerifiedAuth();
+    if (!auth) throw new Error("Not authenticated");
     return {
-      Authorization: `Bearer ${session?.access_token}`,
+      ...authHeaders(auth),
       "Content-Type": "application/json",
       apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
     };
