@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useOrganization } from "@/hooks/useOrganization";
 import { useProject } from "@/contexts/ProjectContext";
 import { supabase } from "@/integrations/supabase/client";
+import { invokeWithRetry } from "@/lib/edge-function-retry";
 import { embedInsightsBatch } from "@/lib/decision-lifecycle";
 import { useToast } from "@/hooks/use-toast";
 import { FileText, Download, Loader2, Plus, BarChart3, Shield, TrendingUp, Crown } from "lucide-react";
