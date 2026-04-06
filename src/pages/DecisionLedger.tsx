@@ -22,6 +22,7 @@ import {
   ShieldCheck, AlertTriangle, Activity, Zap, DollarSign,
 } from "lucide-react";
 import IntelligenceDisclaimer from "@/components/IntelligenceDisclaimer";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 import DecisionResponsibilityDialog from "@/components/DecisionResponsibilityDialog";
 import DecisionComments from "@/components/decisions/DecisionComments";
 import LazyInputWarning from "@/components/dashboard/LazyInputWarning";
