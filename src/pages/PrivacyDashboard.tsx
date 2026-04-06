@@ -14,6 +14,7 @@ import {
   FileText, Clock, Loader2, CheckCircle2, AlertTriangle,
 } from "lucide-react";
 import { CONTACT } from "@/lib/contact-config";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 
 interface DataSummary {
   datasets: number;

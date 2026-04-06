@@ -14,6 +14,7 @@ import DiagnosticSummaryCards from "@/components/diagnostics/DiagnosticSummaryCa
 import DiagnosticCard from "@/components/diagnostics/DiagnosticCard";
 import DiagnosticEmptyState from "@/components/diagnostics/DiagnosticEmptyState";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 
 export interface DiagnosticResult {
   metric_type: string;

@@ -29,6 +29,7 @@ import {
   Brain, TrendingUp, AlertTriangle, GitCompare, BarChart3,
   Layers, RefreshCw, Target, Gauge, CheckCircle2
 } from "lucide-react";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 
 /* ──────── Counterfactual Analysis ──────── */
 const CounterfactualPanel = ({ decisions }: { decisions: any[] }) => {

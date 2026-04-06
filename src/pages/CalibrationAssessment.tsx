@@ -292,6 +292,7 @@ const CalibrationAssessment = () => {
         // Schema-gap cast: bias_markers is Json type, TS generated type doesn't accept string[] directly
         bias_markers: computed.biasMarkers as unknown as import("@/integrations/supabase/types").Json,
         completed_at: new Date().toISOString(),
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
       });
     } catch (e: unknown) {
       console.error("[CalibrationAssessment] Failed to save assessment:", e instanceof Error ? e.message : e);

@@ -15,6 +15,7 @@ import {
   ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, ReferenceLine, LineChart, Line, Legend,
 } from "recharts";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 
 interface DecisionRecord {
   id: string;

@@ -15,6 +15,7 @@ import {
   AlertTriangle, Zap, Shield, BarChart3, Minus,
 } from "lucide-react";
 import DatasetRequired from "@/components/layout/DatasetRequired";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 
 interface Signal {
   category: string;

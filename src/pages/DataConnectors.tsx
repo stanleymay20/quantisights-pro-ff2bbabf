@@ -373,6 +373,7 @@ const DataConnectors = () => {
       const res = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/db-connector`,
         {
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
           method: "POST", headers: authHeaders,
           body: JSON.stringify({
             action: "sync", ...connPayload, data_source_id: ds.id,

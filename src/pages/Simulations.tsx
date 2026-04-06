@@ -14,6 +14,7 @@ import { toast } from "@/hooks/use-toast";
 import { Activity, TrendingUp, TrendingDown, Shield, Info, Loader2, BarChart3 } from "lucide-react";
 import IntelligenceDisclaimer from "@/components/IntelligenceDisclaimer";
 import DatasetRequired from "@/components/layout/DatasetRequired";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 
 const Simulations = () => {
   const { currentOrgId: organizationId } = useOrganization();

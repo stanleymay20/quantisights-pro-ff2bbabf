@@ -10,6 +10,7 @@ import {
   CheckCircle2, AlertTriangle, ArrowRight, Award, BarChart3,
   BookOpen, RefreshCw,
 } from "lucide-react";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 
 /**
  * Decision Fitness Framework — from "Decision Intelligence: The Operating System

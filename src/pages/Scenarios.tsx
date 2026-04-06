@@ -23,6 +23,7 @@ import {
   ResponsiveContainer, CartesianGrid, Legend, Area
 } from "recharts";
 import DatasetRequired from "@/components/layout/DatasetRequired";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 
 interface Scenario {
   id: string;

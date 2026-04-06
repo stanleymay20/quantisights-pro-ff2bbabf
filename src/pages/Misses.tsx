@@ -10,6 +10,7 @@ import {
   AlertTriangle, TrendingDown, Target, XCircle, CheckCircle2, Activity, Crosshair,
 } from "lucide-react";
 import DatasetRequired from "@/components/layout/DatasetRequired";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 
 interface Decision {
   id: string;

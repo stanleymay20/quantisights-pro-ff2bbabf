@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from "recharts";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 
 const STATUS_COLORS: Record<string, string> = {
   completed: "text-success",
