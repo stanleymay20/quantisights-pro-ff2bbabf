@@ -35,6 +35,7 @@ export const useMetrics = (orgId: string | null, datasetId: string | null) => {
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState<{ loaded: number; total: number | null } | null>(null);
   const { subscribed, tier } = useSubscription();
 
   const canStream = subscribed && tier ? REALTIME_TIERS.includes(tier) : false;
