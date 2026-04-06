@@ -338,10 +338,19 @@ Deno.serve(async (req) => {
         }
 
         const allScores = [orgScore, ...userScores];
-        await supabase.from("execution_scores").insert(allScores);
 
-        await logRun("compute_scores", runId, total, allScores.length, "completed");
-        return json({ org_score: orgScore, user_scores: userScores, run_id: runId });
+        // IDEMPOTENCY: Use RPC with cooldown window to prevent duplicate score writes
+        const { data: scoreResult } = await supabase.rpc("exec_compute_scores_idempotent", {
+          _org_id: orgId,
+          _scores: JSON.stringify(allScores),
+          _cooldown_minutes: 5,
+        });
+
+        const inserted = scoreResult?.inserted ?? allScores.length;
+        const skippedDupes = scoreResult?.skipped_duplicates ?? 0;
+
+        await logRun("compute_scores", runId, total, inserted, "completed", undefined, { skipped_duplicates: skippedDupes });
+        return json({ org_score: orgScore, user_scores: userScores, run_id: runId, inserted, skipped_duplicates: skippedDupes });
       }
 
       case "get_scores": {
