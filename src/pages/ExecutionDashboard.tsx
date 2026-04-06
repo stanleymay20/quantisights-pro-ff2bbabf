@@ -5,16 +5,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ArrowRight, CheckCircle2, XCircle, Clock, Play,
   TrendingUp, TrendingDown, RotateCcw, Loader2, Activity,
-  Target, BarChart3, Zap, AlertTriangle, Inbox,
+  Target, BarChart3, Zap, AlertTriangle, Inbox, Shield,
 } from "lucide-react";
 import { useOrganization } from "@/hooks/useOrganization";
 import { useDecisionReplay } from "@/hooks/useDecisionReplay";
 import { supabase } from "@/integrations/supabase/client";
 import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 import IntelligenceDisclaimer from "@/components/IntelligenceDisclaimer";
+import ExecutionCommandCenter from "@/components/execution/ExecutionCommandCenter";
 
 /** Hard cap on execution plans fetched — keeps client-side aggregation fast. */
 const PLANS_QUERY_LIMIT = 500;
