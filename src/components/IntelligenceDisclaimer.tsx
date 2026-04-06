@@ -1,5 +1,5 @@
 import { Info, Shield } from "lucide-react";
-import { useState } from "react";
+import { useState, forwardRef } from "react";
 
 interface IntelligenceDisclaimerProps {
   variant?: "banner" | "inline" | "footer";
