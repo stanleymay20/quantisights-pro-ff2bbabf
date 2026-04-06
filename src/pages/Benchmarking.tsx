@@ -12,6 +12,7 @@ import {
   BarChart3, TrendingUp, TrendingDown, Minus, Loader2, Building2, Target, Award, RefreshCw,
 } from "lucide-react";
 import DatasetRequired from "@/components/layout/DatasetRequired";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 
 interface BenchmarkScore {
   id: string;
