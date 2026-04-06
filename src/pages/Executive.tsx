@@ -227,7 +227,7 @@ const Executive = () => {
     if (risk) {
       setRiskIndex({
         score: risk.score,
-        components: risk.components as any,
+        components: risk.components as RiskIndex["components"],
         last_updated: risk.last_updated,
         escalation_required: risk.escalation_required,
         escalation_reason: risk.escalation_reason ?? undefined,
