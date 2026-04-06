@@ -155,7 +155,7 @@ const DecisionLedgerPage = () => {
       .limit(10);
     
     if (data && data.length > 0) {
-      const deltas = data.map((d: any) => Number(d.calibration_delta));
+      const deltas = data.map((d) => Number(d.calibration_delta));
       const avg = deltas.reduce((s: number, v: number) => s + v, 0) / deltas.length;
       setLearningStats({
         rollingCalError: Math.abs(avg),
