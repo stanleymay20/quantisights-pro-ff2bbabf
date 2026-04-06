@@ -308,8 +308,9 @@ const Executive = () => {
       setDbAlerts(data.triggered_alerts || []);
       toast({ title: "Signals computed", description: `Risk score: ${data.overall_score}/100` });
       fetchSignalData();
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      toast({ title: "Error", description: msg, variant: "destructive" });
     } finally {
       setSignalsLoading(false);
     }
