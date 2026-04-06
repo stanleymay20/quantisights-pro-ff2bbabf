@@ -215,6 +215,36 @@ const Compliance = () => {
     "Compliance Readiness": FileText,
   };
 
+  const downloadCompliancePack = useCallback(() => {
+    const lines = [
+      "QUANTIVIS — COMPLIANCE READINESS REPORT",
+      `Generated: ${new Date().toISOString().split("T")[0]}`,
+      `Overall Score: ${score}%`,
+      "",
+      "=" .repeat(60),
+      "",
+    ];
+    controls.forEach((c) => {
+      lines.push(`[${c.id}] ${c.name} — ${c.status.toUpperCase()}`);
+      lines.push(`  Category: ${c.category}`);
+      lines.push(`  ${c.description}`);
+      lines.push(`  Evidence: ${c.evidence}`);
+      lines.push(`  Frameworks: ${c.framework.join(", ")}`);
+      lines.push("");
+    });
+    lines.push("=" .repeat(60));
+    lines.push("This report is auto-generated from live platform controls.");
+    lines.push("For formal SOC 2 Type II certification, contact enterprise@quantivis.ai");
+
+    const blob = new Blob([lines.join("\n")], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `Quantivis-Compliance-Report-${new Date().toISOString().split("T")[0]}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [controls, score]);
+
   return (
     <div className="p-4 md:p-6 space-y-6 max-w-7xl mx-auto">
       <div className="flex items-center gap-3">
