@@ -338,4 +338,7 @@ const ExecutionDashboard = () => {
         </main>
       </>
     </>
+  );
+};
+
 export default ExecutionDashboard;
