@@ -48,7 +48,7 @@ export function useAuthEvents() {
           organization_id: currentOrgId,
           event_type: eventType,
           user_agent: navigator.userAgent,
-          metadata: metadata as Record<string, unknown>,
+          metadata: JSON.parse(JSON.stringify(metadata)),
           risk_score: riskScore,
         }]);
       } catch (err) {
