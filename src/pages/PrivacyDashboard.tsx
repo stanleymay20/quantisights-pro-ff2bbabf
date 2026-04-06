@@ -56,7 +56,8 @@ const PrivacyDashboard = () => {
     if (!currentOrgId) return;
     setExporting(true);
     try {
-      const { data: session } = await supabase.auth.getSession();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
       const res = await supabase.functions.invoke("data-export", {
         body: { organization_id: currentOrgId, format: "csv" },
       });

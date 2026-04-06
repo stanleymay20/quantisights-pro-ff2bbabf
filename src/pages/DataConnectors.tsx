@@ -145,6 +145,8 @@ const DataConnectors = () => {
   };
 
   const getAuthHeaders = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Not authenticated");
     const { data: { session } } = await supabase.auth.getSession();
     return {
       Authorization: `Bearer ${session?.access_token}`,

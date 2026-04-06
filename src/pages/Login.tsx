@@ -100,7 +100,9 @@ const Login = forwardRef<HTMLDivElement>((_, ref) => {
             duration: 10000,
           });
         }
-      }).catch(() => {}); // Non-blocking
+      }).catch((err) => {
+        console.warn("[login] Anomaly detection call failed:", err);
+      }); // Non-blocking
 
       logAuthEvent({ eventType: "login", metadata: { method: "password" } });
       navigate(redirectTo);
