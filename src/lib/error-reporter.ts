@@ -57,8 +57,10 @@ async function flushErrors(): Promise<void> {
   const batch = ERROR_QUEUE.splice(0, 10); // Max 10 per flush
 
   try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return; // Can't log without auth
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return; // Can't log without auth
+    if (!session) return;
 
     // Resolve actual org_id from user profile
     const { data: profile } = await supabase
