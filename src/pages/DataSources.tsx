@@ -61,9 +61,9 @@ const SyncButton = ({ source, organizationId, onComplete }: { source: DataSource
     setSyncing(true);
     setResult(null);
     try {
-      const { data, error } = await supabase.functions.invoke("connector-pull", {
+      const { data, error } = await invokeWithRetry<{ records?: number; errors?: string[] }>("connector-pull", {
         body: {
-          connector_type: (source.config as any)?.connector_type || "stripe",
+          connector_type: (source.config as Record<string, unknown>)?.connector_type || "stripe",
           data_source_id: source.id,
           organization_id: organizationId,
         },
