@@ -93,7 +93,7 @@ const ScenarioBranching = () => {
       parameters: newParams,
       created_by: user.id,
       comparison_group_id: comparisonGroupId,
-    } as any);
+    } as Record<string, unknown>);
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
