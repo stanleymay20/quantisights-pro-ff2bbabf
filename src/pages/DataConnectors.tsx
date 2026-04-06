@@ -117,7 +117,7 @@ const DataConnectors = () => {
   const [tables, setTables] = useState<DiscoveredTable[]>([]);
   const [discovering, setDiscovering] = useState(false);
   const [selectedTables, setSelectedTables] = useState<string[]>([]);
-  const [previewData, setPreviewData] = useState<{ rows: any[]; count: number } | null>(null);
+  const [previewData, setPreviewData] = useState<{ rows: Record<string, unknown>[]; count: number } | null>(null);
   const [previewTable, setPreviewTable] = useState<string | null>(null);
 
   const [mappings, setMappings] = useState<MetricMapping[]>([]);
@@ -126,7 +126,7 @@ const DataConnectors = () => {
   const [syncResult, setSyncResult] = useState<{ records: number; errors: string[] } | null>(null);
 
   const [dataSourceId, setDataSourceId] = useState<string | null>(null);
-  const [existingConnectors, setExistingConnectors] = useState<any[]>([]);
+  const [existingConnectors, setExistingConnectors] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
