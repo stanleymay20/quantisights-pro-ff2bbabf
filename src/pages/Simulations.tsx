@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { invokeWithRetry } from "@/lib/edge-function-retry";
 import { useOrganization } from "@/hooks/useOrganization";
 import { useProject } from "@/contexts/ProjectContext";
 import { SidebarMobileToggle } from "@/components/layout/ProtectedShell";
@@ -64,7 +65,7 @@ const Simulations = () => {
         throw new Error("Select a metric type first.");
       }
 
-      const { data, error } = await supabase.functions.invoke("monte-carlo-sim", {
+      const { data, error } = await invokeWithRetry<Record<string, unknown>>("monte-carlo-sim", {
         body: {
           organization_id: organizationId,
           dataset_id: activeDatasetId,
@@ -74,7 +75,7 @@ const Simulations = () => {
         },
       });
       if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+      if (data?.error) throw new Error(String(data.error));
       return data;
     },
     onSuccess: () => {

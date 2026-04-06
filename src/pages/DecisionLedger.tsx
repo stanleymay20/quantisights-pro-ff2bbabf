@@ -13,6 +13,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { useOrganization } from "@/hooks/useOrganization";
 import { useProject } from "@/contexts/ProjectContext";
 import { supabase } from "@/integrations/supabase/client";
+import { invokeWithRetry } from "@/lib/edge-function-retry";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -21,6 +22,7 @@ import {
   ShieldCheck, AlertTriangle, Activity, Zap, DollarSign,
 } from "lucide-react";
 import IntelligenceDisclaimer from "@/components/IntelligenceDisclaimer";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 import DecisionResponsibilityDialog from "@/components/DecisionResponsibilityDialog";
 import DecisionComments from "@/components/decisions/DecisionComments";
 import LazyInputWarning from "@/components/dashboard/LazyInputWarning";
@@ -197,20 +199,18 @@ const DecisionLedgerPage = () => {
     setSimRunning(true);
     setSimResult(null);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      const { data: { session } } = await supabase.auth.getSession();
-      const { data, error } = await supabase.functions.invoke("decision-impact-sim", {
+      const { data, error } = await invokeWithRetry<ImpactSim>("decision-impact-sim", {
         body: {
           organization_id: currentOrgId,
           dataset_id: activeDatasetId,
           decision_id: decisionId,
           ...impactForm,
         },
-        ...(session?.access_token ? { headers: { Authorization: `Bearer ${session.access_token}` } } : {}),
       });
       if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      setSimResult(data as ImpactSim);
+      const rawData = data as unknown as Record<string, unknown> | null;
+      if (rawData?.error) throw new Error(String(rawData.error));
+      setSimResult(data);
       toast({ title: "Impact simulation complete" });
       fetchDecisions();
     } catch (e: unknown) {
@@ -302,6 +302,7 @@ const DecisionLedgerPage = () => {
           <IntelligenceDisclaimer variant="banner" context="advisory" />
           <LazyInputWarning decisions={decisions} />
         <main className="flex-1 p-8 overflow-auto space-y-6">
+          <SectionErrorBoundary sectionName="Decision Ledger">
           {/* Summary cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4">
             <Card>
@@ -713,6 +714,7 @@ const DecisionLedgerPage = () => {
               ))}
             </TabsContent>
           </Tabs>
+          </SectionErrorBoundary>
         </main>
 
       {/* Decision Responsibility Confirmation Dialog */}

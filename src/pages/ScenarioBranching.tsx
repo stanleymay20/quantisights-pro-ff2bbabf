@@ -10,6 +10,7 @@ import { useOrganization } from "@/hooks/useOrganization";
 import { useProject } from "@/contexts/ProjectContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { invokeWithRetry } from "@/lib/edge-function-retry";
 import { useToast } from "@/hooks/use-toast";
 import {
   GitBranch, Plus, Loader2, Play, Trash2, BarChart3,
@@ -112,7 +113,7 @@ const ScenarioBranching = () => {
     if (!currentOrgId || !activeDatasetId) return;
     setSimulating(branch.id);
     try {
-      const { data, error } = await supabase.functions.invoke("strategic-simulation", {
+      const { data, error } = await invokeWithRetry<Record<string, unknown>>("strategic-simulation", {
         body: {
           organization_id: currentOrgId,
           dataset_id: activeDatasetId,
@@ -121,7 +122,8 @@ const ScenarioBranching = () => {
         },
       });
       if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+      const rawData = data as unknown as Record<string, unknown> | null;
+      if (rawData?.error) throw new Error(String(rawData.error));
 
       await supabase.from("scenario_branches")
         .update({ results: data, status: "simulated" } as Record<string, unknown>)

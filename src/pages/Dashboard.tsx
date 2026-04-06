@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { SidebarMobileToggle } from "@/components/layout/ProtectedShell";
 import OrgSwitcher from "@/components/dashboard/OrgSwitcher";
 import ProjectSwitcher from "@/components/dashboard/ProjectSwitcher";
@@ -20,6 +21,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { invokeWithRetry } from "@/lib/edge-function-retry";
 import { embedInsightsBatch } from "@/lib/decision-lifecycle";
 import { filterCriticalInsights } from "@/lib/insight-filters";
 import { useToast } from "@/hooks/use-toast";
@@ -116,6 +118,8 @@ const Dashboard = () => {
     fetchCount();
   }, [currentOrgId, activeDatasetId]);
 
+  const queryClient = useQueryClient();
+
   const handleRecalculate = async () => {
     if (!currentOrgId || !activeDatasetId) {
       toast({ title: "Select a dataset first", variant: "destructive" });
@@ -123,13 +127,14 @@ const Dashboard = () => {
     }
     setRecalculating(true);
     try {
-      await supabase.functions.invoke("generate-insights", {
+      await invokeWithRetry("generate-insights", {
         body: { organization_id: currentOrgId, dataset_id: activeDatasetId },
       });
       // Embed new insights into institutional memory (non-blocking)
       embedInsightsBatch(currentOrgId);
       toast({ title: "Intelligence refreshed" });
-      navigate(0);
+      // Invalidate queries to refresh data without destroying state
+      queryClient.invalidateQueries();
     } catch {
       toast({ title: "Refresh failed", variant: "destructive" });
     } finally {

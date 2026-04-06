@@ -7,6 +7,7 @@ import { useProject } from "@/contexts/ProjectContext";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
+import { invokeWithRetry } from "@/lib/edge-function-retry";
 import { embedInsightsBatch } from "@/lib/decision-lifecycle";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
@@ -624,15 +625,15 @@ const DataUpload = () => {
       // TIER 3: ANALYTICAL LAYER — Compute aggregates + insights
       // ═══════════════════════════════════════════════════════
 
-      // Fire aggregates + insights + data profiling in parallel (non-blocking)
+      // Fire aggregates + insights + data profiling in parallel (with retry for reliability)
       const [aggResult] = await Promise.allSettled([
-        supabase.functions.invoke("refresh-aggregates", {
+        invokeWithRetry("refresh-aggregates", {
           body: { organization_id: currentOrgId, dataset_id: dataset.id, pipeline_run_id: pipelineRunId },
         }),
-        supabase.functions.invoke("generate-insights", {
+        invokeWithRetry("generate-insights", {
           body: { organization_id: currentOrgId, dataset_id: dataset.id },
         }),
-        supabase.functions.invoke("data-profiler", {
+        invokeWithRetry("data-profiler", {
           body: { organization_id: currentOrgId, dataset_id: dataset.id },
         }),
       ]);

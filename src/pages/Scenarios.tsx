@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { invokeWithRetry } from "@/lib/edge-function-retry";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOrganization } from "@/hooks/useOrganization";
 import { useProject } from "@/contexts/ProjectContext";
@@ -219,12 +220,12 @@ const Scenarios = () => {
     }
     setSimulating(true);
     try {
-      const { data, error } = await supabase.functions.invoke("simulate-scenario", {
+      const { data, error } = await invokeWithRetry<Record<string, unknown>>("simulate-scenario", {
         body: { scenario_id: selectedId, dataset_id: activeDatasetId },
       });
       if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      toast({ title: `Simulation complete: ${data.projected_values} projections computed` });
+      if (data?.error) throw new Error(String(data.error));
+      toast({ title: `Simulation complete: ${data?.projected_values} projections computed` });
       fetchDetails(selectedId);
       fetchScenarios();
     } catch (e: unknown) {
@@ -239,12 +240,12 @@ const Scenarios = () => {
     if (!selectedId || !canUseAI || !activeDatasetId) return;
     setAnalyzing(true);
     try {
-      const { data, error } = await supabase.functions.invoke("ai-scenario-analysis", {
+      const { data, error } = await invokeWithRetry<Record<string, unknown>>("ai-scenario-analysis", {
         body: { scenario_id: selectedId, dataset_id: activeDatasetId },
       });
       if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      setAnalysis(data.analysis);
+      if (data?.error) throw new Error(String(data.error));
+      setAnalysis(data?.analysis as AIAnalysis);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "AI analysis failed";
       toast({ title: "AI analysis failed", description: msg, variant: "destructive" });

@@ -7,6 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { useOrganization } from "@/hooks/useOrganization";
 import { useProject } from "@/contexts/ProjectContext";
 import { supabase } from "@/integrations/supabase/client";
+import { invokeWithRetry } from "@/lib/edge-function-retry";
 import { useToast } from "@/hooks/use-toast";
 import {
   BarChart3, TrendingUp, TrendingDown, Minus, Loader2, Building2, Target, Award, RefreshCw,
@@ -139,7 +140,7 @@ const BenchmarkingPage = () => {
       let successCount = 0;
 
       for (const kpi of compatibleKpis) {
-        const { data: result, error } = await supabase.functions.invoke("compute-kpi", {
+        const { data: result, error } = await invokeWithRetry<Record<string, unknown>>("compute-kpi", {
           body: { kpi_id: kpi.id, dataset_id: activeDatasetId },
         });
 

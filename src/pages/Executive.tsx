@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useActiveDataContext } from "@/hooks/useActiveDataContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
+import { invokeWithRetry } from "@/lib/edge-function-retry";
 import { SidebarMobileToggle } from "@/components/layout/ProtectedShell";
 import ExecutiveCopilot from "@/components/dashboard/ExecutiveCopilot";
 import StrategicSimulation from "@/components/dashboard/StrategicSimulation";
@@ -294,19 +295,19 @@ const Executive = () => {
     if (!currentOrgId) return;
     setSignalsLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("compute-executive-signals", {
+      const { data, error } = await invokeWithRetry<Record<string, unknown>>("compute-executive-signals", {
         body: { role_type: activeRole, organization_id: currentOrgId, dataset_id: activeDatasetId },
       });
       if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+      if (data?.error) throw new Error(String(data.error));
 
       setRiskIndex({
-        score: data.overall_score,
-        components: data.components,
-        last_updated: data.computed_at,
+        score: data?.overall_score as number,
+        components: data?.components as RiskIndex["components"],
+        last_updated: data?.computed_at as string,
       });
-      setDbAlerts(data.triggered_alerts || []);
-      toast({ title: "Signals computed", description: `Risk score: ${data.overall_score}/100` });
+      setDbAlerts((data?.triggered_alerts as DbAlert[]) || []);
+      toast({ title: "Signals computed", description: `Risk score: ${data?.overall_score}/100` });
       fetchSignalData();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Unknown error";
@@ -354,13 +355,14 @@ const Executive = () => {
     setLoading(true);
     setBrief(null);
     try {
-      const { data, error } = await supabase.functions.invoke("executive-brief", {
+      const { data, error } = await invokeWithRetry<Brief>("executive-brief", {
         body: { role_type: activeRole, organization_id: currentOrgId, dataset_id: activeDatasetId },
       });
       if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      setBrief(data as Brief);
-      if (data.cached) {
+      const rawData = data as unknown as Record<string, unknown> | null;
+      if (rawData?.error) throw new Error(String(rawData.error));
+      if (data) setBrief(data);
+      if (rawData?.cached) {
         toast({ title: "Cached brief loaded", description: "Recent brief returned (< 6 hours old)" });
       }
       fetchSignalData();

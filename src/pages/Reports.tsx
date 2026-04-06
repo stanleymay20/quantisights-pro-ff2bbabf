@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useOrganization } from "@/hooks/useOrganization";
 import { useProject } from "@/contexts/ProjectContext";
 import { supabase } from "@/integrations/supabase/client";
+import { invokeWithRetry } from "@/lib/edge-function-retry";
 import { embedInsightsBatch } from "@/lib/decision-lifecycle";
 import { useToast } from "@/hooks/use-toast";
 import { FileText, Download, Loader2, Plus, BarChart3, Shield, TrendingUp, Crown } from "lucide-react";
@@ -82,20 +83,20 @@ const Reports = () => {
     }
     setGenerating(true);
     try {
-      await supabase.functions.invoke("generate-insights", {
+      await invokeWithRetry("generate-insights", {
         body: { organization_id: currentOrgId, dataset_id: activeDatasetId },
       });
       // Embed new insights into institutional memory (non-blocking)
       embedInsightsBatch(currentOrgId);
 
-      const { data, error } = await supabase.functions.invoke("generate-report", {
+      const { data, error } = await invokeWithRetry<Record<string, unknown>>("generate-report", {
         body: { organization_id: currentOrgId, dataset_id: activeDatasetId, report_type: selectedType },
       });
 
       if (error) throw error;
 
       if (data?.download_url) {
-        window.open(data.download_url, "_blank");
+        window.open(String(data.download_url), "_blank");
       }
 
       toast({ title: "Report generated successfully!" });

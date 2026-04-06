@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { invokeWithRetry } from "@/lib/edge-function-retry";
 
 interface SimulationResult {
   baseline_risk: number;
@@ -107,7 +108,7 @@ const StrategicSimulation = ({ organizationId, datasetId, roleType, tier }: Prop
     setLoading(true);
     setResult(null);
     try {
-      const { data, error } = await supabase.functions.invoke("strategic-simulation", {
+      const { data, error } = await invokeWithRetry<SimulationResult>("strategic-simulation", {
         body: {
           organization_id: organizationId,
           dataset_id: datasetId,
@@ -122,8 +123,9 @@ const StrategicSimulation = ({ organizationId, datasetId, roleType, tier }: Prop
         },
       });
       if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      setResult(data);
+      const rawData = data as unknown as Record<string, unknown> | null;
+      if (rawData?.error) throw new Error(String(rawData.error));
+      if (data) setResult(data);
     } catch (err: unknown) {
       toast({ title: "Simulation Error", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
     } finally {
