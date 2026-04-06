@@ -370,7 +370,7 @@ const OrganizationalIdentitySettings = ({ organizationId }: Props) => {
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Influence</Label>
-                <Select value={s.influence} onValueChange={(v: string) => {
+                <Select value={s.influence} onValueChange={(v: "high" | "medium" | "low") => {
                   const updated = [...stakeholders];
                   updated[i] = { ...s, influence: v };
                   setStakeholders(updated);
