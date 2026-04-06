@@ -377,10 +377,12 @@ const Settings = () => {
                     </CardContent>
                   </Card>
                 </motion.div>
+                </SectionErrorBoundary>
               </TabsContent>
 
               {/* Security */}
               <TabsContent value="security">
+                <SectionErrorBoundary context="Security settings">
                 <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
                   <SecurityPosture />
                   <MFAEnroll />
