@@ -1,4 +1,5 @@
 import { useState } from "react";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 import { motion } from "framer-motion";
 import { SidebarMobileToggle } from "@/components/layout/ProtectedShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
