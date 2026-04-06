@@ -7,6 +7,7 @@ import { useDecisionContexts } from "@/hooks/useDecisionContexts";
 import DatasetRequired from "@/components/layout/DatasetRequired";
 import IntelligenceDisclaimer from "@/components/IntelligenceDisclaimer";
 import { supabase } from "@/integrations/supabase/client";
+import { invokeWithRetry } from "@/lib/edge-function-retry";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, RefreshCw } from "lucide-react";
 import DiagnosticSummaryCards from "@/components/diagnostics/DiagnosticSummaryCards";
