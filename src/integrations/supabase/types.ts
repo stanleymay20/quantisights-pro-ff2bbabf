@@ -2282,6 +2282,75 @@ export type Database = {
           },
         ]
       }
+      execution_interventions: {
+        Row: {
+          auto_triggered: boolean
+          corrective_action: string | null
+          created_at: string
+          escalated_to: string | null
+          execution_plan_id: string
+          id: string
+          intervention_type: string
+          new_owner: string | null
+          organization_id: string
+          previous_owner: string | null
+          resolved: boolean
+          resolved_at: string | null
+          resolved_by: string | null
+          trigger_reason: string
+          updated_at: string
+        }
+        Insert: {
+          auto_triggered?: boolean
+          corrective_action?: string | null
+          created_at?: string
+          escalated_to?: string | null
+          execution_plan_id: string
+          id?: string
+          intervention_type?: string
+          new_owner?: string | null
+          organization_id: string
+          previous_owner?: string | null
+          resolved?: boolean
+          resolved_at?: string | null
+          resolved_by?: string | null
+          trigger_reason: string
+          updated_at?: string
+        }
+        Update: {
+          auto_triggered?: boolean
+          corrective_action?: string | null
+          created_at?: string
+          escalated_to?: string | null
+          execution_plan_id?: string
+          id?: string
+          intervention_type?: string
+          new_owner?: string | null
+          organization_id?: string
+          previous_owner?: string | null
+          resolved?: boolean
+          resolved_at?: string | null
+          resolved_by?: string | null
+          trigger_reason?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "execution_interventions_execution_plan_id_fkey"
+            columns: ["execution_plan_id"]
+            isOneToOne: false
+            referencedRelation: "execution_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "execution_interventions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       execution_plans: {
         Row: {
           action_description: string | null
@@ -2338,6 +2407,116 @@ export type Database = {
           },
           {
             foreignKeyName: "execution_plans_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      execution_predictions: {
+        Row: {
+          created_at: string
+          delay_days_predicted: number | null
+          execution_plan_id: string
+          id: string
+          model_version: number | null
+          organization_id: string
+          predicted_outcome: string
+          recommendation: string | null
+          risk_factors: Json | null
+          risk_score: number
+        }
+        Insert: {
+          created_at?: string
+          delay_days_predicted?: number | null
+          execution_plan_id: string
+          id?: string
+          model_version?: number | null
+          organization_id: string
+          predicted_outcome?: string
+          recommendation?: string | null
+          risk_factors?: Json | null
+          risk_score?: number
+        }
+        Update: {
+          created_at?: string
+          delay_days_predicted?: number | null
+          execution_plan_id?: string
+          id?: string
+          model_version?: number | null
+          organization_id?: string
+          predicted_outcome?: string
+          recommendation?: string | null
+          risk_factors?: Json | null
+          risk_score?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "execution_predictions_execution_plan_id_fkey"
+            columns: ["execution_plan_id"]
+            isOneToOne: false
+            referencedRelation: "execution_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "execution_predictions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      execution_scores: {
+        Row: {
+          avg_delay_days: number | null
+          computed_at: string
+          created_at: string
+          failure_rate: number | null
+          id: string
+          organization_id: string
+          plans_evaluated: number | null
+          reliability_rate: number | null
+          scope_id: string
+          scope_type: string
+          score: number
+          scoring_model_version: number | null
+          success_rate: number | null
+        }
+        Insert: {
+          avg_delay_days?: number | null
+          computed_at?: string
+          created_at?: string
+          failure_rate?: number | null
+          id?: string
+          organization_id: string
+          plans_evaluated?: number | null
+          reliability_rate?: number | null
+          scope_id: string
+          scope_type?: string
+          score?: number
+          scoring_model_version?: number | null
+          success_rate?: number | null
+        }
+        Update: {
+          avg_delay_days?: number | null
+          computed_at?: string
+          created_at?: string
+          failure_rate?: number | null
+          id?: string
+          organization_id?: string
+          plans_evaluated?: number | null
+          reliability_rate?: number | null
+          scope_id?: string
+          scope_type?: string
+          score?: number
+          scoring_model_version?: number | null
+          success_rate?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "execution_scores_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"

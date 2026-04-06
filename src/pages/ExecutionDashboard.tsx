@@ -5,16 +5,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ArrowRight, CheckCircle2, XCircle, Clock, Play,
   TrendingUp, TrendingDown, RotateCcw, Loader2, Activity,
-  Target, BarChart3, Zap, AlertTriangle, Inbox,
+  Target, BarChart3, Zap, AlertTriangle, Inbox, Shield,
 } from "lucide-react";
 import { useOrganization } from "@/hooks/useOrganization";
 import { useDecisionReplay } from "@/hooks/useDecisionReplay";
 import { supabase } from "@/integrations/supabase/client";
 import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 import IntelligenceDisclaimer from "@/components/IntelligenceDisclaimer";
+import ExecutionCommandCenter from "@/components/execution/ExecutionCommandCenter";
 
 /** Hard cap on execution plans fetched — keeps client-side aggregation fast. */
 const PLANS_QUERY_LIMIT = 500;
@@ -142,12 +144,28 @@ const ExecutionDashboard = () => {
         <IntelligenceDisclaimer variant="banner" context="advisory" />
 
         <main className="flex-1 p-8 overflow-auto space-y-6">
+          <Tabs defaultValue="command" className="w-full">
+            <TabsList className="mb-4">
+              <TabsTrigger value="command" className="gap-1.5">
+                <Shield className="w-3.5 h-3.5" /> Command Center
+              </TabsTrigger>
+              <TabsTrigger value="operations" className="gap-1.5">
+                <Activity className="w-3.5 h-3.5" /> Operations
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="command">
+              {currentOrgId && (
+                <ExecutionCommandCenter organizationId={currentOrgId} />
+              )}
+            </TabsContent>
+
+            <TabsContent value="operations">
           {loading ? (
             <div className="flex items-center justify-center py-20">
               <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
             </div>
           ) : !summary || summary.total_plans === 0 ? (
-            /* Empty state — no plans exist */
             <Card>
               <CardContent className="py-16 text-center">
                 <Inbox className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
@@ -159,7 +177,6 @@ const ExecutionDashboard = () => {
             </Card>
           ) : (
             <>
-              {/* Capped query notice */}
               {summary.capped && (
                 <div className="flex items-center gap-2 p-3 rounded-lg bg-warning/10 border border-warning/20 text-sm text-warning">
                   <AlertTriangle className="w-4 h-4 shrink-0" />
@@ -167,7 +184,6 @@ const ExecutionDashboard = () => {
                 </div>
               )}
 
-              {/* Summary KPIs */}
               <SectionErrorBoundary sectionName="Execution summary metrics">
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
                   <Card>
@@ -217,7 +233,6 @@ const ExecutionDashboard = () => {
                 </div>
               </SectionErrorBoundary>
 
-              {/* Decision Replay Drift Report */}
               <SectionErrorBoundary sectionName="Decision drift report">
                 {driftReport && driftReport.total_replays > 0 && (
                   <Card className="border-primary/20">
@@ -255,7 +270,6 @@ const ExecutionDashboard = () => {
                 )}
               </SectionErrorBoundary>
 
-              {/* Active Decisions with Execution */}
               <SectionErrorBoundary sectionName="Active decisions list">
                 <div className="space-y-3">
                   <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
@@ -319,6 +333,8 @@ const ExecutionDashboard = () => {
               </SectionErrorBoundary>
             </>
           )}
+            </TabsContent>
+          </Tabs>
         </main>
       </>
     </>
