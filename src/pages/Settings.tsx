@@ -465,10 +465,12 @@ const Settings = () => {
                     </Card>
                   )}
                 </motion.div>
+                </SectionErrorBoundary>
               </TabsContent>
 
               {/* Notifications */}
               <TabsContent value="notifications">
+                <SectionErrorBoundary context="Notification settings">
                 <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
                   <Card>
                     <CardHeader><CardTitle className="flex items-center gap-2"><Bell className="w-5 h-5 text-primary" /> Notification Preferences</CardTitle></CardHeader>
