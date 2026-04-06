@@ -256,13 +256,13 @@ const SimilarDecisionsPanel = memo(({ organizationId, queryText, onConfidenceAdj
                 {isOutcome && meta?.outcome_delta != null && (
                   <div className="mt-1 ml-[72px] flex items-center gap-3 text-[10px]">
                     <span className="flex items-center gap-1">
-                      {meta.outcome_delta > 0 ? (
+                      {Number(meta.outcome_delta) > 0 ? (
                         <TrendingUp className="w-3 h-3 text-success" />
                       ) : (
                         <TrendingDown className="w-3 h-3 text-destructive" />
                       )}
-                      <span className={`font-mono font-semibold ${meta.outcome_delta > 0 ? "text-success" : "text-destructive"}`}>
-                        {meta.outcome_delta > 0 ? "+" : ""}{Number(meta.outcome_delta).toFixed(1)}%
+                      <span className={`font-mono font-semibold ${Number(meta.outcome_delta) > 0 ? "text-success" : "text-destructive"}`}>
+                        {Number(meta.outcome_delta) > 0 ? "+" : ""}{Number(meta.outcome_delta).toFixed(1)}%
                       </span>
                     </span>
                     {meta.accuracy_score != null && (
