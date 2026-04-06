@@ -48,7 +48,7 @@ const Demo = () => {
         const { data, error: fnErr } = await invokeWithRetry<Record<string, unknown>>("create-demo-session");
 
         if (fnErr) throw fnErr;
-        if (data?.error) throw new Error(data.error);
+        if (data?.error) throw new Error(String(data.error));
 
         if (cancelled) return;
         setCurrentStep(2);
@@ -57,13 +57,13 @@ const Demo = () => {
         if (cancelled) return;
         setCurrentStep(3);
 
-        if (data.org_id) sessionStorage.setItem("quantivis_org_id", data.org_id);
-        if (data.workspace_id) sessionStorage.setItem("quantivis_workspace_id", data.workspace_id);
-        if (data.project_id) sessionStorage.setItem("quantivis_project_id", data.project_id);
+        if (data?.org_id) sessionStorage.setItem("quantivis_org_id", String(data.org_id));
+        if (data?.workspace_id) sessionStorage.setItem("quantivis_workspace_id", String(data.workspace_id));
+        if (data?.project_id) sessionStorage.setItem("quantivis_project_id", String(data.project_id));
 
         const { error: sessErr } = await supabase.auth.setSession({
-          access_token: data.access_token,
-          refresh_token: data.refresh_token,
+          access_token: String(data?.access_token ?? ""),
+          refresh_token: String(data?.refresh_token ?? ""),
         });
         if (sessErr) throw sessErr;
 
