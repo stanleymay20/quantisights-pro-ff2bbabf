@@ -15,6 +15,9 @@ export interface ExecutionScore {
   failure_rate: number;
   plans_evaluated: number;
   computed_at: string;
+  scoring_model_version?: number;
+  formula_snapshot?: string;
+  score_explanation?: Record<string, unknown>;
 }
 
 export interface ExecutionPrediction {
@@ -25,6 +28,12 @@ export interface ExecutionPrediction {
   delay_days_predicted: number;
   risk_factors: Array<{ factor: string; weight: number }>;
   recommendation: string;
+  model_version?: number;
+  is_active?: boolean;
+  generated_at?: string;
+  superseded_at?: string | null;
+  feature_summary?: Record<string, unknown>;
+  run_id?: string;
   execution_plans?: {
     action_title: string;
     status: string;
@@ -51,11 +60,35 @@ export interface ExecutionIntervention {
   };
 }
 
+export interface ExecutionOverride {
+  id: string;
+  execution_plan_id: string;
+  override_type: string;
+  actor_id: string;
+  reason: string;
+  previous_state: Record<string, unknown>;
+  new_state: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface EngineHealth {
+  engines: Record<string, {
+    latest: string;
+    status: string;
+    avg_duration: number;
+    runs: number;
+    errors: number;
+  }>;
+  recent_runs: Array<Record<string, unknown>>;
+  overall_health: "healthy" | "degraded";
+}
+
 export interface CommandSummary {
   org_score: ExecutionScore | null;
   at_risk_plans: number;
   open_interventions: number;
   critical_active: number;
+  blocked_active: number;
   total_active: number;
   multi_plan_decisions: Array<{ decision_id: string; plan_count: number }>;
   risk_distribution: {
@@ -64,6 +97,29 @@ export interface CommandSummary {
     delayed: number;
     on_track: number;
   };
+  recent_overrides: ExecutionOverride[];
+  last_runs: Array<Record<string, unknown>>;
+  generated_at: string;
+  correlation_id: string;
+}
+
+export interface DependencyGraph {
+  graph: Array<Record<string, unknown>>;
+  blocked_chains: Array<{ chain: string[]; depth: number }>;
+  critical_path: Array<Record<string, unknown>>;
+  stats: { total: number; blocked: number; critical: number; with_dependencies: number };
+}
+
+export interface ForensicTrace {
+  plan: Record<string, unknown> | null;
+  timeline: {
+    events: Array<Record<string, unknown>>;
+    interventions: Array<Record<string, unknown>>;
+    overrides: Array<Record<string, unknown>>;
+  };
+  predictions: Array<Record<string, unknown>>;
+  org_score_snapshots: Array<Record<string, unknown>>;
+  lineage: { total_events: number; total_interventions: number; total_predictions: number; total_overrides: number };
 }
 
 export const useExecutionIntelligence = (organizationId: string | null) => {
@@ -73,6 +129,8 @@ export const useExecutionIntelligence = (organizationId: string | null) => {
   const [predictions, setPredictions] = useState<ExecutionPrediction[]>([]);
   const [interventions, setInterventions] = useState<ExecutionIntervention[]>([]);
   const [commandSummary, setCommandSummary] = useState<CommandSummary | null>(null);
+  const [dependencyGraph, setDependencyGraph] = useState<DependencyGraph | null>(null);
+  const [engineHealth, setEngineHealth] = useState<EngineHealth | null>(null);
 
   const invoke = useCallback(async <T>(actionName: string, extra: Record<string, unknown> = {}): Promise<T | null> => {
     if (!organizationId) return null;
@@ -89,24 +147,23 @@ export const useExecutionIntelligence = (organizationId: string | null) => {
   const scanInterventions = useCallback(async () => {
     setLoading(true);
     try {
-      const result = await invoke<{ interventions_created: number; scanned: number }>("scan_interventions");
+      const result = await invoke<{ interventions_created: number; skipped: number; scanned: number; run_id: string }>("scan_interventions");
       if (result && result.interventions_created > 0) {
-        toast({ title: `${result.interventions_created} intervention(s) created` });
+        toast({ title: `${result.interventions_created} intervention(s) created${result.skipped > 0 ? ` (${result.skipped} dedupe skipped)` : ""}` });
       }
       return result;
-    } catch (e) {
-      console.error("Scan interventions failed:", e);
-    } finally {
-      setLoading(false);
-    }
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error("Scan interventions failed:", msg);
+    } finally { setLoading(false); }
   }, [invoke, toast]);
 
   const fetchInterventions = useCallback(async () => {
     try {
       const data = await invoke<ExecutionIntervention[]>("get_interventions");
       setInterventions(data || []);
-    } catch (e) {
-      console.error("Fetch interventions failed:", e);
+    } catch (e: unknown) {
+      console.error("Fetch interventions failed:", e instanceof Error ? e.message : e);
     }
   }, [invoke]);
 
@@ -115,7 +172,7 @@ export const useExecutionIntelligence = (organizationId: string | null) => {
       await invoke("resolve_intervention", { intervention_id: interventionId });
       toast({ title: "Intervention resolved" });
       await fetchInterventions();
-    } catch (e) {
+    } catch {
       toast({ title: "Failed to resolve", variant: "destructive" });
     }
   }, [invoke, toast, fetchInterventions]);
@@ -126,11 +183,9 @@ export const useExecutionIntelligence = (organizationId: string | null) => {
       await invoke("compute_scores");
       toast({ title: "Execution scores computed" });
       await fetchScores();
-    } catch (e) {
-      console.error("Compute scores failed:", e);
-    } finally {
-      setLoading(false);
-    }
+    } catch (e: unknown) {
+      console.error("Compute scores failed:", e instanceof Error ? e.message : e);
+    } finally { setLoading(false); }
   }, [invoke, toast]);
 
   const fetchScores = useCallback(async (scopeType?: string, includeHistory = false) => {
@@ -140,8 +195,8 @@ export const useExecutionIntelligence = (organizationId: string | null) => {
         include_history: includeHistory,
       });
       setScores(data || []);
-    } catch (e) {
-      console.error("Fetch scores failed:", e);
+    } catch (e: unknown) {
+      console.error("Fetch scores failed:", e instanceof Error ? e.message : e);
     }
   }, [invoke]);
 
@@ -154,9 +209,25 @@ export const useExecutionIntelligence = (organizationId: string | null) => {
         avg_delay_days: number;
         plans_evaluated: number;
         computed_at: string;
+        score_explanation: Record<string, unknown>;
       }>>("get_score_trend", { scope_type: scopeType, scope_id: scopeId, limit });
-    } catch (e) {
-      console.error("Fetch score trend failed:", e);
+    } catch (e: unknown) {
+      console.error("Fetch score trend failed:", e instanceof Error ? e.message : e);
+      return null;
+    }
+  }, [invoke]);
+
+  const explainScoreChange = useCallback(async (scopeType: string, scopeId: string) => {
+    try {
+      return await invoke<{
+        score_delta: number;
+        direction: string;
+        component_deltas: Record<string, number>;
+        current: ExecutionScore;
+        previous: ExecutionScore;
+      }>("explain_score_change", { scope_type: scopeType, scope_id: scopeId });
+    } catch (e: unknown) {
+      console.error("Explain score change failed:", e instanceof Error ? e.message : e);
       return null;
     }
   }, [invoke]);
@@ -164,23 +235,30 @@ export const useExecutionIntelligence = (organizationId: string | null) => {
   const predictRisks = useCallback(async () => {
     setLoading(true);
     try {
-      const result = await invoke<{ predictions: ExecutionPrediction[]; total: number }>("predict_risks");
+      const result = await invoke<{ predictions: ExecutionPrediction[]; total: number; run_id: string; superseded: number }>("predict_risks");
       toast({ title: `Risk analysis complete: ${result?.total || 0} plans assessed` });
       await fetchPredictions();
       return result;
-    } catch (e) {
-      console.error("Predict risks failed:", e);
-    } finally {
-      setLoading(false);
-    }
+    } catch (e: unknown) {
+      console.error("Predict risks failed:", e instanceof Error ? e.message : e);
+    } finally { setLoading(false); }
   }, [invoke, toast]);
 
-  const fetchPredictions = useCallback(async () => {
+  const fetchPredictions = useCallback(async (includeHistory = false) => {
     try {
-      const data = await invoke<ExecutionPrediction[]>("get_predictions");
+      const data = await invoke<ExecutionPrediction[]>("get_predictions", { include_history: includeHistory });
       setPredictions(data || []);
-    } catch (e) {
-      console.error("Fetch predictions failed:", e);
+    } catch (e: unknown) {
+      console.error("Fetch predictions failed:", e instanceof Error ? e.message : e);
+    }
+  }, [invoke]);
+
+  const fetchPredictionHistory = useCallback(async (planId: string) => {
+    try {
+      return await invoke<ExecutionPrediction[]>("get_prediction_history", { plan_id: planId });
+    } catch (e: unknown) {
+      console.error("Fetch prediction history failed:", e instanceof Error ? e.message : e);
+      return null;
     }
   }, [invoke]);
 
@@ -189,21 +267,73 @@ export const useExecutionIntelligence = (organizationId: string | null) => {
     try {
       const data = await invoke<CommandSummary>("command_summary");
       setCommandSummary(data);
-    } catch (e) {
-      console.error("Fetch command summary failed:", e);
-    } finally {
-      setLoading(false);
-    }
+    } catch (e: unknown) {
+      console.error("Fetch command summary failed:", e instanceof Error ? e.message : e);
+    } finally { setLoading(false); }
   }, [invoke]);
 
   const reassignPlan = useCallback(async (planId: string, newOwnerId: string, reason?: string) => {
     try {
       await invoke("reassign_plan", { plan_id: planId, new_owner_id: newOwnerId, reason });
       toast({ title: "Plan reassigned successfully" });
-    } catch (e) {
+    } catch {
       toast({ title: "Reassignment failed", variant: "destructive" });
     }
   }, [invoke, toast]);
+
+  const executeOverride = useCallback(async (planId: string, overrideType: string, reason: string, changes?: Record<string, unknown>) => {
+    try {
+      const result = await invoke<{ success: boolean; previous_state: Record<string, unknown>; new_state: Record<string, unknown> }>(
+        "executive_override",
+        { plan_id: planId, override_type: overrideType, reason, changes }
+      );
+      toast({ title: `Override applied: ${overrideType.replace(/_/g, " ")}` });
+      return result;
+    } catch {
+      toast({ title: "Override failed", variant: "destructive" });
+      return null;
+    }
+  }, [invoke, toast]);
+
+  const fetchOverrides = useCallback(async (planId?: string) => {
+    try {
+      return await invoke<ExecutionOverride[]>("get_overrides", planId ? { plan_id: planId } : {});
+    } catch (e: unknown) {
+      console.error("Fetch overrides failed:", e instanceof Error ? e.message : e);
+      return null;
+    }
+  }, [invoke]);
+
+  const fetchDependencyGraph = useCallback(async () => {
+    try {
+      const data = await invoke<DependencyGraph>("get_dependency_graph");
+      setDependencyGraph(data);
+      return data;
+    } catch (e: unknown) {
+      console.error("Fetch dependency graph failed:", e instanceof Error ? e.message : e);
+      return null;
+    }
+  }, [invoke]);
+
+  const fetchForensicTrace = useCallback(async (planId: string) => {
+    try {
+      return await invoke<ForensicTrace>("forensic_trace", { plan_id: planId });
+    } catch (e: unknown) {
+      console.error("Fetch forensic trace failed:", e instanceof Error ? e.message : e);
+      return null;
+    }
+  }, [invoke]);
+
+  const fetchEngineHealth = useCallback(async () => {
+    try {
+      const data = await invoke<EngineHealth>("engine_health");
+      setEngineHealth(data);
+      return data;
+    } catch (e: unknown) {
+      console.error("Fetch engine health failed:", e instanceof Error ? e.message : e);
+      return null;
+    }
+  }, [invoke]);
 
   return {
     loading,
@@ -211,15 +341,24 @@ export const useExecutionIntelligence = (organizationId: string | null) => {
     predictions,
     interventions,
     commandSummary,
+    dependencyGraph,
+    engineHealth,
     scanInterventions,
     fetchInterventions,
     resolveIntervention,
     computeScores,
     fetchScores,
     fetchScoreTrend,
+    explainScoreChange,
     predictRisks,
     fetchPredictions,
+    fetchPredictionHistory,
     fetchCommandSummary,
     reassignPlan,
+    executeOverride,
+    fetchOverrides,
+    fetchDependencyGraph,
+    fetchForensicTrace,
+    fetchEngineHealth,
   };
 };

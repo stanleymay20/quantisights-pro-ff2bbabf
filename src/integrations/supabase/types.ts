@@ -2351,53 +2351,126 @@ export type Database = {
           },
         ]
       }
+      execution_overrides: {
+        Row: {
+          actor_id: string
+          created_at: string
+          execution_plan_id: string
+          id: string
+          new_state: Json
+          organization_id: string
+          override_type: string
+          previous_state: Json
+          reason: string
+          requires_step_up: boolean | null
+        }
+        Insert: {
+          actor_id: string
+          created_at?: string
+          execution_plan_id: string
+          id?: string
+          new_state: Json
+          organization_id: string
+          override_type: string
+          previous_state: Json
+          reason: string
+          requires_step_up?: boolean | null
+        }
+        Update: {
+          actor_id?: string
+          created_at?: string
+          execution_plan_id?: string
+          id?: string
+          new_state?: Json
+          organization_id?: string
+          override_type?: string
+          previous_state?: Json
+          reason?: string
+          requires_step_up?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "execution_overrides_execution_plan_id_fkey"
+            columns: ["execution_plan_id"]
+            isOneToOne: false
+            referencedRelation: "execution_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "execution_overrides_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       execution_plans: {
         Row: {
           action_description: string | null
           action_title: string
+          blocked_by_plan_id: string | null
           created_at: string
           deadline: string | null
           decision_id: string
+          dependency_type: string | null
           id: string
+          is_critical_path: boolean | null
           organization_id: string
           owner_user_id: string | null
           priority: string
           status: string
           trigger_config: Json | null
           trigger_type: string | null
+          unlocks_plan_ids: string[] | null
           updated_at: string
         }
         Insert: {
           action_description?: string | null
           action_title: string
+          blocked_by_plan_id?: string | null
           created_at?: string
           deadline?: string | null
           decision_id: string
+          dependency_type?: string | null
           id?: string
+          is_critical_path?: boolean | null
           organization_id: string
           owner_user_id?: string | null
           priority?: string
           status?: string
           trigger_config?: Json | null
           trigger_type?: string | null
+          unlocks_plan_ids?: string[] | null
           updated_at?: string
         }
         Update: {
           action_description?: string | null
           action_title?: string
+          blocked_by_plan_id?: string | null
           created_at?: string
           deadline?: string | null
           decision_id?: string
+          dependency_type?: string | null
           id?: string
+          is_critical_path?: boolean | null
           organization_id?: string
           owner_user_id?: string | null
           priority?: string
           status?: string
           trigger_config?: Json | null
           trigger_type?: string | null
+          unlocks_plan_ids?: string[] | null
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "execution_plans_blocked_by_plan_id_fkey"
+            columns: ["blocked_by_plan_id"]
+            isOneToOne: false
+            referencedRelation: "execution_plans"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "execution_plans_decision_id_fkey"
             columns: ["decision_id"]
@@ -2419,37 +2492,55 @@ export type Database = {
           created_at: string
           delay_days_predicted: number | null
           execution_plan_id: string
+          feature_summary: Json | null
+          generated_at: string
           id: string
+          is_active: boolean
           model_version: number | null
           organization_id: string
           predicted_outcome: string
           recommendation: string | null
           risk_factors: Json | null
           risk_score: number
+          run_id: string | null
+          superseded_at: string | null
+          superseded_by_run_id: string | null
         }
         Insert: {
           created_at?: string
           delay_days_predicted?: number | null
           execution_plan_id: string
+          feature_summary?: Json | null
+          generated_at?: string
           id?: string
+          is_active?: boolean
           model_version?: number | null
           organization_id: string
           predicted_outcome?: string
           recommendation?: string | null
           risk_factors?: Json | null
           risk_score?: number
+          run_id?: string | null
+          superseded_at?: string | null
+          superseded_by_run_id?: string | null
         }
         Update: {
           created_at?: string
           delay_days_predicted?: number | null
           execution_plan_id?: string
+          feature_summary?: Json | null
+          generated_at?: string
           id?: string
+          is_active?: boolean
           model_version?: number | null
           organization_id?: string
           predicted_outcome?: string
           recommendation?: string | null
           risk_factors?: Json | null
           risk_score?: number
+          run_id?: string | null
+          superseded_at?: string | null
+          superseded_by_run_id?: string | null
         }
         Relationships: [
           {
@@ -2468,12 +2559,73 @@ export type Database = {
           },
         ]
       }
+      execution_run_log: {
+        Row: {
+          completed_at: string | null
+          correlation_id: string | null
+          created_at: string
+          duration_ms: number | null
+          error_message: string | null
+          id: string
+          items_created: number | null
+          items_processed: number | null
+          metadata: Json | null
+          organization_id: string
+          run_id: string
+          run_type: string
+          started_at: string
+          status: string
+        }
+        Insert: {
+          completed_at?: string | null
+          correlation_id?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          items_created?: number | null
+          items_processed?: number | null
+          metadata?: Json | null
+          organization_id: string
+          run_id?: string
+          run_type: string
+          started_at?: string
+          status?: string
+        }
+        Update: {
+          completed_at?: string | null
+          correlation_id?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          items_created?: number | null
+          items_processed?: number | null
+          metadata?: Json | null
+          organization_id?: string
+          run_id?: string
+          run_type?: string
+          started_at?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "execution_run_log_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       execution_scores: {
         Row: {
           avg_delay_days: number | null
           computed_at: string
+          computed_by: string | null
           created_at: string
           failure_rate: number | null
+          formula_snapshot: string | null
           id: string
           organization_id: string
           plans_evaluated: number | null
@@ -2481,14 +2633,18 @@ export type Database = {
           scope_id: string
           scope_type: string
           score: number
+          score_explanation: Json | null
           scoring_model_version: number | null
+          source_window_days: number | null
           success_rate: number | null
         }
         Insert: {
           avg_delay_days?: number | null
           computed_at?: string
+          computed_by?: string | null
           created_at?: string
           failure_rate?: number | null
+          formula_snapshot?: string | null
           id?: string
           organization_id: string
           plans_evaluated?: number | null
@@ -2496,14 +2652,18 @@ export type Database = {
           scope_id: string
           scope_type?: string
           score?: number
+          score_explanation?: Json | null
           scoring_model_version?: number | null
+          source_window_days?: number | null
           success_rate?: number | null
         }
         Update: {
           avg_delay_days?: number | null
           computed_at?: string
+          computed_by?: string | null
           created_at?: string
           failure_rate?: number | null
+          formula_snapshot?: string | null
           id?: string
           organization_id?: string
           plans_evaluated?: number | null
@@ -2511,7 +2671,9 @@ export type Database = {
           scope_id?: string
           scope_type?: string
           score?: number
+          score_explanation?: Json | null
           scoring_model_version?: number | null
+          source_window_days?: number | null
           success_rate?: number | null
         }
         Relationships: [
@@ -5773,6 +5935,52 @@ export type Database = {
         Returns: Json
       }
       cleanup_old_copilot_messages: { Args: never; Returns: undefined }
+      exec_create_interventions_atomic: {
+        Args: { _interventions: Json; _org_id: string }
+        Returns: Json
+      }
+      exec_get_latest_events_by_plan: {
+        Args: { _org_id: string; _plan_ids: string[] }
+        Returns: {
+          event_count: number
+          execution_plan_id: string
+          latest_event_at: string
+        }[]
+      }
+      exec_log_override: {
+        Args: {
+          _actor_id: string
+          _changes?: Json
+          _org_id: string
+          _override_type: string
+          _plan_id: string
+          _reason: string
+        }
+        Returns: Json
+      }
+      exec_reassign_plan_atomic: {
+        Args: {
+          _actor_id: string
+          _new_owner_id: string
+          _org_id: string
+          _plan_id: string
+          _reason?: string
+        }
+        Returns: Json
+      }
+      exec_resolve_intervention_atomic: {
+        Args: { _actor_id: string; _intervention_id: string; _org_id: string }
+        Returns: Json
+      }
+      exec_supersede_predictions: {
+        Args: {
+          _new_run_id: string
+          _org_id: string
+          _plan_ids: string[]
+          _predictions: Json
+        }
+        Returns: Json
+      }
       get_user_org_role: {
         Args: { _org_id: string; _user_id: string }
         Returns: Database["public"]["Enums"]["org_role"]
