@@ -130,8 +130,8 @@ const AlertPlaybooks = () => {
       setAddOpen(false);
       setPbName("");
       fetchData();
-    } catch (e: any) {
-      toast({ title: "Error", description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: "Error", description: e instanceof Error ? e.message : "Unknown error", variant: "destructive" });
     }
     setSaving(false);
   };

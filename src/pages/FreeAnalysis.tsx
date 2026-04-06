@@ -114,8 +114,8 @@ const FreeAnalysis = () => {
           }
         }
       }
-    } catch (err: any) {
-      toast({ title: "Analysis failed", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "Analysis failed", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
       setStep("input");
     } finally {
       setIsStreaming(false);

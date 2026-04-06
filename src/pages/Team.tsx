@@ -93,7 +93,7 @@ const Team = () => {
       );
     }
 
-    setInvitations((invitesRes.data as any) || []);
+    setInvitations((invitesRes.data as unknown as typeof invitations) || []);
     setUserRole(roleRes.data as string | null);
     setLoading(false);
   }, [currentOrgId, user]);

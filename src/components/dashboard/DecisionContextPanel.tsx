@@ -229,8 +229,8 @@ const DecisionContextPanel = memo(({
                       await onArchiveContext(activeContext.id);
                       onContextChange(null);
                       toast({ title: "Context archived" });
-                    } catch (err: any) {
-                      toast({ title: "Archive failed", description: err.message, variant: "destructive" });
+                    } catch (err: unknown) {
+                      toast({ title: "Archive failed", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
                     }
                   }}
                 >
