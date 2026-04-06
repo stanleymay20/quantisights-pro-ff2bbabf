@@ -189,8 +189,8 @@ const Settings = () => {
       if (error) throw error;
       savedOrg.current = { name: trimmedName, industry: trimmedIndustry || "" };
       toast({ title: "Organization updated" });
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "Error", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
     } finally { setSavingOrg(false); }
   };
 
