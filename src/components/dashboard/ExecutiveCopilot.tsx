@@ -8,7 +8,7 @@ import {
   Brain, Send, Loader2, Sparkles, RotateCcw, Activity, Database, Clock,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
-import { supabase } from "@/integrations/supabase/client";
+import { getVerifiedAuth, authHeaders } from "@/lib/auth-helpers";
 import { useRateLimitFeedback } from "@/hooks/useRateLimitFeedback";
 
 interface CopilotMessage {
