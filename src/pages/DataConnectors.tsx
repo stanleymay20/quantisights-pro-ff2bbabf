@@ -259,8 +259,8 @@ const DataConnectors = () => {
       );
       const data = await res.json();
       setPreviewData(data);
-    } catch (err: any) {
-      toast({ title: "Preview failed", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "Preview failed", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
     }
   };
 
