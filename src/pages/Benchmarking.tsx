@@ -140,7 +140,7 @@ const BenchmarkingPage = () => {
       let successCount = 0;
 
       for (const kpi of compatibleKpis) {
-        const { data: result, error } = await supabase.functions.invoke("compute-kpi", {
+        const { data: result, error } = await invokeWithRetry<Record<string, unknown>>("compute-kpi", {
           body: { kpi_id: kpi.id, dataset_id: activeDatasetId },
         });
 

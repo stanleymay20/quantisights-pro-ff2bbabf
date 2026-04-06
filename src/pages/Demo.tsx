@@ -45,7 +45,7 @@ const Demo = () => {
         if (cancelled) return;
         setCurrentStep(1);
 
-        const { data, error: fnErr } = await supabase.functions.invoke("create-demo-session");
+        const { data, error: fnErr } = await invokeWithRetry<Record<string, unknown>>("create-demo-session");
 
         if (fnErr) throw fnErr;
         if (data?.error) throw new Error(data.error);

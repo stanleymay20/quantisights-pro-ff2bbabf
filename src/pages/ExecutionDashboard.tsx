@@ -98,7 +98,7 @@ const ExecutionDashboard = () => {
           plansByDecision.set(p.decision_id, entry);
         }
 
-        const withPlans = ledger.map((d: any) => {
+        const withPlans = ledger.map((d: Record<string, unknown>) => {
           const counts = plansByDecision.get(d.id) || { total: 0, completed: 0 };
           return {
             ...d,

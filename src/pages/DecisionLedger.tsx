@@ -714,6 +714,7 @@ const DecisionLedgerPage = () => {
               ))}
             </TabsContent>
           </Tabs>
+          </SectionErrorBoundary>
         </main>
 
       {/* Decision Responsibility Confirmation Dialog */}
