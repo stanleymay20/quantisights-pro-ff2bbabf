@@ -42,9 +42,13 @@ const ExecutionCommandCenter = memo(({ organizationId }: ExecutionCommandCenterP
     fetchCommandSummary,
     fetchDependencyGraph,
     fetchEngineHealth,
+    fetchInferredBlockers,
+    fetchOperationalMetrics,
   } = useExecutionIntelligence(organizationId);
 
   const [showEngineHealth, setShowEngineHealth] = useState(false);
+  const [inferredBlockers, setInferredBlockers] = useState<InferredBlocker[]>([]);
+  const [opMetrics, setOpMetrics] = useState<OperationalMetrics | null>(null);
 
   useEffect(() => {
     fetchCommandSummary();
@@ -53,7 +57,9 @@ const ExecutionCommandCenter = memo(({ organizationId }: ExecutionCommandCenterP
     fetchScores();
     fetchDependencyGraph();
     fetchEngineHealth();
-  }, [fetchCommandSummary, fetchInterventions, fetchPredictions, fetchScores, fetchDependencyGraph, fetchEngineHealth]);
+    fetchInferredBlockers().then(r => { if (r) setInferredBlockers(r.inferred_blockers); });
+    fetchOperationalMetrics().then(r => { if (r) setOpMetrics(r); });
+  }, [fetchCommandSummary, fetchInterventions, fetchPredictions, fetchScores, fetchDependencyGraph, fetchEngineHealth, fetchInferredBlockers, fetchOperationalMetrics]);
 
   const runFullAnalysis = async () => {
     await Promise.all([
