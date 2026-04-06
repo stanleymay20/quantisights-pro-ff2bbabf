@@ -186,9 +186,7 @@ const KPIs = () => {
       metric_dependencies: newDeps,
       aggregation_type: newAggType,
       created_by: user.id,
-    // Schema-gap: generated types reflect a different `kpis` table shape (industry benchmarks);
-    // the actual `kpis` table has organization_id, dataset_id, formula, etc. — cast required
-    } as Record<string, unknown>);
+    });
 
     if (error) {
       toast({ title: "Failed to create KPI", description: error.message, variant: "destructive" });
