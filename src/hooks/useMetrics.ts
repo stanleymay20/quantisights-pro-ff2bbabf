@@ -98,15 +98,22 @@ export const useMetrics = (orgId: string | null, datasetId: string | null) => {
     fetchMetrics();
   }, [orgId, datasetId, updateLastUpdated]);
 
-  // Realtime subscription (Growth+ only)
+  // Realtime subscription (Growth+ only) — cleanup-first to prevent duplicates
   useEffect(() => {
     if (!orgId || !datasetId || !canStream) {
       setIsStreaming(false);
       return;
     }
 
+    const channelName = `metrics-live-${orgId}-${datasetId}`;
+    // Remove any stale channel with the same name before creating a new one
+    const existing = supabase.getChannels().find(ch => ch.topic === `realtime:${channelName}`);
+    if (existing) {
+      supabase.removeChannel(existing);
+    }
+
     const channel = supabase
-      .channel(`metrics-live-${orgId}-${datasetId}`)
+      .channel(channelName)
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "metrics", filter: `organization_id=eq.${orgId}` },
