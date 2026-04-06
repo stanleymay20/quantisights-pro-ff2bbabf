@@ -110,6 +110,42 @@ export interface DependencyGraph {
   stats: { total: number; blocked: number; critical: number; with_dependencies: number };
 }
 
+export interface InferredBlocker {
+  plan_id: string;
+  inferred_blocker_id: string;
+  blocker_status: string;
+  blocker_action_title: string;
+  plan_action_title: string;
+  reason: string;
+}
+
+export interface OperationalMetrics {
+  engine_performance: Record<string, {
+    total_runs: number;
+    errors: number;
+    p50_ms: number;
+    p95_ms: number;
+    avg_ms: number;
+    max_ms: number;
+    last_run: string;
+  }>;
+  intervention_metrics: {
+    total_created: number;
+    total_resolved: number;
+    resolution_rate: number;
+    auto_triggered: number;
+    manual_triggered: number;
+    avg_resolution_hours: number;
+  };
+  dedupe_effectiveness: {
+    scan_runs: number;
+    total_duplicates_prevented: number;
+    total_interventions_created: number;
+  };
+  computed_at: string;
+  window_days: number;
+}
+
 export interface ForensicTrace {
   plan: Record<string, unknown> | null;
   timeline: {
@@ -335,6 +371,24 @@ export const useExecutionIntelligence = (organizationId: string | null) => {
     }
   }, [invoke]);
 
+  const fetchInferredBlockers = useCallback(async () => {
+    try {
+      return await invoke<{ inferred_blockers: InferredBlocker[]; total: number; note: string }>("infer_blockers");
+    } catch (e: unknown) {
+      console.error("Fetch inferred blockers failed:", e instanceof Error ? e.message : e);
+      return null;
+    }
+  }, [invoke]);
+
+  const fetchOperationalMetrics = useCallback(async () => {
+    try {
+      return await invoke<OperationalMetrics>("operational_metrics");
+    } catch (e: unknown) {
+      console.error("Fetch operational metrics failed:", e instanceof Error ? e.message : e);
+      return null;
+    }
+  }, [invoke]);
+
   return {
     loading,
     scores,
@@ -360,5 +414,7 @@ export const useExecutionIntelligence = (organizationId: string | null) => {
     fetchDependencyGraph,
     fetchForensicTrace,
     fetchEngineHealth,
+    fetchInferredBlockers,
+    fetchOperationalMetrics,
   };
 };
