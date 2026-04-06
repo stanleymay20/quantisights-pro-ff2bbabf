@@ -13,7 +13,7 @@ export interface ExecutionPlan {
   deadline: string | null;
   status: string;
   trigger_type: string;
-  trigger_config: Record<string, any>;
+  trigger_config: Record<string, unknown>;
   created_at: string;
   updated_at: string;
 }
@@ -24,8 +24,17 @@ export interface ExecutionEvent {
   organization_id: string;
   event_type: string;
   actor_id: string | null;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   created_at: string;
+}
+
+/** Helper: get verified user + access token */
+async function getVerifiedAuth(): Promise<{ token: string } | null> {
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error || !user) return null;
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) return null;
+  return { token: session.access_token };
 }
 
 export const useExecutionPlans = (organizationId: string | null, decisionId: string | null) => {
@@ -38,18 +47,18 @@ export const useExecutionPlans = (organizationId: string | null, decisionId: str
     if (!organizationId || !decisionId) return;
     setLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) return;
+      const auth = await getVerifiedAuth();
+      if (!auth) return;
 
       const { data, error } = await supabase.functions.invoke("execute-decision-action", {
         body: { action: "get_timeline", organization_id: organizationId, decision_id: decisionId },
-        headers: { Authorization: `Bearer ${session.access_token}` },
+        headers: { Authorization: `Bearer ${auth.token}` },
       });
 
       if (error) throw error;
       setPlans(data.plans || []);
       setEvents(data.events || []);
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error("Failed to fetch timeline:", e);
     }
     setLoading(false);
@@ -83,11 +92,11 @@ export const useExecutionPlans = (organizationId: string | null, decisionId: str
     priority?: string;
     deadline?: string;
     trigger_type?: string;
-    trigger_config?: Record<string, any>;
+    trigger_config?: Record<string, unknown>;
   }) => {
     if (!organizationId || !decisionId) return null;
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.access_token) return null;
+    const auth = await getVerifiedAuth();
+    if (!auth) return null;
 
     const { data, error } = await supabase.functions.invoke("execute-decision-action", {
       body: {
@@ -96,7 +105,7 @@ export const useExecutionPlans = (organizationId: string | null, decisionId: str
         decision_id: decisionId,
         ...params,
       },
-      headers: { Authorization: `Bearer ${session.access_token}` },
+      headers: { Authorization: `Bearer ${auth.token}` },
     });
 
     if (error) {
@@ -110,8 +119,8 @@ export const useExecutionPlans = (organizationId: string | null, decisionId: str
 
   const updatePlanStatus = useCallback(async (planId: string, status: string, notes?: string) => {
     if (!organizationId) return;
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.access_token) return;
+    const auth = await getVerifiedAuth();
+    if (!auth) return;
 
     const { error } = await supabase.functions.invoke("execute-decision-action", {
       body: {
@@ -121,7 +130,7 @@ export const useExecutionPlans = (organizationId: string | null, decisionId: str
         status,
         notes,
       },
-      headers: { Authorization: `Bearer ${session.access_token}` },
+      headers: { Authorization: `Bearer ${auth.token}` },
     });
 
     if (error) {
@@ -132,10 +141,10 @@ export const useExecutionPlans = (organizationId: string | null, decisionId: str
     }
   }, [organizationId, toast, fetchTimeline]);
 
-  const triggerWebhook = useCallback(async (planId: string, webhookUrl: string, payload?: any) => {
+  const triggerWebhook = useCallback(async (planId: string, webhookUrl: string, payload?: Record<string, unknown>) => {
     if (!organizationId) return;
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.access_token) return;
+    const auth = await getVerifiedAuth();
+    if (!auth) return;
 
     const { data, error } = await supabase.functions.invoke("execute-decision-action", {
       body: {
@@ -145,7 +154,7 @@ export const useExecutionPlans = (organizationId: string | null, decisionId: str
         webhook_url: webhookUrl,
         payload,
       },
-      headers: { Authorization: `Bearer ${session.access_token}` },
+      headers: { Authorization: `Bearer ${auth.token}` },
     });
 
     if (error || !data?.success) {
@@ -158,8 +167,8 @@ export const useExecutionPlans = (organizationId: string | null, decisionId: str
 
   const notifySlack = useCallback(async (planId: string, channel: string, message: string) => {
     if (!organizationId) return;
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.access_token) return;
+    const auth = await getVerifiedAuth();
+    if (!auth) return;
 
     const { data, error } = await supabase.functions.invoke("execute-decision-action", {
       body: {
@@ -169,7 +178,7 @@ export const useExecutionPlans = (organizationId: string | null, decisionId: str
         channel,
         message,
       },
-      headers: { Authorization: `Bearer ${session.access_token}` },
+      headers: { Authorization: `Bearer ${auth.token}` },
     });
 
     if (error || !data?.success) {

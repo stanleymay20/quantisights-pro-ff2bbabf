@@ -21,6 +21,15 @@ export interface DecisionPerformance {
   learnings: string[];
 }
 
+/** Helper: get verified user + access token */
+async function getVerifiedAuth(): Promise<{ token: string } | null> {
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error || !user) return null;
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) return null;
+  return { token: session.access_token };
+}
+
 export const useDecisionPerformance = (orgId: string | null) => {
   const [performance, setPerformance] = useState<DecisionPerformance | null>(null);
   const [loading, setLoading] = useState(false);
@@ -32,8 +41,8 @@ export const useDecisionPerformance = (orgId: string | null) => {
     setError(null);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
+      const auth = await getVerifiedAuth();
+      if (!auth) {
         setError("Not authenticated");
         setLoading(false);
         return;
@@ -41,7 +50,7 @@ export const useDecisionPerformance = (orgId: string | null) => {
 
       const { data, error: fnErr } = await supabase.functions.invoke("evaluate-outcomes", {
         body: { action: "performance", organization_id: orgId },
-        headers: { Authorization: `Bearer ${session.access_token}` },
+        headers: { Authorization: `Bearer ${auth.token}` },
       });
 
       if (fnErr) {
@@ -82,8 +91,8 @@ export const scheduleOutcomeEvaluation = async (params: {
   expectedChange?: number;
   evaluationWindowDays?: number;
 }) => {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session?.access_token) throw new Error("Not authenticated");
+  const auth = await getVerifiedAuth();
+  if (!auth) throw new Error("Not authenticated");
 
   const { data, error } = await supabase.functions.invoke("evaluate-outcomes", {
     body: {
@@ -96,7 +105,7 @@ export const scheduleOutcomeEvaluation = async (params: {
       expected_change: params.expectedChange,
       evaluation_window_days: params.evaluationWindowDays || 30,
     },
-    headers: { Authorization: `Bearer ${session.access_token}` },
+    headers: { Authorization: `Bearer ${auth.token}` },
   });
 
   if (error) throw error;
@@ -104,12 +113,12 @@ export const scheduleOutcomeEvaluation = async (params: {
 };
 
 export const getReliabilityIndex = async (orgId: string, metricType: string) => {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session?.access_token) throw new Error("Not authenticated");
+  const auth = await getVerifiedAuth();
+  if (!auth) throw new Error("Not authenticated");
 
   const { data, error } = await supabase.functions.invoke("evaluate-outcomes", {
     body: { action: "reliability", organization_id: orgId, metric_type: metricType },
-    headers: { Authorization: `Bearer ${session.access_token}` },
+    headers: { Authorization: `Bearer ${auth.token}` },
   });
 
   if (error) throw error;

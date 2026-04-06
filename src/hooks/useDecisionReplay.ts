@@ -13,7 +13,7 @@ export interface DecisionReplay {
   original_recommendation: string | null;
   replayed_recommendation: string | null;
   recommendation_changed: boolean;
-  current_data_summary: Record<string, any>;
+  current_data_summary: Record<string, unknown>;
   replay_narrative: string | null;
   created_at: string;
 }
@@ -23,6 +23,16 @@ export interface DriftReport {
   avg_confidence_drift: number;
   recommendations_changed: number;
   change_rate: number;
+}
+
+/** Helper: get verified user + access token */
+async function getVerifiedAuth(): Promise<{ token: string } | null> {
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error || !user) return null;
+  // We still need the session token for the Authorization header
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) return null;
+  return { token: session.access_token };
 }
 
 export const useDecisionReplay = (organizationId: string | null) => {
@@ -35,19 +45,20 @@ export const useDecisionReplay = (organizationId: string | null) => {
     if (!organizationId) return null;
     setReplaying(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) throw new Error("Not authenticated");
+      const auth = await getVerifiedAuth();
+      if (!auth) throw new Error("Not authenticated");
 
       const { data, error } = await supabase.functions.invoke("decision-replay", {
         body: { action: "replay", organization_id: organizationId, decision_id: decisionId },
-        headers: { Authorization: `Bearer ${session.access_token}` },
+        headers: { Authorization: `Bearer ${auth.token}` },
       });
 
       if (error) throw error;
       toast({ title: "Decision Replay complete" });
       return data as DecisionReplay;
-    } catch (e: any) {
-      toast({ title: "Replay failed", description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Replay failed";
+      toast({ title: "Replay failed", description: msg, variant: "destructive" });
       return null;
     } finally {
       setReplaying(false);
@@ -56,12 +67,12 @@ export const useDecisionReplay = (organizationId: string | null) => {
 
   const fetchReplays = useCallback(async (decisionId: string) => {
     if (!organizationId) return;
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.access_token) return;
+    const auth = await getVerifiedAuth();
+    if (!auth) return;
 
     const { data, error } = await supabase.functions.invoke("decision-replay", {
       body: { action: "list", organization_id: organizationId, decision_id: decisionId },
-      headers: { Authorization: `Bearer ${session.access_token}` },
+      headers: { Authorization: `Bearer ${auth.token}` },
     });
 
     if (!error && data) setReplays(data);
@@ -69,12 +80,12 @@ export const useDecisionReplay = (organizationId: string | null) => {
 
   const fetchDriftReport = useCallback(async () => {
     if (!organizationId) return;
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.access_token) return;
+    const auth = await getVerifiedAuth();
+    if (!auth) return;
 
     const { data, error } = await supabase.functions.invoke("decision-replay", {
       body: { action: "org_drift_report", organization_id: organizationId },
-      headers: { Authorization: `Bearer ${session.access_token}` },
+      headers: { Authorization: `Bearer ${auth.token}` },
     });
 
     if (!error && data) setDriftReport(data);
