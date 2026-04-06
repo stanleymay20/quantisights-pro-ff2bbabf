@@ -133,12 +133,31 @@ export const useExecutionIntelligence = (organizationId: string | null) => {
     }
   }, [invoke, toast]);
 
-  const fetchScores = useCallback(async (scopeType?: string) => {
+  const fetchScores = useCallback(async (scopeType?: string, includeHistory = false) => {
     try {
-      const data = await invoke<ExecutionScore[]>("get_scores", scopeType ? { scope_type: scopeType } : {});
+      const data = await invoke<ExecutionScore[]>("get_scores", {
+        ...(scopeType ? { scope_type: scopeType } : {}),
+        include_history: includeHistory,
+      });
       setScores(data || []);
     } catch (e) {
       console.error("Fetch scores failed:", e);
+    }
+  }, [invoke]);
+
+  const fetchScoreTrend = useCallback(async (scopeType: string, scopeId: string, limit = 30) => {
+    try {
+      return await invoke<Array<{
+        score: number;
+        success_rate: number;
+        failure_rate: number;
+        avg_delay_days: number;
+        plans_evaluated: number;
+        computed_at: string;
+      }>>("get_score_trend", { scope_type: scopeType, scope_id: scopeId, limit });
+    } catch (e) {
+      console.error("Fetch score trend failed:", e);
+      return null;
     }
   }, [invoke]);
 
