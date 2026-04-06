@@ -317,11 +317,11 @@ const ScenarioBranching = () => {
                         <tr key={metric} className="border-b border-border/10">
                           <td className="py-2 px-3 text-xs text-muted-foreground capitalize">{metric.replace(/_/g, " ")}</td>
                           {simulatedBranches.map(b => {
-                            const val = (b.results as any)?.[metric];
+                            const val = b.results?.[metric] as number | undefined;
                             const isBest = metric === "projected_risk"
-                              ? val === Math.min(...simulatedBranches.map(sb => (sb.results as any)?.[metric] ?? 999))
+                              ? val === Math.min(...simulatedBranches.map(sb => (sb.results?.[metric] as number) ?? 999))
                               : metric === "risk_delta"
-                              ? val === Math.min(...simulatedBranches.map(sb => (sb.results as any)?.[metric] ?? 999))
+                              ? val === Math.min(...simulatedBranches.map(sb => (sb.results?.[metric] as number) ?? 999))
                               : false;
                             return (
                               <td key={b.id} className={`text-center py-2 px-3 font-medium ${isBest ? "text-primary font-bold" : ""}`}>
