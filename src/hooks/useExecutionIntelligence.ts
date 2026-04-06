@@ -371,6 +371,24 @@ export const useExecutionIntelligence = (organizationId: string | null) => {
     }
   }, [invoke]);
 
+  const fetchInferredBlockers = useCallback(async () => {
+    try {
+      return await invoke<{ inferred_blockers: InferredBlocker[]; total: number; note: string }>("infer_blockers");
+    } catch (e: unknown) {
+      console.error("Fetch inferred blockers failed:", e instanceof Error ? e.message : e);
+      return null;
+    }
+  }, [invoke]);
+
+  const fetchOperationalMetrics = useCallback(async () => {
+    try {
+      return await invoke<OperationalMetrics>("operational_metrics");
+    } catch (e: unknown) {
+      console.error("Fetch operational metrics failed:", e instanceof Error ? e.message : e);
+      return null;
+    }
+  }, [invoke]);
+
   return {
     loading,
     scores,
@@ -396,5 +414,7 @@ export const useExecutionIntelligence = (organizationId: string | null) => {
     fetchDependencyGraph,
     fetchForensicTrace,
     fetchEngineHealth,
+    fetchInferredBlockers,
+    fetchOperationalMetrics,
   };
 };
