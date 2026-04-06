@@ -29,7 +29,9 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
         } else {
           setMfaStatus("passed");
         }
-      } catch {
+      } catch (e: unknown) {
+        // MFA assurance check failure — allow access to avoid lockout
+        console.error("[ProtectedRoute] MFA assurance check failed:", e instanceof Error ? e.message : e);
         setMfaStatus("passed");
       }
     };

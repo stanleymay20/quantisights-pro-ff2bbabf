@@ -33,7 +33,9 @@ const MFAEnroll = ({ onStatusChange }: MFAEnrollProps) => {
         const { data } = await supabase.auth.mfa.listFactors();
         const verified = data?.totp?.filter((f) => f.status === "verified") || [];
         setMfaEnabled(verified.length > 0);
-      } catch {
+      } catch (e: unknown) {
+        // MFA check failure — assume not enabled to avoid blocking user
+        console.error("[MFAEnroll] Factor check failed:", e instanceof Error ? e.message : e);
         setMfaEnabled(false);
       } finally {
         setChecking(false);
