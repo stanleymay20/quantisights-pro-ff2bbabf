@@ -1,5 +1,5 @@
 import { Info, Shield } from "lucide-react";
-import { useState, forwardRef } from "react";
+import { useState } from "react";
 
 interface IntelligenceDisclaimerProps {
   variant?: "banner" | "inline" | "footer";
@@ -24,7 +24,7 @@ const CONTEXT_TEXT: Record<string, string> = {
 /** Strategic surfaces where the disclaimer must not be dismissible */
 const PERSISTENT_CONTEXTS = new Set(["advisory", "simulation", "report", "executive"]);
 
-const IntelligenceDisclaimer = forwardRef<HTMLDivElement, IntelligenceDisclaimerProps>(({ variant = "banner", context = "general", persistent }, ref) => {
+const IntelligenceDisclaimer = ({ variant = "banner", context = "general", persistent }: IntelligenceDisclaimerProps) => {
   const [dismissed, setDismissed] = useState(false);
 
   // Determine if dismissal is allowed: explicit prop takes priority, otherwise infer from context
@@ -71,8 +71,6 @@ const IntelligenceDisclaimer = forwardRef<HTMLDivElement, IntelligenceDisclaimer
       )}
     </div>
   );
-});
-
-IntelligenceDisclaimer.displayName = "IntelligenceDisclaimer";
+};
 
 export default IntelligenceDisclaimer;
