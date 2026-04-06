@@ -103,6 +103,7 @@ const PrivacyDashboard = () => {
 
   return (
     <div className="space-y-8 max-w-5xl pb-12">
+      <SectionErrorBoundary sectionName="Privacy Dashboard">
       <div className="flex items-center gap-3">
         <SidebarMobileToggle />
         <div>
