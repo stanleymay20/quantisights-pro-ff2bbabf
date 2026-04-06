@@ -12,7 +12,7 @@ import { Gauge, ArrowRight, Clock, Zap, AlertTriangle, BookOpen } from "lucide-r
  */
 
 interface DecisionVelocityProps {
-  decisions: Array<{ created_at: string; status?: string; [key: string]: unknown }>;
+  decisions: Array<{ created_at: string; status?: string; [key: string]: any }>; // eslint-disable-line @typescript-eslint/no-explicit-any
 }
 
 const DecisionVelocityCurve = ({ decisions }: DecisionVelocityProps) => {
