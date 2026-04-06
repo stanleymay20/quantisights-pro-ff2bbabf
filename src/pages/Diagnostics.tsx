@@ -54,7 +54,7 @@ const Diagnostics = () => {
     if (!orgId || !datasetId) return;
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("diagnostic-engine", {
+      const { data, error } = await invokeWithRetry<Record<string, unknown>>("diagnostic-engine", {
         body: {
           organization_id: orgId,
           dataset_id: datasetId,
@@ -62,16 +62,17 @@ const Diagnostics = () => {
         },
       });
       if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      setDiagnostics(data.diagnostics || []);
-      setAnalyzedCount(data.analyzed_metrics || 0);
-      setMetricTypesAnalyzed(data.metric_types_analyzed?.length || 0);
-      setSkippedMetrics(data.skipped_metrics || []);
-      if (data.diagnostics?.length === 0) {
+      if (data?.error) throw new Error(data.error as string);
+      setDiagnostics((data?.diagnostics as DiagnosticResult[]) || []);
+      setAnalyzedCount((data?.analyzed_metrics as number) || 0);
+      setMetricTypesAnalyzed((data?.metric_types_analyzed as string[])?.length || 0);
+      setSkippedMetrics((data?.skipped_metrics as string[]) || []);
+      if ((data?.diagnostics as DiagnosticResult[])?.length === 0) {
         toast({ title: "No anomalies detected", description: "All metrics within expected ranges." });
       }
-    } catch (err: any) {
-      toast({ title: "Diagnostic failed", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Diagnostic failed";
+      toast({ title: "Diagnostic failed", description: msg, variant: "destructive" });
     } finally {
       setLoading(false);
     }
