@@ -13,8 +13,8 @@ const EBITDABridgeChart = lazy(() => import("./EBITDABridgeChart"));
 const PortfolioHealthRadar = lazy(() => import("./PortfolioHealthRadar"));
 
 interface AnalyticsPanelProps {
-  metrics: Array<Record<string, unknown>>;
-  revenueByMonth: Array<Record<string, unknown>>;
+  metrics: MetricRow[];
+  revenueByMonth: Array<{ month: string; revenue: number }>;
   segmentData: Record<string, number>;
   insights: Insight[];
   latestChurn: number;
