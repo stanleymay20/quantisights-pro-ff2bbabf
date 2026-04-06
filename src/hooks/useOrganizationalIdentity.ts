@@ -73,7 +73,7 @@ function parseIdentity(row: OrgIdentityRow): OrganizationalIdentity {
     regulatory_environment: row.regulatory_environment,
     market_stage: (row.market_stage as OrganizationalIdentity["market_stage"]) ?? "growth",
     industry_context: row.industry_context,
-    key_stakeholders: asArr(row.key_stakeholders) as StakeholderEntry[],
+    key_stakeholders: (Array.isArray(row.key_stakeholders) ? row.key_stakeholders : []) as unknown as StakeholderEntry[],
     updated_at: row.updated_at,
   };
 }
