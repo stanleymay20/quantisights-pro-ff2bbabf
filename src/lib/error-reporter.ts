@@ -79,7 +79,7 @@ async function flushErrors(): Promise<void> {
         action_type: "client_error",
         resource_type: "frontend",
         actor_type: "system",
-        actor_id: session.user.id,
+        actor_id: user.id,
         payload: JSON.parse(JSON.stringify({
           message: err.message,
           severity: err.severity,
