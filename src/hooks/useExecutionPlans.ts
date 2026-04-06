@@ -122,6 +122,10 @@ export const useExecutionPlans = (organizationId: string | null, decisionId: str
     const auth = await getVerifiedAuth();
     if (!auth) return;
 
+    // Optimistic update: apply status change immediately
+    const previousPlans = plans;
+    setPlans(prev => prev.map(p => p.id === planId ? { ...p, status } : p));
+
     const { error } = await supabase.functions.invoke("execute-decision-action", {
       body: {
         action: "update_plan_status",
@@ -134,12 +138,14 @@ export const useExecutionPlans = (organizationId: string | null, decisionId: str
     });
 
     if (error) {
+      // Rollback on failure
+      setPlans(previousPlans);
       toast({ title: "Failed to update status", description: error.message, variant: "destructive" });
     } else {
       toast({ title: `Action marked as ${status}` });
       fetchTimeline();
     }
-  }, [organizationId, toast, fetchTimeline]);
+  }, [organizationId, plans, toast, fetchTimeline]);
 
   const triggerWebhook = useCallback(async (planId: string, webhookUrl: string, payload?: Record<string, unknown>) => {
     if (!organizationId) return;

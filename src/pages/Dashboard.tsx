@@ -488,7 +488,7 @@ const Dashboard = () => {
                   datasetId={activeDatasetId ?? undefined}
                   datasetName={currentProject?.name}
                   isDemoMode={isDemoUser}
-                />
+                /></SectionErrorBoundary>
               )}
             </>
           )}

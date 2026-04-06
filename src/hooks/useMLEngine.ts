@@ -21,10 +21,46 @@ interface MLState<T> {
   error: string | null;
 }
 
+// Lightweight in-memory cache for ML results (TTL-based)
+const ML_CACHE_TTL_MS = 3 * 60 * 1000; // 3 minutes
+const mlCache = new Map<string, { result: unknown; timestamp: number }>();
+
+function buildCacheKey(algorithm: string, params: Record<string, unknown>): string {
+  return `${algorithm}:${JSON.stringify(params)}`;
+}
+
+function getCached<T>(key: string): T | null {
+  const entry = mlCache.get(key);
+  if (!entry) return null;
+  if (Date.now() - entry.timestamp > ML_CACHE_TTL_MS) {
+    mlCache.delete(key);
+    return null;
+  }
+  return entry.result as T;
+}
+
+function setCache(key: string, result: unknown) {
+  mlCache.set(key, { result, timestamp: Date.now() });
+  // Evict stale entries if cache grows too large
+  if (mlCache.size > 50) {
+    const now = Date.now();
+    for (const [k, v] of mlCache) {
+      if (now - v.timestamp > ML_CACHE_TTL_MS) mlCache.delete(k);
+    }
+  }
+}
+
 function useMLCall<T>() {
   const [state, setState] = useState<MLState<T>>({ data: null, loading: false, error: null });
 
   const call = useCallback(async (algorithm: string, params: Record<string, unknown>): Promise<T | null> => {
+    const cacheKey = buildCacheKey(algorithm, params);
+    const cached = getCached<T>(cacheKey);
+    if (cached) {
+      setState({ data: cached, loading: false, error: null });
+      return cached;
+    }
+
     setState({ data: null, loading: true, error: null });
     try {
       const { data, error } = await supabase.functions.invoke("ml-engine", {
@@ -32,8 +68,10 @@ function useMLCall<T>() {
       });
       if (error) throw new Error(error.message || "ML engine error");
       if (data?.error) throw new Error(data.error);
-      setState({ data: data.result as T, loading: false, error: null });
-      return data.result as T;
+      const result = data.result as T;
+      setCache(cacheKey, result);
+      setState({ data: result, loading: false, error: null });
+      return result;
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Unknown error";
       setState({ data: null, loading: false, error: msg });

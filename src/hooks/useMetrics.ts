@@ -242,5 +242,6 @@ export const useMetrics = (orgId: string | null, datasetId: string | null) => {
     revenueByMonth,
     segmentData,
     hasData: metrics.length > 0,
+    loadingProgress,
   };
 };
