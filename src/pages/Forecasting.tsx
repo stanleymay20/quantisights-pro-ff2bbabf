@@ -90,6 +90,7 @@ const Forecasting = () => {
 
   return (
     <DatasetRequired moduleName="Forecasting">
+      <SectionErrorBoundary sectionName="Forecasting">
       <>
         <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
           <div className="flex items-center gap-3">
