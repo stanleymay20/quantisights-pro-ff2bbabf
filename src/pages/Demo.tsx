@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { invokeWithRetry } from "@/lib/edge-function-retry";
 import { Brain, Loader2, AlertCircle, CheckCircle2, Shield, BarChart3, Zap, Target } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
