@@ -30,7 +30,7 @@ const GovernanceKPIs = () => {
       if (!currentOrgId) return null;
 
       const [datasets, quality, decisions, members, policies, retentionPolicies] = await Promise.all([
-        supabase.from("datasets").select("id, uploaded_by, steward_user_id").eq("organization_id", currentOrgId).eq("status", "active"),
+        supabase.from("datasets").select("id, uploaded_by, steward_user_id, workspace_id").eq("organization_id", currentOrgId).eq("status", "active"),
         supabase.from("data_quality_checks").select("score, dataset_id").eq("organization_id", currentOrgId).order("created_at", { ascending: false }).limit(10),
         supabase.from("decision_ledger").select("id, outcome_measured_at", { count: "exact" }).eq("organization_id", currentOrgId),
         supabase.from("organization_members").select("role, user_id").eq("organization_id", currentOrgId),
