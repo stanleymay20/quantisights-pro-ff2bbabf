@@ -223,8 +223,8 @@ const DataConnectors = () => {
       const data = await res.json();
       setTestResult(data);
       if (data.success) setStep("testing");
-    } catch (err: any) {
-      setTestResult({ success: false, message: err.message });
+    } catch (err: unknown) {
+      setTestResult({ success: false, message: err instanceof Error ? err.message : "Unknown error" });
     } finally {
       setTesting(false);
     }
