@@ -18,6 +18,7 @@ const Portfolio = () => {
 
   return (
     <DatasetRequired moduleName="Portfolio">
+      <SectionErrorBoundary sectionName="Portfolio">
       <main className="flex-1 flex flex-col overflow-auto">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 flex-1">
           <div className="flex items-center justify-between">
