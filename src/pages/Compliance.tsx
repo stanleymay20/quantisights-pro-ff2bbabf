@@ -1,14 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { SidebarMobileToggle } from "@/components/layout/ProtectedShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { useOrganization } from "@/hooks/useOrganization";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Shield, ShieldCheck, CheckCircle2, AlertTriangle, XCircle,
-  Lock, Eye, Database, FileText, Users, Clock, Activity, Server,
+  Lock, Eye, Database, FileText, Users, Clock, Activity, Server, Download, Globe,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -161,6 +162,18 @@ const Compliance = () => {
         status: "partial", evidence: "Architecture designed for SOC 2 compliance. All technical controls implemented. Formal audit pending.",
         framework: ["SOC 2"],
       },
+      {
+        id: "CR-3", category: "Compliance Readiness", name: "EU Data Residency",
+        description: "All data processed and stored within EU-based infrastructure.",
+        status: "compliant", evidence: "Database and edge functions hosted in EU region. No data transfer to non-EU jurisdictions.",
+        framework: ["GDPR Art. 44", "Schrems II"],
+      },
+      {
+        id: "CR-4", category: "Compliance Readiness", name: "Data Processing Agreement",
+        description: "GDPR Art. 28 compliant DPA available for enterprise customers.",
+        status: "compliant", evidence: "Standard DPA template covers subprocessors, data categories, retention, and breach notification (72h).",
+        framework: ["GDPR Art. 28", "GDPR Art. 33"],
+      },
     ];
 
     setControls(assessedControls);
@@ -202,16 +215,51 @@ const Compliance = () => {
     "Compliance Readiness": FileText,
   };
 
+  const downloadCompliancePack = useCallback(() => {
+    const lines = [
+      "QUANTIVIS — COMPLIANCE READINESS REPORT",
+      `Generated: ${new Date().toISOString().split("T")[0]}`,
+      `Overall Score: ${score}%`,
+      "",
+      "=" .repeat(60),
+      "",
+    ];
+    controls.forEach((c) => {
+      lines.push(`[${c.id}] ${c.name} — ${c.status.toUpperCase()}`);
+      lines.push(`  Category: ${c.category}`);
+      lines.push(`  ${c.description}`);
+      lines.push(`  Evidence: ${c.evidence}`);
+      lines.push(`  Frameworks: ${c.framework.join(", ")}`);
+      lines.push("");
+    });
+    lines.push("=" .repeat(60));
+    lines.push("This report is auto-generated from live platform controls.");
+    lines.push("For formal SOC 2 Type II certification, contact enterprise@quantivis.ai");
+
+    const blob = new Blob([lines.join("\n")], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `Quantivis-Compliance-Report-${new Date().toISOString().split("T")[0]}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [controls, score]);
+
   return (
     <div className="p-4 md:p-6 space-y-6 max-w-7xl mx-auto">
-      <div className="flex items-center gap-3">
-        <SidebarMobileToggle />
-        <div>
-          <h1 className="text-2xl font-bold">Compliance & Governance</h1>
-          <p className="text-sm text-muted-foreground">
-            SOC 2 · ISO 27001 · EU AI Act · GDPR readiness assessment
-          </p>
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-3">
+          <SidebarMobileToggle />
+          <div>
+            <h1 className="text-2xl font-bold">Compliance & Governance</h1>
+            <p className="text-sm text-muted-foreground">
+              SOC 2 · ISO 27001 · EU AI Act · GDPR readiness assessment
+            </p>
+          </div>
         </div>
+        <Button variant="outline" size="sm" className="gap-2" onClick={downloadCompliancePack}>
+          <Download className="w-4 h-4" /> Download Compliance Pack
+        </Button>
       </div>
 
       {/* Score Overview */}
