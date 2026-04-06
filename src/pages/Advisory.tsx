@@ -145,10 +145,10 @@ const AdvisoryPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentOrgId, activeDatasetId]);
 
-  const updateInstanceStatus = async (id: string, status: string, extras?: Record<string, any>) => {
+  const updateInstanceStatus = async (id: string, status: string, extras?: Record<string, unknown>) => {
     setUpdatingId(id);
     try {
-      const update: any = { status, ...extras };
+      const update: Record<string, unknown> = { status, ...extras };
       if (status === "resolved") update.resolved_at = new Date().toISOString();
       const { error } = await supabase
         .from("advisory_instances")
@@ -159,8 +159,9 @@ const AdvisoryPage = () => {
       fetchInstances();
       setResolutionText(prev => { const next = { ...prev }; delete next[id]; return next; });
       setImpactScore(prev => { const next = { ...prev }; delete next[id]; return next; });
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      toast({ title: "Error", description: msg, variant: "destructive" });
     } finally {
       setUpdatingId(null);
     }
