@@ -3,7 +3,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { GitCompare } from "lucide-react";
 
 interface Props {
-  simulations: any[];
+  simulations: Array<{ id: string; scenario_name?: string; expected_value?: number; confidence_interval_low?: number; confidence_interval_high?: number; [key: string]: unknown }>;
 }
 
 const ScenarioComparison = ({ simulations }: Props) => {

@@ -23,7 +23,7 @@ interface Playbook {
   trigger_condition: string;
   trigger_threshold: number;
   severity: string;
-  escalation_steps: any[];
+  escalation_steps: Array<Record<string, unknown>>;
   cooldown_minutes: number;
   is_active: boolean;
   last_triggered_at: string | null;
@@ -100,7 +100,7 @@ const AlertPlaybooks = () => {
       supabase.from("alert_playbooks").select("*").eq("organization_id", currentOrgId).order("created_at", { ascending: false }),
       supabase.from("playbook_executions").select("*").eq("organization_id", currentOrgId).order("started_at", { ascending: false }).limit(50),
     ]);
-    setPlaybooks((pbRes.data || []).map((p: any) => ({ ...p, escalation_steps: Array.isArray(p.escalation_steps) ? p.escalation_steps : [] })));
+    setPlaybooks((pbRes.data || []).map((p: Record<string, unknown>) => ({ ...p, escalation_steps: Array.isArray(p.escalation_steps) ? p.escalation_steps : [] })));
     setExecutions(exRes.data || []);
     setLoading(false);
   }, [currentOrgId]);
@@ -111,7 +111,7 @@ const AlertPlaybooks = () => {
     if (!currentOrgId || !user || !pbName.trim()) return;
     setSaving(true);
     try {
-      let steps: any[];
+      let steps: Array<Record<string, unknown>>;
       try { steps = JSON.parse(pbSteps); } catch { throw new Error("Invalid escalation steps JSON"); }
 
       const { error } = await supabase.from("alert_playbooks").insert({

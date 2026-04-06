@@ -112,7 +112,7 @@ export default function PipelineObservability() {
     };
   });
 
-  const sourceTypeData = dataSources.reduce((acc: any[], ds) => {
+  const sourceTypeData = dataSources.reduce((acc: Array<{ name: string; count: number }>, ds) => {
     const existing = acc.find(a => a.name === ds.source_type);
     if (existing) existing.value++;
     else acc.push({ name: ds.source_type, value: 1 });

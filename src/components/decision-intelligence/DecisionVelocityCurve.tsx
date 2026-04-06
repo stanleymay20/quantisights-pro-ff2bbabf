@@ -12,7 +12,7 @@ import { Gauge, ArrowRight, Clock, Zap, AlertTriangle, BookOpen } from "lucide-r
  */
 
 interface DecisionVelocityProps {
-  decisions: any[];
+  decisions: Array<{ created_at: string; status?: string; [key: string]: unknown }>;
 }
 
 const DecisionVelocityCurve = ({ decisions }: DecisionVelocityProps) => {

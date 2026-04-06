@@ -17,7 +17,7 @@ const COLORS = [
   "hsl(24, 95%, 53%)",
 ];
 
-const CustomContent = (props: any) => {
+const CustomContent = (props: Record<string, unknown>) => {
   const { x, y, width, height, name, value, index } = props;
   if (width < 30 || height < 20) return null;
   return (

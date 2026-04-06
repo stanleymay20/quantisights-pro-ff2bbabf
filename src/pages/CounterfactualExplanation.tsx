@@ -137,7 +137,7 @@ const CounterfactualExplanation = () => {
                     <SelectValue placeholder="Select a recommendation..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {entities?.map((e: any) => (
+                    {entities?.map((e: Record<string, unknown>) => (
                       <SelectItem key={e.id} value={e.id}>
                         <span className="truncate">
                           {e.recommended_action || e.title}

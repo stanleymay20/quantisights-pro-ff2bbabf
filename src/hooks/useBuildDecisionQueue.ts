@@ -89,7 +89,7 @@ export function useBuildDecisionQueue({
     const advisorySourceSignalIds = new Set<string>();
 
     // 1. Open advisories (dataset-scoped — skip if no dataset to prevent cross-workspace leakage)
-    let advisories: any[] | null = null;
+    let advisories: Array<Record<string, unknown>> | null = null;
     if (datasetId) {
       const { data } = await supabase
         .from("advisory_instances")

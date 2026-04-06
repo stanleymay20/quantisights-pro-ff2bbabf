@@ -4,7 +4,7 @@ import { TrendingUp } from "lucide-react";
 import { format, parseISO } from "date-fns";
 
 interface Props {
-  decisions: any[];
+  decisions: Array<{ id: string; title?: string; impact_score?: number | null; confidence?: number; category?: string; [key: string]: unknown }>;
 }
 
 const DecisionImpactAttribution = ({ decisions }: Props) => {

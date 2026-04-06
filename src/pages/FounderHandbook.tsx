@@ -12,7 +12,7 @@ import logo from "@/assets/quantivis-logo.png";
 
 interface Section {
   id: string;
-  icon: any;
+  icon: React.ElementType;
   title: string;
   subtitle: string;
   content: string;

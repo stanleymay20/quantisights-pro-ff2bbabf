@@ -29,8 +29,8 @@ interface CommandCenterProps {
   latestCost: number;
   pendingDecisions: number;
   calibrationScore: number | null;
-  metrics: any[];
-  revenueByMonth: any[];
+  metrics: Array<Record<string, unknown>>;
+  revenueByMonth: Array<Record<string, unknown>>;
   segmentData: Record<string, number>;
   onDecisionLogged: () => void;
   /** Dynamic metric summaries — domain-agnostic */

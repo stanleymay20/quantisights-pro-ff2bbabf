@@ -280,7 +280,7 @@ function StatCard({ label, value, icon }: { label: string; value: string; icon: 
   );
 }
 
-function DistributionBand({ sim }: { sim: any }) {
+function DistributionBand({ sim }: { sim: Record<string, unknown> }) {
   const min = Number(sim.p10_value);
   const max = Number(sim.p90_value);
   const range = max - min || 1;

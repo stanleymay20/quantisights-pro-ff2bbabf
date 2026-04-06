@@ -62,7 +62,7 @@ const RetentionPolicySettings = () => {
     if (savedPolicies && savedPolicies.length > 0) {
       setPolicies((prev) =>
         prev.map((p) => {
-          const saved = savedPolicies.find((s: any) => s.data_category === p.data_category);
+          const saved = savedPolicies.find((s: { data_category: string; retention_days?: number; auto_cleanup?: boolean }) => s.data_category === p.data_category);
           return saved
             ? {
                 ...p,
@@ -78,7 +78,7 @@ const RetentionPolicySettings = () => {
     }
   }, [savedPolicies]);
 
-  const updatePolicy = (category: string, field: keyof RetentionPolicy, value: any) => {
+  const updatePolicy = (category: string, field: keyof RetentionPolicy, value: string | number | boolean) => {
     setPolicies((prev) =>
       prev.map((p) => (p.data_category === category ? { ...p, [field]: value } : p))
     );
