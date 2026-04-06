@@ -216,6 +216,7 @@ export const useExecutionIntelligence = (organizationId: string | null) => {
     resolveIntervention,
     computeScores,
     fetchScores,
+    fetchScoreTrend,
     predictRisks,
     fetchPredictions,
     fetchCommandSummary,
