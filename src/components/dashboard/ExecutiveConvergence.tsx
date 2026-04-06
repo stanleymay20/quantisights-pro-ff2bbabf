@@ -7,6 +7,7 @@ import {
   Users, TrendingUp,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { invokeWithRetry } from "@/lib/edge-function-retry";
 import { useToast } from "@/hooks/use-toast";
 
 interface Conflict {
