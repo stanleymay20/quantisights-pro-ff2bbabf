@@ -327,6 +327,7 @@ const BenchmarkingPage = () => {
           )}
         </main>
     </>
+    </SectionErrorBoundary>
     </DatasetRequired>
   );
 };

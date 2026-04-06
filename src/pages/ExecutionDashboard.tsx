@@ -60,9 +60,9 @@ const ExecutionDashboard = () => {
 
       if (plans) {
         const now = new Date();
-        const pending = plans.filter((p: any) => p.status === "pending").length;
-        const inProgress = plans.filter((p: any) => p.status === "in_progress").length;
-        const completed = plans.filter((p: any) => p.status === "completed").length;
+        const pending = plans.filter((p) => p.status === "pending").length;
+        const inProgress = plans.filter((p) => p.status === "in_progress").length;
+        const completed = plans.filter((p) => p.status === "completed").length;
         const failed = plans.filter((p: any) => p.status === "failed").length;
         const overdue = plans.filter((p: any) =>
           p.deadline && new Date(p.deadline) < now && p.status !== "completed" && p.status !== "cancelled"

@@ -196,6 +196,7 @@ const Forecasting = () => {
           )}
         </main>
       </>
+      </SectionErrorBoundary>
     </DatasetRequired>
   );
 };
