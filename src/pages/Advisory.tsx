@@ -112,7 +112,7 @@ const AdvisoryPage = () => {
     if (!currentOrgId || !activeDatasetId) return;
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("prescriptive-advisory", {
+      const { data, error } = await invokeWithRetry<Record<string, unknown>>("prescriptive-advisory", {
         body: {
           organization_id: currentOrgId,
           dataset_id: activeDatasetId,
@@ -120,17 +120,18 @@ const AdvisoryPage = () => {
         },
       });
       if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      setAdvisories(data.advisories || []);
-      setCriticalCount(data.critical_count || 0);
-      setDataSufficiency(data.data_sufficiency || null);
-      setSampleSize(data.sample_size || 0);
+      if (data?.error) throw new Error(data.error as string);
+      setAdvisories((data?.advisories as Advisory[]) || []);
+      setCriticalCount((data?.critical_count as number) || 0);
+      setDataSufficiency((data?.data_sufficiency as string) || null);
+      setSampleSize((data?.sample_size as number) || 0);
       // Refetch instances since the edge function inserts new ones
       fetchInstances();
       // Embed new advisories into institutional memory (non-blocking)
       if (currentOrgId) embedAdvisoriesBatch(currentOrgId);
-    } catch (err: any) {
-      toast({ title: "Failed to load advisories", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      toast({ title: "Failed to load advisories", description: msg, variant: "destructive" });
     } finally {
       setLoading(false);
     }
