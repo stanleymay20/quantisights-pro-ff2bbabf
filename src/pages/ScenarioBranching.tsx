@@ -18,12 +18,21 @@ import {
 } from "lucide-react";
 import DatasetRequired from "@/components/layout/DatasetRequired";
 
+interface BranchResults {
+  projected_risk: number;
+  risk_delta: number;
+  baseline_risk: number;
+  escalation_triggered: boolean;
+  ai_board_summary?: string;
+  [key: string]: unknown;
+}
+
 interface Branch {
   id: string;
   name: string;
   description: string | null;
-  parameters: Record<string, any>;
-  results: Record<string, any> | null;
+  parameters: Record<string, number>;
+  results: BranchResults | null;
   status: string;
   comparison_group_id: string | null;
   created_at: string;
