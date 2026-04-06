@@ -221,7 +221,7 @@ const Scenarios = () => {
     }
     setSimulating(true);
     try {
-      const { data, error } = await invokeWithRetry<Record<string, unknown>>("simulate-scenario", {
+      const { data, error } = await invokeWithRetry<any>("simulate-scenario", {
         body: { scenario_id: selectedId, dataset_id: activeDatasetId },
       });
       if (error) throw error;
@@ -241,7 +241,7 @@ const Scenarios = () => {
     if (!selectedId || !canUseAI || !activeDatasetId) return;
     setAnalyzing(true);
     try {
-      const { data, error } = await invokeWithRetry<Record<string, unknown>>("ai-scenario-analysis", {
+      const { data, error } = await invokeWithRetry<any>("ai-scenario-analysis", {
         body: { scenario_id: selectedId, dataset_id: activeDatasetId },
       });
       if (error) throw error;

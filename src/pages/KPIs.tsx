@@ -202,7 +202,7 @@ const KPIs = () => {
   const handleCompute = async (kpiId: string) => {
     setComputing(true);
     try {
-      const { data, error } = await invokeWithRetry<Record<string, unknown>>("compute-kpi", {
+      const { data, error } = await invokeWithRetry<any>("compute-kpi", {
         body: { kpi_id: kpiId, dataset_id: activeDatasetId, organization_id: currentOrgId },
       });
       if (error) throw error;
@@ -228,7 +228,7 @@ const KPIs = () => {
     }
     setAnalyzing(true);
     try {
-      const { data, error } = await invokeWithRetry<Record<string, unknown>>("ai-kpi-analysis", {
+      const { data, error } = await invokeWithRetry<any>("ai-kpi-analysis", {
         body: { kpi_id: kpiId, dataset_id: activeDatasetId, organization_id: currentOrgId },
       });
       if (error) throw error;

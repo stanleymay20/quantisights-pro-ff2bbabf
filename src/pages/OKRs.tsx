@@ -73,7 +73,7 @@ const OKRs = () => {
       supabase.from("objectives").select("*").eq("organization_id", currentOrgId).order("created_at", { ascending: false }),
       supabase.from("key_results").select("*").eq("organization_id", currentOrgId),
     ]);
-    const objs: Objective[] = (objRes.data || []).map((o: Record<string, unknown>) => ({
+    const objs: Objective[] = (objRes.data || []).map((o: any) => ({
       ...o,
       key_results: (krRes.data || []).filter((kr: { objective_id?: string; [key: string]: unknown }) => kr.objective_id === o.id),
     }));

@@ -90,7 +90,7 @@ const Reports = () => {
       // Embed new insights into institutional memory (non-blocking)
       embedInsightsBatch(currentOrgId);
 
-      const { data, error } = await invokeWithRetry<Record<string, unknown>>("generate-report", {
+      const { data, error } = await invokeWithRetry<any>("generate-report", {
         body: { organization_id: currentOrgId, dataset_id: activeDatasetId, report_type: selectedType },
       });
 

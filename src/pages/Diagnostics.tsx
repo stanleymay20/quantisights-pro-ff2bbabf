@@ -55,7 +55,7 @@ const Diagnostics = () => {
     if (!orgId || !datasetId) return;
     setLoading(true);
     try {
-      const { data, error } = await invokeWithRetry<Record<string, unknown>>("diagnostic-engine", {
+      const { data, error } = await invokeWithRetry<any>("diagnostic-engine", {
         body: {
           organization_id: orgId,
           dataset_id: datasetId,

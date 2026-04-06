@@ -67,7 +67,7 @@ interface Advisory {
   confidence_cap_reason: string | null;
   rationale: string | null;
   impact_score: number | null;
-  source_evidence: Array<Record<string, unknown>> | null;
+  source_evidence: Array<any> | null;
 }
 
 // ─── Helpers ───
@@ -136,7 +136,7 @@ const StrategyPack = () => {
       ]);
 
       setOrgName(orgRes.data?.name || "Organization");
-      setRoleRisks((riskRes.data || []).map((r: Record<string, unknown>) => ({ ...r, components: (r.components as RoleRisk["components"]) || {} })) as RoleRisk[]);
+      setRoleRisks((riskRes.data || []).map((r: any) => ({ ...r, components: (r.components as RoleRisk["components"]) || {} })) as RoleRisk[]);
       setConvergence(eciRes.data as unknown as Convergence | null);
       setConflicts(conflictRes.data || []);
       setDecisions((decRes.data || []) as unknown as DecisionRow[]);
@@ -457,7 +457,7 @@ const StrategyPack = () => {
                             <div>
                               <p className="text-xs font-medium text-muted-foreground mb-1">Source Evidence</p>
                               <ul className="list-disc list-inside text-xs space-y-1">
-                                {adv.source_evidence.map((ev: Record<string, unknown>, idx: number) => (
+                                {adv.source_evidence.map((ev: any, idx: number) => (
                                   <li key={idx}>{typeof ev === "string" ? ev : JSON.stringify(ev)}</li>
                                 ))}
                               </ul>

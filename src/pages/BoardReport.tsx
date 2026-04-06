@@ -25,14 +25,14 @@ interface ReportData {
   max_risk_score: number;
   has_escalation: boolean;
   active_conflicts_count: number;
-  role_risks: Array<Record<string, unknown>>;
-  convergence: Record<string, unknown> | null;
-  conflicts: Array<Record<string, unknown>>;
-  simulation: Array<Record<string, unknown>>;
-  eci_trend: Record<string, unknown> | null;
-  convergence_history: Array<Record<string, unknown>>;
-  governance_actions: Array<Record<string, unknown>>;
-  ai_narrative: Record<string, unknown> | null;
+  role_risks: Array<any>;
+  convergence: any | null;
+  conflicts: Array<any>;
+  simulation: Array<any>;
+  eci_trend: any | null;
+  convergence_history: Array<any>;
+  governance_actions: Array<any>;
+  ai_narrative: any | null;
 }
 
 const BoardReport = () => {

@@ -19,7 +19,7 @@ interface DataSource {
   name: string;
   source_type: string;
   status: string;
-  config: Record<string, unknown>;
+  config: any;
   credentials_key_hash: string | null;
   last_synced_at: string | null;
   created_at: string;
@@ -64,7 +64,7 @@ const SyncButton = ({ source, organizationId, onComplete }: { source: DataSource
     try {
       const { data, error } = await invokeWithRetry<{ records?: number; errors?: string[] }>("connector-pull", {
         body: {
-          connector_type: (source.config as Record<string, unknown>)?.connector_type || "stripe",
+          connector_type: (source.config as any)?.connector_type || "stripe",
           data_source_id: source.id,
           organization_id: organizationId,
         },

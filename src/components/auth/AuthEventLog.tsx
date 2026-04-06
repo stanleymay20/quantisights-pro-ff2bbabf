@@ -48,7 +48,7 @@ const AuthEventLog = () => {
         .eq("organization_id", currentOrgId)
         .order("created_at", { ascending: false })
         .limit(100);
-      return (data ?? []) as Array<{ id: string; event_type: string; risk_score: number | null; created_at: string; ip_address: string | null; metadata: Record<string, unknown> | null }>;
+      return (data ?? []) as Array<{ id: string; event_type: string; risk_score: number | null; created_at: string; ip_address: string | null; metadata: any | null }>;
     },
     enabled: !!currentOrgId,
     refetchInterval: 30000,

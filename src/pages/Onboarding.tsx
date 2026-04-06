@@ -23,7 +23,7 @@ interface KpiTemplate {
   name: string;
   industry: string;
   description: string;
-  kpis: Array<Record<string, unknown>>;
+  kpis: Array<any>;
 }
 
 const INDUSTRIES = [
@@ -147,7 +147,7 @@ const Onboarding = () => {
     try {
       await saveOrgProfile();
 
-      const { data, error } = await invokeWithRetry<Record<string, unknown>>("complete-onboarding", {
+      const { data, error } = await invokeWithRetry<any>("complete-onboarding", {
         body: {
           organization_id: currentOrgId,
           roles: selectedRoles,

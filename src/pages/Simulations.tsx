@@ -66,7 +66,7 @@ const Simulations = () => {
         throw new Error("Select a metric type first.");
       }
 
-      const { data, error } = await invokeWithRetry<Record<string, unknown>>("monte-carlo-sim", {
+      const { data, error } = await invokeWithRetry<any>("monte-carlo-sim", {
         body: {
           organization_id: organizationId,
           dataset_id: activeDatasetId,
@@ -280,7 +280,7 @@ function StatCard({ label, value, icon }: { label: string; value: string; icon: 
   );
 }
 
-function DistributionBand({ sim }: { sim: Record<string, unknown> }) {
+function DistributionBand({ sim }: { sim: any }) {
   const min = Number(sim.p10_value);
   const max = Number(sim.p90_value);
   const range = max - min || 1;
