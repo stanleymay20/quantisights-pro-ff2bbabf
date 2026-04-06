@@ -40,13 +40,15 @@ const AuthEventLog = () => {
     queryKey: ["auth-events", currentOrgId],
     queryFn: async () => {
       if (!currentOrgId) return [];
+      // Schema-gap note: auth_events IS in generated types, but query builder
+      // types may not resolve correctly here. Cast is safe — table schema matches.
       const { data } = await supabase
-        .from("auth_events" as any)
+        .from("auth_events")
         .select("*")
         .eq("organization_id", currentOrgId)
         .order("created_at", { ascending: false })
         .limit(100);
-      return (data as any[]) ?? [];
+      return (data ?? []) as Record<string, unknown>[];
     },
     enabled: !!currentOrgId,
     refetchInterval: 30000,
