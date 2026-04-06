@@ -43,14 +43,14 @@ export function useAuthEvents() {
       if (!effectiveUserId) return;
 
       try {
-        await supabase.from("auth_events").insert({
+        await supabase.from("auth_events").insert([{
           user_id: effectiveUserId,
           organization_id: currentOrgId,
           event_type: eventType,
           user_agent: navigator.userAgent,
-          metadata,
+          metadata: metadata as Record<string, unknown>,
           risk_score: riskScore,
-        });
+        }]);
       } catch (err) {
         console.warn("Failed to log auth event:", eventType);
         captureError(

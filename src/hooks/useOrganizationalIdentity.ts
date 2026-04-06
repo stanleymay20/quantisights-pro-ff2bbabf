@@ -113,20 +113,37 @@ export const useOrganizationalIdentity = (organizationId: string | null) => {
       setSaving(true);
 
       try {
+        // Serialize complex fields to Json-compatible types
+        const dbUpdates: Record<string, unknown> = { ...updates, updated_by: user.id };
+        if (updates.key_stakeholders) {
+          dbUpdates.key_stakeholders = JSON.parse(JSON.stringify(updates.key_stakeholders));
+        }
+        if (updates.core_values) {
+          dbUpdates.core_values = JSON.parse(JSON.stringify(updates.core_values));
+        }
+        if (updates.strategic_priorities) {
+          dbUpdates.strategic_priorities = JSON.parse(JSON.stringify(updates.strategic_priorities));
+        }
+        if (updates.decision_principles) {
+          dbUpdates.decision_principles = JSON.parse(JSON.stringify(updates.decision_principles));
+        }
+        if (updates.ethical_boundaries) {
+          dbUpdates.ethical_boundaries = JSON.parse(JSON.stringify(updates.ethical_boundaries));
+        }
+
         if (identity) {
           const { error } = await supabase
             .from("organizational_identity")
-            .update({ ...updates, updated_by: user.id })
+            .update(dbUpdates as Parameters<typeof supabase.from<"organizational_identity">>[0] extends infer T ? Record<string, unknown> : never)
             .eq("organization_id", organizationId);
           if (error) throw error;
         } else {
           const { error } = await supabase
             .from("organizational_identity")
-            .insert({
+            .insert([{
               organization_id: organizationId,
-              ...updates,
-              updated_by: user.id,
-            });
+              ...dbUpdates,
+            } as Parameters<ReturnType<typeof supabase.from>["insert"]>[0] extends (infer U)[] ? U : never]);
           if (error) throw error;
         }
         await fetchIdentity();

@@ -26,7 +26,7 @@ export async function writeAuditLog(entry: AuditLogEntry) {
       action_type: entry.action_type,
       resource_type: entry.resource_type,
       resource_id: entry.resource_id,
-      payload: (entry.payload ?? null) as Record<string, unknown> | null,
+      payload: entry.payload ? JSON.parse(JSON.stringify(entry.payload)) : null,
     }]);
   } catch (err) {
     console.error("[audit] Failed to write audit log:", err);
