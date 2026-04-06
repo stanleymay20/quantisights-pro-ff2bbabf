@@ -92,6 +92,7 @@ export const useMetrics = (orgId: string | null, datasetId: string | null) => {
       setMetrics(allMetrics);
       updateLastUpdated(allMetrics);
       setLoading(false);
+      setLoadingProgress(null);
     };
 
     fetchMetrics();
