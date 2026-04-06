@@ -54,10 +54,9 @@ const HeroSection = forwardRef<HTMLElement>((_, ref) => {
               <span className="gradient-text">Billion-Dollar Decisions.</span>
             </h1>
             <p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto mb-3 sm:mb-5 leading-relaxed">
-              Scaling B2B companies lose millions each year to revenue leakage, misallocated budgets, and overconfident forecasts.
-              Quantivis replaces fragmented analytics with{" "}
+              Replaces your BI dashboards, strategy consultants, and spreadsheet forecasts with{" "}
               <span className="text-foreground font-medium">
-                a closed-loop system that tracks every decision, measures every outcome, and corrects its own confidence over time.
+                one system that tracks every decision, measures every outcome, and corrects its own confidence over time.
               </span>
             </p>
             <p className="text-xs sm:text-sm text-muted-foreground/70 max-w-xl mx-auto mb-6 sm:mb-10">
