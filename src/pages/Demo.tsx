@@ -75,7 +75,7 @@ const Demo = () => {
         sessionStorage.removeItem("quantivis_demo_mode");
         if (!cancelled) {
           console.error("Demo init error:", err);
-          setError(err.message || "Failed to create demo session");
+          setError(err instanceof Error ? err.message : "Failed to create demo session");
         }
       }
     };
