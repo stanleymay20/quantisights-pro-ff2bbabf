@@ -446,8 +446,8 @@ const ExecutionCommandCenter = memo(({ organizationId }: ExecutionCommandCenterP
                       <div key={idx} className="flex items-center gap-2 text-[11px]">
                         <div className={`w-1.5 h-1.5 rounded-full ${run.status === "completed" ? "bg-success" : "bg-destructive"}`} />
                         <span className="text-muted-foreground">{(run.run_type as string).replace(/_/g, " ")}</span>
-                        <span className="font-mono">{run.duration_ms}ms</span>
-                        <span className="text-muted-foreground">{run.items_processed} items</span>
+                        <span className="font-mono">{String(run.duration_ms ?? "")}ms</span>
+                        <span className="text-muted-foreground">{String(run.items_processed ?? 0)} items</span>
                         <span className="text-muted-foreground ml-auto">{new Date(run.started_at as string).toLocaleTimeString()}</span>
                       </div>
                     ))}
