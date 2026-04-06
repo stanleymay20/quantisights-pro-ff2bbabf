@@ -102,7 +102,7 @@ const Onboarding = () => {
       .from("kpi_templates")
       .select("*")
       .then(({ data }) => {
-        if (data) setTemplates(data as KPITemplate[]);
+        if (data) setTemplates(data as unknown as KpiTemplate[]);
       });
   }, []);
 
