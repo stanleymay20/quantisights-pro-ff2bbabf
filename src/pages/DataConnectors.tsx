@@ -338,7 +338,8 @@ const DataConnectors = () => {
         host: creds.host || null, port: creds.port ? parseInt(creds.port) : null,
         database_name: creds.dbName || null, schema_name: creds.schemaName || null,
         username: creds.username || null, ssl_mode: creds.sslMode || null,
-        selected_tables: selectedTables, discovered_schema: { tables },
+        selected_tables: selectedTables as unknown as Json,
+        discovered_schema: { tables } as unknown as Json,
         connection_status: "connected", last_tested_at: new Date().toISOString(),
       }).select("id").single();
       if (ccErr) throw ccErr;
