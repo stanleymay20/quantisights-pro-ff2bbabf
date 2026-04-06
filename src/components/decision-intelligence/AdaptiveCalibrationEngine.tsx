@@ -43,8 +43,8 @@ const AdaptiveCalibrationEngine = ({ orgId, decisions }: Props) => {
         .order("computed_at", { ascending: false })
         .limit(1);
 
-      if (!fetchErr && data && (data as any[]).length > 0) {
-        setModel((data as any[])[0] as CalibrationModel);
+      if (!fetchErr && data && data.length > 0) {
+        setModel(data[0] as unknown as CalibrationModel);
       }
       setLoading(false);
     };
