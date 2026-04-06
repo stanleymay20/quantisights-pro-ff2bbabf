@@ -39,7 +39,7 @@ const SCIMTokenManager = () => {
     queryFn: async () => {
       if (!currentOrgId) return [];
       const { data } = await supabase
-        .from("scim_tokens" as any)
+        .from("scim_tokens")
         .select("id, description, created_at, last_used_at, revoked_at")
         .eq("organization_id", currentOrgId)
         .order("created_at", { ascending: false });
