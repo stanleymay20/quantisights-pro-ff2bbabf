@@ -312,7 +312,7 @@ const GovernanceMaturity = () => {
 
       {/* Executive Summary + Trend */}
       {lastAssessment && (
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+        <SectionErrorBoundary sectionName="Governance Executive Summary">
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm flex items-center gap-2">
