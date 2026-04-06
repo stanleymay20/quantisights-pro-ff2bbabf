@@ -898,11 +898,15 @@ Deno.serve(async (req) => {
 
       // ─── DEPENDENCY INTELLIGENCE V2: Inferred blockers ───
       case "infer_blockers": {
-        const { data: blockers } = await supabase.rpc("exec_infer_blockers", { _org_id: orgId });
+        const inferLimit = Math.min(Number(body.limit) || 100, 500);
+        const { data: blockers } = await supabase.rpc("exec_infer_blockers", { _org_id: orgId, _limit: inferLimit });
+        const results = blockers || [];
         return json({
-          inferred_blockers: blockers || [],
-          total: (blockers || []).length,
-          note: "These are automatically inferred dependencies based on decision grouping, creation order, and deadline alignment. They are not yet explicitly linked.",
+          inferred_blockers: results,
+          total: results.length,
+          capped: results.length >= inferLimit,
+          limit_applied: inferLimit,
+          note: "Automatically inferred dependencies based on decision grouping, creation order, and deadline alignment.",
         });
       }
 
