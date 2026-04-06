@@ -71,8 +71,8 @@ const Billing = () => {
       const { data, error } = await supabase.functions.invoke("customer-portal");
       if (error) throw error;
       if (data?.url) window.location.href = data.url;
-    } catch (err: any) {
-      toast({ title: "Could not open billing portal", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "Could not open billing portal", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
     } finally {
       setPortalLoading(false);
     }
