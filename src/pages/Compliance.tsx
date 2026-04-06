@@ -52,8 +52,7 @@ const Compliance = () => {
     // Query real system state to derive evidence
     const [retentionRes, ssoRes, qualityRes, auditRes] = await Promise.all([
       supabase.from("data_retention_policies").select("id").eq("organization_id", currentOrgId).limit(1),
-      // Schema-gap cast: sso_configs table not in auto-generated types
-      (supabase.from as (t: string) => ReturnType<typeof supabase.from>)("sso_configs").select("id, is_active").eq("organization_id", currentOrgId).eq("is_active", true).limit(1),
+      supabase.from("sso_configs").select("id, is_active").eq("organization_id", currentOrgId).eq("is_active", true).limit(1),
       supabase.from("data_quality_checks").select("id").eq("organization_id", currentOrgId).limit(1),
       supabase.from("audit_log").select("id").eq("organization_id", currentOrgId).limit(1),
     ]);

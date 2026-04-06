@@ -50,7 +50,7 @@ const PasskeyManagement = () => {
 
   const removePasskey = useMutation({
     mutationFn: async (id: string) => {
-      await supabase.from("webauthn_credentials" as any).delete().eq("id", id);
+      await supabase.from("webauthn_credentials").delete().eq("id", id);
       logAuthEvent({ eventType: "passkey_remove", metadata: { credential_id: id } });
     },
     onSuccess: () => {

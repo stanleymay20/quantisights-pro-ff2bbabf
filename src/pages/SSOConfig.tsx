@@ -65,9 +65,8 @@ const SSOConfig = () => {
     if (!currentOrgId) return;
     const load = async () => {
       setLoading(true);
-      // Schema-gap cast: sso_configs table not in auto-generated types
-      const { data } = await (supabase
-        .from as (table: string) => ReturnType<typeof supabase.from>)("sso_configs")
+      const { data } = await supabase
+        .from("sso_configs")
         .select("*")
         .eq("organization_id", currentOrgId)
         .eq("provider_type", "saml")

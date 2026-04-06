@@ -361,7 +361,7 @@ const DataConnectors = () => {
       else if (syncFrequency === "daily") nextRun.setDate(nextRun.getDate() + 1);
       else nextRun.setDate(nextRun.getDate() + 7);
 
-      await (supabase.from("sync_schedules") as any).insert({
+      await supabase.from("sync_schedules").insert({
         organization_id: currentOrgId, data_source_id: ds.id,
         frequency: syncFrequency, is_active: true, next_run_at: nextRun.toISOString(),
       });

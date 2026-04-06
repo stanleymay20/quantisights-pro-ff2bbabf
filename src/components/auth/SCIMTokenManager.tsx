@@ -82,7 +82,7 @@ const SCIMTokenManager = () => {
   const revokeToken = useMutation({
     mutationFn: async (id: string) => {
       await supabase
-        .from("scim_tokens" as any)
+        .from("scim_tokens")
         .update({ revoked_at: new Date().toISOString() })
         .eq("id", id);
     },
