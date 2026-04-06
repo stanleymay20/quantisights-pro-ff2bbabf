@@ -162,6 +162,18 @@ const Compliance = () => {
         status: "partial", evidence: "Architecture designed for SOC 2 compliance. All technical controls implemented. Formal audit pending.",
         framework: ["SOC 2"],
       },
+      {
+        id: "CR-3", category: "Compliance Readiness", name: "EU Data Residency",
+        description: "All data processed and stored within EU-based infrastructure.",
+        status: "compliant", evidence: "Database and edge functions hosted in EU region. No data transfer to non-EU jurisdictions.",
+        framework: ["GDPR Art. 44", "Schrems II"],
+      },
+      {
+        id: "CR-4", category: "Compliance Readiness", name: "Data Processing Agreement",
+        description: "GDPR Art. 28 compliant DPA available for enterprise customers.",
+        status: "compliant", evidence: "Standard DPA template covers subprocessors, data categories, retention, and breach notification (72h).",
+        framework: ["GDPR Art. 28", "GDPR Art. 33"],
+      },
     ];
 
     setControls(assessedControls);
