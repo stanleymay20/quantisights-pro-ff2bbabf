@@ -275,7 +275,7 @@ const Settings = () => {
 
               {/* Profile */}
               <TabsContent value="profile">
-                <SectionErrorBoundary context="Profile settings">
+                <SectionErrorBoundary sectionName="Profile settings">
                 <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
                   <Card>
                     <CardHeader><CardTitle className="flex items-center gap-2"><User className="w-5 h-5 text-primary" /> Profile Settings</CardTitle></CardHeader>
@@ -348,7 +348,7 @@ const Settings = () => {
 
               {/* Appearance */}
               <TabsContent value="appearance">
-                <SectionErrorBoundary context="Appearance settings">
+                <SectionErrorBoundary sectionName="Appearance settings">
                 <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
                   <Card>
                     <CardHeader><CardTitle className="flex items-center gap-2"><Sun className="w-5 h-5 text-primary" /> Appearance</CardTitle></CardHeader>
@@ -382,7 +382,7 @@ const Settings = () => {
 
               {/* Security */}
               <TabsContent value="security">
-                <SectionErrorBoundary context="Security settings">
+                <SectionErrorBoundary sectionName="Security settings">
                 <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
                   <SecurityPosture />
                   <MFAEnroll />
@@ -402,7 +402,7 @@ const Settings = () => {
 
               {/* Organization */}
               <TabsContent value="organization">
-                <SectionErrorBoundary context="Organization settings">
+                <SectionErrorBoundary sectionName="Organization settings">
                 <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
                   <Card>
                     <CardHeader><CardTitle className="flex items-center gap-2"><Building2 className="w-5 h-5 text-primary" /> Organization Settings</CardTitle></CardHeader>
@@ -470,7 +470,7 @@ const Settings = () => {
 
               {/* Notifications */}
               <TabsContent value="notifications">
-                <SectionErrorBoundary context="Notification settings">
+                <SectionErrorBoundary sectionName="Notification settings">
                 <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
                   <Card>
                     <CardHeader><CardTitle className="flex items-center gap-2"><Bell className="w-5 h-5 text-primary" /> Notification Preferences</CardTitle></CardHeader>
@@ -525,7 +525,7 @@ const Settings = () => {
 
               {/* Audit Log */}
               <TabsContent value="audit">
-                <SectionErrorBoundary context="Audit log">
+                <SectionErrorBoundary sectionName="Audit log">
                 <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
                   <Card>
                     <CardHeader>
@@ -570,7 +570,7 @@ const Settings = () => {
 
               {/* Organizational Identity */}
               <TabsContent value="identity">
-                <SectionErrorBoundary context="Organizational identity settings">
+                <SectionErrorBoundary sectionName="Organizational identity settings">
                 <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
                   <OrganizationalIdentitySettings organizationId={currentOrgId} />
                 </motion.div>

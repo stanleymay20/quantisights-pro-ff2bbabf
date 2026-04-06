@@ -139,7 +139,7 @@ const ExecutionDashboard = () => {
           <p className="text-xs text-muted-foreground ml-3">Decision → Action → Outcome</p>
         </header>
 
-        <IntelligenceDisclaimer variant="banner" context="advisory" />
+        <IntelligenceDisclaimer variant="banner" sectionName="advisory" />
 
         <main className="flex-1 p-8 overflow-auto space-y-6">
           {loading ? (
@@ -168,7 +168,7 @@ const ExecutionDashboard = () => {
               )}
 
               {/* Summary KPIs */}
-              <SectionErrorBoundary context="Execution summary metrics">
+              <SectionErrorBoundary sectionName="Execution summary metrics">
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
                   <Card>
                     <CardContent className="p-4">
@@ -218,7 +218,7 @@ const ExecutionDashboard = () => {
               </SectionErrorBoundary>
 
               {/* Decision Replay Drift Report */}
-              <SectionErrorBoundary context="Decision drift report">
+              <SectionErrorBoundary sectionName="Decision drift report">
                 {driftReport && driftReport.total_replays > 0 && (
                   <Card className="border-primary/20">
                     <CardHeader className="pb-2">
@@ -256,7 +256,7 @@ const ExecutionDashboard = () => {
               </SectionErrorBoundary>
 
               {/* Active Decisions with Execution */}
-              <SectionErrorBoundary context="Active decisions list">
+              <SectionErrorBoundary sectionName="Active decisions list">
                 <div className="space-y-3">
                   <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
                     <Activity className="w-4 h-4" /> Active Decisions
