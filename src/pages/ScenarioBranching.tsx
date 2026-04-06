@@ -122,7 +122,8 @@ const ScenarioBranching = () => {
         },
       });
       if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+      const rawData = data as unknown as Record<string, unknown> | null;
+      if (rawData?.error) throw new Error(String(rawData.error));
 
       await supabase.from("scenario_branches")
         .update({ results: data, status: "simulated" } as Record<string, unknown>)
