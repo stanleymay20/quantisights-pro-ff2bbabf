@@ -520,10 +520,12 @@ const Settings = () => {
                     </CardContent>
                   </Card>
                 </motion.div>
+                </SectionErrorBoundary>
               </TabsContent>
 
               {/* Audit Log */}
               <TabsContent value="audit">
+                <SectionErrorBoundary context="Audit log">
                 <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
                   <Card>
                     <CardHeader>
