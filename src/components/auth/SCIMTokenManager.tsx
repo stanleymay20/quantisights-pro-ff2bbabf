@@ -74,8 +74,8 @@ const SCIMTokenManager = () => {
       setGeneratedToken(token);
       queryClient.invalidateQueries({ queryKey: ["scim-tokens"] });
     },
-    onError: (err: any) => {
-      toast({ title: "Failed to create token", description: err.message, variant: "destructive" });
+    onError: (err: unknown) => {
+      toast({ title: "Failed to create token", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
     },
   });
 

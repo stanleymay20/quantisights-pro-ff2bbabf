@@ -139,7 +139,7 @@ const ExecutionDashboard = () => {
           <p className="text-xs text-muted-foreground ml-3">Decision → Action → Outcome</p>
         </header>
 
-        <IntelligenceDisclaimer variant="banner" sectionName="advisory" />
+        <IntelligenceDisclaimer variant="banner" context="advisory" />
 
         <main className="flex-1 p-8 overflow-auto space-y-6">
           {loading ? (

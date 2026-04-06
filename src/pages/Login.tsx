@@ -44,7 +44,9 @@ const Login = forwardRef<HTMLDivElement>((_, ref) => {
         setSsoRedirect(null);
         setSsoEnforced(false);
       }
-    } catch {
+    } catch (e: unknown) {
+      // SSO lookup failure is non-blocking — fall back to password login
+      console.error("[Login] SSO lookup failed:", e instanceof Error ? e.message : e);
       setSsoRedirect(null);
       setSsoEnforced(false);
     } finally {

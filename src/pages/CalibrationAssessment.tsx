@@ -228,8 +228,9 @@ const CalibrationAssessment = () => {
           responses: [],
         });
         setStep("results");
-      } catch {
-        // Invalid encoded data — ignore
+      } catch (e: unknown) {
+        // Invalid encoded data from shared URL — non-critical, log and ignore
+        console.error("[CalibrationAssessment] Failed to decode shared results:", e instanceof Error ? e.message : e);
       }
     }
   }, [searchParams]);
@@ -282,15 +283,18 @@ const CalibrationAssessment = () => {
       await supabase.from("calibration_assessments").insert({
         user_id: user.id,
         organization_id: organizationId,
-        responses: resp as any,
+        // Schema-gap cast: responses is Json type, TS generated type doesn't accept Response[] directly
+        responses: resp as unknown as import("@/integrations/supabase/types").Json,
         overconfidence_score: computed.overconfidenceScore,
         underconfidence_score: computed.underconfidenceScore,
         brier_score: computed.brierScore,
         calibration_profile: computed.tier.label,
-        bias_markers: computed.biasMarkers as any,
+        // Schema-gap cast: bias_markers is Json type, TS generated type doesn't accept string[] directly
+        bias_markers: computed.biasMarkers as unknown as import("@/integrations/supabase/types").Json,
         completed_at: new Date().toISOString(),
       });
-    } catch {
+    } catch (e: unknown) {
+      console.error("[CalibrationAssessment] Failed to save assessment:", e instanceof Error ? e.message : e);
       toast.error("Failed to save assessment");
     } finally {
       setSaving(false);
