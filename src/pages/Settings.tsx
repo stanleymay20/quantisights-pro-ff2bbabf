@@ -397,10 +397,12 @@ const Settings = () => {
                   <RetentionPolicySettings />
                   <GovernanceKPIs />
                 </motion.div>
+                </SectionErrorBoundary>
               </TabsContent>
 
               {/* Organization */}
               <TabsContent value="organization">
+                <SectionErrorBoundary context="Organization settings">
                 <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
                   <Card>
                     <CardHeader><CardTitle className="flex items-center gap-2"><Building2 className="w-5 h-5 text-primary" /> Organization Settings</CardTitle></CardHeader>
