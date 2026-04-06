@@ -120,8 +120,9 @@ const KPIs = () => {
       .eq("organization_id", currentOrgId)
       .eq("status", "active")
       .order("created_at", { ascending: false });
-    // dataset_id filter (column added via migration, not yet in generated types)
-    (query as any).eq("dataset_id", activeDatasetId);
+    // KPIs table has dataset_id column but the generated types reflect a different kpis table shape;
+    // this cast is needed until the types align with the actual table schema
+    (query as unknown as { eq: (col: string, val: string) => typeof query }).eq("dataset_id", activeDatasetId);
     const { data, error } = await query;
 
     if (!error && data) setKpis(data as unknown as KPI[]);
