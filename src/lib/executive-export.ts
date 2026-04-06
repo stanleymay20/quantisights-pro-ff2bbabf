@@ -117,7 +117,7 @@ export function exportInsightsAsCSV(findings: AnalystFinding[]): string {
   return [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
 }
 
-export function exportDecisionsAsCSV(decisions: Array<Record<string, unknown>>): string {
+export function exportDecisionsAsCSV(decisions: any[]): string {
   const headers = [
     "ID", "Recommended Action", "Chosen Action", "Status",
     "Confidence", "Capped Confidence", "Decision Type",
