@@ -71,6 +71,8 @@ const IntelligenceDisclaimer = forwardRef<HTMLDivElement, IntelligenceDisclaimer
       )}
     </div>
   );
-};
+});
+
+IntelligenceDisclaimer.displayName = "IntelligenceDisclaimer";
 
 export default IntelligenceDisclaimer;

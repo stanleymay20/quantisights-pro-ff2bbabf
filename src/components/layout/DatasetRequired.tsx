@@ -62,7 +62,9 @@ const DatasetRequired = forwardRef<HTMLDivElement, DatasetRequiredProps>(({ chil
   }
 
   return <>{children}</>;
-};
+});
+
+DatasetRequired.displayName = "DatasetRequired";
 
 function EmptyState({
   icon,
