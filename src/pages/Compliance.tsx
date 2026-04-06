@@ -1,14 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { SidebarMobileToggle } from "@/components/layout/ProtectedShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { useOrganization } from "@/hooks/useOrganization";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Shield, ShieldCheck, CheckCircle2, AlertTriangle, XCircle,
-  Lock, Eye, Database, FileText, Users, Clock, Activity, Server,
+  Lock, Eye, Database, FileText, Users, Clock, Activity, Server, Download, Globe,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
