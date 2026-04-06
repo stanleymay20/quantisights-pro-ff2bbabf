@@ -565,13 +565,16 @@ const Settings = () => {
                     </CardContent>
                   </Card>
                 </motion.div>
+                </SectionErrorBoundary>
               </TabsContent>
 
               {/* Organizational Identity */}
               <TabsContent value="identity">
+                <SectionErrorBoundary context="Organizational identity settings">
                 <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
                   <OrganizationalIdentitySettings organizationId={currentOrgId} />
                 </motion.div>
+                </SectionErrorBoundary>
               </TabsContent>
 
 
