@@ -56,7 +56,7 @@ const AdaptiveCalibrationEngine = ({ orgId, decisions }: Props) => {
     setComputing(true);
     setError(null);
     try {
-      const { data, error: fnErr } = await supabase.functions.invoke("adaptive-calibration", {
+      const { data, error: fnErr } = await invokeWithRetry<{ model?: CalibrationModel; insufficient_data?: boolean; message?: string }>("adaptive-calibration", {
         body: { organization_id: orgId },
       });
       if (fnErr) throw fnErr;
