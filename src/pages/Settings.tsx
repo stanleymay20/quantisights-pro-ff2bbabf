@@ -325,8 +325,8 @@ const Settings = () => {
                                   if (error) throw error;
                                   await signOut();
                                   toast({ title: "Account deleted", description: "Your data has been permanently removed." });
-                                } catch (err: any) {
-                                  toast({ title: "Error", description: err.message, variant: "destructive" });
+                                } catch (err: unknown) {
+                                  toast({ title: "Error", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
                                 } finally {
                                   setDeletingAccount(false);
                                 }
