@@ -406,7 +406,7 @@ const GovernanceMaturity = () => {
               )}
             </CardContent>
           </Card>
-        </motion.div>
+        </SectionErrorBoundary>
       )}
     </div>
   );

@@ -901,6 +901,7 @@ const Executive = () => {
               </TabsContent>
 
               <TabsContent value="copilot">
+                <SectionErrorBoundary sectionName="Executive Copilot">
                 <ExecutiveCopilot
                   organizationId={currentOrgId!}
                   roleType={activeRole}
@@ -909,22 +910,27 @@ const Executive = () => {
                   datasetId={activeDatasetId ?? undefined}
                   datasetName={activeDatasetName}
                 />
+                </SectionErrorBoundary>
               </TabsContent>
 
               <TabsContent value="simulation">
+                <SectionErrorBoundary sectionName="Strategic Simulation">
                 <StrategicSimulation
                   organizationId={currentOrgId!}
                   datasetId={activeDatasetId!}
                   roleType={activeRole}
                   tier={tier}
                 />
+                </SectionErrorBoundary>
               </TabsContent>
 
               <TabsContent value="convergence">
+                <SectionErrorBoundary sectionName="Executive Convergence">
                 <ExecutiveConvergence
                   organizationId={currentOrgId!}
                   tier={tier}
                 />
+                </SectionErrorBoundary>
               </TabsContent>
             </Tabs>
           )}
