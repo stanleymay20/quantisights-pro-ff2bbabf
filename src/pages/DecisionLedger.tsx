@@ -262,7 +262,7 @@ const DecisionLedgerPage = () => {
           decisionId: id,
           organizationId: decision?.organization_id ?? "",
           userId: user?.id ?? null,
-          newStatus: updates.execution_status,
+          newStatus: updates.execution_status as string,
         });
       }
       fetchDecisions();
