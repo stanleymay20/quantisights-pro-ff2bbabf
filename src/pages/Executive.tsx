@@ -303,10 +303,10 @@ const Executive = () => {
 
       setRiskIndex({
         score: data?.overall_score as number,
-        components: data?.components as Record<string, number>,
+        components: data?.components as RiskIndex["components"],
         last_updated: data?.computed_at as string,
       });
-      setDbAlerts((data?.triggered_alerts as Array<Record<string, unknown>>) || []);
+      setDbAlerts((data?.triggered_alerts as DbAlert[]) || []);
       toast({ title: "Signals computed", description: `Risk score: ${data?.overall_score}/100` });
       fetchSignalData();
     } catch (err: unknown) {
