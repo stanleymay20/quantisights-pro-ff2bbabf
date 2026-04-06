@@ -65,9 +65,8 @@ const SSOConfig = () => {
     if (!currentOrgId) return;
     const load = async () => {
       setLoading(true);
-      // Schema-gap cast: sso_configs table not in auto-generated types
-      const { data } = await (supabase
-        .from as (table: string) => ReturnType<typeof supabase.from>)("sso_configs")
+      const { data } = await supabase
+        .from("sso_configs")
         .select("*")
         .eq("organization_id", currentOrgId)
         .eq("provider_type", "saml")
@@ -111,17 +110,16 @@ const SSOConfig = () => {
         is_active: samlEnabled,
       };
 
-      // Schema-gap: sso_configs table not in auto-generated types — use dynamic from()
-      const ssoFrom = (supabase.from as (table: string) => ReturnType<typeof supabase.from>)("sso_configs");
-
       if (existingConfig) {
-        const { error } = await ssoFrom
+        const { error } = await supabase
+          .from("sso_configs")
           .update(payload)
           .eq("id", existingConfig.id);
         if (error) throw error;
       } else {
-        const { error } = await ssoFrom
-          .insert(payload as Record<string, unknown>);
+        const { error } = await supabase
+          .from("sso_configs")
+          .insert(payload);
         if (error) throw error;
       }
 

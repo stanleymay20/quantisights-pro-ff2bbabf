@@ -35,7 +35,7 @@ const Login = forwardRef<HTMLDivElement>((_, ref) => {
     }
     setSsoChecking(true);
     try {
-      const { data } = await supabase.rpc("resolve_sso_for_email" as any, { _email: emailValue });
+      const { data } = await supabase.rpc("resolve_sso_for_email", { _email: emailValue });
       if (data && Array.isArray(data) && data.length > 0) {
         const ssoConfig = data[0];
         setSsoRedirect(ssoConfig.idp_sso_url);

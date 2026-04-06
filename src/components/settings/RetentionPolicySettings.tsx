@@ -104,7 +104,7 @@ const RetentionPolicySettings = () => {
             auto_cleanup: policy.auto_cleanup,
             description: policy.description,
             enforcement_status: effectiveStatus,
-          } as any,
+          },
           { onConflict: "organization_id,data_category" }
         );
       if (error) {

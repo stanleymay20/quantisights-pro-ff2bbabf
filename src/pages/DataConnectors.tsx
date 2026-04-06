@@ -137,7 +137,7 @@ const DataConnectors = () => {
   const fetchExisting = async () => {
     if (!currentOrgId) return;
     setLoading(true);
-    const { data } = await (supabase.from("connector_configs") as any)
+    const { data } = await supabase.from("connector_configs")
       .select("*, data_sources(*)")
       .eq("organization_id", currentOrgId)
       .order("created_at", { ascending: false });
@@ -332,7 +332,7 @@ const DataConnectors = () => {
       setDataSourceId(ds.id);
 
       // 2. Create connector config
-      const { error: ccErr } = await (supabase.from("connector_configs") as any).insert({
+      const { error: ccErr } = await supabase.from("connector_configs").insert({
         organization_id: currentOrgId, data_source_id: ds.id,
         connector_type: selectedType || "postgresql",
         host: creds.host || null, port: creds.port ? parseInt(creds.port) : null,
@@ -351,7 +351,7 @@ const DataConnectors = () => {
         aggregation: m.aggregation, is_active: true,
       }));
       if (mappingInserts.length > 0) {
-        await (supabase.from("metric_mappings") as any).insert(mappingInserts);
+        await supabase.from("metric_mappings").insert(mappingInserts);
       }
 
       // 4. Create sync schedule
@@ -361,7 +361,7 @@ const DataConnectors = () => {
       else if (syncFrequency === "daily") nextRun.setDate(nextRun.getDate() + 1);
       else nextRun.setDate(nextRun.getDate() + 7);
 
-      await (supabase.from("sync_schedules") as any).insert({
+      await supabase.from("sync_schedules").insert({
         organization_id: currentOrgId, data_source_id: ds.id,
         frequency: syncFrequency, is_active: true, next_run_at: nextRun.toISOString(),
       });

@@ -174,9 +174,9 @@ const GovernanceMaturity = () => {
       organization_id: currentOrgId,
       assessed_by: user.id,
       overall_score: overall,
-      dimensions: dimScores,
-      recommendations,
-    } as any);
+      dimensions: dimScores as unknown as import("@/integrations/supabase/types").Json,
+      recommendations: recommendations as unknown as import("@/integrations/supabase/types").Json,
+    });
 
     if (error) {
       toast({ title: "Save failed", description: error.message, variant: "destructive" });
