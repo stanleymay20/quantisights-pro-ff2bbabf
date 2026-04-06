@@ -15,6 +15,24 @@ import {
   Shield, Key, FileText, Lock, Info, Copy, CheckCircle2, AlertTriangle,
 } from "lucide-react";
 
+// Schema-gap: sso_configs table exists in DB but is not in the auto-generated types.
+// Define a local interface until schema generation catches up.
+interface SSOConfigRow {
+  id: string;
+  organization_id: string;
+  provider_type: string;
+  idp_entity_id: string | null;
+  idp_sso_url: string | null;
+  idp_certificate: string | null;
+  idp_metadata_url: string | null;
+  attribute_mapping: Record<string, string> | null;
+  enforce_sso: boolean;
+  allowed_domains: string[] | null;
+  auto_provision: boolean;
+  deactivate_on_removal: boolean;
+  is_active: boolean;
+}
+
 const SSOConfig = () => {
   const { currentOrgId } = useOrganization();
   const { toast } = useToast();
@@ -36,7 +54,7 @@ const SSOConfig = () => {
   const [deactivateOnRemoval, setDeactivateOnRemoval] = useState(true);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [existingConfig, setExistingConfig] = useState<any>(null);
+  const [existingConfig, setExistingConfig] = useState<SSOConfigRow | null>(null);
 
   const spEntityId = `${window.location.origin}/auth/saml/${currentOrgId}`;
   const spAcsUrl = `${window.location.origin}/auth/saml/callback`;
@@ -47,15 +65,16 @@ const SSOConfig = () => {
     if (!currentOrgId) return;
     const load = async () => {
       setLoading(true);
+      // Schema-gap cast: sso_configs is not in generated types yet
       const { data } = await supabase
-        .from("sso_configs" as any)
+        .from("sso_configs" as "audit_log")
         .select("*")
         .eq("organization_id", currentOrgId)
         .eq("provider_type", "saml")
         .maybeSingle();
       
       if (data) {
-        const d = data as any;
+        const d = data as unknown as SSOConfigRow;
         setExistingConfig(d);
         setSamlEnabled(d.is_active);
         setIdpEntityId(d.idp_entity_id || "");
@@ -66,7 +85,7 @@ const SSOConfig = () => {
         setAutoProvision(d.auto_provision);
         setDeactivateOnRemoval(d.deactivate_on_removal);
         setAllowedDomains((d.allowed_domains || []).join(", "));
-        if (d.attribute_mapping) setAttributeMapping(d.attribute_mapping);
+        if (d.attribute_mapping) setAttributeMapping(d.attribute_mapping as typeof attributeMapping);
       }
       setLoading(false);
     };
