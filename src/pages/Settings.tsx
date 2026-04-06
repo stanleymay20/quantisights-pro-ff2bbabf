@@ -26,6 +26,7 @@ import SessionManagement from "@/components/auth/SessionManagement";
 import AuthEventLog from "@/components/auth/AuthEventLog";
 import PasskeyManagement from "@/components/auth/PasskeyManagement";
 import SCIMTokenManager from "@/components/auth/SCIMTokenManager";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -274,6 +275,7 @@ const Settings = () => {
 
               {/* Profile */}
               <TabsContent value="profile">
+                <SectionErrorBoundary sectionName="Profile settings">
                 <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
                   <Card>
                     <CardHeader><CardTitle className="flex items-center gap-2"><User className="w-5 h-5 text-primary" /> Profile Settings</CardTitle></CardHeader>
@@ -341,10 +343,12 @@ const Settings = () => {
                     </CardContent>
                   </Card>
                 </motion.div>
+                </SectionErrorBoundary>
               </TabsContent>
 
               {/* Appearance */}
               <TabsContent value="appearance">
+                <SectionErrorBoundary sectionName="Appearance settings">
                 <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
                   <Card>
                     <CardHeader><CardTitle className="flex items-center gap-2"><Sun className="w-5 h-5 text-primary" /> Appearance</CardTitle></CardHeader>
@@ -373,10 +377,12 @@ const Settings = () => {
                     </CardContent>
                   </Card>
                 </motion.div>
+                </SectionErrorBoundary>
               </TabsContent>
 
               {/* Security */}
               <TabsContent value="security">
+                <SectionErrorBoundary sectionName="Security settings">
                 <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
                   <SecurityPosture />
                   <MFAEnroll />
@@ -391,10 +397,12 @@ const Settings = () => {
                   <RetentionPolicySettings />
                   <GovernanceKPIs />
                 </motion.div>
+                </SectionErrorBoundary>
               </TabsContent>
 
               {/* Organization */}
               <TabsContent value="organization">
+                <SectionErrorBoundary sectionName="Organization settings">
                 <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
                   <Card>
                     <CardHeader><CardTitle className="flex items-center gap-2"><Building2 className="w-5 h-5 text-primary" /> Organization Settings</CardTitle></CardHeader>
@@ -457,10 +465,12 @@ const Settings = () => {
                     </Card>
                   )}
                 </motion.div>
+                </SectionErrorBoundary>
               </TabsContent>
 
               {/* Notifications */}
               <TabsContent value="notifications">
+                <SectionErrorBoundary sectionName="Notification settings">
                 <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
                   <Card>
                     <CardHeader><CardTitle className="flex items-center gap-2"><Bell className="w-5 h-5 text-primary" /> Notification Preferences</CardTitle></CardHeader>
@@ -510,10 +520,12 @@ const Settings = () => {
                     </CardContent>
                   </Card>
                 </motion.div>
+                </SectionErrorBoundary>
               </TabsContent>
 
               {/* Audit Log */}
               <TabsContent value="audit">
+                <SectionErrorBoundary sectionName="Audit log">
                 <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
                   <Card>
                     <CardHeader>
@@ -553,13 +565,16 @@ const Settings = () => {
                     </CardContent>
                   </Card>
                 </motion.div>
+                </SectionErrorBoundary>
               </TabsContent>
 
               {/* Organizational Identity */}
               <TabsContent value="identity">
+                <SectionErrorBoundary sectionName="Organizational identity settings">
                 <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
                   <OrganizationalIdentitySettings organizationId={currentOrgId} />
                 </motion.div>
+                </SectionErrorBoundary>
               </TabsContent>
 
 

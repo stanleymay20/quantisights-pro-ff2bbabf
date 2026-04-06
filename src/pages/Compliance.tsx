@@ -101,16 +101,16 @@ const Compliance = () => {
       // Data Protection
       {
         id: "DP-1", category: "Data Protection", name: "Encryption at Rest",
-        description: "All data encrypted using AES-256 at the storage layer.",
-        status: "implemented",
-        evidence: "Infrastructure-level encryption — provided by hosting platform. Not independently verified by Quantivis.",
+        description: "Storage-layer encryption inherited from hosting platform (AES-256).",
+        status: "not_verified",
+        evidence: "Encryption at rest is provided by the hosting platform infrastructure. Quantivis does not independently verify or manage encryption keys. Status reflects inherited control, not a Quantivis-implemented capability.",
         framework: ["SOC 2 CC6.7", "ISO 27001 A.10.1"],
       },
       {
         id: "DP-2", category: "Data Protection", name: "Encryption in Transit",
-        description: "All connections use TLS for data in transit.",
-        status: "implemented",
-        evidence: "HTTPS enforced on all endpoints by infrastructure. TLS version managed by hosting platform.",
+        description: "TLS encryption inherited from hosting platform for all connections.",
+        status: "not_verified",
+        evidence: "HTTPS and TLS are enforced by the hosting platform infrastructure. Quantivis does not independently verify TLS versions or certificate management. Status reflects inherited control, not a Quantivis-implemented capability.",
         framework: ["SOC 2 CC6.7", "ISO 27001 A.13.1"],
       },
       {
