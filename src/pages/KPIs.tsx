@@ -238,7 +238,7 @@ const KPIs = () => {
         }
         return;
       }
-      setAnalysis(data?.analysis as string);
+      setAnalysis(data?.analysis as AIAnalysis);
     } catch (e: unknown) {
       toast({ title: "Analysis failed", description: e instanceof Error ? e.message : "Unknown error", variant: "destructive" });
     } finally {
