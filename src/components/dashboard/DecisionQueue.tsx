@@ -240,8 +240,9 @@ const DecisionQueue = memo(({
       }
       setDecisions(prev => prev.filter(d => d.id !== decision.id));
       setConfirmation({ decisionTitle: decision.title, action: "dismissed" });
-    } catch {
-      toast({ title: "Action failed", variant: "destructive" });
+    } catch (err) {
+      console.error("[DecisionQueue] Dismiss failed:", err);
+      toast({ title: "Action failed", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
     } finally {
       setActingOn(null);
     }

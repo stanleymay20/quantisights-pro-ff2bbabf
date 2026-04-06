@@ -70,11 +70,9 @@ const ExecutiveCopilot = ({ organizationId, roleType, riskScore, tier, datasetId
     let assistantSoFar = "";
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-      if (!token) throw new Error("Not authenticated");
+      const auth = await getVerifiedAuth();
+      if (!auth) throw new Error("Not authenticated");
+      const token = auth.token;
 
       const resp = await fetch(CHAT_URL, {
         method: "POST",
