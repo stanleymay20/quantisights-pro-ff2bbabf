@@ -468,9 +468,9 @@ const Dashboard = () => {
                   topMetrics={topMetrics}
                   insights={insights}
                   onExpandToFull={() => toggleView("full")}
-                />
+                /></SectionErrorBoundary>
               ) : (
-                <CommandCenter
+                <SectionErrorBoundary sectionName="Command Center"><CommandCenter
                   organizationId={currentOrgId!}
                   insights={insights}
                   hasData={hasData}
