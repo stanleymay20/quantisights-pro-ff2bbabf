@@ -452,7 +452,6 @@ const AdvisoryPage = () => {
             </TabsContent>
           </Tabs>
         </main>
-      </>
       </SectionErrorBoundary>
     </DatasetRequired>
   );
