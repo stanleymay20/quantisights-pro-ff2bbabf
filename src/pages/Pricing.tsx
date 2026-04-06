@@ -35,8 +35,8 @@ const Pricing = () => {
       });
       if (error) throw error;
       if (data?.url) window.location.href = data.url;
-    } catch (err: any) {
-      toast({ title: "Checkout failed", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "Checkout failed", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
     } finally {
       setLoadingTier(null);
     }
