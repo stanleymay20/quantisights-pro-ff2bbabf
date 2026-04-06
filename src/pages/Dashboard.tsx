@@ -21,6 +21,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { invokeWithRetry } from "@/lib/edge-function-retry";
 import { embedInsightsBatch } from "@/lib/decision-lifecycle";
 import { filterCriticalInsights } from "@/lib/insight-filters";
 import { useToast } from "@/hooks/use-toast";
