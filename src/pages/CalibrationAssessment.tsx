@@ -228,8 +228,9 @@ const CalibrationAssessment = () => {
           responses: [],
         });
         setStep("results");
-      } catch {
-        // Invalid encoded data — ignore
+      } catch (e: unknown) {
+        // Invalid encoded data from shared URL — non-critical, log and ignore
+        console.error("[CalibrationAssessment] Failed to decode shared results:", e instanceof Error ? e.message : e);
       }
     }
   }, [searchParams]);
