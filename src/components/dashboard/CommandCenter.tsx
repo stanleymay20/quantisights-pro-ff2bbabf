@@ -15,7 +15,7 @@ import BoardroomBrief from "./BoardroomBrief";
 import WhatChangedWidget from "./WhatChangedWidget";
 import { useDecisionContexts, type DecisionContext } from "@/hooks/useDecisionContexts";
 import type { Insight } from "@/hooks/useInsights";
-import type { MetricTypeSummary } from "@/hooks/useMetrics";
+import type { MetricTypeSummary, MetricRow } from "@/hooks/useMetrics";
 
 const AnalyticsPanel = lazy(() => import("./AnalyticsPanel"));
 
