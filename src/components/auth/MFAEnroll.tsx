@@ -55,8 +55,8 @@ const MFAEnroll = ({ onStatusChange }: MFAEnrollProps) => {
       setSecret(data.totp.secret);
       setFactorId(data.id);
       setStep("enrolling");
-    } catch (err: any) {
-      toast({ title: "Enrollment failed", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "Enrollment failed", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
     } finally {
       setLoading(false);
     }
