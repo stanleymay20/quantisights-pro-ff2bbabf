@@ -877,6 +877,22 @@ Deno.serve(async (req) => {
         });
       }
 
+      // ─── DEPENDENCY INTELLIGENCE V2: Inferred blockers ───
+      case "infer_blockers": {
+        const { data: blockers } = await supabase.rpc("exec_infer_blockers", { _org_id: orgId });
+        return json({
+          inferred_blockers: blockers || [],
+          total: (blockers || []).length,
+          note: "These are automatically inferred dependencies based on decision grouping, creation order, and deadline alignment. They are not yet explicitly linked.",
+        });
+      }
+
+      // ─── OPERATIONAL METRICS: Server-side proof endpoint ───
+      case "operational_metrics": {
+        const { data: metrics } = await supabase.rpc("exec_operational_metrics", { _org_id: orgId });
+        return json(metrics || {});
+      }
+
       default:
         return json({ error: `Unknown action: ${action}` }, 400);
     }
