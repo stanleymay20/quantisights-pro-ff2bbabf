@@ -112,14 +112,16 @@ const SSOConfig = () => {
       };
 
       if (existingConfig) {
+        // Schema-gap cast: sso_configs not in generated types
         const { error } = await supabase
-          .from("sso_configs" as any)
+          .from("sso_configs" as "audit_log")
           .update(payload)
           .eq("id", existingConfig.id);
         if (error) throw error;
       } else {
+        // Schema-gap cast: sso_configs not in generated types
         const { error } = await supabase
-          .from("sso_configs" as any)
+          .from("sso_configs" as "audit_log")
           .insert(payload);
         if (error) throw error;
       }
