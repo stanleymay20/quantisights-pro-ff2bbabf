@@ -123,7 +123,8 @@ const StrategicSimulation = ({ organizationId, datasetId, roleType, tier }: Prop
         },
       });
       if (error) throw error;
-      if ((data as Record<string, unknown> | null)?.error) throw new Error(String((data as Record<string, unknown>).error));
+      const rawData = data as unknown as Record<string, unknown> | null;
+      if (rawData?.error) throw new Error(String(rawData.error));
       if (data) setResult(data);
     } catch (err: unknown) {
       toast({ title: "Simulation Error", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });

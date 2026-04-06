@@ -97,12 +97,12 @@ const MarketIntelligence = () => {
     setLoading(true);
     try {
       const topics = customTopics ? customTopics.split(",").map(t => t.trim()) : [];
-      const { data: result, error } = await invokeWithRetry<Record<string, unknown>>("fetch-market-signals", {
+      const { data: result, error } = await invokeWithRetry<MarketData>("fetch-market-signals", {
         body: { organization_id: currentOrgId, dataset_id: activeDatasetId, industry, topics },
       });
       if (error) throw error;
-      if (result?.error) throw new Error(result.error);
-      setData(result);
+      if ((result as unknown as Record<string, unknown>)?.error) throw new Error(String((result as unknown as Record<string, unknown>).error));
+      if (result) setData(result);
       fetchStoredSignals();
       toast({ title: "Market signals updated" });
     } catch (e: unknown) {
