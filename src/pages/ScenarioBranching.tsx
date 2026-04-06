@@ -252,22 +252,22 @@ const ScenarioBranching = () => {
                         <div className="flex items-center justify-between">
                           <span className="text-xs text-muted-foreground">Projected Risk</span>
                           <span className={`text-sm font-bold ${
-                            (branch.results as any).projected_risk >= 70 ? "text-destructive" :
-                            (branch.results as any).projected_risk >= 40 ? "text-warning" : "text-success"
+                            branch.results.projected_risk >= 70 ? "text-destructive" :
+                            branch.results.projected_risk >= 40 ? "text-warning" : "text-success"
                           }`}>
-                            {(branch.results as any).projected_risk}/100
+                            {branch.results.projected_risk}/100
                           </span>
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="text-xs text-muted-foreground">Risk Delta</span>
                           <span className={`text-sm font-bold flex items-center gap-1 ${
-                            (branch.results as any).risk_delta > 0 ? "text-destructive" : "text-emerald-500"
+                            branch.results.risk_delta > 0 ? "text-destructive" : "text-emerald-500"
                           }`}>
-                            {(branch.results as any).risk_delta > 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                            {(branch.results as any).risk_delta > 0 ? "+" : ""}{(branch.results as any).risk_delta}
+                            {branch.results.risk_delta > 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                            {branch.results.risk_delta > 0 ? "+" : ""}{branch.results.risk_delta}
                           </span>
                         </div>
-                        {(branch.results as any).escalation_triggered && (
+                        {branch.results.escalation_triggered && (
                           <div className="flex items-center gap-1 text-xs text-destructive">
                             <AlertTriangle className="w-3 h-3" /> Escalation triggered
                           </div>
