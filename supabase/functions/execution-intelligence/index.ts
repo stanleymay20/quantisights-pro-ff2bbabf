@@ -628,7 +628,7 @@ Deno.serve(async (req) => {
         return json(data || []);
       }
 
-      // ─── PHASE 7: EXECUTIVE OVERRIDES ───
+      // ─── PHASE 7: EXECUTIVE OVERRIDES (with enforced elevated RBAC) ───
       case "executive_override": {
         const { plan_id: ovPlanId, override_type, reason: ovReason, changes } = body;
         if (!isValidUUID(ovPlanId as string)) return json({ error: "plan_id required" }, 400);
@@ -637,6 +637,15 @@ Deno.serve(async (req) => {
 
         const validTypes = ["force_reassign", "force_cancel", "extend_deadline", "escalate", "mark_blocked"];
         if (!validTypes.includes(override_type as string)) return json({ error: `Invalid override_type. Must be: ${validTypes.join(", ")}` }, 400);
+
+        // ENFORCED: Server-side elevated role check — owner or admin only
+        const { data: hasElevated } = await supabase.rpc("exec_require_elevated_role", {
+          _user_id: userId,
+          _org_id: orgId,
+        });
+        if (!hasElevated) {
+          return json({ error: "Executive overrides require owner or admin role. This action has been denied and logged." }, 403);
+        }
 
         const { data: result } = await supabase.rpc("exec_log_override", {
           _plan_id: ovPlanId,
