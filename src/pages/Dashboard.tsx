@@ -33,6 +33,7 @@ import SystemHealthDashboard from "@/components/dashboard/SystemHealthDashboard"
 import ProofBar from "@/components/dashboard/ProofBar";
 import DecisionOutcomeIntegrity from "@/components/dashboard/DecisionOutcomeIntegrity";
 import ExecutivePriorityStack from "@/components/dashboard/ExecutivePriorityStack";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 const VIEW_STORAGE_KEY = "quantivis_dashboard_view";
 
 const Dashboard = () => {
