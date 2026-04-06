@@ -118,7 +118,7 @@ const Settings = () => {
         setWeeklyBrief(prefs.weekly_brief_enabled);
         setAlertThreshold(prefs.alert_threshold);
         setEscalationThreshold(prefs.escalation_threshold);
-        const recipients = (prefs as any).email_recipients || [];
+        const recipients = ((prefs as Record<string, unknown>).email_recipients as string[]) || [];
         setEmailRecipients(recipients);
         savedNotif.current = {
           emailEnabled: prefs.email_enabled,
