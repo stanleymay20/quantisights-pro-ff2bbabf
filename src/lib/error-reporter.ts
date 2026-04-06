@@ -66,7 +66,7 @@ async function flushErrors(): Promise<void> {
     const { data: profile } = await supabase
       .from("profiles")
       .select("organization_id")
-      .eq("user_id", session.user.id)
+      .eq("user_id", user.id)
       .single();
 
     const orgId = profile?.organization_id;
