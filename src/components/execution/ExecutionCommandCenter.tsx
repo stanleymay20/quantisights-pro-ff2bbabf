@@ -419,7 +419,96 @@ const ExecutionCommandCenter = memo(({ organizationId }: ExecutionCommandCenterP
         )}
       </SectionErrorBoundary>
 
-      {/* Engine Health */}
+      {/* Inferred Blockers (Dependency Intelligence v2) */}
+      <SectionErrorBoundary sectionName="Inferred Dependencies">
+        {inferredBlockers.length > 0 && (
+          <Card className="border-warning/20">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Link2 className="w-4 h-4 text-warning" />
+                Inferred Dependencies
+                <Badge variant="outline" className="text-[10px] ml-auto">{inferredBlockers.length} detected</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <p className="text-[10px] text-muted-foreground mb-2">
+                Auto-detected upstream blockers based on decision grouping, creation order, and deadline alignment.
+              </p>
+              {inferredBlockers.slice(0, 8).map((ib, idx) => (
+                <div key={idx} className="flex items-start gap-3 p-2.5 rounded-lg bg-warning/5 border border-warning/10">
+                  <AlertTriangle className="w-3.5 h-3.5 text-warning shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-medium truncate">{ib.plan_action_title}</span>
+                      <Badge variant="outline" className="text-[9px]">may be blocked</Badge>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                      ← Upstream: <span className="font-medium text-foreground">{ib.blocker_action_title}</span>
+                      <Badge variant="outline" className="text-[9px] ml-1">{ib.blocker_status}</Badge>
+                    </p>
+                    <p className="text-[10px] text-muted-foreground/70 mt-0.5">{ib.reason}</p>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+      </SectionErrorBoundary>
+
+      {/* Operational Metrics (Production Proof) */}
+      <SectionErrorBoundary sectionName="Operational Metrics">
+        {opMetrics && (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Gauge className="w-4 h-4 text-primary" />
+                Operational Proof (30-day window)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                <div className="p-3 rounded-lg bg-secondary/50 border border-border/30">
+                  <p className="text-[10px] text-muted-foreground uppercase">Interventions Created</p>
+                  <p className="text-xl font-bold">{opMetrics.intervention_metrics.total_created}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-success/5 border border-success/10">
+                  <p className="text-[10px] text-muted-foreground uppercase">Resolution Rate</p>
+                  <p className="text-xl font-bold text-success">{opMetrics.intervention_metrics.resolution_rate}%</p>
+                </div>
+                <div className="p-3 rounded-lg bg-primary/5 border border-primary/10">
+                  <p className="text-[10px] text-muted-foreground uppercase">Avg Resolution</p>
+                  <p className="text-xl font-bold">{opMetrics.intervention_metrics.avg_resolution_hours}<span className="text-xs text-muted-foreground">h</span></p>
+                </div>
+                <div className="p-3 rounded-lg bg-secondary/50 border border-border/30">
+                  <p className="text-[10px] text-muted-foreground uppercase">Dupes Prevented</p>
+                  <p className="text-xl font-bold">{opMetrics.dedupe_effectiveness.total_duplicates_prevented}</p>
+                </div>
+              </div>
+
+              {Object.keys(opMetrics.engine_performance).length > 0 && (
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium mb-2">Engine Latency</p>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                    {Object.entries(opMetrics.engine_performance).map(([name, perf]) => (
+                      <div key={name} className="p-2.5 rounded-lg border border-border/30 bg-secondary/20">
+                        <p className="text-[10px] text-muted-foreground uppercase truncate">{name.replace(/_/g, " ")}</p>
+                        <div className="flex items-baseline gap-2 mt-1">
+                          <span className="text-sm font-bold">{Math.round(perf.p50_ms)}ms</span>
+                          <span className="text-[10px] text-muted-foreground">P50</span>
+                          <span className="text-sm font-bold text-warning">{Math.round(perf.p95_ms)}ms</span>
+                          <span className="text-[10px] text-muted-foreground">P95</span>
+                        </div>
+                        <p className="text-[9px] text-muted-foreground">{perf.total_runs} runs • {perf.errors} errors</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+      </SectionErrorBoundary>
+
       <SectionErrorBoundary sectionName="Engine Health">
         <Card>
           <CardHeader className="pb-2">
