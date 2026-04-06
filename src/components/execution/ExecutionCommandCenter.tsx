@@ -7,9 +7,9 @@ import {
   Shield, AlertTriangle, Target, TrendingUp, Activity,
   Zap, CheckCircle2, XCircle, Clock, RefreshCw, Loader2,
   ArrowUpRight, BarChart3, GitBranch, Eye, Heart,
-  Lock, History, ChevronDown, ChevronUp,
+  Lock, History, ChevronDown, ChevronUp, Gauge, Link2,
 } from "lucide-react";
-import { useExecutionIntelligence, type CommandSummary, type EngineHealth } from "@/hooks/useExecutionIntelligence";
+import { useExecutionIntelligence, type CommandSummary, type EngineHealth, type InferredBlocker, type OperationalMetrics } from "@/hooks/useExecutionIntelligence";
 import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 
 interface ExecutionCommandCenterProps {
