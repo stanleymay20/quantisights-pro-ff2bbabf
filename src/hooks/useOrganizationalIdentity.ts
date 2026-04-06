@@ -136,7 +136,7 @@ export const useOrganizationalIdentity = (organizationId: string | null) => {
         if (identity) {
           const { error } = await supabase
             .from("organizational_identity")
-            .update(dbUpdates as Parameters<typeof supabase.from<"organizational_identity">>[0] extends infer T ? Record<string, unknown> : never)
+            .update(dbUpdates as OrgIdentityUpdate)
             .eq("organization_id", organizationId);
           if (error) throw error;
         } else {
@@ -145,7 +145,7 @@ export const useOrganizationalIdentity = (organizationId: string | null) => {
             .insert([{
               organization_id: organizationId,
               ...dbUpdates,
-            } as Parameters<ReturnType<typeof supabase.from>["insert"]>[0] extends (infer U)[] ? U : never]);
+            } as OrgIdentityInsert]);
           if (error) throw error;
         }
         await fetchIdentity();
