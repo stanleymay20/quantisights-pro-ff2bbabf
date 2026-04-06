@@ -224,6 +224,7 @@ const PrivacyDashboard = () => {
           </CardContent>
         </Card>
       </motion.div>
+      </SectionErrorBoundary>
     </div>
   );
 };

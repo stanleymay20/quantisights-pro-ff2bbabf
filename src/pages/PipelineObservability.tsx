@@ -122,6 +122,7 @@ export default function PipelineObservability() {
   const PIE_COLORS = ["hsl(var(--primary))", "hsl(var(--accent))", "hsl(var(--secondary))", "#22c55e", "#f59e0b"];
 
   return (
+    <SectionErrorBoundary sectionName="Pipeline Observability">
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
