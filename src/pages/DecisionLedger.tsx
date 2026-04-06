@@ -213,8 +213,9 @@ const DecisionLedgerPage = () => {
       setSimResult(data as ImpactSim);
       toast({ title: "Impact simulation complete" });
       fetchDecisions();
-    } catch (e: any) {
-      toast({ title: "Simulation failed", description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Simulation failed";
+      toast({ title: "Simulation failed", description: msg, variant: "destructive" });
     } finally {
       setSimRunning(false);
     }
