@@ -86,14 +86,14 @@ const ScenarioBranching = () => {
   const createBranch = async () => {
     if (!currentOrgId || !user || !newName.trim()) return;
     setCreating(true);
-    const { error } = await supabase.from("scenario_branches").insert({
+    const { error } = await supabase.from("scenario_branches").insert([{
       organization_id: currentOrgId,
       name: newName,
       description: newDesc || null,
       parameters: newParams,
       created_by: user.id,
       comparison_group_id: comparisonGroupId,
-    } as Record<string, unknown>);
+    }]);
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
