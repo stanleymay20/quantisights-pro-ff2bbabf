@@ -28,7 +28,7 @@ interface DatasetEntry {
   is_stale: boolean | null;
   freshness_policy_hours: number | null;
   current_version: number | null;
-  column_mapping: Record<string, unknown> | null;
+  column_mapping: unknown;
   data_source_id: string | null;
 }
 
