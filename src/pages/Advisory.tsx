@@ -21,6 +21,7 @@ import {
 import IntelligenceDisclaimer from "@/components/IntelligenceDisclaimer";
 import ConfidenceBadge, { resolveConfidence } from "@/components/ConfidenceBadge";
 import { useDecisionContexts } from "@/hooks/useDecisionContexts";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 
 interface Advisory {
   id: string;
