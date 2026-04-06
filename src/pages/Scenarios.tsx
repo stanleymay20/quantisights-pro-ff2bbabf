@@ -220,12 +220,12 @@ const Scenarios = () => {
     }
     setSimulating(true);
     try {
-      const { data, error } = await supabase.functions.invoke("simulate-scenario", {
+      const { data, error } = await invokeWithRetry<Record<string, unknown>>("simulate-scenario", {
         body: { scenario_id: selectedId, dataset_id: activeDatasetId },
       });
       if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      toast({ title: `Simulation complete: ${data.projected_values} projections computed` });
+      if (data?.error) throw new Error(String(data.error));
+      toast({ title: `Simulation complete: ${data?.projected_values} projections computed` });
       fetchDetails(selectedId);
       fetchScenarios();
     } catch (e: unknown) {
