@@ -78,8 +78,8 @@ const PortfolioCompanyDetail = ({ company, onClose, onUpdate, onDelete }: Props)
       });
       setEditing(false);
       toast({ title: "Company updated" });
-    } catch (err: any) {
-      toast({ title: "Update failed", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "Update failed", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
     } finally {
       setSaving(false);
     }
