@@ -35,6 +35,7 @@ export const useMetrics = (orgId: string | null, datasetId: string | null) => {
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState<{ loaded: number; total: number | null } | null>(null);
   const { subscribed, tier } = useSubscription();
 
   const canStream = subscribed && tier ? REALTIME_TIERS.includes(tier) : false;
@@ -58,14 +59,17 @@ export const useMetrics = (orgId: string | null, datasetId: string | null) => {
 
     const fetchMetrics = async () => {
       setLoading(true);
+      setLoadingProgress({ loaded: 0, total: null });
       // Paginated fetch with safety cap to prevent client-side memory crashes
       const allMetrics: MetricRow[] = [];
       const PAGE_SIZE = 1000;
       const MAX_CLIENT_ROWS = 50_000; // Safety cap: ~50K rows ≈ 10MB in memory
       let offset = 0;
       let hasMore = true;
+      let pageNum = 0;
 
       while (hasMore) {
+        pageNum++;
         const { data, error } = await supabase
           .from("metrics")
           .select("id, metric_type, value, date, region, segment, dataset_id, created_at")
@@ -76,6 +80,7 @@ export const useMetrics = (orgId: string | null, datasetId: string | null) => {
 
         if (error || !data) break;
         allMetrics.push(...data);
+        setLoadingProgress({ loaded: allMetrics.length, total: data.length === PAGE_SIZE ? null : allMetrics.length });
         hasMore = data.length === PAGE_SIZE && allMetrics.length < MAX_CLIENT_ROWS;
         offset += PAGE_SIZE;
       }
@@ -87,20 +92,28 @@ export const useMetrics = (orgId: string | null, datasetId: string | null) => {
       setMetrics(allMetrics);
       updateLastUpdated(allMetrics);
       setLoading(false);
+      setLoadingProgress(null);
     };
 
     fetchMetrics();
   }, [orgId, datasetId, updateLastUpdated]);
 
-  // Realtime subscription (Growth+ only)
+  // Realtime subscription (Growth+ only) — cleanup-first to prevent duplicates
   useEffect(() => {
     if (!orgId || !datasetId || !canStream) {
       setIsStreaming(false);
       return;
     }
 
+    const channelName = `metrics-live-${orgId}-${datasetId}`;
+    // Remove any stale channel with the same name before creating a new one
+    const existing = supabase.getChannels().find(ch => ch.topic === `realtime:${channelName}`);
+    if (existing) {
+      supabase.removeChannel(existing);
+    }
+
     const channel = supabase
-      .channel(`metrics-live-${orgId}-${datasetId}`)
+      .channel(channelName)
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "metrics", filter: `organization_id=eq.${orgId}` },
@@ -229,5 +242,6 @@ export const useMetrics = (orgId: string | null, datasetId: string | null) => {
     revenueByMonth,
     segmentData,
     hasData: metrics.length > 0,
+    loadingProgress,
   };
 };

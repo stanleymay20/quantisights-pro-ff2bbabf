@@ -33,6 +33,7 @@ import SystemHealthDashboard from "@/components/dashboard/SystemHealthDashboard"
 import ProofBar from "@/components/dashboard/ProofBar";
 import DecisionOutcomeIntegrity from "@/components/dashboard/DecisionOutcomeIntegrity";
 import ExecutivePriorityStack from "@/components/dashboard/ExecutivePriorityStack";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 const VIEW_STORAGE_KEY = "quantivis_dashboard_view";
 
 const Dashboard = () => {
@@ -446,18 +447,20 @@ const Dashboard = () => {
               </motion.div>
 
               {/* Signal-first: Priority Actions → Hero Insight → then context */}
-              <ExecutivePriorityStack insights={insights} />
+              <SectionErrorBoundary sectionName="Priority Stack">
+                <ExecutivePriorityStack insights={insights} />
+              </SectionErrorBoundary>
 
-              {hasAnomalies && <div className="mt-4"><HeroInsight insights={insights} /></div>}
+              {hasAnomalies && <div className="mt-4"><SectionErrorBoundary sectionName="Hero Insight"><HeroInsight insights={insights} /></SectionErrorBoundary></div>}
 
               <div className="mt-6 space-y-5">
-                {currentOrgId && <DecisionMemoryWidget organizationId={currentOrgId} />}
-                {currentOrgId && <SystemHealthDashboard orgId={currentOrgId} />}
-                {currentOrgId && <DecisionOutcomeIntegrity organizationId={currentOrgId} />}
+                {currentOrgId && <SectionErrorBoundary sectionName="Decision Memory"><DecisionMemoryWidget organizationId={currentOrgId} /></SectionErrorBoundary>}
+                {currentOrgId && <SectionErrorBoundary sectionName="System Health"><SystemHealthDashboard orgId={currentOrgId} /></SectionErrorBoundary>}
+                {currentOrgId && <SectionErrorBoundary sectionName="Decision Outcomes"><DecisionOutcomeIntegrity organizationId={currentOrgId} /></SectionErrorBoundary>}
               </div>
 
               {dashboardView === "executive" ? (
-                <ExecutiveQuickView
+                <SectionErrorBoundary sectionName="Executive View"><ExecutiveQuickView
                   organizationId={currentOrgId!}
                   pendingDecisions={pendingDecisions}
                   calibrationScore={calibrationScore}
@@ -465,9 +468,9 @@ const Dashboard = () => {
                   topMetrics={topMetrics}
                   insights={insights}
                   onExpandToFull={() => toggleView("full")}
-                />
+                /></SectionErrorBoundary>
               ) : (
-                <CommandCenter
+                <SectionErrorBoundary sectionName="Command Center"><CommandCenter
                   organizationId={currentOrgId!}
                   insights={insights}
                   hasData={hasData}
@@ -485,7 +488,7 @@ const Dashboard = () => {
                   datasetId={activeDatasetId ?? undefined}
                   datasetName={currentProject?.name}
                   isDemoMode={isDemoUser}
-                />
+                /></SectionErrorBoundary>
               )}
             </>
           )}
