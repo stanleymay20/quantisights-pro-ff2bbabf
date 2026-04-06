@@ -239,8 +239,8 @@ const AdvisoryPage = () => {
 
   return (
     <DatasetRequired moduleName="Advisory">
+      <SectionErrorBoundary sectionName="Advisory">
       <>
-        <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
           <div className="flex items-center gap-3">
             <SidebarMobileToggle />
             <h1 className="text-xl font-semibold font-display">Prescriptive Advisory</h1>
