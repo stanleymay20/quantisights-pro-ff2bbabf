@@ -1,4 +1,4 @@
-import { useEffect, memo } from "react";
+import { useEffect, useState, memo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -6,9 +6,10 @@ import { Progress } from "@/components/ui/progress";
 import {
   Shield, AlertTriangle, Target, TrendingUp, Activity,
   Zap, CheckCircle2, XCircle, Clock, RefreshCw, Loader2,
-  ArrowUpRight, BarChart3,
+  ArrowUpRight, BarChart3, GitBranch, Eye, Heart,
+  Lock, History, ChevronDown, ChevronUp,
 } from "lucide-react";
-import { useExecutionIntelligence, type CommandSummary } from "@/hooks/useExecutionIntelligence";
+import { useExecutionIntelligence, type CommandSummary, type EngineHealth } from "@/hooks/useExecutionIntelligence";
 import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 
 interface ExecutionCommandCenterProps {
@@ -29,6 +30,8 @@ const ExecutionCommandCenter = memo(({ organizationId }: ExecutionCommandCenterP
     predictions,
     interventions,
     commandSummary,
+    dependencyGraph,
+    engineHealth,
     scanInterventions,
     fetchInterventions,
     resolveIntervention,
@@ -37,14 +40,20 @@ const ExecutionCommandCenter = memo(({ organizationId }: ExecutionCommandCenterP
     predictRisks,
     fetchPredictions,
     fetchCommandSummary,
+    fetchDependencyGraph,
+    fetchEngineHealth,
   } = useExecutionIntelligence(organizationId);
+
+  const [showEngineHealth, setShowEngineHealth] = useState(false);
 
   useEffect(() => {
     fetchCommandSummary();
     fetchInterventions();
     fetchPredictions();
     fetchScores();
-  }, [fetchCommandSummary, fetchInterventions, fetchPredictions, fetchScores]);
+    fetchDependencyGraph();
+    fetchEngineHealth();
+  }, [fetchCommandSummary, fetchInterventions, fetchPredictions, fetchScores, fetchDependencyGraph, fetchEngineHealth]);
 
   const runFullAnalysis = async () => {
     await Promise.all([
@@ -52,7 +61,11 @@ const ExecutionCommandCenter = memo(({ organizationId }: ExecutionCommandCenterP
       computeScores(),
       predictRisks(),
     ]);
-    await fetchCommandSummary();
+    await Promise.all([
+      fetchCommandSummary(),
+      fetchDependencyGraph(),
+      fetchEngineHealth(),
+    ]);
   };
 
   const summary = commandSummary;
@@ -61,36 +74,49 @@ const ExecutionCommandCenter = memo(({ organizationId }: ExecutionCommandCenterP
   return (
     <div className="space-y-6">
       {/* Control Bar */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
           <h2 className="text-lg font-semibold flex items-center gap-2">
             <Shield className="w-5 h-5 text-primary" />
             Execution Command Center
           </h2>
-          <p className="text-xs text-muted-foreground">Real-time execution control + predictive intelligence</p>
+          <p className="text-xs text-muted-foreground">
+            Real-time execution control + predictive intelligence
+            {summary?.generated_at && (
+              <span className="ml-2 text-[10px] opacity-60">
+                Updated {new Date(summary.generated_at).toLocaleTimeString()}
+              </span>
+            )}
+          </p>
         </div>
-        <Button onClick={runFullAnalysis} disabled={loading} size="sm" className="gap-2">
-          {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-          Run Full Analysis
-        </Button>
+        <div className="flex items-center gap-2">
+          {engineHealth && (
+            <Badge variant={engineHealth.overall_health === "healthy" ? "outline" : "destructive"} className="text-[10px] gap-1">
+              <Heart className="w-3 h-3" />
+              {engineHealth.overall_health}
+            </Badge>
+          )}
+          <Button onClick={runFullAnalysis} disabled={loading} size="sm" className="gap-2">
+            {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+            Run Full Analysis
+          </Button>
+        </div>
       </div>
 
       {/* Executive Score Card */}
       <SectionErrorBoundary sectionName="Execution Health Score">
         <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-transparent">
           <CardContent className="p-6">
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-6">
               <div className="col-span-2 md:col-span-1">
                 <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Execution Health</p>
                 <div className="text-4xl font-bold tabular-nums">
                   {orgScore ? Math.round(orgScore.score) : "—"}
                   <span className="text-base text-muted-foreground">/100</span>
                 </div>
-                {orgScore && (
-                  <Progress
-                    value={orgScore.score}
-                    className="mt-2 h-2"
-                  />
+                {orgScore && <Progress value={orgScore.score} className="mt-2 h-2" />}
+                {orgScore?.scoring_model_version && (
+                  <p className="text-[9px] text-muted-foreground mt-1">Model v{orgScore.scoring_model_version}</p>
                 )}
               </div>
               <div>
@@ -109,12 +135,16 @@ const ExecutionCommandCenter = memo(({ organizationId }: ExecutionCommandCenterP
                 <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Plans Evaluated</p>
                 <p className="text-2xl font-bold">{orgScore?.plans_evaluated ?? 0}</p>
               </div>
+              <div>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Blocked</p>
+                <p className="text-2xl font-bold text-warning">{summary?.blocked_active ?? 0}</p>
+              </div>
             </div>
           </CardContent>
         </Card>
       </SectionErrorBoundary>
 
-      {/* Risk Distribution + Active Threats */}
+      {/* Risk Distribution + Command Summary */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <SectionErrorBoundary sectionName="Risk Distribution">
           <Card>
@@ -188,7 +218,7 @@ const ExecutionCommandCenter = memo(({ organizationId }: ExecutionCommandCenterP
 
       {/* Active Interventions */}
       <SectionErrorBoundary sectionName="Active Interventions">
-        {interventions.length > 0 && (
+        {interventions.filter(i => !i.resolved).length > 0 && (
           <Card className="border-warning/20">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center gap-2">
@@ -225,12 +255,13 @@ const ExecutionCommandCenter = memo(({ organizationId }: ExecutionCommandCenterP
 
       {/* Predictive Risk Table */}
       <SectionErrorBoundary sectionName="Predictive Execution Intelligence">
-        {predictions.length > 0 && (
+        {predictions.filter(p => p.risk_score > 20).length > 0 && (
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center gap-2">
                 <TrendingUp className="w-4 h-4 text-primary" />
                 Predictive Risk Intelligence
+                <Badge variant="outline" className="text-[10px] ml-auto">Model v{predictions[0]?.model_version || "—"}</Badge>
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -252,6 +283,9 @@ const ExecutionCommandCenter = memo(({ organizationId }: ExecutionCommandCenterP
                         <Badge className={`text-[10px] ${RISK_COLORS[pred.predicted_outcome] || ""}`}>
                           {pred.predicted_outcome.replace(/_/g, " ")}
                         </Badge>
+                        {pred.feature_summary?.is_blocked && (
+                          <Badge variant="destructive" className="text-[10px] gap-0.5"><Lock className="w-2.5 h-2.5" /> Blocked</Badge>
+                        )}
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">{pred.recommendation}</p>
                       {pred.risk_factors.length > 0 && (
@@ -278,7 +312,58 @@ const ExecutionCommandCenter = memo(({ organizationId }: ExecutionCommandCenterP
         )}
       </SectionErrorBoundary>
 
-      {/* Multi-Decision Dependencies */}
+      {/* Dependency Graph */}
+      <SectionErrorBoundary sectionName="Dependency Graph">
+        {dependencyGraph && dependencyGraph.stats.with_dependencies > 0 && (
+          <Card className="border-primary/20">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <GitBranch className="w-4 h-4 text-primary" />
+                Execution Dependency Graph
+                <Badge variant="outline" className="text-[10px] ml-auto">
+                  {dependencyGraph.stats.with_dependencies} linked • {dependencyGraph.stats.blocked} blocked • {dependencyGraph.stats.critical} critical path
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {dependencyGraph.blocked_chains.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Blocked Chains (cascading risk)</p>
+                  {dependencyGraph.blocked_chains.slice(0, 5).map((chain, idx) => (
+                    <div key={idx} className="flex items-center gap-1 p-2 rounded-lg bg-destructive/5 border border-destructive/10">
+                      <Lock className="w-3.5 h-3.5 text-destructive shrink-0" />
+                      <div className="flex items-center gap-1 overflow-x-auto">
+                        {chain.chain.map((planId, i) => (
+                          <span key={planId} className="flex items-center gap-1">
+                            <span className="text-[10px] font-mono bg-muted px-1.5 py-0.5 rounded whitespace-nowrap">{planId.slice(0, 8)}…</span>
+                            {i < chain.chain.length - 1 && <ArrowUpRight className="w-3 h-3 text-muted-foreground" />}
+                          </span>
+                        ))}
+                      </div>
+                      <Badge variant="destructive" className="text-[9px] ml-auto shrink-0">depth {chain.depth}</Badge>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {dependencyGraph.critical_path.length > 0 && (
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium mb-1">Critical Path Plans</p>
+                  <div className="flex flex-wrap gap-1">
+                    {dependencyGraph.critical_path.slice(0, 8).map((p) => (
+                      <Badge key={p.id as string} variant="outline" className="text-[10px] border-primary/30">
+                        <Target className="w-2.5 h-2.5 mr-1" />
+                        {(p.action_title as string)?.slice(0, 30) || (p.id as string).slice(0, 8)}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+      </SectionErrorBoundary>
+
+      {/* Cross-Decision Dependencies */}
       <SectionErrorBoundary sectionName="Cross-Decision Dependencies">
         {summary?.multi_plan_decisions && summary.multi_plan_decisions.length > 0 && (
           <Card>
@@ -302,6 +387,76 @@ const ExecutionCommandCenter = memo(({ organizationId }: ExecutionCommandCenterP
             </CardContent>
           </Card>
         )}
+      </SectionErrorBoundary>
+
+      {/* Recent Overrides */}
+      <SectionErrorBoundary sectionName="Executive Overrides">
+        {summary?.recent_overrides && summary.recent_overrides.length > 0 && (
+          <Card className="border-warning/10">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Eye className="w-4 h-4 text-warning" />
+                Recent Executive Overrides
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {summary.recent_overrides.map(ov => (
+                <div key={ov.id} className="flex items-center gap-3 p-2 rounded-lg bg-warning/5 border border-warning/10">
+                  <Lock className="w-3.5 h-3.5 text-warning shrink-0" />
+                  <Badge variant="outline" className="text-[10px]">{ov.override_type.replace(/_/g, " ")}</Badge>
+                  <span className="text-xs text-muted-foreground truncate flex-1">{ov.reason}</span>
+                  <span className="text-[10px] text-muted-foreground shrink-0">{new Date(ov.created_at).toLocaleDateString()}</span>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+      </SectionErrorBoundary>
+
+      {/* Engine Health */}
+      <SectionErrorBoundary sectionName="Engine Health">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2 cursor-pointer" onClick={() => setShowEngineHealth(!showEngineHealth)}>
+              <Heart className="w-4 h-4 text-primary" />
+              Engine Health & Observability
+              {showEngineHealth ? <ChevronUp className="w-3.5 h-3.5 ml-auto" /> : <ChevronDown className="w-3.5 h-3.5 ml-auto" />}
+            </CardTitle>
+          </CardHeader>
+          {showEngineHealth && engineHealth && (
+            <CardContent className="space-y-3">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {Object.entries(engineHealth.engines).map(([name, engine]) => (
+                  <div key={name} className={`p-3 rounded-lg border ${engine.errors > 0 ? "border-destructive/30 bg-destructive/5" : "border-border/30 bg-secondary/30"}`}>
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <div className={`w-2 h-2 rounded-full ${engine.status === "completed" ? "bg-success" : engine.status === "failed" ? "bg-destructive" : "bg-warning"}`} />
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider truncate">{name.replace(/_/g, " ")}</p>
+                    </div>
+                    <p className="text-sm font-bold">{Math.round(engine.avg_duration)}ms <span className="text-[10px] font-normal text-muted-foreground">avg</span></p>
+                    <p className="text-[10px] text-muted-foreground">{engine.runs} runs • {engine.errors} errors</p>
+                    <p className="text-[9px] text-muted-foreground">Last: {new Date(engine.latest).toLocaleTimeString()}</p>
+                  </div>
+                ))}
+              </div>
+              {engineHealth.recent_runs.length > 0 && (
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium mb-1">Recent Runs</p>
+                  <div className="space-y-1">
+                    {engineHealth.recent_runs.slice(0, 5).map((run, idx) => (
+                      <div key={idx} className="flex items-center gap-2 text-[11px]">
+                        <div className={`w-1.5 h-1.5 rounded-full ${run.status === "completed" ? "bg-success" : "bg-destructive"}`} />
+                        <span className="text-muted-foreground">{(run.run_type as string).replace(/_/g, " ")}</span>
+                        <span className="font-mono">{run.duration_ms}ms</span>
+                        <span className="text-muted-foreground">{run.items_processed} items</span>
+                        <span className="text-muted-foreground ml-auto">{new Date(run.started_at as string).toLocaleTimeString()}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          )}
+        </Card>
       </SectionErrorBoundary>
     </div>
   );
