@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { useOrganization } from "@/hooks/useOrganization";
 import { useProject } from "@/contexts/ProjectContext";
 import { supabase } from "@/integrations/supabase/client";
+import { invokeWithRetry } from "@/lib/edge-function-retry";
 import { useToast } from "@/hooks/use-toast";
 import { Network, Loader2, ArrowRight, AlertTriangle, CheckCircle } from "lucide-react";
 import DatasetRequired from "@/components/layout/DatasetRequired";
