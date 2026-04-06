@@ -308,8 +308,9 @@ const Executive = () => {
       setDbAlerts(data.triggered_alerts || []);
       toast({ title: "Signals computed", description: `Risk score: ${data.overall_score}/100` });
       fetchSignalData();
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      toast({ title: "Error", description: msg, variant: "destructive" });
     } finally {
       setSignalsLoading(false);
     }
@@ -329,8 +330,9 @@ const Executive = () => {
         .upsert(payload, { onConflict: "organization_id,role_type" });
       if (error) throw error;
       toast({ title: "Saved", description: "Notification preferences updated" });
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      toast({ title: "Error", description: msg, variant: "destructive" });
     } finally {
       setSavingPrefs(false);
     }
@@ -362,8 +364,9 @@ const Executive = () => {
         toast({ title: "Cached brief loaded", description: "Recent brief returned (< 6 hours old)" });
       }
       fetchSignalData();
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message || "Failed to generate brief", variant: "destructive" });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      toast({ title: "Error", description: msg || "Failed to generate brief", variant: "destructive" });
     } finally {
       setLoading(false);
     }

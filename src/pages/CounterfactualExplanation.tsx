@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useActiveDataContext } from "@/hooks/useActiveDataContext";
 import { supabase } from "@/integrations/supabase/client";
+import { invokeWithRetry } from "@/lib/edge-function-retry";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { FlipVertical, Loader2, AlertTriangle, ArrowUpDown, Gauge } from "lucide-react";
@@ -82,14 +83,15 @@ const CounterfactualExplanation = () => {
     if (!currentOrgId || !datasetId || !entityId) return;
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("counterfactual-explain", {
+      const { data, error } = await invokeWithRetry<CounterfactualResult & { error?: string }>("counterfactual-explain", {
         body: { organization_id: currentOrgId, dataset_id: datasetId, entity_type: entityType, entity_id: entityId },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-      setResult(data);
-    } catch (e: any) {
-      toast({ title: "Analysis failed", description: e.message, variant: "destructive" });
+      if (data) setResult(data);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Analysis failed";
+      toast({ title: "Analysis failed", description: msg, variant: "destructive" });
     } finally {
       setLoading(false);
     }

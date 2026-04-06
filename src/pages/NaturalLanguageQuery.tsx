@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { useActiveDataContext } from "@/hooks/useActiveDataContext";
 import DatasetRequired from "@/components/layout/DatasetRequired";
 import { supabase } from "@/integrations/supabase/client";
+import { invokeWithRetry } from "@/lib/edge-function-retry";
 import { useToast } from "@/hooks/use-toast";
 import { MessageSquare, Loader2, Sparkles, ArrowRight, Database, HelpCircle } from "lucide-react";
 
@@ -44,16 +45,17 @@ const NaturalLanguageQuery = () => {
     if (!currentOrgId || !datasetId || !queryText.trim()) return;
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("nlq-query", {
+      const { data, error } = await invokeWithRetry<QueryResult & { error?: string }>("nlq-query", {
         body: { organization_id: currentOrgId, dataset_id: datasetId, query: queryText },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
-      setHistory(prev => [{ query: queryText, result: data, timestamp: new Date() }, ...prev]);
+      if (data) setHistory(prev => [{ query: queryText, result: data, timestamp: new Date() }, ...prev]);
       setQuery("");
-    } catch (e: any) {
-      toast({ title: "Query failed", description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Query failed";
+      toast({ title: "Query failed", description: msg, variant: "destructive" });
     } finally {
       setLoading(false);
     }

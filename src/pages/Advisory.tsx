@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useActiveDataContext } from "@/hooks/useActiveDataContext";
 import DatasetRequired from "@/components/layout/DatasetRequired";
 import { supabase } from "@/integrations/supabase/client";
+import { invokeWithRetry } from "@/lib/edge-function-retry";
 import { embedAdvisoriesBatch } from "@/lib/decision-lifecycle";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -20,6 +21,7 @@ import {
 import IntelligenceDisclaimer from "@/components/IntelligenceDisclaimer";
 import ConfidenceBadge, { resolveConfidence } from "@/components/ConfidenceBadge";
 import { useDecisionContexts } from "@/hooks/useDecisionContexts";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 
 interface Advisory {
   id: string;
@@ -47,8 +49,8 @@ interface AdvisoryInstance {
   timeframe: string | null;
   confidence: number | null;
   rationale: string | null;
-  kpi_affected: any;
-  playbook_steps: any;
+  kpi_affected: string[] | null;
+  playbook_steps: string[] | null;
   status: string;
   assigned_to: string | null;
   resolved_at: string | null;
@@ -111,7 +113,7 @@ const AdvisoryPage = () => {
     if (!currentOrgId || !activeDatasetId) return;
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("prescriptive-advisory", {
+      const { data, error } = await invokeWithRetry<Record<string, unknown>>("prescriptive-advisory", {
         body: {
           organization_id: currentOrgId,
           dataset_id: activeDatasetId,
@@ -119,17 +121,18 @@ const AdvisoryPage = () => {
         },
       });
       if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      setAdvisories(data.advisories || []);
-      setCriticalCount(data.critical_count || 0);
-      setDataSufficiency(data.data_sufficiency || null);
-      setSampleSize(data.sample_size || 0);
+      if (data?.error) throw new Error(data.error as string);
+      setAdvisories((data?.advisories as Advisory[]) || []);
+      setCriticalCount((data?.critical_count as number) || 0);
+      setDataSufficiency((data?.data_sufficiency as string) || null);
+      setSampleSize((data?.sample_size as number) || 0);
       // Refetch instances since the edge function inserts new ones
       fetchInstances();
       // Embed new advisories into institutional memory (non-blocking)
       if (currentOrgId) embedAdvisoriesBatch(currentOrgId);
-    } catch (err: any) {
-      toast({ title: "Failed to load advisories", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      toast({ title: "Failed to load advisories", description: msg, variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -143,10 +146,10 @@ const AdvisoryPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentOrgId, activeDatasetId]);
 
-  const updateInstanceStatus = async (id: string, status: string, extras?: Record<string, any>) => {
+  const updateInstanceStatus = async (id: string, status: string, extras?: Record<string, unknown>) => {
     setUpdatingId(id);
     try {
-      const update: any = { status, ...extras };
+      const update: Record<string, unknown> = { status, ...extras };
       if (status === "resolved") update.resolved_at = new Date().toISOString();
       const { error } = await supabase
         .from("advisory_instances")
@@ -157,8 +160,9 @@ const AdvisoryPage = () => {
       fetchInstances();
       setResolutionText(prev => { const next = { ...prev }; delete next[id]; return next; });
       setImpactScore(prev => { const next = { ...prev }; delete next[id]; return next; });
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      toast({ title: "Error", description: msg, variant: "destructive" });
     } finally {
       setUpdatingId(null);
     }
@@ -235,7 +239,7 @@ const AdvisoryPage = () => {
 
   return (
     <DatasetRequired moduleName="Advisory">
-      <>
+      <SectionErrorBoundary sectionName="Advisory">
         <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
           <div className="flex items-center gap-3">
             <SidebarMobileToggle />
@@ -448,7 +452,7 @@ const AdvisoryPage = () => {
             </TabsContent>
           </Tabs>
         </main>
-      </>
+      </SectionErrorBoundary>
     </DatasetRequired>
   );
 };

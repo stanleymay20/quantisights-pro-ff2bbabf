@@ -119,8 +119,9 @@ const ExecutiveConvergence = ({ organizationId, tier }: Props) => {
       if (data?.error) throw new Error(data.error);
       setResult(data);
       toast({ title: "Convergence computed", description: `ECI: ${data.convergence_score}/100 — ${data.alignment_status}` });
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      toast({ title: "Error", description: msg, variant: "destructive" });
     } finally {
       setLoading(false);
     }

@@ -165,10 +165,11 @@ const ExecutiveCopilot = ({ organizationId, roleType, riskScore, tier, datasetId
           } catch { /* ignore */ }
         }
       }
-    } catch (e: any) {
-      console.error("Copilot error:", e);
-      const wasRateLimited = handleRateLimitError(e);
-      if (!wasRateLimited) setError(e.message);
+    } catch (e: unknown) {
+      const errorObj = e instanceof Error ? e : new Error(String(e));
+      console.error("Copilot error:", errorObj);
+      const wasRateLimited = handleRateLimitError(errorObj);
+      if (!wasRateLimited) setError(errorObj.message);
       if (!assistantSoFar) {
         setMessages(prev => prev.slice(0, -1));
       }

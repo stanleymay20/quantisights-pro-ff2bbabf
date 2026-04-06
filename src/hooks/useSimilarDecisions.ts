@@ -2,7 +2,8 @@
  * Hook to fetch similar past decisions with hybrid retrieval and match quality.
  */
 import { useState, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { getVerifiedAuth, authHeaders } from "@/lib/auth-helpers";
+import { invokeWithRetry } from "@/lib/edge-function-retry";
 
 export interface SimilarDecision {
   entity_type: string;
@@ -73,40 +74,34 @@ export const useSimilarDecisions = (organizationId: string | null): SimilarDecis
     setError(null);
 
     try {
-      const { data: { user }, error: authErr } = await supabase.auth.getUser();
-      if (authErr || !user) {
-        setError("Not authenticated");
-        setLoading(false);
-        return;
-      }
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
+      const auth = await getVerifiedAuth();
+      if (!auth) {
         setError("Not authenticated");
         setLoading(false);
         return;
       }
 
-      const { data, error: fnErr } = await supabase.functions.invoke("similar-decisions", {
+      const { data, error: fnErr } = await invokeWithRetry<Record<string, unknown>>("similar-decisions", {
         body: { organization_id: organizationId, query_text: queryText },
-        headers: { Authorization: `Bearer ${session.access_token}` },
+        headers: authHeaders(auth),
       });
 
       if (fnErr) {
         setError(fnErr.message);
       } else if (data) {
-        setSimilar(data.similar || []);
-        setHistoricalSuccessRate(data.historical_success_rate ?? null);
-        setAvgAccuracy(data.avg_accuracy ?? null);
-        setConfidenceAdjustment(data.confidence_adjustment ?? 0);
-        setRetrievalQuality(data.retrieval_quality ?? "none");
-        setPrecedentType(data.precedent_type ?? "novel_decision");
-        setQueryCategory(data.query_category ?? null);
-        setNeuralFallbackUsed(data.neural_fallback_used ?? false);
-        setNeuralConcepts(data.neural_concepts ?? []);
-        setMatchSummary(data.match_summary ?? null);
+        setSimilar((data.similar as SimilarDecision[]) || []);
+        setHistoricalSuccessRate((data.historical_success_rate as number) ?? null);
+        setAvgAccuracy((data.avg_accuracy as number) ?? null);
+        setConfidenceAdjustment((data.confidence_adjustment as number) ?? 0);
+        setRetrievalQuality((data.retrieval_quality as RetrievalQuality) ?? "none");
+        setPrecedentType((data.precedent_type as PrecedentType) ?? "novel_decision");
+        setQueryCategory((data.query_category as string) ?? null);
+        setNeuralFallbackUsed((data.neural_fallback_used as boolean) ?? false);
+        setNeuralConcepts((data.neural_concepts as string[]) ?? []);
+        setMatchSummary((data.match_summary as MatchSummary) ?? null);
       }
-    } catch (e) {
-      setError((e as Error).message);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Unknown error");
     }
     setLoading(false);
   }, [organizationId]);

@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { getVerifiedAuth, authHeaders } from "@/lib/auth-helpers";
+import { invokeWithRetry } from "@/lib/edge-function-retry";
 
 export interface ExecutionPlan {
   id: string;
@@ -28,15 +30,6 @@ export interface ExecutionEvent {
   created_at: string;
 }
 
-/** Helper: get verified user + access token */
-async function getVerifiedAuth(): Promise<{ token: string } | null> {
-  const { data: { user }, error } = await supabase.auth.getUser();
-  if (error || !user) return null;
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session?.access_token) return null;
-  return { token: session.access_token };
-}
-
 export const useExecutionPlans = (organizationId: string | null, decisionId: string | null) => {
   const { toast } = useToast();
   const [plans, setPlans] = useState<ExecutionPlan[]>([]);
@@ -50,14 +43,17 @@ export const useExecutionPlans = (organizationId: string | null, decisionId: str
       const auth = await getVerifiedAuth();
       if (!auth) return;
 
-      const { data, error } = await supabase.functions.invoke("execute-decision-action", {
-        body: { action: "get_timeline", organization_id: organizationId, decision_id: decisionId },
-        headers: { Authorization: `Bearer ${auth.token}` },
-      });
+      const { data, error } = await invokeWithRetry<{ plans: ExecutionPlan[]; events: ExecutionEvent[] }>(
+        "execute-decision-action",
+        {
+          body: { action: "get_timeline", organization_id: organizationId, decision_id: decisionId },
+          headers: authHeaders(auth),
+        },
+      );
 
       if (error) throw error;
-      setPlans(data.plans || []);
-      setEvents(data.events || []);
+      setPlans(data?.plans || []);
+      setEvents(data?.events || []);
     } catch (e: unknown) {
       console.error("Failed to fetch timeline:", e);
     }
@@ -98,14 +94,14 @@ export const useExecutionPlans = (organizationId: string | null, decisionId: str
     const auth = await getVerifiedAuth();
     if (!auth) return null;
 
-    const { data, error } = await supabase.functions.invoke("execute-decision-action", {
+    const { data, error } = await invokeWithRetry("execute-decision-action", {
       body: {
         action: "create_plan",
         organization_id: organizationId,
         decision_id: decisionId,
         ...params,
       },
-      headers: { Authorization: `Bearer ${auth.token}` },
+      headers: authHeaders(auth),
     });
 
     if (error) {
@@ -126,7 +122,7 @@ export const useExecutionPlans = (organizationId: string | null, decisionId: str
     const previousPlans = plans;
     setPlans(prev => prev.map(p => p.id === planId ? { ...p, status } : p));
 
-    const { error } = await supabase.functions.invoke("execute-decision-action", {
+    const { error } = await invokeWithRetry("execute-decision-action", {
       body: {
         action: "update_plan_status",
         organization_id: organizationId,
@@ -134,7 +130,7 @@ export const useExecutionPlans = (organizationId: string | null, decisionId: str
         status,
         notes,
       },
-      headers: { Authorization: `Bearer ${auth.token}` },
+      headers: authHeaders(auth),
     });
 
     if (error) {
@@ -152,7 +148,7 @@ export const useExecutionPlans = (organizationId: string | null, decisionId: str
     const auth = await getVerifiedAuth();
     if (!auth) return;
 
-    const { data, error } = await supabase.functions.invoke("execute-decision-action", {
+    const { data, error } = await invokeWithRetry("execute-decision-action", {
       body: {
         action: "trigger_webhook",
         organization_id: organizationId,
@@ -160,10 +156,10 @@ export const useExecutionPlans = (organizationId: string | null, decisionId: str
         webhook_url: webhookUrl,
         payload,
       },
-      headers: { Authorization: `Bearer ${auth.token}` },
+      headers: authHeaders(auth),
     });
 
-    if (error || !data?.success) {
+    if (error || !(data as Record<string, unknown>)?.success) {
       toast({ title: "Webhook failed", variant: "destructive" });
     } else {
       toast({ title: "Webhook triggered successfully" });
@@ -176,7 +172,7 @@ export const useExecutionPlans = (organizationId: string | null, decisionId: str
     const auth = await getVerifiedAuth();
     if (!auth) return;
 
-    const { data, error } = await supabase.functions.invoke("execute-decision-action", {
+    const { data, error } = await invokeWithRetry("execute-decision-action", {
       body: {
         action: "notify_slack",
         organization_id: organizationId,
@@ -184,10 +180,10 @@ export const useExecutionPlans = (organizationId: string | null, decisionId: str
         channel,
         message,
       },
-      headers: { Authorization: `Bearer ${auth.token}` },
+      headers: authHeaders(auth),
     });
 
-    if (error || !data?.success) {
+    if (error || !(data as Record<string, unknown>)?.success) {
       toast({ title: "Slack notification failed", variant: "destructive" });
     } else {
       toast({ title: "Slack notification sent" });

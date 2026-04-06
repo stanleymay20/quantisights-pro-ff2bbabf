@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useActiveDataContext } from "@/hooks/useActiveDataContext";
 import DatasetRequired from "@/components/layout/DatasetRequired";
 import { supabase } from "@/integrations/supabase/client";
+import { invokeWithRetry } from "@/lib/edge-function-retry";
 import { useToast } from "@/hooks/use-toast";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, ComposedChart } from "recharts";
 import { TrendingUp, TrendingDown, Minus, Loader2, Sparkles, BarChart3, Activity } from "lucide-react";
@@ -58,15 +59,16 @@ const Forecasting = () => {
     }
     setLoading(true);
     try {
-      const { data: result, error } = await supabase.functions.invoke("predictive-forecast", {
+      const { data: result, error } = await invokeWithRetry<ForecastData & { error?: string }>("predictive-forecast", {
         body: { organization_id: orgId, dataset_id: datasetId, metric_type: metricType, horizon_months: horizon },
       });
       if (error) throw error;
       if (result?.error) throw new Error(result.error);
-      setData(result);
+      if (result) setData(result);
       toast({ title: "Forecast generated" });
-    } catch (e: any) {
-      toast({ title: "Forecast failed", description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Forecast failed";
+      toast({ title: "Forecast failed", description: msg, variant: "destructive" });
     } finally {
       setLoading(false);
     }

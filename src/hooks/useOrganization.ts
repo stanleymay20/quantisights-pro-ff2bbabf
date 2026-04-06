@@ -8,6 +8,12 @@ interface Organization {
   role: string;
 }
 
+interface OrgMemberRow {
+  organization_id: string;
+  role: string;
+  organizations: { id: string; name: string };
+}
+
 export const useOrganization = () => {
   const { user } = useAuth();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
@@ -33,7 +39,7 @@ export const useOrganization = () => {
         return;
       }
 
-      const orgs: Organization[] = data.map((m: any) => ({
+      const orgs: Organization[] = (data as unknown as OrgMemberRow[]).map((m) => ({
         id: m.organizations.id,
         name: m.organizations.name,
         role: m.role,
@@ -57,9 +63,21 @@ export const useOrganization = () => {
     // Cascade: clear downstream context to prevent cross-org data leakage
     sessionStorage.removeItem("quantivis_workspace_id");
     sessionStorage.removeItem("quantivis_project_id");
+    // Clear ML cache on org switch to prevent cross-tenant data
+    clearMLCache();
   };
 
   const currentOrg = organizations.find((o) => o.id === currentOrgId) ?? null;
 
   return { organizations, currentOrgId, currentOrg, switchOrganization, loading };
 };
+
+/** Clears the module-level ML cache to prevent cross-org leakage */
+function clearMLCache() {
+  try {
+    // Dispatch a custom event that useMLEngine listens to
+    window.dispatchEvent(new CustomEvent("quantivis:org-switch"));
+  } catch {
+    // Ignore if window is not available
+  }
+}

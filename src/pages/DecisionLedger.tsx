@@ -155,7 +155,7 @@ const DecisionLedgerPage = () => {
       .limit(10);
     
     if (data && data.length > 0) {
-      const deltas = data.map((d: any) => Number(d.calibration_delta));
+      const deltas = data.map((d) => Number(d.calibration_delta));
       const avg = deltas.reduce((s: number, v: number) => s + v, 0) / deltas.length;
       setLearningStats({
         rollingCalError: Math.abs(avg),
@@ -213,14 +213,15 @@ const DecisionLedgerPage = () => {
       setSimResult(data as ImpactSim);
       toast({ title: "Impact simulation complete" });
       fetchDecisions();
-    } catch (e: any) {
-      toast({ title: "Simulation failed", description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Simulation failed";
+      toast({ title: "Simulation failed", description: msg, variant: "destructive" });
     } finally {
       setSimRunning(false);
     }
   };
 
-  const updateDecision = async (id: string, updates: Record<string, any>) => {
+  const updateDecision = async (id: string, updates: Record<string, unknown>) => {
     setUpdatingId(id);
     const decision = decisions.find(d => d.id === id);
 
@@ -261,7 +262,7 @@ const DecisionLedgerPage = () => {
           decisionId: id,
           organizationId: decision?.organization_id ?? "",
           userId: user?.id ?? null,
-          newStatus: updates.execution_status,
+          newStatus: updates.execution_status as string,
         });
       }
       fetchDecisions();

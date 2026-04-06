@@ -1,9 +1,10 @@
 /**
  * Hook for calling the server-side ML engine edge function.
  * Provides typed wrappers for all ML algorithms.
+ * Cache is org-scoped and clears on org switch.
  */
-import { useState, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useState, useCallback, useEffect } from "react";
+import { invokeWithRetry } from "@/lib/edge-function-retry";
 import type {
   KMeansResult,
   ARIMAResult,
@@ -21,9 +22,19 @@ interface MLState<T> {
   error: string | null;
 }
 
-// Lightweight in-memory cache for ML results (TTL-based)
+// Lightweight in-memory cache for ML results (TTL-based, org-scoped)
 const ML_CACHE_TTL_MS = 3 * 60 * 1000; // 3 minutes
 const mlCache = new Map<string, { result: unknown; timestamp: number }>();
+
+/** Clear the entire ML cache — called on org switch to prevent cross-tenant leakage */
+export function clearMLCache() {
+  mlCache.clear();
+}
+
+// Listen for org-switch events to clear cache
+if (typeof window !== "undefined") {
+  window.addEventListener("quantivis:org-switch", () => clearMLCache());
+}
 
 function buildCacheKey(algorithm: string, params: Record<string, unknown>): string {
   return `${algorithm}:${JSON.stringify(params)}`;
@@ -63,16 +74,16 @@ function useMLCall<T>() {
 
     setState({ data: null, loading: true, error: null });
     try {
-      const { data, error } = await supabase.functions.invoke("ml-engine", {
+      const { data, error } = await invokeWithRetry<{ error?: string; result: T }>("ml-engine", {
         body: { algorithm, params },
       });
       if (error) throw new Error(error.message || "ML engine error");
       if (data?.error) throw new Error(data.error);
-      const result = data.result as T;
+      const result = data?.result as T;
       setCache(cacheKey, result);
       setState({ data: result, loading: false, error: null });
       return result;
-    } catch (e) {
+    } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Unknown error";
       setState({ data: null, loading: false, error: msg });
       return null;
