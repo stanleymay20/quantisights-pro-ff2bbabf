@@ -39,7 +39,7 @@ const PasskeyManagement = () => {
     queryFn: async () => {
       if (!user?.id) return [];
       const { data } = await supabase
-        .from("webauthn_credentials" as any)
+        .from("webauthn_credentials")
         .select("id, credential_id, device_name, created_at, last_used_at")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
