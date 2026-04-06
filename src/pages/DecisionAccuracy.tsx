@@ -15,6 +15,7 @@ import {
   ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, ReferenceLine, LineChart, Line, Legend,
 } from "recharts";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 
 interface DecisionRecord {
   id: string;
@@ -97,6 +98,7 @@ const DecisionAccuracy = () => {
   const positiveOutcomes = evaluated.filter(d => (d.outcome_delta ?? 0) > 0).length;
 
   return (
+    <SectionErrorBoundary sectionName="Decision Accuracy">
     <div className="min-h-screen bg-background">
       <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
         <div className="flex items-center gap-3">
@@ -278,6 +280,7 @@ const DecisionAccuracy = () => {
         <IntelligenceDisclaimer context="general" />
       </div>
     </div>
+    </SectionErrorBoundary>
   );
 };
 

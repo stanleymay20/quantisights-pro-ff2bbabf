@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { invokeWithRetry } from "@/lib/edge-function-retry";
 import { useToast } from "@/hooks/use-toast";
 import { MessageSquare, Loader2, Sparkles, ArrowRight, Database, HelpCircle } from "lucide-react";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 
 interface QueryResult {
   answer: string;
@@ -76,6 +77,7 @@ const NaturalLanguageQuery = () => {
           </div>
         </header>
 
+        <SectionErrorBoundary sectionName="Natural Language Query">
         <main className="flex-1 p-8 overflow-auto space-y-6">
           {/* Query Input */}
           <Card className="border-primary/20">
@@ -183,6 +185,7 @@ const NaturalLanguageQuery = () => {
             </Card>
           ))}
         </main>
+        </SectionErrorBoundary>
       </>
     </DatasetRequired>
   );

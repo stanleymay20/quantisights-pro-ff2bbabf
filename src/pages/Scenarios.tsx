@@ -23,6 +23,7 @@ import {
   ResponsiveContainer, CartesianGrid, Legend, Area
 } from "recharts";
 import DatasetRequired from "@/components/layout/DatasetRequired";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 
 interface Scenario {
   id: string;
@@ -367,6 +368,7 @@ const Scenarios = () => {
           </Dialog>
         </header>
 
+        <SectionErrorBoundary sectionName="Scenario Simulation">
         <main className="flex-1 p-8 overflow-auto">
           {!canSimulate ? (
             <div className="glass-card p-12 rounded-xl flex flex-col items-center justify-center min-h-[400px]">
@@ -643,6 +645,7 @@ const Scenarios = () => {
             </div>
           )}
         </main>
+        </SectionErrorBoundary>
     </>
     </DatasetRequired>
   );

@@ -52,15 +52,15 @@ const StewardDrillDown = () => {
       const profiles = (profilesRes.data ?? []) as { user_id: string; full_name: string | null }[];
       const profileMap = new Map(profiles.map((p) => [p.user_id, p.full_name]));
 
-      const members: MemberWithProfile[] = (membersRes.data ?? []).map((m: any) => ({
+      const members: MemberWithProfile[] = (membersRes.data ?? []).map((m: Record<string, unknown>) => ({
         user_id: m.user_id,
         role: m.role,
         full_name: profileMap.get(m.user_id) ?? "Unknown",
       }));
 
-      const qualityDatasetIds = new Set((qualityRes.data ?? []).map((q: any) => q.dataset_id).filter(Boolean));
+      const qualityDatasetIds = new Set((qualityRes.data ?? []).map((q: { dataset_id?: string | null }) => q.dataset_id).filter(Boolean));
 
-      const datasets: DatasetOwnership[] = (datasetsRes.data ?? []).map((d: any) => ({
+      const datasets: DatasetOwnership[] = (datasetsRes.data ?? []).map((d: Record<string, unknown>) => ({
         id: d.id,
         name: d.name,
         uploaded_by: d.uploaded_by,

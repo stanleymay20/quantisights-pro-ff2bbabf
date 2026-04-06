@@ -15,6 +15,7 @@ import {
   AlertTriangle, Zap, Shield, BarChart3, Minus,
 } from "lucide-react";
 import DatasetRequired from "@/components/layout/DatasetRequired";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 
 interface Signal {
   category: string;
@@ -132,6 +133,7 @@ const MarketIntelligence = () => {
           </div>
         </header>
 
+        <SectionErrorBoundary sectionName="Market Intelligence">
         <main className="flex-1 p-8 overflow-auto space-y-6">
           {/* Controls */}
           <Card>
@@ -275,6 +277,7 @@ const MarketIntelligence = () => {
             </Card>
           )}
         </main>
+        </SectionErrorBoundary>
     </>
     </DatasetRequired>
   );

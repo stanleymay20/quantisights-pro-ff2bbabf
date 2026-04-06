@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import logo from "@/assets/quantivis-logo.png";
 import { CONTACT } from "@/lib/contact-config";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 
 interface QAItem {
   id: string;
@@ -114,7 +115,8 @@ const SecurityQuestionnaire = () => (
       </div>
     </header>
 
-    <main className="container mx-auto px-6 py-16 max-w-4xl">
+    <SectionErrorBoundary sectionName="Security Questionnaire">
+        <main className="container mx-auto px-6 py-16 max-w-4xl">
       {/* Header */}
       <div className="mb-12">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-medium mb-4">
@@ -282,6 +284,7 @@ const SecurityQuestionnaire = () => (
         </p>
       </div>
     </main>
+        </SectionErrorBoundary>
 
     <footer className="border-t border-border/30 py-8 mt-16 print:hidden">
       <div className="container mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">

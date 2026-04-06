@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { FlipVertical, Loader2, AlertTriangle, ArrowUpDown, Gauge } from "lucide-react";
 import DatasetRequired from "@/components/layout/DatasetRequired";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 
 interface Factor {
   factor: string;
@@ -112,6 +113,7 @@ const CounterfactualExplanation = () => {
           </div>
         </header>
 
+        <SectionErrorBoundary sectionName="Counterfactual Explanation">
         <main className="flex-1 p-8 overflow-auto space-y-6">
           {/* Selection Controls */}
           <Card>
@@ -135,7 +137,7 @@ const CounterfactualExplanation = () => {
                     <SelectValue placeholder="Select a recommendation..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {entities?.map((e: any) => (
+                    {entities?.map((e: Record<string, unknown>) => (
                       <SelectItem key={e.id} value={e.id}>
                         <span className="truncate">
                           {e.recommended_action || e.title}
@@ -268,6 +270,7 @@ const CounterfactualExplanation = () => {
             </>
           )}
         </main>
+        </SectionErrorBoundary>
     </>
     </DatasetRequired>
   );

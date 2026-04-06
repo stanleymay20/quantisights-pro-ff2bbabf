@@ -10,6 +10,7 @@ import { invokeWithRetry } from "@/lib/edge-function-retry";
 import { useToast } from "@/hooks/use-toast";
 import { BrainCircuit, Loader2, AlertTriangle, Shield, Eye, EyeOff, Anchor, TrendingDown, CheckCircle2, Search } from "lucide-react";
 import DatasetRequired from "@/components/layout/DatasetRequired";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 
 interface BiasDetection {
   bias_type: string;
@@ -83,6 +84,7 @@ const CognitiveBiasDetection = () => {
           </Button>
         </header>
 
+        <SectionErrorBoundary sectionName="Cognitive Bias Detection">
         <main className="flex-1 p-8 overflow-auto space-y-6">
           {!result && !loading && (
             <Card className="border-dashed border-border/50">
@@ -225,6 +227,7 @@ const CognitiveBiasDetection = () => {
             </>
           )}
         </main>
+        </SectionErrorBoundary>
     </>
     </DatasetRequired>
   );

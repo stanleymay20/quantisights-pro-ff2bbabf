@@ -103,7 +103,7 @@ const EmbedDashboard = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {metrics.map((m: any, i: number) => (
+            {metrics.map((m: Record<string, unknown>, i: number) => (
               <div key={i} className="rounded-xl border border-border/30 bg-card/50 p-5">
                 <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
                   {m.metric_name}

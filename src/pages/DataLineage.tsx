@@ -23,7 +23,7 @@ interface LineageEdge {
   to: string;
 }
 
-const NODE_STYLES: Record<string, { icon: any; bg: string; border: string }> = {
+const NODE_STYLES: Record<string, { icon: React.ElementType; bg: string; border: string }> = {
   source: { icon: Database, bg: "bg-primary/10", border: "border-primary/30" },
   raw: { icon: Layers, bg: "bg-secondary/50", border: "border-border/40" },
   metric: { icon: BarChart3, bg: "bg-success/10", border: "border-success/30" },
@@ -40,7 +40,7 @@ const DataLineage = () => {
   const [decisions, setDecisions] = useState<any[]>([]);
   const [metricTypes, setMetricTypes] = useState<string[]>([]);
   const [rawCount, setRawCount] = useState(0);
-  const [datasetInfo, setDatasetInfo] = useState<{ name: string; row_count: number | null; column_mapping: any } | null>(null);
+  const [datasetInfo, setDatasetInfo] = useState<{ name: string; row_count: number | null; column_mapping: Record<string, unknown> | null } | null>(null);
 
   useEffect(() => {
     if (!currentOrgId) return;

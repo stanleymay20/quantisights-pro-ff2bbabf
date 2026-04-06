@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, CartesianGrid } from "recharts";
 import DatasetRequired from "@/components/layout/DatasetRequired";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 
 interface KPI {
   id: string;
@@ -415,6 +416,7 @@ const KPIs = () => {
           </div>
         </header>
 
+        <SectionErrorBoundary sectionName="KPI Builder">
         <main className="flex-1 p-8 overflow-auto">
           <div className="grid lg:grid-cols-3 gap-6">
             {/* KPI List */}
@@ -661,6 +663,7 @@ const KPIs = () => {
             </div>
           </div>
         </main>
+        </SectionErrorBoundary>
     </div>
     </DatasetRequired>
   );

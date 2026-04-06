@@ -21,7 +21,7 @@ interface Props {
 const TagInput = ({
   label, description, icon: Icon, values, onChange, placeholder,
 }: {
-  label: string; description: string; icon: any; values: string[];
+  label: string; description: string; icon: React.ElementType; values: string[];
   onChange: (v: string[]) => void; placeholder: string;
 }) => {
   const [input, setInput] = useState("");
@@ -370,7 +370,7 @@ const OrganizationalIdentitySettings = ({ organizationId }: Props) => {
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Influence</Label>
-                <Select value={s.influence} onValueChange={(v: any) => {
+                <Select value={s.influence} onValueChange={(v: string) => {
                   const updated = [...stakeholders];
                   updated[i] = { ...s, influence: v };
                   setStakeholders(updated);
@@ -385,7 +385,7 @@ const OrganizationalIdentitySettings = ({ organizationId }: Props) => {
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Interest</Label>
-                <Select value={s.interest} onValueChange={(v: any) => {
+                <Select value={s.interest} onValueChange={(v: string) => {
                   const updated = [...stakeholders];
                   updated[i] = { ...s, interest: v };
                   setStakeholders(updated);

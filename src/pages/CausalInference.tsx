@@ -10,6 +10,7 @@ import { invokeWithRetry } from "@/lib/edge-function-retry";
 import { useToast } from "@/hooks/use-toast";
 import { Network, Loader2, ArrowRight, AlertTriangle, CheckCircle } from "lucide-react";
 import DatasetRequired from "@/components/layout/DatasetRequired";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 
 interface CausalNode {
   id: string;
@@ -81,6 +82,7 @@ const CausalInference = () => {
           </Button>
         </header>
 
+        <SectionErrorBoundary sectionName="Causal Inference">
         <main className="flex-1 p-8 overflow-auto space-y-6">
           {!result && !loading && (
             <Card className="border-dashed border-border/50">
@@ -220,6 +222,7 @@ const CausalInference = () => {
             </>
           )}
         </main>
+        </SectionErrorBoundary>
     </>
     </DatasetRequired>
   );

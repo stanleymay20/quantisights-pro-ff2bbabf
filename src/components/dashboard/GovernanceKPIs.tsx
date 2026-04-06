@@ -43,19 +43,19 @@ const GovernanceKPIs = () => {
         : 0;
 
       const stewardUserIds = new Set(
-        (members.data ?? []).filter((m: any) => m.role === "steward").map((m: any) => m.user_id)
+        (members.data ?? []).filter((m: { role: string; user_id: string }) => m.role === "steward").map((m: { role: string; user_id: string }) => m.user_id)
       );
       const stewardCount = stewardUserIds.size;
       const totalMembers = members.data?.length ?? 1;
-      const outcomeTracked = decisions.data?.filter((d: any) => d.outcome_measured_at).length ?? 0;
+      const outcomeTracked = decisions.data?.filter((d: { outcome_measured_at?: string | null }) => d.outcome_measured_at).length ?? 0;
       const totalDecisions = decisions.count ?? 0;
       const outcomeRate = totalDecisions > 0 ? Math.round((outcomeTracked / totalDecisions) * 100) : 0;
 
       // Governed dataset = has quality check + has assigned steward + has retention policy for 'datasets'
-      const qualityDatasetIds = new Set((quality.data ?? []).map((q: any) => q.dataset_id).filter(Boolean));
-      const hasDatasetRetention = (retentionPolicies.data ?? []).some((p: any) => p.data_category === "datasets");
+      const qualityDatasetIds = new Set((quality.data ?? []).map((q: { dataset_id?: string | null }) => q.dataset_id).filter(Boolean));
+      const hasDatasetRetention = (retentionPolicies.data ?? []).some((p: { data_category: string }) => p.data_category === "datasets");
       const allDatasets = datasets.data ?? [];
-      const governedCount = allDatasets.filter((d: any) =>
+      const governedCount = allDatasets.filter((d: { id: string; workspace_id?: string | null }) =>
         qualityDatasetIds.has(d.id) &&
         (d.steward_user_id != null || stewardUserIds.has(d.uploaded_by)) &&
         hasDatasetRetention

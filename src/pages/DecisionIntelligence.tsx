@@ -29,9 +29,10 @@ import {
   Brain, TrendingUp, AlertTriangle, GitCompare, BarChart3,
   Layers, RefreshCw, Target, Gauge, CheckCircle2
 } from "lucide-react";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 
 /* ──────── Counterfactual Analysis ──────── */
-const CounterfactualPanel = ({ decisions }: { decisions: any[] }) => {
+const CounterfactualPanel = ({ decisions }: { decisions: Array<Record<string, unknown>> }) => {
   const resolved = decisions.filter(d => d.decision_status === "approved" && d.actual_value != null);
 
   if (resolved.length === 0) {
@@ -92,7 +93,7 @@ const CounterfactualPanel = ({ decisions }: { decisions: any[] }) => {
 };
 
 /* ──────── Decision Fatigue Detector ──────── */
-const DecisionFatiguePanel = ({ decisions }: { decisions: any[] }) => {
+const DecisionFatiguePanel = ({ decisions }: { decisions: Array<Record<string, unknown>> }) => {
   const pending = decisions.filter(d => d.decision_status === "pending");
   const inProgress = decisions.filter(d => d.execution_status === "in_progress");
   const stale = pending.filter(d => {
@@ -143,7 +144,7 @@ const DecisionFatiguePanel = ({ decisions }: { decisions: any[] }) => {
 };
 
 /* ──────── Portfolio Simulation View ──────── */
-const PortfolioSimulation = ({ simulations }: { simulations: any[] }) => {
+const PortfolioSimulation = ({ simulations }: { simulations: Array<Record<string, unknown>> }) => {
   const portfolio = useMemo(() => {
     if (simulations.length === 0) return null;
 
@@ -215,7 +216,7 @@ const PortfolioSimulation = ({ simulations }: { simulations: any[] }) => {
 };
 
 /* ──────── Prediction Calibration ──────── */
-const CalibrationPanel = ({ decisions }: { decisions: any[] }) => {
+const CalibrationPanel = ({ decisions }: { decisions: Array<Record<string, unknown>> }) => {
   const calibrated = decisions.filter(d => d.prediction_accuracy_score != null);
 
   if (calibrated.length === 0) {
@@ -307,6 +308,7 @@ const DecisionIntelligence = () => {
           </div>
         </header>
 
+        <SectionErrorBoundary sectionName="Decision Intelligence">
         <main className="flex-1 p-8 overflow-auto">
           <IntelligenceDisclaimer variant="banner" context="advisory" />
 
@@ -372,6 +374,7 @@ const DecisionIntelligence = () => {
             </div>
           )}
         </main>
+        </SectionErrorBoundary>
     </>
     </DatasetRequired>
   );

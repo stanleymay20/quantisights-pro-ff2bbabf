@@ -6,7 +6,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 
 interface Props {
   orgId: string | null;
-  decisions: any[];
+  decisions: Array<{ confidence?: number; outcome_measured_at?: string | null; outcome_success?: boolean | null; created_at: string; [key: string]: unknown }>;
 }
 
 interface CalibrationModel {

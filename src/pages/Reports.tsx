@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { FileText, Download, Loader2, Plus, BarChart3, Shield, TrendingUp, Crown } from "lucide-react";
 import IntelligenceDisclaimer from "@/components/IntelligenceDisclaimer";
 import DatasetRequired from "@/components/layout/DatasetRequired";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 
 interface Report {
   id: string;
@@ -133,6 +134,7 @@ const Reports = () => {
           </button>
         </header>
         <IntelligenceDisclaimer variant="banner" context="report" />
+        <SectionErrorBoundary sectionName="Reports">
         <main className="flex-1 p-8 overflow-auto space-y-6">
           {/* Report Type Selector */}
           <div>
@@ -222,6 +224,7 @@ const Reports = () => {
             </div>
           )}
         </main>
+        </SectionErrorBoundary>
     </>
     </DatasetRequired>
   );

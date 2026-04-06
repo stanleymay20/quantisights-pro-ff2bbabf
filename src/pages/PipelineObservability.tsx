@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from "recharts";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 
 const STATUS_COLORS: Record<string, string> = {
   completed: "text-success",
@@ -111,7 +112,7 @@ export default function PipelineObservability() {
     };
   });
 
-  const sourceTypeData = dataSources.reduce((acc: any[], ds) => {
+  const sourceTypeData = dataSources.reduce((acc: Array<{ name: string; count: number }>, ds) => {
     const existing = acc.find(a => a.name === ds.source_type);
     if (existing) existing.value++;
     else acc.push({ name: ds.source_type, value: 1 });
@@ -121,6 +122,7 @@ export default function PipelineObservability() {
   const PIE_COLORS = ["hsl(var(--primary))", "hsl(var(--accent))", "hsl(var(--secondary))", "#22c55e", "#f59e0b"];
 
   return (
+    <SectionErrorBoundary sectionName="Pipeline Observability">
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
@@ -417,5 +419,6 @@ export default function PipelineObservability() {
         </TabsContent>
       </Tabs>
     </div>
+    </SectionErrorBoundary>
   );
 }

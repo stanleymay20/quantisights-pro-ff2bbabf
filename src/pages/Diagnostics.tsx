@@ -14,6 +14,7 @@ import DiagnosticSummaryCards from "@/components/diagnostics/DiagnosticSummaryCa
 import DiagnosticCard from "@/components/diagnostics/DiagnosticCard";
 import DiagnosticEmptyState from "@/components/diagnostics/DiagnosticEmptyState";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 
 export interface DiagnosticResult {
   metric_type: string;
@@ -102,6 +103,7 @@ const Diagnostics = () => {
           </Button>
         </header>
 
+        <SectionErrorBoundary sectionName="Diagnostics">
         <main className="flex-1 p-8 overflow-auto space-y-6">
           <DiagnosticSummaryCards
             analyzedCount={analyzedCount}
@@ -132,6 +134,7 @@ const Diagnostics = () => {
 
           <IntelligenceDisclaimer variant="footer" context="advisory" />
         </main>
+        </SectionErrorBoundary>
       </ErrorBoundary>
     </DatasetRequired>
   );

@@ -80,7 +80,7 @@ const DecisionEvidencePanel = ({ decisionId, organizationId, decisionText }: Dec
       setCalibration(cal || null);
 
       // Get execution events for this decision's plans
-      const planIds = (plansRes.data || []).map((p: any) => p.id);
+      const planIds = (plansRes.data || []).map((p: { id: string }) => p.id);
       if (planIds.length > 0) {
         const { data: events } = await supabase
           .from("execution_events")
@@ -299,7 +299,7 @@ const DecisionEvidencePanel = ({ decisionId, organizationId, decisionText }: Dec
                   <Activity className="w-3.5 h-3.5 text-primary" /> Execution Events ({executionEvents.length})
                 </h5>
                 <div className="space-y-1 max-h-32 overflow-y-auto">
-                  {executionEvents.map((ev: any) => (
+                  {executionEvents.map((ev: Record<string, unknown>) => (
                     <div key={ev.id} className="flex items-center gap-2 text-[10px] py-1 border-b border-border/10 last:border-0">
                       <Badge variant="outline" className="text-[9px] px-1">{ev.event_type}</Badge>
                       <span className="text-muted-foreground">{new Date(ev.created_at).toLocaleString()}</span>

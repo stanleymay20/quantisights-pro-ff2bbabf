@@ -81,7 +81,7 @@ const AuthEventLog = () => {
         ) : (
           <ScrollArea className="h-[400px]">
             <div className="space-y-2">
-              {events.map((event: any) => {
+              {events.map((event: Record<string, unknown>) => {
                 const config = EVENT_CONFIG[event.event_type] || {
                   icon: Shield, label: event.event_type, severity: "secondary" as const,
                 };

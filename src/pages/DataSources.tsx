@@ -19,7 +19,7 @@ interface DataSource {
   name: string;
   source_type: string;
   status: string;
-  config: any;
+  config: Record<string, unknown>;
   credentials_key_hash: string | null;
   last_synced_at: string | null;
   created_at: string;

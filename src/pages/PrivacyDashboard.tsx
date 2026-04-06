@@ -14,6 +14,7 @@ import {
   FileText, Clock, Loader2, CheckCircle2, AlertTriangle,
 } from "lucide-react";
 import { CONTACT } from "@/lib/contact-config";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 
 interface DataSummary {
   datasets: number;
@@ -102,6 +103,7 @@ const PrivacyDashboard = () => {
 
   return (
     <div className="space-y-8 max-w-5xl pb-12">
+      <SectionErrorBoundary sectionName="Privacy Dashboard">
       <div className="flex items-center gap-3">
         <SidebarMobileToggle />
         <div>
@@ -222,6 +224,7 @@ const PrivacyDashboard = () => {
           </CardContent>
         </Card>
       </motion.div>
+      </SectionErrorBoundary>
     </div>
   );
 };

@@ -16,7 +16,7 @@ const COLORS = [
   "hsl(262, 83%, 58%)",
 ];
 
-const CustomNode = (props: any) => {
+const CustomNode = (props: Record<string, unknown>) => {
   const { x, y, width, height, index, payload } = props;
   return (
     <Layer key={`node-${index}`}>

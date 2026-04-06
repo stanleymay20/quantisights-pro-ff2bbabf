@@ -23,7 +23,7 @@ interface KpiTemplate {
   name: string;
   industry: string;
   description: string;
-  kpis: any[];
+  kpis: Array<Record<string, unknown>>;
 }
 
 const INDUSTRIES = [

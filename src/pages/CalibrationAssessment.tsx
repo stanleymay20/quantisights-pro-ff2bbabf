@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Brain, ArrowRight, ArrowLeft, Target, TrendingDown, TrendingUp, AlertTriangle, Zap, Share2, BookOpen, LogIn } from "lucide-react";
@@ -292,6 +293,7 @@ const CalibrationAssessment = () => {
         // Schema-gap cast: bias_markers is Json type, TS generated type doesn't accept string[] directly
         bias_markers: computed.biasMarkers as unknown as import("@/integrations/supabase/types").Json,
         completed_at: new Date().toISOString(),
+
       });
     } catch (e: unknown) {
       console.error("[CalibrationAssessment] Failed to save assessment:", e instanceof Error ? e.message : e);
@@ -318,7 +320,8 @@ const CalibrationAssessment = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <main className="flex-1 overflow-y-auto">
+      <SectionErrorBoundary sectionName="Calibration Assessment">
+        <main className="flex-1 overflow-y-auto">
         <div className="p-4 lg:p-8 max-w-4xl mx-auto">
           <div className="flex items-center justify-between mb-6 lg:mb-8">
             <div className="flex items-center gap-3">
@@ -698,6 +701,7 @@ const CalibrationAssessment = () => {
           </AnimatePresence>
         </div>
       </main>
+        </SectionErrorBoundary>
     </div>
   );
 };

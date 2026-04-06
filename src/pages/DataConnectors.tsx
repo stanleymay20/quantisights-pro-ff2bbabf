@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 import { useNavigate } from "react-router-dom";
 import { SidebarMobileToggle } from "@/components/layout/ProtectedShell";
 import { useAuth } from "@/contexts/AuthContext";
@@ -161,7 +162,7 @@ const DataConnectors = () => {
   };
 
   const buildConnectorPayload = () => {
-    const base: any = {
+    const base: Record<string, unknown> = {
       organization_id: currentOrgId,
       connector_type: selectedType,
     };
@@ -373,6 +374,7 @@ const DataConnectors = () => {
       const res = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/db-connector`,
         {
+
           method: "POST", headers: authHeaders,
           body: JSON.stringify({
             action: "sync", ...connPayload, data_source_id: ds.id,
@@ -621,7 +623,8 @@ const DataConnectors = () => {
         )}
       </header>
 
-      <main className="flex-1 p-8 overflow-auto">
+      <SectionErrorBoundary sectionName="Data Connectors">
+        <main className="flex-1 p-8 overflow-auto">
         {/* Progress bar */}
         {step !== "select" && (
           <div className="mb-8">
@@ -666,7 +669,7 @@ const DataConnectors = () => {
                   <div className="mb-8">
                     <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Active Connections</h3>
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {existingConnectors.map((cc: any) => {
+                      {existingConnectors.map((cc: Record<string, unknown>) => {
                         const def = CONNECTORS.find(c => c.type === cc.connector_type);
                         const Icon = def?.icon || Database;
                         return (
@@ -879,7 +882,7 @@ const DataConnectors = () => {
                         <tbody>
                           {previewData.rows.slice(0, 10).map((row, i) => (
                             <tr key={i} className="hover:bg-secondary/50">
-                              {Object.values(row).map((v: any, j) => (
+                              {Object.values(row).map((v: unknown, j) => (
                                 <td key={j} className="p-1.5 border-b border-border/50 truncate max-w-[200px]">{String(v ?? "")}</td>
                               ))}
                             </tr>
@@ -1091,6 +1094,7 @@ const DataConnectors = () => {
           </motion.div>
         </AnimatePresence>
       </main>
+        </SectionErrorBoundary>
     </>
   );
 };

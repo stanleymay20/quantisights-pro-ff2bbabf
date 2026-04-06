@@ -88,9 +88,9 @@ const GovernanceCommandView = () => {
 
   // Enforcement breakdown
   const enforcementCounts = {
-    configured: (retentionData ?? []).filter((p: any) => (p.enforcement_status ?? "configured") === "configured").length,
-    scheduled: (retentionData ?? []).filter((p: any) => p.enforcement_status === "scheduled").length,
-    enforced: (retentionData ?? []).filter((p: any) => p.enforcement_status === "enforced").length,
+    configured: (retentionData ?? []).filter((p: { enforcement_status?: string | null; data_category?: string }) => (p.enforcement_status ?? "configured") === "configured").length,
+    scheduled: (retentionData ?? []).filter((p: { enforcement_status?: string | null; data_category?: string }) => p.enforcement_status === "scheduled").length,
+    enforced: (retentionData ?? []).filter((p: { enforcement_status?: string | null; data_category?: string }) => p.enforcement_status === "enforced").length,
   };
 
   // Risk detection using centralized rules

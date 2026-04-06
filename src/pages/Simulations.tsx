@@ -14,6 +14,7 @@ import { toast } from "@/hooks/use-toast";
 import { Activity, TrendingUp, TrendingDown, Shield, Info, Loader2, BarChart3 } from "lucide-react";
 import IntelligenceDisclaimer from "@/components/IntelligenceDisclaimer";
 import DatasetRequired from "@/components/layout/DatasetRequired";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 
 const Simulations = () => {
   const { currentOrgId: organizationId } = useOrganization();
@@ -91,7 +92,8 @@ const Simulations = () => {
 
   return (
     <DatasetRequired moduleName="Simulations">
-    <main className="flex-1 overflow-y-auto">
+    <SectionErrorBoundary sectionName="Monte Carlo Simulations">
+        <main className="flex-1 overflow-y-auto">
         <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-lg border-b border-border px-6 py-4">
           <div className="flex items-center gap-3">
             <SidebarMobileToggle />
@@ -254,6 +256,7 @@ const Simulations = () => {
           </Card>
         </div>
     </main>
+        </SectionErrorBoundary>
     </DatasetRequired>
   );
 };
@@ -277,7 +280,7 @@ function StatCard({ label, value, icon }: { label: string; value: string; icon: 
   );
 }
 
-function DistributionBand({ sim }: { sim: any }) {
+function DistributionBand({ sim }: { sim: Record<string, unknown> }) {
   const min = Number(sim.p10_value);
   const max = Number(sim.p90_value);
   const range = max - min || 1;

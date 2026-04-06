@@ -1,5 +1,5 @@
 interface SimulationSectionProps {
-  simulation: any[];
+  simulation: Array<{ scenario: string; expected_value?: number; p10?: number; p50?: number; p90?: number; [key: string]: unknown }>;
 }
 
 const SimulationSection = ({ simulation }: SimulationSectionProps) => {
@@ -11,7 +11,7 @@ const SimulationSection = ({ simulation }: SimulationSectionProps) => {
         Strategic Simulation Summary
       </h2>
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        {simulation.slice(0, 5).map((sim: any, i: number) => (
+        {simulation.slice(0, 5).map((sim: { scenario: string; expected_value?: number; p10?: number; p50?: number; p90?: number; [key: string]: unknown }, i: number) => (
           <div key={i} className="border border-border/50 print:border-border rounded-xl p-4 text-center">
             <div className="text-xs text-muted-foreground mb-2">Projection {i + 1}</div>
             <div className="text-lg font-semibold text-foreground/90 print:text-foreground">
