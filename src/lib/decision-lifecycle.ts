@@ -5,6 +5,7 @@
  * and outcome tracking to ensure the learning loop is always fed.
  */
 import { supabase } from "@/integrations/supabase/client";
+import { captureError } from "@/lib/sentry";
 
 interface AuditLogEntry {
   organization_id: string;
@@ -25,10 +26,14 @@ export async function writeAuditLog(entry: AuditLogEntry) {
       action_type: entry.action_type,
       resource_type: entry.resource_type,
       resource_id: entry.resource_id,
-      payload: (entry.payload ?? null) as any,
+      payload: (entry.payload ?? null) as Record<string, unknown> | null,
     }]);
   } catch (err) {
     console.error("[audit] Failed to write audit log:", err);
+    captureError(
+      err instanceof Error ? err : new Error("Audit log write failed"),
+      { action_type: entry.action_type, resource_id: entry.resource_id }
+    );
   }
 }
 
@@ -95,6 +100,10 @@ export async function onDecisionApproved(params: PostApprovalParams) {
     });
   } catch (err) {
     console.error("[lifecycle] Failed to create execution plan:", err);
+    captureError(
+      err instanceof Error ? err : new Error("Execution plan creation failed"),
+      { decisionId, context: "onDecisionApproved" }
+    );
   }
 
   // 3. Decision outcome (for learning loop — only if we have a metric to track)
@@ -110,20 +119,40 @@ export async function onDecisionApproved(params: PostApprovalParams) {
       });
     } catch (err) {
       console.error("[lifecycle] Failed to create decision outcome:", err);
+      captureError(
+        err instanceof Error ? err : new Error("Decision outcome creation failed"),
+        { decisionId, context: "onDecisionApproved" }
+      );
     }
   }
 
-  // 4. Trigger async embedding + prediction (non-blocking)
+  // 4. Trigger async embedding + prediction (non-blocking, but observable)
   try {
     supabase.functions.invoke("embed-decisions", {
       body: { organization_id: organizationId, mode: "specific", entity_ids: [decisionId] },
-    }).catch(() => {}); // fire-and-forget
+    }).catch((err) => {
+      console.warn("[lifecycle] Embedding invocation failed:", err);
+      captureError(
+        err instanceof Error ? err : new Error("embed-decisions invocation failed"),
+        { decisionId, context: "post-approval-embedding" }
+      );
+    });
 
     supabase.functions.invoke("predict-outcome", {
       body: { organization_id: organizationId, decision_id: decisionId },
-    }).catch(() => {}); // fire-and-forget
-  } catch {
-    // Non-critical — embedding/prediction failures should not block approval
+    }).catch((err) => {
+      console.warn("[lifecycle] Prediction invocation failed:", err);
+      captureError(
+        err instanceof Error ? err : new Error("predict-outcome invocation failed"),
+        { decisionId, context: "post-approval-prediction" }
+      );
+    });
+  } catch (err) {
+    console.warn("[lifecycle] Non-critical post-approval task failed:", err);
+    captureError(
+      err instanceof Error ? err : new Error("Post-approval tasks failed"),
+      { decisionId, context: "post-approval-async" }
+    );
   }
 }
 
@@ -134,9 +163,15 @@ export async function embedInsightsBatch(organizationId: string) {
   try {
     supabase.functions.invoke("embed-decisions", {
       body: { organization_id: organizationId, mode: "insights" },
-    }).catch(() => {});
-  } catch {
-    // Non-critical
+    }).catch((err) => {
+      console.warn("[lifecycle] Insights embedding failed:", err);
+      captureError(
+        err instanceof Error ? err : new Error("Insights embedding invocation failed"),
+        { organizationId, context: "embedInsightsBatch" }
+      );
+    });
+  } catch (err) {
+    console.warn("[lifecycle] embedInsightsBatch outer error:", err);
   }
 }
 
@@ -147,9 +182,15 @@ export async function embedAdvisoriesBatch(organizationId: string) {
   try {
     supabase.functions.invoke("embed-decisions", {
       body: { organization_id: organizationId, mode: "advisories" },
-    }).catch(() => {});
-  } catch {
-    // Non-critical
+    }).catch((err) => {
+      console.warn("[lifecycle] Advisories embedding failed:", err);
+      captureError(
+        err instanceof Error ? err : new Error("Advisories embedding invocation failed"),
+        { organizationId, context: "embedAdvisoriesBatch" }
+      );
+    });
+  } catch (err) {
+    console.warn("[lifecycle] embedAdvisoriesBatch outer error:", err);
   }
 }
 
