@@ -347,7 +347,7 @@ export function inferSchema(headers: string[], rows: string[][]): DetectedSchema
         const colSamples = sampleRows.map(r => r[d.colIdx]).filter(Boolean);
         const numRate = colSamples.filter(s => !isNaN(parseFloat(s)) && isFinite(parseFloat(s))).length / Math.max(colSamples.length, 1);
         if (numRate > 0.8) {
-          (d as any).inferredType = "value";
+          (d as { inferredType: string }).inferredType = "value";
           d.reason = "Reclassified as value (another column chosen as date)";
           d.confidence = 65;
           d.rulesApplied = [...d.rulesApplied, "single_date_rule:demoted_to_value"];
