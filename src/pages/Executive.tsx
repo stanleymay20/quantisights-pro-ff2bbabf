@@ -330,8 +330,9 @@ const Executive = () => {
         .upsert(payload, { onConflict: "organization_id,role_type" });
       if (error) throw error;
       toast({ title: "Saved", description: "Notification preferences updated" });
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      toast({ title: "Error", description: msg, variant: "destructive" });
     } finally {
       setSavingPrefs(false);
     }
