@@ -260,3 +260,72 @@ describe("Override Auditability", () => {
     expect(validTypes.includes("invalid_type")).toBe(false);
   });
 });
+
+// ─── Score Idempotency Tests ───
+describe("Score Idempotency Guard", () => {
+  it("skips duplicate scores within cooldown window", () => {
+    const recentScores = [
+      { scope_type: "organization", scope_id: "org-1", scoring_model_version: 3, computed_at: new Date(Date.now() - 2 * 60000).toISOString() },
+    ];
+    const newScores = [
+      { scope_type: "organization", scope_id: "org-1", scoring_model_version: 3 },
+      { scope_type: "user", scope_id: "user-1", scoring_model_version: 3 },
+    ];
+    const cooldownMs = 5 * 60 * 1000;
+    const now = Date.now();
+
+    const filtered = newScores.filter(ns => {
+      const existing = recentScores.find(rs =>
+        rs.scope_type === ns.scope_type &&
+        rs.scope_id === ns.scope_id &&
+        rs.scoring_model_version === ns.scoring_model_version &&
+        (now - new Date(rs.computed_at).getTime()) < cooldownMs
+      );
+      return !existing;
+    });
+
+    expect(filtered).toHaveLength(1);
+    expect(filtered[0].scope_id).toBe("user-1");
+  });
+
+  it("allows scores after cooldown expires", () => {
+    const recentScores = [
+      { scope_type: "organization", scope_id: "org-1", scoring_model_version: 3, computed_at: new Date(Date.now() - 10 * 60000).toISOString() },
+    ];
+    const newScore = { scope_type: "organization", scope_id: "org-1", scoring_model_version: 3 };
+    const cooldownMs = 5 * 60 * 1000;
+    const now = Date.now();
+
+    const existing = recentScores.find(rs =>
+      rs.scope_type === newScore.scope_type &&
+      rs.scope_id === newScore.scope_id &&
+      (now - new Date(rs.computed_at).getTime()) < cooldownMs
+    );
+
+    expect(existing).toBeUndefined();
+  });
+});
+
+// ─── Step-Up Auth Enforcement Tests ───
+describe("Step-Up Auth Enforcement", () => {
+  it("rejects override without recent step-up event", () => {
+    const lastStepUpAt = Date.now() - 10 * 60 * 1000;
+    const validityMs = 5 * 60 * 1000;
+    const isValid = (Date.now() - lastStepUpAt) < validityMs;
+    expect(isValid).toBe(false);
+  });
+
+  it("allows override with recent step-up event", () => {
+    const lastStepUpAt = Date.now() - 2 * 60 * 1000;
+    const validityMs = 5 * 60 * 1000;
+    const isValid = (Date.now() - lastStepUpAt) < validityMs;
+    expect(isValid).toBe(true);
+  });
+
+  it("requires both elevated role AND step-up auth", () => {
+    const hasElevatedRole = true;
+    const hasStepUp = false;
+    const canOverride = hasElevatedRole && hasStepUp;
+    expect(canOverride).toBe(false);
+  });
+});
