@@ -30,6 +30,12 @@ Deno.serve(async (req) => {
   const isMember = await verifyOrgMembership(userId, organization_id as string);
   if (!isMember) return json({ error: "Not a member" }, 403);
 
+  // ─── RATE LIMITING: Tiered by action category ───
+  const writeActions = ["scan_interventions", "compute_scores", "predict_risks", "reassign_plan", "resolve_intervention", "executive_override"];
+  const rlCategory = writeActions.includes(action as string) ? "mutation" as const : "query" as const;
+  const rlResult = applyRateLimit(req, organization_id as string, rlCategory, "execution-intelligence");
+  if (rlResult) return rlResult;
+
   const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
   const orgId = organization_id as string;
 
@@ -52,10 +58,22 @@ Deno.serve(async (req) => {
     });
   };
 
+  // Helper: per-action error boundary
+  const safeAction = async (actionName: string, handler: () => Promise<Response>): Promise<Response> => {
+    try {
+      return await handler();
+    } catch (e: unknown) {
+      const errorMsg = e instanceof Error ? e.message : String(e);
+      console.error(`[${actionName}] error [${correlationId}]:`, errorMsg);
+      await logRun(actionName, crypto.randomUUID(), 0, 0, "failed", errorMsg).catch(() => {});
+      return json({ error: errorMsg, action: actionName, correlation_id: correlationId }, 500);
+    }
+  };
+
   try {
     switch (action as string) {
       // ─── INTERVENTION ENGINE (atomic + concurrency-safe) ───
-      case "scan_interventions": {
+      case "scan_interventions": return safeAction("scan_interventions", async () => {
         const runId = crypto.randomUUID();
         const { data: plans } = await supabase
           .from("execution_plans")
