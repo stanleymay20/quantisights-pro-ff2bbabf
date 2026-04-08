@@ -2,6 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { authenticateRequest, verifyOrgMembership } from "../_shared/auth-guard.ts";
 import { getCorsHeaders, corsPreflightResponse } from "../_shared/cors.ts";
 import { isValidUUID, isValidString } from "../_shared/input-validation.ts";
+import { applyRateLimit } from "../_shared/rate-guard.ts";
 
 const FORMULA_V1 = "score = successRate*40 + (1-failureRate)*25 + max(0,1-avgDelay/14)*20 + reliabilityRate*15";
 const MODEL_VERSION = 3;
