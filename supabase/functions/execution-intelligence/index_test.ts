@@ -1,6 +1,6 @@
 /**
- * Integration tests for execution-intelligence edge function.
- * These tests hit the REAL deployed function and verify actual DB behavior.
+ * E2E Integration Tests for Execution Intelligence v4.0
+ * Tests: auth, RBAC, bounded modules, telemetry, circuit breaker status
  */
 import "https://deno.land/std@0.224.0/dotenv/load.ts";
 import { assertEquals, assertExists } from "https://deno.land/std@0.224.0/assert/mod.ts";
@@ -24,7 +24,6 @@ async function callFunction(token: string, body: Record<string, unknown>): Promi
   return { status: res.status, data };
 }
 
-// Helper: get authenticated session + org — skip test if no test user
 async function getTestSession(): Promise<{ token: string; orgId: string; cleanup: () => Promise<void> } | null> {
   const email = Deno.env.get("TEST_USER_EMAIL") || "test-integration@quantivis.test";
   const password = Deno.env.get("TEST_USER_PASSWORD") || "test-password-123!";
@@ -66,11 +65,7 @@ Deno.test({ name: "rejects unauthenticated requests", sanitizeOps: false, saniti
 Deno.test({ name: "rejects invalid org_id format", sanitizeOps: false, sanitizeResources: false, fn: async () => {
   const session = await getTestSession();
   if (!session) { console.log("⏭️  Skipping: No test user"); return; }
-
-  const { status, data } = await callFunction(session.token, {
-    action: "engine_health",
-    organization_id: "not-a-uuid",
-  });
+  const { status, data } = await callFunction(session.token, { action: "engine_health", organization_id: "not-a-uuid" });
   assertEquals(status, 400);
   assertExists(data.error);
   await session.cleanup();
@@ -79,11 +74,7 @@ Deno.test({ name: "rejects invalid org_id format", sanitizeOps: false, sanitizeR
 Deno.test({ name: "rejects non-member org access", sanitizeOps: false, sanitizeResources: false, fn: async () => {
   const session = await getTestSession();
   if (!session) { console.log("⏭️  Skipping: No test user"); return; }
-
-  const { status, data } = await callFunction(session.token, {
-    action: "engine_health",
-    organization_id: "00000000-0000-4000-a000-000000000001",
-  });
+  const { status, data } = await callFunction(session.token, { action: "engine_health", organization_id: "00000000-0000-4000-a000-000000000001" });
   assertEquals(status, 403);
   assertExists(data.error);
   await session.cleanup();
@@ -92,52 +83,37 @@ Deno.test({ name: "rejects non-member org access", sanitizeOps: false, sanitizeR
 Deno.test({ name: "rejects unknown action", sanitizeOps: false, sanitizeResources: false, fn: async () => {
   const session = await getTestSession();
   if (!session) { console.log("⏭️  Skipping: No test user"); return; }
-
-  const { status, data } = await callFunction(session.token, {
-    action: "totally_invalid_action_xyz",
-    organization_id: session.orgId,
-  });
+  const { status, data } = await callFunction(session.token, { action: "totally_invalid_action_xyz", organization_id: session.orgId });
   assertEquals(status, 400);
   assertExists(data.error);
   await session.cleanup();
 }});
 
-// ─── FUNCTIONAL TESTS ───
-Deno.test({ name: "engine_health returns valid response", sanitizeOps: false, sanitizeResources: false, fn: async () => {
+// ─── QUERY MODULE TESTS ───
+Deno.test({ name: "engine_health returns valid response (intelligence module)", sanitizeOps: false, sanitizeResources: false, fn: async () => {
   const session = await getTestSession();
   if (!session) { console.log("⏭️  Skipping: No test user"); return; }
-
-  const { status, data } = await callFunction(session.token, {
-    action: "engine_health",
-    organization_id: session.orgId,
-  });
+  const { status, data } = await callFunction(session.token, { action: "engine_health", organization_id: session.orgId });
   assertEquals(status, 200);
   assertExists(data.overall_health);
   await session.cleanup();
 }});
 
-Deno.test({ name: "command_summary returns valid response", sanitizeOps: false, sanitizeResources: false, fn: async () => {
+Deno.test({ name: "command_summary returns structured response (intelligence module)", sanitizeOps: false, sanitizeResources: false, fn: async () => {
   const session = await getTestSession();
   if (!session) { console.log("⏭️  Skipping: No test user"); return; }
-
-  const { status, data } = await callFunction(session.token, {
-    action: "command_summary",
-    organization_id: session.orgId,
-  });
+  const { status, data } = await callFunction(session.token, { action: "command_summary", organization_id: session.orgId });
   assertEquals(status, 200);
   assertExists(data.generated_at);
   assertExists(data.correlation_id);
+  assertExists(data.risk_distribution);
   await session.cleanup();
 }});
 
-Deno.test({ name: "operational_metrics returns server-side stats", sanitizeOps: false, sanitizeResources: false, fn: async () => {
+Deno.test({ name: "operational_metrics returns server-side stats (intelligence module)", sanitizeOps: false, sanitizeResources: false, fn: async () => {
   const session = await getTestSession();
   if (!session) { console.log("⏭️  Skipping: No test user"); return; }
-
-  const { status, data } = await callFunction(session.token, {
-    action: "operational_metrics",
-    organization_id: session.orgId,
-  });
+  const { status, data } = await callFunction(session.token, { action: "operational_metrics", organization_id: session.orgId });
   assertEquals(status, 200);
   assertExists(data.engine_performance);
   assertExists(data.intervention_metrics);
@@ -145,33 +121,11 @@ Deno.test({ name: "operational_metrics returns server-side stats", sanitizeOps: 
   await session.cleanup();
 }});
 
-// ─── OVERRIDE RBAC TEST ───
-Deno.test({ name: "executive_override requires step-up auth", sanitizeOps: false, sanitizeResources: false, fn: async () => {
+// ─── MUTATION MODULE TESTS ───
+Deno.test({ name: "scan_interventions returns structured result (interventions module)", sanitizeOps: false, sanitizeResources: false, fn: async () => {
   const session = await getTestSession();
   if (!session) { console.log("⏭️  Skipping: No test user"); return; }
-
-  const { status, data } = await callFunction(session.token, {
-    action: "executive_override",
-    organization_id: session.orgId,
-    plan_id: crypto.randomUUID(),
-    override_type: "force_cancel",
-    reason: "Integration test — should fail step-up auth",
-  });
-
-  // Should be 403 (step-up auth not satisfied) or 400 (plan not found after auth passes)
-  assertEquals([403, 400].includes(status), true, `Expected 403 or 400, got ${status}: ${JSON.stringify(data)}`);
-  await session.cleanup();
-}});
-
-// ─── SCAN / MUTATION TESTS ───
-Deno.test({ name: "scan_interventions returns structured result", sanitizeOps: false, sanitizeResources: false, fn: async () => {
-  const session = await getTestSession();
-  if (!session) { console.log("⏭️  Skipping: No test user"); return; }
-
-  const { status, data } = await callFunction(session.token, {
-    action: "scan_interventions",
-    organization_id: session.orgId,
-  });
+  const { status, data } = await callFunction(session.token, { action: "scan_interventions", organization_id: session.orgId });
   assertEquals(status, 200);
   assertEquals(typeof data.interventions_created, "number");
   assertEquals(typeof data.scanned, "number");
@@ -180,16 +134,109 @@ Deno.test({ name: "scan_interventions returns structured result", sanitizeOps: f
   await session.cleanup();
 }});
 
-Deno.test({ name: "infer_blockers respects limit cap", sanitizeOps: false, sanitizeResources: false, fn: async () => {
+Deno.test({ name: "compute_scores returns org + user scores (scoring module)", sanitizeOps: false, sanitizeResources: false, fn: async () => {
   const session = await getTestSession();
   if (!session) { console.log("⏭️  Skipping: No test user"); return; }
-
-  const { status, data } = await callFunction(session.token, {
-    action: "infer_blockers",
-    organization_id: session.orgId,
-    limit: 9999, // Should be capped to 500
-  });
+  const { status, data } = await callFunction(session.token, { action: "compute_scores", organization_id: session.orgId });
   assertEquals(status, 200);
-  assertEquals(data.limit_applied, 500); // Verify server-side cap
+  assertExists(data.run_id);
+  await session.cleanup();
+}});
+
+// ─── SCORING QUERIES ───
+Deno.test({ name: "get_scores returns array (scoring module)", sanitizeOps: false, sanitizeResources: false, fn: async () => {
+  const session = await getTestSession();
+  if (!session) { console.log("⏭️  Skipping: No test user"); return; }
+  const { status, data } = await callFunction(session.token, { action: "get_scores", organization_id: session.orgId });
+  assertEquals(status, 200);
+  assertEquals(Array.isArray(data), true);
+  await session.cleanup();
+}});
+
+// ─── PREDICTION MODULE ───
+Deno.test({ name: "predict_risks returns predictions (predictions module)", sanitizeOps: false, sanitizeResources: false, fn: async () => {
+  const session = await getTestSession();
+  if (!session) { console.log("⏭️  Skipping: No test user"); return; }
+  const { status, data } = await callFunction(session.token, { action: "predict_risks", organization_id: session.orgId });
+  assertEquals(status, 200);
+  assertExists(data.predictions);
+  assertExists(data.run_id);
+  await session.cleanup();
+}});
+
+Deno.test({ name: "get_predictions returns array (predictions module)", sanitizeOps: false, sanitizeResources: false, fn: async () => {
+  const session = await getTestSession();
+  if (!session) { console.log("⏭️  Skipping: No test user"); return; }
+  const { status, data } = await callFunction(session.token, { action: "get_predictions", organization_id: session.orgId });
+  assertEquals(status, 200);
+  assertEquals(Array.isArray(data), true);
+  await session.cleanup();
+}});
+
+// ─── OVERRIDE MODULE ───
+Deno.test({ name: "executive_override requires step-up auth (overrides module)", sanitizeOps: false, sanitizeResources: false, fn: async () => {
+  const session = await getTestSession();
+  if (!session) { console.log("⏭️  Skipping: No test user"); return; }
+  const { status, data } = await callFunction(session.token, {
+    action: "executive_override",
+    organization_id: session.orgId,
+    plan_id: crypto.randomUUID(),
+    override_type: "force_cancel",
+    reason: "Integration test — should fail step-up auth",
+  });
+  assertEquals([403, 400].includes(status), true, `Expected 403 or 400, got ${status}: ${JSON.stringify(data)}`);
+  await session.cleanup();
+}});
+
+// ─── DEPENDENCY INTELLIGENCE ───
+Deno.test({ name: "infer_blockers respects limit cap (intelligence module)", sanitizeOps: false, sanitizeResources: false, fn: async () => {
+  const session = await getTestSession();
+  if (!session) { console.log("⏭️  Skipping: No test user"); return; }
+  const { status, data } = await callFunction(session.token, { action: "infer_blockers", organization_id: session.orgId, limit: 9999 });
+  assertEquals(status, 200);
+  assertEquals(data.limit_applied, 500);
+  await session.cleanup();
+}});
+
+Deno.test({ name: "get_dependency_graph returns graph structure (intelligence module)", sanitizeOps: false, sanitizeResources: false, fn: async () => {
+  const session = await getTestSession();
+  if (!session) { console.log("⏭️  Skipping: No test user"); return; }
+  const { status, data } = await callFunction(session.token, { action: "get_dependency_graph", organization_id: session.orgId });
+  assertEquals(status, 200);
+  assertExists(data.graph);
+  assertExists(data.blocked_chains);
+  assertExists(data.critical_path);
+  await session.cleanup();
+}});
+
+// ─── TELEMETRY / OBSERVABILITY ───
+Deno.test({ name: "telemetry_stats returns action stats + circuit breaker status", sanitizeOps: false, sanitizeResources: false, fn: async () => {
+  const session = await getTestSession();
+  if (!session) { console.log("⏭️  Skipping: No test user"); return; }
+  const { status, data } = await callFunction(session.token, { action: "telemetry_stats", organization_id: session.orgId });
+  assertEquals(status, 200);
+  assertExists(data.action_stats);
+  assertExists(data.circuit_breakers);
+  assertExists(data.generated_at);
+  await session.cleanup();
+}});
+
+// ─── FORENSIC TRACE ───
+Deno.test({ name: "forensic_trace requires valid plan_id", sanitizeOps: false, sanitizeResources: false, fn: async () => {
+  const session = await getTestSession();
+  if (!session) { console.log("⏭️  Skipping: No test user"); return; }
+  const { status, data } = await callFunction(session.token, { action: "forensic_trace", organization_id: session.orgId, plan_id: "not-a-uuid" });
+  assertEquals(status, 400);
+  assertExists(data.error);
+  await session.cleanup();
+}});
+
+// ─── RETENTION CLEANUP ───
+Deno.test({ name: "retention_cleanup requires elevated role (overrides module)", sanitizeOps: false, sanitizeResources: false, fn: async () => {
+  const session = await getTestSession();
+  if (!session) { console.log("⏭️  Skipping: No test user"); return; }
+  const { status } = await callFunction(session.token, { action: "retention_cleanup", organization_id: session.orgId });
+  // Either 200 (if user is admin) or 403 (if not)
+  assertEquals([200, 403].includes(status), true, `Expected 200 or 403, got ${status}`);
   await session.cleanup();
 }});
