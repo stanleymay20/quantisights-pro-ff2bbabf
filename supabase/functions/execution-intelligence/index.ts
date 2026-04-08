@@ -2,6 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { authenticateRequest, verifyOrgMembership } from "../_shared/auth-guard.ts";
 import { getCorsHeaders, corsPreflightResponse } from "../_shared/cors.ts";
 import { isValidUUID, isValidString } from "../_shared/input-validation.ts";
+import { applyRateLimit } from "../_shared/rate-guard.ts";
 
 const FORMULA_V1 = "score = successRate*40 + (1-failureRate)*25 + max(0,1-avgDelay/14)*20 + reliabilityRate*15";
 const MODEL_VERSION = 3;
@@ -29,6 +30,12 @@ Deno.serve(async (req) => {
   const isMember = await verifyOrgMembership(userId, organization_id as string);
   if (!isMember) return json({ error: "Not a member" }, 403);
 
+  // ─── RATE LIMITING: Tiered by action category ───
+  const writeActions = ["scan_interventions", "compute_scores", "predict_risks", "reassign_plan", "resolve_intervention", "executive_override"];
+  const rlCategory = writeActions.includes(action as string) ? "mutation" as const : "query" as const;
+  const rlResult = applyRateLimit(req, organization_id as string, rlCategory, "execution-intelligence");
+  if (rlResult) return rlResult;
+
   const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
   const orgId = organization_id as string;
 
@@ -51,10 +58,22 @@ Deno.serve(async (req) => {
     });
   };
 
+  // Helper: per-action error boundary
+  const safeAction = async (actionName: string, handler: () => Promise<Response>): Promise<Response> => {
+    try {
+      return await handler();
+    } catch (e: unknown) {
+      const errorMsg = e instanceof Error ? e.message : String(e);
+      console.error(`[${actionName}] error [${correlationId}]:`, errorMsg);
+      await logRun(actionName, crypto.randomUUID(), 0, 0, "failed", errorMsg).catch(() => {});
+      return json({ error: errorMsg, action: actionName, correlation_id: correlationId }, 500);
+    }
+  };
+
   try {
     switch (action as string) {
       // ─── INTERVENTION ENGINE (atomic + concurrency-safe) ───
-      case "scan_interventions": {
+      case "scan_interventions": return safeAction("scan_interventions", async () => {
         const runId = crypto.randomUUID();
         const { data: plans } = await supabase
           .from("execution_plans")
@@ -189,10 +208,10 @@ Deno.serve(async (req) => {
 
         await logRun("scan_interventions", runId, plans.length, created, "completed", undefined, { skipped });
         return json({ interventions_created: created, skipped, scanned: plans.length, run_id: runId, correlation_id: correlationId });
-      }
+      });
 
       // PHASE 1: Atomic resolve via RPC
-      case "resolve_intervention": {
+      case "resolve_intervention": return safeAction("resolve_intervention", async () => {
         const { intervention_id } = body;
         if (!isValidUUID(intervention_id as string)) return json({ error: "Invalid intervention_id" }, 400);
 
@@ -204,10 +223,10 @@ Deno.serve(async (req) => {
 
         if (result && !result.success) return json({ error: result.error }, 400);
         return json(result);
-      }
+      });
 
       // PHASE 1: Atomic reassign via RPC
-      case "reassign_plan": {
+      case "reassign_plan": return safeAction("reassign_plan", async () => {
         const { plan_id, new_owner_id, reason } = body;
         if (!isValidUUID(plan_id as string) || !isValidUUID(new_owner_id as string)) return json({ error: "Invalid IDs" }, 400);
 
@@ -221,7 +240,7 @@ Deno.serve(async (req) => {
 
         if (result && !result.success) return json({ error: result.error }, 404);
         return json(result);
-      }
+      });
 
       case "get_interventions": {
         const { data } = await supabase
@@ -234,7 +253,7 @@ Deno.serve(async (req) => {
       }
 
       // ─── EXECUTION SCORING (append-only + governance metadata) ───
-      case "compute_scores": {
+      case "compute_scores": return safeAction("compute_scores", async () => {
         const runId = crypto.randomUUID();
         const { data: plans } = await supabase
           .from("execution_plans")
@@ -351,7 +370,7 @@ Deno.serve(async (req) => {
 
         await logRun("compute_scores", runId, total, inserted, "completed", undefined, { skipped_duplicates: skippedDupes });
         return json({ org_score: orgScore, user_scores: userScores, run_id: runId, inserted, skipped_duplicates: skippedDupes });
-      }
+      });
 
       case "get_scores": {
         const { scope_type, include_history } = body;
@@ -435,7 +454,7 @@ Deno.serve(async (req) => {
       }
 
       // ─── PREDICTIVE EXECUTION AI (append-only history via RPC) ───
-      case "predict_risks": {
+      case "predict_risks": return safeAction("predict_risks", async () => {
         const runId = crypto.randomUUID();
         const { data: activePlans } = await supabase
           .from("execution_plans")
@@ -601,7 +620,7 @@ Deno.serve(async (req) => {
 
         await logRun("predict_risks", runId, activePlans.length, supersedeResult?.inserted || predictions.length, "completed");
         return json({ predictions, total: predictions.length, run_id: runId, superseded: supersedeResult?.superseded || 0 });
-      }
+      });
 
       case "get_predictions": {
         const { include_history, plan_id: filterPlanId } = body;
@@ -638,7 +657,7 @@ Deno.serve(async (req) => {
       }
 
       // ─── PHASE 7: EXECUTIVE OVERRIDES (with enforced elevated RBAC) ───
-      case "executive_override": {
+      case "executive_override": return safeAction("executive_override", async () => {
         const { plan_id: ovPlanId, override_type, reason: ovReason, changes } = body;
         if (!isValidUUID(ovPlanId as string)) return json({ error: "plan_id required" }, 400);
         if (!isValidString(override_type as string, 30)) return json({ error: "override_type required" }, 400);
@@ -677,7 +696,7 @@ Deno.serve(async (req) => {
 
         if (result && !result.success) return json({ error: result.error }, 400);
         return json(result);
-      }
+      });
 
       case "get_overrides": {
         const { plan_id: ovFilterPlanId } = body;
@@ -915,6 +934,39 @@ Deno.serve(async (req) => {
         const { data: metrics } = await supabase.rpc("exec_operational_metrics", { _org_id: orgId });
         return json(metrics || {});
       }
+
+      // ─── DATA RETENTION: Cleanup old execution data ───
+      case "retention_cleanup": return safeAction("retention_cleanup", async () => {
+        // Requires elevated role (admin/owner only)
+        const { data: hasRole } = await supabase.rpc("exec_require_elevated_role", {
+          _user_id: userId, _org_id: orgId,
+        });
+        if (!hasRole) return json({ error: "Admin role required for retention cleanup" }, 403);
+
+        const retainEvents = Math.max(30, Number(body.events_retain_days) || 180);
+        const retainPredictions = Math.max(30, Number(body.predictions_retain_days) || 90);
+        const retainScores = Math.max(90, Number(body.scores_retain_days) || 365);
+        const retainRunLog = Math.max(30, Number(body.run_log_retain_days) || 90);
+
+        const { data: result } = await supabase.rpc("exec_cleanup_old_data", {
+          _events_retain_days: retainEvents,
+          _predictions_retain_days: retainPredictions,
+          _scores_retain_days: retainScores,
+          _run_log_retain_days: retainRunLog,
+        });
+
+        // Audit log
+        await supabase.from("audit_log").insert({
+          organization_id: orgId,
+          actor_id: userId,
+          actor_type: "user",
+          action_type: "execution_retention_cleanup",
+          resource_type: "execution_data",
+          payload: { ...result, retain_days: { events: retainEvents, predictions: retainPredictions, scores: retainScores, run_log: retainRunLog } },
+        });
+
+        return json(result || {});
+      });
 
       default:
         return json({ error: `Unknown action: ${action}` }, 400);

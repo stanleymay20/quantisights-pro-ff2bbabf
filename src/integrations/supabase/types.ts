@@ -5935,6 +5935,15 @@ export type Database = {
         Returns: Json
       }
       cleanup_old_copilot_messages: { Args: never; Returns: undefined }
+      exec_cleanup_old_data: {
+        Args: {
+          _events_retain_days?: number
+          _predictions_retain_days?: number
+          _run_log_retain_days?: number
+          _scores_retain_days?: number
+        }
+        Returns: Json
+      }
       exec_compute_scores_idempotent: {
         Args: { _cooldown_minutes?: number; _org_id: string; _scores: Json }
         Returns: Json
