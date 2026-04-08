@@ -621,7 +621,6 @@ Deno.serve(async (req) => {
         await logRun("predict_risks", runId, activePlans.length, supersedeResult?.inserted || predictions.length, "completed");
         return json({ predictions, total: predictions.length, run_id: runId, superseded: supersedeResult?.superseded || 0 });
       });
-      }
 
       case "get_predictions": {
         const { include_history, plan_id: filterPlanId } = body;
