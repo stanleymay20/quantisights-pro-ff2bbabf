@@ -208,10 +208,10 @@ Deno.serve(async (req) => {
 
         await logRun("scan_interventions", runId, plans.length, created, "completed", undefined, { skipped });
         return json({ interventions_created: created, skipped, scanned: plans.length, run_id: runId, correlation_id: correlationId });
-      }
+      });
 
       // PHASE 1: Atomic resolve via RPC
-      case "resolve_intervention": {
+      case "resolve_intervention": return safeAction("resolve_intervention", async () => {
         const { intervention_id } = body;
         if (!isValidUUID(intervention_id as string)) return json({ error: "Invalid intervention_id" }, 400);
 
