@@ -71,6 +71,16 @@ export async function retentionCleanup(ctx: ActionContext, supabase: SupabaseCli
   });
   if (!hasRole) return { data: { error: "Admin role required for retention cleanup" }, status: 403 };
 
+  // ENFORCED: Step-up auth required for destructive retention cleanup
+  const { data: stepUpValid } = await supabase.rpc("exec_verify_step_up_auth", {
+    _user_id: ctx.userId,
+    _org_id: ctx.orgId,
+    _validity_minutes: 5,
+  });
+  if (!stepUpValid) {
+    return { data: { error: "Step-up re-authentication required for retention cleanup." }, status: 403 };
+  }
+
   const retainEvents = Math.max(30, Number(ctx.body.events_retain_days) || 180);
   const retainPredictions = Math.max(30, Number(ctx.body.predictions_retain_days) || 90);
   const retainScores = Math.max(90, Number(ctx.body.scores_retain_days) || 365);
