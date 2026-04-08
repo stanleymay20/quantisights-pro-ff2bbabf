@@ -240,7 +240,7 @@ Deno.serve(async (req) => {
 
         if (result && !result.success) return json({ error: result.error }, 404);
         return json(result);
-      }
+      });
 
       case "get_interventions": {
         const { data } = await supabase
