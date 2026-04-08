@@ -198,10 +198,16 @@ Deno.serve(async (req) => {
 
   // Log SLO violations
   if (sloViolations.length > 0) {
-    console.warn(`[health-check] SLO violations: ${JSON.stringify(sloViolations)}`);
+    log.warn(`SLO violations detected`, { violations: sloViolations });
   }
 
-  await guard.succeed({ status: overallStatus, checks, slo_violations: sloViolations.length });
+  try {
+    await guard.succeed({ status: overallStatus, checks, slo_violations: sloViolations.length });
+  } catch (e) {
+    // If succeed fails (e.g. DB error during logging), still release the lock
+    log.error("Failed to log health-check completion", { error: e instanceof Error ? e.message : String(e) });
+    try { await guard.fail(e); } catch { /* lock release best-effort */ }
+  }
 
   return new Response(
     JSON.stringify({
