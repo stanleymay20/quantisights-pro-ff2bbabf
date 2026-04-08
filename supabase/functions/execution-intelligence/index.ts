@@ -935,6 +935,39 @@ Deno.serve(async (req) => {
         return json(metrics || {});
       }
 
+      // ─── DATA RETENTION: Cleanup old execution data ───
+      case "retention_cleanup": return safeAction("retention_cleanup", async () => {
+        // Requires elevated role (admin/owner only)
+        const { data: hasRole } = await supabase.rpc("exec_require_elevated_role", {
+          _user_id: userId, _org_id: orgId,
+        });
+        if (!hasRole) return json({ error: "Admin role required for retention cleanup" }, 403);
+
+        const retainEvents = Math.max(30, Number(body.events_retain_days) || 180);
+        const retainPredictions = Math.max(30, Number(body.predictions_retain_days) || 90);
+        const retainScores = Math.max(90, Number(body.scores_retain_days) || 365);
+        const retainRunLog = Math.max(30, Number(body.run_log_retain_days) || 90);
+
+        const { data: result } = await supabase.rpc("exec_cleanup_old_data", {
+          _events_retain_days: retainEvents,
+          _predictions_retain_days: retainPredictions,
+          _scores_retain_days: retainScores,
+          _run_log_retain_days: retainRunLog,
+        });
+
+        // Audit log
+        await supabase.from("audit_log").insert({
+          organization_id: orgId,
+          actor_id: userId,
+          actor_type: "user",
+          action_type: "execution_retention_cleanup",
+          resource_type: "execution_data",
+          payload: { ...result, retain_days: { events: retainEvents, predictions: retainPredictions, scores: retainScores, run_log: retainRunLog } },
+        });
+
+        return json(result || {});
+      });
+
       default:
         return json({ error: `Unknown action: ${action}` }, 400);
     }
