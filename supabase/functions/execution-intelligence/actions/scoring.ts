@@ -30,7 +30,7 @@ export async function computeScores(ctx: ActionContext, supabase: SupabaseClient
 
   const successRate = total > 0 ? completed.length / total : 0;
   const failureRate = total > 0 ? failed.length / total : 0;
-  const reliabilityRate = total > 0 ? (completed.length + cancelled.length) / total : 0;
+  const reliabilityRate = total > 0 ? (completed.length + failed.length + cancelled.length) / total : 0;
 
   const completedWithDeadline = completed.filter(p => p.deadline);
   let avgDelay = 0;
