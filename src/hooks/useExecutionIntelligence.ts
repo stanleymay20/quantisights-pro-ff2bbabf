@@ -389,6 +389,17 @@ export const useExecutionIntelligence = (organizationId: string | null) => {
     }
   }, [invoke]);
 
+  const runRetentionCleanup = useCallback(async (retainDays?: {
+    events?: number; predictions?: number; scores?: number; run_log?: number;
+  }) => {
+    return invoke("retention_cleanup", {
+      events_retain_days: retainDays?.events ?? 180,
+      predictions_retain_days: retainDays?.predictions ?? 90,
+      scores_retain_days: retainDays?.scores ?? 365,
+      run_log_retain_days: retainDays?.run_log ?? 90,
+    });
+  }, [invoke]);
+
   return {
     loading,
     scores,
@@ -416,5 +427,6 @@ export const useExecutionIntelligence = (organizationId: string | null) => {
     fetchEngineHealth,
     fetchInferredBlockers,
     fetchOperationalMetrics,
+    runRetentionCleanup,
   };
 };
