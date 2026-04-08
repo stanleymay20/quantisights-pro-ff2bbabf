@@ -253,7 +253,7 @@ Deno.serve(async (req) => {
       }
 
       // ─── EXECUTION SCORING (append-only + governance metadata) ───
-      case "compute_scores": {
+      case "compute_scores": return safeAction("compute_scores", async () => {
         const runId = crypto.randomUUID();
         const { data: plans } = await supabase
           .from("execution_plans")
@@ -370,7 +370,7 @@ Deno.serve(async (req) => {
 
         await logRun("compute_scores", runId, total, inserted, "completed", undefined, { skipped_duplicates: skippedDupes });
         return json({ org_score: orgScore, user_scores: userScores, run_id: runId, inserted, skipped_duplicates: skippedDupes });
-      }
+      });
 
       case "get_scores": {
         const { scope_type, include_history } = body;
@@ -454,7 +454,7 @@ Deno.serve(async (req) => {
       }
 
       // ─── PREDICTIVE EXECUTION AI (append-only history via RPC) ───
-      case "predict_risks": {
+      case "predict_risks": return safeAction("predict_risks", async () => {
         const runId = crypto.randomUUID();
         const { data: activePlans } = await supabase
           .from("execution_plans")
@@ -620,6 +620,7 @@ Deno.serve(async (req) => {
 
         await logRun("predict_risks", runId, activePlans.length, supersedeResult?.inserted || predictions.length, "completed");
         return json({ predictions, total: predictions.length, run_id: runId, superseded: supersedeResult?.superseded || 0 });
+      });
       }
 
       case "get_predictions": {
@@ -657,7 +658,7 @@ Deno.serve(async (req) => {
       }
 
       // ─── PHASE 7: EXECUTIVE OVERRIDES (with enforced elevated RBAC) ───
-      case "executive_override": {
+      case "executive_override": return safeAction("executive_override", async () => {
         const { plan_id: ovPlanId, override_type, reason: ovReason, changes } = body;
         if (!isValidUUID(ovPlanId as string)) return json({ error: "plan_id required" }, 400);
         if (!isValidString(override_type as string, 30)) return json({ error: "override_type required" }, 400);
@@ -696,7 +697,7 @@ Deno.serve(async (req) => {
 
         if (result && !result.success) return json({ error: result.error }, 400);
         return json(result);
-      }
+      });
 
       case "get_overrides": {
         const { plan_id: ovFilterPlanId } = body;
