@@ -1,182 +1,105 @@
+# FORTUNE 10 GAP-CLOSURE ROADMAP
 
-# QUANTIVIS FORENSIC AUDIT — FIX EXECUTION PLAN
-
-Based on verified codebase state (TSC: 0 errors, 71 `: any`, 22 pages without SectionErrorBoundary, 11 direct invoke calls, 11 silent catches).
-
----
-
-## TIER 1: IMMEDIATE BLOCKERS (Enterprise-risk debt)
-
-### 1.1 — Add SectionErrorBoundary to 22 unprotected strategic pages
-
-**Risk removed:** One component crash → full page white-screen on 22 enterprise surfaces  
-**Files:**
-- `src/pages/AlertPlaybooks.tsx`
-- `src/pages/Billing.tsx`
-- `src/pages/Team.tsx`
-- `src/pages/PrivacyDashboard.tsx`
-- `src/pages/DataConnectors.tsx`
-- `src/pages/CalibrationAssessment.tsx`
-- `src/pages/Diagnostics.tsx`
-- `src/pages/Scenarios.tsx`
-- `src/pages/Simulations.tsx`
-- `src/pages/KPIs.tsx`
-- `src/pages/Reports.tsx`
-- `src/pages/Misses.tsx`
-- `src/pages/DecisionIntelligence.tsx`
-- `src/pages/SecurityQuestionnaire.tsx`
-- `src/pages/PipelineObservability.tsx`
-- `src/pages/NaturalLanguageQuery.tsx`
-- `src/pages/CognitiveBiasDetection.tsx`
-- `src/pages/CausalInference.tsx`
-- `src/pages/CounterfactualExplanation.tsx`
-- `src/pages/DecisionAccuracy.tsx`
-- `src/pages/DecisionFitness.tsx`
-- `src/pages/MarketIntelligence.tsx`
-
-**Fix:** Wrap major content sections in `<SectionErrorBoundary sectionName="...">`.  
-**Verify:** Throw test error in each page's child → confirm inline fallback, not white screen.
-
-### 1.2 — Add double-submit guards to destructive mutations in Settings
-
-**Risk removed:** Account deletion or demo-seed can fire multiple times  
-**Files:** `src/pages/Settings.tsx` (lines ~326, ~447)  
-**Fix:** Add `isDeleting` / `isSeeding` state; disable button during execution.  
-**Verify:** Click delete/seed rapidly → only one invocation fires.
-
-### 1.3 — Wrap Settings direct invokes with error feedback
-
-**Risk removed:** `delete-account` and `seed-demo-data` fail silently on network error  
-**Files:** `src/pages/Settings.tsx`  
-**Fix:** Add try/catch with toast on error for both invoke calls.  
-**Verify:** Block network → trigger action → confirm error toast appears.
+**Current Status:** Fortune 500 Strong · Not yet Fortune 10 Ready  
+**Goal:** Close remaining proof, resilience, compliance, and scale gaps  
+**Last Updated:** 2026-04-08
 
 ---
 
-## TIER 2: NEXT SPRINT (Type safety + trust surface integrity)
+## Track 1: E2E Enterprise Workflow Tests _(P0)_
+> Biggest technical credibility gap for procurement. Prove real workflows across auth → DB → edge functions → UI.
 
-### 2.1 — Eliminate 71 `: any` annotations
-
-**Risk removed:** Runtime shape mismatches on enterprise-critical surfaces  
-**Priority files (highest `: any` concentration):**
-
-| File | Count | Fix approach |
-|------|-------|-------------|
-| `src/pages/BoardReport.tsx` | 8 | Define `BoardReportData` interface |
-| `src/pages/DecisionIntelligence.tsx` | 5 | Type `decisions` / `simulations` props |
-| `src/pages/DataConnectors.tsx` | 3 | Use Supabase generated types |
-| `src/components/dashboard/GovernanceKPIs.tsx` | 5 | Type query results inline |
-| `src/components/decision-intelligence/*.tsx` | 4 | Define `DecisionRecord` interface |
-| `src/components/dashboard/SankeyChart.tsx` | 1 | Type recharts `CustomNode` props |
-| `src/components/dashboard/TreemapChart.tsx` | 1 | Type recharts `CustomContent` props |
-| `src/components/dashboard/EBITDABridgeChart.tsx` | 1 | Type recharts label render props |
-| `src/components/dashboard/WaterfallChart.tsx` | 1 | Type recharts label render props |
-| `src/components/settings/EmbedManager.tsx` | 1 | Type `tokens` query result |
-| `src/components/settings/OrganizationalIdentitySettings.tsx` | 3 | Type icon prop + Select onChange |
-| `src/components/settings/RetentionPolicySettings.tsx` | 2 | Type `value` param + query result |
-| `src/components/governance/StewardDrillDown.tsx` | 3 | Type member/dataset query results |
-| `src/components/auth/AuthEventLog.tsx` | 1 | Type `events` array items |
-| `src/hooks/useBuildDecisionQueue.ts` | 1 | Type `advisories` properly |
-| `src/hooks/usePermissions.ts` | 1 | Type permission check result |
-| `src/lib/executive-export.ts` | 1 | Define `ExportableDecision` type |
-| `src/pages/AlertPlaybooks.tsx` | 3 | Type `escalation_steps` as `Json[]` |
-| `src/pages/DataLineage.tsx` | 2 | Type icon map + column_mapping |
-| `src/pages/DataSources.tsx` | 1 | Type `config` field |
-| `src/pages/DatasetExplorer.tsx` | 1 | Type `column_mapping` |
-| `src/pages/EmbedDashboard.tsx` | 1 | Type metrics array |
-| `src/pages/FounderHandbook.tsx` | 1 | Type icon prop as `LucideIcon` |
-| `src/pages/GovernanceCommandView.tsx` | 3 | Type retention policy filter |
-| `src/pages/GovernanceMaturity.tsx` | 1 | Type assessment history items |
-| `src/pages/OKRs.tsx` | 2 | Type objective/KR query results |
-| `src/pages/Onboarding.tsx` | 1 | Type `kpis` array |
-| `src/pages/PipelineObservability.tsx` | 1 | Type reduce accumulator |
-| `src/pages/Simulations.tsx` | 1 | Type `sim` prop |
-| `src/pages/StrategyPack.tsx` | 2 | Type `source_evidence` |
-| `src/pages/CounterfactualExplanation.tsx` | 1 | Type entity map callback |
-
-**Verify:** `npx tsc --noEmit` passes; grep confirms 0 `: any` in src/.
-
-### 2.2 — Label hardcoded compliance values as architectural invariants
-
-**Risk removed:** Procurement reviewer sees `rlsEnabled: true` and asks for proof  
-**File:** `src/pages/Compliance.tsx` (lines 61, 66)  
-**Fix:** Add visible "(Architectural invariant)" label in UI next to RLS and MFA items, or query real DB state.  
-**Verify:** Visual inspection of Compliance page shows honest labeling.
-
-### 2.3 — Wrap fire-and-forget decision-lifecycle invokes with error logging
-
-**Risk removed:** `embed-decisions` and `predict-outcome` fail silently after decision mutations  
-**File:** `src/lib/decision-lifecycle.ts` (lines 131, 141, 164, 183)  
-**Fix:** Add `.catch(err => console.error("[decision-lifecycle]", err))` to each fire-and-forget.  
-**Verify:** Grep confirms no unhandled promise from invoke calls.
+- [ ] **Auth E2E** — login → session → MFA → step-up re-auth → logout lifecycle
+- [ ] **Onboarding E2E** — signup → org creation → workspace → first dataset upload
+- [ ] **Decision Lifecycle E2E** — create → approve → execute → intervention scan → outcome measurement
+- [ ] **Data Pipeline E2E** — upload/connector → ingest → transform → metrics → insights
+- [ ] **Governance E2E** — RBAC enforcement → executive override with step-up → audit trail → data export
+- [ ] **Billing E2E** — checkout → Stripe webhook → subscription gate → customer portal
 
 ---
 
-## TIER 3: BEFORE SCALE (Long-tail hardening)
+## Track 2: Load, Stress & Chaos Validation _(P1)_
+> Prove correctness under enterprise-scale volume, concurrency, and failure conditions.
 
-### 3.1 — Add retry wrapper to PilotAudit dynamic invocations
-
-**Risk removed:** Transient failure during pilot audit edge function calls  
-**File:** `src/pages/PilotAudit.tsx` (line 139)  
-**Fix:** Replace `supabase.functions.invoke` with `invokeWithRetry`.  
-**Verify:** Network throttle → confirm retry behavior.
-
-### 3.2 — Remaining silent catches — add observability
-
-**Risk removed:** Hidden failures in workspace switching, analysis engine, free analysis  
-**Files:**
-- `src/components/dashboard/WorkspaceSwitcher.tsx:41`
-- `src/lib/analysis-engine.ts:612`
-- `src/pages/FreeAnalysis.tsx:111`
-
-**Fix:** Add `console.error` with context to each catch block.  
-**Verify:** Grep confirms no bare `catch {` without logging in non-infra code.
-
-### 3.3 — Add loading/empty states to PrivacyDashboard reports count
-
-**Risk removed:** Hardcoded `0` reports misleads users  
-**File:** `src/pages/PrivacyDashboard.tsx`  
-**Fix:** Query actual export count or label as "No exports requested yet".  
-**Verify:** Visual check shows honest state.
+- [ ] **Load test:** `scan_interventions` at 10k+ plans — verify rate limiting holds
+- [ ] **Concurrency test:** `compute_scores` under 50+ parallel writes — verify idempotency
+- [ ] **Throughput test:** `predict_risks` at 100+ req/min — verify graceful degradation
+- [ ] **Scale test:** `exec_cleanup_old_data` on 1M+ row tables — benchmark retention cleanup
+- [ ] **Chaos test:** Edge function cold-start recovery — no data corruption or orphaned state
+- [ ] **Query cost audit:** `EXPLAIN ANALYZE` all RPCs with realistic volumes; add indexes as needed
 
 ---
 
-## RUNTIME RE-TEST CHECKLIST
+## Track 3: Disaster Recovery & Operational Resilience _(P1)_
+> Produce evidence that the platform can recover from failures and maintain data integrity.
 
-After all fixes, verify each surface:
-
-| # | Surface | Test action | Expected result |
-|---|---------|------------|-----------------|
-| 1 | `/login` | Login with valid creds | Redirect to dashboard |
-| 2 | `/login` | Login with invalid creds | Error toast, no crash |
-| 3 | `/register` | Create account | Success flow |
-| 4 | `/dashboard` | Load with no data | Empty states render |
-| 5 | `/settings` | Click "Delete Account" | Confirmation dialog, single-fire |
-| 6 | `/settings` | Click "Seed Demo Data" | Loading state, single-fire |
-| 7 | `/compliance` | Load page | All items labeled honestly |
-| 8 | `/sso-config` | Save SSO config | Success toast |
-| 9 | `/execution-dashboard` | Approve/dismiss action | Toast feedback, no double-submit |
-| 10 | `/data-connectors` | Test connection | Loading + result feedback |
-| 11 | `/privacy-dashboard` | Load page | Reports count honest |
-| 12 | `/decision-ledger` | Create decision | Ledger updates, no silent fail |
-| 13 | `/alert-playbooks` | Create playbook | Success feedback |
-| 14 | `/team` | Invite member | Toast + table update |
-| 15 | `/billing` | Load page | No crash on missing Stripe data |
-| 16 | `/diagnostics` | Run diagnostic | Results render in boundary |
-| 17 | `/simulations` | Run simulation | Chart renders in boundary |
-| 18 | `/decision-intelligence` | Load all tabs | No white-screen on any tab |
-| 19 | `/calibration-assessment` | Submit assessment | Feedback on success/failure |
-| 20 | `/governance-maturity` | Load assessment | Boundary-protected sections |
+- [ ] **Backup & restore runbook** — tested point-in-time recovery with integrity verification
+- [ ] **DR failover test** — simulated primary failure, documented RTO <4h / RPO <1h
+- [ ] **Data archival strategy** — partitioning or archival for execution_events, scores, predictions, run_log
+- [ ] **Incident response playbook** — severity levels, response times, escalation matrix, comms templates
+- [ ] **Monitoring & alerting** — health-check alerts, error rate thresholds, latency SLO tracking
 
 ---
 
-## SUMMARY METRICS
+## Track 4: Security & Compliance Artifacts _(P2)_
+> Documentation and evidence required for Fortune 10 procurement and security review.
 
-| Metric | Current | After Tier 1 | After Tier 2 | After Tier 3 |
-|--------|---------|-------------|-------------|-------------|
-| Pages with SectionErrorBoundary | 12 | 34 | 34 | 34 |
-| `: any` annotations | 71 | 71 | 0 | 0 |
-| Silent catches (non-infra) | 3 | 3 | 3 | 0 |
-| Unguarded direct invokes | 8 | 6 | 2 | 1 |
-| Double-submit risk surfaces | 2 | 0 | 0 | 0 |
-| TSC errors | 0 | 0 | 0 | 0 |
+- [ ] **Security questionnaire** (SIG/CAIQ) — with evidence references for each control
+- [ ] **Pen test scope & remediation tracking** — define scope, track findings and fixes
+- [ ] **SOC 2 Type II evidence pack** — map controls to criteria, identify gaps, produce docs
+- [ ] **Data residency & processing documentation** — storage, processing, transit mapped to regulations
+- [ ] **Architecture & control evidence document** — visual diagram with security controls, data flows, trust boundaries
+
+---
+
+## Track 5: Architectural De-risking _(P0)_
+> Reduce concentration risk and improve fault isolation in critical infrastructure.
+
+- [ ] **Split execution-intelligence** — extract mutation actions into bounded modules (scan, compute, override)
+- [ ] **Dead-letter / retry queue** — recovery path for failed mutations, no silent drops
+- [ ] **Per-action observability** — structured telemetry: latency, error rate, throughput per action type
+- [ ] **Circuit breaker for AI/ML calls** — prevent cascade failures, fail fast with cached fallbacks
+
+---
+
+## Priority Matrix
+
+| Priority | Track | Rationale |
+|----------|-------|-----------|
+| 🔴 P0 | Track 1 — E2E Tests | Biggest technical credibility gap for procurement |
+| 🔴 P0 | Track 5 — Architectural De-risking | Reduces single-function concentration risk |
+| 🟠 P1 | Track 2 — Load & Chaos | Proves system behaves at scale |
+| 🟠 P1 | Track 3 — DR & Resilience | Required evidence for enterprise trust |
+| 🟡 P2 | Track 4 — Compliance Artifacts | Formal procurement gate; can parallel with P0/P1 |
+
+---
+
+## Success Criteria for Fortune 10 Ready
+
+- [ ] All E2E workflows pass against real infrastructure
+- [ ] Load tests demonstrate <200ms P95 for critical RPCs at 10x current volume
+- [ ] Chaos tests show zero data corruption under failure conditions
+- [ ] DR test completed with documented RTO <4h, RPO <1h
+- [ ] SOC 2 control mapping at >80% coverage
+- [ ] Execution-intelligence split into ≥3 bounded action modules
+- [ ] Per-action SLO dashboards operational
+- [ ] Security questionnaire completed with evidence links
+
+---
+
+## Previous Audit Items (Completed)
+
+The following items from the original forensic audit have been resolved:
+
+- ✅ SectionErrorBoundary on all 34 strategic pages
+- ✅ Zero `: any` annotations in production code
+- ✅ Double-submit guards on destructive mutations
+- ✅ Silent catch blocks eliminated
+- ✅ Rate limiting on execution engine
+- ✅ Per-action error isolation in execution-intelligence
+- ✅ Score idempotency via `exec_compute_scores_idempotent`
+- ✅ Server-side step-up auth enforcement
+- ✅ Retention cleanup RPC (`exec_cleanup_old_data`)
+- ✅ Integration tests for execution-intelligence
+- ✅ Hardcoded index strategy replaced with unbounded composite indexes
+- ✅ `infer_blockers` capped at 500 with `_limit` parameter
