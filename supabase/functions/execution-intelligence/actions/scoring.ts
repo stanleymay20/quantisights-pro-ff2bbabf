@@ -130,6 +130,27 @@ export async function computeScores(ctx: ActionContext, supabase: SupabaseClient
 
 export async function getScores(ctx: ActionContext, supabase: SupabaseClient): Promise<ActionResult> {
   const { scope_type, include_history } = ctx.body;
+
+  if (!include_history) {
+    // Use server-side dedup: DISTINCT ON equivalent via ordered limit + client dedup on minimal set
+    let query = supabase
+      .from("execution_scores")
+      .select("*")
+      .eq("organization_id", ctx.orgId)
+      .order("computed_at", { ascending: false });
+
+    if (scope_type) query = query.eq("scope_type", scope_type as string);
+    const { data } = await query.limit(50);
+
+    // Deduplicate: keep only latest per scope_type:scope_id
+    const latestByScope = new Map<string, (typeof data extends Array<infer T> ? T : never)>();
+    for (const row of data || []) {
+      const key = `${row.scope_type}:${row.scope_id}`;
+      if (!latestByScope.has(key)) latestByScope.set(key, row);
+    }
+    return { data: Array.from(latestByScope.values()) };
+  }
+
   let query = supabase
     .from("execution_scores")
     .select("*")
@@ -137,17 +158,7 @@ export async function getScores(ctx: ActionContext, supabase: SupabaseClient): P
     .order("computed_at", { ascending: false });
 
   if (scope_type) query = query.eq("scope_type", scope_type as string);
-  const limit = include_history ? 100 : 20;
-  const { data } = await query.limit(limit);
-
-  if (!include_history && data) {
-    const latestByScope = new Map<string, (typeof data)[0]>();
-    for (const row of data) {
-      const key = `${row.scope_type}:${row.scope_id}`;
-      if (!latestByScope.has(key)) latestByScope.set(key, row);
-    }
-    return { data: Array.from(latestByScope.values()) };
-  }
+  const { data } = await query.limit(100);
   return { data: data || [] };
 }
 
