@@ -223,10 +223,10 @@ Deno.serve(async (req) => {
 
         if (result && !result.success) return json({ error: result.error }, 400);
         return json(result);
-      }
+      });
 
       // PHASE 1: Atomic reassign via RPC
-      case "reassign_plan": {
+      case "reassign_plan": return safeAction("reassign_plan", async () => {
         const { plan_id, new_owner_id, reason } = body;
         if (!isValidUUID(plan_id as string) || !isValidUUID(new_owner_id as string)) return json({ error: "Invalid IDs" }, 400);
 
