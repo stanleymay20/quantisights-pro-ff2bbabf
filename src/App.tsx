@@ -51,6 +51,8 @@ const CausalInference = lazy(() => import("./pages/CausalInference"));
 const CalibrationAssessment = lazy(() => import("./pages/CalibrationAssessment"));
 const Misses = lazy(() => import("./pages/Misses"));
 const DecisionAccuracy = lazy(() => import("./pages/DecisionAccuracy"));
+const Outcomes = lazy(() => import("./pages/Outcomes"));
+const DecisionHistory = lazy(() => import("./pages/DecisionHistory"));
 
 // ── Scenarios & Simulations ──
 const Scenarios = lazy(() => import("./pages/Scenarios"));
@@ -262,6 +264,8 @@ const App = () => (
               <Route path="/causal-inference" element={<P><CausalInference /></P>} />
               <Route path="/misses" element={<P><Misses /></P>} />
               <Route path="/decision-accuracy" element={<P><DecisionAccuracy /></P>} />
+              <Route path="/outcomes" element={<P><Outcomes /></P>} />
+              <Route path="/history" element={<P><DecisionHistory /></P>} />
 
               {/* ══════ Scenarios & Simulations ══════ */}
               <Route path="/scenarios" element={<P><Scenarios /></P>} />
