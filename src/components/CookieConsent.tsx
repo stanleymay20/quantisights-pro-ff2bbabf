@@ -17,6 +17,8 @@ const CookieConsent = forwardRef<HTMLDivElement>((_, ref) => {
   const isGerman = i18n.language?.startsWith("de");
 
   useEffect(() => {
+    // Never show cookie consent on the demo provisioning page
+    if (location.pathname === "/demo") return;
     const stored = localStorage.getItem(CONSENT_KEY);
     const isDemo = sessionStorage.getItem("quantivis_demo_mode") === "true";
     if (isDemo) {
