@@ -1792,6 +1792,7 @@ export type Database = {
           decided_at: string | null
           decided_by: string | null
           decision_context_id: string | null
+          decision_origin: string
           decision_simulation_id: string | null
           decision_status: string
           decision_type: string
@@ -1799,6 +1800,7 @@ export type Database = {
           execution_started_at: string | null
           execution_status: string
           expected_value_at_decision: number | null
+          explanation_metadata: Json | null
           id: string
           kpi_id: string | null
           model_calibration_adjustment: number | null
@@ -1811,8 +1813,10 @@ export type Database = {
           prediction_accuracy_score: number | null
           probability_of_success: number | null
           raw_confidence: number | null
+          recommendation_logic_type: string | null
           recommended_action: string
           simulation_id: string | null
+          source_insight_summary: string | null
           updated_at: string
         }
         Insert: {
@@ -1829,6 +1833,7 @@ export type Database = {
           decided_at?: string | null
           decided_by?: string | null
           decision_context_id?: string | null
+          decision_origin?: string
           decision_simulation_id?: string | null
           decision_status?: string
           decision_type?: string
@@ -1836,6 +1841,7 @@ export type Database = {
           execution_started_at?: string | null
           execution_status?: string
           expected_value_at_decision?: number | null
+          explanation_metadata?: Json | null
           id?: string
           kpi_id?: string | null
           model_calibration_adjustment?: number | null
@@ -1848,8 +1854,10 @@ export type Database = {
           prediction_accuracy_score?: number | null
           probability_of_success?: number | null
           raw_confidence?: number | null
+          recommendation_logic_type?: string | null
           recommended_action: string
           simulation_id?: string | null
+          source_insight_summary?: string | null
           updated_at?: string
         }
         Update: {
@@ -1866,6 +1874,7 @@ export type Database = {
           decided_at?: string | null
           decided_by?: string | null
           decision_context_id?: string | null
+          decision_origin?: string
           decision_simulation_id?: string | null
           decision_status?: string
           decision_type?: string
@@ -1873,6 +1882,7 @@ export type Database = {
           execution_started_at?: string | null
           execution_status?: string
           expected_value_at_decision?: number | null
+          explanation_metadata?: Json | null
           id?: string
           kpi_id?: string | null
           model_calibration_adjustment?: number | null
@@ -1885,8 +1895,10 @@ export type Database = {
           prediction_accuracy_score?: number | null
           probability_of_success?: number | null
           raw_confidence?: number | null
+          recommendation_logic_type?: string | null
           recommended_action?: string
           simulation_id?: string | null
+          source_insight_summary?: string | null
           updated_at?: string
         }
         Relationships: [
