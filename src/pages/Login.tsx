@@ -5,9 +5,10 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuthThrottle } from "@/hooks/useAuthThrottle";
 import { useAuthEvents } from "@/hooks/useAuthEvents";
 import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable/index";
 import MFAChallenge from "@/components/auth/MFAChallenge";
 import logo from "@/assets/quantivis-logo.png";
-import { Shield, AlertTriangle } from "lucide-react";
+import { Shield, AlertTriangle, Loader2 } from "lucide-react";
 
 const Login = forwardRef<HTMLDivElement>((_, ref) => {
   const [email, setEmail] = useState("");
