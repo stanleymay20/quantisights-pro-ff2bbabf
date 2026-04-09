@@ -158,7 +158,6 @@ const DataLineage = () => {
   );
 
   return (
-    <SectionErrorBoundary sectionName="Data Lineage">
     <DatasetRequired moduleName="Data Lineage">
     <>
         <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
@@ -235,6 +234,7 @@ const DataLineage = () => {
                           const style = NODE_STYLES[node.type];
                           const Icon = style.icon;
                           return (
+    <SectionErrorBoundary sectionName="Data Lineage">
                             <Card key={node.id} className={`border ${style.border} ${style.bg}`}>
                               <CardContent className="p-3 flex items-start gap-2">
                                 <Icon className="w-4 h-4 mt-0.5 shrink-0" />
@@ -250,6 +250,7 @@ const DataLineage = () => {
                                 </div>
                               </CardContent>
                             </Card>
+    </SectionErrorBoundary>
                           );
                         })
                       )}
@@ -283,4 +284,3 @@ const DataLineage = () => {
 };
 
 export default DataLineage;
-    </SectionErrorBoundary>

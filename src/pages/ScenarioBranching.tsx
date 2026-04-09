@@ -157,7 +157,6 @@ const ScenarioBranching = () => {
   const simulatedBranches = branches.filter(b => b.results);
 
   return (
-    <SectionErrorBoundary sectionName="Scenario Branching">
     <DatasetRequired moduleName="Scenario Branching">
     <>
         <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
@@ -326,9 +325,11 @@ const ScenarioBranching = () => {
                               ? val === Math.min(...simulatedBranches.map(sb => (sb.results?.[metric] as number) ?? 999))
                               : false;
                             return (
+    <SectionErrorBoundary sectionName="Scenario Branching">
                               <td key={b.id} className={`text-center py-2 px-3 font-medium ${isBest ? "text-primary font-bold" : ""}`}>
                                 {val ?? "—"}
                               </td>
+    </SectionErrorBoundary>
                             );
                           })}
                         </tr>
@@ -371,4 +372,3 @@ const ScenarioBranching = () => {
 };
 
 export default ScenarioBranching;
-    </SectionErrorBoundary>

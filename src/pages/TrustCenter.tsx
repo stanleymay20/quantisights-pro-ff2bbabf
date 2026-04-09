@@ -151,8 +151,8 @@ const TrustCenter = () => {
         </Button>
       </div>
     </div>
+    </SectionErrorBoundary>
   );
 };
 
 export default TrustCenter;
-    </SectionErrorBoundary>

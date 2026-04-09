@@ -6,10 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-import SectionErrorBoundary from "@/components/SectionErrorBoundary";
   CheckCircle2, XCircle, Loader2, ShieldCheck, RefreshCw,
   Database, Layers, AlertTriangle, Zap,
 } from "lucide-react";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 
 interface CheckResult {
   module: string;
@@ -194,7 +194,6 @@ const PilotAudit = () => {
   const allPass = results.length > 0 && failCount === 0;
 
   return (
-    <SectionErrorBoundary sectionName="Pilot Audit">
     <main className="flex-1 flex flex-col overflow-auto">
       <div className="max-w-[1000px] mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 flex-1">
         <div className="flex items-center justify-between">
@@ -386,6 +385,7 @@ function ContextField({
   value: string | null | undefined;
 }) {
   return (
+    <SectionErrorBoundary sectionName="Pilot Audit">
     <div>
       <span className="text-muted-foreground">{label}</span>
       <p className="font-mono truncate text-xs">
@@ -396,8 +396,8 @@ function ContextField({
           : "—"}
       </p>
     </div>
+    </SectionErrorBoundary>
   );
 }
 
 export default PilotAudit;
-    </SectionErrorBoundary>

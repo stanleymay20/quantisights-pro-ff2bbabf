@@ -12,9 +12,9 @@ import { useOrganization } from "@/hooks/useOrganization";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import {
-import SectionErrorBoundary from "@/components/SectionErrorBoundary";
   Shield, Key, FileText, Lock, Info, Copy, CheckCircle2, AlertTriangle,
 } from "lucide-react";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 
 // Schema-gap: sso_configs table exists in DB but is not in the auto-generated types.
 // Define a local interface until schema generation catches up.
@@ -388,8 +388,8 @@ const SSOConfig = () => {
         </TabsContent>
       </Tabs>
     </div>
+    </SectionErrorBoundary>
   );
 };
 
 export default SSOConfig;
-    </SectionErrorBoundary>
