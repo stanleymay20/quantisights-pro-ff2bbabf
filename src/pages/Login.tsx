@@ -19,7 +19,7 @@ const Login = forwardRef<HTMLDivElement>((_, ref) => {
   const [ssoRedirect, setSsoRedirect] = useState<string | null>(null);
   const [ssoChecking, setSsoChecking] = useState(false);
   const [ssoEnforced, setSsoEnforced] = useState(false);
-  const { signIn } = useAuth();
+  const { user, signIn } = useAuth();
   const { logAuthEvent } = useAuthEvents();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
