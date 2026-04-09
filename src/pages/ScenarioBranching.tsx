@@ -17,6 +17,7 @@ import {
   TrendingUp, TrendingDown, ArrowRight, AlertTriangle,
 } from "lucide-react";
 import DatasetRequired from "@/components/layout/DatasetRequired";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 
 interface BranchResults {
   projected_risk: number;
@@ -156,6 +157,7 @@ const ScenarioBranching = () => {
   const simulatedBranches = branches.filter(b => b.results);
 
   return (
+    <SectionErrorBoundary sectionName="Scenario Branching">
     <DatasetRequired moduleName="Scenario Branching">
     <>
         <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
@@ -369,3 +371,4 @@ const ScenarioBranching = () => {
 };
 
 export default ScenarioBranching;
+    </SectionErrorBoundary>

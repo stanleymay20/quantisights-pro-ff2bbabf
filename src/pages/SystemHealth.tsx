@@ -1,10 +1,12 @@
 import { useOrganization } from "@/hooks/useOrganization";
 import SystemHealthDashboard from "@/components/dashboard/SystemHealthDashboard";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 
 const SystemHealth = () => {
   const { currentOrg } = useOrganization();
 
   return (
+    <SectionErrorBoundary sectionName="System Health">
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">System Health</h1>
@@ -18,6 +20,7 @@ const SystemHealth = () => {
         <p className="text-muted-foreground">Select an organization to view system health.</p>
       )}
     </div>
+    </SectionErrorBoundary>
   );
 };
 

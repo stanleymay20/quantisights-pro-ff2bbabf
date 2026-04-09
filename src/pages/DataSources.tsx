@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { invokeWithRetry } from "@/lib/edge-function-retry";
 import { useToast } from "@/hooks/use-toast";
 import {
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
   Database, Globe, Webhook, FileSpreadsheet, Plus, Copy, Check,
   RefreshCw, Trash2, Clock, AlertCircle, CheckCircle2, XCircle, Lock, Eye, EyeOff, Play
 } from "lucide-react";
@@ -244,6 +245,7 @@ const DataSources = () => {
   const webhookUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/webhook-ingest`;
 
   return (
+    <SectionErrorBoundary sectionName="Data Sources">
     <>
         <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
           <div className="flex items-center gap-3">
@@ -479,3 +481,4 @@ Content-Type: application/json
 };
 
 export default DataSources;
+    </SectionErrorBoundary>

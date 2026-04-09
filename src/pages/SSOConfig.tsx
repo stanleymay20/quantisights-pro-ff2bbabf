@@ -12,6 +12,7 @@ import { useOrganization } from "@/hooks/useOrganization";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import {
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
   Shield, Key, FileText, Lock, Info, Copy, CheckCircle2, AlertTriangle,
 } from "lucide-react";
 
@@ -155,6 +156,7 @@ const SSOConfig = () => {
   }
 
   return (
+    <SectionErrorBoundary sectionName="SSO Config">
     <div className="p-4 md:p-6 space-y-6 max-w-5xl mx-auto">
       <div className="flex items-center gap-3">
         <SidebarMobileToggle />
@@ -390,3 +392,4 @@ const SSOConfig = () => {
 };
 
 export default SSOConfig;
+    </SectionErrorBoundary>

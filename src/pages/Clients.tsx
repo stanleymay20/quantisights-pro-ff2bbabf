@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import {
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
   Building2, Users, AlertTriangle, TrendingUp, TrendingDown,
   ChevronRight, Loader2, Shield, Activity, BarChart3, Minus,
 } from "lucide-react";
@@ -120,6 +121,7 @@ const Clients = () => {
   const totalMembers = orgSummaries.reduce((s, o) => s + o.memberCount, 0);
 
   return (
+    <SectionErrorBoundary sectionName="Clients">
     <>
         <header className="h-14 border-b border-border/30 flex items-center px-8 shrink-0 bg-background/60 backdrop-blur-sm">
           <div className="flex items-center gap-3">
@@ -282,3 +284,4 @@ const Clients = () => {
 };
 
 export default Clients;
+    </SectionErrorBoundary>

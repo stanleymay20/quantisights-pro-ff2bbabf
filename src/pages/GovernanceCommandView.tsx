@@ -12,6 +12,7 @@ import StewardDrillDown from "@/components/governance/StewardDrillDown";
 import { GovernanceExportButton } from "@/components/governance/GovernanceExport";
 import { evaluateGovernanceRisks, type RiskContext } from "@/lib/governance-rules";
 import {
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
   Shield, Award, Clock, Users, AlertTriangle, CheckCircle2,
   ArrowRight, TrendingUp, TrendingDown, Minus, BarChart3,
 } from "lucide-react";
@@ -132,6 +133,7 @@ const GovernanceCommandView = () => {
   };
 
   return (
+    <SectionErrorBoundary sectionName="Governance Command">
     <div className="space-y-8 max-w-6xl pb-12">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-3">
@@ -325,3 +327,4 @@ const GovernanceCommandView = () => {
 };
 
 export default GovernanceCommandView;
+    </SectionErrorBoundary>

@@ -4,6 +4,7 @@ import remarkGfm from "remark-gfm";
 import { SidebarMobileToggle } from "@/components/layout/ProtectedShell";
 import { BookOpen, Download, ChevronRight } from "lucide-react";
 import { DOC_SECTIONS, type DocSection } from "@/data/documentation-sections";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 
 /* ─── Downloadable section component ─── */
 const DocSectionCard = ({
@@ -84,6 +85,7 @@ const Documentation = () => {
   };
 
   return (
+    <SectionErrorBoundary sectionName="Documentation">
     <>
       <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
         <div className="flex items-center gap-2">
@@ -145,3 +147,4 @@ const Documentation = () => {
 };
 
 export default Documentation;
+    </SectionErrorBoundary>

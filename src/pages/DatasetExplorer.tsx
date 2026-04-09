@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 
 interface DatasetRecord {
   id: string;
@@ -135,6 +136,7 @@ const DatasetExplorer = () => {
   };
 
   return (
+    <SectionErrorBoundary sectionName="Dataset Explorer">
     <>
       <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
         <div className="flex items-center gap-3">
@@ -392,3 +394,4 @@ const DatasetExplorer = () => {
 };
 
 export default DatasetExplorer;
+    </SectionErrorBoundary>
