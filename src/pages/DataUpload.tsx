@@ -23,6 +23,7 @@ import {
 import UploadTrustBadges from "@/components/security/UploadTrustBadges";
 import { motion, AnimatePresence } from "framer-motion";
 import {
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
   type DetectedSchema, type ValidationResult, type HumanizedError,
   type DatasetIntelligence, type DatasetDiagnostics, type DatasetClassification,
   type ImportMode, type ColumnMapping, type ColumnTarget,
@@ -721,6 +722,7 @@ const DataUpload = () => {
   const currentStepIndex = steps.findIndex(s => s.key === step || (step === "validation" && s.key === "intelligence"));
 
   return (
+    <SectionErrorBoundary sectionName="Data Upload">
     <>
         <header className="h-14 border-b border-border/30 flex items-center px-8 shrink-0 bg-background/60 backdrop-blur-sm">
           <div className="flex items-center gap-3">
@@ -1491,3 +1493,4 @@ const DataUpload = () => {
 };
 
 export default DataUpload;
+    </SectionErrorBoundary>

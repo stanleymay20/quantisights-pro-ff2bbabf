@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 
 const sections = [
   {
@@ -78,6 +79,7 @@ const TrustCenter = () => {
   const navigate = useNavigate();
 
   return (
+    <SectionErrorBoundary sectionName="Trust Center">
     <div className="space-y-8 max-w-4xl">
       <div>
         <div className="flex items-center gap-3 mb-2">
@@ -153,3 +155,4 @@ const TrustCenter = () => {
 };
 
 export default TrustCenter;
+    </SectionErrorBoundary>
