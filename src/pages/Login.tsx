@@ -1,5 +1,5 @@
 import { useState, forwardRef } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthThrottle } from "@/hooks/useAuthThrottle";
