@@ -33,7 +33,7 @@ const CookieConsent = forwardRef<HTMLDivElement>((_, ref) => {
       const timer = setTimeout(() => setVisible(true), 1500);
       return () => clearTimeout(timer);
     }
-  }, []);
+  }, [location.pathname]);
 
   const handleChoice = (choice: ConsentChoice) => {
     localStorage.setItem(CONSENT_KEY, JSON.stringify({ choice, timestamp: new Date().toISOString() }));

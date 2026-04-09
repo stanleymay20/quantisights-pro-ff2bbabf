@@ -70,20 +70,18 @@ const ProofBar = ({ organizationId }: ProofBarProps) => {
   }, [organizationId]);
 
   if (!metrics) return null;
-  // Always show ProofBar even with 0 decisions — gives context instead of blank space
-  if (metrics.totalDecisions === 0) return null;
 
   const items = [
     {
       icon: Target,
-      label: "Decisions Tracked",
-      value: metrics.totalDecisions.toLocaleString(),
-      tooltip: "Total strategic decisions logged in the Decision Ledger across all contexts.",
+      label: "Decisions",
+      value: metrics.totalDecisions > 0 ? metrics.totalDecisions.toLocaleString() : "Get started",
+      tooltip: metrics.totalDecisions > 0 ? "Total strategic decisions logged in the Decision Ledger across all contexts." : "Log your first decision to begin building institutional memory.",
     },
     {
       icon: CheckCircle2,
-      label: "Outcomes Measured",
-      value: metrics.outcomesMeasured.toLocaleString(),
+      label: "Outcomes",
+      value: metrics.outcomesMeasured > 0 ? metrics.outcomesMeasured.toLocaleString() : "Pending",
       tooltip: "Decisions with verified real-world outcomes — comparing predicted vs. actual results.",
     },
     {
