@@ -45,7 +45,7 @@ const CookieConsent = forwardRef<HTMLDivElement>((_, ref) => {
 
   return (
     <div
-      className={`fixed bottom-0 left-0 right-0 z-[100] p-2 sm:p-4 md:p-6 pb-[env(safe-area-inset-bottom,8px)] transition-all duration-300 ease-out ${
+      className={`fixed bottom-4 left-4 right-4 z-[90] transition-all duration-300 ease-out ${
         exiting ? "translate-y-full opacity-0" : "translate-y-0 opacity-100 animate-[slide-up_0.4s_ease-out]"
       }`}
       style={{ "--slide-up-from": "100px" } as React.CSSProperties}

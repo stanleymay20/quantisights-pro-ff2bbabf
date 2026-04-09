@@ -176,7 +176,7 @@ const Dashboard = () => {
   /** Data-driven summary: show metric count and types instead of hardcoded SaaS terms */
   const dataDescription = metricTypes.length > 0
     ? `${metricTypes.length} metric type${metricTypes.length > 1 ? "s" : ""} detected across ${metrics.length.toLocaleString()} data points`
-    : "Upload verified operational data to enable intelligence. Every insight is derived from your data.";
+    : "Upload a CSV or try the demo to see intelligence in action.";
 
   return (
     <>
@@ -213,7 +213,7 @@ const Dashboard = () => {
                   className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-all disabled:opacity-50"
                 >
                   <RefreshCw className={`w-3 h-3 ${recalculating ? "animate-spin" : ""}`} />
-                  Refresh
+                  {recalculating ? "Analyzing…" : "Refresh Intelligence"}
                 </button>
                 <button
                   onClick={handleRecalculate}
