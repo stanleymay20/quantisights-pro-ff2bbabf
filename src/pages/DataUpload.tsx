@@ -22,8 +22,8 @@ import {
 } from "lucide-react";
 import UploadTrustBadges from "@/components/security/UploadTrustBadges";
 import { motion, AnimatePresence } from "framer-motion";
-import {
 import SectionErrorBoundary from "@/components/SectionErrorBoundary";
+import {
   type DetectedSchema, type ValidationResult, type HumanizedError,
   type DatasetIntelligence, type DatasetDiagnostics, type DatasetClassification,
   type ImportMode, type ColumnMapping, type ColumnTarget,
