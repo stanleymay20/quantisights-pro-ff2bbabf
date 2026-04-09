@@ -6,10 +6,10 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return corsPreflightResponse(req);
   const corsHeaders = getCorsHeaders(req);
 
-  // Rate limit: 5 demo sessions per IP per hour
+  // Rate limit: 15 demo sessions per IP per hour (generous for demos/testing)
   const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-  const { allowed, retryAfterMs } = checkRateLimit(`demo:${clientIp}`, 5, 3600_000);
-  if (!allowed) return rateLimitResponse(retryAfterMs);
+  const { allowed, retryAfterMs } = checkRateLimit(`demo:${clientIp}`, 15, 3600_000);
+  if (!allowed) return rateLimitResponse(retryAfterMs, req);
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -29,15 +29,21 @@ Deno.serve(async (req) => {
     if (authErr) throw authErr;
     const userId = authData.user.id;
 
-    await new Promise(r => setTimeout(r, 1500));
-
-    const { data: profile } = await admin
-      .from("profiles")
-      .select("organization_id")
-      .eq("user_id", userId)
-      .maybeSingle();
-    if (!profile?.organization_id) throw new Error("Profile not created");
-    const orgId = profile.organization_id;
+    // Poll for profile creation (trigger-based) with timeout
+    let orgId: string | null = null;
+    for (let i = 0; i < 10; i++) {
+      await new Promise(r => setTimeout(r, 500));
+      const { data: profile } = await admin
+        .from("profiles")
+        .select("organization_id")
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (profile?.organization_id) {
+        orgId = profile.organization_id;
+        break;
+      }
+    }
+    if (!orgId) throw new Error("Profile not created after 5s — trigger may have failed");
 
     // Get default workspace
     const { data: workspace } = await admin

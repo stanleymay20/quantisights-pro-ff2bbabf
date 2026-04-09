@@ -429,19 +429,19 @@ const Onboarding = () => {
                 <CardContent className="p-6 space-y-4">
                   <div className="flex items-center justify-between py-3 border-b border-border">
                     <span className="text-muted-foreground">Organization</span>
-                    <span className="font-medium">{orgName || currentOrg?.name}</span>
+                    <span className="font-medium">{orgName || currentOrg?.name || "Your organization"}</span>
                   </div>
                   <div className="flex items-center justify-between py-3 border-b border-border">
                     <span className="text-muted-foreground">Industry</span>
-                    <span className="font-medium capitalize">{industry || "—"}</span>
+                    <span className="font-medium capitalize">{INDUSTRIES.find(i => i.value === industry)?.label || "Not specified"}</span>
                   </div>
                   <div className="flex items-center justify-between py-3 border-b border-border">
                     <span className="text-muted-foreground">Company Size</span>
-                    <span className="font-medium">{SIZE_BANDS.find(s => s.value === sizeBand)?.label || "—"}</span>
+                    <span className="font-medium">{SIZE_BANDS.find(s => s.value === sizeBand)?.label || "Not specified"}</span>
                   </div>
                   <div className="flex items-center justify-between py-3 border-b border-border">
                     <span className="text-muted-foreground">Revenue Band</span>
-                    <span className="font-medium">{REVENUE_BANDS.find(r => r.value === revenueBand)?.label || "—"}</span>
+                    <span className="font-medium">{REVENUE_BANDS.find(r => r.value === revenueBand)?.label || "Not specified"}</span>
                   </div>
                   <div className="flex items-center justify-between py-3 border-b border-border">
                     <span className="text-muted-foreground">Executive Roles</span>
@@ -459,7 +459,7 @@ const Onboarding = () => {
                   </div>
                   <div className="flex items-center justify-between py-3">
                     <span className="text-muted-foreground">Data Source</span>
-                    <span className="font-medium capitalize">{dataOption}</span>
+                    <span className="font-medium">{DATA_OPTIONS.find(o => o.key === dataOption)?.label || "Connect Later"}</span>
                   </div>
                 </CardContent>
               </Card>
@@ -509,7 +509,7 @@ const Onboarding = () => {
                 ) : (
                   <ArrowRight className="w-4 h-4" />
                 )}
-                {loading ? "Generating..." : "Launch Intelligence Engine"}
+                {loading ? "Setting up..." : "Complete Setup"}
               </Button>
             )}
           </div>
