@@ -29,14 +29,21 @@ Deno.serve(async (req) => {
     if (authErr) throw authErr;
     const userId = authData.user.id;
 
-    await new Promise(r => setTimeout(r, 1500));
-
-    const { data: profile } = await admin
-      .from("profiles")
-      .select("organization_id")
-      .eq("user_id", userId)
-      .maybeSingle();
-    if (!profile?.organization_id) throw new Error("Profile not created");
+    // Poll for profile creation (trigger-based) with timeout
+    let orgId: string | null = null;
+    for (let i = 0; i < 10; i++) {
+      await new Promise(r => setTimeout(r, 500));
+      const { data: profile } = await admin
+        .from("profiles")
+        .select("organization_id")
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (profile?.organization_id) {
+        orgId = profile.organization_id;
+        break;
+      }
+    }
+    if (!orgId) throw new Error("Profile not created after 5s — trigger may have failed");
     const orgId = profile.organization_id;
 
     // Get default workspace
