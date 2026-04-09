@@ -6,10 +6,10 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return corsPreflightResponse(req);
   const corsHeaders = getCorsHeaders(req);
 
-  // Rate limit: 5 demo sessions per IP per hour
+  // Rate limit: 15 demo sessions per IP per hour (generous for demos/testing)
   const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-  const { allowed, retryAfterMs } = checkRateLimit(`demo:${clientIp}`, 5, 3600_000);
-  if (!allowed) return rateLimitResponse(retryAfterMs);
+  const { allowed, retryAfterMs } = checkRateLimit(`demo:${clientIp}`, 15, 3600_000);
+  if (!allowed) return rateLimitResponse(retryAfterMs, req);
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
