@@ -1,6 +1,7 @@
 import { useState, forwardRef } from "react";
 import { Link } from "react-router-dom";
 import { Menu, X } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 import logo from "@/assets/quantivis-logo.png";
 
 const NAV_LINKS: { label: string; href?: string; to?: string }[] = [
@@ -22,6 +23,7 @@ NavItem.displayName = "NavItem";
 
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { user } = useAuth();
 
   return (
     <nav aria-label="Main navigation" className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-2xl">
@@ -35,18 +37,29 @@ const Navbar = () => {
           {NAV_LINKS.map((link) => (
             <NavItem key={link.label} link={link} />
           ))}
-          <Link to="/login" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-            Sign In
-          </Link>
-          <Link to="/demo" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-            Try Demo
-          </Link>
-          <Link
-            to="/register"
-            className="px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:brightness-110 transition-all"
-          >
-            Start Free Trial
-          </Link>
+          {user ? (
+            <Link
+              to="/dashboard"
+              className="px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:brightness-110 transition-all"
+            >
+              Go to Dashboard
+            </Link>
+          ) : (
+            <>
+              <Link to="/login" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Sign In
+              </Link>
+              <Link to="/demo" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Try Demo
+              </Link>
+              <Link
+                to="/register"
+                className="px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:brightness-110 transition-all"
+              >
+                Start Free Trial
+              </Link>
+            </>
+          )}
         </div>
 
         {/* Mobile toggle */}
@@ -67,19 +80,31 @@ const Navbar = () => {
               <NavItem link={link} onClick={() => setMobileOpen(false)} />
             </div>
           ))}
-          <Link to="/demo" className="block text-sm text-primary font-semibold hover:text-foreground py-2" onClick={() => setMobileOpen(false)}>
-            Try Demo
-          </Link>
-          <Link to="/login" className="block text-sm text-muted-foreground hover:text-foreground py-2" onClick={() => setMobileOpen(false)}>
-            Sign In
-          </Link>
-          <Link
-            to="/register"
-            className="block text-center px-5 py-3 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:brightness-110 transition-all"
-            onClick={() => setMobileOpen(false)}
-          >
-            Start Free Trial
-          </Link>
+          {user ? (
+            <Link
+              to="/dashboard"
+              className="block text-center px-5 py-3 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:brightness-110 transition-all"
+              onClick={() => setMobileOpen(false)}
+            >
+              Go to Dashboard
+            </Link>
+          ) : (
+            <>
+              <Link to="/demo" className="block text-sm text-primary font-semibold hover:text-foreground py-2" onClick={() => setMobileOpen(false)}>
+                Try Demo
+              </Link>
+              <Link to="/login" className="block text-sm text-muted-foreground hover:text-foreground py-2" onClick={() => setMobileOpen(false)}>
+                Sign In
+              </Link>
+              <Link
+                to="/register"
+                className="block text-center px-5 py-3 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:brightness-110 transition-all"
+                onClick={() => setMobileOpen(false)}
+              >
+                Start Free Trial
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </nav>
