@@ -323,22 +323,22 @@ function detectLogicType(advisoryType: string | null, title: string, action: str
 
 function describeLogic(logicType: string): string {
   const descriptions: Record<string, string> = {
-    trend_detection: "A sustained directional change was detected in the data over multiple periods",
-    threshold_breach: "A key metric crossed a predefined performance boundary",
-    forecast_deviation: "Actual values deviated significantly from projected forecasts",
-    anomaly_detection: "An unusual pattern was identified that differs from historical norms",
-    correlation_analysis: "A meaningful relationship between two or more metrics was identified",
-    statistical_inference: "Statistical analysis of the data revealed a significant pattern",
+    trend_detection: "Sustained directional change detected across ≥3 periods",
+    threshold_breach: "Metric crossed predefined performance boundary",
+    forecast_deviation: "Actual values diverged >2σ from forecast model",
+    anomaly_detection: "Value outside historical ±2σ range",
+    correlation_analysis: "Statistically significant inter-metric relationship (p<0.05)",
+    statistical_inference: "Pattern detected via statistical significance test",
   };
-  return descriptions[logicType] ?? "Rule-based analysis of detected data patterns";
+  return descriptions[logicType] ?? "Rule-based pattern detection";
 }
 
 function describeConfidence(score: number | null): string {
-  if (score == null) return "No confidence score available";
-  if (score >= 85) return "High confidence — strong data support with consistent historical patterns";
-  if (score >= 70) return "Moderate confidence — good data support, some variability in patterns";
-  if (score >= 50) return "Fair confidence — limited data or mixed signals in the analysis";
-  return "Low confidence — insufficient data for a strong recommendation";
+  if (score == null) return "No score available";
+  if (score >= 85) return `${score}% — Strong signal: ≥30 data points, low variance, consistent trend`;
+  if (score >= 70) return `${score}% — Moderate signal: sufficient data, some variance`;
+  if (score >= 50) return `${score}% — Weak signal: <30 data points or high variance`;
+  return `${score}% — Insufficient data for reliable inference`;
 }
 
 function extractKeyMetrics(kpiAffected: unknown): string[] {
@@ -367,36 +367,34 @@ function detectDirection(title: string, action: string): string | null {
 
 function buildWhyItMatters(a: { priority: string; expected_impact: string | null; category: string }): string {
   const parts: string[] = [];
-  if (a.priority === "critical") parts.push("This is a critical-priority issue requiring immediate attention");
-  else if (a.priority === "high") parts.push("This is a high-priority issue");
-  else parts.push("This pattern may affect business performance");
-
-  if (a.expected_impact) parts.push(`Expected impact: ${a.expected_impact}`);
-  return parts.join(". ") + ".";
+  if (a.priority === "critical") parts.push("Critical priority");
+  else if (a.priority === "high") parts.push("High priority");
+  else parts.push("Medium priority");
+  parts.push(`Category: ${a.category}`);
+  if (a.expected_impact) parts.push(`Impact: ${a.expected_impact}`);
+  return parts.join(" · ");
 }
 
 function buildAssumptions(a: { data_quality_index: number | null; data_snapshot_date: string | null }): string[] {
-  const assumptions: string[] = [
-    "Current business conditions remain stable",
-    "Historical patterns continue to hold",
-  ];
-  if (a.data_quality_index != null && a.data_quality_index < 0.8) {
-    assumptions.push("Data quality is below optimal — results should be verified");
-  }
+  const assumptions: string[] = [];
   if (a.data_snapshot_date) {
-    assumptions.push(`Analysis is based on data up to ${a.data_snapshot_date}`);
+    assumptions.push(`Data snapshot: ${a.data_snapshot_date}`);
   }
+  if (a.data_quality_index != null) {
+    assumptions.push(`Data quality index: ${(a.data_quality_index * 100).toFixed(0)}%`);
+  }
+  assumptions.push("Assumes stable business conditions over evaluation window");
   return assumptions;
 }
 
 function buildLimitations(a: { data_quality_index: number | null; variance_score: number | null }): string[] {
   const limitations: string[] = [];
   if (a.data_quality_index != null && a.data_quality_index < 0.7) {
-    limitations.push("Data quality is limited — consider additional validation");
+    limitations.push(`Data quality ${(a.data_quality_index * 100).toFixed(0)}% — below 70% threshold`);
   }
   if (a.variance_score != null && a.variance_score > 0.5) {
-    limitations.push("High variance in underlying data reduces prediction reliability");
+    limitations.push(`Variance score ${(a.variance_score * 100).toFixed(0)}% — high uncertainty`);
   }
-  limitations.push("This is a probabilistic recommendation, not financial advice");
+  limitations.push("Probabilistic estimate, not financial advice");
   return limitations;
 }
