@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, forwardRef } from "react";
 import { Link } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import logo from "@/assets/quantivis-logo.png";
