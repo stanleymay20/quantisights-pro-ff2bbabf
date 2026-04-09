@@ -320,7 +320,7 @@ const ExecutionCommandCenter = memo(({ organizationId }: ExecutionCommandCenterP
 
       {/* Dependency Graph */}
       <SectionErrorBoundary sectionName="Dependency Graph">
-        {dependencyGraph && dependencyGraph.stats.with_dependencies > 0 && (
+        {dependencyGraph && dependencyGraph.stats?.with_dependencies > 0 && (
           <Card className="border-primary/20">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center gap-2">

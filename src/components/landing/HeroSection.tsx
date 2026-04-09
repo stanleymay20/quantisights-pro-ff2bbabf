@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { ArrowRight, ShieldCheck, Target, AlertTriangle, BarChart3, Database, Cable, Sparkles } from "lucide-react";
@@ -11,9 +12,9 @@ const CAPABILITY_PILLS = [
   { icon: BarChart3, label: "Board-Ready" },
 ];
 
-const HeroSection = () => {
+const HeroSection = forwardRef<HTMLElement>((_, ref) => {
   return (
-    <header className="relative min-h-[85vh] min-h-[85dvh] flex items-center overflow-hidden pt-20" role="banner">
+    <header ref={ref} className="relative min-h-[85vh] min-h-[85dvh] flex items-center overflow-hidden pt-20" role="banner">
       <img
         src={heroVisual}
         alt=""
@@ -128,6 +129,8 @@ const HeroSection = () => {
       </div>
     </header>
   );
-};
+});
+
+HeroSection.displayName = "HeroSection";
 
 export default HeroSection;

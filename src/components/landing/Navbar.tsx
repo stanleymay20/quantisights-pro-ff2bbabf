@@ -21,12 +21,12 @@ const NavItem = forwardRef<HTMLAnchorElement, { link: typeof NAV_LINKS[number]; 
 });
 NavItem.displayName = "NavItem";
 
-const Navbar = () => {
+const Navbar = forwardRef<HTMLElement>((_, ref) => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user } = useAuth();
 
   return (
-    <nav aria-label="Main navigation" className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-2xl">
+    <nav ref={ref} aria-label="Main navigation" className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-2xl">
       <div className="container mx-auto flex items-center justify-between py-4 px-6">
         <Link to="/" className="flex items-center gap-3">
           <img src={logo} alt="Quantivis Global" className="h-10 w-auto" />
@@ -109,6 +109,8 @@ const Navbar = () => {
       </div>
     </nav>
   );
-};
+});
+
+Navbar.displayName = "Navbar";
 
 export default Navbar;
