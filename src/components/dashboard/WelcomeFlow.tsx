@@ -19,10 +19,10 @@ const STEPS = [
   {
     icon: FileSpreadsheet,
     title: "Get Started in 60 Seconds",
-    subtitle: "Choose your path",
+    subtitle: "Choose how to get started",
     description:
       "Load our pre-built demo with 15 months of B2B SaaS data to see the platform in action — or upload your own CSV to start building your decision ledger.",
-    cta: "Try with Sample Data",
+    cta: "Try the Interactive Demo",
     ctaPath: "/demo",
     secondaryCta: "Upload My Data",
     secondaryPath: "/data-upload",
