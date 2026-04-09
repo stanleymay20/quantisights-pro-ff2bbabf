@@ -25,7 +25,7 @@ export const CONTACT = {
   },
 
   // Social
-  linkedin: "https://linkedin.com/company/quantivis",
+  linkedin: "https://www.linkedin.com/company/quantivis-io/",
 
   // Location
   location: "Germany",
