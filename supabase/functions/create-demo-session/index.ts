@@ -44,7 +44,6 @@ Deno.serve(async (req) => {
       }
     }
     if (!orgId) throw new Error("Profile not created after 5s — trigger may have failed");
-    const orgId = profile.organization_id;
 
     // Get default workspace
     const { data: workspace } = await admin
