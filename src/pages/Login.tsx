@@ -1,5 +1,5 @@
 import { useState, forwardRef } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthThrottle } from "@/hooks/useAuthThrottle";
@@ -19,7 +19,7 @@ const Login = forwardRef<HTMLDivElement>((_, ref) => {
   const [ssoRedirect, setSsoRedirect] = useState<string | null>(null);
   const [ssoChecking, setSsoChecking] = useState(false);
   const [ssoEnforced, setSsoEnforced] = useState(false);
-  const { signIn } = useAuth();
+  const { user, signIn } = useAuth();
   const { logAuthEvent } = useAuthEvents();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -27,6 +27,9 @@ const Login = forwardRef<HTMLDivElement>((_, ref) => {
   const redirectTo = rawRedirect.startsWith("/") && !rawRedirect.startsWith("//") ? rawRedirect : "/dashboard";
   const { toast } = useToast();
   const throttle = useAuthThrottle(5, 60_000);
+
+  // Redirect already-authenticated users to dashboard
+  if (user) return <Navigate to={redirectTo} replace />;
 
   // Check SSO for email domain
   const checkSSODomain = async (emailValue: string) => {
