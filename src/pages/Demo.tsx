@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { invokeWithRetry } from "@/lib/edge-function-retry";
@@ -13,77 +13,94 @@ const STEPS = [
   { label: "Initializing executive dashboard", icon: Target },
 ];
 
-const TIMEOUT_MS = 20_000;
+const TIMEOUT_MS = 45_000;
 
 const Demo = () => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+
+  const initDemo = useCallback(async (signal: AbortSignal) => {
+    try {
+      setError(null);
+      setCurrentStep(0);
+
+      await supabase.auth.signOut();
+
+      sessionStorage.setItem("quantivis_demo_mode", "true");
+      sessionStorage.removeItem("quantivis_org_id");
+      sessionStorage.removeItem("quantivis_workspace_id");
+      sessionStorage.removeItem("quantivis_project_id");
+
+      localStorage.setItem("quantivis_welcome_completed", "true");
+      localStorage.setItem("quantivis_cookie_consent", JSON.stringify({ choice: "accepted", timestamp: new Date().toISOString() }));
+
+      if (signal.aborted) return;
+      setCurrentStep(1);
+
+      const { data, error: fnErr } = await invokeWithRetry<Record<string, unknown>>(
+        "create-demo-session",
+        undefined,
+        { maxAttempts: 3, baseDelayMs: 500 }
+      );
+
+      if (signal.aborted) return;
+
+      if (fnErr) throw fnErr;
+      if (data?.error) throw new Error(String(data.error));
+
+      setCurrentStep(2);
+      await new Promise(r => setTimeout(r, 400));
+
+      if (signal.aborted) return;
+      setCurrentStep(3);
+
+      if (data?.org_id) sessionStorage.setItem("quantivis_org_id", String(data.org_id));
+      if (data?.workspace_id) sessionStorage.setItem("quantivis_workspace_id", String(data.workspace_id));
+      if (data?.project_id) sessionStorage.setItem("quantivis_project_id", String(data.project_id));
+
+      const { error: sessErr } = await supabase.auth.setSession({
+        access_token: String(data?.access_token ?? ""),
+        refresh_token: String(data?.refresh_token ?? ""),
+      });
+      if (sessErr) throw sessErr;
+
+      if (signal.aborted) return;
+      setCurrentStep(4);
+      await new Promise(r => setTimeout(r, 500));
+
+      navigate("/dashboard", { replace: true });
+    } catch (err: unknown) {
+      sessionStorage.removeItem("quantivis_demo_mode");
+      if (!signal.aborted) {
+        console.error("Demo init error:", err);
+        setError(err instanceof Error ? err.message : "Failed to create demo session");
+      }
+    }
+  }, [navigate]);
 
   useEffect(() => {
-    let cancelled = false;
+    const abortController = new AbortController();
 
-    // Safety timeout — if provisioning hangs, show error with retry
     const timeout = setTimeout(() => {
-      if (!cancelled && currentStep < STEPS.length - 1) {
-        setError("Provisioning is taking longer than expected. Please retry or contact support.");
+      if (!abortController.signal.aborted && currentStep < STEPS.length - 1) {
+        setError("Provisioning is taking longer than expected. Please retry.");
       }
     }, TIMEOUT_MS);
 
-    const initDemo = async () => {
-      try {
-        await supabase.auth.signOut();
+    initDemo(abortController.signal);
 
-        sessionStorage.setItem("quantivis_demo_mode", "true");
-        sessionStorage.removeItem("quantivis_org_id");
-        sessionStorage.removeItem("quantivis_workspace_id");
-        sessionStorage.removeItem("quantivis_project_id");
-
-        localStorage.setItem("quantivis_welcome_completed", "true");
-        localStorage.setItem("quantivis_cookie_consent", JSON.stringify({ choice: "accepted", timestamp: new Date().toISOString() }));
-
-        if (cancelled) return;
-        setCurrentStep(1);
-
-        const { data, error: fnErr } = await invokeWithRetry<Record<string, unknown>>("create-demo-session");
-
-        if (fnErr) throw fnErr;
-        if (data?.error) throw new Error(String(data.error));
-
-        if (cancelled) return;
-        setCurrentStep(2);
-        await new Promise(r => setTimeout(r, 500));
-
-        if (cancelled) return;
-        setCurrentStep(3);
-
-        if (data?.org_id) sessionStorage.setItem("quantivis_org_id", String(data.org_id));
-        if (data?.workspace_id) sessionStorage.setItem("quantivis_workspace_id", String(data.workspace_id));
-        if (data?.project_id) sessionStorage.setItem("quantivis_project_id", String(data.project_id));
-
-        const { error: sessErr } = await supabase.auth.setSession({
-          access_token: String(data?.access_token ?? ""),
-          refresh_token: String(data?.refresh_token ?? ""),
-        });
-        if (sessErr) throw sessErr;
-
-        if (cancelled) return;
-        setCurrentStep(4);
-        await new Promise(r => setTimeout(r, 600));
-
-        navigate("/dashboard", { replace: true });
-      } catch (err: unknown) {
-        sessionStorage.removeItem("quantivis_demo_mode");
-        if (!cancelled) {
-          console.error("Demo init error:", err);
-          setError(err instanceof Error ? err.message : "Failed to create demo session");
-        }
-      }
+    return () => {
+      abortController.abort();
+      clearTimeout(timeout);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [retryCount]);
 
-    initDemo();
-    return () => { cancelled = true; clearTimeout(timeout); };
-  }, [navigate]);
+  const handleRetry = () => {
+    setRetryCount(c => c + 1);
+  };
 
   const progress = ((currentStep + 1) / STEPS.length) * 100;
 
@@ -107,10 +124,10 @@ const Demo = () => {
               <h2 className="text-lg font-semibold">Demo Temporarily Unavailable</h2>
             </div>
             <p className="text-sm text-muted-foreground mb-6 max-w-sm mx-auto">
-              The demo environment is being updated. Please try again in a moment or contact us for a guided walkthrough.
+              {error}
             </p>
             <button
-              onClick={() => window.location.reload()}
+              onClick={handleRetry}
               className="px-6 py-2.5 rounded-lg bg-primary text-primary-foreground font-medium text-sm hover:brightness-110 transition-all"
             >
               Retry
