@@ -13,6 +13,7 @@ const CookieConsent = forwardRef<HTMLDivElement>((_, ref) => {
   const [visible, setVisible] = useState(false);
   const [exiting, setExiting] = useState(false);
   const { t, i18n } = useTranslation();
+  const location = useLocation();
   const isGerman = i18n.language?.startsWith("de");
 
   useEffect(() => {
