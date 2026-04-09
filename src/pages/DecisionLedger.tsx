@@ -30,6 +30,8 @@ import LazyInputWarning from "@/components/dashboard/LazyInputWarning";
 import ExecutionTimeline from "@/components/execution/ExecutionTimeline";
 import DecisionReplayPanel from "@/components/execution/DecisionReplayPanel";
 import DecisionEvidencePanel from "@/components/decision-intelligence/DecisionEvidencePanel";
+import ExplainDecisionPanel from "@/components/dashboard/ExplainDecisionPanel";
+import type { ExplanationMetadata } from "@/components/dashboard/ExplainDecisionPanel";
 import { onDecisionApproved, onExecutionStatusChanged } from "@/lib/decision-lifecycle";
 
 interface Decision {
@@ -63,6 +65,10 @@ interface Decision {
   decision_simulation_id: string | null;
   predicted_roi_probability: number | null;
   predicted_net_impact: number | null;
+  explanation_metadata: ExplanationMetadata | null;
+  source_insight_summary: string | null;
+  recommendation_logic_type: string | null;
+  decision_origin: string;
 }
 
 interface ImpactSim {
@@ -630,6 +636,19 @@ const DecisionLedgerPage = () => {
                         </div>
                         {expandedDecision === d.id && currentOrgId && (
                           <div className="mt-4 space-y-4">
+                            <ExplainDecisionPanel
+                              explanation={d.explanation_metadata}
+                              sourceInsightSummary={d.source_insight_summary}
+                              recommendationLogicType={d.recommendation_logic_type}
+                              decisionOrigin={d.decision_origin}
+                              createdAt={d.created_at}
+                              advisoryInstanceId={d.advisory_instance_id}
+                              datasetId={null}
+                              confidenceAtDecision={d.confidence_at_decision}
+                              cappedConfidence={d.capped_confidence}
+                              rawConfidence={d.raw_confidence}
+                              confidenceCapReason={d.confidence_cap_reason}
+                            />
                             <DecisionEvidencePanel
                               decisionId={d.id}
                               organizationId={currentOrgId}
