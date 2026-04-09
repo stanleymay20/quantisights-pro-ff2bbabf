@@ -60,9 +60,8 @@ const navSections: NavSection[] = [
     defaultOpen: true,
     items: [
       { icon: LayoutDashboard, label: "Command Center", path: "/dashboard" },
-      { icon: Briefcase, label: "Portfolio", path: "/portfolio" },
-      { icon: BarChart3, label: "KPI Builder", path: "/kpis" },
       { icon: Compass, label: "Executive View", path: "/executive" },
+      { icon: Briefcase, label: "Portfolio", path: "/portfolio" },
       { icon: FileText, label: "Reports", path: "/reports" },
     ],
   },

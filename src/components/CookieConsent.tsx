@@ -1,4 +1,4 @@
-import { useState, useEffect, forwardRef } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,7 @@ const CONSENT_KEY = "quantivis_cookie_consent";
 
 type ConsentChoice = "accepted" | "essential_only";
 
-const CookieConsent = forwardRef<HTMLDivElement>((_, ref) => {
+const CookieConsent = () => {
   const [visible, setVisible] = useState(false);
   const [exiting, setExiting] = useState(false);
   const { t, i18n } = useTranslation();
@@ -93,8 +93,6 @@ const CookieConsent = forwardRef<HTMLDivElement>((_, ref) => {
       </div>
     </div>
   );
-});
-
-CookieConsent.displayName = "CookieConsent";
+};
 
 export default CookieConsent;
