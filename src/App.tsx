@@ -264,6 +264,8 @@ const App = () => (
               <Route path="/causal-inference" element={<P><CausalInference /></P>} />
               <Route path="/misses" element={<P><Misses /></P>} />
               <Route path="/decision-accuracy" element={<P><DecisionAccuracy /></P>} />
+              <Route path="/outcomes" element={<P><Outcomes /></P>} />
+              <Route path="/history" element={<P><DecisionHistory /></P>} />
 
               {/* ══════ Scenarios & Simulations ══════ */}
               <Route path="/scenarios" element={<P><Scenarios /></P>} />
