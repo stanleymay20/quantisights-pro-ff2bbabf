@@ -1,4 +1,5 @@
 import { useSubscription } from "@/hooks/useSubscription";
+import { useAuth } from "@/contexts/AuthContext";
 import { TierKey } from "@/lib/stripe-tiers";
 
 /**
@@ -35,8 +36,13 @@ const FEATURE_TIERS: Record<string, TierKey[]> = {
 
 export const useSubscriptionGate = () => {
   const { subscribed, tier, loading } = useSubscription();
+  const { user } = useAuth();
+
+  // Demo users bypass all subscription gates
+  const isDemoUser = Boolean(user?.user_metadata?.is_demo);
 
   const canAccess = (feature: keyof typeof FEATURE_TIERS): boolean => {
+    if (isDemoUser) return true;
     if (loading) return false;
     if (!subscribed || !tier) return false;
     const allowed = FEATURE_TIERS[feature];
@@ -44,7 +50,7 @@ export const useSubscriptionGate = () => {
     return allowed.includes(tier);
   };
 
-  const isExpired = !loading && !subscribed;
+  const isExpired = !loading && !subscribed && !isDemoUser;
 
-  return { canAccess, isExpired, tier, loading, subscribed };
+  return { canAccess, isExpired, tier, loading, subscribed, isDemoUser };
 };
