@@ -112,6 +112,7 @@ const Diagnostics = () => {
             totalDiagnosed={diagnostics.length}
             metricTypesAnalyzed={metricTypesAnalyzed}
             skippedMetrics={skippedMetrics}
+            loading={loading}
           />
 
           {loading ? (
