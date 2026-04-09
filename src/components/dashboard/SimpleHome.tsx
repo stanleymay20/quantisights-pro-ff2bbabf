@@ -142,7 +142,10 @@ const SimpleHome = ({
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {displayMetrics.map((m, i) => {
-              const isPositive = (m.pctChange ?? 0) >= 0;
+              const pctChange = m.previousTotal && m.previousTotal !== 0
+                ? ((m.total - m.previousTotal) / Math.abs(m.previousTotal)) * 100
+                : null;
+              const isPositive = (pctChange ?? 0) >= 0;
               return (
                 <Card key={i}>
                   <CardContent className="p-4">
@@ -150,16 +153,14 @@ const SimpleHome = ({
                       {m.metricType.replace(/_/g, " ")}
                     </p>
                     <p className="text-xl font-bold mt-1">
-                      {typeof m.latestValue === "number"
-                        ? m.latestValue >= 1000
-                          ? `${(m.latestValue / 1000).toFixed(1)}k`
-                          : m.latestValue.toFixed(1)
-                        : "—"}
+                      {m.latest >= 1000
+                        ? `${(m.latest / 1000).toFixed(1)}k`
+                        : m.latest.toFixed(1)}
                     </p>
-                    {m.pctChange != null && (
+                    {pctChange != null && (
                       <div className={`flex items-center gap-1 mt-1 text-xs font-medium ${isPositive ? "text-success" : "text-destructive"}`}>
                         {isPositive ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                        {isPositive ? "+" : ""}{m.pctChange.toFixed(1)}%
+                        {isPositive ? "+" : ""}{pctChange.toFixed(1)}%
                       </div>
                     )}
                   </CardContent>
