@@ -152,7 +152,6 @@ const OKRs = () => {
     : 0;
 
   return (
-    <SectionErrorBoundary sectionName="OKRs">
     <DatasetRequired moduleName="OKRs">
     <>
         <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
@@ -233,6 +232,7 @@ const OKRs = () => {
                       {krs.map(kr => {
                         const pct = kr.target_value > 0 ? (kr.current_value / kr.target_value) * 100 : 0;
                         return (
+    <SectionErrorBoundary sectionName="OKRs">
                           <div key={kr.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
                             {pct >= 100 ? <CheckCircle2 className="w-4 h-4 text-success shrink-0" /> : <Target className="w-4 h-4 text-primary shrink-0" />}
                             <div className="flex-1 min-w-0">
@@ -251,6 +251,7 @@ const OKRs = () => {
                               onChange={e => updateKRProgress(kr.id, Number(e.target.value))}
                             />
                           </div>
+    </SectionErrorBoundary>
                         );
                       })}
 
@@ -282,4 +283,3 @@ const OKRs = () => {
 };
 
 export default OKRs;
-    </SectionErrorBoundary>

@@ -143,8 +143,8 @@ const Documentation = () => {
         </main>
       </div>
     </>
+    </SectionErrorBoundary>
   );
 };
 
 export default Documentation;
-    </SectionErrorBoundary>

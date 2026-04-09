@@ -12,10 +12,10 @@ import StewardDrillDown from "@/components/governance/StewardDrillDown";
 import { GovernanceExportButton } from "@/components/governance/GovernanceExport";
 import { evaluateGovernanceRisks, type RiskContext } from "@/lib/governance-rules";
 import {
-import SectionErrorBoundary from "@/components/SectionErrorBoundary";
   Shield, Award, Clock, Users, AlertTriangle, CheckCircle2,
   ArrowRight, TrendingUp, TrendingDown, Minus, BarChart3,
 } from "lucide-react";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 
 const MATURITY_LEVELS = [
   { min: 0, max: 20, label: "Initial", color: "text-destructive", bg: "bg-destructive/10" },
@@ -323,8 +323,8 @@ const GovernanceCommandView = () => {
         </Card>
       </div>
     </div>
+    </SectionErrorBoundary>
   );
 };
 
 export default GovernanceCommandView;
-    </SectionErrorBoundary>

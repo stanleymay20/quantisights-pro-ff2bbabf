@@ -9,10 +9,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import {
-import SectionErrorBoundary from "@/components/SectionErrorBoundary";
   Building2, Users, AlertTriangle, TrendingUp, TrendingDown,
   ChevronRight, Loader2, Shield, Activity, BarChart3, Minus,
 } from "lucide-react";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 
 interface OrgSummary {
   id: string;
@@ -280,8 +280,8 @@ const Clients = () => {
           </div>
         </main>
     </>
+    </SectionErrorBoundary>
   );
 };
 
 export default Clients;
-    </SectionErrorBoundary>

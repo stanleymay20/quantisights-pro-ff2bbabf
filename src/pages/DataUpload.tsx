@@ -22,7 +22,6 @@ import {
 } from "lucide-react";
 import UploadTrustBadges from "@/components/security/UploadTrustBadges";
 import { motion, AnimatePresence } from "framer-motion";
-import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 import {
   type DetectedSchema, type ValidationResult, type HumanizedError,
   type DatasetIntelligence, type DatasetDiagnostics, type DatasetClassification,
@@ -31,6 +30,7 @@ import {
   classifyDataset, confidenceColor, qualityColor, humanizeError, parseCSVText,
   slugifyMetric, deduplicateMetricSlugs,
 } from "@/lib/data-upload-utils";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 
 type Step = "upload" | "autodetect" | "mapping" | "validation" | "intelligence" | "importing" | "done";
 
@@ -722,7 +722,6 @@ const DataUpload = () => {
   const currentStepIndex = steps.findIndex(s => s.key === step || (step === "validation" && s.key === "intelligence"));
 
   return (
-    <SectionErrorBoundary sectionName="Data Upload">
     <>
         <header className="h-14 border-b border-border/30 flex items-center px-8 shrink-0 bg-background/60 backdrop-blur-sm">
           <div className="flex items-center gap-3">
@@ -1054,6 +1053,7 @@ const DataUpload = () => {
                           return t;
                         };
                         return (
+    <SectionErrorBoundary sectionName="Data Upload">
                           <div key={colIdx} className="flex items-center gap-4">
                             <div className="w-44 shrink-0">
                               <span className="text-sm font-medium truncate block">
@@ -1087,6 +1087,7 @@ const DataUpload = () => {
                               </Badge>
                             )}
                           </div>
+    </SectionErrorBoundary>
                         );
                       })}
                     </div>
@@ -1493,4 +1494,3 @@ const DataUpload = () => {
 };
 
 export default DataUpload;
-    </SectionErrorBoundary>

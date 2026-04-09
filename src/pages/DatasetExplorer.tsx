@@ -390,8 +390,8 @@ const DatasetExplorer = () => {
         </div>
       </main>
     </>
+    </SectionErrorBoundary>
   );
 };
 
 export default DatasetExplorer;
-    </SectionErrorBoundary>

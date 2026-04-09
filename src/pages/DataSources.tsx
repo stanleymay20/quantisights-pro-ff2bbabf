@@ -8,10 +8,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { invokeWithRetry } from "@/lib/edge-function-retry";
 import { useToast } from "@/hooks/use-toast";
 import {
-import SectionErrorBoundary from "@/components/SectionErrorBoundary";
   Database, Globe, Webhook, FileSpreadsheet, Plus, Copy, Check,
   RefreshCw, Trash2, Clock, AlertCircle, CheckCircle2, XCircle, Lock, Eye, EyeOff, Play
 } from "lucide-react";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 
 type SourceType = "csv" | "webhook" | "api" | "database";
 
@@ -245,7 +245,6 @@ const DataSources = () => {
   const webhookUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/webhook-ingest`;
 
   return (
-    <SectionErrorBoundary sectionName="Data Sources">
     <>
         <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
           <div className="flex items-center gap-3">
@@ -366,6 +365,7 @@ const DataSources = () => {
                 {sources.map((src) => {
                   const Icon = SOURCE_TYPES.find((t) => t.value === src.source_type)?.icon || Database;
                   return (
+    <SectionErrorBoundary sectionName="Data Sources">
                     <div key={src.id} onClick={() => setSelectedSource(src.id)}
                       className={`glass-card p-5 rounded-xl cursor-pointer transition-all ${selectedSource === src.id ? "ring-2 ring-primary" : "hover:border-primary/30"}`}>
                       <div className="flex items-center justify-between mb-3">
@@ -422,6 +422,7 @@ const DataSources = () => {
                         <p className="text-xs text-muted-foreground mt-2">Last sync: {new Date(src.last_synced_at).toLocaleString()}</p>
                       )}
                     </div>
+    </SectionErrorBoundary>
                   );
                 })}
               </div>
@@ -481,4 +482,3 @@ Content-Type: application/json
 };
 
 export default DataSources;
-    </SectionErrorBoundary>
