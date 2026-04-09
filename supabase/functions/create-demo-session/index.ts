@@ -338,6 +338,42 @@ Deno.serve(async (req) => {
       },
     ]);
 
+    // ─── Portfolio Companies (demo) ───
+    await admin.from("portfolio_companies").insert([
+      {
+        organization_id: orgId, dataset_id: datasetId, name: "NovaPay Solutions",
+        sector: "Fintech", investment_amount: 4200000, ownership_pct: 22,
+        current_valuation: 18500000, revenue_ltm: 3800000, ebitda_ltm: 680000,
+        revenue_growth_pct: 34, ebitda_margin_pct: 17.9, cash_runway_months: 18,
+        headcount: 62, risk_score: 35, risk_trend: "improving", health_status: "healthy",
+        fund_name: "Growth Fund I",
+      },
+      {
+        organization_id: orgId, dataset_id: datasetId, name: "CloudMetrics AG",
+        sector: "Enterprise SaaS", investment_amount: 2800000, ownership_pct: 15,
+        current_valuation: 12000000, revenue_ltm: 2200000, ebitda_ltm: 220000,
+        revenue_growth_pct: 18, ebitda_margin_pct: 10.0, cash_runway_months: 14,
+        headcount: 45, risk_score: 52, risk_trend: "stable", health_status: "watch",
+        fund_name: "Growth Fund I",
+      },
+      {
+        organization_id: orgId, dataset_id: datasetId, name: "DataBridge Systems",
+        sector: "Data Infrastructure", investment_amount: 6500000, ownership_pct: 28,
+        current_valuation: 32000000, revenue_ltm: 7100000, ebitda_ltm: 1420000,
+        revenue_growth_pct: 42, ebitda_margin_pct: 20.0, cash_runway_months: 24,
+        headcount: 110, risk_score: 22, risk_trend: "improving", health_status: "healthy",
+        fund_name: "Growth Fund II",
+      },
+      {
+        organization_id: orgId, dataset_id: datasetId, name: "SupplyChain.io",
+        sector: "Supply Chain / Logistics", investment_amount: 3100000, ownership_pct: 18,
+        current_valuation: 8500000, revenue_ltm: 1900000, ebitda_ltm: -120000,
+        revenue_growth_pct: 8, ebitda_margin_pct: -6.3, cash_runway_months: 9,
+        headcount: 38, risk_score: 78, risk_trend: "worsening", health_status: "at_risk",
+        fund_name: "Growth Fund I",
+      },
+    ]);
+
     // Sign in
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const userClient = createClient(supabaseUrl, anonKey);
