@@ -211,7 +211,8 @@ const Executive = () => {
   const [emailInput, setEmailInput] = useState("");
   const [savingPrefs, setSavingPrefs] = useState(false);
 
-  const isGated = !tier || tier === "starter";
+  const isDemoUser = Boolean(user?.user_metadata?.is_demo);
+  const isGated = !isDemoUser && (!tier || tier === "starter");
 
   // Fetch persistent data
   const fetchSignalData = useCallback(async () => {
