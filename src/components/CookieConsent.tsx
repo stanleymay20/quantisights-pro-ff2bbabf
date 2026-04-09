@@ -17,8 +17,12 @@ const CookieConsent = forwardRef<HTMLDivElement>((_, ref) => {
   useEffect(() => {
     const stored = localStorage.getItem(CONSENT_KEY);
     const isDemo = sessionStorage.getItem("quantivis_demo_mode") === "true";
-    if (isDemo && !stored) {
-      localStorage.setItem(CONSENT_KEY, JSON.stringify({ choice: "accepted", timestamp: new Date().toISOString() }));
+    if (isDemo) {
+      // Always auto-accept in demo mode — never show the dialog
+      if (!stored) {
+        localStorage.setItem(CONSENT_KEY, JSON.stringify({ choice: "accepted", timestamp: new Date().toISOString() }));
+      }
+      setVisible(false);
       return;
     }
     if (!stored) {
