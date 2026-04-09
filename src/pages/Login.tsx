@@ -28,6 +28,9 @@ const Login = forwardRef<HTMLDivElement>((_, ref) => {
   const { toast } = useToast();
   const throttle = useAuthThrottle(5, 60_000);
 
+  // Redirect already-authenticated users to dashboard
+  if (user) return <Navigate to={redirectTo} replace />;
+
   // Check SSO for email domain
   const checkSSODomain = async (emailValue: string) => {
     if (!emailValue.includes("@")) {
