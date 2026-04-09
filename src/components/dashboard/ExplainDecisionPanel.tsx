@@ -1,13 +1,13 @@
 /**
  * ExplainDecisionPanel — "Why this decision?"
  *
- * Collapsible panel that shows the full reasoning chain behind
- * every auto-generated decision, grounded in real data signals.
+ * Data-driven explanation panel. No LLM-style prose.
+ * Every line anchored to a metric, dataset, or rule.
  */
 
 import { useState } from "react";
 import {
-  ChevronDown, ChevronUp, Database, TrendingDown, Brain,
+  ChevronDown, ChevronUp, Database, TrendingDown, 
   Cpu, Target, ShieldCheck, AlertTriangle, Clock, Tag, Info,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -93,7 +93,6 @@ const ExplainDecisionPanel = ({
 
   return (
     <div className="border border-border/40 rounded-lg overflow-hidden bg-card/50">
-      {/* Origin badge + toggle */}
       <button
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center justify-between gap-2 px-4 py-3 text-sm hover:bg-muted/30 transition-colors"
@@ -103,7 +102,7 @@ const ExplainDecisionPanel = ({
           <span className="font-medium text-foreground">Why this decision?</span>
           {decisionOrigin === "ai_generated" && (
             <Badge variant="outline" className="text-[10px] border-primary/30 text-primary">
-              AI-Generated Recommendation
+              AI-Generated
             </Badge>
           )}
         </span>
@@ -112,24 +111,24 @@ const ExplainDecisionPanel = ({
 
       {expanded && (
         <div className="px-4 pb-4 space-y-4 border-t border-border/20 pt-3">
-          {/* Decision metadata bar */}
-          <div className="flex flex-wrap gap-3 text-[11px] text-muted-foreground">
+          {/* Metadata bar */}
+          <div className="flex flex-wrap gap-3 text-[11px] text-muted-foreground font-mono">
             {createdAt && (
               <span className="flex items-center gap-1">
                 <Clock className="w-3 h-3" />
-                Created {new Date(createdAt).toLocaleString()}
+                {new Date(createdAt).toISOString().slice(0, 16).replace("T", " ")}
               </span>
             )}
             {advisoryInstanceId && (
               <span className="flex items-center gap-1">
                 <Tag className="w-3 h-3" />
-                Source: {advisoryInstanceId.slice(0, 8)}…
+                src:{advisoryInstanceId.slice(0, 8)}
               </span>
             )}
-            {datasetId && (
+            {(datasetId || meta.source_data?.dataset_id) && (
               <span className="flex items-center gap-1">
                 <Database className="w-3 h-3" />
-                Dataset: {datasetId.slice(0, 8)}…
+                ds:{(datasetId ?? meta.source_data?.dataset_id ?? "").slice(0, 8)}
               </span>
             )}
           </div>
@@ -137,105 +136,98 @@ const ExplainDecisionPanel = ({
           {/* 1. Source Data */}
           {meta.source_data && (
             <Section icon={Database} title="Source Data">
-              {meta.source_data.dataset_name && (
-                <Bullet label="Dataset">{meta.source_data.dataset_name}</Bullet>
-              )}
-              {meta.source_data.time_range && (
-                <Bullet label="Time range">{meta.source_data.time_range}</Bullet>
-              )}
-              {meta.source_data.rows_analyzed != null && (
-                <Bullet label="Rows analyzed">{meta.source_data.rows_analyzed.toLocaleString()}</Bullet>
-              )}
-              {meta.source_data.key_metrics && meta.source_data.key_metrics.length > 0 && (
-                <Bullet label="Key metrics">{meta.source_data.key_metrics.join(", ")}</Bullet>
-              )}
+              <DataRow label="Dataset" value={meta.source_data.dataset_name} />
+              <DataRow label="Period" value={meta.source_data.time_range} />
+              <DataRow
+                label="Sample"
+                value={meta.source_data.rows_analyzed != null ? `${meta.source_data.rows_analyzed.toLocaleString()} rows` : null}
+              />
+              <DataRow
+                label="Metrics"
+                value={meta.source_data.key_metrics?.length ? meta.source_data.key_metrics.join(", ") : null}
+              />
             </Section>
           )}
 
-          {/* 2. Triggering Insight */}
-          <Section icon={TrendingDown} title="Triggering Insight">
-            {sourceInsightSummary ? (
-              <p className="text-sm text-foreground">{sourceInsightSummary}</p>
-            ) : meta.triggering_insight?.description ? (
-              <p className="text-sm text-foreground">{meta.triggering_insight.description}</p>
+          {/* 2. Trigger */}
+          <Section icon={TrendingDown} title="Trigger">
+            {meta.triggering_insight ? (
+              <div className="space-y-1">
+                {meta.triggering_insight.metric_name && meta.triggering_insight.change_value && (
+                  <p className="text-sm font-medium text-foreground">
+                    {meta.triggering_insight.metric_name}: {meta.triggering_insight.change_direction === "decrease" ? "↓" : meta.triggering_insight.change_direction === "increase" ? "↑" : "Δ"} {meta.triggering_insight.change_value}
+                  </p>
+                )}
+                {meta.triggering_insight.description && (
+                  <p className="text-xs text-muted-foreground">{meta.triggering_insight.description}</p>
+                )}
+                {meta.triggering_insight.pattern_type && (
+                  <Badge variant="secondary" className="text-[10px]">
+                    {LOGIC_LABELS[meta.triggering_insight.pattern_type] ?? meta.triggering_insight.pattern_type}
+                  </Badge>
+                )}
+              </div>
+            ) : sourceInsightSummary ? (
+              <p className="text-xs text-muted-foreground">{sourceInsightSummary}</p>
             ) : (
-              <p className="text-sm text-muted-foreground italic">No triggering insight recorded</p>
-            )}
-            {meta.triggering_insight?.pattern_type && (
-              <Badge variant="secondary" className="mt-1 text-[10px]">
-                {meta.triggering_insight.pattern_type}
-              </Badge>
+              <p className="text-xs text-muted-foreground/60">No trigger recorded</p>
             )}
           </Section>
 
-          {/* 3. Reasoning */}
+          {/* 3. Analysis */}
           {meta.reasoning && (
-            <Section icon={Brain} title="Reasoning">
-              {meta.reasoning.what_happened && (
-                <Bullet label="What happened">{meta.reasoning.what_happened}</Bullet>
-              )}
-              {meta.reasoning.why_it_matters && (
-                <Bullet label="Why it matters">{meta.reasoning.why_it_matters}</Bullet>
-              )}
-              {meta.reasoning.why_this_recommendation && (
-                <Bullet label="Why this recommendation">{meta.reasoning.why_this_recommendation}</Bullet>
-              )}
+            <Section icon={Target} title="Analysis">
+              <DataRow label="Signal" value={meta.reasoning.what_happened} />
+              <DataRow label="Impact" value={meta.reasoning.why_it_matters} />
+              <DataRow label="Action basis" value={meta.reasoning.why_this_recommendation} />
             </Section>
           )}
 
-          {/* 4. Recommendation Logic */}
-          <Section icon={Cpu} title="Recommendation Logic">
-            {recommendationLogicType ? (
-              <div className="flex items-center gap-2">
-                <Badge variant="outline" className="text-[10px]">
+          {/* 4. Method */}
+          <Section icon={Cpu} title="Method">
+            <div className="flex items-center gap-2 flex-wrap">
+              {recommendationLogicType && (
+                <Badge variant="outline" className="text-[10px] font-mono">
                   {LOGIC_LABELS[recommendationLogicType] ?? recommendationLogicType}
                 </Badge>
-                {meta.recommendation_logic?.description && (
-                  <span className="text-sm text-muted-foreground">{meta.recommendation_logic.description}</span>
-                )}
-              </div>
-            ) : meta.recommendation_logic ? (
-              <p className="text-sm text-muted-foreground">
-                {meta.recommendation_logic.method ?? "Rule-based analysis"}
-                {meta.recommendation_logic.description && ` — ${meta.recommendation_logic.description}`}
-              </p>
-            ) : (
-              <p className="text-sm text-muted-foreground italic">Statistical analysis of detected patterns</p>
-            )}
+              )}
+              {meta.recommendation_logic?.description && (
+                <span className="text-xs text-muted-foreground">{meta.recommendation_logic.description}</span>
+              )}
+              {!recommendationLogicType && !meta.recommendation_logic && (
+                <span className="text-xs text-muted-foreground/60">Statistical pattern analysis</span>
+              )}
+            </div>
           </Section>
 
           {/* 5. Expected Impact */}
-          {meta.expected_impact && (
+          {meta.expected_impact && (meta.expected_impact.range || meta.expected_impact.basis) && (
             <Section icon={Target} title="Expected Impact">
-              {meta.expected_impact.range && (
-                <Bullet label="Estimated range">{meta.expected_impact.range}</Bullet>
-              )}
-              {meta.expected_impact.basis && (
-                <Bullet label="Based on">{meta.expected_impact.basis}</Bullet>
-              )}
+              <DataRow label="Range" value={meta.expected_impact.range} />
+              <DataRow label="Basis" value={meta.expected_impact.basis} />
             </Section>
           )}
 
-          {/* 6. Confidence Score */}
-          <Section icon={ShieldCheck} title="Confidence Score">
+          {/* 6. Confidence */}
+          <Section icon={ShieldCheck} title="Confidence">
             <div className="flex items-center gap-3">
               {(confidenceAtDecision ?? cappedConfidence ?? rawConfidence) != null && (
-                <span className="text-lg font-bold text-foreground">
+                <span className="text-lg font-bold font-mono text-foreground">
                   {confidenceAtDecision ?? cappedConfidence ?? rawConfidence}%
                 </span>
               )}
               {rawConfidence != null && cappedConfidence != null && rawConfidence !== cappedConfidence && (
-                <span className="text-[11px] text-muted-foreground">
-                  (Raw: {rawConfidence}% → Capped: {cappedConfidence}%)
+                <span className="text-[11px] font-mono text-muted-foreground">
+                  raw {rawConfidence}% → capped {cappedConfidence}%
                 </span>
               )}
             </div>
             {meta.confidence_explanation?.meaning && (
-              <p className="text-sm text-muted-foreground mt-1">{meta.confidence_explanation.meaning}</p>
+              <p className="text-xs text-muted-foreground mt-1">{meta.confidence_explanation.meaning}</p>
             )}
             {(confidenceCapReason || meta.confidence_explanation?.cap_reason) && (
               <p className="text-[11px] text-warning mt-1">
-                Capped because: {confidenceCapReason ?? meta.confidence_explanation?.cap_reason}
+                Cap: {confidenceCapReason ?? meta.confidence_explanation?.cap_reason}
               </p>
             )}
           </Section>
@@ -243,10 +235,10 @@ const ExplainDecisionPanel = ({
           {/* 7. Assumptions */}
           {meta.assumptions && meta.assumptions.length > 0 && (
             <Section icon={AlertTriangle} title="Assumptions" iconColor="text-warning">
-              <ul className="space-y-1">
+              <ul className="space-y-0.5">
                 {meta.assumptions.map((a, i) => (
-                  <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
-                    <span className="text-warning mt-0.5">•</span> {a}
+                  <li key={i} className="text-xs text-muted-foreground flex items-start gap-1.5">
+                    <span className="text-warning shrink-0">•</span>{a}
                   </li>
                 ))}
               </ul>
@@ -256,21 +248,19 @@ const ExplainDecisionPanel = ({
           {/* Limitations */}
           {meta.limitations && meta.limitations.length > 0 && (
             <Section icon={AlertTriangle} title="Limitations" iconColor="text-destructive">
-              <ul className="space-y-1">
+              <ul className="space-y-0.5">
                 {meta.limitations.map((l, i) => (
-                  <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
-                    <span className="text-destructive mt-0.5">•</span> {l}
+                  <li key={i} className="text-xs text-muted-foreground flex items-start gap-1.5">
+                    <span className="text-destructive shrink-0">•</span>{l}
                   </li>
                 ))}
               </ul>
             </Section>
           )}
 
-          {/* Fallback if no metadata at all */}
           {!hasExplanation && (
-            <p className="text-sm text-muted-foreground italic">
-              Detailed explanation metadata is not available for this decision.
-              It may have been created before the explainability system was active.
+            <p className="text-xs text-muted-foreground/60">
+              No explanation metadata. Decision predates explainability system.
             </p>
           )}
         </div>
@@ -293,21 +283,22 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <div className="space-y-1.5">
-      <div className="flex items-center gap-2">
-        <Icon className={`w-3.5 h-3.5 ${iconColor}`} />
-        <span className="text-xs font-semibold text-foreground uppercase tracking-wide">{title}</span>
+    <div className="space-y-1">
+      <div className="flex items-center gap-1.5">
+        <Icon className={`w-3 h-3 ${iconColor}`} />
+        <span className="text-[10px] font-semibold text-foreground uppercase tracking-wider">{title}</span>
       </div>
-      <div className="pl-5.5">{children}</div>
+      <div className="pl-[18px]">{children}</div>
     </div>
   );
 }
 
-function Bullet({ label, children }: { label: string; children: React.ReactNode }) {
+function DataRow({ label, value }: { label: string; value?: string | null }) {
+  if (!value) return null;
   return (
-    <p className="text-sm text-muted-foreground">
-      <span className="font-medium text-foreground">{label}:</span> {children}
-    </p>
+    <div className="text-xs text-muted-foreground">
+      <span className="font-medium text-foreground">{label}:</span> {value}
+    </div>
   );
 }
 
