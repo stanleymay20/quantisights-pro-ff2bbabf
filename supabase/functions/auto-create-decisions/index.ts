@@ -6,8 +6,7 @@ import { getCorsHeaders, corsPreflightResponse } from "../_shared/cors.ts";
  * Auto-Create Decisions from Advisory Instances
  * 
  * Takes open advisory instances and creates decision_ledger entries
- * for any that don't already have a linked decision. Then optionally
- * notifies team members via email.
+ * with full explanation metadata for transparency and auditability.
  */
 serve(async (req) => {
   if (req.method === "OPTIONS") return corsPreflightResponse(req);
@@ -57,7 +56,7 @@ serve(async (req) => {
     // Fetch open advisories that don't yet have linked decisions
     let advisoryQuery = serviceSupabase
       .from("advisory_instances")
-      .select("id, title, action, category, priority, confidence, capped_confidence, raw_confidence, confidence_cap_reason, expected_impact, rationale, kpi_affected, dataset_id")
+      .select("id, title, action, category, priority, confidence, capped_confidence, raw_confidence, confidence_cap_reason, expected_impact, rationale, kpi_affected, dataset_id, advisory_type, source_evidence, data_quality_index, data_snapshot_date, variance_score")
       .eq("organization_id", organization_id)
       .eq("status", "open")
       .in("priority", ["critical", "high", "medium"])
@@ -93,21 +92,87 @@ serve(async (req) => {
       });
     }
 
-    // Create decision ledger entries
-    const decisionRows = newAdvisories.map(a => ({
-      organization_id,
-      advisory_instance_id: a.id,
-      decision_type: a.category || "strategic",
-      recommended_action: `${a.title}: ${a.action}`,
-      decision_status: "pending",
-      execution_status: "not_started",
-      raw_confidence: a.raw_confidence,
-      capped_confidence: a.capped_confidence,
-      confidence_at_decision: a.capped_confidence ?? a.confidence,
-      confidence_cap_reason: a.confidence_cap_reason,
-      predicted_net_impact: parseImpactEstimate(a.expected_impact),
-      notes: a.rationale,
-    }));
+    // Fetch dataset info for explanation metadata
+    const datasetIds = [...new Set(newAdvisories.map(a => a.dataset_id).filter(Boolean))];
+    let datasetMap: Record<string, { name: string; row_count: number | null }> = {};
+    if (datasetIds.length > 0) {
+      const { data: datasets } = await serviceSupabase
+        .from("datasets")
+        .select("id, name, row_count")
+        .in("id", datasetIds);
+      if (datasets) {
+        datasetMap = Object.fromEntries(datasets.map(d => [d.id, { name: d.name, row_count: d.row_count }]));
+      }
+    }
+
+    // Create decision ledger entries with explanation metadata
+    const decisionRows = newAdvisories.map(a => {
+      const dsInfo = a.dataset_id ? datasetMap[a.dataset_id] : null;
+      const logicType = detectLogicType(a.advisory_type, a.title, a.action);
+      const assumptions = buildAssumptions(a);
+      const limitations = buildLimitations(a);
+
+      const explanationMetadata = {
+        source_data: {
+          dataset_name: dsInfo?.name ?? "Unknown dataset",
+          dataset_id: a.dataset_id,
+          time_range: a.data_snapshot_date
+            ? `Up to ${a.data_snapshot_date}`
+            : "Latest available data",
+          rows_analyzed: dsInfo?.row_count ?? null,
+          key_metrics: extractKeyMetrics(a.kpi_affected),
+        },
+        triggering_insight: {
+          pattern_type: logicType,
+          description: a.title,
+          metric_name: extractPrimaryMetric(a.kpi_affected),
+          change_value: extractChangeValue(a.title, a.action),
+          change_direction: detectDirection(a.title, a.action),
+        },
+        reasoning: {
+          what_happened: a.title,
+          why_it_matters: buildWhyItMatters(a),
+          why_this_recommendation: a.rationale ?? a.action,
+        },
+        recommendation_logic: {
+          method: logicType,
+          description: describeLogic(logicType),
+        },
+        expected_impact: {
+          range: a.expected_impact ?? null,
+          basis: a.source_evidence
+            ? "Based on historical data patterns and statistical analysis"
+            : "Based on detected trend analysis",
+        },
+        confidence_explanation: {
+          score: a.capped_confidence ?? a.confidence,
+          meaning: describeConfidence(a.capped_confidence ?? a.confidence),
+          capped: a.raw_confidence != null && a.capped_confidence != null && a.raw_confidence !== a.capped_confidence,
+          cap_reason: a.confidence_cap_reason,
+        },
+        assumptions,
+        limitations,
+      };
+
+      return {
+        organization_id,
+        advisory_instance_id: a.id,
+        decision_type: a.category || "strategic",
+        recommended_action: `${a.title}: ${a.action}`,
+        decision_status: "pending",
+        execution_status: "not_started",
+        raw_confidence: a.raw_confidence,
+        capped_confidence: a.capped_confidence,
+        confidence_at_decision: a.capped_confidence ?? a.confidence,
+        confidence_cap_reason: a.confidence_cap_reason,
+        predicted_net_impact: parseImpactEstimate(a.expected_impact),
+        notes: a.rationale,
+        decision_origin: "ai_generated",
+        source_insight_summary: a.title,
+        recommendation_logic_type: logicType,
+        explanation_metadata: explanationMetadata,
+      };
+    });
 
     const { data: createdDecisions, error: insertError } = await serviceSupabase
       .from("decision_ledger")
@@ -122,7 +187,6 @@ serve(async (req) => {
     let emailsSent = 0;
 
     if (resendKey && createdDecisions && createdDecisions.length > 0) {
-      // Get org members with admin/owner/executive roles
       const { data: members } = await serviceSupabase
         .from("organization_members")
         .select("user_id, role")
@@ -136,19 +200,16 @@ serve(async (req) => {
           .select("user_id, full_name")
           .in("user_id", userIds);
 
-        // Get emails from auth (via profiles user_id lookup)
         const { data: orgData } = await serviceSupabase
           .from("organizations")
           .select("name")
           .eq("id", organization_id)
           .single();
 
-        // Build email content
         const decisionCount = createdDecisions.length;
         const criticalCount = newAdvisories.filter(a => a.priority === "critical").length;
-        const highCount = newAdvisories.filter(a => a.priority === "high").length;
 
-        const summaryItems = newAdvisories.slice(0, 5).map(a => 
+        const summaryItems = newAdvisories.slice(0, 5).map(a =>
           `<li style="margin-bottom: 8px; color: #e2e8f0;">
             <strong style="color: ${a.priority === 'critical' ? '#ef4444' : a.priority === 'high' ? '#f59e0b' : '#94a3b8'};">
               [${a.priority.toUpperCase()}]
@@ -183,12 +244,10 @@ serve(async (req) => {
           </div>
         `;
 
-        // Send to each admin/owner (get emails from auth.users via service role)
         for (const member of members) {
           try {
             const { data: authUser } = await serviceSupabase.auth.admin.getUserById(member.user_id);
             if (authUser?.user?.email) {
-              const name = profiles?.find(p => p.user_id === member.user_id)?.full_name || '';
               await fetch("https://api.resend.com/emails", {
                 method: "POST",
                 headers: {
@@ -222,6 +281,7 @@ serve(async (req) => {
         count: createdDecisions?.length ?? 0,
         emails_sent: emailsSent,
         source: "auto_create_decisions",
+        has_explanations: true,
       },
     });
 
@@ -233,18 +293,110 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
 
-  } catch (err: any) {
-    console.error("auto-create-decisions error:", err);
-    return new Response(JSON.stringify({ error: err.message }), {
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("auto-create-decisions error:", message);
+    return new Response(JSON.stringify({ error: message }), {
       status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
     });
   }
 });
 
-/** Parse impact strings like "+5-10% revenue" into a numeric estimate */
+/* ---- Helper functions for explanation generation ---- */
+
 function parseImpactEstimate(impact: string | null): number | null {
   if (!impact) return null;
   const match = impact.match(/([+-]?\d+(?:\.\d+)?)/);
   return match ? parseFloat(match[1]) : null;
+}
+
+function detectLogicType(advisoryType: string | null, title: string, action: string): string {
+  const combined = `${title} ${action} ${advisoryType ?? ""}`.toLowerCase();
+  if (combined.includes("trend") || combined.includes("declining") || combined.includes("increasing")) return "trend_detection";
+  if (combined.includes("threshold") || combined.includes("breach") || combined.includes("exceeded")) return "threshold_breach";
+  if (combined.includes("forecast") || combined.includes("deviation") || combined.includes("projected")) return "forecast_deviation";
+  if (combined.includes("anomal") || combined.includes("unusual") || combined.includes("spike")) return "anomaly_detection";
+  if (combined.includes("correlat") || combined.includes("relationship")) return "correlation_analysis";
+  return "statistical_inference";
+}
+
+function describeLogic(logicType: string): string {
+  const descriptions: Record<string, string> = {
+    trend_detection: "A sustained directional change was detected in the data over multiple periods",
+    threshold_breach: "A key metric crossed a predefined performance boundary",
+    forecast_deviation: "Actual values deviated significantly from projected forecasts",
+    anomaly_detection: "An unusual pattern was identified that differs from historical norms",
+    correlation_analysis: "A meaningful relationship between two or more metrics was identified",
+    statistical_inference: "Statistical analysis of the data revealed a significant pattern",
+  };
+  return descriptions[logicType] ?? "Rule-based analysis of detected data patterns";
+}
+
+function describeConfidence(score: number | null): string {
+  if (score == null) return "No confidence score available";
+  if (score >= 85) return "High confidence — strong data support with consistent historical patterns";
+  if (score >= 70) return "Moderate confidence — good data support, some variability in patterns";
+  if (score >= 50) return "Fair confidence — limited data or mixed signals in the analysis";
+  return "Low confidence — insufficient data for a strong recommendation";
+}
+
+function extractKeyMetrics(kpiAffected: unknown): string[] {
+  if (!kpiAffected) return [];
+  if (Array.isArray(kpiAffected)) return kpiAffected.map(String).slice(0, 5);
+  if (typeof kpiAffected === "object") return Object.keys(kpiAffected as Record<string, unknown>).slice(0, 5);
+  return [String(kpiAffected)];
+}
+
+function extractPrimaryMetric(kpiAffected: unknown): string | null {
+  const metrics = extractKeyMetrics(kpiAffected);
+  return metrics.length > 0 ? metrics[0] : null;
+}
+
+function extractChangeValue(title: string, action: string): string | null {
+  const match = (title + " " + action).match(/(\d+(?:\.\d+)?%)/);
+  return match ? match[1] : null;
+}
+
+function detectDirection(title: string, action: string): string | null {
+  const combined = `${title} ${action}`.toLowerCase();
+  if (combined.includes("drop") || combined.includes("declin") || combined.includes("decrease") || combined.includes("fell")) return "decrease";
+  if (combined.includes("increase") || combined.includes("grew") || combined.includes("rise") || combined.includes("spike")) return "increase";
+  return null;
+}
+
+function buildWhyItMatters(a: { priority: string; expected_impact: string | null; category: string }): string {
+  const parts: string[] = [];
+  if (a.priority === "critical") parts.push("This is a critical-priority issue requiring immediate attention");
+  else if (a.priority === "high") parts.push("This is a high-priority issue");
+  else parts.push("This pattern may affect business performance");
+
+  if (a.expected_impact) parts.push(`Expected impact: ${a.expected_impact}`);
+  return parts.join(". ") + ".";
+}
+
+function buildAssumptions(a: { data_quality_index: number | null; data_snapshot_date: string | null }): string[] {
+  const assumptions: string[] = [
+    "Current business conditions remain stable",
+    "Historical patterns continue to hold",
+  ];
+  if (a.data_quality_index != null && a.data_quality_index < 0.8) {
+    assumptions.push("Data quality is below optimal — results should be verified");
+  }
+  if (a.data_snapshot_date) {
+    assumptions.push(`Analysis is based on data up to ${a.data_snapshot_date}`);
+  }
+  return assumptions;
+}
+
+function buildLimitations(a: { data_quality_index: number | null; variance_score: number | null }): string[] {
+  const limitations: string[] = [];
+  if (a.data_quality_index != null && a.data_quality_index < 0.7) {
+    limitations.push("Data quality is limited — consider additional validation");
+  }
+  if (a.variance_score != null && a.variance_score > 0.5) {
+    limitations.push("High variance in underlying data reduces prediction reliability");
+  }
+  limitations.push("This is a probabilistic recommendation, not financial advice");
+  return limitations;
 }
