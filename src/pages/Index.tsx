@@ -1,4 +1,3 @@
-import { forwardRef } from "react";
 import Navbar from "@/components/landing/Navbar";
 import HeroSection from "@/components/landing/HeroSection";
 import PainMirrorSection from "@/components/landing/PainMirrorSection";
@@ -13,9 +12,9 @@ import CTASection from "@/components/landing/CTASection";
 import ComparisonSection from "@/components/landing/ComparisonSection";
 import Footer from "@/components/landing/Footer";
 
-const Index = forwardRef<HTMLDivElement>((_, ref) => {
+const Index = () => {
   return (
-    <div ref={ref} className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background">
       <Navbar />
       <main id="main-content">
         <HeroSection />
@@ -35,8 +34,6 @@ const Index = forwardRef<HTMLDivElement>((_, ref) => {
       <Footer />
     </div>
   );
-});
-
-Index.displayName = "Index";
+};
 
 export default Index;
