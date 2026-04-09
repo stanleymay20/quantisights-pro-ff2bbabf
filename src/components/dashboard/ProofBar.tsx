@@ -69,7 +69,9 @@ const ProofBar = ({ organizationId }: ProofBarProps) => {
     fetch();
   }, [organizationId]);
 
-  if (!metrics || metrics.totalDecisions === 0) return null;
+  if (!metrics) return null;
+  // Always show ProofBar even with 0 decisions — gives context instead of blank space
+  if (metrics.totalDecisions === 0) return null;
 
   const items = [
     {
@@ -87,7 +89,7 @@ const ProofBar = ({ organizationId }: ProofBarProps) => {
     {
       icon: TrendingUp,
       label: "Prediction Accuracy",
-      value: metrics.predictionAccuracy !== null ? `${metrics.predictionAccuracy}%` : "—",
+      value: metrics.predictionAccuracy !== null ? `${metrics.predictionAccuracy}%` : "Awaiting data",
       tooltip: metrics.predictionAccuracy !== null
         ? `Average accuracy score across ${metrics.outcomesMeasured} measured outcomes. Derived from expected vs actual outcome variance.`
         : "Accuracy will be computed once outcomes are evaluated against predictions.",
@@ -95,7 +97,7 @@ const ProofBar = ({ organizationId }: ProofBarProps) => {
     {
       icon: Brain,
       label: "Calibration",
-      value: metrics.calibrationScore !== null ? `${metrics.calibrationScore}%` : "—",
+      value: metrics.calibrationScore !== null ? `${metrics.calibrationScore}%` : "Learning",
       tooltip: metrics.calibrationScore !== null
         ? "Bayesian calibration score — measures how well confidence estimates match real-world success rates across confidence bands."
         : "Calibration score requires sufficient outcome data. The engine runs every 12 hours.",

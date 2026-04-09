@@ -83,12 +83,12 @@ const ExecutiveQuickView = memo(({
             <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Calibration</span>
           </div>
           <p className="text-2xl font-bold text-foreground">
-            {calibrationScore != null ? `${calibrationScore}%` : "—"}
+            {calibrationScore != null ? `${calibrationScore}%` : "Learning"}
           </p>
           <p className="text-xs text-muted-foreground mt-1">
             {calibrationScore != null
-              ? calibrationScore >= 70 ? "Well-calibrated" : "Needs improvement"
-              : "Needs more decisions"
+              ? calibrationScore >= 70 ? "Well-calibrated" : "Improving with each outcome"
+              : "Collecting outcome data"
             }
           </p>
         </div>

@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { invokeWithRetry } from "@/lib/edge-function-retry";
-import { Brain, Loader2, AlertCircle, CheckCircle2, Shield, BarChart3, Zap, Target } from "lucide-react";
+import { Brain, Loader2, AlertCircle, CheckCircle2, Shield, BarChart3, Zap, Target, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const STEPS = [
@@ -13,13 +13,15 @@ const STEPS = [
   { label: "Initializing executive dashboard", icon: Target },
 ];
 
-const TIMEOUT_MS = 60_000;
+const TIMEOUT_MS = 90_000;
+const MAX_RETRIES = 3;
 
 const Demo = () => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [autoRetrying, setAutoRetrying] = useState(false);
 
   const initDemo = useCallback(async (signal: AbortSignal) => {
     try {
@@ -34,6 +36,7 @@ const Demo = () => {
       sessionStorage.removeItem("quantivis_project_id");
 
       localStorage.setItem("quantivis_welcome_completed", "true");
+      localStorage.setItem("quantivis_tour_completed", "true");
       localStorage.setItem("quantivis_cookie_consent", JSON.stringify({ choice: "accepted", timestamp: new Date().toISOString() }));
 
       if (signal.aborted) return;
@@ -42,7 +45,7 @@ const Demo = () => {
       const { data, error: fnErr } = await invokeWithRetry<Record<string, unknown>>(
         "create-demo-session",
         undefined,
-        { maxAttempts: 3, baseDelayMs: 500 }
+        { maxAttempts: 3, baseDelayMs: 800 }
       );
 
       if (signal.aborted) return;
@@ -51,7 +54,7 @@ const Demo = () => {
       if (data?.error) throw new Error(String(data.error));
 
       setCurrentStep(2);
-      await new Promise(r => setTimeout(r, 400));
+      await new Promise(r => setTimeout(r, 300));
 
       if (signal.aborted) return;
       setCurrentStep(3);
@@ -68,24 +71,38 @@ const Demo = () => {
 
       if (signal.aborted) return;
       setCurrentStep(4);
-      await new Promise(r => setTimeout(r, 500));
+      await new Promise(r => setTimeout(r, 400));
 
       navigate("/dashboard", { replace: true });
     } catch (err: unknown) {
-      sessionStorage.removeItem("quantivis_demo_mode");
-      if (!signal.aborted) {
-        console.error("Demo init error:", err);
-        setError(err instanceof Error ? err.message : "Failed to create demo session");
+      if (signal.aborted) return;
+      console.error("Demo init error:", err);
+      
+      const message = err instanceof Error ? err.message : "Failed to create demo session";
+      
+      // Auto-retry on transient errors (up to MAX_RETRIES)
+      if (retryCount < MAX_RETRIES - 1 && isTransientError(message)) {
+        setAutoRetrying(true);
+        setTimeout(() => {
+          if (!signal.aborted) {
+            setAutoRetrying(false);
+            setRetryCount(c => c + 1);
+          }
+        }, 2000);
+        return;
       }
+
+      sessionStorage.removeItem("quantivis_demo_mode");
+      setError(getUserFriendlyError(message));
     }
-  }, [navigate]);
+  }, [navigate, retryCount]);
 
   useEffect(() => {
     const abortController = new AbortController();
 
     const timeout = setTimeout(() => {
       if (!abortController.signal.aborted && currentStep < STEPS.length - 1) {
-        setError("Provisioning is taking longer than expected. Please retry.");
+        setError("The demo environment is taking longer than usual. Please try again.");
       }
     }, TIMEOUT_MS);
 
@@ -121,7 +138,7 @@ const Demo = () => {
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
             <div className="flex items-center justify-center gap-2 text-destructive mb-3">
               <AlertCircle className="w-5 h-5" />
-              <h2 className="text-lg font-semibold">Demo Temporarily Unavailable</h2>
+              <h2 className="text-lg font-semibold">Could Not Load Demo</h2>
             </div>
             <p className="text-sm text-muted-foreground mb-6 max-w-sm mx-auto">
               {error}
@@ -130,19 +147,27 @@ const Demo = () => {
               onClick={handleRetry}
               className="px-6 py-2.5 rounded-lg bg-primary text-primary-foreground font-medium text-sm hover:brightness-110 transition-all"
             >
-              Retry
+              Try Again
             </button>
-            <button
-              onClick={() => navigate("/")}
-              className="block mx-auto mt-3 text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Back to home
-            </button>
+            <div className="flex flex-col items-center gap-2 mt-4">
+              <button
+                onClick={() => navigate("/register")}
+                className="text-xs text-primary hover:text-foreground transition-colors flex items-center gap-1"
+              >
+                Create a free account instead <ArrowRight className="w-3 h-3" />
+              </button>
+              <button
+                onClick={() => navigate("/")}
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Back to home
+              </button>
+            </div>
           </motion.div>
         ) : (
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
             <h2 className="text-xl font-bold font-display mb-1 tracking-tight">
-              Provisioning Your Environment
+              {autoRetrying ? "Reconnecting…" : "Provisioning Your Environment"}
             </h2>
             <p className="text-xs text-muted-foreground mb-8">
               Setting up a fully populated decision intelligence workspace
@@ -207,11 +232,38 @@ const Demo = () => {
                 420 customers · 6 metric types · 5 decisions logged · 2 outcomes measured · 1 recalibration applied
               </p>
             </div>
+
+            {/* Retry count indicator */}
+            {retryCount > 0 && (
+              <p className="text-[10px] text-muted-foreground/40 mt-3">
+                Attempt {retryCount + 1} of {MAX_RETRIES}
+              </p>
+            )}
           </motion.div>
         )}
       </div>
     </div>
   );
 };
+
+/** Check if the error is transient and worth auto-retrying */
+function isTransientError(message: string): boolean {
+  const transient = ["fetch", "network", "timeout", "502", "503", "504", "ECONNRESET", "Failed to fetch"];
+  return transient.some(t => message.toLowerCase().includes(t.toLowerCase()));
+}
+
+/** Convert raw error messages to user-friendly text */
+function getUserFriendlyError(message: string): string {
+  if (message.includes("rate") || message.includes("limit") || message.includes("429")) {
+    return "You've reached the demo session limit. Please wait a few minutes and try again, or create a free account to get started immediately.";
+  }
+  if (message.includes("fetch") || message.includes("network") || message.includes("Failed to fetch")) {
+    return "We couldn't connect to our servers. Please check your internet connection and try again.";
+  }
+  if (message.includes("timeout")) {
+    return "The demo environment took too long to provision. Please try again — it usually takes under 30 seconds.";
+  }
+  return "Something went wrong while setting up your demo environment. Please try again or create a free account.";
+}
 
 export default Demo;
