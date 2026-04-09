@@ -99,10 +99,25 @@ const Dashboard = () => {
     }
     setRecalculating(true);
     try {
+      // Full pipeline: Insights → Advisory → Auto-create decisions
       await invokeWithRetry("generate-insights", {
         body: { organization_id: currentOrgId, dataset_id: activeDatasetId },
       });
       embedInsightsBatch(currentOrgId);
+
+      // Auto-generate advisories and convert to pending decisions
+      try {
+        await invokeWithRetry("prescriptive-advisory", {
+          body: { organization_id: currentOrgId, dataset_id: activeDatasetId, role_type: "ceo" },
+        });
+        await invokeWithRetry("auto-create-decisions", {
+          body: { organization_id: currentOrgId, dataset_id: activeDatasetId },
+        });
+      } catch {
+        // Non-blocking: advisory/decision creation is best-effort
+        console.warn("[Dashboard] Advisory pipeline step failed");
+      }
+
       toast({ title: "Analysis refreshed" });
       queryClient.invalidateQueries();
     } catch {
