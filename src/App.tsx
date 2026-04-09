@@ -51,6 +51,8 @@ const CausalInference = lazy(() => import("./pages/CausalInference"));
 const CalibrationAssessment = lazy(() => import("./pages/CalibrationAssessment"));
 const Misses = lazy(() => import("./pages/Misses"));
 const DecisionAccuracy = lazy(() => import("./pages/DecisionAccuracy"));
+const Outcomes = lazy(() => import("./pages/Outcomes"));
+const DecisionHistory = lazy(() => import("./pages/DecisionHistory"));
 
 // ── Scenarios & Simulations ──
 const Scenarios = lazy(() => import("./pages/Scenarios"));
