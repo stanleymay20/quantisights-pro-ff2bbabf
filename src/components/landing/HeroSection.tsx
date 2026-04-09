@@ -1,4 +1,4 @@
-import { } from "react";
+import { motion } from "framer-motion";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { ArrowRight, ShieldCheck, Target, AlertTriangle, BarChart3, Database, Cable, Sparkles } from "lucide-react";
