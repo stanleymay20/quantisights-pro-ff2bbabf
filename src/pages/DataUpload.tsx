@@ -646,6 +646,20 @@ const DataUpload = () => {
         console.warn("[Pipeline] Aggregate refresh failed:", aggResult.reason);
       }
 
+      // ═══════════════════════════════════════════════════════
+      // TIER 4: DECISION LAYER — Auto-generate advisory → decisions
+      // ═══════════════════════════════════════════════════════
+      try {
+        await invokeWithRetry("prescriptive-advisory", {
+          body: { organization_id: currentOrgId, dataset_id: dataset.id, role_type: "ceo" },
+        });
+        await invokeWithRetry("auto-create-decisions", {
+          body: { organization_id: currentOrgId, dataset_id: dataset.id },
+        });
+      } catch (decisionErr) {
+        console.warn("[Pipeline] Auto-decision creation failed (non-blocking):", decisionErr);
+      }
+
       // Record lineage: dataset → metrics → aggregates
       const { error: lineage2Err } = await supabase.from("data_lineage").insert([
         {
