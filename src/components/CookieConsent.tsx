@@ -1,5 +1,6 @@
 import { useState, useEffect, forwardRef } from "react";
 import { useTranslation } from "react-i18next";
+import { useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Cookie, X, Shield } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -12,13 +13,20 @@ const CookieConsent = forwardRef<HTMLDivElement>((_, ref) => {
   const [visible, setVisible] = useState(false);
   const [exiting, setExiting] = useState(false);
   const { t, i18n } = useTranslation();
+  const location = useLocation();
   const isGerman = i18n.language?.startsWith("de");
 
   useEffect(() => {
+    // Never show cookie consent on the demo provisioning page
+    if (location.pathname === "/demo") return;
     const stored = localStorage.getItem(CONSENT_KEY);
     const isDemo = sessionStorage.getItem("quantivis_demo_mode") === "true";
-    if (isDemo && !stored) {
-      localStorage.setItem(CONSENT_KEY, JSON.stringify({ choice: "accepted", timestamp: new Date().toISOString() }));
+    if (isDemo) {
+      // Always auto-accept in demo mode — never show the dialog
+      if (!stored) {
+        localStorage.setItem(CONSENT_KEY, JSON.stringify({ choice: "accepted", timestamp: new Date().toISOString() }));
+      }
+      setVisible(false);
       return;
     }
     if (!stored) {

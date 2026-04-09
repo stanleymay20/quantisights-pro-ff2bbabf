@@ -13,7 +13,7 @@ const STEPS = [
   { label: "Initializing executive dashboard", icon: Target },
 ];
 
-const TIMEOUT_MS = 45_000;
+const TIMEOUT_MS = 60_000;
 
 const Demo = () => {
   const navigate = useNavigate();
