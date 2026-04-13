@@ -13,6 +13,7 @@ import DecisionContextPanel from "./DecisionContextPanel";
 import DataQualityScorecard from "./DataQualityScorecard";
 import BoardroomBrief from "./BoardroomBrief";
 import WhatChangedWidget from "./WhatChangedWidget";
+import SUDALOperatingLoop from "./SUDALOperatingLoop";
 import { useDecisionContexts, type DecisionContext } from "@/hooks/useDecisionContexts";
 import type { Insight } from "@/hooks/useInsights";
 import type { MetricTypeSummary, MetricRow } from "@/hooks/useMetrics";
@@ -85,6 +86,8 @@ const CommandCenter = memo(({
       />
 
       <WhatChangedWidget organizationId={organizationId} />
+
+      <SUDALOperatingLoop organizationId={organizationId} />
 
       <BoardroomBrief
         insights={insights}
