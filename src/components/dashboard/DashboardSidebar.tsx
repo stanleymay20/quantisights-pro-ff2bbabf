@@ -75,7 +75,7 @@ export const SidebarMobileToggle = () => {
   const { toggle } = useSidebarToggle();
   if (!isMobile) return null;
   return (
-    <button onClick={toggle} className="p-2 -ml-2 rounded-lg hover:bg-secondary/60 transition-colors lg:hidden">
+    <button onClick={toggle} className="p-2 -ml-2 rounded-lg hover:bg-secondary/60 transition-colors lg:hidden" aria-label="Open navigation menu">
       <Menu className="w-5 h-5 text-muted-foreground" />
     </button>
   );
