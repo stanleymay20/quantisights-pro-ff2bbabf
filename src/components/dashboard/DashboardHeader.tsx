@@ -18,8 +18,8 @@ interface Insight {
 }
 
 interface DashboardHeaderProps {
-  organizations: { id: string; name: string }[];
-  currentOrg: { id: string; name: string } | null;
+  organizations: { id: string; name: string; role: string }[];
+  currentOrg: { id: string; name: string; role: string } | null;
   switchOrganization: (id: string) => void;
   displayName: string;
   email?: string;
