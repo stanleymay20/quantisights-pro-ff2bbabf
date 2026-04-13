@@ -112,11 +112,16 @@ export type Database = {
           data_snapshot_date: string | null
           dataset_id: string | null
           decision_context_id: string | null
+          detection_model: string | null
+          deviation_score: number | null
+          ewma_baseline: number | null
+          ewma_std: number | null
           expected_impact: string | null
           generation_version: number | null
           id: string
           impact_score: number | null
           kpi_affected: Json | null
+          model_parameters: Json | null
           organization_id: string
           playbook_steps: Json | null
           priority: string
@@ -130,6 +135,7 @@ export type Database = {
           title: string
           updated_at: string
           variance_score: number | null
+          z_score: number | null
         }
         Insert: {
           action: string
@@ -144,11 +150,16 @@ export type Database = {
           data_snapshot_date?: string | null
           dataset_id?: string | null
           decision_context_id?: string | null
+          detection_model?: string | null
+          deviation_score?: number | null
+          ewma_baseline?: number | null
+          ewma_std?: number | null
           expected_impact?: string | null
           generation_version?: number | null
           id?: string
           impact_score?: number | null
           kpi_affected?: Json | null
+          model_parameters?: Json | null
           organization_id: string
           playbook_steps?: Json | null
           priority?: string
@@ -162,6 +173,7 @@ export type Database = {
           title: string
           updated_at?: string
           variance_score?: number | null
+          z_score?: number | null
         }
         Update: {
           action?: string
@@ -176,11 +188,16 @@ export type Database = {
           data_snapshot_date?: string | null
           dataset_id?: string | null
           decision_context_id?: string | null
+          detection_model?: string | null
+          deviation_score?: number | null
+          ewma_baseline?: number | null
+          ewma_std?: number | null
           expected_impact?: string | null
           generation_version?: number | null
           id?: string
           impact_score?: number | null
           kpi_affected?: Json | null
+          model_parameters?: Json | null
           organization_id?: string
           playbook_steps?: Json | null
           priority?: string
@@ -194,6 +211,7 @@ export type Database = {
           title?: string
           updated_at?: string
           variance_score?: number | null
+          z_score?: number | null
         }
         Relationships: [
           {
@@ -1784,10 +1802,13 @@ export type Database = {
           baseline_value: number | null
           calibration_error: number | null
           capped_confidence: number | null
+          causal_attribution_score: number | null
           chosen_action: string | null
           confidence_at_decision: number | null
           confidence_cap_reason: string | null
           confidence_updated: number | null
+          counterfactual_analysis_id: string | null
+          counterfactual_delta: number | null
           created_at: string
           decided_at: string | null
           decided_by: string | null
@@ -1825,10 +1846,13 @@ export type Database = {
           baseline_value?: number | null
           calibration_error?: number | null
           capped_confidence?: number | null
+          causal_attribution_score?: number | null
           chosen_action?: string | null
           confidence_at_decision?: number | null
           confidence_cap_reason?: string | null
           confidence_updated?: number | null
+          counterfactual_analysis_id?: string | null
+          counterfactual_delta?: number | null
           created_at?: string
           decided_at?: string | null
           decided_by?: string | null
@@ -1866,10 +1890,13 @@ export type Database = {
           baseline_value?: number | null
           calibration_error?: number | null
           capped_confidence?: number | null
+          causal_attribution_score?: number | null
           chosen_action?: string | null
           confidence_at_decision?: number | null
           confidence_cap_reason?: string | null
           confidence_updated?: number | null
+          counterfactual_analysis_id?: string | null
+          counterfactual_delta?: number | null
           created_at?: string
           decided_at?: string | null
           decided_by?: string | null
@@ -1907,6 +1934,13 @@ export type Database = {
             columns: ["advisory_instance_id"]
             isOneToOne: false
             referencedRelation: "advisory_instances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "decision_ledger_counterfactual_analysis_id_fkey"
+            columns: ["counterfactual_analysis_id"]
+            isOneToOne: false
+            referencedRelation: "counterfactual_analyses"
             referencedColumns: ["id"]
           },
           {
@@ -2087,6 +2121,136 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      decision_rules: {
+        Row: {
+          actions: Json
+          condition_type: string
+          conditions: Json
+          created_at: string
+          created_by: string | null
+          description: string | null
+          hit_policy: string
+          id: string
+          is_active: boolean
+          is_shadow: boolean
+          name: string
+          organization_id: string
+          priority: number
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          actions?: Json
+          condition_type?: string
+          conditions?: Json
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          hit_policy?: string
+          id?: string
+          is_active?: boolean
+          is_shadow?: boolean
+          name: string
+          organization_id: string
+          priority?: number
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          actions?: Json
+          condition_type?: string
+          conditions?: Json
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          hit_policy?: string
+          id?: string
+          is_active?: boolean
+          is_shadow?: boolean
+          name?: string
+          organization_id?: string
+          priority?: number
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "decision_rules_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      decision_shadow_log: {
+        Row: {
+          advisory_instance_id: string | null
+          created_at: string
+          discrepancy_detected: boolean
+          id: string
+          organization_id: string
+          production_decision_id: string | null
+          rule_id: string
+          rule_version: number
+          shadow_decision: Json
+          would_have_created: boolean
+        }
+        Insert: {
+          advisory_instance_id?: string | null
+          created_at?: string
+          discrepancy_detected?: boolean
+          id?: string
+          organization_id: string
+          production_decision_id?: string | null
+          rule_id: string
+          rule_version: number
+          shadow_decision?: Json
+          would_have_created?: boolean
+        }
+        Update: {
+          advisory_instance_id?: string | null
+          created_at?: string
+          discrepancy_detected?: boolean
+          id?: string
+          organization_id?: string
+          production_decision_id?: string | null
+          rule_id?: string
+          rule_version?: number
+          shadow_decision?: Json
+          would_have_created?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "decision_shadow_log_advisory_instance_id_fkey"
+            columns: ["advisory_instance_id"]
+            isOneToOne: false
+            referencedRelation: "advisory_instances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "decision_shadow_log_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "decision_shadow_log_production_decision_id_fkey"
+            columns: ["production_decision_id"]
+            isOneToOne: false
+            referencedRelation: "decision_ledger"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "decision_shadow_log_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "decision_rules"
             referencedColumns: ["id"]
           },
         ]
