@@ -63,7 +63,7 @@ const FACT_FIELDS = [
 ];
 
 export default function DecisionRules() {
-  const { organizationId } = useActiveDataContext();
+  const { orgId: organizationId } = useActiveDataContext();
   const queryClient = useQueryClient();
   const [createOpen, setCreateOpen] = useState(false);
 
