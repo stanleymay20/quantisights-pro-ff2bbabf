@@ -3,7 +3,8 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Upload, Settings, LogOut,
   Menu, X, BookOpen, Brain, Target,
-  ChevronDown, Clock, BarChart3, Plus, Shield,
+  ChevronDown, Clock, BarChart3, Shield,
+  Lightbulb, TrendingUp, FileText,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -15,6 +16,7 @@ interface NavItem {
   icon: React.ElementType;
   label: string;
   path: string;
+  badge?: string;
 }
 
 interface NavSection {
@@ -23,35 +25,36 @@ interface NavSection {
   defaultOpen?: boolean;
 }
 
+/**
+ * Simplified sidebar nav — 3 primary actions always visible,
+ * advanced features progressively disclosed under "Explore".
+ * Inspired by InVideo's clean, task-oriented navigation.
+ */
 const navSections: NavSection[] = [
   {
-    label: "Workflow",
+    label: "Your Workflow",
     defaultOpen: true,
     items: [
-      { icon: LayoutDashboard, label: "Review", path: "/dashboard" },
-      { icon: Brain, label: "Decide", path: "/decisions" },
-      { icon: Target, label: "Track", path: "/outcomes" },
+      { icon: LayoutDashboard, label: "Home", path: "/dashboard" },
+      { icon: Brain, label: "Decisions", path: "/decisions" },
+      { icon: Target, label: "Outcomes", path: "/outcomes" },
     ],
   },
   {
-    label: "More",
+    label: "Explore",
     items: [
-      { icon: Clock, label: "History", path: "/history" },
+      { icon: Lightbulb, label: "Insights", path: "/advisory" },
+      { icon: TrendingUp, label: "Forecasting", path: "/forecasting" },
       { icon: BarChart3, label: "Analytics", path: "/decision-accuracy" },
+      { icon: Clock, label: "History", path: "/history" },
+      { icon: FileText, label: "Reports", path: "/reports" },
       { icon: Upload, label: "Upload Data", path: "/data-upload" },
-      { icon: Plus, label: "Log Decision", path: "/decisions" },
-    ],
-  },
-  {
-    label: "Governance",
-    items: [
-      { icon: Shield, label: "Fairness & Drift", path: "/fairness" },
-      { icon: BarChart3, label: "Maturity Model", path: "/decision-maturity" },
     ],
   },
   {
     label: "Admin",
     items: [
+      { icon: Shield, label: "Governance", path: "/governance" },
       { icon: Settings, label: "Settings", path: "/settings" },
     ],
   },
@@ -70,7 +73,7 @@ export const SidebarProvider = ({ children }: { children: React.ReactNode }) => 
   );
 };
 
-/** Mobile hamburger button — render in page headers */
+/** Mobile hamburger button */
 export const SidebarMobileToggle = () => {
   const isMobile = useIsMobile();
   const { toggle } = useSidebarToggle();
@@ -118,7 +121,12 @@ const SectionBlock = ({ section, location, onNavClick }: { section: NavSection; 
               >
                 <item.icon className={cn("w-4 h-4 transition-colors", isActive ? "text-primary" : "text-muted-foreground group-hover:text-sidebar-accent-foreground")} />
                 {item.label}
-                {isActive && (
+                {item.badge && (
+                  <span className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">
+                    {item.badge}
+                  </span>
+                )}
+                {isActive && !item.badge && (
                   <span className="ml-auto w-1.5 h-1.5 rounded-full bg-primary" />
                 )}
               </Link>
@@ -159,22 +167,8 @@ const DashboardSidebar = () => {
         )}
       </div>
 
-      <div className="px-3 pb-2">
+      <div className="px-3 pb-3">
         <WorkspaceSwitcher />
-      </div>
-
-      {/* 3-step visual */}
-      <div className="px-4 pb-3">
-        <div className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
-          <span className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[9px] font-bold">1</span>
-          Review
-          <span className="text-border mx-1">→</span>
-          <span className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[9px] font-bold">2</span>
-          Decide
-          <span className="text-border mx-1">→</span>
-          <span className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[9px] font-bold">3</span>
-          Track
-        </div>
       </div>
 
       <nav aria-label="Dashboard navigation" className="flex-1 px-2 overflow-y-auto space-y-1">
@@ -200,7 +194,7 @@ const DashboardSidebar = () => {
           )}
         >
           <BookOpen className="w-[15px] h-[15px] text-muted-foreground" />
-          Help
+          Help & Docs
         </Link>
         <button
           onClick={handleSignOut}

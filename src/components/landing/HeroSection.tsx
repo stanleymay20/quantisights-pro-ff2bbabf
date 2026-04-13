@@ -1,129 +1,118 @@
 import { forwardRef } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { ArrowRight, ShieldCheck, Target, AlertTriangle, BarChart3, Database, Cable, Sparkles } from "lucide-react";
-import heroVisual from "@/assets/hero-visual.png";
-
-const CAPABILITY_PILLS = [
-  { icon: Cable, label: "Data Connectors" },
-  { icon: ShieldCheck, label: "Audit Trails" },
-  { icon: Target, label: "Calibration" },
-  { icon: AlertTriangle, label: "Bias Detection" },
-  { icon: BarChart3, label: "Board-Ready" },
-];
+import { ArrowRight, Sparkles, Play } from "lucide-react";
 
 const HeroSection = forwardRef<HTMLElement>((_, ref) => {
   return (
-    <header ref={ref} className="relative min-h-[85vh] min-h-[85dvh] flex items-center overflow-hidden pt-20" role="banner">
-      <img
-        src={heroVisual}
-        alt=""
-        role="presentation"
-        loading="eager"
-        width={1920}
-        height={1080}
-        className="absolute inset-0 w-full h-full object-cover z-0 opacity-25"
-      />
-      <div className="absolute inset-0 z-[1] bg-gradient-to-b from-background/60 via-background/40 to-background" />
-
-      <div className="absolute inset-0 pointer-events-none z-[2]">
-        <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/6 rounded-full blur-[150px]" />
-        <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-primary/[0.04] rounded-full blur-[120px]" />
+    <header
+      ref={ref}
+      className="relative min-h-[90vh] min-h-[90dvh] flex items-center overflow-hidden pt-16 sm:pt-20"
+      role="banner"
+    >
+      {/* Soft gradient background — no heavy image */}
+      <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 bg-gradient-to-b from-primary/[0.04] via-background to-background" />
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-primary/[0.06] rounded-full blur-[180px]" />
       </div>
 
-      <div className="container mx-auto px-6 relative z-10">
+      <div className="container mx-auto px-5 sm:px-6 relative z-10">
         <div className="max-w-3xl mx-auto text-center">
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
+            transition={{ duration: 0.6 }}
           >
+            {/* Pill badge */}
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.2 }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary/20 bg-primary/5 text-xs font-semibold text-primary mb-6 sm:mb-8"
+              transition={{ delay: 0.15 }}
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-primary/20 bg-primary/5 text-xs font-semibold text-primary mb-6"
             >
               <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-              The Closed-Loop Decision Operating System
+              Decision Intelligence Platform
             </motion.div>
 
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold font-display leading-[1.08] mb-4 sm:mb-6">
-              The Operating System for{" "}
+            {/* Single bold headline — InVideo style */}
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold font-display leading-[1.1] mb-4 sm:mb-5">
+              Make <span className="gradient-text">Better Decisions</span>,{" "}
               <br className="hidden sm:block" />
-              <span className="gradient-text">Billion-Dollar Decisions.</span>
+              Track Every Outcome.
             </h1>
-            <p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto mb-3 sm:mb-5 leading-relaxed">
-              Replaces your BI dashboards, strategy consultants, and spreadsheet forecasts with{" "}
+
+            {/* One sentence — no jargon */}
+            <p className="text-base sm:text-lg text-muted-foreground max-w-xl mx-auto mb-8 sm:mb-10 leading-relaxed">
+              Upload your data. Get insights in minutes.{" "}
               <span className="text-foreground font-medium">
-                one system that tracks every decision, measures every outcome, and corrects its own confidence over time.
+                See which decisions actually worked.
               </span>
             </p>
-            <p className="text-xs sm:text-sm text-muted-foreground/70 max-w-xl mx-auto mb-2 sm:mb-4">
-              Built for VPs of Finance, Revenue, and Strategy at companies doing €1M–€50M ARR.
-            </p>
-            <p className="text-[11px] sm:text-xs text-primary/80 font-semibold max-w-lg mx-auto mb-6 sm:mb-10">
-              Replaces: Tableau/Power BI dashboards + McKinsey engagements + Excel forecasting → one self-correcting system.
-            </p>
 
-            {/* Capability pills */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-              className="flex flex-wrap gap-2.5 justify-center mb-6 sm:mb-10"
-            >
-              {CAPABILITY_PILLS.map((pill, i) => (
-                <motion.div
-                  key={pill.label}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.5 + i * 0.08 }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-card/60 backdrop-blur-sm text-xs sm:text-sm font-medium text-foreground/80"
-                >
-                  <pill.icon className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
-                  {pill.label}
-                </motion.div>
-              ))}
-            </motion.div>
-
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
-              <Link
-                to="/free-analysis"
-                className="inline-flex items-center justify-center gap-2 px-6 sm:px-10 py-3.5 sm:py-4 rounded-xl bg-primary text-primary-foreground font-semibold text-sm sm:text-base hover:brightness-110 transition-all shadow-lg shadow-primary/25"
-              >
-                <Sparkles className="w-4 h-4" /> Run Free Business Analysis <ArrowRight className="w-4 h-4" />
-              </Link>
+            {/* Two clear CTAs — InVideo pattern */}
+            <div className="flex flex-col sm:flex-row gap-3 justify-center mb-8">
               <Link
                 to="/register"
-                className="inline-flex items-center justify-center gap-2 px-6 sm:px-10 py-3.5 sm:py-4 rounded-xl border border-border bg-card/50 text-foreground font-semibold text-sm sm:text-base hover:border-primary/30 transition-all"
+                className="inline-flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-xl bg-primary text-primary-foreground font-semibold text-sm sm:text-base hover:brightness-110 transition-all shadow-lg shadow-primary/20"
               >
-                <Database className="w-4 h-4" /> Connect Your Data
+                <Sparkles className="w-4 h-4" />
+                Start Free
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+              <Link
+                to="/demo"
+                className="inline-flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-xl border border-border bg-card/60 text-foreground font-semibold text-sm sm:text-base hover:border-primary/40 transition-all"
+              >
+                <Play className="w-4 h-4" />
+                See It In Action
               </Link>
             </div>
 
-            {/* 90-day promise strip */}
+            {/* Trust strip — minimal */}
             <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.7 }}
-              className="mt-12 pt-6 border-t border-border/30"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5 }}
+              className="flex flex-wrap gap-x-5 gap-y-2 justify-center text-xs text-muted-foreground/60"
             >
-              <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground/50 mb-3">Your 90-day path to calibrated decisions</p>
-              <div className="flex flex-wrap gap-x-6 gap-y-1.5 justify-center">
-                {[
-                  { month: "Month 1", label: "Decision Ledger" },
-                  { month: "Month 2", label: "Outcome Tracking" },
-                  { month: "Month 3", label: "Calibration Active" },
-                ].map((step) => (
-                  <span key={step.month} className="text-xs sm:text-sm text-muted-foreground/60">
-                    <span className="text-primary font-semibold">{step.month}</span>
-                    <span className="mx-1.5 text-border">→</span>
-                    {step.label}
-                  </span>
-                ))}
-              </div>
+              <span>✓ No credit card</span>
+              <span>✓ 5 min setup</span>
+              <span>✓ SOC 2 compliant</span>
+              <span>✓ GDPR ready</span>
             </motion.div>
+          </motion.div>
+
+          {/* How it works — 3 steps, InVideo simplicity */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6, duration: 0.5 }}
+            className="mt-16 sm:mt-20"
+          >
+            <p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground/50 mb-6 font-semibold">
+              How it works
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 max-w-2xl mx-auto">
+              {[
+                { step: "1", title: "Upload", desc: "Drop your CSV or connect a source" },
+                { step: "2", title: "Decide", desc: "Log decisions, get AI recommendations" },
+                { step: "3", title: "Learn", desc: "Track outcomes, calibrate confidence" },
+              ].map((item, i) => (
+                <motion.div
+                  key={item.step}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.7 + i * 0.1 }}
+                  className="flex flex-col items-center gap-2 p-4 rounded-xl border border-border/50 bg-card/40 backdrop-blur-sm"
+                >
+                  <span className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-bold">
+                    {item.step}
+                  </span>
+                  <span className="text-sm font-semibold text-foreground">{item.title}</span>
+                  <span className="text-xs text-muted-foreground text-center">{item.desc}</span>
+                </motion.div>
+              ))}
+            </div>
           </motion.div>
         </div>
       </div>

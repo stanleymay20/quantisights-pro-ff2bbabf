@@ -106,6 +106,7 @@ const EmbedDashboard = lazy(() => import("@/pages/EmbedDashboard"));
 const PilotAudit = lazy(() => import("@/pages/PilotAudit"));
 const SystemStatus = lazy(() => import("@/pages/SystemStatus"));
 const SLA = lazy(() => import("@/pages/SLA"));
+const Compare = lazy(() => import("@/pages/Compare"));
 
 // ── Legal ──
 const Terms = lazy(() => import("@/pages/Terms"));
@@ -146,7 +147,8 @@ export const routes: RouteEntry[] = [
   { path: "/status", element: <SystemStatus />, layout: "public" },
   { path: "/sla", element: <SLA />, layout: "public" },
 
-  // ══════ Marketing / Trust ══════
+  // ══════ Marketing / Trust / Comparison ══════
+  { path: "/compare", element: <Compare />, layout: "public" },
   { path: "/business-model", element: <BusinessModel />, layout: "public" },
   { path: "/security", element: <Security />, layout: "public" },
   { path: "/security-questionnaire", element: <SecurityQuestionnaire />, layout: "public" },
