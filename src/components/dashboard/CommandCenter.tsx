@@ -87,6 +87,8 @@ const CommandCenter = memo(({
 
       <WhatChangedWidget organizationId={organizationId} />
 
+      <SUDALOperatingLoop organizationId={organizationId} />
+
       <BoardroomBrief
         insights={insights}
         pendingDecisions={pendingDecisions}
