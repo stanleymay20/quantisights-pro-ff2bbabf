@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Upload, Settings, LogOut,
   Menu, X, BookOpen, Brain, Target,
-  ChevronDown, Clock, BarChart3, Plus,
+  ChevronDown, Clock, BarChart3, Plus, Shield,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -40,6 +40,12 @@ const navSections: NavSection[] = [
       { icon: BarChart3, label: "Analytics", path: "/decision-accuracy" },
       { icon: Upload, label: "Upload Data", path: "/data-upload" },
       { icon: Plus, label: "Log Decision", path: "/decisions" },
+    ],
+  },
+  {
+    label: "Governance",
+    items: [
+      { icon: Shield, label: "Fairness & Drift", path: "/fairness" },
     ],
   },
   {
