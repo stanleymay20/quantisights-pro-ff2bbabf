@@ -131,7 +131,22 @@ serve(async (req) => {
           const result = computeEWMA(values, 0.2);
           ewmaResults.set(a.id, result);
 
-          // Update advisory with EWMA stats
+          // Build canonical Insight Object (Book Ch.3)
+          const insightObject = {
+            insightID: a.id,
+            timestampUTC: new Date().toISOString(),
+            metricName: primaryMetric,
+            currentValue: values[values.length - 1],
+            expectedValue: result.ewmaBaseline,
+            deviationMagnitude: result.deviationMagnitude,
+            deviationScore: result.zScore,
+            severityLevel: Math.abs(result.zScore) >= 3 ? "CRITICAL" : Math.abs(result.zScore) >= 2 ? "WARNING" : "INFO",
+            detectionModel: result.detectionModel,
+            modelParameters: result.modelParameters,
+            labels: [a.category, a.priority].filter(Boolean),
+          };
+
+          // Update advisory with EWMA stats + Insight Object
           await serviceSupabase
             .from("advisory_instances")
             .update({
@@ -141,6 +156,7 @@ serve(async (req) => {
               model_parameters: result.modelParameters,
               ewma_baseline: result.ewmaBaseline,
               ewma_std: result.ewmaStd,
+              insight_object: insightObject,
             })
             .eq("id", a.id);
         }
