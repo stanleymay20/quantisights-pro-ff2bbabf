@@ -80,9 +80,9 @@ export const useSUDALHealth = (organizationId: string | null) => {
       const activeDatasets = datasets.filter(d => d.status === "active");
       const freshDatasets = activeDatasets.filter(d => !d.is_stale);
       const avgDQ = dqScores.length > 0 ? dqScores.reduce((a, b) => a + b, 0) / dqScores.length : 0;
-      const approvedDecisions = decisions.filter(d => d.status === "approved" || d.decided_at);
+      const approvedDecisions = decisions.filter(d => d.decision_status === "approved" || d.decided_at);
       const completedPlans = plans.filter(p => p.status === "completed");
-      const measuredOutcomes = outcomes.filter(o => o.actual_outcome !== null);
+      const measuredOutcomes = outcomes.filter(o => o.outcome_status === "measured" || o.outcome_status === "evaluated");
 
       // ── SENSE ──
       const senseSignals: PhaseSignal[] = [
@@ -105,7 +105,7 @@ export const useSUDALHealth = (organizationId: string | null) => {
       const decideSignals: PhaseSignal[] = [
         { label: "Decisions logged", met: decisions.length > 0, value: `${decisions.length} total` },
         { label: "Approval workflow", met: approvedDecisions.length > 0, value: approvedDecisions.length > 0 ? `${approvedDecisions.length} approved` : "Pending" },
-        { label: "Confidence scored", met: decisions.some(d => d.confidence !== null), value: decisions.filter(d => d.confidence !== null).length > 0 ? "Active" : "—" },
+        { label: "Confidence scored", met: decisions.some(d => d.confidence_at_decision !== null), value: decisions.filter(d => d.confidence_at_decision !== null).length > 0 ? "Active" : "—" },
         { label: "Human-in-loop", met: approvedDecisions.length > 0, value: approvedDecisions.length > 0 ? "Enforced" : "Awaiting" },
       ];
 
