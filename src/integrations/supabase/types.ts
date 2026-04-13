@@ -3190,6 +3190,85 @@ export type Database = {
           },
         ]
       }
+      fairness_assessments: {
+        Row: {
+          assessment_status: string
+          created_at: string
+          created_by: string | null
+          dataset_id: string | null
+          decision_id: string | null
+          disparate_impact_ratio: number | null
+          group_a_label: string
+          group_a_value: number | null
+          group_b_label: string
+          group_b_value: number | null
+          id: string
+          metric_name: string
+          organization_id: string
+          protected_attribute: string
+          remediation_notes: string | null
+          statistical_parity_diff: number | null
+        }
+        Insert: {
+          assessment_status?: string
+          created_at?: string
+          created_by?: string | null
+          dataset_id?: string | null
+          decision_id?: string | null
+          disparate_impact_ratio?: number | null
+          group_a_label: string
+          group_a_value?: number | null
+          group_b_label: string
+          group_b_value?: number | null
+          id?: string
+          metric_name: string
+          organization_id: string
+          protected_attribute: string
+          remediation_notes?: string | null
+          statistical_parity_diff?: number | null
+        }
+        Update: {
+          assessment_status?: string
+          created_at?: string
+          created_by?: string | null
+          dataset_id?: string | null
+          decision_id?: string | null
+          disparate_impact_ratio?: number | null
+          group_a_label?: string
+          group_a_value?: number | null
+          group_b_label?: string
+          group_b_value?: number | null
+          id?: string
+          metric_name?: string
+          organization_id?: string
+          protected_attribute?: string
+          remediation_notes?: string | null
+          statistical_parity_diff?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fairness_assessments_dataset_id_fkey"
+            columns: ["dataset_id"]
+            isOneToOne: false
+            referencedRelation: "datasets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fairness_assessments_decision_id_fkey"
+            columns: ["decision_id"]
+            isOneToOne: false
+            referencedRelation: "decision_ledger"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fairness_assessments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       forecast_results: {
         Row: {
           confidence_interval: number | null
@@ -4088,6 +4167,60 @@ export type Database = {
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      model_drift_snapshots: {
+        Row: {
+          baseline_snapshot_id: string | null
+          created_at: string
+          drift_detected: boolean | null
+          drift_score: number | null
+          feature_importance: Json | null
+          id: string
+          model_name: string
+          organization_id: string
+          prediction_distribution: Json | null
+          snapshot_date: string
+        }
+        Insert: {
+          baseline_snapshot_id?: string | null
+          created_at?: string
+          drift_detected?: boolean | null
+          drift_score?: number | null
+          feature_importance?: Json | null
+          id?: string
+          model_name: string
+          organization_id: string
+          prediction_distribution?: Json | null
+          snapshot_date?: string
+        }
+        Update: {
+          baseline_snapshot_id?: string | null
+          created_at?: string
+          drift_detected?: boolean | null
+          drift_score?: number | null
+          feature_importance?: Json | null
+          id?: string
+          model_name?: string
+          organization_id?: string
+          prediction_distribution?: Json | null
+          snapshot_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "model_drift_snapshots_baseline_snapshot_id_fkey"
+            columns: ["baseline_snapshot_id"]
+            isOneToOne: false
+            referencedRelation: "model_drift_snapshots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "model_drift_snapshots_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]

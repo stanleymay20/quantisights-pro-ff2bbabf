@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Upload, Settings, LogOut,
   Menu, X, BookOpen, Brain, Target,
-  ChevronDown, Clock, BarChart3, Plus,
+  ChevronDown, Clock, BarChart3, Plus, Shield,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -43,6 +43,12 @@ const navSections: NavSection[] = [
     ],
   },
   {
+    label: "Governance",
+    items: [
+      { icon: Shield, label: "Fairness & Drift", path: "/fairness" },
+    ],
+  },
+  {
     label: "Admin",
     items: [
       { icon: Settings, label: "Settings", path: "/settings" },
@@ -69,7 +75,7 @@ export const SidebarMobileToggle = () => {
   const { toggle } = useSidebarToggle();
   if (!isMobile) return null;
   return (
-    <button onClick={toggle} className="p-2 -ml-2 rounded-lg hover:bg-secondary/60 transition-colors lg:hidden">
+    <button onClick={toggle} className="p-2 -ml-2 rounded-lg hover:bg-secondary/60 transition-colors lg:hidden" aria-label="Open navigation menu">
       <Menu className="w-5 h-5 text-muted-foreground" />
     </button>
   );
@@ -140,13 +146,13 @@ const DashboardSidebar = () => {
   };
 
   const sidebarContent = (
-    <aside className="w-56 h-screen h-[100dvh] bg-sidebar border-r border-sidebar-border flex flex-col shrink-0 safe-area-left safe-area-top safe-area-bottom">
+    <aside aria-label="Main navigation" className="w-56 h-screen h-[100dvh] bg-sidebar border-r border-sidebar-border flex flex-col shrink-0 safe-area-left safe-area-top safe-area-bottom">
       <div className="p-4 pb-3 flex items-center justify-between">
         <Link to="/" onClick={handleNavClick}>
           <img src={logo} alt="Quantivis" className="h-7 w-auto" />
         </Link>
         {isMobile && (
-          <button onClick={toggle} className="p-1.5 rounded-lg hover:bg-sidebar-accent transition-colors">
+          <button onClick={toggle} className="p-1.5 rounded-lg hover:bg-sidebar-accent transition-colors" aria-label="Close navigation">
             <X className="w-5 h-5 text-sidebar-foreground" />
           </button>
         )}
@@ -170,7 +176,7 @@ const DashboardSidebar = () => {
         </div>
       </div>
 
-      <nav className="flex-1 px-2 overflow-y-auto space-y-1">
+      <nav aria-label="Dashboard navigation" className="flex-1 px-2 overflow-y-auto space-y-1">
         {navSections.map((section) => (
           <SectionBlock
             key={section.label}
