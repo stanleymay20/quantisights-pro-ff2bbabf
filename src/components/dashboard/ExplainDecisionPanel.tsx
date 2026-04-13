@@ -3,12 +3,15 @@
  *
  * Data-driven explanation panel. No LLM-style prose.
  * Every line anchored to a metric, dataset, or rule.
+ * 
+ * Book-aligned: SUDAL Evidence Classification + EWMA Stats
  */
 
 import { useState } from "react";
 import {
   ChevronDown, ChevronUp, Database, TrendingDown, 
   Cpu, Target, ShieldCheck, AlertTriangle, Clock, Tag, Info,
+  Activity, Beaker,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -19,6 +22,18 @@ export interface ExplanationMetadata {
     time_range?: string;
     rows_analyzed?: number;
     key_metrics?: string[];
+  };
+  statistical_basis?: {
+    method?: string;
+    ewma_baseline?: number;
+    ewma_std?: number;
+    z_score?: number;
+    deviation_magnitude?: number;
+    is_anomaly?: boolean;
+    alpha?: number;
+    k_sigma?: number;
+    data_points_used?: number;
+    note?: string;
   };
   triggering_insight?: {
     pattern_type?: string;
@@ -35,6 +50,8 @@ export interface ExplanationMetadata {
   recommendation_logic?: {
     method?: string;
     description?: string;
+    rule_name?: string | null;
+    rule_version?: number | null;
   };
   expected_impact?: {
     range?: string;
@@ -48,6 +65,7 @@ export interface ExplanationMetadata {
   };
   assumptions?: string[];
   limitations?: string[];
+  evidence_classification?: string;
 }
 
 interface Props {
@@ -71,6 +89,14 @@ const LOGIC_LABELS: Record<string, string> = {
   anomaly_detection: "Anomaly Detection",
   correlation_analysis: "Correlation Analysis",
   statistical_inference: "Statistical Inference",
+  externalized_rule_engine: "Rule Engine",
+};
+
+const EVIDENCE_COLORS: Record<string, string> = {
+  "OBSERVED_FACT + RULE_BASED_ACTION": "text-emerald-400 border-emerald-400/30",
+  "STATISTICAL_INFERENCE": "text-sky-400 border-sky-400/30",
+  "RULE_BASED_ACTION": "text-violet-400 border-violet-400/30",
+  "HEURISTIC_ESTIMATE": "text-amber-400 border-amber-400/30",
 };
 
 const ExplainDecisionPanel = ({
@@ -103,6 +129,11 @@ const ExplainDecisionPanel = ({
           {decisionOrigin === "ai_generated" && (
             <Badge variant="outline" className="text-[10px] border-primary/30 text-primary">
               AI-Generated
+            </Badge>
+          )}
+          {meta.evidence_classification && (
+            <Badge variant="outline" className={`text-[10px] ${EVIDENCE_COLORS[meta.evidence_classification] ?? "text-muted-foreground"}`}>
+              {meta.evidence_classification}
             </Badge>
           )}
         </span>
@@ -149,7 +180,45 @@ const ExplainDecisionPanel = ({
             </Section>
           )}
 
-          {/* 2. Trigger */}
+          {/* 2. Statistical Basis (EWMA) */}
+          {meta.statistical_basis && (
+            <Section icon={Activity} title="Statistical Basis">
+              <DataRow label="Method" value={meta.statistical_basis.method} />
+              {meta.statistical_basis.z_score != null && (
+                <div className="text-xs text-muted-foreground">
+                  <span className="font-medium text-foreground">Z-Score:</span>{" "}
+                  <span className={`font-mono font-bold ${Math.abs(meta.statistical_basis.z_score) >= 3 ? "text-destructive" : Math.abs(meta.statistical_basis.z_score) >= 2 ? "text-warning" : "text-emerald-400"}`}>
+                    {meta.statistical_basis.z_score > 0 ? "+" : ""}{meta.statistical_basis.z_score}
+                  </span>
+                  {meta.statistical_basis.is_anomaly && (
+                    <Badge variant="destructive" className="text-[9px] ml-2">ANOMALY</Badge>
+                  )}
+                </div>
+              )}
+              {meta.statistical_basis.ewma_baseline != null && (
+                <DataRow label="EWMA Baseline" value={meta.statistical_basis.ewma_baseline.toFixed(4)} />
+              )}
+              {meta.statistical_basis.ewma_std != null && (
+                <DataRow label="EWMA σ" value={meta.statistical_basis.ewma_std.toFixed(4)} />
+              )}
+              {meta.statistical_basis.deviation_magnitude != null && (
+                <DataRow label="Deviation" value={meta.statistical_basis.deviation_magnitude.toFixed(4)} />
+              )}
+              {meta.statistical_basis.data_points_used != null && (
+                <DataRow label="Data Points" value={`${meta.statistical_basis.data_points_used}`} />
+              )}
+              {meta.statistical_basis.alpha != null && (
+                <div className="text-[10px] text-muted-foreground/60 font-mono mt-1">
+                  α={meta.statistical_basis.alpha} · k={meta.statistical_basis.k_sigma}σ
+                </div>
+              )}
+              {meta.statistical_basis.note && (
+                <p className="text-[10px] text-muted-foreground/60 italic">{meta.statistical_basis.note}</p>
+              )}
+            </Section>
+          )}
+
+          {/* 3. Trigger */}
           <Section icon={TrendingDown} title="Trigger">
             {meta.triggering_insight ? (
               <div className="space-y-1">
@@ -174,7 +243,7 @@ const ExplainDecisionPanel = ({
             )}
           </Section>
 
-          {/* 3. Analysis */}
+          {/* 4. Analysis */}
           {meta.reasoning && (
             <Section icon={Target} title="Analysis">
               <DataRow label="Signal" value={meta.reasoning.what_happened} />
@@ -183,14 +252,21 @@ const ExplainDecisionPanel = ({
             </Section>
           )}
 
-          {/* 4. Method */}
+          {/* 5. Method */}
           <Section icon={Cpu} title="Method">
-            <div className="flex items-center gap-2 flex-wrap">
-              {recommendationLogicType && (
-                <Badge variant="outline" className="text-[10px] font-mono">
-                  {LOGIC_LABELS[recommendationLogicType] ?? recommendationLogicType}
-                </Badge>
-              )}
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                {recommendationLogicType && (
+                  <Badge variant="outline" className="text-[10px] font-mono">
+                    {LOGIC_LABELS[recommendationLogicType] ?? recommendationLogicType}
+                  </Badge>
+                )}
+                {meta.recommendation_logic?.rule_name && (
+                  <Badge variant="secondary" className="text-[10px]">
+                    Rule: {meta.recommendation_logic.rule_name} v{meta.recommendation_logic.rule_version}
+                  </Badge>
+                )}
+              </div>
               {meta.recommendation_logic?.description && (
                 <span className="text-xs text-muted-foreground">{meta.recommendation_logic.description}</span>
               )}
@@ -200,7 +276,7 @@ const ExplainDecisionPanel = ({
             </div>
           </Section>
 
-          {/* 5. Expected Impact */}
+          {/* 6. Expected Impact */}
           {meta.expected_impact && (meta.expected_impact.range || meta.expected_impact.basis) && (
             <Section icon={Target} title="Expected Impact">
               <DataRow label="Range" value={meta.expected_impact.range} />
@@ -208,7 +284,7 @@ const ExplainDecisionPanel = ({
             </Section>
           )}
 
-          {/* 6. Confidence */}
+          {/* 7. Confidence */}
           <Section icon={ShieldCheck} title="Confidence">
             <div className="flex items-center gap-3">
               {(confidenceAtDecision ?? cappedConfidence ?? rawConfidence) != null && (
@@ -232,7 +308,7 @@ const ExplainDecisionPanel = ({
             )}
           </Section>
 
-          {/* 7. Assumptions */}
+          {/* 8. Assumptions */}
           {meta.assumptions && meta.assumptions.length > 0 && (
             <Section icon={AlertTriangle} title="Assumptions" iconColor="text-warning">
               <ul className="space-y-0.5">
@@ -255,6 +331,15 @@ const ExplainDecisionPanel = ({
                   </li>
                 ))}
               </ul>
+            </Section>
+          )}
+
+          {/* Evidence Classification */}
+          {meta.evidence_classification && (
+            <Section icon={Beaker} title="Evidence Grade">
+              <div className="text-xs font-mono text-muted-foreground">
+                {meta.evidence_classification}
+              </div>
             </Section>
           )}
 
