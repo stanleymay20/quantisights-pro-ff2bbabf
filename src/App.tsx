@@ -86,6 +86,7 @@ const AlertPlaybooks = lazy(() => import("./pages/AlertPlaybooks"));
 const SystemHealth = lazy(() => import("./pages/SystemHealth"));
 const TrustCenter = lazy(() => import("./pages/TrustCenter"));
 const FairnessObservability = lazy(() => import("./pages/FairnessObservability"));
+const DecisionMaturity = lazy(() => import("./pages/DecisionMaturity"));
 
 // ── Organization & Admin ──
 const Team = lazy(() => import("./pages/Team"));
@@ -300,6 +301,7 @@ const App = () => (
               <Route path="/system-health" element={<P><SystemHealth /></P>} />
               <Route path="/trust-center" element={<P><TrustCenter /></P>} />
               <Route path="/fairness" element={<P><FairnessObservability /></P>} />
+              <Route path="/decision-maturity" element={<P><DecisionMaturity /></P>} />
 
               {/* ══════ Organization & Admin ══════ */}
               <Route path="/team" element={<P><Team /></P>} />

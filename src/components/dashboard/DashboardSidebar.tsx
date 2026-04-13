@@ -46,6 +46,7 @@ const navSections: NavSection[] = [
     label: "Governance",
     items: [
       { icon: Shield, label: "Fairness & Drift", path: "/fairness" },
+      { icon: BarChart3, label: "Maturity Model", path: "/decision-maturity" },
     ],
   },
   {

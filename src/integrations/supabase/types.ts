@@ -409,6 +409,112 @@ export type Database = {
           },
         ]
       }
+      attribution_results: {
+        Row: {
+          computed_at: string
+          credit: number
+          decision_id: string | null
+          id: string
+          model: string
+          organization_id: string
+          touchpoint_id: string | null
+        }
+        Insert: {
+          computed_at?: string
+          credit: number
+          decision_id?: string | null
+          id?: string
+          model: string
+          organization_id: string
+          touchpoint_id?: string | null
+        }
+        Update: {
+          computed_at?: string
+          credit?: number
+          decision_id?: string | null
+          id?: string
+          model?: string
+          organization_id?: string
+          touchpoint_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attribution_results_decision_id_fkey"
+            columns: ["decision_id"]
+            isOneToOne: false
+            referencedRelation: "decision_ledger"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attribution_results_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attribution_results_touchpoint_id_fkey"
+            columns: ["touchpoint_id"]
+            isOneToOne: false
+            referencedRelation: "attribution_touchpoints"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      attribution_touchpoints: {
+        Row: {
+          created_at: string
+          decision_id: string | null
+          entity_id: string
+          entity_type: string
+          id: string
+          metadata: Json | null
+          occurred_at: string
+          organization_id: string
+          touchpoint_type: string
+          weight: number | null
+        }
+        Insert: {
+          created_at?: string
+          decision_id?: string | null
+          entity_id: string
+          entity_type: string
+          id?: string
+          metadata?: Json | null
+          occurred_at?: string
+          organization_id: string
+          touchpoint_type: string
+          weight?: number | null
+        }
+        Update: {
+          created_at?: string
+          decision_id?: string | null
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          metadata?: Json | null
+          occurred_at?: string
+          organization_id?: string
+          touchpoint_type?: string
+          weight?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attribution_touchpoints_decision_id_fkey"
+            columns: ["decision_id"]
+            isOneToOne: false
+            referencedRelation: "decision_ledger"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attribution_touchpoints_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_log: {
         Row: {
           action_type: string
@@ -496,6 +602,107 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "auth_events_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bandit_experiments: {
+        Row: {
+          arms: Json
+          created_at: string
+          created_by: string | null
+          description: string | null
+          epsilon: number | null
+          exploration_bonus: number | null
+          id: string
+          name: string
+          organization_id: string
+          status: string
+          strategy: string
+          total_pulls: number | null
+          updated_at: string
+        }
+        Insert: {
+          arms?: Json
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          epsilon?: number | null
+          exploration_bonus?: number | null
+          id?: string
+          name: string
+          organization_id: string
+          status?: string
+          strategy?: string
+          total_pulls?: number | null
+          updated_at?: string
+        }
+        Update: {
+          arms?: Json
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          epsilon?: number | null
+          exploration_bonus?: number | null
+          id?: string
+          name?: string
+          organization_id?: string
+          status?: string
+          strategy?: string
+          total_pulls?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bandit_experiments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bandit_rewards: {
+        Row: {
+          arm_id: string
+          context_features: Json | null
+          created_at: string
+          experiment_id: string
+          id: string
+          organization_id: string
+          reward: number
+        }
+        Insert: {
+          arm_id: string
+          context_features?: Json | null
+          created_at?: string
+          experiment_id: string
+          id?: string
+          organization_id: string
+          reward?: number
+        }
+        Update: {
+          arm_id?: string
+          context_features?: Json | null
+          created_at?: string
+          experiment_id?: string
+          id?: string
+          organization_id?: string
+          reward?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bandit_rewards_experiment_id_fkey"
+            columns: ["experiment_id"]
+            isOneToOne: false
+            referencedRelation: "bandit_experiments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bandit_rewards_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -3814,6 +4021,53 @@ export type Database = {
           },
           {
             foreignKeyName: "kpis_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      maturity_assessments: {
+        Row: {
+          assessed_by: string | null
+          created_at: string
+          dimensions: Json
+          id: string
+          next_actions: Json
+          organization_id: string
+          overall_level: number
+          overall_score: number
+          readiness_grade: string
+          scaling_readiness: number
+        }
+        Insert: {
+          assessed_by?: string | null
+          created_at?: string
+          dimensions?: Json
+          id?: string
+          next_actions?: Json
+          organization_id: string
+          overall_level?: number
+          overall_score?: number
+          readiness_grade?: string
+          scaling_readiness?: number
+        }
+        Update: {
+          assessed_by?: string | null
+          created_at?: string
+          dimensions?: Json
+          id?: string
+          next_actions?: Json
+          organization_id?: string
+          overall_level?: number
+          overall_score?: number
+          readiness_grade?: string
+          scaling_readiness?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maturity_assessments_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
