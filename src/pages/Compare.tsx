@@ -71,7 +71,7 @@ const CellValue = ({ value }: { value: boolean | string }) => {
     return <span className="text-sm font-medium text-foreground">{value}</span>;
   }
   return value ? (
-    <Check className="w-5 h-5 text-emerald-500" />
+    <Check className="w-5 h-5 text-primary" />
   ) : (
     <X className="w-5 h-5 text-muted-foreground/40" />
   );
