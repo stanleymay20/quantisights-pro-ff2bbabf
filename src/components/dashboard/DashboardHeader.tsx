@@ -14,7 +14,8 @@ import { useToast } from "@/hooks/use-toast";
 interface Insight {
   category?: string;
   message?: string;
-  [key: string]: unknown;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: any;
 }
 
 interface DashboardHeaderProps {
