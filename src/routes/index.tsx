@@ -106,6 +106,7 @@ const EmbedDashboard = lazy(() => import("@/pages/EmbedDashboard"));
 const PilotAudit = lazy(() => import("@/pages/PilotAudit"));
 const SystemStatus = lazy(() => import("@/pages/SystemStatus"));
 const SLA = lazy(() => import("@/pages/SLA"));
+const Compare = lazy(() => import("@/pages/Compare"));
 
 // ── Legal ──
 const Terms = lazy(() => import("@/pages/Terms"));
