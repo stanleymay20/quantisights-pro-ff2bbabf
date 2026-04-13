@@ -120,6 +120,7 @@ export type Database = {
           generation_version: number | null
           id: string
           impact_score: number | null
+          insight_object: Json | null
           kpi_affected: Json | null
           model_parameters: Json | null
           organization_id: string
@@ -158,6 +159,7 @@ export type Database = {
           generation_version?: number | null
           id?: string
           impact_score?: number | null
+          insight_object?: Json | null
           kpi_affected?: Json | null
           model_parameters?: Json | null
           organization_id: string
@@ -196,6 +198,7 @@ export type Database = {
           generation_version?: number | null
           id?: string
           impact_score?: number | null
+          insight_object?: Json | null
           kpi_affected?: Json | null
           model_parameters?: Json | null
           organization_id?: string
