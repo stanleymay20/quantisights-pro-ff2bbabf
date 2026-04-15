@@ -45,7 +45,7 @@ const SystemHealthDashboard = ({ orgId }: Props) => {
   }[loopStatus];
 
   return (
-    <div className="space-y-3 sm:space-y-4">
+    <section aria-label="System Intelligence Dashboard" className="space-y-3 sm:space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Activity className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
@@ -65,6 +65,7 @@ const SystemHealthDashboard = ({ orgId }: Props) => {
             size="sm"
             onClick={refresh}
             disabled={loading}
+            aria-label={loading ? "Refreshing system health" : "Refresh system health"}
             className="h-7 sm:h-8"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
@@ -106,7 +107,7 @@ const SystemHealthDashboard = ({ orgId }: Props) => {
                 {health.evaluatedOutcomes}/{health.totalDecisions} measured
               </span>
             </div>
-            <Progress value={health.closedLoopRate} className="h-1.5" />
+            <Progress value={health.closedLoopRate} className="h-1.5" aria-label={`Closed loop rate: ${health.closedLoopRate}%`} />
           </CardContent>
         </Card>
 
@@ -230,7 +231,7 @@ const SystemHealthDashboard = ({ orgId }: Props) => {
           </Card>
         )}
       </div>
-    </div>
+    </section>
   );
 };
 

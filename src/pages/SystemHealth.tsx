@@ -7,17 +7,17 @@ const SystemHealth = () => {
 
   return (
     <SectionErrorBoundary sectionName="System Health">
-    <div className="space-y-6">
-      <div>
+    <div className="space-y-6 p-4 sm:p-6 lg:p-8">
+      <header>
         <h1 className="text-2xl font-bold">System Health</h1>
         <p className="text-muted-foreground text-sm mt-1">
           Monitor platform health, pipeline status, and infrastructure metrics.
         </p>
-      </div>
+      </header>
       {currentOrg?.id ? (
         <SystemHealthDashboard orgId={currentOrg.id} />
       ) : (
-        <p className="text-muted-foreground">Select an organization to view system health.</p>
+        <p className="text-muted-foreground" role="status">Select an organization to view system health.</p>
       )}
     </div>
     </SectionErrorBoundary>
