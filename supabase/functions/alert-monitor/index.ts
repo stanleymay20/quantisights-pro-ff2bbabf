@@ -33,6 +33,16 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    // Verify caller is service-role (cron) — reject anon/user tokens
+    const authHeader = req.headers.get("Authorization") || "";
+    if (!authHeader.includes(serviceKey)) {
+      log.warn("Alert-monitor called without service-role key — rejecting");
+      return new Response(JSON.stringify({ error: "Forbidden: requires service-role" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const svc = createClient(supabaseUrl, serviceKey);
 
     const guard = await cronGuard("alert-monitor");
