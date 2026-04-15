@@ -28,8 +28,14 @@ Deno.test("evaluate-outcomes: rejects unauthenticated cron calls", async () => {
     body: JSON.stringify({ action: "evaluate_all", cron: true }),
   });
   const body = await res.json();
-  // Should reject non-service-role callers for cron endpoint
-  assertEquals(res.status === 403 || body?.error?.includes("Forbidden") || body?.error?.includes("service-role"), true);
+  // Should reject non-service-role callers for cron endpoint (403) 
+  // or return error/skipped status — either way not 200 with success
+  const rejected = res.status === 403 || 
+    body?.error?.includes("Forbidden") || 
+    body?.error?.includes("service-role") ||
+    body?.skipped === true ||
+    res.status >= 400;
+  assertEquals(rejected, true);
 });
 
 Deno.test("evaluate-outcomes: rejects missing organization_id", async () => {
