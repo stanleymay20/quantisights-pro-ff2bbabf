@@ -165,21 +165,16 @@ const CommandCenter = memo(({
           </div>
         }>
           <div id="analytics-panel">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="h-64 rounded-xl bg-muted/30 animate-pulse" />
-            ))}
+            <AnalyticsPanel
+              metrics={metrics}
+              revenueByMonth={revenueByMonth}
+              segmentData={segmentData}
+              insights={insights}
+              latestChurn={churnRate}
+              latestCost={latestCost}
+              isDemoMode={isDemoMode}
+            />
           </div>
-        }>
-          <AnalyticsPanel
-            metrics={metrics}
-            revenueByMonth={revenueByMonth}
-            segmentData={segmentData}
-            insights={insights}
-            latestChurn={churnRate}
-            latestCost={latestCost}
-            isDemoMode={isDemoMode}
-          />
         </Suspense>
       )}
     </section>
