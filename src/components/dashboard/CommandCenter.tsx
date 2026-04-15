@@ -76,7 +76,7 @@ const CommandCenter = memo(({
   );
 
   return (
-    <div className="space-y-6 max-w-[1400px]">
+    <section aria-label="Command Center Dashboard" className="space-y-6 max-w-[1400px]">
       <DecisionContextPanel
         activeContext={activeContext}
         onContextChange={setActiveContext}
@@ -146,7 +146,9 @@ const CommandCenter = memo(({
       <div className="flex items-center justify-center">
         <button
           onClick={() => setShowAnalytics(!showAnalytics)}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg border border-border/40 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-all group"
+          aria-expanded={showAnalytics}
+          aria-controls="analytics-panel"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg border border-border/40 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-all group touch-target"
         >
           <BarChart3 className="w-3.5 h-3.5" />
           {showAnalytics ? "Hide Analytics" : "View Full Analytics"}
@@ -156,6 +158,13 @@ const CommandCenter = memo(({
 
       {showAnalytics && (
         <Suspense fallback={
+          <div id="analytics-panel" aria-busy="true" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="h-64 rounded-xl bg-muted/30 animate-pulse" aria-hidden="true" />
+            ))}
+          </div>
+        }>
+          <div id="analytics-panel">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="h-64 rounded-xl bg-muted/30 animate-pulse" />
@@ -173,7 +182,7 @@ const CommandCenter = memo(({
           />
         </Suspense>
       )}
-    </div>
+    </section>
   );
 });
 

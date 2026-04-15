@@ -21,7 +21,9 @@ const ProtectedShell = ({ children }: { children: ReactNode }) => {
       <DashboardSidebar />
       <div className="flex-1 flex flex-col min-h-screen min-h-[100dvh] overflow-hidden">
         <GlobalContextBar />
-        {children}
+        <main id="main-content" role="main" className="flex-1 overflow-y-auto">
+          {children}
+        </main>
       </div>
     </div>
   );
