@@ -18,11 +18,7 @@ Deno.test("evaluate-outcomes: handles OPTIONS preflight", async () => {
   assertEquals(res.status, 200);
 });
 
-Deno.test("evaluate-outcomes: cron endpoint returns success structure", async () => {
-  // NOTE: This test documents that the cron endpoint currently accepts
-  // anon-key callers (returns 200 with evaluated:0). This is a known 
-  // security gap — cron should reject non-service-role callers with 403.
-  // The advisory lock prevents duplicate execution, but authorization is weak.
+Deno.test("evaluate-outcomes: cron endpoint rejects non-service-role callers", async () => {
   const res = await fetch(FUNCTION_URL, {
     method: "POST",
     headers: {
@@ -32,9 +28,8 @@ Deno.test("evaluate-outcomes: cron endpoint returns success structure", async ()
     body: JSON.stringify({ action: "evaluate_all", cron: true }),
   });
   const body = await res.json();
-  // Currently returns 200 — documenting actual behavior
-  assertEquals(res.status, 200);
-  assertExists(body);
+  assertEquals(res.status, 403);
+  assertEquals(body.error, "Forbidden: cron endpoint requires service-role");
 });
 
 Deno.test("evaluate-outcomes: rejects missing organization_id", async () => {
