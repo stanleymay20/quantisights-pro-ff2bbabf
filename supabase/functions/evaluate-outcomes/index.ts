@@ -20,18 +20,13 @@ Deno.serve(async (req) => {
     // ── CRON: evaluate_all processes all orgs — requires service-role auth ──
     if (action === "evaluate_all" && body.cron === true) {
       // Verify caller is service-role (cron) — reject anon/user tokens
-      const authHeader = req.headers.get("Authorization");
-      const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-      if (!authHeader || !authHeader.includes(serviceKey)) {
-        const callerClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
-          global: { headers: { Authorization: authHeader || "" } },
+      const authHeader = req.headers.get("Authorization") || "";
+      const cronServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      if (!authHeader.includes(cronServiceKey)) {
+        log.warn("Cron endpoint called without service-role key — rejecting");
+        return new Response(JSON.stringify({ error: "Forbidden: cron endpoint requires service-role" }), {
+          status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
-        const { data: { user: cronUser } } = await callerClient.auth.getUser();
-        if (cronUser) {
-          return new Response(JSON.stringify({ error: "Forbidden: cron endpoint requires service-role" }), {
-            status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        }
       }
 
       // Advisory lock — prevent overlapping cron runs
