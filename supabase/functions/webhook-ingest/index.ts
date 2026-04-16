@@ -343,6 +343,7 @@ serve(async (req) => {
 
       metrics.push({
         organization_id: orgId,
+        dataset_id: datasetId,
         metric_type: typeof rec[metricField] === "string" && rec[metricField]
           ? rec[metricField]
           : defaultMetricType,
