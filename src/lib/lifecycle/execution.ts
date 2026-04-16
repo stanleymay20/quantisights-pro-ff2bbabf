@@ -65,14 +65,44 @@ export async function onDecisionApproved(params: PostApprovalParams) {
     captureError(err instanceof Error ? err : new Error("Execution plan creation failed"), { decisionId, context: "onDecisionApproved" });
   }
 
-  // 3. Decision outcome (for learning loop)
+  // 3. Decision outcome (for learning loop) — with metric validation
   if (expectedMetric) {
     try {
+      // Validate that the expected_metric exists in the org's actual metrics
+      let validatedMetric = expectedMetric;
+      if (datasetId) {
+        const { data: metricCheck } = await supabase
+          .from("metrics")
+          .select("metric_type")
+          .eq("organization_id", organizationId)
+          .eq("dataset_id", datasetId)
+          .eq("metric_type", expectedMetric)
+          .limit(1)
+          .maybeSingle();
+
+        if (!metricCheck) {
+          // Metric doesn't exist — try to find the closest match in this dataset
+          const { data: availableMetrics } = await supabase
+            .from("metric_summaries")
+            .select("metric_type, row_count")
+            .eq("organization_id", organizationId)
+            .eq("dataset_id", datasetId)
+            .order("row_count", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (availableMetrics) {
+            validatedMetric = availableMetrics.metric_type;
+          }
+          // If no metrics at all, proceed anyway — evaluate-outcomes will handle gracefully
+        }
+      }
+
       await supabase.from("decision_outcomes").insert({
         decision_id: decisionId,
         organization_id: organizationId,
         dataset_id: datasetId ?? null,
-        expected_metric: expectedMetric,
+        expected_metric: validatedMetric,
         expected_direction: "increase",
         evaluation_window_days: evaluationWindowDays,
       });

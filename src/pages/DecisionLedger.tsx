@@ -313,14 +313,24 @@ const DecisionLedgerPage = () => {
 
     // ── HEAVY PATH: lifecycle side effects run async, non-blocking ──
     if (updates.decision_status === "approved") {
+      // Resolve dataset: use the advisory's dataset, the active project dataset, or null (server fallback)
+      const resolvedDatasetId = activeDatasetId ?? null;
+
+      // Resolve metric: derive from decision_type → canonical metric mapping
+      const metricByType: Record<string, string> = {
+        growth: "revenue", retention: "churn_rate", cost_optimization: "cost",
+        strategic: "revenue", operational: "cost", risk: "revenue",
+      };
+      const resolvedMetric = metricByType[decision.decision_type] ?? decision.decision_type;
+
       onDecisionApproved({
         decisionId: id,
         organizationId: decision.organization_id,
         userId: user?.id ?? null,
         recommendedAction: decision.recommended_action,
         confidence: decision.capped_confidence ?? decision.confidence_at_decision ?? 50,
-        datasetId: null,
-        expectedMetric: decision.recommended_action?.substring(0, 30) ?? "metric",
+        datasetId: resolvedDatasetId,
+        expectedMetric: resolvedMetric,
         evaluationWindowDays: 30,
       }).catch(() => {}); // fire-and-forget
     }
