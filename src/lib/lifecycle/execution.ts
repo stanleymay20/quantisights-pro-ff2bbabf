@@ -4,6 +4,8 @@
 import { supabase } from "@/integrations/supabase/client";
 import { captureError } from "@/lib/sentry";
 import { writeAuditLog } from "./audit";
+import { checkEvaluability } from "./evaluability";
+import type { EvaluabilityResult } from "./evaluability";
 
 interface PostApprovalParams {
   decisionId: string;
