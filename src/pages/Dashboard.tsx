@@ -1,12 +1,11 @@
 import { useState, useEffect, useMemo } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { useOrganization } from "@/hooks/useOrganization";
 import { useProject } from "@/contexts/ProjectContext";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
-import { useMetrics } from "@/hooks/useMetrics";
+import { useMetricsSummary } from "@/hooks/useMetricsSummary";
 import { useInsights } from "@/hooks/useInsights";
 import { filterCriticalInsights } from "@/lib/insight-filters";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,11 +23,12 @@ const Dashboard = () => {
   const { organizations, currentOrgId, currentOrg, switchOrganization, loading: orgLoading } = useOrganization();
   const { currentWorkspaceId, loading: workspaceLoading } = useWorkspace();
   const { currentProject, activeDatasetId, loading: projectLoading } = useProject();
+
+  // ── FAST PATH: server-aggregated summaries (~20 rows) instead of full metrics (~3K+ rows) ──
   const {
-    metrics, totalRevenue, totalCustomers, latestCost, latestChurn,
-    revenueByMonth, segmentData, hasData, lastUpdated, loading: metricsLoading,
-    topMetrics, metricTypes,
-  } = useMetrics(currentOrgId, activeDatasetId);
+    topMetrics, hasData, loading: metricsLoading,
+  } = useMetricsSummary(currentOrgId, activeDatasetId);
+
   const { insights, loading: insightsLoading } = useInsights(currentOrgId, activeDatasetId);
   const navigate = useNavigate();
 
