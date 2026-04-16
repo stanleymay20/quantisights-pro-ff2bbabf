@@ -182,6 +182,51 @@ const DecisionLedgerPage = () => {
 
   const createDecision = async () => {
     if (!currentOrgId || !newAction.trim()) return;
+
+    // Optimistic: add to list immediately
+    const optimisticId = crypto.randomUUID();
+    const optimisticDecision: Decision = {
+      id: optimisticId,
+      organization_id: currentOrgId,
+      advisory_instance_id: null,
+      decision_type: newType,
+      recommended_action: newAction,
+      chosen_action: null,
+      decision_status: "pending",
+      execution_status: "not_started",
+      outcome_delta: null,
+      confidence_at_decision: null,
+      confidence_updated: null,
+      baseline_value: null,
+      actual_value: null,
+      kpi_id: null,
+      decided_by: user?.id ?? null,
+      decided_at: null,
+      execution_started_at: null,
+      execution_completed_at: null,
+      outcome_measured_at: null,
+      notes: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      prediction_accuracy_score: null,
+      calibration_error: null,
+      raw_confidence: null,
+      capped_confidence: null,
+      confidence_cap_reason: null,
+      decision_simulation_id: null,
+      predicted_roi_probability: null,
+      predicted_net_impact: null,
+      explanation_metadata: null,
+      source_insight_summary: null,
+      recommendation_logic_type: null,
+      decision_origin: "manual",
+    };
+
+    setDecisions(prev => [optimisticDecision, ...prev]);
+    toast({ title: "Decision logged" });
+    setNewAction("");
+    setShowCreate(false);
+
     const { error } = await supabase
       .from("decision_ledger")
       .insert({
@@ -190,12 +235,13 @@ const DecisionLedgerPage = () => {
         decision_type: newType,
         decided_by: user?.id,
       });
+
     if (error) {
+      // Rollback optimistic add
+      setDecisions(prev => prev.filter(d => d.id !== optimisticId));
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Decision logged" });
-      setNewAction("");
-      setShowCreate(false);
+      // Replace optimistic with real data in background
       fetchDecisions();
     }
   };
@@ -228,52 +274,64 @@ const DecisionLedgerPage = () => {
   };
 
   const updateDecision = async (id: string, updates: Record<string, unknown>) => {
-    setUpdatingId(id);
     const decision = decisions.find(d => d.id === id);
+    if (!decision) return;
 
+    // Compute derived fields upfront
     if (updates.execution_status === "completed") {
-      if (decision) {
-        const conf = decision.confidence_at_decision || decision.capped_confidence || 50;
-        const hasOutcome = decision.outcome_delta !== null;
-        const outcomePositive = (decision.outcome_delta || 0) >= 0;
-        const calibrationError = Math.abs(conf - (outcomePositive ? 100 : 0));
-        const predictionAccuracy = hasOutcome ? Math.max(0, 100 - calibrationError) : null;
-        updates.calibration_error = calibrationError;
-        updates.prediction_accuracy_score = predictionAccuracy;
-      }
+      const conf = decision.confidence_at_decision || decision.capped_confidence || 50;
+      const hasOutcome = decision.outcome_delta !== null;
+      const outcomePositive = (decision.outcome_delta || 0) >= 0;
+      const calibrationError = Math.abs(conf - (outcomePositive ? 100 : 0));
+      const predictionAccuracy = hasOutcome ? Math.max(0, 100 - calibrationError) : null;
+      updates.calibration_error = calibrationError;
+      updates.prediction_accuracy_score = predictionAccuracy;
     }
 
+    // ── OPTIMISTIC UPDATE: reflect change instantly ──
+    const previousDecisions = [...decisions];
+    setDecisions(prev =>
+      prev.map(d => d.id === id ? { ...d, ...updates, updated_at: new Date().toISOString() } as Decision : d)
+    );
+    setUpdatingId(id);
+
+    // ── FAST PATH: write to DB ──
     const { error } = await supabase
       .from("decision_ledger")
       .update(updates)
       .eq("id", id);
+
     if (error) {
+      // ── ROLLBACK on failure ──
+      setDecisions(previousDecisions);
       toast({ title: "Error", description: error.message, variant: "destructive" });
-    } else {
-      // Post-update lifecycle side effects
-      if (updates.decision_status === "approved" && decision) {
-        await onDecisionApproved({
-          decisionId: id,
-          organizationId: decision.organization_id,
-          userId: user?.id ?? null,
-          recommendedAction: decision.recommended_action,
-          confidence: decision.capped_confidence ?? decision.confidence_at_decision ?? 50,
-          datasetId: null,
-          expectedMetric: decision.recommended_action?.substring(0, 30) ?? "metric",
-          evaluationWindowDays: 30,
-        });
-      }
-      if (updates.execution_status) {
-        await onExecutionStatusChanged({
-          decisionId: id,
-          organizationId: decision?.organization_id ?? "",
-          userId: user?.id ?? null,
-          newStatus: updates.execution_status as string,
-        });
-      }
-      fetchDecisions();
+      setUpdatingId(null);
+      return;
     }
+
     setUpdatingId(null);
+
+    // ── HEAVY PATH: lifecycle side effects run async, non-blocking ──
+    if (updates.decision_status === "approved") {
+      onDecisionApproved({
+        decisionId: id,
+        organizationId: decision.organization_id,
+        userId: user?.id ?? null,
+        recommendedAction: decision.recommended_action,
+        confidence: decision.capped_confidence ?? decision.confidence_at_decision ?? 50,
+        datasetId: null,
+        expectedMetric: decision.recommended_action?.substring(0, 30) ?? "metric",
+        evaluationWindowDays: 30,
+      }).catch(() => {}); // fire-and-forget
+    }
+    if (updates.execution_status) {
+      onExecutionStatusChanged({
+        decisionId: id,
+        organizationId: decision.organization_id,
+        userId: user?.id ?? null,
+        newStatus: updates.execution_status as string,
+      }).catch(() => {}); // fire-and-forget
+    }
   };
 
   const activeDecisions = decisions.filter(d => d.decision_status !== "rejected" && d.execution_status !== "completed");
