@@ -34,7 +34,15 @@ export async function onDecisionApproved(params: PostApprovalParams) {
     datasetId, expectedMetric, evaluationWindowDays = 30, suggestedOwner, evaluability: precomputedEval,
   } = params;
 
-  // 1. Audit log
+  // 0. Evaluability gate — run pre-check (reuse if already provided)
+  let evalResult: EvaluabilityResult;
+  try {
+    evalResult = precomputedEval ?? await checkEvaluability(organizationId, datasetId ?? null, expectedMetric ?? null);
+  } catch {
+    evalResult = { status: "NOT_MEASURABLE", score: 0, maxScore: 3, hasDataset: false, hasMetric: false, dataPoints: 0, distinctDates: 0, resolvedDatasetId: null, resolvedMetric: null, reasons: ["Evaluability check failed"], suggestions: [] };
+  }
+
+  // 1. Audit log — includes evaluability metadata
   await writeAuditLog({
     organization_id: organizationId,
     actor_id: userId,
@@ -45,6 +53,9 @@ export async function onDecisionApproved(params: PostApprovalParams) {
       recommended_action: recommendedAction,
       confidence_at_decision: confidence,
       dataset_id: datasetId ?? null,
+      evaluability_status: evalResult.status,
+      evaluability_score: evalResult.score,
+      evaluability_reasons: evalResult.reasons,
     },
   });
 
