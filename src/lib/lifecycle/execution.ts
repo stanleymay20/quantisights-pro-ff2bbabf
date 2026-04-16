@@ -17,6 +17,8 @@ interface PostApprovalParams {
   expectedMetric?: string | null;
   evaluationWindowDays?: number;
   suggestedOwner?: string | null;
+  /** Pre-computed evaluability — if provided, skips redundant RPC call */
+  evaluability?: EvaluabilityResult | null;
 }
 
 /**
