@@ -124,6 +124,8 @@ const DecisionLedgerPage = () => {
   const [simRunning, setSimRunning] = useState(false);
   const [simResult, setSimResult] = useState<ImpactSim | null>(null);
   const [approvalTarget, setApprovalTarget] = useState<{ id: string; action: string } | null>(null);
+  const [evaluabilityCheck, setEvaluabilityCheck] = useState<EvaluabilityResult | null>(null);
+  const [evaluabilityLoading, setEvaluabilityLoading] = useState(false);
   const [impactForm, setImpactForm] = useState({
     revenue_delta_pct: 5,
     cost_delta_pct: -2,
