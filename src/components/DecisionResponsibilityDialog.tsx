@@ -75,6 +75,8 @@ const DecisionResponsibilityDialog = ({
           </label>
         </div>
 
+        {children}
+
         <AlertDialogFooter>
           <AlertDialogCancel onClick={() => { setAck1(false); setAck2(false); }}>
             Cancel
