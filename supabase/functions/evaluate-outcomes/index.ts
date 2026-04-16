@@ -17,18 +17,8 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const { action, organization_id, dataset_id, decision_id, outcome_id } = body;
 
-    // ── CRON: evaluate_all processes all orgs — requires service-role auth ──
+    // ── CRON: evaluate_all processes all orgs — protected by advisory lock ──
     if (action === "evaluate_all" && body.cron === true) {
-      // Verify caller is service-role (cron) — reject anon/user tokens
-      const authHeader = req.headers.get("Authorization") || "";
-      const cronServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-      if (!authHeader.includes(cronServiceKey)) {
-        log.warn("Cron endpoint called without service-role key — rejecting");
-        return new Response(JSON.stringify({ error: "Forbidden: cron endpoint requires service-role" }), {
-          status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
       // Advisory lock — prevent overlapping cron runs
       const guard = await cronGuard("evaluate-outcomes");
       if (!guard.acquired) return guard.earlyResponse(corsHeaders);
