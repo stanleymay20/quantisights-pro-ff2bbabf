@@ -32,7 +32,8 @@ import DecisionReplayPanel from "@/components/execution/DecisionReplayPanel";
 import DecisionEvidencePanel from "@/components/decision-intelligence/DecisionEvidencePanel";
 import ExplainDecisionPanel from "@/components/dashboard/ExplainDecisionPanel";
 import type { ExplanationMetadata } from "@/components/dashboard/ExplainDecisionPanel";
-import { onDecisionApproved, onExecutionStatusChanged } from "@/lib/decision-lifecycle";
+import { onDecisionApproved, onExecutionStatusChanged, checkEvaluability, evaluabilityColor, evaluabilityBadgeVariant } from "@/lib/decision-lifecycle";
+import type { EvaluabilityResult } from "@/lib/decision-lifecycle";
 
 interface Decision {
   id: string;
