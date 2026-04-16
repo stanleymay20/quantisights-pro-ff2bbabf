@@ -38,9 +38,12 @@ const Dashboard = () => {
   const [pendingDecisions, setPendingDecisions] = useState(0);
   const [calibrationScore, setCalibrationScore] = useState<number | null>(null);
 
-  // Onboarding redirect
+  // Onboarding redirect — cached in sessionStorage to avoid repeated DB hits
   useEffect(() => {
     if (orgLoading || !currentOrgId) return;
+    const cacheKey = `onboarding_checked_${currentOrgId}`;
+    if (sessionStorage.getItem(cacheKey) === "done") return;
+
     const checkOnboarding = async () => {
       const { data } = await supabase
         .from("organizations")
@@ -49,12 +52,14 @@ const Dashboard = () => {
         .maybeSingle();
       if (data && !data.onboarding_completed) {
         navigate("/onboarding", { replace: true });
+      } else {
+        sessionStorage.setItem(cacheKey, "done");
       }
     };
     checkOnboarding();
   }, [currentOrgId, orgLoading, navigate]);
 
-  // Fetch pending decisions & calibration
+  // Fetch pending decisions & calibration — parallel, lightweight queries
   useEffect(() => {
     if (!currentOrgId) return;
     const fetchCount = async () => {
@@ -64,7 +69,7 @@ const Dashboard = () => {
       }
       const [decisionRes, calRes] = await Promise.all([
         supabase.from("decision_ledger")
-          .select("*", { count: "exact", head: true })
+          .select("id", { count: "exact", head: true })
           .eq("organization_id", currentOrgId)
           .eq("execution_status", "not_started"),
         supabase.from("calibration_models")
