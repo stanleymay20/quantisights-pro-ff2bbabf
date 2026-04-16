@@ -662,7 +662,18 @@ const DecisionLedgerPage = () => {
                           <div className="flex flex-col gap-1">
                             {d.decision_status === "pending" && (
                               <>
-                                <Button size="sm" variant="outline" onClick={() => setApprovalTarget({ id: d.id, action: d.recommended_action })} disabled={updatingId === d.id}>
+                                <Button size="sm" variant="outline" onClick={async () => {
+                                  setEvaluabilityCheck(null);
+                                  setApprovalTarget({ id: d.id, action: d.recommended_action });
+                                  if (currentOrgId) {
+                                    setEvaluabilityLoading(true);
+                                    const metricByType: Record<string, string> = { growth: "revenue", retention: "churn_rate", cost_optimization: "cost", strategic: "revenue", operational: "cost", risk: "revenue" };
+                                    const metric = metricByType[d.decision_type] ?? d.decision_type;
+                                    const result = await checkEvaluability(currentOrgId, activeDatasetId ?? null, metric);
+                                    setEvaluabilityCheck(result);
+                                    setEvaluabilityLoading(false);
+                                  }
+                                }} disabled={updatingId === d.id}>
                                   Approve
                                 </Button>
                                 <Button size="sm" variant="ghost" onClick={() => updateDecision(d.id, { decision_status: "rejected" })} disabled={updatingId === d.id}>
