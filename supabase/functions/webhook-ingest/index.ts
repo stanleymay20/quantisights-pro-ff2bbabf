@@ -431,6 +431,17 @@ serve(async (req) => {
       .update({ last_synced_at: new Date().toISOString() })
       .eq("id", sourceId!);
 
+    // Refresh precomputed metric summaries (fire-and-forget, non-blocking)
+    if (inserted > 0 && orgId && datasetId) {
+      supabase.rpc("refresh_metric_summaries", {
+        _org_id: orgId,
+        _dataset_id: datasetId,
+      }).then(({ error }) => {
+        if (error) structuredLog("summary_refresh_error", { error: safeErrorMessage(error) });
+        else structuredLog("summary_refreshed", { org_id: orgId, dataset_id: datasetId });
+      });
+    }
+
     const executionMs = Date.now() - startTime;
 
     structuredLog("complete", {

@@ -4352,6 +4352,63 @@ export type Database = {
           },
         ]
       }
+      metric_summaries: {
+        Row: {
+          computed_at: string
+          dataset_id: string
+          id: string
+          latest_date: string | null
+          latest_value: number
+          metric_type: string
+          organization_id: string
+          previous_half_total: number | null
+          row_count: number
+          total: number
+          trend: string
+        }
+        Insert: {
+          computed_at?: string
+          dataset_id: string
+          id?: string
+          latest_date?: string | null
+          latest_value?: number
+          metric_type: string
+          organization_id: string
+          previous_half_total?: number | null
+          row_count?: number
+          total?: number
+          trend?: string
+        }
+        Update: {
+          computed_at?: string
+          dataset_id?: string
+          id?: string
+          latest_date?: string | null
+          latest_value?: number
+          metric_type?: string
+          organization_id?: string
+          previous_half_total?: number | null
+          row_count?: number
+          total?: number
+          trend?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "metric_summaries_dataset_id_fkey"
+            columns: ["dataset_id"]
+            isOneToOne: false
+            referencedRelation: "datasets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "metric_summaries_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       metrics: {
         Row: {
           created_at: string
@@ -6673,6 +6730,10 @@ export type Database = {
       }
       refresh_metric_aggregates: {
         Args: { _dataset_id?: string; _org_id: string; _period_type?: string }
+        Returns: number
+      }
+      refresh_metric_summaries: {
+        Args: { _dataset_id: string; _org_id: string }
         Returns: number
       }
       release_cron_advisory_lock: {

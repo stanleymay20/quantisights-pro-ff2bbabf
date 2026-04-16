@@ -196,6 +196,14 @@ serve(async (req) => {
       }).eq("id", pipeline_run_id);
     }
 
+    // Refresh precomputed metric summaries alongside aggregates
+    if (dataset_id) {
+      await supabase.rpc("refresh_metric_summaries", {
+        _org_id: organization_id,
+        _dataset_id: dataset_id,
+      });
+    }
+
     // Audit log
     await supabase.from("audit_log").insert({
       organization_id,
