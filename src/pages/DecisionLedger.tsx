@@ -335,6 +335,7 @@ const DecisionLedgerPage = () => {
         datasetId: resolvedDatasetId,
         expectedMetric: resolvedMetric,
         evaluationWindowDays: 30,
+        evaluability: evaluabilityCheck,
       }).catch(() => {}); // fire-and-forget
     }
     if (updates.execution_status) {
