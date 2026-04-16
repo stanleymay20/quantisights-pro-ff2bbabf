@@ -272,8 +272,10 @@ serve(async (req) => {
     });
 
     /* ── 9. Validate and map records ────────────────────────── */
-    const fieldMap = (isRecord(source.config) ? (source.config as Record<string, unknown>).field_mapping : null) as Record<string, string> | null ?? {};
-    const defaultMetricType = (isRecord(source.config) ? (source.config as Record<string, unknown>).default_metric_type : null) as string | null ?? "revenue";
+    const sourceConfig = isRecord(source.config) ? source.config as Record<string, unknown> : {};
+    const fieldMap = (sourceConfig.field_mapping ?? {}) as Record<string, string>;
+    const defaultMetricType = (sourceConfig.default_metric_type as string) || "revenue";
+    const datasetId = (sourceConfig.dataset_id as string) || null;
     const minDate = new Date();
     minDate.setFullYear(minDate.getFullYear() - MAX_DATE_AGE_YEARS);
 
@@ -341,6 +343,7 @@ serve(async (req) => {
 
       metrics.push({
         organization_id: orgId,
+        dataset_id: datasetId,
         metric_type: typeof rec[metricField] === "string" && rec[metricField]
           ? rec[metricField]
           : defaultMetricType,
