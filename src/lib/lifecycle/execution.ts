@@ -31,7 +31,7 @@ interface PostApprovalParams {
 export async function onDecisionApproved(params: PostApprovalParams) {
   const {
     decisionId, organizationId, userId, recommendedAction, confidence,
-    datasetId, expectedMetric, evaluationWindowDays = 30, suggestedOwner,
+    datasetId, expectedMetric, evaluationWindowDays = 30, suggestedOwner, evaluability: precomputedEval,
   } = params;
 
   // 1. Audit log
