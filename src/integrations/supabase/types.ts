@@ -6592,6 +6592,18 @@ export type Database = {
         Args: { _org_id: string; _user_id: string; _validity_minutes?: number }
         Returns: boolean
       }
+      get_metrics_summary: {
+        Args: { _dataset_id: string; _org_id: string }
+        Returns: {
+          latest_date: string
+          latest_value: number
+          metric_type: string
+          previous_half_total: number
+          row_count: number
+          total: number
+          trend: string
+        }[]
+      }
       get_user_org_role: {
         Args: { _org_id: string; _user_id: string }
         Returns: Database["public"]["Enums"]["org_role"]
