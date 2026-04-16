@@ -821,15 +821,60 @@ const DecisionLedgerPage = () => {
       {/* Decision Responsibility Confirmation Dialog */}
       <DecisionResponsibilityDialog
         open={!!approvalTarget}
-        onOpenChange={(open) => { if (!open) setApprovalTarget(null); }}
+        onOpenChange={(open) => { if (!open) { setApprovalTarget(null); setEvaluabilityCheck(null); } }}
         actionLabel={approvalTarget?.action || ""}
         onConfirm={() => {
           if (approvalTarget) {
             updateDecision(approvalTarget.id, { decision_status: "approved", decided_at: new Date().toISOString() });
             setApprovalTarget(null);
+            setEvaluabilityCheck(null);
           }
         }}
-      />
+      >
+        {/* Evaluability gate inline */}
+        {evaluabilityLoading && (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground py-2">
+            <Loader2 className="w-3 h-3 animate-spin" /> Checking outcome evaluability…
+          </div>
+        )}
+        {evaluabilityCheck && (
+          <div className="mt-3 rounded-lg border p-3 space-y-2">
+            <div className="flex items-center gap-2">
+              <Badge variant={evaluabilityBadgeVariant(evaluabilityCheck.status)} className="text-xs">
+                {evaluabilityCheck.status.replace(/_/g, " ")}
+              </Badge>
+              <span className="text-xs text-muted-foreground">
+                Score: {evaluabilityCheck.score}/{evaluabilityCheck.maxScore}
+              </span>
+            </div>
+            {evaluabilityCheck.reasons.length > 0 && (
+              <ul className="text-xs space-y-1">
+                {evaluabilityCheck.reasons.map((r, i) => (
+                  <li key={i} className="flex items-start gap-1.5">
+                    <AlertTriangle className={`w-3 h-3 mt-0.5 shrink-0 ${evaluabilityColor(evaluabilityCheck.status)}`} />
+                    <span className="text-muted-foreground">{r}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {evaluabilityCheck.suggestions.length > 0 && (
+              <ul className="text-xs space-y-1">
+                {evaluabilityCheck.suggestions.map((s, i) => (
+                  <li key={i} className="flex items-start gap-1.5">
+                    <Target className="w-3 h-3 mt-0.5 shrink-0 text-primary" />
+                    <span className="text-muted-foreground">{s}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {evaluabilityCheck.status === "NOT_MEASURABLE" && (
+              <p className="text-xs font-medium text-destructive">
+                ⚠ Outcome tracking will not be scheduled. Approve anyway?
+              </p>
+            )}
+          </div>
+        )}
+      </DecisionResponsibilityDialog>
     </>
   );
 };
