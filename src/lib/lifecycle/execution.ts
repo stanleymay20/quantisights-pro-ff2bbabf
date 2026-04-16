@@ -4,6 +4,8 @@
 import { supabase } from "@/integrations/supabase/client";
 import { captureError } from "@/lib/sentry";
 import { writeAuditLog } from "./audit";
+import { checkEvaluability } from "./evaluability";
+import type { EvaluabilityResult } from "./evaluability";
 
 interface PostApprovalParams {
   decisionId: string;
@@ -15,6 +17,8 @@ interface PostApprovalParams {
   expectedMetric?: string | null;
   evaluationWindowDays?: number;
   suggestedOwner?: string | null;
+  /** Pre-computed evaluability — if provided, skips redundant RPC call */
+  evaluability?: EvaluabilityResult | null;
 }
 
 /**
@@ -27,10 +31,18 @@ interface PostApprovalParams {
 export async function onDecisionApproved(params: PostApprovalParams) {
   const {
     decisionId, organizationId, userId, recommendedAction, confidence,
-    datasetId, expectedMetric, evaluationWindowDays = 30, suggestedOwner,
+    datasetId, expectedMetric, evaluationWindowDays = 30, suggestedOwner, evaluability: precomputedEval,
   } = params;
 
-  // 1. Audit log
+  // 0. Evaluability gate — run pre-check (reuse if already provided)
+  let evalResult: EvaluabilityResult;
+  try {
+    evalResult = precomputedEval ?? await checkEvaluability(organizationId, datasetId ?? null, expectedMetric ?? null);
+  } catch {
+    evalResult = { status: "NOT_MEASURABLE", score: 0, maxScore: 3, hasDataset: false, hasMetric: false, dataPoints: 0, distinctDates: 0, resolvedDatasetId: null, resolvedMetric: null, reasons: ["Evaluability check failed"], suggestions: [] };
+  }
+
+  // 1. Audit log — includes evaluability metadata
   await writeAuditLog({
     organization_id: organizationId,
     actor_id: userId,
@@ -41,6 +53,9 @@ export async function onDecisionApproved(params: PostApprovalParams) {
       recommended_action: recommendedAction,
       confidence_at_decision: confidence,
       dataset_id: datasetId ?? null,
+      evaluability_status: evalResult.status,
+      evaluability_score: evalResult.score,
+      evaluability_reasons: evalResult.reasons,
     },
   });
 
@@ -65,44 +80,17 @@ export async function onDecisionApproved(params: PostApprovalParams) {
     captureError(err instanceof Error ? err : new Error("Execution plan creation failed"), { decisionId, context: "onDecisionApproved" });
   }
 
-  // 3. Decision outcome (for learning loop) — with metric validation
-  if (expectedMetric) {
+  // 3. Decision outcome — GATED by evaluability
+  if (evalResult.status !== "NOT_MEASURABLE") {
     try {
-      // Validate that the expected_metric exists in the org's actual metrics
-      let validatedMetric = expectedMetric;
-      if (datasetId) {
-        const { data: metricCheck } = await supabase
-          .from("metrics")
-          .select("metric_type")
-          .eq("organization_id", organizationId)
-          .eq("dataset_id", datasetId)
-          .eq("metric_type", expectedMetric)
-          .limit(1)
-          .maybeSingle();
-
-        if (!metricCheck) {
-          // Metric doesn't exist — try to find the closest match in this dataset
-          const { data: availableMetrics } = await supabase
-            .from("metric_summaries")
-            .select("metric_type, row_count")
-            .eq("organization_id", organizationId)
-            .eq("dataset_id", datasetId)
-            .order("row_count", { ascending: false })
-            .limit(1)
-            .maybeSingle();
-
-          if (availableMetrics) {
-            validatedMetric = availableMetrics.metric_type;
-          }
-          // If no metrics at all, proceed anyway — evaluate-outcomes will handle gracefully
-        }
-      }
+      const resolvedMetric = evalResult.resolvedMetric ?? expectedMetric ?? "unknown";
+      const resolvedDataset = evalResult.resolvedDatasetId ?? datasetId ?? null;
 
       await supabase.from("decision_outcomes").insert({
         decision_id: decisionId,
         organization_id: organizationId,
-        dataset_id: datasetId ?? null,
-        expected_metric: validatedMetric,
+        dataset_id: resolvedDataset,
+        expected_metric: resolvedMetric,
         expected_direction: "increase",
         evaluation_window_days: evaluationWindowDays,
       });
@@ -110,6 +98,8 @@ export async function onDecisionApproved(params: PostApprovalParams) {
       console.error("[lifecycle] Failed to create decision outcome:", err);
       captureError(err instanceof Error ? err : new Error("Decision outcome creation failed"), { decisionId, context: "onDecisionApproved" });
     }
+  } else {
+    console.warn(`[lifecycle] Outcome scheduling blocked for decision ${decisionId}: ${evalResult.reasons.join("; ")}`);
   }
 
   // 4. Non-blocking async tasks

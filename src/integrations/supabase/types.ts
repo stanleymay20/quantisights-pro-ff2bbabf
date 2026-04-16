@@ -6553,6 +6553,14 @@ export type Database = {
     }
     Functions: {
       accept_invitation: { Args: { _token: string }; Returns: Json }
+      check_decision_evaluability: {
+        Args: {
+          _dataset_id?: string
+          _expected_metric?: string
+          _org_id: string
+        }
+        Returns: Json
+      }
       check_workspace_quota: {
         Args: { _metric_name: string; _workspace_id: string }
         Returns: Json

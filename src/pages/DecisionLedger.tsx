@@ -32,7 +32,8 @@ import DecisionReplayPanel from "@/components/execution/DecisionReplayPanel";
 import DecisionEvidencePanel from "@/components/decision-intelligence/DecisionEvidencePanel";
 import ExplainDecisionPanel from "@/components/dashboard/ExplainDecisionPanel";
 import type { ExplanationMetadata } from "@/components/dashboard/ExplainDecisionPanel";
-import { onDecisionApproved, onExecutionStatusChanged } from "@/lib/decision-lifecycle";
+import { onDecisionApproved, onExecutionStatusChanged, checkEvaluability, evaluabilityColor, evaluabilityBadgeVariant } from "@/lib/decision-lifecycle";
+import type { EvaluabilityResult } from "@/lib/decision-lifecycle";
 
 interface Decision {
   id: string;
@@ -123,6 +124,8 @@ const DecisionLedgerPage = () => {
   const [simRunning, setSimRunning] = useState(false);
   const [simResult, setSimResult] = useState<ImpactSim | null>(null);
   const [approvalTarget, setApprovalTarget] = useState<{ id: string; action: string } | null>(null);
+  const [evaluabilityCheck, setEvaluabilityCheck] = useState<EvaluabilityResult | null>(null);
+  const [evaluabilityLoading, setEvaluabilityLoading] = useState(false);
   const [impactForm, setImpactForm] = useState({
     revenue_delta_pct: 5,
     cost_delta_pct: -2,
@@ -332,6 +335,7 @@ const DecisionLedgerPage = () => {
         datasetId: resolvedDatasetId,
         expectedMetric: resolvedMetric,
         evaluationWindowDays: 30,
+        evaluability: evaluabilityCheck,
       }).catch(() => {}); // fire-and-forget
     }
     if (updates.execution_status) {
@@ -659,7 +663,18 @@ const DecisionLedgerPage = () => {
                           <div className="flex flex-col gap-1">
                             {d.decision_status === "pending" && (
                               <>
-                                <Button size="sm" variant="outline" onClick={() => setApprovalTarget({ id: d.id, action: d.recommended_action })} disabled={updatingId === d.id}>
+                                <Button size="sm" variant="outline" onClick={async () => {
+                                  setEvaluabilityCheck(null);
+                                  setApprovalTarget({ id: d.id, action: d.recommended_action });
+                                  if (currentOrgId) {
+                                    setEvaluabilityLoading(true);
+                                    const metricByType: Record<string, string> = { growth: "revenue", retention: "churn_rate", cost_optimization: "cost", strategic: "revenue", operational: "cost", risk: "revenue" };
+                                    const metric = metricByType[d.decision_type] ?? d.decision_type;
+                                    const result = await checkEvaluability(currentOrgId, activeDatasetId ?? null, metric);
+                                    setEvaluabilityCheck(result);
+                                    setEvaluabilityLoading(false);
+                                  }
+                                }} disabled={updatingId === d.id}>
                                   Approve
                                 </Button>
                                 <Button size="sm" variant="ghost" onClick={() => updateDecision(d.id, { decision_status: "rejected" })} disabled={updatingId === d.id}>
@@ -807,15 +822,60 @@ const DecisionLedgerPage = () => {
       {/* Decision Responsibility Confirmation Dialog */}
       <DecisionResponsibilityDialog
         open={!!approvalTarget}
-        onOpenChange={(open) => { if (!open) setApprovalTarget(null); }}
+        onOpenChange={(open) => { if (!open) { setApprovalTarget(null); setEvaluabilityCheck(null); } }}
         actionLabel={approvalTarget?.action || ""}
         onConfirm={() => {
           if (approvalTarget) {
             updateDecision(approvalTarget.id, { decision_status: "approved", decided_at: new Date().toISOString() });
             setApprovalTarget(null);
+            setEvaluabilityCheck(null);
           }
         }}
-      />
+      >
+        {/* Evaluability gate inline */}
+        {evaluabilityLoading && (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground py-2">
+            <Loader2 className="w-3 h-3 animate-spin" /> Checking outcome evaluability…
+          </div>
+        )}
+        {evaluabilityCheck && (
+          <div className="mt-3 rounded-lg border p-3 space-y-2">
+            <div className="flex items-center gap-2">
+              <Badge variant={evaluabilityBadgeVariant(evaluabilityCheck.status)} className="text-xs">
+                {evaluabilityCheck.status.replace(/_/g, " ")}
+              </Badge>
+              <span className="text-xs text-muted-foreground">
+                Score: {evaluabilityCheck.score}/{evaluabilityCheck.maxScore}
+              </span>
+            </div>
+            {evaluabilityCheck.reasons.length > 0 && (
+              <ul className="text-xs space-y-1">
+                {evaluabilityCheck.reasons.map((r, i) => (
+                  <li key={i} className="flex items-start gap-1.5">
+                    <AlertTriangle className={`w-3 h-3 mt-0.5 shrink-0 ${evaluabilityColor(evaluabilityCheck.status)}`} />
+                    <span className="text-muted-foreground">{r}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {evaluabilityCheck.suggestions.length > 0 && (
+              <ul className="text-xs space-y-1">
+                {evaluabilityCheck.suggestions.map((s, i) => (
+                  <li key={i} className="flex items-start gap-1.5">
+                    <Target className="w-3 h-3 mt-0.5 shrink-0 text-primary" />
+                    <span className="text-muted-foreground">{s}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {evaluabilityCheck.status === "NOT_MEASURABLE" && (
+              <p className="text-xs font-medium text-destructive">
+                ⚠ Outcome tracking will not be scheduled. Approve anyway?
+              </p>
+            )}
+          </div>
+        )}
+      </DecisionResponsibilityDialog>
     </>
   );
 };
