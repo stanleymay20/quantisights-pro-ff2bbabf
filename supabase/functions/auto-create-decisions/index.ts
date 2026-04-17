@@ -210,7 +210,7 @@ serve(async (req) => {
         execution_status: "not_started",
         raw_confidence: a.raw_confidence,
         capped_confidence: a.capped_confidence,
-        confidence_at_decision: a.capped_confidence ?? a.confidence,
+        confidence_at_decision: a.enriched_confidence ?? a.capped_confidence ?? a.confidence,
         confidence_cap_reason: a.confidence_cap_reason,
         predicted_net_impact: parseImpactEstimate(ruleAction.expected_impact ?? a.expected_impact),
         notes: a.rationale,
@@ -218,6 +218,7 @@ serve(async (req) => {
         source_insight_summary: a.title,
         recommendation_logic_type: matchedRule ? `rule:${matchedRule.name}` : logicType,
         explanation_metadata: explanationMetadata,
+        evidence_sources: Array.isArray(a.evidence_sources) ? a.evidence_sources : [],
       });
 
       // ── Step 5: Shadow rule execution ──
@@ -476,6 +477,17 @@ function buildExplanationMetadata(
     assumptions: buildAssumptions(a as { data_quality_index: number | null; data_snapshot_date: string | null }),
     limitations: buildLimitations(a as { data_quality_index: number | null; variance_score: number | null }),
     evidence_classification: classifyEvidence(ewma, matchedRule),
+    // Dual-layer enrichment (Layer A + Layer B → Layer C synthesis)
+    dual_layer_enrichment: a.decision_enrichment_id ? {
+      enrichment_id: a.decision_enrichment_id,
+      client_evidence_summary: a.client_evidence_summary ?? null,
+      internal_context_summary: a.internal_context_summary ?? null,
+      combined_interpretation: a.combined_interpretation ?? null,
+      client_confidence: a.client_confidence ?? null,
+      enriched_confidence: a.enriched_confidence ?? null,
+      confidence_delta: a.confidence_delta ?? null,
+      blending_rule: a.blending_rule ?? "no_context",
+    } : null,
   };
 }
 

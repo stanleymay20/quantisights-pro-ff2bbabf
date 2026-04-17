@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { authenticateRequest, verifyOrgMembership } from "../_shared/auth-guard.ts";
 import { capConfidence, dataSufficiencyRating, fetchCalibrationModel } from "../_shared/confidence-cap.ts";
 import { getCorsHeaders, corsPreflightResponse } from "../_shared/cors.ts";
+import { enrichWithContext, getOrgContext } from "../_shared/enrichment.ts";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return corsPreflightResponse(req);const auth = await authenticateRequest(req);
@@ -365,10 +366,30 @@ Rules:
     );
 
     if (advisories.length > 0) {
-      const rows = advisories.map((a: any) => {
-        // Extract numeric values from ConfidenceResult objects
+      // ── Layer C synthesis: enrich each advisory with internal context ──
+      // Doctrine: client values stay; only confidence + interpretation are augmented.
+      const orgCtx = await getOrgContext(organization_id);
+
+      const enrichedRows = await Promise.all(advisories.map(async (a: any) => {
         const rawConf = typeof a.confidence === "object" ? a.confidence?.raw_confidence : a.confidence;
         const cappedConf = typeof a.confidence === "object" ? a.confidence?.capped_confidence : a.confidence;
+
+        const focusMetric = Array.isArray(a.kpi_affected) && a.kpi_affected.length > 0
+          ? String(a.kpi_affected[0]).toLowerCase().replace(/\s+/g, "_")
+          : a.category;
+
+        const enrichment = await enrichWithContext({
+          organization_id,
+          region: orgCtx.region,
+          industry: orgCtx.industry,
+          metric_focus: focusMetric,
+          client_confidence: Number(cappedConf ?? 50),
+        });
+
+        // Safety: never overwrite client-anchored core values; only adjust confidence within ±10pp
+        const safeEnrichedConfidence = enrichment.ok
+          ? Math.max(0, Math.min(100, enrichment.enriched_confidence))
+          : (cappedConf ?? null);
 
         return {
           organization_id,
@@ -378,7 +399,7 @@ Rules:
           advisory_type: "prescriptive",
           category: a.category,
           priority: a.priority,
-          confidence: cappedConf ?? null,
+          confidence: safeEnrichedConfidence,
           capped_confidence: cappedConf ?? null,
           raw_confidence: rawConf ?? null,
           confidence_cap_reason: typeof a.confidence === "object" ? a.confidence?.confidence_cap_reason : null,
@@ -388,13 +409,31 @@ Rules:
           kpi_affected: a.kpi_affected,
           playbook_steps: a.playbook_steps,
           status: "open",
+          // Enrichment fields (Layer C)
+          decision_enrichment_id: enrichment.enrichment_id,
+          client_evidence_summary: enrichment.client_evidence_summary || null,
+          internal_context_summary: enrichment.internal_context_summary || null,
+          combined_interpretation: enrichment.combined_interpretation || null,
+          client_confidence: enrichment.ok ? enrichment.client_confidence : null,
+          enriched_confidence: enrichment.ok ? safeEnrichedConfidence : null,
+          confidence_delta: enrichment.ok ? enrichment.confidence_delta : null,
+          blending_rule: enrichment.ok ? enrichment.blending_rule : "no_context",
+          evidence_sources: enrichment.ok && enrichment.internal_context_count > 0
+            ? [
+                { source_type: "client", source_name: "client_upload", metric_type: focusMetric, dataset_id, contribution_weight: 0.7 },
+                { source_type: "internal", source_name: "internal_reference", metric_type: focusMetric, dataset_id: null, contribution_weight: 0.3 },
+              ]
+            : [
+                { source_type: "client", source_name: "client_upload", metric_type: focusMetric, dataset_id, contribution_weight: 1.0 },
+              ],
+          advisory_lane: "primary",
         };
-      });
+      }));
 
       const insertResp = await fetch(`${supabaseUrl}/rest/v1/advisory_instances`, {
         method: "POST",
         headers: serviceHeaders,
-        body: JSON.stringify(rows),
+        body: JSON.stringify(enrichedRows),
       });
       if (!insertResp.ok) {
         const errBody = await insertResp.text();

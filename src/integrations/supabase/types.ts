@@ -104,17 +104,24 @@ export type Database = {
           advisory_lane: string
           advisory_type: string
           assigned_to: string | null
+          blending_rule: string | null
           capped_confidence: number | null
           category: string
+          client_confidence: number | null
+          client_evidence_summary: string | null
+          combined_interpretation: string | null
           confidence: number | null
           confidence_cap_reason: string | null
+          confidence_delta: number | null
           created_at: string
           data_quality_index: number | null
           data_snapshot_date: string | null
           dataset_id: string | null
           decision_context_id: string | null
+          decision_enrichment_id: string | null
           detection_model: string | null
           deviation_score: number | null
+          enriched_confidence: number | null
           evidence_sources: Json
           ewma_baseline: number | null
           ewma_std: number | null
@@ -123,6 +130,7 @@ export type Database = {
           id: string
           impact_score: number | null
           insight_object: Json | null
+          internal_context_summary: string | null
           kpi_affected: Json | null
           model_parameters: Json | null
           organization_id: string
@@ -145,17 +153,24 @@ export type Database = {
           advisory_lane?: string
           advisory_type: string
           assigned_to?: string | null
+          blending_rule?: string | null
           capped_confidence?: number | null
           category?: string
+          client_confidence?: number | null
+          client_evidence_summary?: string | null
+          combined_interpretation?: string | null
           confidence?: number | null
           confidence_cap_reason?: string | null
+          confidence_delta?: number | null
           created_at?: string
           data_quality_index?: number | null
           data_snapshot_date?: string | null
           dataset_id?: string | null
           decision_context_id?: string | null
+          decision_enrichment_id?: string | null
           detection_model?: string | null
           deviation_score?: number | null
+          enriched_confidence?: number | null
           evidence_sources?: Json
           ewma_baseline?: number | null
           ewma_std?: number | null
@@ -164,6 +179,7 @@ export type Database = {
           id?: string
           impact_score?: number | null
           insight_object?: Json | null
+          internal_context_summary?: string | null
           kpi_affected?: Json | null
           model_parameters?: Json | null
           organization_id: string
@@ -186,17 +202,24 @@ export type Database = {
           advisory_lane?: string
           advisory_type?: string
           assigned_to?: string | null
+          blending_rule?: string | null
           capped_confidence?: number | null
           category?: string
+          client_confidence?: number | null
+          client_evidence_summary?: string | null
+          combined_interpretation?: string | null
           confidence?: number | null
           confidence_cap_reason?: string | null
+          confidence_delta?: number | null
           created_at?: string
           data_quality_index?: number | null
           data_snapshot_date?: string | null
           dataset_id?: string | null
           decision_context_id?: string | null
+          decision_enrichment_id?: string | null
           detection_model?: string | null
           deviation_score?: number | null
+          enriched_confidence?: number | null
           evidence_sources?: Json
           ewma_baseline?: number | null
           ewma_std?: number | null
@@ -205,6 +228,7 @@ export type Database = {
           id?: string
           impact_score?: number | null
           insight_object?: Json | null
+          internal_context_summary?: string | null
           kpi_affected?: Json | null
           model_parameters?: Json | null
           organization_id?: string
@@ -235,6 +259,13 @@ export type Database = {
             columns: ["decision_context_id"]
             isOneToOne: false
             referencedRelation: "decision_contexts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "advisory_instances_decision_enrichment_id_fkey"
+            columns: ["decision_enrichment_id"]
+            isOneToOne: false
+            referencedRelation: "decision_enrichment"
             referencedColumns: ["id"]
           },
           {

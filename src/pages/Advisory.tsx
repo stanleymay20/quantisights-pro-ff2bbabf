@@ -22,6 +22,7 @@ import IntelligenceDisclaimer from "@/components/IntelligenceDisclaimer";
 import ConfidenceBadge, { resolveConfidence } from "@/components/ConfidenceBadge";
 import { useDecisionContexts } from "@/hooks/useDecisionContexts";
 import SectionErrorBoundary from "@/components/SectionErrorBoundary";
+import DualLayerEvidencePanel from "@/components/dashboard/DualLayerEvidencePanel";
 
 interface Advisory {
   id: string;
@@ -58,6 +59,14 @@ interface AdvisoryInstance {
   impact_score: number | null;
   created_at: string;
   updated_at: string;
+  // Dual-layer enrichment
+  client_evidence_summary?: string | null;
+  internal_context_summary?: string | null;
+  combined_interpretation?: string | null;
+  client_confidence?: number | null;
+  enriched_confidence?: number | null;
+  confidence_delta?: number | null;
+  blending_rule?: string | null;
 }
 
 const PRIORITY_CONFIG: Record<string, { bg: string; border: string; text: string; label: string }> = {
@@ -366,6 +375,17 @@ const AdvisoryPage = () => {
                                 </ol>
                               </div>
                             )}
+                            <DualLayerEvidencePanel
+                              evidence={{
+                                client_evidence_summary: inst.client_evidence_summary,
+                                internal_context_summary: inst.internal_context_summary,
+                                combined_interpretation: inst.combined_interpretation,
+                                client_confidence: inst.client_confidence,
+                                enriched_confidence: inst.enriched_confidence,
+                                confidence_delta: inst.confidence_delta,
+                                blending_rule: inst.blending_rule,
+                              }}
+                            />
                             <div className="flex flex-col gap-3 pt-4 border-t border-border">
                               <Textarea
                                 placeholder="Resolution summary (what was done, outcome)..."
