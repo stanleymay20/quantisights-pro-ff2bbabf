@@ -1725,9 +1725,11 @@ export type Database = {
           id: string
           is_stale: boolean | null
           last_refreshed_at: string | null
+          layer_type: string
           name: string
           organization_id: string
           owner_user_id: string | null
+          provenance: Json | null
           row_count: number | null
           status: string
           steward_user_id: string | null
@@ -1744,9 +1746,11 @@ export type Database = {
           id?: string
           is_stale?: boolean | null
           last_refreshed_at?: string | null
+          layer_type?: string
           name: string
           organization_id: string
           owner_user_id?: string | null
+          provenance?: Json | null
           row_count?: number | null
           status?: string
           steward_user_id?: string | null
@@ -1763,9 +1767,11 @@ export type Database = {
           id?: string
           is_stale?: boolean | null
           last_refreshed_at?: string | null
+          layer_type?: string
           name?: string
           organization_id?: string
           owner_user_id?: string | null
+          provenance?: Json | null
           row_count?: number | null
           status?: string
           steward_user_id?: string | null
@@ -1998,6 +2004,73 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "decision_embeddings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      decision_enrichment: {
+        Row: {
+          advisory_id: string | null
+          blending_rule: string | null
+          client_confidence: number | null
+          client_evidence: Json
+          combined_interpretation: string | null
+          confidence_delta: number | null
+          created_at: string
+          decision_id: string | null
+          enriched_confidence: number | null
+          id: string
+          internal_context: Json
+          organization_id: string
+        }
+        Insert: {
+          advisory_id?: string | null
+          blending_rule?: string | null
+          client_confidence?: number | null
+          client_evidence?: Json
+          combined_interpretation?: string | null
+          confidence_delta?: number | null
+          created_at?: string
+          decision_id?: string | null
+          enriched_confidence?: number | null
+          id?: string
+          internal_context?: Json
+          organization_id: string
+        }
+        Update: {
+          advisory_id?: string | null
+          blending_rule?: string | null
+          client_confidence?: number | null
+          client_evidence?: Json
+          combined_interpretation?: string | null
+          confidence_delta?: number | null
+          created_at?: string
+          decision_id?: string | null
+          enriched_confidence?: number | null
+          id?: string
+          internal_context?: Json
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "decision_enrichment_advisory_id_fkey"
+            columns: ["advisory_id"]
+            isOneToOne: false
+            referencedRelation: "advisory_instances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "decision_enrichment_decision_id_fkey"
+            columns: ["decision_id"]
+            isOneToOne: false
+            referencedRelation: "decision_ledger"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "decision_enrichment_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -3774,6 +3847,60 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      internal_reference_data: {
+        Row: {
+          category: string
+          confidence_grade: string | null
+          created_at: string
+          id: string
+          industry: string | null
+          metadata: Json | null
+          metric_name: string
+          period_end: string | null
+          period_start: string | null
+          region: string | null
+          source: string
+          source_url: string | null
+          unit: string | null
+          updated_at: string
+          value: number
+        }
+        Insert: {
+          category: string
+          confidence_grade?: string | null
+          created_at?: string
+          id?: string
+          industry?: string | null
+          metadata?: Json | null
+          metric_name: string
+          period_end?: string | null
+          period_start?: string | null
+          region?: string | null
+          source: string
+          source_url?: string | null
+          unit?: string | null
+          updated_at?: string
+          value: number
+        }
+        Update: {
+          category?: string
+          confidence_grade?: string | null
+          created_at?: string
+          id?: string
+          industry?: string | null
+          metadata?: Json | null
+          metric_name?: string
+          period_end?: string | null
+          period_start?: string | null
+          region?: string | null
+          source?: string
+          source_url?: string | null
+          unit?: string | null
+          updated_at?: string
+          value?: number
+        }
+        Relationships: []
       }
       key_results: {
         Row: {
