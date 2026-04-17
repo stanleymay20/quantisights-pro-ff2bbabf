@@ -101,6 +101,7 @@ export type Database = {
       advisory_instances: {
         Row: {
           action: string
+          advisory_lane: string
           advisory_type: string
           assigned_to: string | null
           capped_confidence: number | null
@@ -114,6 +115,7 @@ export type Database = {
           decision_context_id: string | null
           detection_model: string | null
           deviation_score: number | null
+          evidence_sources: Json
           ewma_baseline: number | null
           ewma_std: number | null
           expected_impact: string | null
@@ -140,6 +142,7 @@ export type Database = {
         }
         Insert: {
           action: string
+          advisory_lane?: string
           advisory_type: string
           assigned_to?: string | null
           capped_confidence?: number | null
@@ -153,6 +156,7 @@ export type Database = {
           decision_context_id?: string | null
           detection_model?: string | null
           deviation_score?: number | null
+          evidence_sources?: Json
           ewma_baseline?: number | null
           ewma_std?: number | null
           expected_impact?: string | null
@@ -179,6 +183,7 @@ export type Database = {
         }
         Update: {
           action?: string
+          advisory_lane?: string
           advisory_type?: string
           assigned_to?: string | null
           capped_confidence?: number | null
@@ -192,6 +197,7 @@ export type Database = {
           decision_context_id?: string | null
           detection_model?: string | null
           deviation_score?: number | null
+          evidence_sources?: Json
           ewma_baseline?: number | null
           ewma_std?: number | null
           expected_impact?: string | null
@@ -2100,6 +2106,7 @@ export type Database = {
           decision_simulation_id: string | null
           decision_status: string
           decision_type: string
+          evidence_sources: Json
           execution_completed_at: string | null
           execution_started_at: string | null
           execution_status: string
@@ -2144,6 +2151,7 @@ export type Database = {
           decision_simulation_id?: string | null
           decision_status?: string
           decision_type?: string
+          evidence_sources?: Json
           execution_completed_at?: string | null
           execution_started_at?: string | null
           execution_status?: string
@@ -2188,6 +2196,7 @@ export type Database = {
           decision_simulation_id?: string | null
           decision_status?: string
           decision_type?: string
+          evidence_sources?: Json
           execution_completed_at?: string | null
           execution_started_at?: string | null
           execution_status?: string
@@ -4210,6 +4219,7 @@ export type Database = {
           agg_min: number | null
           agg_sum: number
           computed_at: string
+          data_origin: Database["public"]["Enums"]["data_origin_type"]
           dataset_id: string | null
           id: string
           metric_type: string
@@ -4218,6 +4228,9 @@ export type Database = {
           period_type: string
           region: string
           segment: string
+          source_name: string
+          trust_level: number
+          visibility_scope: Database["public"]["Enums"]["visibility_scope_type"]
           workspace_id: string | null
         }
         Insert: {
@@ -4227,6 +4240,7 @@ export type Database = {
           agg_min?: number | null
           agg_sum?: number
           computed_at?: string
+          data_origin?: Database["public"]["Enums"]["data_origin_type"]
           dataset_id?: string | null
           id?: string
           metric_type: string
@@ -4235,6 +4249,9 @@ export type Database = {
           period_type?: string
           region?: string
           segment?: string
+          source_name?: string
+          trust_level?: number
+          visibility_scope?: Database["public"]["Enums"]["visibility_scope_type"]
           workspace_id?: string | null
         }
         Update: {
@@ -4244,6 +4261,7 @@ export type Database = {
           agg_min?: number | null
           agg_sum?: number
           computed_at?: string
+          data_origin?: Database["public"]["Enums"]["data_origin_type"]
           dataset_id?: string | null
           id?: string
           metric_type?: string
@@ -4252,6 +4270,9 @@ export type Database = {
           period_type?: string
           region?: string
           segment?: string
+          source_name?: string
+          trust_level?: number
+          visibility_scope?: Database["public"]["Enums"]["visibility_scope_type"]
           workspace_id?: string | null
         }
         Relationships: [
@@ -4482,6 +4503,7 @@ export type Database = {
       metric_summaries: {
         Row: {
           computed_at: string
+          data_origin: Database["public"]["Enums"]["data_origin_type"]
           dataset_id: string
           id: string
           latest_date: string | null
@@ -4490,11 +4512,15 @@ export type Database = {
           organization_id: string
           previous_half_total: number | null
           row_count: number
+          source_name: string
           total: number
           trend: string
+          trust_level: number
+          visibility_scope: Database["public"]["Enums"]["visibility_scope_type"]
         }
         Insert: {
           computed_at?: string
+          data_origin?: Database["public"]["Enums"]["data_origin_type"]
           dataset_id: string
           id?: string
           latest_date?: string | null
@@ -4503,11 +4529,15 @@ export type Database = {
           organization_id: string
           previous_half_total?: number | null
           row_count?: number
+          source_name?: string
           total?: number
           trend?: string
+          trust_level?: number
+          visibility_scope?: Database["public"]["Enums"]["visibility_scope_type"]
         }
         Update: {
           computed_at?: string
+          data_origin?: Database["public"]["Enums"]["data_origin_type"]
           dataset_id?: string
           id?: string
           latest_date?: string | null
@@ -4516,8 +4546,11 @@ export type Database = {
           organization_id?: string
           previous_half_total?: number | null
           row_count?: number
+          source_name?: string
           total?: number
           trend?: string
+          trust_level?: number
+          visibility_scope?: Database["public"]["Enums"]["visibility_scope_type"]
         }
         Relationships: [
           {
@@ -4539,6 +4572,7 @@ export type Database = {
       metrics: {
         Row: {
           created_at: string
+          data_origin: Database["public"]["Enums"]["data_origin_type"]
           dataset_id: string | null
           date: string
           id: string
@@ -4549,12 +4583,16 @@ export type Database = {
           region: string
           segment: string
           source_id: string
+          source_name: string
           source_type: string
+          trust_level: number
           value: number
+          visibility_scope: Database["public"]["Enums"]["visibility_scope_type"]
           workspace_id: string | null
         }
         Insert: {
           created_at?: string
+          data_origin?: Database["public"]["Enums"]["data_origin_type"]
           dataset_id?: string | null
           date: string
           id?: string
@@ -4565,12 +4603,16 @@ export type Database = {
           region?: string
           segment?: string
           source_id?: string
+          source_name?: string
           source_type?: string
+          trust_level?: number
           value: number
+          visibility_scope?: Database["public"]["Enums"]["visibility_scope_type"]
           workspace_id?: string | null
         }
         Update: {
           created_at?: string
+          data_origin?: Database["public"]["Enums"]["data_origin_type"]
           dataset_id?: string | null
           date?: string
           id?: string
@@ -4581,8 +4623,11 @@ export type Database = {
           region?: string
           segment?: string
           source_id?: string
+          source_name?: string
           source_type?: string
+          trust_level?: number
           value?: number
+          visibility_scope?: Database["public"]["Enums"]["visibility_scope_type"]
           workspace_id?: string | null
         }
         Relationships: [
@@ -5533,6 +5578,7 @@ export type Database = {
       }
       raw_records: {
         Row: {
+          data_origin: Database["public"]["Enums"]["data_origin_type"]
           dataset_id: string
           dataset_version_id: string | null
           id: string
@@ -5540,12 +5586,16 @@ export type Database = {
           organization_id: string
           raw_data: Json
           row_index: number
+          source_name: string
           transform_error: string | null
           transform_status: string
           transformed_at: string | null
+          trust_level: number
+          visibility_scope: Database["public"]["Enums"]["visibility_scope_type"]
           workspace_id: string | null
         }
         Insert: {
+          data_origin?: Database["public"]["Enums"]["data_origin_type"]
           dataset_id: string
           dataset_version_id?: string | null
           id?: string
@@ -5553,12 +5603,16 @@ export type Database = {
           organization_id: string
           raw_data?: Json
           row_index: number
+          source_name?: string
           transform_error?: string | null
           transform_status?: string
           transformed_at?: string | null
+          trust_level?: number
+          visibility_scope?: Database["public"]["Enums"]["visibility_scope_type"]
           workspace_id?: string | null
         }
         Update: {
+          data_origin?: Database["public"]["Enums"]["data_origin_type"]
           dataset_id?: string
           dataset_version_id?: string | null
           id?: string
@@ -5566,9 +5620,12 @@ export type Database = {
           organization_id?: string
           raw_data?: Json
           row_index?: number
+          source_name?: string
           transform_error?: string | null
           transform_status?: string
           transformed_at?: string | null
+          trust_level?: number
+          visibility_scope?: Database["public"]["Enums"]["visibility_scope_type"]
           workspace_id?: string | null
         }
         Relationships: [
@@ -6680,6 +6737,7 @@ export type Database = {
     }
     Functions: {
       accept_invitation: { Args: { _token: string }; Returns: Json }
+      blend_evidence: { Args: { _inputs: Json }; Returns: Json }
       check_decision_evaluability: {
         Args: {
           _dataset_id?: string
@@ -6887,9 +6945,11 @@ export type Database = {
       try_cron_advisory_lock: { Args: { _lock_id: number }; Returns: boolean }
       update_dataset_staleness: { Args: never; Returns: undefined }
       validate_embed_token: { Args: { _token: string }; Returns: Json }
+      validate_evidence_sources: { Args: { _sources: Json }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "analyst" | "executive" | "client_viewer"
+      data_origin_type: "client" | "internal" | "external"
       org_role:
         | "owner"
         | "admin"
@@ -6897,6 +6957,7 @@ export type Database = {
         | "executive"
         | "viewer"
         | "steward"
+      visibility_scope_type: "private" | "org_shared" | "global"
       workspace_role:
         | "workspace_admin"
         | "workspace_editor"
@@ -7029,7 +7090,9 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "analyst", "executive", "client_viewer"],
+      data_origin_type: ["client", "internal", "external"],
       org_role: ["owner", "admin", "analyst", "executive", "viewer", "steward"],
+      visibility_scope_type: ["private", "org_shared", "global"],
       workspace_role: [
         "workspace_admin",
         "workspace_editor",
