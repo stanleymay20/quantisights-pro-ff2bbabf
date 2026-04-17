@@ -14,6 +14,7 @@ import {
   Activity, Beaker,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import DualLayerEvidencePanel from "@/components/dashboard/DualLayerEvidencePanel";
 
 export interface ExplanationMetadata {
   source_data?: {
@@ -66,6 +67,16 @@ export interface ExplanationMetadata {
   assumptions?: string[];
   limitations?: string[];
   evidence_classification?: string;
+  dual_layer_enrichment?: {
+    enrichment_id?: string | null;
+    client_evidence_summary?: string | null;
+    internal_context_summary?: string | null;
+    combined_interpretation?: string | null;
+    client_confidence?: number | null;
+    enriched_confidence?: number | null;
+    confidence_delta?: number | null;
+    blending_rule?: string | null;
+  } | null;
 }
 
 interface Props {
@@ -142,6 +153,11 @@ const ExplainDecisionPanel = ({
 
       {expanded && (
         <div className="px-4 pb-4 space-y-4 border-t border-border/20 pt-3">
+          {/* Dual-Layer Evidence (always first if present) */}
+          {meta.dual_layer_enrichment && (
+            <DualLayerEvidencePanel evidence={meta.dual_layer_enrichment} variant="full" />
+          )}
+
           {/* Metadata bar */}
           <div className="flex flex-wrap gap-3 text-[11px] text-muted-foreground font-mono">
             {createdAt && (
