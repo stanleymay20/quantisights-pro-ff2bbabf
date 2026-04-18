@@ -1,10 +1,17 @@
+/**
+ * Annual pricing offers a 20% discount vs monthly.
+ * `price_id_annual` should be created in Stripe and pasted here once available.
+ * Until then, the UI gracefully falls back to monthly checkout.
+ */
 export const TIERS = {
   starter: {
     name: "Starter",
     price: 99,
+    price_annual: 79, // €79/mo billed annually = €948/yr (20% off)
     currency: "€",
     interval: "month",
     price_id: "price_1T6Ji8JYFIBeCvef4RkHSCfw",
+    price_id_annual: null as string | null, // TODO: replace with Stripe annual price ID
     product_id: "prod_U4SdCda1dcZAtu",
     tagline: "Decision intelligence for teams replacing spreadsheet-driven strategy",
     features: [
@@ -19,9 +26,11 @@ export const TIERS = {
   growth: {
     name: "Growth",
     price: 499,
+    price_annual: 399, // €399/mo billed annually = €4,788/yr (20% off)
     currency: "€",
     interval: "month",
     price_id: "price_1TCfwlJYFIBeCvefvzY9z5m9",
+    price_id_annual: null as string | null,
     product_id: "prod_UB202T0yfALsxx",
     tagline: "Full AI decision engine for operational and leadership teams",
     features: [
@@ -43,9 +52,11 @@ export const TIERS = {
   enterprise: {
     name: "Enterprise",
     price: null,
+    price_annual: null,
     currency: "€",
     interval: "year",
     price_id: null,
+    price_id_annual: null as string | null,
     product_id: "prod_U1oN5CDeptb9uY",
     tagline: "Enterprise decision governance — €18K–€72K annually",
     contactSales: true,

@@ -26,13 +26,19 @@ const Pricing = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [loadingTier, setLoadingTier] = useState<TierKey | null>(null);
+  const [annual, setAnnual] = useState(false);
 
   const handleCheckout = async (tierKey: TierKey) => {
     if (!user) { navigate("/login"); return; }
+    const tier = TIERS[tierKey];
+    const priceId = annual && tier.price_id_annual ? tier.price_id_annual : tier.price_id;
+    if (!priceId) {
+      toast({ title: "Annual billing coming soon", description: "Annual price not yet available — switching to monthly.", variant: "default" });
+    }
     setLoadingTier(tierKey);
     try {
       const { data, error } = await invokeWithRetry<{ url?: string }>("create-checkout", {
-        body: { priceId: TIERS[tierKey].price_id },
+        body: { priceId: priceId ?? tier.price_id },
       });
       if (error) throw error;
       if (data?.url) window.location.href = data.url;
@@ -75,12 +81,32 @@ const Pricing = () => {
             </p>
           </motion.div>
 
+          {/* Billing interval toggle */}
+          <div className="flex justify-center mb-10">
+            <div className="inline-flex items-center gap-1 p-1 rounded-full border border-border bg-card/40">
+              <button
+                onClick={() => setAnnual(false)}
+                className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${!annual ? "bg-primary text-primary-foreground shadow" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                Monthly
+              </button>
+              <button
+                onClick={() => setAnnual(true)}
+                className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 ${annual ? "bg-primary text-primary-foreground shadow" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                Annual <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-success/20 text-success font-bold">−20%</span>
+              </button>
+            </div>
+          </div>
+
           {/* Tier Cards */}
           <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto mb-10">
             {(Object.entries(TIERS) as [TierKey, (typeof TIERS)[TierKey]][]).map(
               ([key, tier], i) => {
                 const isActive = subscribed && currentTier === key;
                 const isPopular = "popular" in tier && tier.popular;
+                const displayPrice = annual && tier.price_annual !== null ? tier.price_annual : tier.price;
+                const displayInterval = annual ? "mo, billed yearly" : tier.interval;
 
                 return (
                   <motion.div
@@ -108,10 +134,15 @@ const Pricing = () => {
                       <p className="text-xs text-muted-foreground mb-4">{tier.tagline}</p>
                     )}
                     <div className="mb-6">
-                      {tier.price !== null ? (
+                      {displayPrice !== null ? (
                         <>
-                          <span className="text-4xl font-bold font-display">{tier.currency}{tier.price}</span>
-                          <span className="text-muted-foreground text-sm">/{tier.interval}</span>
+                          <span className="text-4xl font-bold font-display">{tier.currency}{displayPrice}</span>
+                          <span className="text-muted-foreground text-sm">/{displayInterval}</span>
+                          {annual && tier.price !== null && (
+                            <div className="text-[11px] text-success font-semibold mt-1">
+                              Save {tier.currency}{(tier.price - (tier.price_annual ?? tier.price)) * 12}/yr
+                            </div>
+                          )}
                         </>
                       ) : (
                         <span className="text-3xl font-bold font-display">Custom</span>
@@ -128,12 +159,12 @@ const Pricing = () => {
                     </ul>
 
                     {"contactSales" in tier && tier.contactSales ? (
-                      <a
-                        href={`mailto:${CONTACT.email.general}`}
-                        className="w-full py-3 rounded-lg border border-border text-sm font-semibold hover:bg-secondary transition-colors text-center block"
+                      <button
+                        onClick={() => navigate("/enterprise/contact")}
+                        className="w-full py-3 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:brightness-110 transition-colors text-center"
                       >
                         Contact Sales
-                      </a>
+                      </button>
                     ) : isActive ? (
                       <button
                         onClick={handleManage}
