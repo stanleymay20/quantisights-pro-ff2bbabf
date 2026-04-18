@@ -154,19 +154,18 @@ Deno.serve(async (req) => {
         let inserted = 0;
 
         for (const row of rows) {
-          const { error } = await supabase.from("internal_reference_data").upsert({
-            organization_id: src.organization_id,
-            domain: "macro",
-            metric_key: row.metric_key,
-            metric_value: typeof row.value === "number" ? row.value : null,
-            metric_text: typeof row.value === "string" ? row.value : null,
-            period: row.period ?? null,
-            source_vendor: src.vendor_name,
-            source_url: src.endpoint_url,
-            license_type: src.license_type,
-            metadata: row.metadata ?? {},
-            ingested_at: new Date().toISOString(),
-          }, { onConflict: "organization_id,metric_key,period" });
+          const numeric = typeof row.value === "number" ? row.value : Number(row.value);
+          const { error } = await supabase.from("internal_reference_data").insert({
+            category: (src.category as string) ?? "macro",
+            metric_name: row.metric_key,
+            value: Number.isFinite(numeric) ? numeric : 0,
+            unit: row.unit ?? null,
+            period_start: row.period ?? null,
+            source: src.vendor_name as string,
+            source_url: (src.endpoint_url as string) ?? null,
+            confidence_grade: ((src.trust_level as number) ?? 70) >= 85 ? "high" : "medium",
+            metadata: { ...(row.metadata ?? {}), vendor_key: src.vendor_key, license: src.license_type },
+          });
           if (!error) inserted++;
         }
 
