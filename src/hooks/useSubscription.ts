@@ -10,6 +10,10 @@ interface SubscriptionState {
   subscriptionEnd: string | null;
   isTrial: boolean;
   trialEnd: string | null;
+  inGracePeriod: boolean;
+  gracePeriodEnd: string | null;
+  paymentFailed: boolean;
+  billingInterval: "month" | "year" | null;
   loading: boolean;
 }
 
