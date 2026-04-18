@@ -2736,6 +2736,51 @@ export type Database = {
           },
         ]
       }
+      enterprise_leads: {
+        Row: {
+          company: string
+          company_size: string | null
+          created_at: string
+          estimated_seats: number | null
+          full_name: string
+          id: string
+          notes: string | null
+          source: string | null
+          status: string
+          updated_at: string
+          use_case: string | null
+          work_email: string
+        }
+        Insert: {
+          company: string
+          company_size?: string | null
+          created_at?: string
+          estimated_seats?: number | null
+          full_name: string
+          id?: string
+          notes?: string | null
+          source?: string | null
+          status?: string
+          updated_at?: string
+          use_case?: string | null
+          work_email: string
+        }
+        Update: {
+          company?: string
+          company_size?: string | null
+          created_at?: string
+          estimated_seats?: number | null
+          full_name?: string
+          id?: string
+          notes?: string | null
+          source?: string | null
+          status?: string
+          updated_at?: string
+          use_case?: string | null
+          work_email?: string
+        }
+        Relationships: []
+      }
       execution_events: {
         Row: {
           actor_id: string | null
@@ -3452,6 +3497,74 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "executive_risk_index_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      external_data_sources: {
+        Row: {
+          category: string
+          config: Json
+          created_at: string
+          endpoint_url: string | null
+          id: string
+          is_active: boolean
+          last_error: string | null
+          last_refreshed_at: string | null
+          license_type: string | null
+          license_url: string | null
+          next_refresh_at: string | null
+          organization_id: string | null
+          refresh_interval_hours: number
+          trust_level: number
+          updated_at: string
+          vendor_key: string
+          vendor_name: string
+        }
+        Insert: {
+          category?: string
+          config?: Json
+          created_at?: string
+          endpoint_url?: string | null
+          id?: string
+          is_active?: boolean
+          last_error?: string | null
+          last_refreshed_at?: string | null
+          license_type?: string | null
+          license_url?: string | null
+          next_refresh_at?: string | null
+          organization_id?: string | null
+          refresh_interval_hours?: number
+          trust_level?: number
+          updated_at?: string
+          vendor_key: string
+          vendor_name: string
+        }
+        Update: {
+          category?: string
+          config?: Json
+          created_at?: string
+          endpoint_url?: string | null
+          id?: string
+          is_active?: boolean
+          last_error?: string | null
+          last_refreshed_at?: string | null
+          license_type?: string | null
+          license_url?: string | null
+          next_refresh_at?: string | null
+          organization_id?: string | null
+          refresh_interval_hours?: number
+          trust_level?: number
+          updated_at?: string
+          vendor_key?: string
+          vendor_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "external_data_sources_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -6287,12 +6400,16 @@ export type Database = {
       }
       subscriptions: {
         Row: {
+          billing_interval: string | null
           cancel_at_period_end: boolean
+          canceled_at: string | null
           created_at: string
           current_period_end: string | null
+          grace_period_end: string | null
           id: string
           is_trial: boolean
           organization_id: string
+          payment_failed_at: string | null
           price_id: string | null
           status: string
           stripe_customer_id: string
@@ -6302,12 +6419,16 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          billing_interval?: string | null
           cancel_at_period_end?: boolean
+          canceled_at?: string | null
           created_at?: string
           current_period_end?: string | null
+          grace_period_end?: string | null
           id?: string
           is_trial?: boolean
           organization_id: string
+          payment_failed_at?: string | null
           price_id?: string | null
           status?: string
           stripe_customer_id: string
@@ -6317,12 +6438,16 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          billing_interval?: string | null
           cancel_at_period_end?: boolean
+          canceled_at?: string | null
           created_at?: string
           current_period_end?: string | null
+          grace_period_end?: string | null
           id?: string
           is_trial?: boolean
           organization_id?: string
+          payment_failed_at?: string | null
           price_id?: string | null
           status?: string
           stripe_customer_id?: string
@@ -6453,6 +6578,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      tier_features: {
+        Row: {
+          created_at: string
+          feature_key: string
+          id: string
+          is_allowed: boolean
+          quota_limit: number | null
+          quota_period: string | null
+          tier: string
+        }
+        Insert: {
+          created_at?: string
+          feature_key: string
+          id?: string
+          is_allowed?: boolean
+          quota_limit?: number | null
+          quota_period?: string | null
+          tier: string
+        }
+        Update: {
+          created_at?: string
+          feature_key?: string
+          id?: string
+          is_allowed?: boolean
+          quota_limit?: number | null
+          quota_period?: string | null
+          tier?: string
+        }
+        Relationships: []
       }
       usage_metering: {
         Row: {
@@ -6775,6 +6930,10 @@ export type Database = {
           _expected_metric?: string
           _org_id: string
         }
+        Returns: Json
+      }
+      check_feature_access: {
+        Args: { _feature_key: string; _org_id: string }
         Returns: Json
       }
       check_workspace_quota: {
