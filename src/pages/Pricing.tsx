@@ -134,10 +134,15 @@ const Pricing = () => {
                       <p className="text-xs text-muted-foreground mb-4">{tier.tagline}</p>
                     )}
                     <div className="mb-6">
-                      {tier.price !== null ? (
+                      {displayPrice !== null ? (
                         <>
-                          <span className="text-4xl font-bold font-display">{tier.currency}{tier.price}</span>
-                          <span className="text-muted-foreground text-sm">/{tier.interval}</span>
+                          <span className="text-4xl font-bold font-display">{tier.currency}{displayPrice}</span>
+                          <span className="text-muted-foreground text-sm">/{displayInterval}</span>
+                          {annual && tier.price !== null && (
+                            <div className="text-[11px] text-success font-semibold mt-1">
+                              Save {tier.currency}{(tier.price - (tier.price_annual ?? tier.price)) * 12}/yr
+                            </div>
+                          )}
                         </>
                       ) : (
                         <span className="text-3xl font-bold font-display">Custom</span>
@@ -154,12 +159,12 @@ const Pricing = () => {
                     </ul>
 
                     {"contactSales" in tier && tier.contactSales ? (
-                      <a
-                        href={`mailto:${CONTACT.email.general}`}
-                        className="w-full py-3 rounded-lg border border-border text-sm font-semibold hover:bg-secondary transition-colors text-center block"
+                      <button
+                        onClick={() => navigate("/enterprise/contact")}
+                        className="w-full py-3 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:brightness-110 transition-colors text-center"
                       >
                         Contact Sales
-                      </a>
+                      </button>
                     ) : isActive ? (
                       <button
                         onClick={handleManage}
