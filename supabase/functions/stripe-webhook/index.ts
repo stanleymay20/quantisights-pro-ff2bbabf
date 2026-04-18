@@ -73,7 +73,54 @@ serve(async (req) => {
       });
     };
 
+    const GRACE_PERIOD_DAYS = 7;
+
     switch (event.type) {
+      case "invoice.payment_failed": {
+        const invoice = event.data.object as Stripe.Invoice;
+        const subId = (invoice as any).subscription as string | null;
+        if (!subId) break;
+        const graceEnd = new Date(Date.now() + GRACE_PERIOD_DAYS * 24 * 60 * 60 * 1000).toISOString();
+
+        const { data: subRow, error } = await supabase
+          .from("subscriptions")
+          .update({
+            payment_failed_at: new Date().toISOString(),
+            grace_period_end: graceEnd,
+            status: "past_due",
+          })
+          .eq("stripe_subscription_id", subId)
+          .select("organization_id")
+          .maybeSingle();
+
+        if (error) logStep("payment_failed update error", error);
+        else logStep("Payment failed → grace period set", { subId, graceEnd });
+        await markEventProcessed(subRow?.organization_id);
+        break;
+      }
+
+      case "invoice.payment_succeeded": {
+        const invoice = event.data.object as Stripe.Invoice;
+        const subId = (invoice as any).subscription as string | null;
+        if (!subId) break;
+
+        const { data: subRow, error } = await supabase
+          .from("subscriptions")
+          .update({
+            payment_failed_at: null,
+            grace_period_end: null,
+            status: "active",
+          })
+          .eq("stripe_subscription_id", subId)
+          .select("organization_id")
+          .maybeSingle();
+
+        if (error) logStep("payment_succeeded update error", error);
+        else logStep("Payment succeeded → grace period cleared", { subId });
+        await markEventProcessed(subRow?.organization_id);
+        break;
+      }
+
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
         if (session.mode !== "subscription") break;
