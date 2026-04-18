@@ -4,6 +4,7 @@ import { applyAdaptiveConfidence, fetchCalibrationModel } from "../_shared/adapt
 import { capConfidence } from "../_shared/confidence-cap.ts";
 import { applyRateLimit } from "../_shared/rate-guard.ts";
 import { getCorsHeaders, corsPreflightResponse } from "../_shared/cors.ts";
+import { requireFeatureAccess } from "../_shared/feature-access.ts";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return corsPreflightResponse(req);

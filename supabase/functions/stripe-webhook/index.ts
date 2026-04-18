@@ -73,7 +73,54 @@ serve(async (req) => {
       });
     };
 
+    const GRACE_PERIOD_DAYS = 7;
+
     switch (event.type) {
+      case "invoice.payment_failed": {
+        const invoice = event.data.object as Stripe.Invoice;
+        const subId = (invoice as any).subscription as string | null;
+        if (!subId) break;
+        const graceEnd = new Date(Date.now() + GRACE_PERIOD_DAYS * 24 * 60 * 60 * 1000).toISOString();
+
+        const { data: subRow, error } = await supabase
+          .from("subscriptions")
+          .update({
+            payment_failed_at: new Date().toISOString(),
+            grace_period_end: graceEnd,
+            status: "past_due",
+          })
+          .eq("stripe_subscription_id", subId)
+          .select("organization_id")
+          .maybeSingle();
+
+        if (error) logStep("payment_failed update error", error);
+        else logStep("Payment failed → grace period set", { subId, graceEnd });
+        await markEventProcessed(subRow?.organization_id);
+        break;
+      }
+
+      case "invoice.payment_succeeded": {
+        const invoice = event.data.object as Stripe.Invoice;
+        const subId = (invoice as any).subscription as string | null;
+        if (!subId) break;
+
+        const { data: subRow, error } = await supabase
+          .from("subscriptions")
+          .update({
+            payment_failed_at: null,
+            grace_period_end: null,
+            status: "active",
+          })
+          .eq("stripe_subscription_id", subId)
+          .select("organization_id")
+          .maybeSingle();
+
+        if (error) logStep("payment_succeeded update error", error);
+        else logStep("Payment succeeded → grace period cleared", { subId });
+        await markEventProcessed(subRow?.organization_id);
+        break;
+      }
+
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
         if (session.mode !== "subscription") break;
@@ -124,12 +171,16 @@ serve(async (req) => {
             stripe_customer_id: customerId,
             stripe_subscription_id: subscriptionId,
             tier,
-            status: sub.status, // "active" or "trialing"
+            status: sub.status,
             price_id: sub.items.data[0].price.id,
             current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
             cancel_at_period_end: sub.cancel_at_period_end,
             is_trial: isTrial,
             trial_end: sub.trial_end ? new Date(sub.trial_end * 1000).toISOString() : null,
+            billing_interval: sub.items.data[0].price.recurring?.interval === "year" ? "year" : "month",
+            payment_failed_at: null,
+            grace_period_end: null,
+            canceled_at: null,
           },
           { onConflict: "stripe_subscription_id" }
         );
@@ -156,6 +207,8 @@ serve(async (req) => {
             cancel_at_period_end: sub.cancel_at_period_end,
             is_trial: isTrial,
             trial_end: sub.trial_end ? new Date(sub.trial_end * 1000).toISOString() : null,
+            billing_interval: sub.items.data[0].price.recurring?.interval === "year" ? "year" : "month",
+            ...(sub.status === "active" ? { payment_failed_at: null, grace_period_end: null } : {}),
           })
           .eq("stripe_subscription_id", sub.id);
 
@@ -176,7 +229,7 @@ serve(async (req) => {
 
         const { error } = await supabase
           .from("subscriptions")
-          .update({ status: "canceled" })
+          .update({ status: "canceled", canceled_at: new Date().toISOString() })
           .eq("stripe_subscription_id", sub.id);
 
         if (error) logStep("Delete-update error", error);
