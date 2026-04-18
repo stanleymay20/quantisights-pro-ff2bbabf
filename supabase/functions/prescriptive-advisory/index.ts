@@ -3,6 +3,7 @@ import { authenticateRequest, verifyOrgMembership } from "../_shared/auth-guard.
 import { capConfidence, dataSufficiencyRating, fetchCalibrationModel } from "../_shared/confidence-cap.ts";
 import { getCorsHeaders, corsPreflightResponse } from "../_shared/cors.ts";
 import { enrichWithContext, getOrgContext } from "../_shared/enrichment.ts";
+import { requireFeatureAccess } from "../_shared/feature-access.ts";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return corsPreflightResponse(req);const auth = await authenticateRequest(req);
@@ -18,6 +19,20 @@ serve(async (req) => {
     if (!isMember) {
       return new Response(JSON.stringify({ error: "Forbidden" }), {
         status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ── Tier gating ──
+    const access = await requireFeatureAccess(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+      req.headers.get("Authorization"),
+      "advisory",
+    );
+    if (!access.ok) {
+      return new Response(JSON.stringify(access.body), {
+        status: access.status,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
