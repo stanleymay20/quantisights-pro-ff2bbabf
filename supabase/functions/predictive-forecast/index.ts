@@ -137,6 +137,15 @@ serve(async (req) => {
       });
     }
 
+    // Tier gating: forecasting requires Growth/Enterprise
+    const fcAccess = await requireFeatureAccess(supabaseUrl, serviceKey, authHeader, "forecasting");
+    if (!fcAccess.ok) {
+      return new Response(JSON.stringify(fcAccess.body), {
+        status: fcAccess.status,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Validate dataset belongs to org
     const { data: dsCheck } = await serviceClient
       .from("datasets").select("id")
