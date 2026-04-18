@@ -4,7 +4,7 @@ import { RefreshCw, Plus, Database, AlertTriangle, CheckCircle2, Loader2 } from 
 import { supabase } from "@/integrations/supabase/client";
 import { invokeWithRetry } from "@/lib/edge-function-retry";
 import { useToast } from "@/hooks/use-toast";
-import { useOrganization } from "@/contexts/OrganizationContext";
+import { useOrganization } from "@/hooks/useOrganization";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 
