@@ -17,6 +17,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import ProtectedLayout, { MinimalProtectedLayout } from "@/components/layout/ProtectedLayout";
 import CookieConsent from "@/components/CookieConsent";
 import SessionTimeout from "@/components/auth/SessionTimeout";
+import UpgradeModalProvider from "@/components/UpgradeModalProvider";
 import { routes, RouteLayout } from "@/routes";
 
 // ═══════════════════════════════════════════════════════
@@ -104,6 +105,7 @@ const App = () => (
           <AuthProvider>
             <CookieConsent />
             <SessionTimeout />
+            <UpgradeModalProvider />
             <Suspense fallback={<PageLoader />}>
             <Routes>
               {routes.map(({ path, element, layout }) => (
