@@ -17,10 +17,12 @@ const FOOTER_SECTIONS = [
   {
     title: "Enterprise Trust",
     links: [
+      { label: "Trust Center", to: "/trust-center" },
       { label: "System Status", to: "/status" },
       { label: "SLA & Incident Response", to: "/sla" },
-      { label: "Security", to: "/security" },
-      { label: "Documentation", to: "/docs" },
+      { label: "Security & Compliance", to: "/security" },
+      { label: "Security Questionnaire", to: "/security-questionnaire" },
+      { label: "Contact Enterprise Sales", to: "/enterprise/contact" },
     ],
   },
   {
