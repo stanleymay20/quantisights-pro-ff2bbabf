@@ -7136,6 +7136,10 @@ export type Database = {
       }
       try_cron_advisory_lock: { Args: { _lock_id: number }; Returns: boolean }
       update_dataset_staleness: { Args: never; Returns: undefined }
+      upsert_vault_secret: {
+        Args: { _description?: string; _name: string; _value: string }
+        Returns: undefined
+      }
       validate_embed_token: { Args: { _token: string }; Returns: Json }
       validate_evidence_sources: { Args: { _sources: Json }; Returns: boolean }
     }

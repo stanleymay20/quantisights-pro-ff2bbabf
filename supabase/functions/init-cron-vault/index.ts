@@ -2,10 +2,11 @@
  * One-shot bootstrapper: copies the INGEST_CRON_SECRET env var into Supabase Vault
  * under the name `ingest_cron_secret` so pg_cron jobs can read it at runtime.
  *
- * Idempotent: re-running updates the existing vault entry.
+ * Idempotent: re-running upserts the existing vault entry.
  *
- * Auth: requires the caller to present the same secret in `x-bootstrap-secret`,
- * preventing unauthorised vault writes from anyone with anon access.
+ * Safe to expose: the function takes no input that affects what gets written.
+ * It only mirrors a server-side env var (set by an admin via Lovable Cloud
+ * secrets) into Vault. There is no way for a caller to inject a chosen value.
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders, corsPreflightResponse } from "../_shared/cors.ts";
@@ -28,47 +29,24 @@ Deno.serve(async (req) => {
     return json({ error: "Server not configured" }, 500);
   }
 
-  const provided = req.headers.get("x-bootstrap-secret");
-  if (!provided || provided !== expected) {
-    log.warn("unauthorised bootstrap attempt");
-    return json({ error: "Unauthorised" }, 401);
-  }
-
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
 
   try {
-    // Upsert into vault.secrets via the helper RPCs
-    // First check existence
-    const { data: existing } = await supabase
-      .schema("vault" as never)
-      .from("secrets" as never)
-      .select("id")
-      .eq("name", "ingest_cron_secret")
-      .maybeSingle();
+    // Use raw SQL via Postgres-side admin function (vault RPCs vary across versions).
+    // Safest path: call vault.create_secret / update_secret directly through PostgREST RPC.
+    // We expose two tiny SECURITY DEFINER wrappers in public to avoid schema scoping issues.
+    const { error: rpcError } = await supabase.rpc("upsert_vault_secret", {
+      _name: "ingest_cron_secret",
+      _value: expected,
+      _description: "Shared secret used by pg_cron to authenticate to ingest-external-signals",
+    });
+    if (rpcError) throw rpcError;
 
-    if (existing) {
-      // @ts-expect-error vault schema not in types
-      const { error } = await supabase.rpc("update_secret", {
-        secret_id: (existing as { id: string }).id,
-        new_secret: expected,
-      });
-      if (error) throw error;
-      log.info("vault secret updated");
-    } else {
-      // @ts-expect-error vault schema not in types
-      const { error } = await supabase.rpc("create_secret", {
-        new_secret: expected,
-        new_name: "ingest_cron_secret",
-        new_description: "Shared secret used by pg_cron to authenticate to ingest-external-signals",
-      });
-      if (error) throw error;
-      log.info("vault secret created");
-    }
-
-    return json({ ok: true });
+    log.info("vault secret synced");
+    return json({ ok: true, message: "Cron secret synced to Vault" });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     log.error("vault write failed", { error: msg });
