@@ -4010,6 +4010,7 @@ export type Database = {
           industry: string | null
           metadata: Json | null
           metric_name: string
+          organization_id: string | null
           period_end: string | null
           period_start: string | null
           region: string | null
@@ -4027,6 +4028,7 @@ export type Database = {
           industry?: string | null
           metadata?: Json | null
           metric_name: string
+          organization_id?: string | null
           period_end?: string | null
           period_start?: string | null
           region?: string | null
@@ -4044,6 +4046,7 @@ export type Database = {
           industry?: string | null
           metadata?: Json | null
           metric_name?: string
+          organization_id?: string | null
           period_end?: string | null
           period_start?: string | null
           region?: string | null
@@ -4053,7 +4056,15 @@ export type Database = {
           updated_at?: string
           value?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "internal_reference_data_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       key_results: {
         Row: {
@@ -7032,6 +7043,7 @@ export type Database = {
         Args: { _org_id: string; _user_id: string; _validity_minutes?: number }
         Returns: boolean
       }
+      get_ingest_cron_secret: { Args: never; Returns: string }
       get_ingest_service_token: { Args: never; Returns: string }
       get_metrics_summary: {
         Args: { _dataset_id: string; _org_id: string }
@@ -7135,6 +7147,10 @@ export type Database = {
       }
       try_cron_advisory_lock: { Args: { _lock_id: number }; Returns: boolean }
       update_dataset_staleness: { Args: never; Returns: undefined }
+      upsert_vault_secret: {
+        Args: { _description?: string; _name: string; _value: string }
+        Returns: undefined
+      }
       validate_embed_token: { Args: { _token: string }; Returns: Json }
       validate_evidence_sources: { Args: { _sources: Json }; Returns: boolean }
     }
