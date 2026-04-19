@@ -240,6 +240,7 @@ Deno.serve(async (req) => {
             .from("internal_reference_data")
             .upsert(
               {
+                organization_id: orgId,
                 category: (src.category as string) ?? "macro",
                 metric_name: row.metric_key,
                 value: numeric,
@@ -251,7 +252,7 @@ Deno.serve(async (req) => {
                   ((src.trust_level as number) ?? 70) >= 85 ? "A" : "B",
                 metadata,
               },
-              { onConflict: "metric_name,source,period_start", ignoreDuplicates: false },
+              { onConflict: "organization_id,metric_name,source,period_start", ignoreDuplicates: false },
             );
           if (!error) upserted++;
           else log.warn("upsert failed", { vendor_key: src.vendor_key, metric: row.metric_key, error: error.message });
