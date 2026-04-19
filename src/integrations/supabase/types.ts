@@ -4010,6 +4010,7 @@ export type Database = {
           industry: string | null
           metadata: Json | null
           metric_name: string
+          organization_id: string | null
           period_end: string | null
           period_start: string | null
           region: string | null
@@ -4027,6 +4028,7 @@ export type Database = {
           industry?: string | null
           metadata?: Json | null
           metric_name: string
+          organization_id?: string | null
           period_end?: string | null
           period_start?: string | null
           region?: string | null
@@ -4044,6 +4046,7 @@ export type Database = {
           industry?: string | null
           metadata?: Json | null
           metric_name?: string
+          organization_id?: string | null
           period_end?: string | null
           period_start?: string | null
           region?: string | null
@@ -4053,7 +4056,15 @@ export type Database = {
           updated_at?: string
           value?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "internal_reference_data_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       key_results: {
         Row: {
