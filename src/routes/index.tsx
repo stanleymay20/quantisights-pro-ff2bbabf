@@ -109,6 +109,8 @@ const SLA = lazy(() => import("@/pages/SLA"));
 const Compare = lazy(() => import("@/pages/Compare"));
 const EnterpriseContact = lazy(() => import("@/pages/EnterpriseContact"));
 const DataVendors = lazy(() => import("@/pages/admin/DataVendors"));
+const InternalData = lazy(() => import("@/pages/admin/InternalData"));
+const CompetitiveAnalysis = lazy(() => import("@/pages/CompetitiveAnalysis"));
 
 // ── Legal ──
 const Terms = lazy(() => import("@/pages/Terms"));
@@ -161,6 +163,7 @@ export const routes: RouteEntry[] = [
   { path: "/pitch-deck", element: <PitchDeck />, layout: "public" },
   { path: "/ebook", element: <Ebook />, layout: "public" },
   { path: "/enterprise/contact", element: <EnterpriseContact />, layout: "public" },
+  { path: "/competitive-analysis", element: <CompetitiveAnalysis />, layout: "public" },
 
   // ══════ Legal ══════
   { path: "/terms", element: <Terms />, layout: "public" },
@@ -241,6 +244,7 @@ export const routes: RouteEntry[] = [
   { path: "/api-docs", element: <APIDocs />, layout: "full" },
   { path: "/pilot-audit", element: <PilotAudit />, layout: "full" },
   { path: "/admin/data-vendors", element: <DataVendors />, layout: "full" },
+  { path: "/admin/internal-data", element: <InternalData />, layout: "full" },
 
   // ══════ Catch-all ══════
   { path: "*", element: <NotFound />, layout: "public" },
