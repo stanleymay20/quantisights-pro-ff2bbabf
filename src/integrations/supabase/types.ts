@@ -7032,6 +7032,7 @@ export type Database = {
         Args: { _org_id: string; _user_id: string; _validity_minutes?: number }
         Returns: boolean
       }
+      get_ingest_cron_secret: { Args: never; Returns: string }
       get_ingest_service_token: { Args: never; Returns: string }
       get_metrics_summary: {
         Args: { _dataset_id: string; _org_id: string }
