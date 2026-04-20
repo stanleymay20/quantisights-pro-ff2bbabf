@@ -111,6 +111,7 @@ const EnterpriseContact = lazy(() => import("@/pages/EnterpriseContact"));
 const DataVendors = lazy(() => import("@/pages/admin/DataVendors"));
 const InternalData = lazy(() => import("@/pages/admin/InternalData"));
 const AdminConnectors = lazy(() => import("@/pages/admin/Connectors"));
+const IngestionObservability = lazy(() => import("@/pages/admin/IngestionObservability"));
 const CompetitiveAnalysis = lazy(() => import("@/pages/CompetitiveAnalysis"));
 
 // ── Legal ──
@@ -247,6 +248,7 @@ export const routes: RouteEntry[] = [
   { path: "/admin/data-vendors", element: <DataVendors />, layout: "full" },
   { path: "/admin/internal-data", element: <InternalData />, layout: "full" },
   { path: "/admin/connectors", element: <AdminConnectors />, layout: "full" },
+  { path: "/admin/ingestion-observability", element: <IngestionObservability />, layout: "full" },
 
   // ══════ Catch-all ══════
   { path: "*", element: <NotFound />, layout: "public" },
