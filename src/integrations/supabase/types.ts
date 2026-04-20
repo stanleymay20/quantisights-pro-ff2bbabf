@@ -1186,6 +1186,395 @@ export type Database = {
           },
         ]
       }
+      connector_field_mappings: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          connector_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          mappings: Json
+          organization_id: string
+          validation_summary: Json | null
+          version: number
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          connector_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          mappings?: Json
+          organization_id: string
+          validation_summary?: Json | null
+          version?: number
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          connector_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          mappings?: Json
+          organization_id?: string
+          validation_summary?: Json | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "connector_field_mappings_connector_id_fkey"
+            columns: ["connector_id"]
+            isOneToOne: false
+            referencedRelation: "data_connectors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "connector_field_mappings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      connector_lineage_events: {
+        Row: {
+          connector_id: string
+          created_at: string
+          dataset_id: string | null
+          details: Json
+          event_type: string
+          id: string
+          organization_id: string
+          records_count: number
+          sync_run_id: string | null
+        }
+        Insert: {
+          connector_id: string
+          created_at?: string
+          dataset_id?: string | null
+          details?: Json
+          event_type: string
+          id?: string
+          organization_id: string
+          records_count?: number
+          sync_run_id?: string | null
+        }
+        Update: {
+          connector_id?: string
+          created_at?: string
+          dataset_id?: string | null
+          details?: Json
+          event_type?: string
+          id?: string
+          organization_id?: string
+          records_count?: number
+          sync_run_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "connector_lineage_events_connector_id_fkey"
+            columns: ["connector_id"]
+            isOneToOne: false
+            referencedRelation: "data_connectors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "connector_lineage_events_dataset_id_fkey"
+            columns: ["dataset_id"]
+            isOneToOne: false
+            referencedRelation: "datasets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "connector_lineage_events_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "connector_lineage_events_sync_run_id_fkey"
+            columns: ["sync_run_id"]
+            isOneToOne: false
+            referencedRelation: "connector_sync_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      connector_sync_checkpoints: {
+        Row: {
+          connector_id: string
+          cursor_field: string
+          cursor_value: string | null
+          id: string
+          last_sync_run_id: string | null
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          connector_id: string
+          cursor_field: string
+          cursor_value?: string | null
+          id?: string
+          last_sync_run_id?: string | null
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          connector_id?: string
+          cursor_field?: string
+          cursor_value?: string | null
+          id?: string
+          last_sync_run_id?: string | null
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "connector_sync_checkpoints_connector_id_fkey"
+            columns: ["connector_id"]
+            isOneToOne: false
+            referencedRelation: "data_connectors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "connector_sync_checkpoints_last_sync_run_id_fkey"
+            columns: ["last_sync_run_id"]
+            isOneToOne: false
+            referencedRelation: "connector_sync_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "connector_sync_checkpoints_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      connector_sync_run_errors: {
+        Row: {
+          connector_id: string
+          created_at: string
+          error_kind: string
+          error_message: string
+          id: string
+          is_resolved: boolean
+          organization_id: string
+          raw_payload: Json | null
+          resolved_at: string | null
+          resolved_by: string | null
+          row_index: number | null
+          sync_run_id: string
+        }
+        Insert: {
+          connector_id: string
+          created_at?: string
+          error_kind: string
+          error_message: string
+          id?: string
+          is_resolved?: boolean
+          organization_id: string
+          raw_payload?: Json | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          row_index?: number | null
+          sync_run_id: string
+        }
+        Update: {
+          connector_id?: string
+          created_at?: string
+          error_kind?: string
+          error_message?: string
+          id?: string
+          is_resolved?: boolean
+          organization_id?: string
+          raw_payload?: Json | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          row_index?: number | null
+          sync_run_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "connector_sync_run_errors_connector_id_fkey"
+            columns: ["connector_id"]
+            isOneToOne: false
+            referencedRelation: "data_connectors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "connector_sync_run_errors_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "connector_sync_run_errors_sync_run_id_fkey"
+            columns: ["sync_run_id"]
+            isOneToOne: false
+            referencedRelation: "connector_sync_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      connector_sync_runs: {
+        Row: {
+          checkpoint_after: Json | null
+          checkpoint_before: Json | null
+          completed_at: string | null
+          connector_id: string
+          created_at: string
+          current_stage: string | null
+          dataset_id: string | null
+          duration_ms: number | null
+          error_summary: string | null
+          id: string
+          metadata: Json
+          organization_id: string
+          request_id: string | null
+          rows_extracted: number
+          rows_inserted: number
+          rows_invalid: number
+          rows_skipped: number
+          rows_updated: number
+          rows_valid: number
+          stage_timings: Json
+          started_at: string
+          status: Database["public"]["Enums"]["connector_run_status"]
+          triggered_by: string
+        }
+        Insert: {
+          checkpoint_after?: Json | null
+          checkpoint_before?: Json | null
+          completed_at?: string | null
+          connector_id: string
+          created_at?: string
+          current_stage?: string | null
+          dataset_id?: string | null
+          duration_ms?: number | null
+          error_summary?: string | null
+          id?: string
+          metadata?: Json
+          organization_id: string
+          request_id?: string | null
+          rows_extracted?: number
+          rows_inserted?: number
+          rows_invalid?: number
+          rows_skipped?: number
+          rows_updated?: number
+          rows_valid?: number
+          stage_timings?: Json
+          started_at?: string
+          status?: Database["public"]["Enums"]["connector_run_status"]
+          triggered_by?: string
+        }
+        Update: {
+          checkpoint_after?: Json | null
+          checkpoint_before?: Json | null
+          completed_at?: string | null
+          connector_id?: string
+          created_at?: string
+          current_stage?: string | null
+          dataset_id?: string | null
+          duration_ms?: number | null
+          error_summary?: string | null
+          id?: string
+          metadata?: Json
+          organization_id?: string
+          request_id?: string | null
+          rows_extracted?: number
+          rows_inserted?: number
+          rows_invalid?: number
+          rows_skipped?: number
+          rows_updated?: number
+          rows_valid?: number
+          stage_timings?: Json
+          started_at?: string
+          status?: Database["public"]["Enums"]["connector_run_status"]
+          triggered_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "connector_sync_runs_connector_id_fkey"
+            columns: ["connector_id"]
+            isOneToOne: false
+            referencedRelation: "data_connectors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "connector_sync_runs_dataset_id_fkey"
+            columns: ["dataset_id"]
+            isOneToOne: false
+            referencedRelation: "datasets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "connector_sync_runs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      connector_sync_schedules: {
+        Row: {
+          connector_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          last_dispatch_at: string | null
+          next_run_at: string | null
+          organization_id: string
+          schedule_kind: Database["public"]["Enums"]["connector_schedule_kind"]
+          updated_at: string
+        }
+        Insert: {
+          connector_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_dispatch_at?: string | null
+          next_run_at?: string | null
+          organization_id: string
+          schedule_kind?: Database["public"]["Enums"]["connector_schedule_kind"]
+          updated_at?: string
+        }
+        Update: {
+          connector_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_dispatch_at?: string | null
+          next_run_at?: string | null
+          organization_id?: string
+          schedule_kind?: Database["public"]["Enums"]["connector_schedule_kind"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "connector_sync_schedules_connector_id_fkey"
+            columns: ["connector_id"]
+            isOneToOne: true
+            referencedRelation: "data_connectors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "connector_sync_schedules_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       convergence_usage: {
         Row: {
           call_count: number
@@ -1412,6 +1801,103 @@ export type Database = {
           status?: string
         }
         Relationships: []
+      }
+      data_connectors: {
+        Row: {
+          config: Json
+          connector_type: Database["public"]["Enums"]["connector_type"]
+          consecutive_failures: number
+          created_at: string
+          created_by: string
+          cursor_field: string | null
+          dataset_id: string | null
+          description: string | null
+          health: Database["public"]["Enums"]["connector_health"]
+          id: string
+          last_error_at: string | null
+          last_error_message: string | null
+          last_success_at: string | null
+          name: string
+          organization_id: string
+          retry_policy: Json
+          status: Database["public"]["Enums"]["connector_status"]
+          sync_mode: Database["public"]["Enums"]["connector_sync_mode"]
+          updated_at: string
+          updated_by: string | null
+          vault_secret_name: string | null
+          workspace_id: string | null
+        }
+        Insert: {
+          config?: Json
+          connector_type: Database["public"]["Enums"]["connector_type"]
+          consecutive_failures?: number
+          created_at?: string
+          created_by: string
+          cursor_field?: string | null
+          dataset_id?: string | null
+          description?: string | null
+          health?: Database["public"]["Enums"]["connector_health"]
+          id?: string
+          last_error_at?: string | null
+          last_error_message?: string | null
+          last_success_at?: string | null
+          name: string
+          organization_id: string
+          retry_policy?: Json
+          status?: Database["public"]["Enums"]["connector_status"]
+          sync_mode?: Database["public"]["Enums"]["connector_sync_mode"]
+          updated_at?: string
+          updated_by?: string | null
+          vault_secret_name?: string | null
+          workspace_id?: string | null
+        }
+        Update: {
+          config?: Json
+          connector_type?: Database["public"]["Enums"]["connector_type"]
+          consecutive_failures?: number
+          created_at?: string
+          created_by?: string
+          cursor_field?: string | null
+          dataset_id?: string | null
+          description?: string | null
+          health?: Database["public"]["Enums"]["connector_health"]
+          id?: string
+          last_error_at?: string | null
+          last_error_message?: string | null
+          last_success_at?: string | null
+          name?: string
+          organization_id?: string
+          retry_policy?: Json
+          status?: Database["public"]["Enums"]["connector_status"]
+          sync_mode?: Database["public"]["Enums"]["connector_sync_mode"]
+          updated_at?: string
+          updated_by?: string | null
+          vault_secret_name?: string | null
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "data_connectors_dataset_id_fkey"
+            columns: ["dataset_id"]
+            isOneToOne: false
+            referencedRelation: "datasets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "data_connectors_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "data_connectors_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       data_lineage: {
         Row: {
@@ -6952,6 +7438,11 @@ export type Database = {
         Returns: Json
       }
       cleanup_old_copilot_messages: { Args: never; Returns: undefined }
+      connector_release_lock: {
+        Args: { _connector_id: string }
+        Returns: undefined
+      }
+      connector_try_lock: { Args: { _connector_id: string }; Returns: boolean }
       exec_cleanup_old_data: {
         Args: {
           _events_retain_days?: number
@@ -7043,6 +7534,7 @@ export type Database = {
         Args: { _org_id: string; _user_id: string; _validity_minutes?: number }
         Returns: boolean
       }
+      get_connector_secret: { Args: { _secret_name: string }; Returns: string }
       get_ingest_cron_secret: { Args: never; Returns: string }
       get_ingest_service_token: { Args: never; Returns: string }
       get_metrics_summary: {
@@ -7156,6 +7648,30 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "analyst" | "executive" | "client_viewer"
+      connector_health: "healthy" | "degraded" | "unhealthy" | "unknown"
+      connector_run_status:
+        | "queued"
+        | "extracting"
+        | "validating"
+        | "extracted"
+        | "transforming"
+        | "transformed"
+        | "aggregating"
+        | "complete"
+        | "partial_success"
+        | "failed"
+        | "cancelled"
+      connector_schedule_kind: "manual" | "every_5_min" | "hourly" | "daily"
+      connector_status: "active" | "paused" | "error" | "draft"
+      connector_sync_mode: "full_refresh" | "append" | "incremental"
+      connector_type:
+        | "rest_api"
+        | "csv_upload"
+        | "postgres"
+        | "mysql"
+        | "snowflake"
+        | "bigquery"
+        | "webhook"
       data_origin_type: "client" | "internal" | "external"
       org_role:
         | "owner"
@@ -7297,6 +7813,32 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "analyst", "executive", "client_viewer"],
+      connector_health: ["healthy", "degraded", "unhealthy", "unknown"],
+      connector_run_status: [
+        "queued",
+        "extracting",
+        "validating",
+        "extracted",
+        "transforming",
+        "transformed",
+        "aggregating",
+        "complete",
+        "partial_success",
+        "failed",
+        "cancelled",
+      ],
+      connector_schedule_kind: ["manual", "every_5_min", "hourly", "daily"],
+      connector_status: ["active", "paused", "error", "draft"],
+      connector_sync_mode: ["full_refresh", "append", "incremental"],
+      connector_type: [
+        "rest_api",
+        "csv_upload",
+        "postgres",
+        "mysql",
+        "snowflake",
+        "bigquery",
+        "webhook",
+      ],
       data_origin_type: ["client", "internal", "external"],
       org_role: ["owner", "admin", "analyst", "executive", "viewer", "steward"],
       visibility_scope_type: ["private", "org_shared", "global"],
