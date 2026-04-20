@@ -222,7 +222,7 @@ const Connectors = () => {
     const { error } = await supabase.from("connector_field_mappings").insert([{
       organization_id: currentOrgId!,
       connector_id: selected.id,
-      mappings: newMapping as unknown as Record<string, unknown>,
+      mappings: newMapping as any,
       is_active: true,
       version: 1,
     }]);
@@ -743,7 +743,7 @@ function CreateWizard({
           sync_mode: syncMode,
           cursor_field: syncMode === "incremental" ? cursorField || null : null,
           vault_secret_name: vaultSecretName,
-          config: config as unknown as Record<string, unknown>,
+          config: config as any,
           created_by: userId,
         }])
         .select("id")
