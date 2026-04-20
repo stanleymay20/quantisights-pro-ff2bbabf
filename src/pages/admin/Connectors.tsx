@@ -166,7 +166,7 @@ const Connectors = () => {
     ]);
     setRuns((runsRes.data as SyncRun[] | null) ?? []);
     setErrors((errRes.data as RunError[] | null) ?? []);
-    setMapping(((mapRes.data as { mappings?: Record<string, FieldMapping> } | null)?.mappings) ?? {});
+    setMapping(((mapRes.data as unknown as { mappings?: Record<string, FieldMapping> } | null)?.mappings) ?? {});
     setSchedule((schedRes.data as Schedule | null) ?? null);
   }
 
@@ -219,13 +219,13 @@ const Connectors = () => {
     if (!selected) return;
     // Deactivate prior, insert new active version
     await supabase.from("connector_field_mappings").update({ is_active: false }).eq("connector_id", selected.id).eq("is_active", true);
-    const { error } = await supabase.from("connector_field_mappings").insert({
+    const { error } = await supabase.from("connector_field_mappings").insert([{
       organization_id: currentOrgId!,
       connector_id: selected.id,
-      mappings: newMapping,
+      mappings: newMapping as unknown as Record<string, unknown>,
       is_active: true,
       version: 1,
-    });
+    }]);
     if (error) {
       toast({ title: "Mapping save failed", description: error.message, variant: "destructive" });
       return;
@@ -700,7 +700,7 @@ function CreateWizard({
         vaultSecretName = `connector_${crypto.randomUUID().slice(0, 8)}`;
         const { error: vaultErr } = await supabase.rpc("upsert_vault_secret", {
           _name: vaultSecretName,
-          _secret: secretValue,
+          _value: secretValue,
         });
         if (vaultErr) {
           // Vault RPC may not exist — surface clearly but allow connector creation without secret persistence.
@@ -732,7 +732,7 @@ function CreateWizard({
 
       const { data, error } = await supabase
         .from("data_connectors")
-        .insert({
+        .insert([{
           organization_id: orgId,
           dataset_id: datasetId,
           name: name.trim(),
@@ -743,9 +743,9 @@ function CreateWizard({
           sync_mode: syncMode,
           cursor_field: syncMode === "incremental" ? cursorField || null : null,
           vault_secret_name: vaultSecretName,
-          config,
+          config: config as unknown as Record<string, unknown>,
           created_by: userId,
-        })
+        }])
         .select("id")
         .single();
       if (error) throw error;
