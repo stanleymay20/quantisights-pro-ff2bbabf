@@ -110,6 +110,7 @@ const Compare = lazy(() => import("@/pages/Compare"));
 const EnterpriseContact = lazy(() => import("@/pages/EnterpriseContact"));
 const DataVendors = lazy(() => import("@/pages/admin/DataVendors"));
 const InternalData = lazy(() => import("@/pages/admin/InternalData"));
+const AdminConnectors = lazy(() => import("@/pages/admin/Connectors"));
 const CompetitiveAnalysis = lazy(() => import("@/pages/CompetitiveAnalysis"));
 
 // ── Legal ──
@@ -245,6 +246,7 @@ export const routes: RouteEntry[] = [
   { path: "/pilot-audit", element: <PilotAudit />, layout: "full" },
   { path: "/admin/data-vendors", element: <DataVendors />, layout: "full" },
   { path: "/admin/internal-data", element: <InternalData />, layout: "full" },
+  { path: "/admin/connectors", element: <AdminConnectors />, layout: "full" },
 
   // ══════ Catch-all ══════
   { path: "*", element: <NotFound />, layout: "public" },
