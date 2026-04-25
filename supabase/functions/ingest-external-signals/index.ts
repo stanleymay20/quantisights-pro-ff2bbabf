@@ -203,6 +203,9 @@ const adapters: Record<string, VendorAdapter> = {
             });
           }
         }
+        if (!throttled && i + BATCH_SIZE < countries.length) {
+          await new Promise((res) => setTimeout(res, INTER_BATCH_DELAY_MS));
+        }
       }
 
       log.info("aicis sweep complete", {
