@@ -140,8 +140,10 @@ const adapters: Record<string, VendorAdapter> = {
         per_country_limit: perCountryLimit,
       });
 
-      // ── Step 2: per-country signal pull (parallel batches) ───────────
-      const BATCH_SIZE = 20; // 20 concurrent country fetches
+      // ── Step 2: per-country signal pull (small batches, throttle-aware) ──
+      // AICIS bridge rate-limits aggressive parallelism; keep batch tiny.
+      const BATCH_SIZE = 3;
+      const INTER_BATCH_DELAY_MS = 250;
       let pages = 0;
       let throttled = false;
 
