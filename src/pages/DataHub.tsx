@@ -166,6 +166,7 @@ export default function DataHub() {
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<ReferenceRow[]>([]);
   const [sources, setSources] = useState<VendorSource[]>([]);
+  const [runs, setRuns] = useState<SyncRun[]>([]);
   const [syncing, setSyncing] = useState<string | null>(null);
 
   // AICIS filters
@@ -178,7 +179,7 @@ export default function DataHub() {
     if (!currentOrgId) return;
     setLoading(true);
     try {
-      const [refRes, srcRes] = await Promise.all([
+      const [refRes, srcRes, runRes] = await Promise.all([
         supabase
           .from("internal_reference_data")
           .select("*")
@@ -192,13 +193,24 @@ export default function DataHub() {
           )
           .eq("organization_id", currentOrgId)
           .order("vendor_key"),
+        supabase
+          .from("external_sync_runs")
+          .select(
+            "id, source_id, vendor_key, trigger, actor, status, rows_fetched, rows_upserted, pages_fetched, error_message, started_at, completed_at, duration_ms"
+          )
+          .eq("organization_id", currentOrgId)
+          .order("started_at", { ascending: false })
+          .limit(50),
       ]);
 
       if (refRes.error) throw refRes.error;
       if (srcRes.error) throw srcRes.error;
+      // Sync runs is non-critical; surface but don't fail the whole page
+      if (runRes.error) console.warn("sync runs load failed", runRes.error);
 
       setRows((refRes.data ?? []) as ReferenceRow[]);
       setSources((srcRes.data ?? []) as VendorSource[]);
+      setRuns((runRes.data ?? []) as SyncRun[]);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       toast({ title: "Failed to load reference data", description: msg, variant: "destructive" });
