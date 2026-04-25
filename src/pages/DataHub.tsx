@@ -77,6 +77,22 @@ interface VendorSource {
   license_type: string | null;
 }
 
+interface SyncRun {
+  id: string;
+  source_id: string | null;
+  vendor_key: string;
+  trigger: string;
+  actor: string | null;
+  status: string;
+  rows_fetched: number;
+  rows_upserted: number;
+  pages_fetched: number;
+  error_message: string | null;
+  started_at: string;
+  completed_at: string | null;
+  duration_ms: number | null;
+}
+
 const ALL = "__all__";
 const AICIS_VENDOR_KEY = "aicis";
 
@@ -150,6 +166,7 @@ export default function DataHub() {
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<ReferenceRow[]>([]);
   const [sources, setSources] = useState<VendorSource[]>([]);
+  const [runs, setRuns] = useState<SyncRun[]>([]);
   const [syncing, setSyncing] = useState<string | null>(null);
 
   // AICIS filters
@@ -162,7 +179,7 @@ export default function DataHub() {
     if (!currentOrgId) return;
     setLoading(true);
     try {
-      const [refRes, srcRes] = await Promise.all([
+      const [refRes, srcRes, runRes] = await Promise.all([
         supabase
           .from("internal_reference_data")
           .select("*")
@@ -176,13 +193,24 @@ export default function DataHub() {
           )
           .eq("organization_id", currentOrgId)
           .order("vendor_key"),
+        supabase
+          .from("external_sync_runs")
+          .select(
+            "id, source_id, vendor_key, trigger, actor, status, rows_fetched, rows_upserted, pages_fetched, error_message, started_at, completed_at, duration_ms"
+          )
+          .eq("organization_id", currentOrgId)
+          .order("started_at", { ascending: false })
+          .limit(50),
       ]);
 
       if (refRes.error) throw refRes.error;
       if (srcRes.error) throw srcRes.error;
+      // Sync runs is non-critical; surface but don't fail the whole page
+      if (runRes.error) console.warn("sync runs load failed", runRes.error);
 
       setRows((refRes.data ?? []) as ReferenceRow[]);
       setSources((srcRes.data ?? []) as VendorSource[]);
+      setRuns((runRes.data ?? []) as SyncRun[]);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       toast({ title: "Failed to load reference data", description: msg, variant: "destructive" });
@@ -657,9 +685,91 @@ export default function DataHub() {
               )}
             </CardContent>
           </Card>
-        </TabsContent>
 
-        {/* ─── DATA QUALITY ─────────────────────────────────────────── */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent sync runs</CardTitle>
+              <CardDescription>
+                Last 50 refresh attempts across all reference sources.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {runs.length === 0 ? (
+                <EmptyState
+                  icon={<Clock className="h-8 w-8" />}
+                  title="No sync runs yet"
+                  description="Trigger a manual sync above or wait for the next scheduled refresh — runs will appear here with row counts and any errors."
+                />
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Started</TableHead>
+                      <TableHead>Vendor</TableHead>
+                      <TableHead>Trigger</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Fetched</TableHead>
+                      <TableHead className="text-right">Saved</TableHead>
+                      <TableHead className="text-right">Pages</TableHead>
+                      <TableHead className="text-right">Duration</TableHead>
+                      <TableHead>Issue</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {runs.map((r) => (
+                      <TableRow key={r.id}>
+                        <TableCell className="text-xs">
+                          <div>{fmtAge(r.started_at)}</div>
+                          <div className="text-muted-foreground">
+                            {format(new Date(r.started_at), "PPp")}
+                          </div>
+                        </TableCell>
+                        <TableCell className="font-mono text-xs">{r.vendor_key}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-xs capitalize">{r.trigger}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          {r.status === "success" ? (
+                            <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20">
+                              <CheckCircle2 className="h-3 w-3 mr-1" /> Success
+                            </Badge>
+                          ) : r.status === "partial" ? (
+                            <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-400 hover:bg-amber-500/20">
+                              Partial
+                            </Badge>
+                          ) : r.status === "running" ? (
+                            <Badge variant="secondary">
+                              <Loader2 className="h-3 w-3 mr-1 animate-spin" /> Running
+                            </Badge>
+                          ) : (
+                            <Badge variant="destructive">
+                              <AlertTriangle className="h-3 w-3 mr-1" /> Error
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">{num(r.rows_fetched, 0)}</TableCell>
+                        <TableCell className="text-right tabular-nums">{num(r.rows_upserted, 0)}</TableCell>
+                        <TableCell className="text-right tabular-nums">{r.pages_fetched}</TableCell>
+                        <TableCell className="text-right text-xs text-muted-foreground">
+                          {r.duration_ms !== null ? `${(r.duration_ms / 1000).toFixed(1)}s` : "—"}
+                        </TableCell>
+                        <TableCell className="max-w-[220px]">
+                          {r.error_message ? (
+                            <span className="text-xs text-destructive truncate block" title={r.error_message}>
+                              {r.error_message}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
         <TabsContent value="quality" className="space-y-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <KpiCard
