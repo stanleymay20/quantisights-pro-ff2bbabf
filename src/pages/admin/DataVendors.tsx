@@ -23,9 +23,16 @@ interface DataSource {
 }
 
 const VENDOR_PRESETS = [
-  { key: "aicis", name: "AICIS — Industrial Chemicals Inventory", category: "regulatory", interval: 168, license: "public" },
-  { key: "worldbank", name: "World Bank Open Data", category: "macro", interval: 168, license: "CC-BY-4.0" },
-  { key: "imf", name: "IMF DataMapper", category: "macro", interval: 168, license: "public" },
+  {
+    key: "aicis",
+    name: "AICIS — Aggregated Country Intelligence Signals (live)",
+    category: "country_intelligence",
+    interval: 24,
+    license: "quantivis_platform_license",
+    trust: 90,
+  },
+  { key: "worldbank", name: "World Bank Open Data", category: "macro", interval: 168, license: "CC-BY-4.0", trust: 90 },
+  { key: "imf", name: "IMF DataMapper", category: "macro", interval: 168, license: "public", trust: 90 },
 ];
 
 const DataVendors = () => {
