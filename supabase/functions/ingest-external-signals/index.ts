@@ -330,6 +330,7 @@ Deno.serve(async (req) => {
                 value: numeric,
                 unit: row.unit ?? null,
                 period_start: row.period ?? null,
+                region: row.region ?? null,
                 source: src.vendor_name as string,
                 source_url: (src.endpoint_url as string) ?? null,
                 confidence_grade:
