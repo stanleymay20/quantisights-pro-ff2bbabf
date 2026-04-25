@@ -57,6 +57,7 @@ const DatasetExplorer = lazy(() => import("@/pages/DatasetExplorer"));
 const DataCatalog = lazy(() => import("@/pages/DataCatalog"));
 const DataLineage = lazy(() => import("@/pages/DataLineage"));
 const PipelineObservability = lazy(() => import("@/pages/PipelineObservability"));
+const DataHub = lazy(() => import("@/pages/DataHub"));
 
 // ── Reporting & Strategy ──
 const Reports = lazy(() => import("@/pages/Reports"));
@@ -216,6 +217,7 @@ export const routes: RouteEntry[] = [
   { path: "/data-catalog", element: <DataCatalog />, layout: "full" },
   { path: "/lineage", element: <DataLineage />, layout: "full" },
   { path: "/pipeline", element: <PipelineObservability />, layout: "full" },
+  { path: "/data-hub", element: <DataHub />, layout: "full" },
 
   // ══════ Reporting & Strategy ══════
   { path: "/reports", element: <Reports />, layout: "full" },
