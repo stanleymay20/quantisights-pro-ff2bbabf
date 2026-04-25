@@ -140,60 +140,74 @@ const adapters: Record<string, VendorAdapter> = {
         per_country_limit: perCountryLimit,
       });
 
-      // ── Step 2: per-country signal pull ───────────────────────────────
+      // ── Step 2: per-country signal pull (parallel batches) ───────────
+      const BATCH_SIZE = 20; // 20 concurrent country fetches
       let pages = 0;
       let throttled = false;
-      for (const iso3 of countries) {
-        if (throttled) break;
-        const qs = new URLSearchParams({
-          iso3,
-          limit: String(perCountryLimit),
+
+      for (let i = 0; i < countries.length && !throttled; i += BATCH_SIZE) {
+        const batch = countries.slice(i, i + BATCH_SIZE);
+        const fetches = batch.map(async (iso3) => {
+          const qs = new URLSearchParams({ iso3, limit: String(perCountryLimit) });
+          if (domainFilter) qs.set("domain", domainFilter);
+          const r = await fetch(`${base}/signals?${qs.toString()}`, { headers });
+          return { iso3, r };
         });
-        if (domainFilter) qs.set("domain", domainFilter);
-        const url = `${base}/signals?${qs.toString()}`;
-        const r = await fetch(url, { headers });
-        pages += 1;
+        const settled = await Promise.allSettled(fetches);
 
-        if (r.status === 429 || r.status === 503) {
-          warnings.push(`AICIS throttled on ${iso3} (HTTP ${r.status}); stopping sweep early.`);
-          throttled = true;
-          break;
-        }
-        if (!r.ok) {
-          warnings.push(`AICIS ${iso3} HTTP ${r.status}; skipped.`);
-          continue;
-        }
-
-        const j = (await r.json()) as { data?: AicisSignal[] };
-        const signals = Array.isArray(j.data) ? j.data : [];
-        for (const s of signals) {
-          const numeric = Number(s.value);
-          if (!Number.isFinite(numeric)) continue;
-          const sIso = (s.iso3 ?? iso3).toUpperCase();
-          const domain = (s.domain ?? "general").toLowerCase();
-          const metric = (s.metric_name ?? "unknown").toLowerCase();
-          out.push({
-            metric_key: `aicis.${domain}.${metric}.${sIso}`,
-            value: numeric,
-            unit: s.unit ?? undefined,
-            period: s.period ?? undefined,
-            region: sIso,
-            metadata: {
-              signal_id: s.signal_id,
-              domain,
-              iso3: sIso,
-              confidence: s.confidence,
-              freshness_score: s.freshness_score,
-              source_provider: s.source_provider,
-              source_url: s.source_url,
-              provenance_observed_at: s.provenance_observed_at,
-              entity_name: s.entity_name,
-              entity_type: s.entity_type,
-              sovereignty_status: s.sovereignty_status,
-            },
-          });
+        for (const s of settled) {
+          pages += 1;
+          if (s.status === "rejected") {
+            warnings.push(`AICIS network error: ${String(s.reason).slice(0, 100)}`);
+            continue;
+          }
+          const { iso3, r } = s.value;
+          if (r.status === 429 || r.status === 503) {
+            warnings.push(`AICIS throttled on ${iso3} (HTTP ${r.status}); stopping sweep early.`);
+            throttled = true;
+            break;
+          }
+          if (!r.ok) {
+            warnings.push(`AICIS ${iso3} HTTP ${r.status}; skipped.`);
+            continue;
+          }
+          const j = (await r.json()) as { data?: AicisSignal[] };
+          const signals = Array.isArray(j.data) ? j.data : [];
+          for (const sig of signals) {
+            const numeric = Number(sig.value);
+            if (!Number.isFinite(numeric)) continue;
+            const sIso = (sig.iso3 ?? iso3).toUpperCase();
+            const domain = (sig.domain ?? "general").toLowerCase();
+            const metric = (sig.metric_name ?? "unknown").toLowerCase();
+            out.push({
+              metric_key: `aicis.${domain}.${metric}.${sIso}`,
+              value: numeric,
+              unit: sig.unit ?? undefined,
+              period: sig.period ?? undefined,
+              region: sIso,
+              metadata: {
+                signal_id: sig.signal_id,
+                domain,
+                iso3: sIso,
+                confidence: sig.confidence,
+                freshness_score: sig.freshness_score,
+                source_provider: sig.source_provider,
+                source_url: sig.source_url,
+                provenance_observed_at: sig.provenance_observed_at,
+                entity_name: sig.entity_name,
+                entity_type: sig.entity_type,
+                sovereignty_status: sig.sovereignty_status,
+              },
+            });
+          }
         }
       }
+
+      log.info("aicis sweep complete", {
+        countries_swept: pages,
+        rows_collected: out.length,
+        warnings: warnings.length,
+      });
 
       if (out.length === 0) {
         throw new Error("AICIS bridge returned 0 usable signals — refusing empty ingest.");
