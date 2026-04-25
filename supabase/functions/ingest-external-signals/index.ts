@@ -101,11 +101,12 @@ const adapters: Record<string, VendorAdapter> = {
 
       const pageSize = Math.min(
         Math.max(1, Number((config.page_size as number | undefined) ?? 500)),
-        500,
+        1000,
       );
+      // Default 10 pages (5k rows) per scheduled sync; backfill mode raises this to 200 (100k rows)
       const maxPages = Math.min(
-        Math.max(1, Number((config.max_pages as number | undefined) ?? 4)),
-        10,
+        Math.max(1, Number((config.max_pages as number | undefined) ?? 10)),
+        200,
       );
       const domainFilter = (config.domain as string | undefined) ?? "";
       const isoFilter = (config.iso3 as string | undefined) ?? "";
