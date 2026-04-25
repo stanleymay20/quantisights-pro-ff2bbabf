@@ -69,7 +69,7 @@ const DataVendors = () => {
       category: preset.category,
       refresh_interval_hours: preset.interval,
       license_type: preset.license,
-      trust_level: preset.key === "worldbank" || preset.key === "imf" ? 90 : 75,
+      trust_level: preset.trust ?? 75,
       is_active: true,
       next_refresh_at: new Date().toISOString(),
     });
