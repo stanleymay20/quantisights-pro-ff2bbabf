@@ -99,85 +99,120 @@ const adapters: Record<string, VendorAdapter> = {
         );
       }
 
-      const pageSize = Math.min(
-        Math.max(1, Number((config.page_size as number | undefined) ?? 500)),
+      const base = endpoint.replace(/\/$/, "");
+      const headers = { "x-api-key": apiKey, Accept: "application/json" };
+      const perCountryLimit = Math.min(
+        Math.max(1, Number((config.per_country_limit as number | undefined) ?? 50)),
         500,
       );
-      const maxPages = Math.min(
-        Math.max(1, Number((config.max_pages as number | undefined) ?? 4)),
-        10,
+      // max_countries = 0 → all countries (only safe in backfill mode)
+      const maxCountries = Math.max(
+        0,
+        Number((config.max_countries as number | undefined) ?? 50),
       );
-      const domainFilter = (config.domain as string | undefined) ?? "";
       const isoFilter = (config.iso3 as string | undefined) ?? "";
+      const domainFilter = (config.domain as string | undefined) ?? "";
 
       const warnings: string[] = [];
       const out: VendorRow[] = [];
-      let cursor: string | null = null;
-      let pages = 0;
 
-      while (pages < maxPages) {
-        const qs = new URLSearchParams({ limit: String(pageSize) });
-        if (domainFilter) qs.set("domain", domainFilter);
-        if (isoFilter) qs.set("iso3", isoFilter);
-        if (cursor) qs.set("cursor", cursor);
-
-        const url = `${endpoint.replace(/\/$/, "")}/signals?${qs.toString()}`;
-        const r = await fetch(url, {
-          headers: { "x-api-key": apiKey, Accept: "application/json" },
-        });
-
-        // Soft-fail on rate limits — don't break the whole ingestion system
-        if (r.status === 429 || r.status === 503) {
-          const msg = `AICIS rate-limit/throttle (HTTP ${r.status}) on page ${pages + 1}; stopping early.`;
-          log.warn("aicis throttled", { status: r.status, page: pages + 1 });
-          warnings.push(msg);
-          break;
-        }
+      // ── Step 1: discover the country universe ─────────────────────────
+      let countries: string[] = [];
+      if (isoFilter) {
+        countries = [isoFilter.toUpperCase()];
+      } else {
+        const r = await fetch(`${base}/countries`, { headers });
         if (!r.ok) {
-          const body = await r.text().catch(() => "");
-          throw new Error(`AICIS bridge HTTP ${r.status}: ${body.slice(0, 200)}`);
+          throw new Error(`AICIS /countries HTTP ${r.status}`);
         }
-
-        const j = (await r.json()) as {
-          data?: AicisSignal[];
-          next_cursor?: string | null;
-          pagination?: { next_cursor?: string | null };
-        };
-        const signals = Array.isArray(j.data) ? j.data : [];
-        pages += 1;
-
-        for (const s of signals) {
-          const numeric = Number(s.value);
-          if (!Number.isFinite(numeric)) continue;
-          const iso3 = (s.iso3 ?? "GLB").toUpperCase();
-          const domain = (s.domain ?? "general").toLowerCase();
-          const metric = (s.metric_name ?? "unknown").toLowerCase();
-          out.push({
-            metric_key: `aicis.${domain}.${metric}.${iso3}`,
-            value: numeric,
-            unit: s.unit ?? undefined,
-            period: s.period ?? undefined,
-            region: iso3,
-            metadata: {
-              signal_id: s.signal_id,
-              domain,
-              iso3,
-              confidence: s.confidence,
-              freshness_score: s.freshness_score,
-              source_provider: s.source_provider,
-              source_url: s.source_url,
-              provenance_observed_at: s.provenance_observed_at,
-              entity_name: s.entity_name,
-              entity_type: s.entity_type,
-              sovereignty_status: s.sovereignty_status,
-            },
-          });
-        }
-
-        cursor = j.next_cursor ?? j.pagination?.next_cursor ?? null;
-        // Stop when bridge says no more, or page came back short
-        if (!cursor || signals.length < pageSize) break;
+        const j = (await r.json()) as { data?: Array<{ iso3?: string; total_metrics?: number }> };
+        const list = Array.isArray(j.data) ? j.data : [];
+        // Sort by total_metrics desc so we always get richest countries first
+        list.sort((a, b) => (b.total_metrics ?? 0) - (a.total_metrics ?? 0));
+        countries = list
+          .map((c) => (c.iso3 ?? "").toUpperCase())
+          .filter((s) => s.length === 3);
+        if (maxCountries > 0) countries = countries.slice(0, maxCountries);
       }
+
+      log.info("aicis country sweep", {
+        total_countries: countries.length,
+        per_country_limit: perCountryLimit,
+      });
+
+      // ── Step 2: per-country signal pull (small batches, throttle-aware) ──
+      // AICIS bridge rate-limits aggressive parallelism; keep batch tiny.
+      const BATCH_SIZE = 3;
+      const INTER_BATCH_DELAY_MS = 250;
+      let pages = 0;
+      let throttled = false;
+
+      for (let i = 0; i < countries.length && !throttled; i += BATCH_SIZE) {
+        const batch = countries.slice(i, i + BATCH_SIZE);
+        const fetches = batch.map(async (iso3) => {
+          const qs = new URLSearchParams({ iso3, limit: String(perCountryLimit) });
+          if (domainFilter) qs.set("domain", domainFilter);
+          const r = await fetch(`${base}/signals?${qs.toString()}`, { headers });
+          return { iso3, r };
+        });
+        const settled = await Promise.allSettled(fetches);
+
+        for (const s of settled) {
+          pages += 1;
+          if (s.status === "rejected") {
+            warnings.push(`AICIS network error: ${String(s.reason).slice(0, 100)}`);
+            continue;
+          }
+          const { iso3, r } = s.value;
+          if (r.status === 429 || r.status === 503) {
+            warnings.push(`AICIS throttled on ${iso3} (HTTP ${r.status}); stopping sweep early.`);
+            throttled = true;
+            break;
+          }
+          if (!r.ok) {
+            warnings.push(`AICIS ${iso3} HTTP ${r.status}; skipped.`);
+            continue;
+          }
+          const j = (await r.json()) as { data?: AicisSignal[] };
+          const signals = Array.isArray(j.data) ? j.data : [];
+          for (const sig of signals) {
+            const numeric = Number(sig.value);
+            if (!Number.isFinite(numeric)) continue;
+            const sIso = (sig.iso3 ?? iso3).toUpperCase();
+            const domain = (sig.domain ?? "general").toLowerCase();
+            const metric = (sig.metric_name ?? "unknown").toLowerCase();
+            out.push({
+              metric_key: `aicis.${domain}.${metric}.${sIso}`,
+              value: numeric,
+              unit: sig.unit ?? undefined,
+              period: sig.period ?? undefined,
+              region: sIso,
+              metadata: {
+                signal_id: sig.signal_id,
+                domain,
+                iso3: sIso,
+                confidence: sig.confidence,
+                freshness_score: sig.freshness_score,
+                source_provider: sig.source_provider,
+                source_url: sig.source_url,
+                provenance_observed_at: sig.provenance_observed_at,
+                entity_name: sig.entity_name,
+                entity_type: sig.entity_type,
+                sovereignty_status: sig.sovereignty_status,
+              },
+            });
+          }
+        }
+        if (!throttled && i + BATCH_SIZE < countries.length) {
+          await new Promise((res) => setTimeout(res, INTER_BATCH_DELAY_MS));
+        }
+      }
+
+      log.info("aicis sweep complete", {
+        countries_swept: pages,
+        rows_collected: out.length,
+        warnings: warnings.length,
+      });
 
       if (out.length === 0) {
         throw new Error("AICIS bridge returned 0 usable signals — refusing empty ingest.");
@@ -329,6 +364,24 @@ Deno.serve(async (req) => {
         .eq("id", body.source_id as string)
         .maybeSingle();
       if (data) sources = [data];
+    } else if (mode === "backfill" && body.source_id) {
+      // BACKFILL: one-shot deep pull. For AICIS, sweeps ALL countries.
+      const { data } = await supabase
+        .from("external_data_sources")
+        .select("*")
+        .eq("id", body.source_id as string)
+        .maybeSingle();
+      if (data) {
+        const cfg = (data.config as Record<string, unknown>) ?? {};
+        sources = [{
+          ...data,
+          config: {
+            ...cfg,
+            per_country_limit: Number(body.per_country_limit ?? cfg.per_country_limit ?? 100),
+            max_countries: Number(body.max_countries ?? 0), // 0 = all countries
+          },
+        }];
+      }
     } else if (mode === "test" && body.vendor_key) {
       const adapter = adapters[body.vendor_key as string];
       if (!adapter) return json({ error: "Unknown vendor" }, 400);
@@ -413,42 +466,58 @@ Deno.serve(async (req) => {
           log,
         });
 
+        // Batch upsert (500 rows/chunk) + dedupe within request to avoid
+        // "ON CONFLICT DO UPDATE command cannot affect row a second time"
         let upserted = 0;
-        for (const row of rows) {
-          const numeric = Number(row.value);
-          if (!Number.isFinite(numeric)) continue;
-          const orgId = (src.organization_id as string) ?? null;
-          const metadata = {
-            ...(row.metadata ?? {}),
-            vendor_key: src.vendor_key,
-            license: src.license_type,
+        const orgId = (src.organization_id as string) ?? null;
+        const seen = new Set<string>();
+        const payload = rows
+          .filter((row) => Number.isFinite(Number(row.value)))
+          .map((row) => ({
             organization_id: orgId,
-          };
+            category: (src.category as string) ?? "macro",
+            metric_name: row.metric_key,
+            value: Number(row.value),
+            unit: row.unit ?? null,
+            period_start: row.period ?? null,
+            region: row.region ?? null,
+            source: src.vendor_name as string,
+            source_url: (src.endpoint_url as string) ?? null,
+            confidence_grade:
+              ((src.trust_level as number) ?? 70) >= 85 ? "A" : "B",
+            metadata: {
+              ...(row.metadata ?? {}),
+              vendor_key: src.vendor_key,
+              license: src.license_type,
+              organization_id: orgId,
+            },
+          }))
+          .filter((r) => {
+            const k = `${r.organization_id ?? "_"}|${r.metric_name}|${r.source}|${r.period_start ?? ""}`;
+            if (seen.has(k)) return false;
+            seen.add(k);
+            return true;
+          });
+
+        const CHUNK = 500;
+        for (let i = 0; i < payload.length; i += CHUNK) {
+          const slice = payload.slice(i, i + CHUNK);
           const { error } = await supabase
             .from("internal_reference_data")
-            .upsert(
-              {
-                organization_id: orgId,
-                category: (src.category as string) ?? "macro",
-                metric_name: row.metric_key,
-                value: numeric,
-                unit: row.unit ?? null,
-                period_start: row.period ?? null,
-                region: row.region ?? null,
-                source: src.vendor_name as string,
-                source_url: (src.endpoint_url as string) ?? null,
-                confidence_grade:
-                  ((src.trust_level as number) ?? 70) >= 85 ? "A" : "B",
-                metadata,
-              },
-              { onConflict: "organization_id,metric_name,source,period_start", ignoreDuplicates: false },
-            );
-          if (!error) upserted++;
-          else log.warn("upsert failed", {
-            vendor_key: src.vendor_key,
-            metric: row.metric_key,
-            error: error.message,
-          });
+            .upsert(slice, {
+              onConflict: "organization_id,metric_name,source,period_start",
+              ignoreDuplicates: false,
+            });
+          if (error) {
+            log.warn("batch upsert failed", {
+              vendor_key: src.vendor_key,
+              chunk_start: i,
+              chunk_size: slice.length,
+              error: error.message,
+            });
+          } else {
+            upserted += slice.length;
+          }
         }
 
         const nextRefresh = new Date(
