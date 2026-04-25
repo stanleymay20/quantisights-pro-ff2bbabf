@@ -685,9 +685,91 @@ export default function DataHub() {
               )}
             </CardContent>
           </Card>
-        </TabsContent>
 
-        {/* ─── DATA QUALITY ─────────────────────────────────────────── */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent sync runs</CardTitle>
+              <CardDescription>
+                Last 50 refresh attempts across all reference sources.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {runs.length === 0 ? (
+                <EmptyState
+                  icon={<Clock className="h-8 w-8" />}
+                  title="No sync runs yet"
+                  description="Trigger a manual sync above or wait for the next scheduled refresh — runs will appear here with row counts and any errors."
+                />
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Started</TableHead>
+                      <TableHead>Vendor</TableHead>
+                      <TableHead>Trigger</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Fetched</TableHead>
+                      <TableHead className="text-right">Saved</TableHead>
+                      <TableHead className="text-right">Pages</TableHead>
+                      <TableHead className="text-right">Duration</TableHead>
+                      <TableHead>Issue</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {runs.map((r) => (
+                      <TableRow key={r.id}>
+                        <TableCell className="text-xs">
+                          <div>{fmtAge(r.started_at)}</div>
+                          <div className="text-muted-foreground">
+                            {format(new Date(r.started_at), "PPp")}
+                          </div>
+                        </TableCell>
+                        <TableCell className="font-mono text-xs">{r.vendor_key}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-xs capitalize">{r.trigger}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          {r.status === "success" ? (
+                            <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20">
+                              <CheckCircle2 className="h-3 w-3 mr-1" /> Success
+                            </Badge>
+                          ) : r.status === "partial" ? (
+                            <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-400 hover:bg-amber-500/20">
+                              Partial
+                            </Badge>
+                          ) : r.status === "running" ? (
+                            <Badge variant="secondary">
+                              <Loader2 className="h-3 w-3 mr-1 animate-spin" /> Running
+                            </Badge>
+                          ) : (
+                            <Badge variant="destructive">
+                              <AlertTriangle className="h-3 w-3 mr-1" /> Error
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">{num(r.rows_fetched, 0)}</TableCell>
+                        <TableCell className="text-right tabular-nums">{num(r.rows_upserted, 0)}</TableCell>
+                        <TableCell className="text-right tabular-nums">{r.pages_fetched}</TableCell>
+                        <TableCell className="text-right text-xs text-muted-foreground">
+                          {r.duration_ms !== null ? `${(r.duration_ms / 1000).toFixed(1)}s` : "—"}
+                        </TableCell>
+                        <TableCell className="max-w-[220px]">
+                          {r.error_message ? (
+                            <span className="text-xs text-destructive truncate block" title={r.error_message}>
+                              {r.error_message}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
         <TabsContent value="quality" className="space-y-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <KpiCard
