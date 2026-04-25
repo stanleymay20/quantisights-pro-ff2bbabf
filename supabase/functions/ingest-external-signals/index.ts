@@ -330,6 +330,24 @@ Deno.serve(async (req) => {
         .eq("id", body.source_id as string)
         .maybeSingle();
       if (data) sources = [data];
+    } else if (mode === "backfill" && body.source_id) {
+      // BACKFILL: one-shot deep pull, raises max_pages to drain the vendor cursor
+      const { data } = await supabase
+        .from("external_data_sources")
+        .select("*")
+        .eq("id", body.source_id as string)
+        .maybeSingle();
+      if (data) {
+        const cfg = (data.config as Record<string, unknown>) ?? {};
+        sources = [{
+          ...data,
+          config: {
+            ...cfg,
+            page_size: Number(body.page_size ?? cfg.page_size ?? 1000),
+            max_pages: Number(body.max_pages ?? 200),
+          },
+        }];
+      }
     } else if (mode === "test" && body.vendor_key) {
       const adapter = adapters[body.vendor_key as string];
       if (!adapter) return json({ error: "Unknown vendor" }, 400);
