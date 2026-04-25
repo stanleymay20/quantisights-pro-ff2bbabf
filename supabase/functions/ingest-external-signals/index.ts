@@ -99,70 +99,89 @@ const adapters: Record<string, VendorAdapter> = {
         );
       }
 
-      const pageSize = Math.min(
-        Math.max(1, Number((config.page_size as number | undefined) ?? 500)),
-        1000,
+      const base = endpoint.replace(/\/$/, "");
+      const headers = { "x-api-key": apiKey, Accept: "application/json" };
+      const perCountryLimit = Math.min(
+        Math.max(1, Number((config.per_country_limit as number | undefined) ?? 50)),
+        500,
       );
-      // Default 10 pages (5k rows) per scheduled sync; backfill mode raises this to 200 (100k rows)
-      const maxPages = Math.min(
-        Math.max(1, Number((config.max_pages as number | undefined) ?? 10)),
-        200,
+      // max_countries = 0 → all countries (only safe in backfill mode)
+      const maxCountries = Math.max(
+        0,
+        Number((config.max_countries as number | undefined) ?? 50),
       );
-      const domainFilter = (config.domain as string | undefined) ?? "";
       const isoFilter = (config.iso3 as string | undefined) ?? "";
+      const domainFilter = (config.domain as string | undefined) ?? "";
 
       const warnings: string[] = [];
       const out: VendorRow[] = [];
-      let cursor: string | null = null;
+
+      // ── Step 1: discover the country universe ─────────────────────────
+      let countries: string[] = [];
+      if (isoFilter) {
+        countries = [isoFilter.toUpperCase()];
+      } else {
+        const r = await fetch(`${base}/countries`, { headers });
+        if (!r.ok) {
+          throw new Error(`AICIS /countries HTTP ${r.status}`);
+        }
+        const j = (await r.json()) as { data?: Array<{ iso3?: string; total_metrics?: number }> };
+        const list = Array.isArray(j.data) ? j.data : [];
+        // Sort by total_metrics desc so we always get richest countries first
+        list.sort((a, b) => (b.total_metrics ?? 0) - (a.total_metrics ?? 0));
+        countries = list
+          .map((c) => (c.iso3 ?? "").toUpperCase())
+          .filter((s) => s.length === 3);
+        if (maxCountries > 0) countries = countries.slice(0, maxCountries);
+      }
+
+      log.info("aicis country sweep", {
+        total_countries: countries.length,
+        per_country_limit: perCountryLimit,
+      });
+
+      // ── Step 2: per-country signal pull ───────────────────────────────
       let pages = 0;
-
-      while (pages < maxPages) {
-        const qs = new URLSearchParams({ limit: String(pageSize) });
-        if (domainFilter) qs.set("domain", domainFilter);
-        if (isoFilter) qs.set("iso3", isoFilter);
-        if (cursor) qs.set("cursor", cursor);
-
-        const url = `${endpoint.replace(/\/$/, "")}/signals?${qs.toString()}`;
-        const r = await fetch(url, {
-          headers: { "x-api-key": apiKey, Accept: "application/json" },
+      let throttled = false;
+      for (const iso3 of countries) {
+        if (throttled) break;
+        const qs = new URLSearchParams({
+          iso3,
+          limit: String(perCountryLimit),
         });
+        if (domainFilter) qs.set("domain", domainFilter);
+        const url = `${base}/signals?${qs.toString()}`;
+        const r = await fetch(url, { headers });
+        pages += 1;
 
-        // Soft-fail on rate limits — don't break the whole ingestion system
         if (r.status === 429 || r.status === 503) {
-          const msg = `AICIS rate-limit/throttle (HTTP ${r.status}) on page ${pages + 1}; stopping early.`;
-          log.warn("aicis throttled", { status: r.status, page: pages + 1 });
-          warnings.push(msg);
+          warnings.push(`AICIS throttled on ${iso3} (HTTP ${r.status}); stopping sweep early.`);
+          throttled = true;
           break;
         }
         if (!r.ok) {
-          const body = await r.text().catch(() => "");
-          throw new Error(`AICIS bridge HTTP ${r.status}: ${body.slice(0, 200)}`);
+          warnings.push(`AICIS ${iso3} HTTP ${r.status}; skipped.`);
+          continue;
         }
 
-        const j = (await r.json()) as {
-          data?: AicisSignal[];
-          next_cursor?: string | null;
-          pagination?: { next_cursor?: string | null };
-        };
+        const j = (await r.json()) as { data?: AicisSignal[] };
         const signals = Array.isArray(j.data) ? j.data : [];
-        pages += 1;
-
         for (const s of signals) {
           const numeric = Number(s.value);
           if (!Number.isFinite(numeric)) continue;
-          const iso3 = (s.iso3 ?? "GLB").toUpperCase();
+          const sIso = (s.iso3 ?? iso3).toUpperCase();
           const domain = (s.domain ?? "general").toLowerCase();
           const metric = (s.metric_name ?? "unknown").toLowerCase();
           out.push({
-            metric_key: `aicis.${domain}.${metric}.${iso3}`,
+            metric_key: `aicis.${domain}.${metric}.${sIso}`,
             value: numeric,
             unit: s.unit ?? undefined,
             period: s.period ?? undefined,
-            region: iso3,
+            region: sIso,
             metadata: {
               signal_id: s.signal_id,
               domain,
-              iso3,
+              iso3: sIso,
               confidence: s.confidence,
               freshness_score: s.freshness_score,
               source_provider: s.source_provider,
@@ -174,10 +193,6 @@ const adapters: Record<string, VendorAdapter> = {
             },
           });
         }
-
-        cursor = j.next_cursor ?? j.pagination?.next_cursor ?? null;
-        // Stop when bridge says no more, or page came back short
-        if (!cursor || signals.length < pageSize) break;
       }
 
       if (out.length === 0) {
