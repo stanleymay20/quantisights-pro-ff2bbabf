@@ -346,7 +346,7 @@ Deno.serve(async (req) => {
         .maybeSingle();
       if (data) sources = [data];
     } else if (mode === "backfill" && body.source_id) {
-      // BACKFILL: one-shot deep pull, raises max_pages to drain the vendor cursor
+      // BACKFILL: one-shot deep pull. For AICIS, sweeps ALL countries.
       const { data } = await supabase
         .from("external_data_sources")
         .select("*")
@@ -358,8 +358,8 @@ Deno.serve(async (req) => {
           ...data,
           config: {
             ...cfg,
-            page_size: Number(body.page_size ?? cfg.page_size ?? 1000),
-            max_pages: Number(body.max_pages ?? 200),
+            per_country_limit: Number(body.per_country_limit ?? cfg.per_country_limit ?? 100),
+            max_countries: Number(body.max_countries ?? 0), // 0 = all countries
           },
         }];
       }
