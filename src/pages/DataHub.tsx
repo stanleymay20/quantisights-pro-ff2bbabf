@@ -77,6 +77,22 @@ interface VendorSource {
   license_type: string | null;
 }
 
+interface SyncRun {
+  id: string;
+  source_id: string | null;
+  vendor_key: string;
+  trigger: string;
+  actor: string | null;
+  status: string;
+  rows_fetched: number;
+  rows_upserted: number;
+  pages_fetched: number;
+  error_message: string | null;
+  started_at: string;
+  completed_at: string | null;
+  duration_ms: number | null;
+}
+
 const ALL = "__all__";
 const AICIS_VENDOR_KEY = "aicis";
 
