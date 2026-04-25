@@ -4109,6 +4109,75 @@ export type Database = {
           },
         ]
       }
+      external_sync_runs: {
+        Row: {
+          actor: string | null
+          completed_at: string | null
+          duration_ms: number | null
+          error_message: string | null
+          id: string
+          metadata: Json
+          organization_id: string | null
+          pages_fetched: number
+          rows_fetched: number
+          rows_upserted: number
+          source_id: string | null
+          started_at: string
+          status: string
+          trigger: string
+          vendor_key: string
+        }
+        Insert: {
+          actor?: string | null
+          completed_at?: string | null
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json
+          organization_id?: string | null
+          pages_fetched?: number
+          rows_fetched?: number
+          rows_upserted?: number
+          source_id?: string | null
+          started_at?: string
+          status?: string
+          trigger?: string
+          vendor_key: string
+        }
+        Update: {
+          actor?: string | null
+          completed_at?: string | null
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json
+          organization_id?: string | null
+          pages_fetched?: number
+          rows_fetched?: number
+          rows_upserted?: number
+          source_id?: string | null
+          started_at?: string
+          status?: string
+          trigger?: string
+          vendor_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "external_sync_runs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "external_sync_runs_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "external_data_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fairness_assessments: {
         Row: {
           assessment_status: string
@@ -7616,6 +7685,7 @@ export type Database = {
           metadata: Json
         }[]
       }
+      provision_aicis_for_org: { Args: { _org_id: string }; Returns: undefined }
       refresh_metric_aggregates: {
         Args: { _dataset_id?: string; _org_id: string; _period_type?: string }
         Returns: number
