@@ -25,6 +25,7 @@ interface VendorRow {
   value: number;
   unit?: string;
   period?: string;
+  region?: string;
   metadata?: Record<string, unknown>;
 }
 
@@ -33,35 +34,118 @@ interface VendorAdapter {
   fetch: (config: Record<string, unknown>) => Promise<VendorRow[]>;
 }
 
+// ── AICIS bridge config (shared platform license, read from Vault) ────────
+// Hybrid access model: Pro tier orgs use the shared platform credentials
+// below; Enterprise orgs may override per-tenant via config.endpoint_url +
+// config.api_key on their external_data_sources row.
+const AICIS_PLATFORM_ENDPOINT = Deno.env.get("AICIS_TEST_ENDPOINT_URL") ?? "";
+const AICIS_PLATFORM_API_KEY = Deno.env.get("AICIS_TEST_API_KEY") ?? "";
+
+interface AicisSignal {
+  signal_id: string;
+  metric_name: string;
+  value: number;
+  unit?: string | null;
+  period?: string | null;
+  domain?: string | null;
+  iso3?: string | null;
+  confidence?: number | null;
+  freshness_score?: number | null;
+  source_provider?: string | null;
+  source_url?: string | null;
+  provenance_observed_at?: string | null;
+  ingested_at?: string | null;
+  entity_name?: string | null;
+  entity_type?: string | null;
+  sovereignty_status?: string | null;
+}
+
 // ── Adapters ──────────────────────────────────────────────────────────────
 const adapters: Record<string, VendorAdapter> = {
   aicis: {
     vendor_key: "aicis",
     async fetch(config) {
-      // AICIS = Australian Industrial Chemicals Introduction Scheme.
-      // Public catalogue endpoint is unstable; production users provide
-      // a licensed feed URL via config.endpoint_url. We require an explicit
-      // endpoint — never fabricate.
-      const endpoint = (config.endpoint_url as string) ?? null;
-      if (!endpoint) {
+      // AICIS = Aggregated Country Intelligence Signals (Quantivis-licensed
+      // feed via the AICIS bridge). Pulls live signals across climate,
+      // economic, demographic and event domains keyed by ISO3 country.
+      //
+      // Per-tenant (Enterprise) override: config.endpoint_url + config.api_key.
+      // Otherwise uses the shared platform license from Vault.
+      const endpoint =
+        (config.endpoint_url as string | undefined) || AICIS_PLATFORM_ENDPOINT;
+      const apiKey =
+        (config.api_key as string | undefined) || AICIS_PLATFORM_API_KEY;
+
+      if (!endpoint || !apiKey) {
         throw new Error(
-          "AICIS adapter requires `config.endpoint_url` pointing at a licensed JSON feed. " +
-            "Strict Real Data Only — no fabricated fallback.",
+          "AICIS adapter requires AICIS_TEST_ENDPOINT_URL + AICIS_TEST_API_KEY " +
+            "in Vault (platform license), or per-tenant config.endpoint_url + " +
+            "config.api_key. Strict Real Data Only — no fabricated fallback.",
         );
       }
-      const r = await fetch(endpoint, { headers: { Accept: "application/json" } });
-      if (!r.ok) throw new Error(`AICIS HTTP ${r.status}`);
-      const j = (await r.json()) as Record<string, unknown>;
-      const total = typeof j.total === "number" ? j.total : null;
-      if (total === null) {
-        throw new Error("AICIS response missing `total` field — cannot ingest unverified value.");
+
+      // Pull the most recent signals page. Configurable page size keeps the
+      // ingest run bounded; cron schedules a fresh pull each interval.
+      const limit = Math.min(
+        Number((config.page_size as number | undefined) ?? 500),
+        2000,
+      );
+      const domainFilter = (config.domain as string | undefined) ?? "";
+      const isoFilter = (config.iso3 as string | undefined) ?? "";
+
+      const qs = new URLSearchParams({ limit: String(limit) });
+      if (domainFilter) qs.set("domain", domainFilter);
+      if (isoFilter) qs.set("iso3", isoFilter);
+
+      const url = `${endpoint.replace(/\/$/, "")}/signals?${qs.toString()}`;
+      const r = await fetch(url, {
+        headers: { "x-api-key": apiKey, Accept: "application/json" },
+      });
+      if (!r.ok) {
+        const body = await r.text().catch(() => "");
+        throw new Error(`AICIS bridge HTTP ${r.status}: ${body.slice(0, 200)}`);
       }
-      return [{
-        metric_key: "aicis.inventory.total_substances",
-        value: total,
-        period: new Date().toISOString().slice(0, 10),
-        metadata: { source_endpoint: endpoint },
-      }];
+      const j = (await r.json()) as { data?: AicisSignal[] };
+      const signals = Array.isArray(j.data) ? j.data : [];
+      if (signals.length === 0) {
+        throw new Error("AICIS bridge returned 0 signals — refusing empty ingest.");
+      }
+
+      const rows: VendorRow[] = [];
+      for (const s of signals) {
+        const numeric = Number(s.value);
+        if (!Number.isFinite(numeric)) continue;
+        const iso3 = (s.iso3 ?? "GLB").toUpperCase();
+        const domain = (s.domain ?? "general").toLowerCase();
+        const metric = (s.metric_name ?? "unknown").toLowerCase();
+        // Stable, deterministic key so cron reruns upsert in place.
+        const metric_key = `aicis.${domain}.${metric}.${iso3}`;
+        rows.push({
+          metric_key,
+          value: numeric,
+          unit: s.unit ?? undefined,
+          period: s.period ?? undefined,
+          region: iso3,
+          metadata: {
+            signal_id: s.signal_id,
+            domain,
+            iso3,
+            confidence: s.confidence,
+            freshness_score: s.freshness_score,
+            source_provider: s.source_provider,
+            source_url: s.source_url,
+            provenance_observed_at: s.provenance_observed_at,
+            entity_name: s.entity_name,
+            entity_type: s.entity_type,
+            sovereignty_status: s.sovereignty_status,
+          },
+        });
+      }
+
+      if (rows.length === 0) {
+        throw new Error("AICIS bridge returned signals but none had numeric values.");
+      }
+      return rows;
     },
   },
 
