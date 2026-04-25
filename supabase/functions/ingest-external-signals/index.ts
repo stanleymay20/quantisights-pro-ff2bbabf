@@ -461,42 +461,58 @@ Deno.serve(async (req) => {
           log,
         });
 
+        // Batch upsert (500 rows/chunk) + dedupe within request to avoid
+        // "ON CONFLICT DO UPDATE command cannot affect row a second time"
         let upserted = 0;
-        for (const row of rows) {
-          const numeric = Number(row.value);
-          if (!Number.isFinite(numeric)) continue;
-          const orgId = (src.organization_id as string) ?? null;
-          const metadata = {
-            ...(row.metadata ?? {}),
-            vendor_key: src.vendor_key,
-            license: src.license_type,
+        const orgId = (src.organization_id as string) ?? null;
+        const seen = new Set<string>();
+        const payload = rows
+          .filter((row) => Number.isFinite(Number(row.value)))
+          .map((row) => ({
             organization_id: orgId,
-          };
+            category: (src.category as string) ?? "macro",
+            metric_name: row.metric_key,
+            value: Number(row.value),
+            unit: row.unit ?? null,
+            period_start: row.period ?? null,
+            region: row.region ?? null,
+            source: src.vendor_name as string,
+            source_url: (src.endpoint_url as string) ?? null,
+            confidence_grade:
+              ((src.trust_level as number) ?? 70) >= 85 ? "A" : "B",
+            metadata: {
+              ...(row.metadata ?? {}),
+              vendor_key: src.vendor_key,
+              license: src.license_type,
+              organization_id: orgId,
+            },
+          }))
+          .filter((r) => {
+            const k = `${r.organization_id ?? "_"}|${r.metric_name}|${r.source}|${r.period_start ?? ""}`;
+            if (seen.has(k)) return false;
+            seen.add(k);
+            return true;
+          });
+
+        const CHUNK = 500;
+        for (let i = 0; i < payload.length; i += CHUNK) {
+          const slice = payload.slice(i, i + CHUNK);
           const { error } = await supabase
             .from("internal_reference_data")
-            .upsert(
-              {
-                organization_id: orgId,
-                category: (src.category as string) ?? "macro",
-                metric_name: row.metric_key,
-                value: numeric,
-                unit: row.unit ?? null,
-                period_start: row.period ?? null,
-                region: row.region ?? null,
-                source: src.vendor_name as string,
-                source_url: (src.endpoint_url as string) ?? null,
-                confidence_grade:
-                  ((src.trust_level as number) ?? 70) >= 85 ? "A" : "B",
-                metadata,
-              },
-              { onConflict: "organization_id,metric_name,source,period_start", ignoreDuplicates: false },
-            );
-          if (!error) upserted++;
-          else log.warn("upsert failed", {
-            vendor_key: src.vendor_key,
-            metric: row.metric_key,
-            error: error.message,
-          });
+            .upsert(slice, {
+              onConflict: "organization_id,metric_name,source,period_start",
+              ignoreDuplicates: false,
+            });
+          if (error) {
+            log.warn("batch upsert failed", {
+              vendor_key: src.vendor_key,
+              chunk_start: i,
+              chunk_size: slice.length,
+              error: error.message,
+            });
+          } else {
+            upserted += slice.length;
+          }
         }
 
         const nextRefresh = new Date(
