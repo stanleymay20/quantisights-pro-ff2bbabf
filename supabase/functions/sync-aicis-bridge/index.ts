@@ -27,8 +27,13 @@ const DATA_SURFACES = [
 ] as const;
 
 const PAGE_SIZE = 500;
-const MAX_PAGES = 20; // hard safety cap = 10k records / surface / run
+// Hard safety cap per surface per run.
+// Sized for full 211-country coverage across all domains:
+//   - /countries: ~211 rows (1 page)
+//   - /signals, /events, /predictions, /recommendations: up to ~50k rows (211 countries × multi-domain history)
+const MAX_PAGES = 100; // = 50,000 rows / surface / run
 const STALE_HOURS = 24;
+const EXPECTED_MIN_COUNTRIES = 211; // AICIS Bridge v2 country universe (UN + sovereign + dependencies)
 
 type Surface = (typeof DATA_SURFACES)[number];
 
