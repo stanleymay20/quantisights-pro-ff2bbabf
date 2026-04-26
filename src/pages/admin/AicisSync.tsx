@@ -121,7 +121,9 @@ function statusBadge(status: string | null, freshness?: string | null) {
 }
 
 export default function AicisSync() {
-  const { organization, role } = useOrganization();
+  const { currentOrg } = useOrganization();
+  const organization = currentOrg;
+  const role = currentOrg?.role;
   const { toast } = useToast();
   const [statuses, setStatuses] = useState<SurfaceStatus[]>([]);
   const [runs, setRuns] = useState<SyncRun[]>([]);
