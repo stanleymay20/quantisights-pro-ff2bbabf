@@ -139,7 +139,7 @@ serve(async (req) => {
 
     for (const m of metrics) {
       for (const period of periods) {
-        const ps = getPeriodStart(m.date, period);
+        const ps = getPeriodStart(String(m.date), period);
         const key = `${m.dataset_id || "null"}|${m.metric_type}|${period}|${ps}|${m.region || ""}|${m.segment || ""}`;
         const val = Number(m.value);
         if (isNaN(val)) continue;

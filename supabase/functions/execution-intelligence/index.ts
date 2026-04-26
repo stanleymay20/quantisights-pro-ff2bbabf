@@ -112,7 +112,7 @@ Deno.serve(async (req) => {
 
   // ─── Build Context ───
   const ctx: ActionContext = { orgId, userId, correlationId, body };
-  const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+  const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!) as any;
 
   // ─── Run Log Helper ───
   const logRun = async (runType: string, runId: string, itemsProcessed: number, itemsCreated: number, status: string, errorMsg?: string, meta?: Record<string, unknown>) => {

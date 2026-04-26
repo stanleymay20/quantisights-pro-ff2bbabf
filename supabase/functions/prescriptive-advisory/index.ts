@@ -29,7 +29,7 @@ serve(async (req) => {
       req.headers.get("Authorization"),
       "advisory",
     );
-    if (!access.ok) {
+    if (access.ok === false) {
       return new Response(JSON.stringify(access.body), {
         status: access.status,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -360,6 +360,7 @@ Rules:
             "Establish weekly risk monitoring",
             "Report mitigation progress within 14 days",
           ],
+          rag_adjustment: undefined,
         });
       }
     }

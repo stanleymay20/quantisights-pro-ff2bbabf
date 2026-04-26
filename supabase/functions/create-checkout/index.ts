@@ -54,7 +54,7 @@ serve(async (req) => {
         limit: 10,
       });
       hadTrial = existingSubs.data.some(
-        (s) => s.trial_start !== null || s.status === "trialing"
+        (s: any) => s.trial_start !== null || s.status === "trialing"
       );
     }
 
@@ -73,7 +73,7 @@ serve(async (req) => {
       status: 200,
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: (error instanceof Error ? error.message : String(error)) }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });

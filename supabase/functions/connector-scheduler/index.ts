@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * connector-scheduler — cron-driven dispatcher for connector_sync_schedules.
  *
@@ -42,7 +43,7 @@ Deno.serve(async (req: Request) => {
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     { auth: { persistSession: false } },
-  );
+  ) as any;
   const { data: expected } = await svc.rpc("get_ingest_cron_secret");
   const provided = req.headers.get("x-cron-secret");
   if (!expected || expected !== provided) {

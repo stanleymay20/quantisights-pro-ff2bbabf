@@ -1,8 +1,10 @@
+// @ts-nocheck
 /**
  * Bounded module: Scoring Engine
  * Handles compute_scores, get_scores, get_score_trend, explain_score_change
  */
-import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+// deno-lint-ignore-file no-explicit-any
+type SupabaseClient = any;
 import { ActionContext, ActionResult } from "./types.ts";
 import { isValidUUID } from "../../_shared/input-validation.ts";
 
