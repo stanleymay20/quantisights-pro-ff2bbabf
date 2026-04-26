@@ -108,7 +108,7 @@ Deno.serve(async (req: Request) => {
         Deno.env.get("SUPABASE_URL")!,
         Deno.env.get("SUPABASE_ANON_KEY")!,
         { global: { headers: { Authorization: authHeader } } },
-      );
+      ) as any;
       const { data: u, error: uErr } = await userClient.auth.getUser();
       if (uErr || !u?.user) return jsonResponse(401, { error: "Invalid auth" });
       actorId = u.user.id;

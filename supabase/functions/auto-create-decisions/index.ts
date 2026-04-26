@@ -25,7 +25,7 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!,
       { global: { headers: { Authorization: authHeader } } }
-    );
+    ) as any;
 
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
@@ -53,7 +53,7 @@ serve(async (req) => {
     const serviceSupabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    );
+    ) as any;
 
     // ── Step 1: Fetch open advisories ──
     let advisoryQuery = serviceSupabase
