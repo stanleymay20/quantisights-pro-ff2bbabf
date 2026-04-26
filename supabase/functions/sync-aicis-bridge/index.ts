@@ -530,41 +530,59 @@ Deno.serve(async (req: Request) => {
     );
   }
 
-  // Identify caller (must be admin/owner of an org)
-  const authHeader = req.headers.get("Authorization");
-  if (!authHeader) {
-    return new Response(JSON.stringify({ error: "unauthorized" }), {
-      status: 401,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
-
-  const userClient = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_ANON_KEY")!, {
-    global: { headers: { Authorization: authHeader } },
-  });
-  const { data: userRes, error: userErr } = await userClient.auth.getUser();
-  if (userErr || !userRes.user) {
-    return new Response(JSON.stringify({ error: "invalid token" }), {
-      status: 401,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
-  const user = userRes.user;
-
   const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
+  const CRON_SECRET = Deno.env.get("INGEST_CRON_SECRET");
+  const cronHeader = req.headers.get("x-cron-secret");
 
-  // Resolve org and role
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("organization_id")
-    .eq("user_id", user.id)
-    .maybeSingle();
-  const orgId = profile?.organization_id;
-  if (!orgId) {
-    return new Response(JSON.stringify({ error: "no organization" }), {
-      status: 403,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+  // Parse body early so we can support cron-triggered, multi-org sweeps
+  let body: any = {};
+  try {
+    body = await req.json();
+  } catch {
+    body = {};
+  }
+
+  let user: { id: string } | null = null;
+  let orgId: string | null = body.organization_id ?? null;
+  const isCron = !!CRON_SECRET && cronHeader === CRON_SECRET;
+
+  if (!isCron) {
+    // User-triggered: require valid JWT
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const userClient = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_ANON_KEY")!, {
+      global: { headers: { Authorization: authHeader } },
     });
+    const { data: userRes, error: userErr } = await userClient.auth.getUser();
+    if (userErr || !userRes.user) {
+      return new Response(JSON.stringify({ error: "invalid token" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    user = { id: userRes.user.id };
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("organization_id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    orgId = profile?.organization_id ?? null;
+    if (!orgId) {
+      return new Response(JSON.stringify({ error: "no organization" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+  } else if (!orgId) {
+    return new Response(
+      JSON.stringify({ error: "cron trigger requires organization_id in body" }),
+      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
   }
 
   // Body params
