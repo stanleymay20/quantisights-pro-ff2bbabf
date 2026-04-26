@@ -54,7 +54,7 @@ serve(async (req) => {
         limit: 10,
       });
       hadTrial = existingSubs.data.some(
-        (s) => s.trial_start !== null || s.status === "trialing"
+        (s: any) => s.trial_start !== null || s.status === "trialing"
       );
     }
 
