@@ -21,7 +21,8 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-type SvcClient = ReturnType<typeof createClient>;
+// deno-lint-ignore no-explicit-any
+type SvcClient = any;
 
 export interface ExtractedRow {
   /** Raw payload from the source (CSV row, REST item, etc.) */
