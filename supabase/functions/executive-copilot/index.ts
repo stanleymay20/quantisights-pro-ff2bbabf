@@ -166,7 +166,7 @@ serve(async (req) => {
     // ══════════════════════════════════════════════════════════════════
     // FETCH ALL CONTEXT IN PARALLEL — including ACTUAL dataset metrics
     // ══════════════════════════════════════════════════════════════════
-    const fetchPromises: Promise<any>[] = [
+    const fetchPromises: Array<PromiseLike<any>> = [
       // 0: Risk index
       serviceClient
         .from("executive_risk_index")
