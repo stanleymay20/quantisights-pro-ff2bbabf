@@ -43,7 +43,7 @@ serve(async (req) => {
       limit: 5,
     });
     const activeSubs = subscriptions.data.filter(
-      (s) => s.status === "active" || s.status === "trialing"
+      (s: any) => s.status === "active" || s.status === "trialing"
     );
 
     const hasActiveSub = activeSubs.length > 0;
