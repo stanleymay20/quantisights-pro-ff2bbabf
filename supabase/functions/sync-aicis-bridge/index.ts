@@ -585,20 +585,13 @@ Deno.serve(async (req: Request) => {
     );
   }
 
-  // Body params
-  let body: any = {};
-  try {
-    body = await req.json();
-  } catch {
-    body = {};
-  }
-  const triggerType = body.trigger_type ?? "manual";
+  const triggerType = body.trigger_type ?? (isCron ? "cron" : "manual");
   const requestedSurfaces: Surface[] = Array.isArray(body.surfaces) && body.surfaces.length
     ? (body.surfaces as Surface[]).filter((s) => DATA_SURFACES.includes(s))
     : [...DATA_SURFACES];
 
-  // For manual triggers, require admin/owner
-  if (triggerType === "manual") {
+  // For manual triggers (user-initiated), require admin/owner
+  if (triggerType === "manual" && user) {
     const { data: member } = await supabase
       .from("organization_members")
       .select("role")
@@ -614,7 +607,12 @@ Deno.serve(async (req: Request) => {
     }
   }
 
-  log("info", "sync_started", { org_id: orgId, user_id: user.id, surfaces: requestedSurfaces.length });
+  log("info", "sync_started", {
+    org_id: orgId,
+    user_id: user?.id ?? null,
+    is_cron: isCron,
+    surfaces: requestedSurfaces.length,
+  });
 
   // 1. Catalog (introspection — schema fingerprints)
   const catalogRes = await bridgeFetch(BRIDGE_URL, BRIDGE_KEY, "/catalog");
