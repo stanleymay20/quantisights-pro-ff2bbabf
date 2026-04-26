@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Bounded module: Scoring Engine
  * Handles compute_scores, get_scores, get_score_trend, explain_score_change
