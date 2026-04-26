@@ -27,8 +27,13 @@ const DATA_SURFACES = [
 ] as const;
 
 const PAGE_SIZE = 500;
-const MAX_PAGES = 20; // hard safety cap = 10k records / surface / run
+// Hard safety cap per surface per run.
+// Sized for full 211-country coverage across all domains:
+//   - /countries: ~211 rows (1 page)
+//   - /signals, /events, /predictions, /recommendations: up to ~50k rows (211 countries × multi-domain history)
+const MAX_PAGES = 100; // = 50,000 rows / surface / run
 const STALE_HOURS = 24;
+const EXPECTED_MIN_COUNTRIES = 211; // AICIS Bridge v2 country universe (UN + sovereign + dependencies)
 
 type Surface = (typeof DATA_SURFACES)[number];
 
@@ -338,6 +343,37 @@ async function syncSurface(
       details: {},
     });
   }
+  // Country-universe completeness check (only for /countries surface)
+  if (surface === "countries") {
+    const distinctCountriesPulled = seenIds.size;
+    if (distinctCountriesPulled < EXPECTED_MIN_COUNTRIES) {
+      qcInserts.push({
+        organization_id: orgId,
+        run_id: runId,
+        surface,
+        check_type: "coverage_incomplete",
+        severity: "error",
+        passed: false,
+        count_affected: EXPECTED_MIN_COUNTRIES - distinctCountriesPulled,
+        details: {
+          expected_min: EXPECTED_MIN_COUNTRIES,
+          observed: distinctCountriesPulled,
+          message: `AICIS country coverage below expected universe (${distinctCountriesPulled}/${EXPECTED_MIN_COUNTRIES})`,
+        },
+      });
+    } else {
+      qcInserts.push({
+        organization_id: orgId,
+        run_id: runId,
+        surface,
+        check_type: "coverage_complete",
+        severity: "info",
+        passed: true,
+        count_affected: distinctCountriesPulled,
+        details: { observed: distinctCountriesPulled, expected_min: EXPECTED_MIN_COUNTRIES },
+      });
+    }
+  }
   // Schema drift: compare keys against catalog
   if (catalogSchema && catalogSchema[surface] && pulled > 0) {
     const expected: string[] = Array.isArray(catalogSchema[surface])
@@ -494,57 +530,68 @@ Deno.serve(async (req: Request) => {
     );
   }
 
-  // Identify caller (must be admin/owner of an org)
-  const authHeader = req.headers.get("Authorization");
-  if (!authHeader) {
-    return new Response(JSON.stringify({ error: "unauthorized" }), {
-      status: 401,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
-
-  const userClient = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_ANON_KEY")!, {
-    global: { headers: { Authorization: authHeader } },
-  });
-  const { data: userRes, error: userErr } = await userClient.auth.getUser();
-  if (userErr || !userRes.user) {
-    return new Response(JSON.stringify({ error: "invalid token" }), {
-      status: 401,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
-  const user = userRes.user;
-
   const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
+  const CRON_SECRET = Deno.env.get("INGEST_CRON_SECRET");
+  const cronHeader = req.headers.get("x-cron-secret");
 
-  // Resolve org and role
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("organization_id")
-    .eq("user_id", user.id)
-    .maybeSingle();
-  const orgId = profile?.organization_id;
-  if (!orgId) {
-    return new Response(JSON.stringify({ error: "no organization" }), {
-      status: 403,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
-
-  // Body params
+  // Parse body early so we can support cron-triggered, multi-org sweeps
   let body: any = {};
   try {
     body = await req.json();
   } catch {
     body = {};
   }
-  const triggerType = body.trigger_type ?? "manual";
+
+  let user: { id: string } | null = null;
+  let orgId: string | null = body.organization_id ?? null;
+  const isCron = !!CRON_SECRET && cronHeader === CRON_SECRET;
+
+  if (!isCron) {
+    // User-triggered: require valid JWT
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const userClient = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_ANON_KEY")!, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: userRes, error: userErr } = await userClient.auth.getUser();
+    if (userErr || !userRes.user) {
+      return new Response(JSON.stringify({ error: "invalid token" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    user = { id: userRes.user.id };
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("organization_id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    orgId = profile?.organization_id ?? null;
+    if (!orgId) {
+      return new Response(JSON.stringify({ error: "no organization" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+  } else if (!orgId) {
+    return new Response(
+      JSON.stringify({ error: "cron trigger requires organization_id in body" }),
+      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
+  }
+
+  const triggerType = body.trigger_type ?? (isCron ? "cron" : "manual");
   const requestedSurfaces: Surface[] = Array.isArray(body.surfaces) && body.surfaces.length
     ? (body.surfaces as Surface[]).filter((s) => DATA_SURFACES.includes(s))
     : [...DATA_SURFACES];
 
-  // For manual triggers, require admin/owner
-  if (triggerType === "manual") {
+  // For manual triggers (user-initiated), require admin/owner
+  if (triggerType === "manual" && user) {
     const { data: member } = await supabase
       .from("organization_members")
       .select("role")
@@ -560,7 +607,12 @@ Deno.serve(async (req: Request) => {
     }
   }
 
-  log("info", "sync_started", { org_id: orgId, user_id: user.id, surfaces: requestedSurfaces.length });
+  log("info", "sync_started", {
+    org_id: orgId,
+    user_id: user?.id ?? null,
+    is_cron: isCron,
+    surfaces: requestedSurfaces.length,
+  });
 
   // 1. Catalog (introspection — schema fingerprints)
   const catalogRes = await bridgeFetch(BRIDGE_URL, BRIDGE_KEY, "/catalog");
@@ -585,7 +637,7 @@ Deno.serve(async (req: Request) => {
         surface,
         BRIDGE_URL,
         BRIDGE_KEY,
-        user.id,
+        user?.id ?? null,
         triggerType,
         catalogSchema,
       );
@@ -631,8 +683,8 @@ Deno.serve(async (req: Request) => {
   // Audit
   await supabase.from("audit_log").insert({
     organization_id: orgId,
-    actor_id: user.id,
-    actor_type: "user",
+    actor_id: user?.id ?? null,
+    actor_type: isCron ? "system" : "user",
     action_type: "aicis_sync_triggered",
     resource_type: "aicis_bridge",
     resource_id: orgId.toString(),
