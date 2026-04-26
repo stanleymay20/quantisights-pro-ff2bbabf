@@ -343,6 +343,37 @@ async function syncSurface(
       details: {},
     });
   }
+  // Country-universe completeness check (only for /countries surface)
+  if (surface === "countries") {
+    const distinctCountriesPulled = seenIds.size;
+    if (distinctCountriesPulled < EXPECTED_MIN_COUNTRIES) {
+      qcInserts.push({
+        organization_id: orgId,
+        run_id: runId,
+        surface,
+        check_type: "coverage_incomplete",
+        severity: "error",
+        passed: false,
+        count_affected: EXPECTED_MIN_COUNTRIES - distinctCountriesPulled,
+        details: {
+          expected_min: EXPECTED_MIN_COUNTRIES,
+          observed: distinctCountriesPulled,
+          message: `AICIS country coverage below expected universe (${distinctCountriesPulled}/${EXPECTED_MIN_COUNTRIES})`,
+        },
+      });
+    } else {
+      qcInserts.push({
+        organization_id: orgId,
+        run_id: runId,
+        surface,
+        check_type: "coverage_complete",
+        severity: "info",
+        passed: true,
+        count_affected: distinctCountriesPulled,
+        details: { observed: distinctCountriesPulled, expected_min: EXPECTED_MIN_COUNTRIES },
+      });
+    }
+  }
   // Schema drift: compare keys against catalog
   if (catalogSchema && catalogSchema[surface] && pulled > 0) {
     const expected: string[] = Array.isArray(catalogSchema[surface])
