@@ -137,7 +137,7 @@ serve(async (req) => {
         // Look up user by email using getUserByEmail (O(1) instead of listing all users)
         let authUser: any = null;
         try {
-          const { data: userByEmail } = await supabase.auth.admin.getUserByEmail(customerEmail);
+          const { data: userByEmail } = await (supabase.auth.admin as any).getUserByEmail(customerEmail);
           authUser = userByEmail?.user;
         } catch {
           logStep("getUserByEmail lookup failed for", { customerEmail });
