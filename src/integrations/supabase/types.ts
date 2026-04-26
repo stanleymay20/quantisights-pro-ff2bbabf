@@ -321,6 +321,278 @@ export type Database = {
           },
         ]
       }
+      aicis_data_quality_checks: {
+        Row: {
+          check_type: string
+          checked_at: string
+          count_affected: number
+          details: Json
+          id: string
+          organization_id: string
+          passed: boolean
+          run_id: string | null
+          severity: string
+          surface: string
+        }
+        Insert: {
+          check_type: string
+          checked_at?: string
+          count_affected?: number
+          details?: Json
+          id?: string
+          organization_id: string
+          passed: boolean
+          run_id?: string | null
+          severity?: string
+          surface: string
+        }
+        Update: {
+          check_type?: string
+          checked_at?: string
+          count_affected?: number
+          details?: Json
+          id?: string
+          organization_id?: string
+          passed?: boolean
+          run_id?: string | null
+          severity?: string
+          surface?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aicis_data_quality_checks_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "aicis_sync_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      aicis_ingested_records: {
+        Row: {
+          content_hash: string
+          country_iso3: string | null
+          domain: string | null
+          external_id: string
+          id: string
+          ingested_at: string
+          organization_id: string
+          payload: Json
+          source_run_id: string | null
+          surface: string
+          updated_at: string
+        }
+        Insert: {
+          content_hash: string
+          country_iso3?: string | null
+          domain?: string | null
+          external_id: string
+          id?: string
+          ingested_at?: string
+          organization_id: string
+          payload: Json
+          source_run_id?: string | null
+          surface: string
+          updated_at?: string
+        }
+        Update: {
+          content_hash?: string
+          country_iso3?: string | null
+          domain?: string | null
+          external_id?: string
+          id?: string
+          ingested_at?: string
+          organization_id?: string
+          payload?: Json
+          source_run_id?: string | null
+          surface?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aicis_ingested_records_source_run_id_fkey"
+            columns: ["source_run_id"]
+            isOneToOne: false
+            referencedRelation: "aicis_sync_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      aicis_sync_errors: {
+        Row: {
+          context: Json
+          error_code: string | null
+          error_message: string
+          http_status: number | null
+          id: string
+          occurred_at: string
+          organization_id: string
+          run_id: string | null
+          surface: string
+        }
+        Insert: {
+          context?: Json
+          error_code?: string | null
+          error_message: string
+          http_status?: number | null
+          id?: string
+          occurred_at?: string
+          organization_id: string
+          run_id?: string | null
+          surface: string
+        }
+        Update: {
+          context?: Json
+          error_code?: string | null
+          error_message?: string
+          http_status?: number | null
+          id?: string
+          occurred_at?: string
+          organization_id?: string
+          run_id?: string | null
+          surface?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aicis_sync_errors_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "aicis_sync_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      aicis_sync_runs: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          duration_ms: number | null
+          error_message: string | null
+          id: string
+          last_offset: number | null
+          metadata: Json
+          next_offset: number | null
+          organization_id: string
+          pages_fetched: number
+          payload_checksum: string | null
+          records_failed: number
+          records_inserted: number
+          records_pulled: number
+          records_updated: number
+          started_at: string
+          status: Database["public"]["Enums"]["aicis_sync_status"]
+          surface: string
+          trigger_type: string
+          triggered_by: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          last_offset?: number | null
+          metadata?: Json
+          next_offset?: number | null
+          organization_id: string
+          pages_fetched?: number
+          payload_checksum?: string | null
+          records_failed?: number
+          records_inserted?: number
+          records_pulled?: number
+          records_updated?: number
+          started_at?: string
+          status?: Database["public"]["Enums"]["aicis_sync_status"]
+          surface: string
+          trigger_type?: string
+          triggered_by?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          last_offset?: number | null
+          metadata?: Json
+          next_offset?: number | null
+          organization_id?: string
+          pages_fetched?: number
+          payload_checksum?: string | null
+          records_failed?: number
+          records_inserted?: number
+          records_pulled?: number
+          records_updated?: number
+          started_at?: string
+          status?: Database["public"]["Enums"]["aicis_sync_status"]
+          surface?: string
+          trigger_type?: string
+          triggered_by?: string | null
+        }
+        Relationships: []
+      }
+      aicis_sync_surface_status: {
+        Row: {
+          consecutive_failures: number
+          freshness_seconds: number | null
+          id: string
+          last_attempt_at: string | null
+          last_error_at: string | null
+          last_error_message: string | null
+          last_run_id: string | null
+          last_status: Database["public"]["Enums"]["aicis_sync_status"] | null
+          last_success_at: string | null
+          organization_id: string
+          records_available: number | null
+          schema_fingerprint: string | null
+          surface: string
+          total_records: number
+          updated_at: string
+        }
+        Insert: {
+          consecutive_failures?: number
+          freshness_seconds?: number | null
+          id?: string
+          last_attempt_at?: string | null
+          last_error_at?: string | null
+          last_error_message?: string | null
+          last_run_id?: string | null
+          last_status?: Database["public"]["Enums"]["aicis_sync_status"] | null
+          last_success_at?: string | null
+          organization_id: string
+          records_available?: number | null
+          schema_fingerprint?: string | null
+          surface: string
+          total_records?: number
+          updated_at?: string
+        }
+        Update: {
+          consecutive_failures?: number
+          freshness_seconds?: number | null
+          id?: string
+          last_attempt_at?: string | null
+          last_error_at?: string | null
+          last_error_message?: string | null
+          last_run_id?: string | null
+          last_status?: Database["public"]["Enums"]["aicis_sync_status"] | null
+          last_success_at?: string | null
+          organization_id?: string
+          records_available?: number | null
+          schema_fingerprint?: string | null
+          surface?: string
+          total_records?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aicis_sync_surface_status_last_run_id_fkey"
+            columns: ["last_run_id"]
+            isOneToOne: false
+            referencedRelation: "aicis_sync_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       alert_playbooks: {
         Row: {
           cooldown_minutes: number
@@ -7717,6 +7989,12 @@ export type Database = {
       validate_evidence_sources: { Args: { _sources: Json }; Returns: boolean }
     }
     Enums: {
+      aicis_sync_status:
+        | "pending"
+        | "running"
+        | "success"
+        | "failed"
+        | "partial"
       app_role: "admin" | "analyst" | "executive" | "client_viewer"
       connector_health: "healthy" | "degraded" | "unhealthy" | "unknown"
       connector_run_status:
@@ -7882,6 +8160,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      aicis_sync_status: ["pending", "running", "success", "failed", "partial"],
       app_role: ["admin", "analyst", "executive", "client_viewer"],
       connector_health: ["healthy", "degraded", "unhealthy", "unknown"],
       connector_run_status: [
