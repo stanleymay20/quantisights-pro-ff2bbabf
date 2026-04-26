@@ -637,7 +637,7 @@ Deno.serve(async (req: Request) => {
         surface,
         BRIDGE_URL,
         BRIDGE_KEY,
-        user.id,
+        user?.id ?? null,
         triggerType,
         catalogSchema,
       );
