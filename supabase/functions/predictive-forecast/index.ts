@@ -141,7 +141,7 @@ serve(async (req) => {
 
     // Tier gating: forecasting requires Growth/Enterprise
     const fcAccess = await requireFeatureAccess(supabaseUrl, serviceKey, authHeader, "forecasting");
-    if (!fcAccess.ok) {
+    if (fcAccess.ok === false) {
       return new Response(JSON.stringify(fcAccess.body), {
         status: fcAccess.status,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
