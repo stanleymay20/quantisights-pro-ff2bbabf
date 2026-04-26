@@ -683,8 +683,8 @@ Deno.serve(async (req: Request) => {
   // Audit
   await supabase.from("audit_log").insert({
     organization_id: orgId,
-    actor_id: user.id,
-    actor_type: "user",
+    actor_id: user?.id ?? null,
+    actor_type: isCron ? "system" : "user",
     action_type: "aicis_sync_triggered",
     resource_type: "aicis_bridge",
     resource_id: orgId.toString(),
