@@ -113,6 +113,7 @@ const DataVendors = lazy(() => import("@/pages/admin/DataVendors"));
 const InternalData = lazy(() => import("@/pages/admin/InternalData"));
 const AdminConnectors = lazy(() => import("@/pages/admin/Connectors"));
 const IngestionObservability = lazy(() => import("@/pages/admin/IngestionObservability"));
+const AicisSync = lazy(() => import("@/pages/admin/AicisSync"));
 const CompetitiveAnalysis = lazy(() => import("@/pages/CompetitiveAnalysis"));
 
 // ── Legal ──
@@ -218,6 +219,7 @@ export const routes: RouteEntry[] = [
   { path: "/lineage", element: <DataLineage />, layout: "full" },
   { path: "/pipeline", element: <PipelineObservability />, layout: "full" },
   { path: "/data-hub", element: <DataHub />, layout: "full" },
+  { path: "/aicis-sync", element: <AicisSync />, layout: "full" },
 
   // ══════ Reporting & Strategy ══════
   { path: "/reports", element: <Reports />, layout: "full" },
