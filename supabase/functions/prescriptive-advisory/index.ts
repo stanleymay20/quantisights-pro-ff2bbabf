@@ -360,6 +360,7 @@ Rules:
             "Establish weekly risk monitoring",
             "Report mitigation progress within 14 days",
           ],
+          rag_adjustment: undefined,
         });
       }
     }
