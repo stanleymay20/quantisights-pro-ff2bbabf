@@ -85,7 +85,7 @@ Deno.serve(async (req) => {
       // Get user emails
       const userIds = members.map((m) => m.user_id);
       const { data: { users } } = await supabase.auth.admin.listUsers();
-      const orgUsers = users?.filter((u) => userIds.includes(u.id)) ?? [];
+      const orgUsers = (users as any[] | undefined)?.filter((u: any) => userIds.includes(u.id)) ?? [];
 
       if (orgUsers.length === 0) continue;
 
