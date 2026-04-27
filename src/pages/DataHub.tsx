@@ -407,9 +407,10 @@ export default function DataHub() {
       </motion.div>
 
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-5">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="aicis">AICIS Intelligence</TabsTrigger>
+          <TabsTrigger value="bridge">Bridge Surfaces</TabsTrigger>
           <TabsTrigger value="sync">Sync History</TabsTrigger>
           <TabsTrigger value="quality">Data Quality</TabsTrigger>
         </TabsList>
