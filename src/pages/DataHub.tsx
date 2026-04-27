@@ -198,7 +198,7 @@ export default function DataHub() {
     if (!currentOrgId) return;
     setLoading(true);
     try {
-      const [refRes, srcRes, runRes] = await Promise.all([
+      const [refRes, srcRes, runRes, bridgeRes, bridgeStatRes] = await Promise.all([
         supabase
           .from("internal_reference_data")
           .select("*")
@@ -220,16 +220,30 @@ export default function DataHub() {
           .eq("organization_id", currentOrgId)
           .order("started_at", { ascending: false })
           .limit(50),
+        supabase
+          .from("aicis_ingested_records")
+          .select("id, surface, external_id, country_iso3, domain, payload, ingested_at")
+          .eq("organization_id", currentOrgId)
+          .order("ingested_at", { ascending: false })
+          .limit(1000),
+        supabase
+          .from("aicis_sync_surface_status")
+          .select("surface, total_records, last_success_at, last_status")
+          .eq("organization_id", currentOrgId),
       ]);
 
       if (refRes.error) throw refRes.error;
       if (srcRes.error) throw srcRes.error;
-      // Sync runs is non-critical; surface but don't fail the whole page
+      // Sync runs / bridge data are non-critical; surface but don't fail the whole page
       if (runRes.error) console.warn("sync runs load failed", runRes.error);
+      if (bridgeRes.error) console.warn("aicis bridge records load failed", bridgeRes.error);
+      if (bridgeStatRes.error) console.warn("aicis bridge stats load failed", bridgeStatRes.error);
 
       setRows((refRes.data ?? []) as ReferenceRow[]);
       setSources((srcRes.data ?? []) as VendorSource[]);
       setRuns((runRes.data ?? []) as SyncRun[]);
+      setBridgeRecords((bridgeRes.data ?? []) as BridgeRecord[]);
+      setBridgeStats((bridgeStatRes.data ?? []) as BridgeSurfaceStat[]);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       toast({ title: "Failed to load reference data", description: msg, variant: "destructive" });
