@@ -626,6 +626,124 @@ export default function DataHub() {
           </Card>
         </TabsContent>
 
+        {/* ─── BRIDGE SURFACES (raw AICIS v2 surfaces) ──────────────── */}
+        <TabsContent value="bridge" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Database className="h-5 w-5 text-primary" />
+                AICIS Bridge v2 — Ingested Surfaces
+              </CardTitle>
+              <CardDescription>
+                Raw records pulled from the AICIS Bridge v2 API, grouped by surface.
+                These power downstream intelligence (predictions, entity graph,
+                cross-border flows). For per-metric reference signals, see the AICIS Intelligence tab.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {bridgeStats.length === 0 ? (
+                <EmptyState
+                  icon={<Database className="h-8 w-8" />}
+                  title="No bridge data ingested yet"
+                  description="Trigger a sync from the AICIS Sync admin page or wait for the next scheduled refresh."
+                />
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Surface</TableHead>
+                      <TableHead className="text-right">Records</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Last success</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {bridgeStats
+                      .slice()
+                      .sort((a, b) => (b.total_records ?? 0) - (a.total_records ?? 0))
+                      .map((s) => (
+                        <TableRow key={s.surface}>
+                          <TableCell className="font-mono text-xs">/{s.surface}</TableCell>
+                          <TableCell className="text-right tabular-nums font-medium">
+                            {num(s.total_records ?? 0, 0)}
+                          </TableCell>
+                          <TableCell>
+                            {s.last_status === "success" ? (
+                              <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">
+                                <CheckCircle2 className="h-3 w-3 mr-1" /> Healthy
+                              </Badge>
+                            ) : s.last_status === "partial" ? (
+                              <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-400">
+                                Partial
+                              </Badge>
+                            ) : s.last_status === "failed" ? (
+                              <Badge variant="destructive">
+                                <AlertTriangle className="h-3 w-3 mr-1" /> Failed
+                              </Badge>
+                            ) : (
+                              <Badge variant="secondary">Idle</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-xs text-muted-foreground">
+                            {fmtAge(s.last_success_at)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+
+          {bridgeRecords.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Latest 1,000 ingested records</CardTitle>
+                <CardDescription>
+                  Most recent payloads across all surfaces — newest first.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[480px]">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Surface</TableHead>
+                        <TableHead>External ID</TableHead>
+                        <TableHead>Country</TableHead>
+                        <TableHead>Domain</TableHead>
+                        <TableHead>Ingested</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {bridgeRecords.slice(0, 200).map((r) => (
+                        <TableRow key={r.id}>
+                          <TableCell className="font-mono text-xs">/{r.surface}</TableCell>
+                          <TableCell className="font-mono text-xs text-muted-foreground truncate max-w-[200px]" title={r.external_id}>
+                            {r.external_id}
+                          </TableCell>
+                          <TableCell>
+                            {r.country_iso3 ? <Badge variant="outline">{r.country_iso3}</Badge> : <span className="text-muted-foreground text-xs">—</span>}
+                          </TableCell>
+                          <TableCell>
+                            {r.domain ? <Badge variant="secondary" className="text-xs">{r.domain}</Badge> : <span className="text-muted-foreground text-xs">—</span>}
+                          </TableCell>
+                          <TableCell className="text-xs text-muted-foreground">{fmtAge(r.ingested_at)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                  {bridgeRecords.length > 200 && (
+                    <div className="text-center text-xs text-muted-foreground py-3">
+                      Showing 200 of {num(bridgeRecords.length, 0)} loaded records.
+                    </div>
+                  )}
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
         {/* ─── SYNC HISTORY ─────────────────────────────────────────── */}
         <TabsContent value="sync" className="space-y-4">
           <Card>
