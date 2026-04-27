@@ -314,10 +314,15 @@ export default function DataHub() {
 
   // ── Overview KPIs ────────────────────────────────────────────────────────
   const overview = useMemo(() => {
-    const totalSignals = rows.length;
+    const bridgeTotal = bridgeStats.reduce((a, s) => a + (s.total_records ?? 0), 0);
+    const totalSignals = rows.length + bridgeTotal;
     const activeSources = sources.filter((s) => s.is_active).length;
-    const countries = new Set(rows.map((r) => r.region).filter(Boolean)).size;
-    const domains = new Set(rows.map(getDomain).filter(Boolean)).size;
+    const countriesFromRefs = new Set(rows.map((r) => r.region).filter(Boolean));
+    bridgeRecords.forEach((r) => { if (r.country_iso3) countriesFromRefs.add(r.country_iso3); });
+    const countries = countriesFromRefs.size;
+    const domainsFromRefs = new Set(rows.map(getDomain).filter(Boolean));
+    bridgeRecords.forEach((r) => { if (r.domain) domainsFromRefs.add(r.domain); });
+    const domains = domainsFromRefs.size;
     const lastSync = sources
       .map((s) => s.last_refreshed_at)
       .filter(Boolean)
@@ -329,8 +334,8 @@ export default function DataHub() {
       confidences.length > 0 ? confidences.reduce((a, b) => a + b, 0) / confidences.length : null;
     const avgFreshness =
       freshnesses.length > 0 ? freshnesses.reduce((a, b) => a + b, 0) / freshnesses.length : null;
-    return { totalSignals, activeSources, countries, domains, lastSync, avgConfidence, avgFreshness };
-  }, [rows, sources]);
+    return { totalSignals, activeSources, countries, domains, lastSync, avgConfidence, avgFreshness, bridgeTotal };
+  }, [rows, sources, bridgeRecords, bridgeStats]);
 
   // ── Data Quality stats ───────────────────────────────────────────────────
   const quality = useMemo(() => {
