@@ -184,6 +184,8 @@ export default function DataHub() {
   const [rows, setRows] = useState<ReferenceRow[]>([]);
   const [sources, setSources] = useState<VendorSource[]>([]);
   const [runs, setRuns] = useState<SyncRun[]>([]);
+  const [bridgeRecords, setBridgeRecords] = useState<BridgeRecord[]>([]);
+  const [bridgeStats, setBridgeStats] = useState<BridgeSurfaceStat[]>([]);
   const [syncing, setSyncing] = useState<string | null>(null);
 
   // AICIS filters
