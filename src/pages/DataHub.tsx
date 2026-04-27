@@ -93,6 +93,23 @@ interface SyncRun {
   duration_ms: number | null;
 }
 
+interface BridgeRecord {
+  id: string;
+  surface: string;
+  external_id: string;
+  country_iso3: string | null;
+  domain: string | null;
+  payload: Record<string, unknown>;
+  ingested_at: string;
+}
+
+interface BridgeSurfaceStat {
+  surface: string;
+  total_records: number;
+  last_success_at: string | null;
+  last_status: string | null;
+}
+
 const ALL = "__all__";
 const AICIS_VENDOR_KEY = "aicis";
 
