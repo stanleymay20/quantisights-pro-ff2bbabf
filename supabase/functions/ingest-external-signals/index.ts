@@ -161,7 +161,14 @@ const adapters: Record<string, VendorAdapter> = {
         for (const s of settled) {
           pages += 1;
           if (s.status === "rejected") {
-            warnings.push(`AICIS network error: ${String(s.reason).slice(0, 100)}`);
+            const msg = String(s.reason);
+            // Detect upstream rate-limit (thrown as JS error) and stop the sweep.
+            if (/RateLimit|Rate limit|429|Retry after/i.test(msg)) {
+              warnings.push(`AICIS rate-limited; stopping sweep early. ${msg.slice(0, 160)}`);
+              throttled = true;
+              break;
+            }
+            warnings.push(`AICIS network error: ${msg.slice(0, 160)}`);
             continue;
           }
           const { iso3, r } = s.value;
