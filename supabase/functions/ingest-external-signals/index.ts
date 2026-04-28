@@ -61,7 +61,7 @@ interface VendorAdapter {
 const AICIS_PLATFORM_ENDPOINT = Deno.env.get("AICIS_TEST_ENDPOINT_URL") ?? "";
 const AICIS_PLATFORM_API_KEY = Deno.env.get("AICIS_TEST_API_KEY") ?? "";
 
-const AICIS_PRO_TIERS = new Set(["pro", "business", "enterprise", "enterprise_plus"]);
+const AICIS_PRO_TIERS = new Set(["growth", "enterprise", "pro", "business", "enterprise_plus"]);
 
 interface AicisSignal {
   signal_id: string;
