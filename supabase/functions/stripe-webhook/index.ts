@@ -134,13 +134,20 @@ serve(async (req) => {
           break;
         }
 
-        // Look up user by email using getUserByEmail (O(1) instead of listing all users)
+        // Look up user by email. Supabase admin SDK exposes listUsers with an email filter
+        // (getUserByEmail does not exist on the JS client, so the previous call always threw).
         let authUser: any = null;
         try {
-          const { data: userByEmail } = await (supabase.auth.admin as any).getUserByEmail(customerEmail);
-          authUser = userByEmail?.user;
-        } catch {
-          logStep("getUserByEmail lookup failed for", { customerEmail });
+          const { data: list, error: listErr } = await supabase.auth.admin.listUsers({
+            page: 1,
+            perPage: 1,
+            // @ts-expect-error – `email` is a valid filter accepted by GoTrue admin API
+            email: customerEmail,
+          });
+          if (listErr) throw listErr;
+          authUser = list?.users?.find((u: any) => u.email?.toLowerCase() === customerEmail.toLowerCase()) ?? null;
+        } catch (e) {
+          logStep("listUsers email lookup failed for", { customerEmail, error: (e as Error).message });
         }
 
         if (!authUser) {
