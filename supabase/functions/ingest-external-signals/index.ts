@@ -421,7 +421,7 @@ Deno.serve(async (req) => {
           ["active", "trialing"].includes(status) && AICIS_PRO_TIERS.has(tier);
 
         if (!allowed) {
-          const reason = `AICIS sync requires Pro tier or higher (current: ${tier || "free"} / ${status || "no_subscription"})`;
+          const reason = `AICIS sync requires Growth tier or higher (current: ${tier || "free"} / ${status || "no_subscription"})`;
           log.warn("aicis tier blocked", {
             org_id: src.organization_id, tier, status,
           });
