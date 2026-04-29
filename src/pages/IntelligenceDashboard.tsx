@@ -98,9 +98,9 @@ interface InfluenceEdge {
 
 interface AutoDecision {
   id: string;
-  decision_title: string | null;
-  status: string | null;
-  confidence_score: number | null;
+  recommended_action: string | null;
+  decision_status: string | null;
+  capped_confidence: number | null;
   linked_aicis_prediction_id: string | null;
   linked_aicis_recommendation_id: string | null;
   created_at: string;
