@@ -569,10 +569,19 @@ async function syncSurface(
       records_failed: failed,
       pages_fetched: pages,
       last_offset: offset,
-      next_offset: lastError ? offset : null,
+      next_offset: resumeCursor,
       payload_checksum: checksum,
       error_message: lastError ?? null,
-      metadata: { total_available: totalAvailable, duplicate_ids: duplicateIds },
+      metadata: {
+        total_available: totalAvailable,
+        duplicate_ids: duplicateIds,
+        records_unchanged: unchanged,
+        page_size_used: finalPageSize,
+        retries_used: retriesUsed,
+        resume_offset_next: resumeCursor,
+        exhausted,
+        max_pages_for_surface: maxPagesForSurface,
+      },
     })
     .eq("id", runId);
 
@@ -584,14 +593,14 @@ async function syncSurface(
     .eq("surface", surface);
   const totalRecords = (totalRow as any)?.count ?? 0;
 
-  const { data: prev } = await supabase
-    .from("aicis_sync_surface_status")
-    .select("consecutive_failures")
-    .eq("organization_id", orgId)
-    .eq("surface", surface)
-    .maybeSingle();
-  const prevFailures = prev?.consecutive_failures ?? 0;
+  const prevFailures = prevState.consecutive_failures ?? 0;
   const consecFailures = status === "failed" ? prevFailures + 1 : 0;
+
+  // Circuit breaker: open after N consecutive failures, cooldown 1h.
+  const breakerOpen = consecFailures >= BREAKER_FAILURE_THRESHOLD;
+  const breakerUntil = breakerOpen
+    ? new Date(Date.now() + BREAKER_COOLDOWN_MS).toISOString()
+    : null;
 
   // Build schema fingerprint from latest sample
   let fingerprint: string | null = null;
@@ -624,6 +633,18 @@ async function syncSurface(
         consecutive_failures: consecFailures,
         schema_fingerprint: fingerprint,
         freshness_seconds: 0,
+        circuit_breaker_until: breakerUntil,
+        metadata: {
+          ...(prevState.metadata ?? {}),
+          last_page_size: finalPageSize,
+          last_retries_used: retriesUsed,
+          resume_offset: resumeCursor ?? 0,
+          last_pages_fetched: pages,
+          last_max_pages: maxPagesForSurface,
+          last_records_unchanged: unchanged,
+          last_run_duration_ms: duration,
+          breaker_opened_at: breakerOpen ? new Date().toISOString() : (prevState.metadata?.breaker_opened_at ?? null),
+        },
       },
       { onConflict: "organization_id,surface" },
     );
