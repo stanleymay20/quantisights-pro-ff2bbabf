@@ -463,8 +463,8 @@ export default function IntelligenceDashboard() {
                             <TableCell>
                               <ConfidenceBadge
                                 confidence={Math.min(100, ((p.evidence_count ?? 0) / 50) * 100)}
-                                dataPoints={p.evidence_count ?? 0}
                               />
+                              <span className="ml-1 text-[10px] text-muted-foreground">n={p.evidence_count ?? 0}</span>
                             </TableCell>
                             <TableCell className="text-xs text-muted-foreground">
                               {p.generated_at
