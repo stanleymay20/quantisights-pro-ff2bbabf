@@ -192,6 +192,7 @@ export const routes: RouteEntry[] = [
   { path: "/forecasting", element: <Forecasting />, layout: "full" },
   { path: "/ask", element: <NaturalLanguageQuery />, layout: "full" },
   { path: "/market-intelligence", element: <MarketIntelligence />, layout: "full" },
+  { path: "/intelligence-dashboard", element: <IntelligenceDashboard />, layout: "full" },
 
   // ══════ Decision System ══════
   { path: "/decisions", element: <DecisionLedger />, layout: "full" },
