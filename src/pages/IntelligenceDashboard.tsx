@@ -586,8 +586,8 @@ export default function IntelligenceDashboard() {
                       <TableBody>
                         {autoDecisions.map((d) => (
                           <TableRow key={d.id}>
-                            <TableCell className="text-sm max-w-md truncate" title={d.decision_title ?? ""}>
-                              {d.decision_title ?? "—"}
+                            <TableCell className="text-sm max-w-md truncate" title={d.recommended_action ?? ""}>
+                              {d.recommended_action ?? "—"}
                             </TableCell>
                             <TableCell className="text-xs">
                               {d.linked_aicis_prediction_id ? (
@@ -599,10 +599,10 @@ export default function IntelligenceDashboard() {
                               )}
                             </TableCell>
                             <TableCell>
-                              <Badge variant="outline" className="text-xs capitalize">{d.status ?? "—"}</Badge>
+                              <Badge variant="outline" className="text-xs capitalize">{d.decision_status ?? "—"}</Badge>
                             </TableCell>
                             <TableCell className="text-xs font-mono">
-                              {d.confidence_score != null ? `${Math.round(d.confidence_score)}%` : "—"}
+                              {d.capped_confidence != null ? `${Math.round(d.capped_confidence)}%` : "—"}
                             </TableCell>
                             <TableCell className="text-xs text-muted-foreground">
                               {formatDistanceToNow(new Date(d.created_at), { addSuffix: true })}
