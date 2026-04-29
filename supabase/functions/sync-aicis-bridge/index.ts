@@ -293,26 +293,50 @@ async function syncSurface(
     let pageInserted = 0,
       pageUpdated = 0,
       pageFailed = 0;
-    for (const row of rows) {
+
+    // Build the changed set (skip rows whose hash already matches what's stored)
+    const toWrite = rows.filter((row) => {
       const prev = existingMap.get(row.external_id);
-      const isNew = !prev;
-      const changed = prev && prev !== row.content_hash;
-      if (!isNew && !changed) continue; // truly idempotent — skip unchanged
+      if (!prev) {
+        pageInserted++;
+        return true;
+      }
+      if (prev !== row.content_hash) {
+        pageUpdated++;
+        return true;
+      }
+      return false; // unchanged — truly idempotent
+    });
+
+    if (toWrite.length > 0) {
+      // Bulk upsert in one round-trip per page (was N+1).
       const { error: upErr } = await supabase
         .from("aicis_ingested_records")
-        .upsert(row, { onConflict: "organization_id,surface,external_id" });
+        .upsert(toWrite, { onConflict: "organization_id,surface,external_id" });
       if (upErr) {
-        pageFailed++;
-        await supabase.from("aicis_sync_errors").insert({
-          organization_id: orgId,
-          run_id: runId,
-          surface,
-          error_code: "upsert_failed",
-          error_message: upErr.message,
-          context: { external_id: row.external_id },
-        });
-      } else if (isNew) pageInserted++;
-      else pageUpdated++;
+        // Fallback: isolate the bad row(s) one-by-one so we don't drop the whole page.
+        pageInserted = 0;
+        pageUpdated = 0;
+        for (const row of toWrite) {
+          const prev = existingMap.get(row.external_id);
+          const isNew = !prev;
+          const { error: singleErr } = await supabase
+            .from("aicis_ingested_records")
+            .upsert(row, { onConflict: "organization_id,surface,external_id" });
+          if (singleErr) {
+            pageFailed++;
+            await supabase.from("aicis_sync_errors").insert({
+              organization_id: orgId,
+              run_id: runId,
+              surface,
+              error_code: "upsert_failed",
+              error_message: singleErr.message.slice(0, 500),
+              context: { external_id: row.external_id },
+            });
+          } else if (isNew) pageInserted++;
+          else pageUpdated++;
+        }
+      }
     }
     inserted += pageInserted;
     updated += pageUpdated;
