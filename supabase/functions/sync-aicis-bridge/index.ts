@@ -26,12 +26,29 @@ const DATA_SURFACES = [
   "entity_links",
 ] as const;
 
-const PAGE_SIZE = 500;
-// Hard safety cap per surface per run.
-// Sized for full 211-country coverage across all domains:
-//   - /countries: ~211 rows (1 page)
-//   - /signals, /events, /predictions, /recommendations: up to ~50k rows (211 countries × multi-domain history)
-const MAX_PAGES = 100; // = 50,000 rows / surface / run
+// Adaptive page size ladder. Start big; downshift on transient upstream failures.
+const PAGE_SIZE_LADDER = [500, 250, 100] as const;
+const DEFAULT_PAGE_SIZE = PAGE_SIZE_LADDER[0];
+
+// Per-surface hard page cap per run (heavy surfaces get more pages, but bounded).
+const SURFACE_MAX_PAGES: Record<string, number> = {
+  signals: 20,
+  entities: 10,
+  events: 20,
+  countries: 5,
+  predictions: 10,
+  recommendations: 10,
+  outcomes: 10,
+  cross_border: 10,
+  cross_domain: 10,
+  entity_links: 10,
+};
+const DEFAULT_MAX_PAGES = 10;
+
+// Circuit breaker: after N consecutive failed runs, skip the surface for this window.
+const BREAKER_FAILURE_THRESHOLD = 3;
+const BREAKER_COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
+
 const STALE_HOURS = 24;
 const EXPECTED_MIN_COUNTRIES = 211; // AICIS Bridge v2 country universe (UN + sovereign + dependencies)
 
