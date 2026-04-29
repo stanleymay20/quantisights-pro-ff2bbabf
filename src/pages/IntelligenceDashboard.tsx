@@ -42,9 +42,9 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import { ConfidenceBadge } from "@/components/ConfidenceBadge";
-import { IntelligenceDisclaimer } from "@/components/IntelligenceDisclaimer";
-import { SectionErrorBoundary } from "@/components/SectionErrorBoundary";
+import ConfidenceBadge from "@/components/ConfidenceBadge";
+import IntelligenceDisclaimer from "@/components/IntelligenceDisclaimer";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 import { useActiveDataContext } from "@/hooks/useActiveDataContext";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
