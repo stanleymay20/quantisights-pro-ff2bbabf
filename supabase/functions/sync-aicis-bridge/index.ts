@@ -193,8 +193,25 @@ async function syncSurface(
   triggeredBy: string | null,
   triggerType: string,
   catalogSchema: any,
+  prevState: {
+    metadata: Record<string, any>;
+    consecutive_failures: number;
+  },
 ): Promise<SurfaceResult> {
   const t0 = Date.now();
+
+  // Resume cursor & last successful page size from prior run metadata.
+  const resumeOffset = Number.isFinite(prevState.metadata?.resume_offset)
+    ? Number(prevState.metadata.resume_offset)
+    : 0;
+  const preferredSize = PAGE_SIZE_LADDER.includes(prevState.metadata?.last_page_size)
+    ? Number(prevState.metadata.last_page_size)
+    : DEFAULT_PAGE_SIZE;
+  let pageSizeIdx = PAGE_SIZE_LADDER.indexOf(preferredSize as any);
+  if (pageSizeIdx < 0) pageSizeIdx = 0;
+
+  const maxPagesForSurface = SURFACE_MAX_PAGES[surface] ?? DEFAULT_MAX_PAGES;
+
   // Create run row
   const { data: runRow, error: runErr } = await supabase
     .from("aicis_sync_runs")
@@ -205,6 +222,8 @@ async function syncSurface(
       triggered_by: triggeredBy,
       trigger_type: triggerType,
       started_at: new Date().toISOString(),
+      last_offset: resumeOffset,
+      metadata: { resume_from: resumeOffset, page_size_start: PAGE_SIZE_LADDER[pageSizeIdx] },
     })
     .select("id")
     .single();
@@ -216,9 +235,15 @@ async function syncSurface(
       records_pulled: 0,
       records_inserted: 0,
       records_updated: 0,
+      records_unchanged: 0,
       records_failed: 0,
       pages_fetched: 0,
+      page_size_used: PAGE_SIZE_LADDER[pageSizeIdx],
+      retries_used: 0,
       duration_ms: Date.now() - t0,
+      resume_cursor: resumeOffset,
+      consecutive_failures: prevState.consecutive_failures,
+      circuit_breaker_open: false,
       error: runErr.message,
     };
   }
