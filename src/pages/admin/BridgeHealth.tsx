@@ -44,7 +44,7 @@ interface SurfaceRow {
 }
 
 export default function BridgeHealth() {
-  const { organization } = useOrganization();
+  const { currentOrg: organization } = useOrganization();
   const [rows, setRows] = useState<SurfaceRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [now, setNow] = useState(Date.now());
