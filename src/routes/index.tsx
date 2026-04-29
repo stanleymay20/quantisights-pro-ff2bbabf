@@ -116,6 +116,7 @@ const IngestionObservability = lazy(() => import("@/pages/admin/IngestionObserva
 const AicisSync = lazy(() => import("@/pages/admin/AicisSync"));
 const BridgeHealth = lazy(() => import("@/pages/admin/BridgeHealth"));
 const CompetitiveAnalysis = lazy(() => import("@/pages/CompetitiveAnalysis"));
+const IntelligenceDashboard = lazy(() => import("@/pages/IntelligenceDashboard"));
 
 // ── Legal ──
 const Terms = lazy(() => import("@/pages/Terms"));
