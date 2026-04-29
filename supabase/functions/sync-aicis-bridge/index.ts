@@ -84,36 +84,71 @@ function pickDomain(rec: Record<string, any>): string | null {
   return v ? String(v) : null;
 }
 
+// Per-request timeout (ms) for the upstream bridge.
+// AICIS /signals is known to occasionally hit 30s Postgres statement timeout.
+// We give it a hair more headroom + retry, but still bound the total wait.
+const FETCH_TIMEOUT_MS = 35_000;
+// Retries on transient upstream failures (502/503/504/timeouts).
+const MAX_FETCH_RETRIES = 3;
+
 async function bridgeFetch(
   baseUrl: string,
   apiKey: string,
   path: string,
   params: Record<string, string | number> = {},
-): Promise<{ ok: boolean; status: number; body: any; error?: string }> {
+): Promise<{ ok: boolean; status: number; body: any; error?: string; retries?: number }> {
   const url = new URL(path.replace(/^\//, ""), baseUrl.endsWith("/") ? baseUrl : baseUrl + "/");
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, String(v));
-  try {
-    const res = await fetch(url.toString(), {
-      headers: {
-        "x-api-key": apiKey,
-        Authorization: `Bearer ${apiKey}`,
-        Accept: "application/json",
-      },
-    });
-    const text = await res.text();
-    let body: any = null;
+
+  let lastError: string | undefined;
+  let lastStatus = 0;
+  let lastBody: any = null;
+
+  for (let attempt = 0; attempt <= MAX_FETCH_RETRIES; attempt++) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
     try {
-      body = text ? JSON.parse(text) : null;
-    } catch {
-      body = { raw: text };
+      const res = await fetch(url.toString(), {
+        headers: {
+          "x-api-key": apiKey,
+          Authorization: `Bearer ${apiKey}`,
+          Accept: "application/json",
+        },
+        signal: ctrl.signal,
+      });
+      clearTimeout(timer);
+      const text = await res.text();
+      let body: any = null;
+      try {
+        body = text ? JSON.parse(text) : null;
+      } catch {
+        body = { raw: text };
+      }
+      if (res.ok) {
+        return { ok: true, status: res.status, body, retries: attempt };
+      }
+      lastStatus = res.status;
+      lastBody = body;
+      lastError = `HTTP ${res.status}: ${text.slice(0, 200)}`;
+      // Only retry transient upstream failures
+      const transient = res.status === 429 || res.status === 502 || res.status === 503 || res.status === 504 || res.status === 500;
+      if (!transient || attempt === MAX_FETCH_RETRIES) {
+        return { ok: false, status: res.status, body, error: lastError, retries: attempt };
+      }
+    } catch (e) {
+      clearTimeout(timer);
+      const msg = e instanceof Error ? e.message : String(e);
+      lastError = msg.includes("aborted") ? `Request timed out after ${FETCH_TIMEOUT_MS}ms` : msg;
+      lastStatus = 0;
+      if (attempt === MAX_FETCH_RETRIES) {
+        return { ok: false, status: 0, body: null, error: lastError, retries: attempt };
+      }
     }
-    if (!res.ok) {
-      return { ok: false, status: res.status, body, error: `HTTP ${res.status}: ${text.slice(0, 200)}` };
-    }
-    return { ok: true, status: res.status, body };
-  } catch (e) {
-    return { ok: false, status: 0, body: null, error: e instanceof Error ? e.message : String(e) };
+    // Exponential backoff: 1s, 2s, 4s (+ small jitter)
+    const backoff = Math.min(8000, 1000 * Math.pow(2, attempt)) + Math.floor(Math.random() * 250);
+    await new Promise((r) => setTimeout(r, backoff));
   }
+  return { ok: false, status: lastStatus, body: lastBody, error: lastError, retries: MAX_FETCH_RETRIES };
 }
 
 function extractRecords(body: any): { items: any[]; total?: number } {
