@@ -533,6 +533,7 @@ export type Database = {
       }
       aicis_sync_surface_status: {
         Row: {
+          circuit_breaker_until: string | null
           consecutive_failures: number
           freshness_seconds: number | null
           id: string
@@ -542,6 +543,7 @@ export type Database = {
           last_run_id: string | null
           last_status: Database["public"]["Enums"]["aicis_sync_status"] | null
           last_success_at: string | null
+          metadata: Json
           organization_id: string
           records_available: number | null
           schema_fingerprint: string | null
@@ -550,6 +552,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          circuit_breaker_until?: string | null
           consecutive_failures?: number
           freshness_seconds?: number | null
           id?: string
@@ -559,6 +562,7 @@ export type Database = {
           last_run_id?: string | null
           last_status?: Database["public"]["Enums"]["aicis_sync_status"] | null
           last_success_at?: string | null
+          metadata?: Json
           organization_id: string
           records_available?: number | null
           schema_fingerprint?: string | null
@@ -567,6 +571,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          circuit_breaker_until?: string | null
           consecutive_failures?: number
           freshness_seconds?: number | null
           id?: string
@@ -576,6 +581,7 @@ export type Database = {
           last_run_id?: string | null
           last_status?: Database["public"]["Enums"]["aicis_sync_status"] | null
           last_success_at?: string | null
+          metadata?: Json
           organization_id?: string
           records_available?: number | null
           schema_fingerprint?: string | null

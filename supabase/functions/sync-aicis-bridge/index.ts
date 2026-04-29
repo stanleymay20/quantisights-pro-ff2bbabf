@@ -26,12 +26,29 @@ const DATA_SURFACES = [
   "entity_links",
 ] as const;
 
-const PAGE_SIZE = 500;
-// Hard safety cap per surface per run.
-// Sized for full 211-country coverage across all domains:
-//   - /countries: ~211 rows (1 page)
-//   - /signals, /events, /predictions, /recommendations: up to ~50k rows (211 countries × multi-domain history)
-const MAX_PAGES = 100; // = 50,000 rows / surface / run
+// Adaptive page size ladder. Start big; downshift on transient upstream failures.
+const PAGE_SIZE_LADDER = [500, 250, 100] as const;
+const DEFAULT_PAGE_SIZE = PAGE_SIZE_LADDER[0];
+
+// Per-surface hard page cap per run (heavy surfaces get more pages, but bounded).
+const SURFACE_MAX_PAGES: Record<string, number> = {
+  signals: 20,
+  entities: 10,
+  events: 20,
+  countries: 5,
+  predictions: 10,
+  recommendations: 10,
+  outcomes: 10,
+  cross_border: 10,
+  cross_domain: 10,
+  entity_links: 10,
+};
+const DEFAULT_MAX_PAGES = 10;
+
+// Circuit breaker: after N consecutive failed runs, skip the surface for this window.
+const BREAKER_FAILURE_THRESHOLD = 3;
+const BREAKER_COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
+
 const STALE_HOURS = 24;
 const EXPECTED_MIN_COUNTRIES = 211; // AICIS Bridge v2 country universe (UN + sovereign + dependencies)
 
@@ -39,13 +56,20 @@ type Surface = (typeof DATA_SURFACES)[number];
 
 interface SurfaceResult {
   surface: string;
-  status: "success" | "failed" | "partial";
+  status: "success" | "failed" | "partial" | "skipped";
   records_pulled: number;
   records_inserted: number;
   records_updated: number;
+  records_unchanged: number;
   records_failed: number;
   pages_fetched: number;
+  page_size_used: number;
+  retries_used: number;
   duration_ms: number;
+  resume_cursor: number | null;
+  consecutive_failures: number;
+  circuit_breaker_open: boolean;
+  next_retry_at?: string | null;
   error?: string;
 }
 
@@ -169,8 +193,25 @@ async function syncSurface(
   triggeredBy: string | null,
   triggerType: string,
   catalogSchema: any,
+  prevState: {
+    metadata: Record<string, any>;
+    consecutive_failures: number;
+  },
 ): Promise<SurfaceResult> {
   const t0 = Date.now();
+
+  // Resume cursor & last successful page size from prior run metadata.
+  const resumeOffset = Number.isFinite(prevState.metadata?.resume_offset)
+    ? Number(prevState.metadata.resume_offset)
+    : 0;
+  const preferredSize = PAGE_SIZE_LADDER.includes(prevState.metadata?.last_page_size)
+    ? Number(prevState.metadata.last_page_size)
+    : DEFAULT_PAGE_SIZE;
+  let pageSizeIdx = PAGE_SIZE_LADDER.indexOf(preferredSize as any);
+  if (pageSizeIdx < 0) pageSizeIdx = 0;
+
+  const maxPagesForSurface = SURFACE_MAX_PAGES[surface] ?? DEFAULT_MAX_PAGES;
+
   // Create run row
   const { data: runRow, error: runErr } = await supabase
     .from("aicis_sync_runs")
@@ -181,6 +222,8 @@ async function syncSurface(
       triggered_by: triggeredBy,
       trigger_type: triggerType,
       started_at: new Date().toISOString(),
+      last_offset: resumeOffset,
+      metadata: { resume_from: resumeOffset, page_size_start: PAGE_SIZE_LADDER[pageSizeIdx] },
     })
     .select("id")
     .single();
@@ -192,9 +235,15 @@ async function syncSurface(
       records_pulled: 0,
       records_inserted: 0,
       records_updated: 0,
+      records_unchanged: 0,
       records_failed: 0,
       pages_fetched: 0,
+      page_size_used: PAGE_SIZE_LADDER[pageSizeIdx],
+      retries_used: 0,
       duration_ms: Date.now() - t0,
+      resume_cursor: resumeOffset,
+      consecutive_failures: prevState.consecutive_failures,
+      circuit_breaker_open: false,
       error: runErr.message,
     };
   }
@@ -203,9 +252,11 @@ async function syncSurface(
   let pulled = 0,
     inserted = 0,
     updated = 0,
+    unchanged = 0,
     failed = 0,
-    pages = 0;
-  let offset = 0;
+    pages = 0,
+    retriesUsed = 0;
+  let offset = resumeOffset;
   let lastError: string | undefined;
   let partial = false;
   let totalAvailable: number | undefined;
@@ -214,15 +265,37 @@ async function syncSurface(
   let duplicateIds = 0;
   let missingCountry = 0;
   let missingDomain = 0;
+  let exhausted = false; // true when upstream returned a short page (we caught up)
 
-  while (pages < MAX_PAGES) {
+  while (pages < maxPagesForSurface) {
+    const currentPageSize = PAGE_SIZE_LADDER[pageSizeIdx];
     const r = await bridgeFetch(baseUrl, apiKey, `/${surface}`, {
-      limit: PAGE_SIZE,
+      limit: currentPageSize,
       offset,
     });
+    retriesUsed += r.retries ?? 0;
+
     if (!r.ok) {
+      // Adaptive downshift on transient upstream pain (timeouts/500/503/504/429).
+      const transient = r.status === 0 || r.status === 429 || r.status === 500 || r.status === 502 || r.status === 503 || r.status === 504;
+      if (transient && pageSizeIdx < PAGE_SIZE_LADDER.length - 1) {
+        const nextSize = PAGE_SIZE_LADDER[pageSizeIdx + 1];
+        log("warn", "page_size_downshift", { surface, from: currentPageSize, to: nextSize, http_status: r.status, error: r.error });
+        await supabase.from("aicis_sync_errors").insert({
+          organization_id: orgId,
+          run_id: runId,
+          surface,
+          error_code: "page_size_downshift",
+          error_message: `Downshifting page_size ${currentPageSize} → ${nextSize}: ${r.error}`,
+          http_status: r.status,
+          context: { offset, pages, from: currentPageSize, to: nextSize },
+        });
+        pageSizeIdx++;
+        continue; // retry same offset with smaller page
+      }
+
+      // Exhausted ladder or non-transient error.
       lastError = r.error;
-      // Log error
       await supabase.from("aicis_sync_errors").insert({
         organization_id: orgId,
         run_id: runId,
@@ -230,9 +303,8 @@ async function syncSurface(
         error_code: "fetch_failed",
         error_message: r.error ?? "fetch failed",
         http_status: r.status,
-        context: { offset, pages },
+        context: { offset, pages, page_size: currentPageSize },
       });
-      // Quality check: pagination_failed
       await supabase.from("aicis_data_quality_checks").insert({
         organization_id: orgId,
         run_id: runId,
@@ -241,7 +313,7 @@ async function syncSurface(
         severity: "error",
         passed: false,
         count_affected: 1,
-        details: { offset, http_status: r.status },
+        details: { offset, http_status: r.status, page_size: currentPageSize },
       });
       partial = pulled > 0;
       break;
@@ -250,7 +322,10 @@ async function syncSurface(
     if (typeof total === "number") totalAvailable = total;
     pages++;
 
-    if (!items.length) break;
+    if (!items.length) {
+      exhausted = true;
+      break;
+    }
 
     // Upsert items
     const rows = await Promise.all(
@@ -279,7 +354,6 @@ async function syncSurface(
       }),
     );
 
-    // Bulk upsert; count inserts vs updates by pre-checking hashes
     const { data: existing } = await supabase
       .from("aicis_ingested_records")
       .select("external_id, content_hash")
@@ -292,9 +366,9 @@ async function syncSurface(
 
     let pageInserted = 0,
       pageUpdated = 0,
+      pageUnchanged = 0,
       pageFailed = 0;
 
-    // Build the changed set (skip rows whose hash already matches what's stored)
     const toWrite = rows.filter((row) => {
       const prev = existingMap.get(row.external_id);
       if (!prev) {
@@ -305,16 +379,15 @@ async function syncSurface(
         pageUpdated++;
         return true;
       }
-      return false; // unchanged — truly idempotent
+      pageUnchanged++;
+      return false;
     });
 
     if (toWrite.length > 0) {
-      // Bulk upsert in one round-trip per page (was N+1).
       const { error: upErr } = await supabase
         .from("aicis_ingested_records")
         .upsert(toWrite, { onConflict: "organization_id,surface,external_id" });
       if (upErr) {
-        // Fallback: isolate the bad row(s) one-by-one so we don't drop the whole page.
         pageInserted = 0;
         pageUpdated = 0;
         for (const row of toWrite) {
@@ -340,12 +413,21 @@ async function syncSurface(
     }
     inserted += pageInserted;
     updated += pageUpdated;
+    unchanged += pageUnchanged;
     failed += pageFailed;
     pulled += items.length;
 
-    if (items.length < PAGE_SIZE) break;
+    if (items.length < currentPageSize) {
+      exhausted = true;
+      break;
+    }
     offset += items.length;
   }
+
+  // Resume cursor: if we hit page cap or transient error mid-stream, persist offset to resume next run.
+  // If exhausted (upstream returned everything), reset to 0 for full re-scan next time.
+  const resumeCursor: number | null = exhausted ? 0 : offset;
+  const finalPageSize = PAGE_SIZE_LADDER[pageSizeIdx];
 
   // Aggregate checksum
   const checksum = allHashes.length
@@ -487,10 +569,19 @@ async function syncSurface(
       records_failed: failed,
       pages_fetched: pages,
       last_offset: offset,
-      next_offset: lastError ? offset : null,
+      next_offset: resumeCursor,
       payload_checksum: checksum,
       error_message: lastError ?? null,
-      metadata: { total_available: totalAvailable, duplicate_ids: duplicateIds },
+      metadata: {
+        total_available: totalAvailable,
+        duplicate_ids: duplicateIds,
+        records_unchanged: unchanged,
+        page_size_used: finalPageSize,
+        retries_used: retriesUsed,
+        resume_offset_next: resumeCursor,
+        exhausted,
+        max_pages_for_surface: maxPagesForSurface,
+      },
     })
     .eq("id", runId);
 
@@ -502,14 +593,14 @@ async function syncSurface(
     .eq("surface", surface);
   const totalRecords = (totalRow as any)?.count ?? 0;
 
-  const { data: prev } = await supabase
-    .from("aicis_sync_surface_status")
-    .select("consecutive_failures")
-    .eq("organization_id", orgId)
-    .eq("surface", surface)
-    .maybeSingle();
-  const prevFailures = prev?.consecutive_failures ?? 0;
+  const prevFailures = prevState.consecutive_failures ?? 0;
   const consecFailures = status === "failed" ? prevFailures + 1 : 0;
+
+  // Circuit breaker: open after N consecutive failures, cooldown 1h.
+  const breakerOpen = consecFailures >= BREAKER_FAILURE_THRESHOLD;
+  const breakerUntil = breakerOpen
+    ? new Date(Date.now() + BREAKER_COOLDOWN_MS).toISOString()
+    : null;
 
   // Build schema fingerprint from latest sample
   let fingerprint: string | null = null;
@@ -542,6 +633,18 @@ async function syncSurface(
         consecutive_failures: consecFailures,
         schema_fingerprint: fingerprint,
         freshness_seconds: 0,
+        circuit_breaker_until: breakerUntil,
+        metadata: {
+          ...(prevState.metadata ?? {}),
+          last_page_size: finalPageSize,
+          last_retries_used: retriesUsed,
+          resume_offset: resumeCursor ?? 0,
+          last_pages_fetched: pages,
+          last_max_pages: maxPagesForSurface,
+          last_records_unchanged: unchanged,
+          last_run_duration_ms: duration,
+          breaker_opened_at: breakerOpen ? new Date().toISOString() : (prevState.metadata?.breaker_opened_at ?? null),
+        },
       },
       { onConflict: "organization_id,surface" },
     );
@@ -552,9 +655,16 @@ async function syncSurface(
     pulled,
     inserted,
     updated,
+    unchanged,
     failed,
     pages,
+    page_size_used: finalPageSize,
+    retries_used: retriesUsed,
     duration_ms: duration,
+    resume_cursor: resumeCursor,
+    consecutive_failures: consecFailures,
+    circuit_breaker_open: breakerOpen,
+    next_retry_at: breakerUntil,
   });
 
   return {
@@ -563,9 +673,16 @@ async function syncSurface(
     records_pulled: pulled,
     records_inserted: inserted,
     records_updated: updated,
+    records_unchanged: unchanged,
     records_failed: failed,
     pages_fetched: pages,
+    page_size_used: finalPageSize,
+    retries_used: retriesUsed,
     duration_ms: duration,
+    resume_cursor: resumeCursor,
+    consecutive_failures: consecFailures,
+    circuit_breaker_open: breakerOpen,
+    next_retry_at: breakerUntil,
     error: lastError,
   };
 }
@@ -686,9 +803,48 @@ Deno.serve(async (req: Request) => {
   const statsRes = await bridgeFetch(BRIDGE_URL, BRIDGE_KEY, "/stats");
   const stats = statsRes.ok ? statsRes.body : null;
 
-  // 3. Sync each surface, isolated
+  // 3. Pre-fetch surface state for circuit-breaker + cursor resume (single round-trip).
+  const { data: prevStates } = await supabase
+    .from("aicis_sync_surface_status")
+    .select("surface, metadata, consecutive_failures, circuit_breaker_until")
+    .eq("organization_id", orgId)
+    .in("surface", requestedSurfaces);
+  const stateMap = new Map<string, { metadata: Record<string, any>; consecutive_failures: number; circuit_breaker_until: string | null }>(
+    (prevStates ?? []).map((s: any) => [s.surface, {
+      metadata: s.metadata ?? {},
+      consecutive_failures: s.consecutive_failures ?? 0,
+      circuit_breaker_until: s.circuit_breaker_until ?? null,
+    }]),
+  );
+
+  // 4. Sync each surface, isolated. Skip if circuit breaker is open.
+  const now = Date.now();
   const results: SurfaceResult[] = [];
   for (const surface of requestedSurfaces) {
+    const prevState = stateMap.get(surface) ?? { metadata: {}, consecutive_failures: 0, circuit_breaker_until: null };
+    const breakerUntilMs = prevState.circuit_breaker_until ? Date.parse(prevState.circuit_breaker_until) : 0;
+    if (breakerUntilMs > now) {
+      log("warn", "surface_skipped_breaker_open", { surface, until: prevState.circuit_breaker_until, consecutive_failures: prevState.consecutive_failures });
+      results.push({
+        surface,
+        status: "skipped",
+        records_pulled: 0,
+        records_inserted: 0,
+        records_updated: 0,
+        records_unchanged: 0,
+        records_failed: 0,
+        pages_fetched: 0,
+        page_size_used: 0,
+        retries_used: 0,
+        duration_ms: 0,
+        resume_cursor: prevState.metadata?.resume_offset ?? 0,
+        consecutive_failures: prevState.consecutive_failures,
+        circuit_breaker_open: true,
+        next_retry_at: prevState.circuit_breaker_until,
+        error: "circuit_breaker_open",
+      });
+      continue;
+    }
     try {
       const r = await syncSurface(
         supabase,
@@ -699,6 +855,7 @@ Deno.serve(async (req: Request) => {
         user?.id ?? null,
         triggerType,
         catalogSchema,
+        { metadata: prevState.metadata, consecutive_failures: prevState.consecutive_failures },
       );
       results.push(r);
     } catch (e) {
@@ -710,9 +867,15 @@ Deno.serve(async (req: Request) => {
         records_pulled: 0,
         records_inserted: 0,
         records_updated: 0,
+        records_unchanged: 0,
         records_failed: 0,
         pages_fetched: 0,
+        page_size_used: 0,
+        retries_used: 0,
         duration_ms: 0,
+        resume_cursor: null,
+        consecutive_failures: prevState.consecutive_failures + 1,
+        circuit_breaker_open: false,
         error: msg,
       });
       await supabase.from("aicis_sync_errors").insert({
@@ -730,9 +893,11 @@ Deno.serve(async (req: Request) => {
     surfaces_succeeded: results.filter((r) => r.status === "success").length,
     surfaces_partial: results.filter((r) => r.status === "partial").length,
     surfaces_failed: results.filter((r) => r.status === "failed").length,
+    surfaces_skipped: results.filter((r) => r.status === "skipped").length,
     total_pulled: results.reduce((s, r) => s + r.records_pulled, 0),
     total_inserted: results.reduce((s, r) => s + r.records_inserted, 0),
     total_updated: results.reduce((s, r) => s + r.records_updated, 0),
+    total_unchanged: results.reduce((s, r) => s + r.records_unchanged, 0),
     catalog_ok: catalogRes.ok,
     stats_ok: statsRes.ok,
     stats,
