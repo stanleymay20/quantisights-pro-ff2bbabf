@@ -252,9 +252,11 @@ async function syncSurface(
   let pulled = 0,
     inserted = 0,
     updated = 0,
+    unchanged = 0,
     failed = 0,
-    pages = 0;
-  let offset = 0;
+    pages = 0,
+    retriesUsed = 0;
+  let offset = resumeOffset;
   let lastError: string | undefined;
   let partial = false;
   let totalAvailable: number | undefined;
@@ -263,15 +265,37 @@ async function syncSurface(
   let duplicateIds = 0;
   let missingCountry = 0;
   let missingDomain = 0;
+  let exhausted = false; // true when upstream returned a short page (we caught up)
 
-  while (pages < MAX_PAGES) {
+  while (pages < maxPagesForSurface) {
+    const currentPageSize = PAGE_SIZE_LADDER[pageSizeIdx];
     const r = await bridgeFetch(baseUrl, apiKey, `/${surface}`, {
-      limit: PAGE_SIZE,
+      limit: currentPageSize,
       offset,
     });
+    retriesUsed += r.retries ?? 0;
+
     if (!r.ok) {
+      // Adaptive downshift on transient upstream pain (timeouts/500/503/504/429).
+      const transient = r.status === 0 || r.status === 429 || r.status === 500 || r.status === 502 || r.status === 503 || r.status === 504;
+      if (transient && pageSizeIdx < PAGE_SIZE_LADDER.length - 1) {
+        const nextSize = PAGE_SIZE_LADDER[pageSizeIdx + 1];
+        log("warn", "page_size_downshift", { surface, from: currentPageSize, to: nextSize, http_status: r.status, error: r.error });
+        await supabase.from("aicis_sync_errors").insert({
+          organization_id: orgId,
+          run_id: runId,
+          surface,
+          error_code: "page_size_downshift",
+          error_message: `Downshifting page_size ${currentPageSize} → ${nextSize}: ${r.error}`,
+          http_status: r.status,
+          context: { offset, pages, from: currentPageSize, to: nextSize },
+        });
+        pageSizeIdx++;
+        continue; // retry same offset with smaller page
+      }
+
+      // Exhausted ladder or non-transient error.
       lastError = r.error;
-      // Log error
       await supabase.from("aicis_sync_errors").insert({
         organization_id: orgId,
         run_id: runId,
@@ -279,9 +303,8 @@ async function syncSurface(
         error_code: "fetch_failed",
         error_message: r.error ?? "fetch failed",
         http_status: r.status,
-        context: { offset, pages },
+        context: { offset, pages, page_size: currentPageSize },
       });
-      // Quality check: pagination_failed
       await supabase.from("aicis_data_quality_checks").insert({
         organization_id: orgId,
         run_id: runId,
@@ -290,7 +313,7 @@ async function syncSurface(
         severity: "error",
         passed: false,
         count_affected: 1,
-        details: { offset, http_status: r.status },
+        details: { offset, http_status: r.status, page_size: currentPageSize },
       });
       partial = pulled > 0;
       break;
@@ -299,7 +322,10 @@ async function syncSurface(
     if (typeof total === "number") totalAvailable = total;
     pages++;
 
-    if (!items.length) break;
+    if (!items.length) {
+      exhausted = true;
+      break;
+    }
 
     // Upsert items
     const rows = await Promise.all(
@@ -328,7 +354,6 @@ async function syncSurface(
       }),
     );
 
-    // Bulk upsert; count inserts vs updates by pre-checking hashes
     const { data: existing } = await supabase
       .from("aicis_ingested_records")
       .select("external_id, content_hash")
@@ -341,9 +366,9 @@ async function syncSurface(
 
     let pageInserted = 0,
       pageUpdated = 0,
+      pageUnchanged = 0,
       pageFailed = 0;
 
-    // Build the changed set (skip rows whose hash already matches what's stored)
     const toWrite = rows.filter((row) => {
       const prev = existingMap.get(row.external_id);
       if (!prev) {
@@ -354,16 +379,15 @@ async function syncSurface(
         pageUpdated++;
         return true;
       }
-      return false; // unchanged — truly idempotent
+      pageUnchanged++;
+      return false;
     });
 
     if (toWrite.length > 0) {
-      // Bulk upsert in one round-trip per page (was N+1).
       const { error: upErr } = await supabase
         .from("aicis_ingested_records")
         .upsert(toWrite, { onConflict: "organization_id,surface,external_id" });
       if (upErr) {
-        // Fallback: isolate the bad row(s) one-by-one so we don't drop the whole page.
         pageInserted = 0;
         pageUpdated = 0;
         for (const row of toWrite) {
@@ -389,12 +413,21 @@ async function syncSurface(
     }
     inserted += pageInserted;
     updated += pageUpdated;
+    unchanged += pageUnchanged;
     failed += pageFailed;
     pulled += items.length;
 
-    if (items.length < PAGE_SIZE) break;
+    if (items.length < currentPageSize) {
+      exhausted = true;
+      break;
+    }
     offset += items.length;
   }
+
+  // Resume cursor: if we hit page cap or transient error mid-stream, persist offset to resume next run.
+  // If exhausted (upstream returned everything), reset to 0 for full re-scan next time.
+  const resumeCursor: number | null = exhausted ? 0 : offset;
+  const finalPageSize = PAGE_SIZE_LADDER[pageSizeIdx];
 
   // Aggregate checksum
   const checksum = allHashes.length
