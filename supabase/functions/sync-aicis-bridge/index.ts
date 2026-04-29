@@ -803,9 +803,48 @@ Deno.serve(async (req: Request) => {
   const statsRes = await bridgeFetch(BRIDGE_URL, BRIDGE_KEY, "/stats");
   const stats = statsRes.ok ? statsRes.body : null;
 
-  // 3. Sync each surface, isolated
+  // 3. Pre-fetch surface state for circuit-breaker + cursor resume (single round-trip).
+  const { data: prevStates } = await supabase
+    .from("aicis_sync_surface_status")
+    .select("surface, metadata, consecutive_failures, circuit_breaker_until")
+    .eq("organization_id", orgId)
+    .in("surface", requestedSurfaces);
+  const stateMap = new Map<string, { metadata: Record<string, any>; consecutive_failures: number; circuit_breaker_until: string | null }>(
+    (prevStates ?? []).map((s: any) => [s.surface, {
+      metadata: s.metadata ?? {},
+      consecutive_failures: s.consecutive_failures ?? 0,
+      circuit_breaker_until: s.circuit_breaker_until ?? null,
+    }]),
+  );
+
+  // 4. Sync each surface, isolated. Skip if circuit breaker is open.
+  const now = Date.now();
   const results: SurfaceResult[] = [];
   for (const surface of requestedSurfaces) {
+    const prevState = stateMap.get(surface) ?? { metadata: {}, consecutive_failures: 0, circuit_breaker_until: null };
+    const breakerUntilMs = prevState.circuit_breaker_until ? Date.parse(prevState.circuit_breaker_until) : 0;
+    if (breakerUntilMs > now) {
+      log("warn", "surface_skipped_breaker_open", { surface, until: prevState.circuit_breaker_until, consecutive_failures: prevState.consecutive_failures });
+      results.push({
+        surface,
+        status: "skipped",
+        records_pulled: 0,
+        records_inserted: 0,
+        records_updated: 0,
+        records_unchanged: 0,
+        records_failed: 0,
+        pages_fetched: 0,
+        page_size_used: 0,
+        retries_used: 0,
+        duration_ms: 0,
+        resume_cursor: prevState.metadata?.resume_offset ?? 0,
+        consecutive_failures: prevState.consecutive_failures,
+        circuit_breaker_open: true,
+        next_retry_at: prevState.circuit_breaker_until,
+        error: "circuit_breaker_open",
+      });
+      continue;
+    }
     try {
       const r = await syncSurface(
         supabase,
@@ -816,6 +855,7 @@ Deno.serve(async (req: Request) => {
         user?.id ?? null,
         triggerType,
         catalogSchema,
+        { metadata: prevState.metadata, consecutive_failures: prevState.consecutive_failures },
       );
       results.push(r);
     } catch (e) {
@@ -827,9 +867,15 @@ Deno.serve(async (req: Request) => {
         records_pulled: 0,
         records_inserted: 0,
         records_updated: 0,
+        records_unchanged: 0,
         records_failed: 0,
         pages_fetched: 0,
+        page_size_used: 0,
+        retries_used: 0,
         duration_ms: 0,
+        resume_cursor: null,
+        consecutive_failures: prevState.consecutive_failures + 1,
+        circuit_breaker_open: false,
         error: msg,
       });
       await supabase.from("aicis_sync_errors").insert({
