@@ -221,6 +221,7 @@ export const routes: RouteEntry[] = [
   { path: "/pipeline", element: <PipelineObservability />, layout: "full" },
   { path: "/data-hub", element: <DataHub />, layout: "full" },
   { path: "/aicis-sync", element: <AicisSync />, layout: "full" },
+  { path: "/admin/bridge-health", element: <BridgeHealth />, layout: "full" },
 
   // ══════ Reporting & Strategy ══════
   { path: "/reports", element: <Reports />, layout: "full" },
