@@ -56,13 +56,20 @@ type Surface = (typeof DATA_SURFACES)[number];
 
 interface SurfaceResult {
   surface: string;
-  status: "success" | "failed" | "partial";
+  status: "success" | "failed" | "partial" | "skipped";
   records_pulled: number;
   records_inserted: number;
   records_updated: number;
+  records_unchanged: number;
   records_failed: number;
   pages_fetched: number;
+  page_size_used: number;
+  retries_used: number;
   duration_ms: number;
+  resume_cursor: number | null;
+  consecutive_failures: number;
+  circuit_breaker_open: boolean;
+  next_retry_at?: string | null;
   error?: string;
 }
 
