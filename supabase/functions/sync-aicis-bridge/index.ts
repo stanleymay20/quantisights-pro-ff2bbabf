@@ -655,9 +655,16 @@ async function syncSurface(
     pulled,
     inserted,
     updated,
+    unchanged,
     failed,
     pages,
+    page_size_used: finalPageSize,
+    retries_used: retriesUsed,
     duration_ms: duration,
+    resume_cursor: resumeCursor,
+    consecutive_failures: consecFailures,
+    circuit_breaker_open: breakerOpen,
+    next_retry_at: breakerUntil,
   });
 
   return {
@@ -666,9 +673,16 @@ async function syncSurface(
     records_pulled: pulled,
     records_inserted: inserted,
     records_updated: updated,
+    records_unchanged: unchanged,
     records_failed: failed,
     pages_fetched: pages,
+    page_size_used: finalPageSize,
+    retries_used: retriesUsed,
     duration_ms: duration,
+    resume_cursor: resumeCursor,
+    consecutive_failures: consecFailures,
+    circuit_breaker_open: breakerOpen,
+    next_retry_at: breakerUntil,
     error: lastError,
   };
 }
