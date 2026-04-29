@@ -368,6 +368,75 @@ export type Database = {
           },
         ]
       }
+      aicis_influence_graph: {
+        Row: {
+          description: string | null
+          detected_at: string | null
+          domain: string | null
+          edge_kind: string
+          external_id: string
+          id: string
+          ingested_at: string
+          lag_days: number | null
+          organization_id: string
+          region: string | null
+          sample_size: number | null
+          source_node: string
+          source_record_id: string | null
+          target_node: string
+          weight: number
+        }
+        Insert: {
+          description?: string | null
+          detected_at?: string | null
+          domain?: string | null
+          edge_kind: string
+          external_id: string
+          id?: string
+          ingested_at?: string
+          lag_days?: number | null
+          organization_id: string
+          region?: string | null
+          sample_size?: number | null
+          source_node: string
+          source_record_id?: string | null
+          target_node: string
+          weight?: number
+        }
+        Update: {
+          description?: string | null
+          detected_at?: string | null
+          domain?: string | null
+          edge_kind?: string
+          external_id?: string
+          id?: string
+          ingested_at?: string
+          lag_days?: number | null
+          organization_id?: string
+          region?: string | null
+          sample_size?: number | null
+          source_node?: string
+          source_record_id?: string | null
+          target_node?: string
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aicis_influence_graph_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "aicis_influence_graph_source_record_id_fkey"
+            columns: ["source_record_id"]
+            isOneToOne: false
+            referencedRelation: "aicis_ingested_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       aicis_ingested_records: {
         Row: {
           content_hash: string
@@ -414,6 +483,222 @@ export type Database = {
             columns: ["source_run_id"]
             isOneToOne: false
             referencedRelation: "aicis_sync_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      aicis_outcomes: {
+        Row: {
+          actual_value: number | null
+          brier_score: number | null
+          country_iso3: string | null
+          domain: string | null
+          error_margin: number | null
+          evaluated_at: string | null
+          external_id: string
+          id: string
+          ingested_at: string
+          organization_id: string
+          predicted_value: number | null
+          prediction_external_id: string | null
+          source_record_id: string | null
+        }
+        Insert: {
+          actual_value?: number | null
+          brier_score?: number | null
+          country_iso3?: string | null
+          domain?: string | null
+          error_margin?: number | null
+          evaluated_at?: string | null
+          external_id: string
+          id?: string
+          ingested_at?: string
+          organization_id: string
+          predicted_value?: number | null
+          prediction_external_id?: string | null
+          source_record_id?: string | null
+        }
+        Update: {
+          actual_value?: number | null
+          brier_score?: number | null
+          country_iso3?: string | null
+          domain?: string | null
+          error_margin?: number | null
+          evaluated_at?: string | null
+          external_id?: string
+          id?: string
+          ingested_at?: string
+          organization_id?: string
+          predicted_value?: number | null
+          prediction_external_id?: string | null
+          source_record_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aicis_outcomes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "aicis_outcomes_source_record_id_fkey"
+            columns: ["source_record_id"]
+            isOneToOne: false
+            referencedRelation: "aicis_ingested_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      aicis_predictions: {
+        Row: {
+          confidence_lower: number | null
+          confidence_upper: number | null
+          country_iso3: string | null
+          domain: string | null
+          evidence_count: number | null
+          external_id: string
+          factors: Json | null
+          generated_at: string | null
+          horizon_days: number | null
+          id: string
+          ingested_at: string
+          model_version: string | null
+          organization_id: string
+          rank_position: number | null
+          risk_probability: number
+          source_record_id: string | null
+        }
+        Insert: {
+          confidence_lower?: number | null
+          confidence_upper?: number | null
+          country_iso3?: string | null
+          domain?: string | null
+          evidence_count?: number | null
+          external_id: string
+          factors?: Json | null
+          generated_at?: string | null
+          horizon_days?: number | null
+          id?: string
+          ingested_at?: string
+          model_version?: string | null
+          organization_id: string
+          rank_position?: number | null
+          risk_probability: number
+          source_record_id?: string | null
+        }
+        Update: {
+          confidence_lower?: number | null
+          confidence_upper?: number | null
+          country_iso3?: string | null
+          domain?: string | null
+          evidence_count?: number | null
+          external_id?: string
+          factors?: Json | null
+          generated_at?: string | null
+          horizon_days?: number | null
+          id?: string
+          ingested_at?: string
+          model_version?: string | null
+          organization_id?: string
+          rank_position?: number | null
+          risk_probability?: number
+          source_record_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aicis_predictions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "aicis_predictions_source_record_id_fkey"
+            columns: ["source_record_id"]
+            isOneToOne: false
+            referencedRelation: "aicis_ingested_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      aicis_recommendations: {
+        Row: {
+          confidence: number | null
+          country_iso3: string | null
+          domain: string | null
+          estimated_cost_eur: number | null
+          estimated_roi_eur: number | null
+          expected_roi_lower: number | null
+          expected_roi_upper: number | null
+          external_id: string
+          generated_at: string | null
+          id: string
+          ingested_at: string
+          intervention_title: string | null
+          intervention_type: string | null
+          organization_id: string
+          rationale_md: string | null
+          source_record_id: string | null
+          status: string | null
+          urgency_hours: number | null
+          urgency_window: string | null
+        }
+        Insert: {
+          confidence?: number | null
+          country_iso3?: string | null
+          domain?: string | null
+          estimated_cost_eur?: number | null
+          estimated_roi_eur?: number | null
+          expected_roi_lower?: number | null
+          expected_roi_upper?: number | null
+          external_id: string
+          generated_at?: string | null
+          id?: string
+          ingested_at?: string
+          intervention_title?: string | null
+          intervention_type?: string | null
+          organization_id: string
+          rationale_md?: string | null
+          source_record_id?: string | null
+          status?: string | null
+          urgency_hours?: number | null
+          urgency_window?: string | null
+        }
+        Update: {
+          confidence?: number | null
+          country_iso3?: string | null
+          domain?: string | null
+          estimated_cost_eur?: number | null
+          estimated_roi_eur?: number | null
+          expected_roi_lower?: number | null
+          expected_roi_upper?: number | null
+          external_id?: string
+          generated_at?: string | null
+          id?: string
+          ingested_at?: string
+          intervention_title?: string | null
+          intervention_type?: string | null
+          organization_id?: string
+          rationale_md?: string | null
+          source_record_id?: string | null
+          status?: string | null
+          urgency_hours?: number | null
+          urgency_window?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aicis_recommendations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "aicis_recommendations_source_record_id_fkey"
+            columns: ["source_record_id"]
+            isOneToOne: false
+            referencedRelation: "aicis_ingested_records"
             referencedColumns: ["id"]
           },
         ]
@@ -2909,6 +3194,8 @@ export type Database = {
           explanation_metadata: Json | null
           id: string
           kpi_id: string | null
+          linked_aicis_prediction_id: string | null
+          linked_aicis_recommendation_id: string | null
           model_calibration_adjustment: number | null
           notes: string | null
           organization_id: string
@@ -2954,6 +3241,8 @@ export type Database = {
           explanation_metadata?: Json | null
           id?: string
           kpi_id?: string | null
+          linked_aicis_prediction_id?: string | null
+          linked_aicis_recommendation_id?: string | null
           model_calibration_adjustment?: number | null
           notes?: string | null
           organization_id: string
@@ -2999,6 +3288,8 @@ export type Database = {
           explanation_metadata?: Json | null
           id?: string
           kpi_id?: string | null
+          linked_aicis_prediction_id?: string | null
+          linked_aicis_recommendation_id?: string | null
           model_calibration_adjustment?: number | null
           notes?: string | null
           organization_id?: string
@@ -3049,6 +3340,20 @@ export type Database = {
             columns: ["kpi_id"]
             isOneToOne: false
             referencedRelation: "kpis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "decision_ledger_linked_aicis_prediction_id_fkey"
+            columns: ["linked_aicis_prediction_id"]
+            isOneToOne: false
+            referencedRelation: "aicis_predictions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "decision_ledger_linked_aicis_recommendation_id_fkey"
+            columns: ["linked_aicis_recommendation_id"]
+            isOneToOne: false
+            referencedRelation: "aicis_recommendations"
             referencedColumns: ["id"]
           },
           {
