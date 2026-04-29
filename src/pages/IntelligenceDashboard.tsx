@@ -278,7 +278,7 @@ export default function IntelligenceDashboard() {
             .limit(500),
           supabase
             .from("decision_ledger")
-            .select("id, decision_title, status, confidence_score, linked_aicis_prediction_id, linked_aicis_recommendation_id, created_at")
+            .select("id, recommended_action, decision_status, capped_confidence, linked_aicis_prediction_id, linked_aicis_recommendation_id, created_at")
             .eq("organization_id", orgId)
             .or("linked_aicis_prediction_id.not.is.null,linked_aicis_recommendation_id.not.is.null")
             .order("created_at", { ascending: false })
