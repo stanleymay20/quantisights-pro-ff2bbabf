@@ -25,6 +25,7 @@ import IntelligenceDisclaimer from "@/components/IntelligenceDisclaimer";
 import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 import DecisionResponsibilityDialog from "@/components/DecisionResponsibilityDialog";
 import DecisionComments from "@/components/decisions/DecisionComments";
+import OutcomeFeedbackWidget from "@/components/decisions/OutcomeFeedbackWidget";
 import LazyInputWarning from "@/components/dashboard/LazyInputWarning";
 
 import ExecutionTimeline from "@/components/execution/ExecutionTimeline";
