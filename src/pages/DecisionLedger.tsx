@@ -871,6 +871,14 @@ const DecisionLedgerPage = () => {
                         )}
                       </div>
                     </div>
+                    {(d.linked_aicis_prediction_id || d.linked_aicis_recommendation_id) && currentOrgId && (
+                      <OutcomeFeedbackWidget
+                        decisionId={d.id}
+                        organizationId={currentOrgId}
+                        alreadyEvaluated={evaluatedAicisIds.has(d.id)}
+                        onSubmitted={() => setEvaluatedAicisIds(prev => new Set(prev).add(d.id))}
+                      />
+                    )}
                     <DecisionComments decisionId={d.id} />
                   </CardContent>
                 </Card>
