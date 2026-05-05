@@ -924,6 +924,35 @@ Deno.serve(async (req: Request) => {
     },
   });
 
+  // Staleness alert: any surface whose last_success_at is older than STALE_HOURS
+  // (or has never succeeded) is recorded as a separate audit_log row so /system-health
+  // and downstream alerting can fire. Cheap query — single round-trip.
+  try {
+    const staleCutoff = new Date(Date.now() - STALE_HOURS * 3600 * 1000).toISOString();
+    const { data: stale } = await supabase
+      .from("aicis_sync_surface_status")
+      .select("surface,last_status,last_success_at,consecutive_failures,last_error_message")
+      .eq("organization_id", orgId)
+      .or(`last_success_at.is.null,last_success_at.lt.${staleCutoff}`);
+    if (stale && stale.length > 0) {
+      await supabase.from("audit_log").insert({
+        organization_id: orgId,
+        actor_type: "system",
+        action_type: "aicis_surface_stale",
+        resource_type: "aicis_bridge",
+        resource_id: orgId.toString(),
+        payload: {
+          stale_threshold_hours: STALE_HOURS,
+          stale_count: stale.length,
+          surfaces: stale,
+        },
+      });
+      log("warn", "stale_surfaces_detected", { stale_count: stale.length });
+    }
+  } catch (e) {
+    log("warn", "staleness_check_failed", { error: e instanceof Error ? e.message : String(e) });
+  }
+
   log("info", "sync_completed", summary);
 
   return new Response(JSON.stringify(summary), {
