@@ -207,7 +207,7 @@ async function syncSurface(
     : 0;
   // Surfaces that historically time out on the upstream Postgres (statement_timeout)
   // start at a smaller page size to keep each round-trip well under 30s.
-  const SLOW_SURFACE_START_SIZE: Record<string, number> = { signals: 100, events: 250 };
+  const SLOW_SURFACE_START_SIZE: Record<string, number> = { signals: 50, events: 250 };
   const slowDefault = SLOW_SURFACE_START_SIZE[surface];
   const preferredSize = PAGE_SIZE_LADDER.includes(prevState.metadata?.last_page_size)
     ? Number(prevState.metadata.last_page_size)
