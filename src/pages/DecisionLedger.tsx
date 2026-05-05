@@ -229,6 +229,8 @@ const DecisionLedgerPage = () => {
       source_insight_summary: null,
       recommendation_logic_type: null,
       decision_origin: "manual",
+      linked_aicis_prediction_id: null,
+      linked_aicis_recommendation_id: null,
     };
 
     setDecisions(prev => [optimisticDecision, ...prev]);
