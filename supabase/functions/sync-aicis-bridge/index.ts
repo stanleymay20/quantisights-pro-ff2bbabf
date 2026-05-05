@@ -27,7 +27,8 @@ const DATA_SURFACES = [
 ] as const;
 
 // Adaptive page size ladder. Start big; downshift on transient upstream failures.
-const PAGE_SIZE_LADDER = [500, 250, 100] as const;
+// Bottom rungs (50, 25) added to survive AICIS /signals 30s statement timeout.
+const PAGE_SIZE_LADDER = [500, 250, 100, 50, 25] as const;
 const DEFAULT_PAGE_SIZE = PAGE_SIZE_LADDER[0];
 
 // Per-surface hard page cap per run (heavy surfaces get more pages, but bounded).
@@ -206,7 +207,7 @@ async function syncSurface(
     : 0;
   // Surfaces that historically time out on the upstream Postgres (statement_timeout)
   // start at a smaller page size to keep each round-trip well under 30s.
-  const SLOW_SURFACE_START_SIZE: Record<string, number> = { signals: 100, events: 250 };
+  const SLOW_SURFACE_START_SIZE: Record<string, number> = { signals: 50, events: 250 };
   const slowDefault = SLOW_SURFACE_START_SIZE[surface];
   const preferredSize = PAGE_SIZE_LADDER.includes(prevState.metadata?.last_page_size)
     ? Number(prevState.metadata.last_page_size)
