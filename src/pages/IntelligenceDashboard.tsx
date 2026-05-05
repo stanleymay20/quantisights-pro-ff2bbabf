@@ -314,10 +314,14 @@ export default function IntelligenceDashboard() {
 
   if (!orgId) {
     return (
-      <div className="p-8">
+      <div className="p-8 max-w-2xl mx-auto">
         <Card>
-          <CardContent className="py-12 text-center text-muted-foreground">
-            Select an organization to view AICIS intelligence.
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><Brain className="w-5 h-5 text-primary" /> Intelligence Dashboard</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm text-muted-foreground">
+            <p>No active organization is loaded yet. Once your workspace finishes loading — or after you select an org from the header — AICIS predictions, recommendations and the influence heatmap will appear here.</p>
+            <Button asChild size="sm" variant="outline"><Link to="/dashboard">Go to Dashboard</Link></Button>
           </CardContent>
         </Card>
       </div>
