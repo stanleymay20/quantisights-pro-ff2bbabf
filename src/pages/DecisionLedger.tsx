@@ -186,6 +186,15 @@ const DecisionLedgerPage = () => {
     if (currentOrgId) {
       fetchDecisions();
       fetchLearningStats();
+      // Hydrate which AICIS-linked decisions already have an outcome row
+      (async () => {
+        const { data } = await supabase
+          .from("aicis_outcomes")
+          .select("external_id")
+          .eq("organization_id", currentOrgId)
+          .like("external_id", "decision:%");
+        if (data) setEvaluatedAicisIds(new Set(data.map(r => (r.external_id as string).replace(/^decision:/, ""))));
+      })();
     }
   }, [currentOrgId]);
 
