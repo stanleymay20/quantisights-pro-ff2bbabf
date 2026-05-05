@@ -71,6 +71,8 @@ interface Decision {
   source_insight_summary: string | null;
   recommendation_logic_type: string | null;
   decision_origin: string;
+  linked_aicis_prediction_id: string | null;
+  linked_aicis_recommendation_id: string | null;
 }
 
 interface ImpactSim {
@@ -141,6 +143,9 @@ const DecisionLedgerPage = () => {
     totalCalibrated: number;
     confidenceAdjustment: number;
   }>({ rollingCalError: null, totalCalibrated: 0, confidenceAdjustment: 0 });
+
+  // Set of decision IDs that already have an aicis_outcomes row
+  const [evaluatedAicisIds, setEvaluatedAicisIds] = useState<Set<string>>(new Set());
 
   const fetchDecisions = async () => {
     if (!currentOrgId) return;
