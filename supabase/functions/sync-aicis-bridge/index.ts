@@ -204,10 +204,15 @@ async function syncSurface(
   const resumeOffset = Number.isFinite(prevState.metadata?.resume_offset)
     ? Number(prevState.metadata.resume_offset)
     : 0;
+  // Surfaces that historically time out on the upstream Postgres (statement_timeout)
+  // start at a smaller page size to keep each round-trip well under 30s.
+  const SLOW_SURFACE_START_SIZE: Record<string, number> = { signals: 100, events: 250 };
+  const slowDefault = SLOW_SURFACE_START_SIZE[surface];
   const preferredSize = PAGE_SIZE_LADDER.includes(prevState.metadata?.last_page_size)
     ? Number(prevState.metadata.last_page_size)
-    : DEFAULT_PAGE_SIZE;
+    : (slowDefault ?? DEFAULT_PAGE_SIZE);
   let pageSizeIdx = PAGE_SIZE_LADDER.indexOf(preferredSize as any);
+  if (pageSizeIdx < 0) pageSizeIdx = PAGE_SIZE_LADDER.indexOf(slowDefault as any);
   if (pageSizeIdx < 0) pageSizeIdx = 0;
 
   const maxPagesForSurface = SURFACE_MAX_PAGES[surface] ?? DEFAULT_MAX_PAGES;
@@ -918,6 +923,35 @@ Deno.serve(async (req: Request) => {
       stale_threshold_hours: STALE_HOURS,
     },
   });
+
+  // Staleness alert: any surface whose last_success_at is older than STALE_HOURS
+  // (or has never succeeded) is recorded as a separate audit_log row so /system-health
+  // and downstream alerting can fire. Cheap query — single round-trip.
+  try {
+    const staleCutoff = new Date(Date.now() - STALE_HOURS * 3600 * 1000).toISOString();
+    const { data: stale } = await supabase
+      .from("aicis_sync_surface_status")
+      .select("surface,last_status,last_success_at,consecutive_failures,last_error_message")
+      .eq("organization_id", orgId)
+      .or(`last_success_at.is.null,last_success_at.lt.${staleCutoff}`);
+    if (stale && stale.length > 0) {
+      await supabase.from("audit_log").insert({
+        organization_id: orgId,
+        actor_type: "system",
+        action_type: "aicis_surface_stale",
+        resource_type: "aicis_bridge",
+        resource_id: orgId.toString(),
+        payload: {
+          stale_threshold_hours: STALE_HOURS,
+          stale_count: stale.length,
+          surfaces: stale,
+        },
+      });
+      log("warn", "stale_surfaces_detected", { stale_count: stale.length });
+    }
+  } catch (e) {
+    log("warn", "staleness_check_failed", { error: e instanceof Error ? e.message : String(e) });
+  }
 
   log("info", "sync_completed", summary);
 

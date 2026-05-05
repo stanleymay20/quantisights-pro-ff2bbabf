@@ -143,46 +143,84 @@ const adapters: Record<string, VendorAdapter> = {
 
       // ── Step 2: per-country signal pull (small batches, throttle-aware) ──
       // AICIS bridge rate-limits aggressive parallelism; keep batch tiny.
+      // On rate-limit: parse Retry-After (header or error message), sleep up to cap,
+      // and resume the sweep. Only abort if we would exceed the total rate-limit budget.
       const BATCH_SIZE = 3;
       const INTER_BATCH_DELAY_MS = 250;
+      const MAX_RATE_LIMIT_WAIT_MS = 60_000; // single backoff cap
+      const MAX_TOTAL_THROTTLE_MS = 180_000; // give up if cumulative wait exceeds 3 min
       let pages = 0;
       let throttled = false;
+      let totalThrottleWaitMs = 0;
+      let throttledCountries = 0;
+
+      const parseRetryAfterMs = (msg: string, header?: string | null): number => {
+        if (header) {
+          const sec = Number(header);
+          if (Number.isFinite(sec)) return Math.min(MAX_RATE_LIMIT_WAIT_MS, Math.max(1000, sec * 1000));
+        }
+        const m = msg.match(/Retry after\s*(\d+)\s*ms/i);
+        if (m) return Math.min(MAX_RATE_LIMIT_WAIT_MS, Math.max(1000, Number(m[1])));
+        return 5000;
+      };
+
+      const fetchOneWithBackoff = async (iso3: string): Promise<{ iso3: string; ok: boolean; status: number; signals: AicisSignal[]; error?: string }> => {
+        const qs = new URLSearchParams({ iso3, limit: String(perCountryLimit) });
+        if (domainFilter) qs.set("domain", domainFilter);
+        for (let attempt = 0; attempt < 2; attempt++) {
+          try {
+            const r = await fetch(`${base}/signals?${qs.toString()}`, { headers });
+            if (r.status === 429 || r.status === 503) {
+              const waitMs = parseRetryAfterMs("", r.headers.get("retry-after"));
+              if (totalThrottleWaitMs + waitMs > MAX_TOTAL_THROTTLE_MS || attempt === 1) {
+                return { iso3, ok: false, status: r.status, signals: [], error: `HTTP ${r.status} (rate-limited; budget exhausted)` };
+              }
+              totalThrottleWaitMs += waitMs;
+              await new Promise((res) => setTimeout(res, waitMs));
+              continue;
+            }
+            if (!r.ok) return { iso3, ok: false, status: r.status, signals: [], error: `HTTP ${r.status}` };
+            const j = (await r.json()) as { data?: AicisSignal[] };
+            return { iso3, ok: true, status: r.status, signals: Array.isArray(j.data) ? j.data : [] };
+          } catch (e) {
+            const msg = e instanceof Error ? e.message : String(e);
+            if (/RateLimit|Rate limit|429|Retry after/i.test(msg)) {
+              const waitMs = parseRetryAfterMs(msg);
+              if (totalThrottleWaitMs + waitMs > MAX_TOTAL_THROTTLE_MS || attempt === 1) {
+                return { iso3, ok: false, status: 429, signals: [], error: `${msg.slice(0, 160)} (budget exhausted)` };
+              }
+              totalThrottleWaitMs += waitMs;
+              await new Promise((res) => setTimeout(res, waitMs));
+              continue;
+            }
+            return { iso3, ok: false, status: 0, signals: [], error: msg.slice(0, 160) };
+          }
+        }
+        return { iso3, ok: false, status: 0, signals: [], error: "exhausted retries" };
+      };
 
       for (let i = 0; i < countries.length && !throttled; i += BATCH_SIZE) {
         const batch = countries.slice(i, i + BATCH_SIZE);
-        const fetches = batch.map(async (iso3) => {
-          const qs = new URLSearchParams({ iso3, limit: String(perCountryLimit) });
-          if (domainFilter) qs.set("domain", domainFilter);
-          const r = await fetch(`${base}/signals?${qs.toString()}`, { headers });
-          return { iso3, r };
-        });
-        const settled = await Promise.allSettled(fetches);
+        const settled = await Promise.all(batch.map(fetchOneWithBackoff));
 
-        for (const s of settled) {
+        for (const res of settled) {
           pages += 1;
-          if (s.status === "rejected") {
-            const msg = String(s.reason);
-            // Detect upstream rate-limit (thrown as JS error) and stop the sweep.
-            if (/RateLimit|Rate limit|429|Retry after/i.test(msg)) {
-              warnings.push(`AICIS rate-limited; stopping sweep early. ${msg.slice(0, 160)}`);
-              throttled = true;
-              break;
+          if (!res.ok) {
+            if (res.status === 429 || res.status === 503) {
+              throttledCountries++;
+              warnings.push(`AICIS ${res.iso3} ${res.error}`);
+              if (totalThrottleWaitMs >= MAX_TOTAL_THROTTLE_MS) {
+                warnings.push(`AICIS rate-limit budget exhausted after ${(totalThrottleWaitMs / 1000).toFixed(0)}s — stopping sweep.`);
+                throttled = true;
+                break;
+              }
+            } else {
+              warnings.push(`AICIS ${res.iso3} ${res.error}; skipped.`);
             }
-            warnings.push(`AICIS network error: ${msg.slice(0, 160)}`);
             continue;
           }
-          const { iso3, r } = s.value;
-          if (r.status === 429 || r.status === 503) {
-            warnings.push(`AICIS throttled on ${iso3} (HTTP ${r.status}); stopping sweep early.`);
-            throttled = true;
-            break;
-          }
-          if (!r.ok) {
-            warnings.push(`AICIS ${iso3} HTTP ${r.status}; skipped.`);
-            continue;
-          }
-          const j = (await r.json()) as { data?: AicisSignal[] };
-          const signals = Array.isArray(j.data) ? j.data : [];
+          const signals = res.signals;
+          const iso3 = res.iso3;
           for (const sig of signals) {
             const numeric = Number(sig.value);
             if (!Number.isFinite(numeric)) continue;
@@ -220,6 +258,8 @@ const adapters: Record<string, VendorAdapter> = {
         countries_swept: pages,
         rows_collected: out.length,
         warnings: warnings.length,
+        throttled_countries: throttledCountries,
+        total_throttle_wait_ms: totalThrottleWaitMs,
       });
 
       if (out.length === 0) {
