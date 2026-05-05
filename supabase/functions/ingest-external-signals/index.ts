@@ -258,6 +258,8 @@ const adapters: Record<string, VendorAdapter> = {
         countries_swept: pages,
         rows_collected: out.length,
         warnings: warnings.length,
+        throttled_countries: throttledCountries,
+        total_throttle_wait_ms: totalThrottleWaitMs,
       });
 
       if (out.length === 0) {
