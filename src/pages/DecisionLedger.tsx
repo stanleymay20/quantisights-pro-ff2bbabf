@@ -358,6 +358,9 @@ const DecisionLedgerPage = () => {
 
   const activeDecisions = decisions.filter(d => d.decision_status !== "rejected" && d.execution_status !== "completed");
   const completedDecisions = decisions.filter(d => d.execution_status === "completed");
+  const aicisQueue = decisions
+    .filter(d => (d.linked_aicis_prediction_id || d.linked_aicis_recommendation_id) && d.decision_status === "pending")
+    .sort((a, b) => (b.capped_confidence ?? 0) - (a.capped_confidence ?? 0));
 
   const avgOutcomeDelta = completedDecisions.length > 0
     ? completedDecisions.reduce((s, d) => s + (d.outcome_delta || 0), 0) / completedDecisions.length
@@ -611,8 +614,58 @@ const DecisionLedgerPage = () => {
           <Tabs defaultValue="active" className="space-y-4">
             <TabsList>
               <TabsTrigger value="active" className="gap-2"><PlayCircle className="w-4 h-4" /> Active ({activeDecisions.length})</TabsTrigger>
+              <TabsTrigger value="aicis" className="gap-2"><Zap className="w-4 h-4" /> AICIS Queue ({aicisQueue.length})</TabsTrigger>
               <TabsTrigger value="completed" className="gap-2"><CheckCircle2 className="w-4 h-4" /> Completed ({completedDecisions.length})</TabsTrigger>
             </TabsList>
+
+            <TabsContent value="aicis" className="space-y-3">
+              {aicisQueue.length === 0 ? (
+                <Card className="border-dashed"><CardContent className="py-16 flex flex-col items-center gap-3">
+                  <Zap className="w-10 h-10 text-muted-foreground" />
+                  <p className="text-muted-foreground text-sm">No AICIS-generated decisions pending. The auto-pipeline runs every 15 minutes.</p>
+                </CardContent></Card>
+              ) : aicisQueue.map(d => {
+                const isPrediction = !!d.linked_aicis_prediction_id;
+                return (
+                  <Card key={d.id} className="border-primary/20">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                            <Badge className="bg-primary/15 text-primary border-none text-[10px]">AICIS</Badge>
+                            <Badge variant="outline" className="text-[10px] capitalize">
+                              {isPrediction ? "Risk Prediction" : "Recommendation"}
+                            </Badge>
+                            {d.capped_confidence !== null && (
+                              <Badge variant="outline" className="text-[10px] gap-1">
+                                <BarChart3 className="w-3 h-3" /> {Number(d.capped_confidence).toFixed(0)}% conf
+                              </Badge>
+                            )}
+                            {d.predicted_net_impact !== null && (
+                              <Badge variant="outline" className="text-[10px]">
+                                Est. impact: {Number(d.predicted_net_impact) >= 0 ? "+" : ""}{fmt(Number(d.predicted_net_impact))}
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-sm font-medium truncate">{d.recommended_action}</p>
+                          {d.notes && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{d.notes}</p>}
+                        </div>
+                        <div className="flex flex-col gap-1 shrink-0">
+                          <Button size="sm" className="h-7 text-xs" disabled={updatingId === d.id}
+                            onClick={() => updateDecision(d.id, { decision_status: "approved", decided_at: new Date().toISOString() })}>
+                            Approve
+                          </Button>
+                          <Button size="sm" variant="ghost" className="h-7 text-xs" disabled={updatingId === d.id}
+                            onClick={() => updateDecision(d.id, { decision_status: "rejected" })}>
+                            Dismiss
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </TabsContent>
 
             <TabsContent value="active" className="space-y-3">
               {loading ? (
