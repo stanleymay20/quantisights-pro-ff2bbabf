@@ -39,41 +39,67 @@ Deno.serve(async (req) => {
   const correlationId = req.headers.get("x-request-id") || crypto.randomUUID();
   const startedAt = Date.now();
 
-  // ── Auth ──
-  const authHeader = req.headers.get("Authorization");
-  if (!authHeader?.startsWith("Bearer ")) return json({ error: "Unauthorized" }, 401);
-
-  const userClient = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_ANON_KEY")!,
-    { global: { headers: { Authorization: authHeader } } },
-  );
-
-  const { data: { user }, error: userErr } = await userClient.auth.getUser();
-  if (userErr || !user) return json({ error: "Unauthorized" }, 401);
-
-  let body: { organization_id?: string; dry_run?: boolean } = {};
+  // ── Parse body first (cron mode needs body) ──
+  let body: { organization_id?: string; dry_run?: boolean; cron?: boolean } = {};
   try { body = await req.json(); } catch { /* allow empty */ }
 
-  if (!body.organization_id) return json({ error: "organization_id required" }, 400);
-  const orgId = body.organization_id;
-  const dryRun = body.dry_run === true;
-
-  // ── Authorization: owner/admin only (decision creation is privileged) ──
   const service = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
 
-  const { data: member } = await service
-    .from("organization_members")
-    .select("role")
-    .eq("user_id", user.id)
-    .eq("organization_id", orgId)
-    .maybeSingle();
+  // ── Cron mode: shared secret bypasses user auth, iterates all orgs ──
+  const cronSecretHeader = req.headers.get("x-cron-secret");
+  const cronSecretEnv = Deno.env.get("CRON_SHARED_SECRET") ?? Deno.env.get("INGEST_CRON_SECRET");
+  const isCronMode = body.cron === true && cronSecretHeader && cronSecretEnv && cronSecretHeader === cronSecretEnv;
 
-  if (!member || !["owner", "admin"].includes(member.role)) {
-    return json({ error: "Forbidden — owner or admin required" }, 403);
+  let userId: string;
+  let orgsToProcess: string[] = [];
+  const dryRun = body.dry_run === true;
+
+  if (isCronMode) {
+    userId = "00000000-0000-0000-0000-000000000000"; // system actor
+    // Find orgs that actually have AICIS data above thresholds
+    const { data: candidateOrgs } = await service
+      .from("aicis_predictions")
+      .select("organization_id")
+      .gte("risk_probability", RISK_THRESHOLD);
+    const set = new Set<string>((candidateOrgs ?? []).map(r => r.organization_id as string));
+    const { data: recOrgs } = await service
+      .from("aicis_recommendations")
+      .select("organization_id")
+      .lte("urgency_hours", URGENCY_HOURS_THRESHOLD);
+    for (const r of recOrgs ?? []) set.add(r.organization_id as string);
+    orgsToProcess = Array.from(set);
+    log("info", "cron_mode_started", { org_count: orgsToProcess.length, correlation_id: correlationId });
+  } else {
+    // ── User-mode auth ──
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) return json({ error: "Unauthorized" }, 401);
+
+    const userClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } },
+    );
+
+    const { data: { user }, error: userErr } = await userClient.auth.getUser();
+    if (userErr || !user) return json({ error: "Unauthorized" }, 401);
+
+    if (!body.organization_id) return json({ error: "organization_id required" }, 400);
+
+    const { data: member } = await service
+      .from("organization_members")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("organization_id", body.organization_id)
+      .maybeSingle();
+
+    if (!member || !["owner", "admin"].includes(member.role)) {
+      return json({ error: "Forbidden — owner or admin required" }, 403);
+    }
+    userId = user.id;
+    orgsToProcess = [body.organization_id];
   }
 
   const result: AutoRunResult = {
