@@ -280,7 +280,7 @@ Deno.serve(async (req) => {
             risk_threshold: RISK_THRESHOLD,
             urgency_threshold_hours: URGENCY_HOURS_THRESHOLD,
           },
-        }).catch(() => { /* non-fatal */ });
+        });
 
         perOrgResults.push(orgRes);
       } catch (orgErr: unknown) {
