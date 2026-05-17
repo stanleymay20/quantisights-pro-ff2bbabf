@@ -115,6 +115,25 @@ function pickDomain(rec: Record<string, any>): string | null {
 const FETCH_TIMEOUT_MS = 35_000;
 // Retries on transient upstream failures (502/503/504/timeouts).
 const MAX_FETCH_RETRIES = 3;
+// Honor upstream `Retry-After` for 429s — but cap so a single surface can't stall the whole run.
+const MAX_RETRY_AFTER_WAIT_MS = 45_000;
+
+/** Parse retry-after delay (ms) from `Retry-After` header (seconds or HTTP-date) or "Retry after Nms" body text. */
+function parseRetryAfterMs(headerVal: string | null, bodyMsg: string | null): number | null {
+  if (headerVal) {
+    const asInt = parseInt(headerVal, 10);
+    if (!isNaN(asInt)) return asInt < 1000 ? asInt * 1000 : asInt;
+    const t = Date.parse(headerVal);
+    if (!isNaN(t)) return Math.max(0, t - Date.now());
+  }
+  if (bodyMsg) {
+    const m = bodyMsg.match(/[Rr]etry after\s+(\d+)\s*ms/);
+    if (m) return parseInt(m[1], 10);
+    const s = bodyMsg.match(/[Rr]etry after\s+(\d+)\s*s(?:ec(?:onds?)?)?\b/);
+    if (s) return parseInt(s[1], 10) * 1000;
+  }
+  return null;
+}
 
 async function bridgeFetch(
   baseUrl: string,
@@ -157,7 +176,27 @@ async function bridgeFetch(
       lastError = `HTTP ${res.status}: ${text.slice(0, 200)}`;
       // Only retry transient upstream failures
       const transient = res.status === 429 || res.status === 502 || res.status === 503 || res.status === 504 || res.status === 500;
-      if (!transient || attempt === MAX_FETCH_RETRIES) {
+      // Also treat upstream "Rate limit exceeded" 200/4xx body as throttled
+      const bodyMsg = typeof body === "object" && body && "error" in body ? String((body as any).error) : text;
+      const isRateLimited = res.status === 429 || /rate limit/i.test(bodyMsg);
+      if (!transient && !isRateLimited || attempt === MAX_FETCH_RETRIES) {
+        if (!transient && !isRateLimited) {
+          return { ok: false, status: res.status, body, error: lastError, retries: attempt };
+        }
+      }
+      // Honor Retry-After if present (rate-limited)
+      if (isRateLimited) {
+        const wait = parseRetryAfterMs(res.headers.get("retry-after"), bodyMsg);
+        if (wait !== null && wait > 0 && wait <= MAX_RETRY_AFTER_WAIT_MS && attempt < MAX_FETCH_RETRIES) {
+          await new Promise((r) => setTimeout(r, wait + 250));
+          continue;
+        }
+        if (wait !== null && wait > MAX_RETRY_AFTER_WAIT_MS) {
+          // Refuse to block run beyond cap — surface as transient and let caller downshift/retry next run.
+          return { ok: false, status: res.status, body, error: `Rate limited: Retry-After ${wait}ms exceeds cap`, retries: attempt };
+        }
+      }
+      if (attempt === MAX_FETCH_RETRIES) {
         return { ok: false, status: res.status, body, error: lastError, retries: attempt };
       }
     } catch (e) {
@@ -273,12 +312,28 @@ async function syncSurface(
   let missingDomain = 0;
   let exhausted = false; // true when upstream returned a short page (we caught up)
 
+  // SIGNALS: upstream Postgres hits 30s statement_timeout on offset-pagination's full COUNT(*).
+  // Switch to date-window slicing for the trailing 90 days in 7-day chunks. Same upsert/dedupe path.
+  const useDateWindow = surface === "signals";
+  const dateWindows: Array<{ since: string; until: string }> = [];
+  if (useDateWindow) {
+    const SLICE_DAYS = 7;
+    const LOOKBACK_DAYS = 90;
+    const now = new Date();
+    for (let d = 0; d < LOOKBACK_DAYS; d += SLICE_DAYS) {
+      const until = new Date(now.getTime() - d * 86400_000).toISOString().slice(0, 10);
+      const since = new Date(now.getTime() - (d + SLICE_DAYS) * 86400_000).toISOString().slice(0, 10);
+      dateWindows.push({ since, until });
+    }
+  }
+  let windowIdx = 0;
+
   while (pages < maxPagesForSurface) {
     const currentPageSize = PAGE_SIZE_LADDER[pageSizeIdx];
-    const r = await bridgeFetch(baseUrl, apiKey, `/${surface}`, {
-      limit: currentPageSize,
-      offset,
-    });
+    const params: Record<string, string | number> = useDateWindow
+      ? { limit: currentPageSize, offset: 0, since: dateWindows[windowIdx].since, until: dateWindows[windowIdx].until }
+      : { limit: currentPageSize, offset };
+    const r = await bridgeFetch(baseUrl, apiKey, `/${surface}`, params);
     retriesUsed += r.retries ?? 0;
 
     if (!r.ok) {
@@ -422,6 +477,16 @@ async function syncSurface(
     unchanged += pageUnchanged;
     failed += pageFailed;
     pulled += items.length;
+
+    if (useDateWindow) {
+      // One page per date-window per run (windows are small enough). Advance to next window.
+      windowIdx++;
+      if (windowIdx >= dateWindows.length) {
+        exhausted = true;
+        break;
+      }
+      continue;
+    }
 
     if (items.length < currentPageSize) {
       exhausted = true;

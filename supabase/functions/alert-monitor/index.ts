@@ -134,6 +134,40 @@ Deno.serve(async (req) => {
       });
     }
 
+    // 6. AICIS surface staleness — query directly from surface_status (authoritative)
+    const twelveHoursAgo = new Date(Date.now() - 12 * 3600_000).toISOString();
+    const fortyEightHoursAgo = new Date(Date.now() - 48 * 3600_000).toISOString();
+    const { data: aicisSurfaces } = await svc
+      .from("aicis_sync_surface_status")
+      .select("organization_id, surface, last_success_at, consecutive_failures, last_error_message, circuit_breaker_until");
+
+    if (aicisSurfaces && aicisSurfaces.length > 0) {
+      const critical = aicisSurfaces.filter((s: any) =>
+        !s.last_success_at || s.last_success_at < fortyEightHoursAgo || (s.consecutive_failures ?? 0) >= 10
+      );
+      const warning = aicisSurfaces.filter((s: any) =>
+        s.last_success_at && s.last_success_at >= fortyEightHoursAgo && s.last_success_at < twelveHoursAgo
+      );
+      if (critical.length > 0) {
+        alerts.push({
+          severity: "critical",
+          category: "aicis_surface_stale",
+          message: `${critical.length} AICIS surface(s) stale >48h or in breakdown: ${critical.map((s: any) => s.surface).join(", ")}`,
+          count: critical.length,
+          metadata: { surfaces: critical.map((s: any) => ({ surface: s.surface, last_success_at: s.last_success_at, consecutive_failures: s.consecutive_failures, error: s.last_error_message })) },
+        });
+      }
+      if (warning.length > 0) {
+        alerts.push({
+          severity: "warning",
+          category: "aicis_surface_stale",
+          message: `${warning.length} AICIS surface(s) stale 12–48h: ${warning.map((s: any) => s.surface).join(", ")}`,
+          count: warning.length,
+          metadata: { surfaces: warning.map((s: any) => ({ surface: s.surface, last_success_at: s.last_success_at })) },
+        });
+      }
+    }
+
     // Log alerts to cron_run_log
     const summary = {
       alerts_count: alerts.length,
