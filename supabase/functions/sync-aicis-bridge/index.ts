@@ -312,12 +312,28 @@ async function syncSurface(
   let missingDomain = 0;
   let exhausted = false; // true when upstream returned a short page (we caught up)
 
+  // SIGNALS: upstream Postgres hits 30s statement_timeout on offset-pagination's full COUNT(*).
+  // Switch to date-window slicing for the trailing 90 days in 7-day chunks. Same upsert/dedupe path.
+  const useDateWindow = surface === "signals";
+  const dateWindows: Array<{ since: string; until: string }> = [];
+  if (useDateWindow) {
+    const SLICE_DAYS = 7;
+    const LOOKBACK_DAYS = 90;
+    const now = new Date();
+    for (let d = 0; d < LOOKBACK_DAYS; d += SLICE_DAYS) {
+      const until = new Date(now.getTime() - d * 86400_000).toISOString().slice(0, 10);
+      const since = new Date(now.getTime() - (d + SLICE_DAYS) * 86400_000).toISOString().slice(0, 10);
+      dateWindows.push({ since, until });
+    }
+  }
+  let windowIdx = 0;
+
   while (pages < maxPagesForSurface) {
     const currentPageSize = PAGE_SIZE_LADDER[pageSizeIdx];
-    const r = await bridgeFetch(baseUrl, apiKey, `/${surface}`, {
-      limit: currentPageSize,
-      offset,
-    });
+    const params: Record<string, string | number> = useDateWindow
+      ? { limit: currentPageSize, offset: 0, since: dateWindows[windowIdx].since, until: dateWindows[windowIdx].until }
+      : { limit: currentPageSize, offset };
+    const r = await bridgeFetch(baseUrl, apiKey, `/${surface}`, params);
     retriesUsed += r.retries ?? 0;
 
     if (!r.ok) {
