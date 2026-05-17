@@ -478,6 +478,16 @@ async function syncSurface(
     failed += pageFailed;
     pulled += items.length;
 
+    if (useDateWindow) {
+      // One page per date-window per run (windows are small enough). Advance to next window.
+      windowIdx++;
+      if (windowIdx >= dateWindows.length) {
+        exhausted = true;
+        break;
+      }
+      continue;
+    }
+
     if (items.length < currentPageSize) {
       exhausted = true;
       break;
