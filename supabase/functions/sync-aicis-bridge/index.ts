@@ -115,6 +115,25 @@ function pickDomain(rec: Record<string, any>): string | null {
 const FETCH_TIMEOUT_MS = 35_000;
 // Retries on transient upstream failures (502/503/504/timeouts).
 const MAX_FETCH_RETRIES = 3;
+// Honor upstream `Retry-After` for 429s — but cap so a single surface can't stall the whole run.
+const MAX_RETRY_AFTER_WAIT_MS = 45_000;
+
+/** Parse retry-after delay (ms) from `Retry-After` header (seconds or HTTP-date) or "Retry after Nms" body text. */
+function parseRetryAfterMs(headerVal: string | null, bodyMsg: string | null): number | null {
+  if (headerVal) {
+    const asInt = parseInt(headerVal, 10);
+    if (!isNaN(asInt)) return asInt < 1000 ? asInt * 1000 : asInt;
+    const t = Date.parse(headerVal);
+    if (!isNaN(t)) return Math.max(0, t - Date.now());
+  }
+  if (bodyMsg) {
+    const m = bodyMsg.match(/[Rr]etry after\s+(\d+)\s*ms/);
+    if (m) return parseInt(m[1], 10);
+    const s = bodyMsg.match(/[Rr]etry after\s+(\d+)\s*s(?:ec(?:onds?)?)?\b/);
+    if (s) return parseInt(s[1], 10) * 1000;
+  }
+  return null;
+}
 
 async function bridgeFetch(
   baseUrl: string,
