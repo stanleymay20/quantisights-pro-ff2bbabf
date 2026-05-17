@@ -176,7 +176,27 @@ async function bridgeFetch(
       lastError = `HTTP ${res.status}: ${text.slice(0, 200)}`;
       // Only retry transient upstream failures
       const transient = res.status === 429 || res.status === 502 || res.status === 503 || res.status === 504 || res.status === 500;
-      if (!transient || attempt === MAX_FETCH_RETRIES) {
+      // Also treat upstream "Rate limit exceeded" 200/4xx body as throttled
+      const bodyMsg = typeof body === "object" && body && "error" in body ? String((body as any).error) : text;
+      const isRateLimited = res.status === 429 || /rate limit/i.test(bodyMsg);
+      if (!transient && !isRateLimited || attempt === MAX_FETCH_RETRIES) {
+        if (!transient && !isRateLimited) {
+          return { ok: false, status: res.status, body, error: lastError, retries: attempt };
+        }
+      }
+      // Honor Retry-After if present (rate-limited)
+      if (isRateLimited) {
+        const wait = parseRetryAfterMs(res.headers.get("retry-after"), bodyMsg);
+        if (wait !== null && wait > 0 && wait <= MAX_RETRY_AFTER_WAIT_MS && attempt < MAX_FETCH_RETRIES) {
+          await new Promise((r) => setTimeout(r, wait + 250));
+          continue;
+        }
+        if (wait !== null && wait > MAX_RETRY_AFTER_WAIT_MS) {
+          // Refuse to block run beyond cap — surface as transient and let caller downshift/retry next run.
+          return { ok: false, status: res.status, body, error: `Rate limited: Retry-After ${wait}ms exceeds cap`, retries: attempt };
+        }
+      }
+      if (attempt === MAX_FETCH_RETRIES) {
         return { ok: false, status: res.status, body, error: lastError, retries: attempt };
       }
     } catch (e) {
