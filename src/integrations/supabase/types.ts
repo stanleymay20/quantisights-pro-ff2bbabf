@@ -1674,6 +1674,59 @@ export type Database = {
           },
         ]
       }
+      concept_associations: {
+        Row: {
+          co_occurrences: number
+          computed_at: string
+          concept_a: string
+          concept_b: string
+          confidence: number
+          corpus_size: number
+          id: string
+          last_seen_at: string
+          lift: number
+          organization_id: string
+          source_window_days: number
+          support: number
+        }
+        Insert: {
+          co_occurrences?: number
+          computed_at?: string
+          concept_a: string
+          concept_b: string
+          confidence?: number
+          corpus_size?: number
+          id?: string
+          last_seen_at?: string
+          lift?: number
+          organization_id: string
+          source_window_days?: number
+          support?: number
+        }
+        Update: {
+          co_occurrences?: number
+          computed_at?: string
+          concept_a?: string
+          concept_b?: string
+          confidence?: number
+          corpus_size?: number
+          id?: string
+          last_seen_at?: string
+          lift?: number
+          organization_id?: string
+          source_window_days?: number
+          support?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "concept_associations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       connector_configs: {
         Row: {
           connection_status: string | null
@@ -3850,6 +3903,59 @@ export type Database = {
         }
         Relationships: []
       }
+      entity_match_functions: {
+        Row: {
+          attribute_path: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          match_kind: string
+          name: string
+          organization_id: string
+          threshold: number | null
+          updated_at: string
+          weight: number
+        }
+        Insert: {
+          attribute_path: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          match_kind: string
+          name: string
+          organization_id: string
+          threshold?: number | null
+          updated_at?: string
+          weight?: number
+        }
+        Update: {
+          attribute_path?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          match_kind?: string
+          name?: string
+          organization_id?: string
+          threshold?: number | null
+          updated_at?: string
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entity_match_functions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       execution_events: {
         Row: {
           actor_id: string | null
@@ -5139,6 +5245,56 @@ export type Database = {
           },
         ]
       }
+      intelligence_product_verifications: {
+        Row: {
+          entity_id: string
+          entity_type: string
+          id: string
+          inputs_hash: string | null
+          is_reproducible: boolean
+          organization_id: string
+          output_summary: string | null
+          sources: Json
+          transformations: Json
+          verification_hash: string
+          verified_at: string
+        }
+        Insert: {
+          entity_id: string
+          entity_type: string
+          id?: string
+          inputs_hash?: string | null
+          is_reproducible?: boolean
+          organization_id: string
+          output_summary?: string | null
+          sources?: Json
+          transformations?: Json
+          verification_hash: string
+          verified_at?: string
+        }
+        Update: {
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          inputs_hash?: string | null
+          is_reproducible?: boolean
+          organization_id?: string
+          output_summary?: string | null
+          sources?: Json
+          transformations?: Json
+          verification_hash?: string
+          verified_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intelligence_product_verifications_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       internal_reference_data: {
         Row: {
           category: string
@@ -5197,6 +5353,54 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "internal_reference_data_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      iq_dimension_scores: {
+        Row: {
+          computed_at: string
+          dataset_id: string | null
+          details: Json
+          dimension: string
+          id: string
+          organization_id: string
+          sample_size: number
+          score: number
+        }
+        Insert: {
+          computed_at?: string
+          dataset_id?: string | null
+          details?: Json
+          dimension: string
+          id?: string
+          organization_id: string
+          sample_size?: number
+          score: number
+        }
+        Update: {
+          computed_at?: string
+          dataset_id?: string | null
+          details?: Json
+          dimension?: string
+          id?: string
+          organization_id?: string
+          sample_size?: number
+          score?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "iq_dimension_scores_dataset_id_fkey"
+            columns: ["dataset_id"]
+            isOneToOne: false
+            referencedRelation: "datasets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "iq_dimension_scores_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -8189,6 +8393,10 @@ export type Database = {
       get_connector_secret: { Args: { _secret_name: string }; Returns: string }
       get_ingest_cron_secret: { Args: never; Returns: string }
       get_ingest_service_token: { Args: never; Returns: string }
+      get_iq_composite_score: {
+        Args: { _dataset_id: string; _org_id: string }
+        Returns: Json
+      }
       get_metrics_summary: {
         Args: { _dataset_id: string; _org_id: string }
         Returns: {
