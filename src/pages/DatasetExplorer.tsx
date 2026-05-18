@@ -10,6 +10,10 @@ import {
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import SectionErrorBoundary from "@/components/SectionErrorBoundary";
+import { IQScoreBadge } from "@/components/quality/IQScoreBadge";
+import { Button } from "@/components/ui/button";
+import { invokeWithRetry } from "@/lib/edge-function-retry";
+import { toast } from "@/hooks/use-toast";
 
 interface DatasetRecord {
   id: string;
@@ -204,12 +208,34 @@ const DatasetExplorer = () => {
             <div className="max-w-[1200px] space-y-6">
               {/* Dataset header */}
               <div className="flex items-center justify-between">
-                <div>
+                <div className="space-y-1.5">
                   <h2 className="text-xl font-bold font-display">{selected.name}</h2>
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="text-xs text-muted-foreground">
                     Created {new Date(selected.created_at).toLocaleDateString()} · {selected.row_count?.toLocaleString() ?? "—"} rows
                     {selected.is_stale && <span className="text-yellow-500 ml-2">⚠ Stale</span>}
                   </p>
+                  <div className="flex items-center gap-2">
+                    <IQScoreBadge organizationId={selected.organization_id} datasetId={selected.id} />
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 px-2 text-[10px]"
+                      onClick={async () => {
+                        const t = toast({ title: "Computing IQ score…", description: "Scoring 7 dimensions" });
+                        const { data, error } = await invokeWithRetry<any>("compute-iq-score", {
+                          body: { organization_id: selected.organization_id, dataset_id: selected.id },
+                        });
+                        t.dismiss();
+                        if (error || data?.error) {
+                          toast({ title: "IQ score failed", description: error?.message ?? data?.error, variant: "destructive" });
+                        } else {
+                          toast({ title: `IQ composite: ${data?.composite ?? "—"}/100`, description: "Reload to see updated grade" });
+                        }
+                      }}
+                    >
+                      Recompute IQ
+                    </Button>
+                  </div>
                 </div>
                 <div className="flex items-center gap-1 bg-secondary/50 rounded-lg p-0.5">
                   {(["schema", "sample", "stats"] as const).map(v => (
