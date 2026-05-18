@@ -54,20 +54,24 @@ Deno.serve(async (req) => {
     const supa = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
     const since = new Date(Date.now() - windowDays * 86400000).toISOString();
 
-    // Pull text corpus from decisions + advisories
-    const [{ data: dec }, { data: adv }] = await Promise.all([
-      supa.from('decision_ledger').select('id, rationale, hypothesis, expected_outcome').eq('organization_id', body.organization_id).gte('created_at', since).limit(2000),
-      supa.from('advisory_outputs').select('id, summary, recommendation').eq('organization_id', body.organization_id).gte('created_at', since).limit(2000),
+    // Pull text corpus from decisions + advisories + insights
+    const [{ data: dec }, { data: adv }, { data: ins }] = await Promise.all([
+      supa.from('decision_ledger').select('id, notes, recommended_action, chosen_action, source_insight_summary').eq('organization_id', body.organization_id).gte('created_at', since).limit(2000),
+      supa.from('advisory_instances').select('id, title, action, rationale, expected_impact').eq('organization_id', body.organization_id).gte('created_at', since).limit(2000),
+      supa.from('insights').select('id, message').eq('organization_id', body.organization_id).gte('created_at', since).limit(2000),
     ]);
 
     const docs: Set<string>[] = [];
     for (const d of dec ?? []) {
-      const t = [d.rationale, d.hypothesis, d.expected_outcome].filter(Boolean).join(' ');
+      const t = [d.notes, d.recommended_action, d.chosen_action, d.source_insight_summary].filter(Boolean).join(' ');
       if (t) docs.push(extractConcepts(t));
     }
     for (const a of adv ?? []) {
-      const t = [a.summary, a.recommendation].filter(Boolean).join(' ');
+      const t = [a.title, a.action, a.rationale, a.expected_impact].filter(Boolean).join(' ');
       if (t) docs.push(extractConcepts(t));
+    }
+    for (const i of ins ?? []) {
+      if (i.message) docs.push(extractConcepts(i.message));
     }
 
     const corpusSize = docs.length;
