@@ -27,13 +27,14 @@ const DATA_SURFACES = [
 ] as const;
 
 // Adaptive page size ladder. Start big; downshift on transient upstream failures.
-// Bottom rungs (50, 25) added to survive AICIS /signals 30s statement timeout.
-const PAGE_SIZE_LADDER = [500, 250, 100, 50, 25] as const;
+// Bottom rung (10) added to survive AICIS /signals 30s statement timeout even on 2-day windows.
+const PAGE_SIZE_LADDER = [500, 250, 100, 50, 25, 10] as const;
 const DEFAULT_PAGE_SIZE = PAGE_SIZE_LADDER[0];
 
 // Per-surface hard page cap per run (heavy surfaces get more pages, but bounded).
+// signals now uses 2-day windows over 90 days → up to 45 windows, but cap at 30 per run.
 const SURFACE_MAX_PAGES: Record<string, number> = {
-  signals: 20,
+  signals: 30,
   entities: 10,
   events: 20,
   countries: 5,
@@ -47,8 +48,10 @@ const SURFACE_MAX_PAGES: Record<string, number> = {
 const DEFAULT_MAX_PAGES = 10;
 
 // Circuit breaker: after N consecutive failed runs, skip the surface for this window.
+// Cooldown is capped at 1 hour — never longer — so a stuck surface always self-heals
+// within an hour and gets re-attempted by the next cron run.
 const BREAKER_FAILURE_THRESHOLD = 3;
-const BREAKER_COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
+const BREAKER_COOLDOWN_MS = 60 * 60 * 1000; // 1 hour (max)
 
 const STALE_HOURS = 24;
 const EXPECTED_MIN_COUNTRIES = 211; // AICIS Bridge v2 country universe (UN + sovereign + dependencies)
@@ -246,7 +249,8 @@ async function syncSurface(
     : 0;
   // Surfaces that historically time out on the upstream Postgres (statement_timeout)
   // start at a smaller page size to keep each round-trip well under 30s.
-  const SLOW_SURFACE_START_SIZE: Record<string, number> = { signals: 50, events: 250 };
+  // signals: pin to ladder floor (10) — upstream choked even on 25 with 7-day windows.
+  const SLOW_SURFACE_START_SIZE: Record<string, number> = { signals: 10, events: 250 };
   const slowDefault = SLOW_SURFACE_START_SIZE[surface];
   const preferredSize = PAGE_SIZE_LADDER.includes(prevState.metadata?.last_page_size)
     ? Number(prevState.metadata.last_page_size)
@@ -254,6 +258,8 @@ async function syncSurface(
   let pageSizeIdx = PAGE_SIZE_LADDER.indexOf(preferredSize as any);
   if (pageSizeIdx < 0) pageSizeIdx = PAGE_SIZE_LADDER.indexOf(slowDefault as any);
   if (pageSizeIdx < 0) pageSizeIdx = 0;
+  // For signals: force the floor even if a prior run cached a larger size.
+  if (surface === "signals") pageSizeIdx = PAGE_SIZE_LADDER.length - 1;
 
   const maxPagesForSurface = SURFACE_MAX_PAGES[surface] ?? DEFAULT_MAX_PAGES;
 
@@ -313,11 +319,12 @@ async function syncSurface(
   let exhausted = false; // true when upstream returned a short page (we caught up)
 
   // SIGNALS: upstream Postgres hits 30s statement_timeout on offset-pagination's full COUNT(*).
-  // Switch to date-window slicing for the trailing 90 days in 7-day chunks. Same upsert/dedupe path.
+  // Switch to date-window slicing for the trailing 90 days in 2-day chunks (tightened from 7 to
+  // shrink the upstream working set further). Same upsert/dedupe path.
   const useDateWindow = surface === "signals";
   const dateWindows: Array<{ since: string; until: string }> = [];
   if (useDateWindow) {
-    const SLICE_DAYS = 7;
+    const SLICE_DAYS = 2;
     const LOOKBACK_DAYS = 90;
     const now = new Date();
     for (let d = 0; d < LOOKBACK_DAYS; d += SLICE_DAYS) {
@@ -888,14 +895,28 @@ Deno.serve(async (req: Request) => {
     }]),
   );
 
-  // 4. Sync each surface, isolated. Skip if circuit breaker is open.
+  // 4. Sync each surface, isolated. Skip if circuit breaker is open AND still in the future.
+  //    Stuck-row guard: rows with consecutive_failures > 0 AND circuit_breaker_until IS NULL
+  //    are ALWAYS eligible for retry (never trapped). Cap any breaker open at 1h max so
+  //    stale long-expiry rows still self-heal.
   const now = Date.now();
   const results: SurfaceResult[] = [];
   for (const surface of requestedSurfaces) {
     const prevState = stateMap.get(surface) ?? { metadata: {}, consecutive_failures: 0, circuit_breaker_until: null };
-    const breakerUntilMs = prevState.circuit_breaker_until ? Date.parse(prevState.circuit_breaker_until) : 0;
-    if (breakerUntilMs > now) {
-      log("warn", "surface_skipped_breaker_open", { surface, until: prevState.circuit_breaker_until, consecutive_failures: prevState.consecutive_failures });
+    const rawBreakerUntilMs = prevState.circuit_breaker_until ? Date.parse(prevState.circuit_breaker_until) : 0;
+    // Cap effective breaker at 1h from now — older rows that somehow got a longer expiry are released.
+    const effectiveBreakerUntilMs = Math.min(rawBreakerUntilMs, now + BREAKER_COOLDOWN_MS);
+    const breakerOpen = effectiveBreakerUntilMs > now;
+    const stuckButEligible = prevState.consecutive_failures > 0 && !prevState.circuit_breaker_until;
+
+    if (breakerOpen) {
+      log("warn", "surface_skipped_breaker_open", {
+        surface,
+        reason: "circuit_breaker_open",
+        until: new Date(effectiveBreakerUntilMs).toISOString(),
+        raw_until: prevState.circuit_breaker_until,
+        consecutive_failures: prevState.consecutive_failures,
+      });
       results.push({
         surface,
         status: "skipped",
@@ -911,11 +932,22 @@ Deno.serve(async (req: Request) => {
         resume_cursor: prevState.metadata?.resume_offset ?? 0,
         consecutive_failures: prevState.consecutive_failures,
         circuit_breaker_open: true,
-        next_retry_at: prevState.circuit_breaker_until,
+        next_retry_at: new Date(effectiveBreakerUntilMs).toISOString(),
         error: "circuit_breaker_open",
       });
       continue;
     }
+
+    log("info", "surface_retry_eligible", {
+      surface,
+      reason: stuckButEligible
+        ? "stuck_row_no_breaker_recovery"
+        : prevState.consecutive_failures > 0
+          ? "breaker_expired_retry"
+          : "normal_run",
+      consecutive_failures: prevState.consecutive_failures,
+      prev_breaker_until: prevState.circuit_breaker_until,
+    });
     try {
       const r = await syncSurface(
         supabase,
@@ -974,6 +1006,65 @@ Deno.serve(async (req: Request) => {
     stats,
     results,
   };
+
+  // --- external_data_sources writeback -------------------------------------------------
+  // Update the AICIS source row so downstream health/freshness dashboards reflect reality.
+  // Rules:
+  //  - last_refreshed_at + next_refresh_at: bump iff at least ONE surface succeeded or partial.
+  //  - last_error: ONLY set when EVERY attempted surface failed (skipped doesn't count as failure).
+  //  - Preserve partial-success: error cleared on any landing, even if other surfaces failed.
+  try {
+    const anyLanded = summary.surfaces_succeeded + summary.surfaces_partial > 0;
+    const attempted = results.filter((r) => r.status !== "skipped");
+    const allFailed = attempted.length > 0 && attempted.every((r) => r.status === "failed");
+    const failedSurfaces = results.filter((r) => r.status === "failed").map((r) => r.surface);
+
+    const { data: srcRow } = await supabase
+      .from("external_data_sources")
+      .select("id, refresh_interval_hours")
+      .eq("organization_id", orgId)
+      .eq("vendor_key", "aicis")
+      .maybeSingle();
+
+    if (srcRow?.id) {
+      const intervalH = Number(srcRow.refresh_interval_hours) || 6;
+      const nowIso = new Date().toISOString();
+      const nextRefreshIso = new Date(Date.now() + intervalH * 3600 * 1000).toISOString();
+
+      const patch: Record<string, unknown> = {};
+      if (anyLanded) {
+        patch.last_refreshed_at = nowIso;
+        patch.next_refresh_at = nextRefreshIso;
+        patch.last_error = null; // clear on any landing — preserves partial-success semantics
+      }
+      if (allFailed) {
+        patch.last_error = `All ${attempted.length} attempted surfaces failed: ${failedSurfaces.join(", ")}`.slice(0, 500);
+      }
+
+      if (Object.keys(patch).length > 0) {
+        await supabase.from("external_data_sources").update(patch).eq("id", srcRow.id);
+        log("info", "source_writeback", {
+          source_id: srcRow.id,
+          organization_id: orgId,
+          any_landed: anyLanded,
+          all_failed: allFailed,
+          patch_keys: Object.keys(patch),
+          next_refresh_at: patch.next_refresh_at ?? null,
+        });
+      } else {
+        log("info", "source_writeback_skipped", {
+          source_id: srcRow.id,
+          reason: "no_attempted_surfaces",
+          summary: { succeeded: summary.surfaces_succeeded, failed: summary.surfaces_failed, skipped: summary.surfaces_skipped },
+        });
+      }
+    } else {
+      log("warn", "source_writeback_no_row", { organization_id: orgId });
+    }
+  } catch (e) {
+    log("warn", "source_writeback_failed", { error: e instanceof Error ? e.message : String(e) });
+  }
+  // --- end writeback --------------------------------------------------------------------
 
   // Audit
   await supabase.from("audit_log").insert({
