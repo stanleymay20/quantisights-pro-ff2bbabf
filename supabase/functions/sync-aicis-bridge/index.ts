@@ -895,14 +895,28 @@ Deno.serve(async (req: Request) => {
     }]),
   );
 
-  // 4. Sync each surface, isolated. Skip if circuit breaker is open.
+  // 4. Sync each surface, isolated. Skip if circuit breaker is open AND still in the future.
+  //    Stuck-row guard: rows with consecutive_failures > 0 AND circuit_breaker_until IS NULL
+  //    are ALWAYS eligible for retry (never trapped). Cap any breaker open at 1h max so
+  //    stale long-expiry rows still self-heal.
   const now = Date.now();
   const results: SurfaceResult[] = [];
   for (const surface of requestedSurfaces) {
     const prevState = stateMap.get(surface) ?? { metadata: {}, consecutive_failures: 0, circuit_breaker_until: null };
-    const breakerUntilMs = prevState.circuit_breaker_until ? Date.parse(prevState.circuit_breaker_until) : 0;
-    if (breakerUntilMs > now) {
-      log("warn", "surface_skipped_breaker_open", { surface, until: prevState.circuit_breaker_until, consecutive_failures: prevState.consecutive_failures });
+    const rawBreakerUntilMs = prevState.circuit_breaker_until ? Date.parse(prevState.circuit_breaker_until) : 0;
+    // Cap effective breaker at 1h from now — older rows that somehow got a longer expiry are released.
+    const effectiveBreakerUntilMs = Math.min(rawBreakerUntilMs, now + BREAKER_COOLDOWN_MS);
+    const breakerOpen = effectiveBreakerUntilMs > now;
+    const stuckButEligible = prevState.consecutive_failures > 0 && !prevState.circuit_breaker_until;
+
+    if (breakerOpen) {
+      log("warn", "surface_skipped_breaker_open", {
+        surface,
+        reason: "circuit_breaker_open",
+        until: new Date(effectiveBreakerUntilMs).toISOString(),
+        raw_until: prevState.circuit_breaker_until,
+        consecutive_failures: prevState.consecutive_failures,
+      });
       results.push({
         surface,
         status: "skipped",
@@ -918,11 +932,22 @@ Deno.serve(async (req: Request) => {
         resume_cursor: prevState.metadata?.resume_offset ?? 0,
         consecutive_failures: prevState.consecutive_failures,
         circuit_breaker_open: true,
-        next_retry_at: prevState.circuit_breaker_until,
+        next_retry_at: new Date(effectiveBreakerUntilMs).toISOString(),
         error: "circuit_breaker_open",
       });
       continue;
     }
+
+    log("info", "surface_retry_eligible", {
+      surface,
+      reason: stuckButEligible
+        ? "stuck_row_no_breaker_recovery"
+        : prevState.consecutive_failures > 0
+          ? "breaker_expired_retry"
+          : "normal_run",
+      consecutive_failures: prevState.consecutive_failures,
+      prev_breaker_until: prevState.circuit_breaker_until,
+    });
     try {
       const r = await syncSurface(
         supabase,
