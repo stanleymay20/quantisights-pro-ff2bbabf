@@ -27,13 +27,14 @@ const DATA_SURFACES = [
 ] as const;
 
 // Adaptive page size ladder. Start big; downshift on transient upstream failures.
-// Bottom rungs (50, 25) added to survive AICIS /signals 30s statement timeout.
-const PAGE_SIZE_LADDER = [500, 250, 100, 50, 25] as const;
+// Bottom rung (10) added to survive AICIS /signals 30s statement timeout even on 2-day windows.
+const PAGE_SIZE_LADDER = [500, 250, 100, 50, 25, 10] as const;
 const DEFAULT_PAGE_SIZE = PAGE_SIZE_LADDER[0];
 
 // Per-surface hard page cap per run (heavy surfaces get more pages, but bounded).
+// signals now uses 2-day windows over 90 days → up to 45 windows, but cap at 30 per run.
 const SURFACE_MAX_PAGES: Record<string, number> = {
-  signals: 20,
+  signals: 30,
   entities: 10,
   events: 20,
   countries: 5,
@@ -47,8 +48,10 @@ const SURFACE_MAX_PAGES: Record<string, number> = {
 const DEFAULT_MAX_PAGES = 10;
 
 // Circuit breaker: after N consecutive failed runs, skip the surface for this window.
+// Cooldown is capped at 1 hour — never longer — so a stuck surface always self-heals
+// within an hour and gets re-attempted by the next cron run.
 const BREAKER_FAILURE_THRESHOLD = 3;
-const BREAKER_COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
+const BREAKER_COOLDOWN_MS = 60 * 60 * 1000; // 1 hour (max)
 
 const STALE_HOURS = 24;
 const EXPECTED_MIN_COUNTRIES = 211; // AICIS Bridge v2 country universe (UN + sovereign + dependencies)
