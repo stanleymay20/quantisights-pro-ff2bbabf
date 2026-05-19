@@ -319,11 +319,12 @@ async function syncSurface(
   let exhausted = false; // true when upstream returned a short page (we caught up)
 
   // SIGNALS: upstream Postgres hits 30s statement_timeout on offset-pagination's full COUNT(*).
-  // Switch to date-window slicing for the trailing 90 days in 7-day chunks. Same upsert/dedupe path.
+  // Switch to date-window slicing for the trailing 90 days in 2-day chunks (tightened from 7 to
+  // shrink the upstream working set further). Same upsert/dedupe path.
   const useDateWindow = surface === "signals";
   const dateWindows: Array<{ since: string; until: string }> = [];
   if (useDateWindow) {
-    const SLICE_DAYS = 7;
+    const SLICE_DAYS = 2;
     const LOOKBACK_DAYS = 90;
     const now = new Date();
     for (let d = 0; d < LOOKBACK_DAYS; d += SLICE_DAYS) {
