@@ -1007,6 +1007,65 @@ Deno.serve(async (req: Request) => {
     results,
   };
 
+  // --- external_data_sources writeback -------------------------------------------------
+  // Update the AICIS source row so downstream health/freshness dashboards reflect reality.
+  // Rules:
+  //  - last_refreshed_at + next_refresh_at: bump iff at least ONE surface succeeded or partial.
+  //  - last_error: ONLY set when EVERY attempted surface failed (skipped doesn't count as failure).
+  //  - Preserve partial-success: error cleared on any landing, even if other surfaces failed.
+  try {
+    const anyLanded = summary.surfaces_succeeded + summary.surfaces_partial > 0;
+    const attempted = results.filter((r) => r.status !== "skipped");
+    const allFailed = attempted.length > 0 && attempted.every((r) => r.status === "failed");
+    const failedSurfaces = results.filter((r) => r.status === "failed").map((r) => r.surface);
+
+    const { data: srcRow } = await supabase
+      .from("external_data_sources")
+      .select("id, refresh_interval_hours")
+      .eq("organization_id", orgId)
+      .eq("vendor_key", "aicis")
+      .maybeSingle();
+
+    if (srcRow?.id) {
+      const intervalH = Number(srcRow.refresh_interval_hours) || 6;
+      const nowIso = new Date().toISOString();
+      const nextRefreshIso = new Date(Date.now() + intervalH * 3600 * 1000).toISOString();
+
+      const patch: Record<string, unknown> = {};
+      if (anyLanded) {
+        patch.last_refreshed_at = nowIso;
+        patch.next_refresh_at = nextRefreshIso;
+        patch.last_error = null; // clear on any landing — preserves partial-success semantics
+      }
+      if (allFailed) {
+        patch.last_error = `All ${attempted.length} attempted surfaces failed: ${failedSurfaces.join(", ")}`.slice(0, 500);
+      }
+
+      if (Object.keys(patch).length > 0) {
+        await supabase.from("external_data_sources").update(patch).eq("id", srcRow.id);
+        log("info", "source_writeback", {
+          source_id: srcRow.id,
+          organization_id: orgId,
+          any_landed: anyLanded,
+          all_failed: allFailed,
+          patch_keys: Object.keys(patch),
+          next_refresh_at: patch.next_refresh_at ?? null,
+        });
+      } else {
+        log("info", "source_writeback_skipped", {
+          source_id: srcRow.id,
+          reason: "no_attempted_surfaces",
+          summary: { succeeded: summary.surfaces_succeeded, failed: summary.surfaces_failed, skipped: summary.surfaces_skipped },
+        });
+      }
+    } else {
+      log("warn", "source_writeback_no_row", { organization_id: orgId });
+    }
+  } catch (e) {
+    log("warn", "source_writeback_failed", { error: e instanceof Error ? e.message : String(e) });
+  }
+  // --- end writeback --------------------------------------------------------------------
+
   // Audit
   await supabase.from("audit_log").insert({
     organization_id: orgId,
