@@ -51,11 +51,18 @@ Deno.serve(async (req) => {
   // Fetch org identity profile (best-effort)
   const { data: identity } = await svc
     .from("organizational_identity")
-    .select("settings")
+    .select("industry_context, strategic_priorities, key_stakeholders")
     .eq("organization_id", body.organization_id)
     .maybeSingle();
 
-  const profile: OrgProfile = (identity?.settings as OrgProfile) || {};
+  const stakeholders = Array.isArray(identity?.key_stakeholders) ? (identity!.key_stakeholders as Array<{ name?: string } | string>) : [];
+  const watched = stakeholders.map((s) => typeof s === "string" ? s : s?.name).filter(Boolean) as string[];
+  const profile: OrgProfile = {
+    industry: identity?.industry_context ?? undefined,
+    watched_entities: watched,
+    geography: [],
+    suppliers: [],
+  };
 
   // Fetch unscored items (status = new)
   const { data: items, error } = await svc
