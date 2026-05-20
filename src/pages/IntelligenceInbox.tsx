@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { IntelligenceDisclaimer } from "@/components/IntelligenceDisclaimer";
+import IntelligenceDisclaimer from "@/components/IntelligenceDisclaimer";
 import { AlertTriangle, Globe, ShieldAlert, Inbox, ArrowRight, ThumbsUp, ThumbsDown } from "lucide-react";
 
 const SEVERITY_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
