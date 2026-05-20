@@ -368,6 +368,51 @@ export type Database = {
           },
         ]
       }
+      aicis_export_batches: {
+        Row: {
+          batch_ref: string
+          completed_at: string | null
+          duplicates_suppressed: number
+          error: string | null
+          id: string
+          item_count: number
+          organization_id: string
+          processing_ms: number | null
+          received_at: string
+          schema_version: string
+          source: string
+          status: string
+        }
+        Insert: {
+          batch_ref: string
+          completed_at?: string | null
+          duplicates_suppressed?: number
+          error?: string | null
+          id?: string
+          item_count?: number
+          organization_id: string
+          processing_ms?: number | null
+          received_at?: string
+          schema_version: string
+          source: string
+          status?: string
+        }
+        Update: {
+          batch_ref?: string
+          completed_at?: string | null
+          duplicates_suppressed?: number
+          error?: string | null
+          id?: string
+          item_count?: number
+          organization_id?: string
+          processing_ms?: number | null
+          received_at?: string
+          schema_version?: string
+          source?: string
+          status?: string
+        }
+        Relationships: []
+      }
       aicis_influence_graph: {
         Row: {
           description: string | null
@@ -483,6 +528,99 @@ export type Database = {
             columns: ["source_run_id"]
             isOneToOne: false
             referencedRelation: "aicis_sync_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      aicis_intelligence_items: {
+        Row: {
+          cluster_id: string | null
+          content_hash: string
+          domain: string | null
+          entities: Json
+          export_batch_id: string | null
+          geography: string[]
+          global_criticality_score: number
+          id: string
+          ingested_at: string
+          last_transition_at: string
+          occurred_at: string | null
+          organization_id: string
+          payload: Json
+          resolution_notes: string | null
+          resolution_status: string | null
+          schema_version: string
+          severity: string
+          source_ref: string | null
+          source_surface: string
+          status: Database["public"]["Enums"]["intelligence_status"]
+          summary: string | null
+          title: string | null
+          urgency: string
+        }
+        Insert: {
+          cluster_id?: string | null
+          content_hash: string
+          domain?: string | null
+          entities?: Json
+          export_batch_id?: string | null
+          geography?: string[]
+          global_criticality_score?: number
+          id?: string
+          ingested_at?: string
+          last_transition_at?: string
+          occurred_at?: string | null
+          organization_id: string
+          payload?: Json
+          resolution_notes?: string | null
+          resolution_status?: string | null
+          schema_version?: string
+          severity?: string
+          source_ref?: string | null
+          source_surface: string
+          status?: Database["public"]["Enums"]["intelligence_status"]
+          summary?: string | null
+          title?: string | null
+          urgency?: string
+        }
+        Update: {
+          cluster_id?: string | null
+          content_hash?: string
+          domain?: string | null
+          entities?: Json
+          export_batch_id?: string | null
+          geography?: string[]
+          global_criticality_score?: number
+          id?: string
+          ingested_at?: string
+          last_transition_at?: string
+          occurred_at?: string | null
+          organization_id?: string
+          payload?: Json
+          resolution_notes?: string | null
+          resolution_status?: string | null
+          schema_version?: string
+          severity?: string
+          source_ref?: string | null
+          source_surface?: string
+          status?: Database["public"]["Enums"]["intelligence_status"]
+          summary?: string | null
+          title?: string | null
+          urgency?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aicis_intelligence_items_export_batch_id_fkey"
+            columns: ["export_batch_id"]
+            isOneToOne: false
+            referencedRelation: "aicis_export_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intel_items_cluster_fk"
+            columns: ["cluster_id"]
+            isOneToOne: false
+            referencedRelation: "intelligence_clusters"
             referencedColumns: ["id"]
           },
         ]
@@ -5195,6 +5333,60 @@ export type Database = {
           },
         ]
       }
+      intelligence_advisories: {
+        Row: {
+          body: string
+          brief_id: string | null
+          confidence: number
+          created_at: string
+          id: string
+          intelligence_item_id: string | null
+          kind: Database["public"]["Enums"]["intelligence_advisory_kind"]
+          organization_id: string
+          rationale: Json
+          title: string
+        }
+        Insert: {
+          body: string
+          brief_id?: string | null
+          confidence?: number
+          created_at?: string
+          id?: string
+          intelligence_item_id?: string | null
+          kind: Database["public"]["Enums"]["intelligence_advisory_kind"]
+          organization_id: string
+          rationale?: Json
+          title: string
+        }
+        Update: {
+          body?: string
+          brief_id?: string | null
+          confidence?: number
+          created_at?: string
+          id?: string
+          intelligence_item_id?: string | null
+          kind?: Database["public"]["Enums"]["intelligence_advisory_kind"]
+          organization_id?: string
+          rationale?: Json
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intelligence_advisories_brief_id_fkey"
+            columns: ["brief_id"]
+            isOneToOne: false
+            referencedRelation: "intelligence_briefs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intelligence_advisories_intelligence_item_id_fkey"
+            columns: ["intelligence_item_id"]
+            isOneToOne: false
+            referencedRelation: "aicis_intelligence_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       intelligence_audit_trail: {
         Row: {
           confidence_score: number | null
@@ -5245,6 +5437,242 @@ export type Database = {
           },
         ]
       }
+      intelligence_briefs: {
+        Row: {
+          affected_areas: string[]
+          cluster_id: string | null
+          confidence: number
+          generated_at: string
+          id: string
+          item_ids: string[]
+          organization_id: string
+          projected_impact_window: unknown
+          recommended_actions: Json
+          severity: string
+          summary: string
+          title: string
+          why_it_matters: string | null
+        }
+        Insert: {
+          affected_areas?: string[]
+          cluster_id?: string | null
+          confidence?: number
+          generated_at?: string
+          id?: string
+          item_ids?: string[]
+          organization_id: string
+          projected_impact_window?: unknown
+          recommended_actions?: Json
+          severity?: string
+          summary: string
+          title: string
+          why_it_matters?: string | null
+        }
+        Update: {
+          affected_areas?: string[]
+          cluster_id?: string | null
+          confidence?: number
+          generated_at?: string
+          id?: string
+          item_ids?: string[]
+          organization_id?: string
+          projected_impact_window?: unknown
+          recommended_actions?: Json
+          severity?: string
+          summary?: string
+          title?: string
+          why_it_matters?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intelligence_briefs_cluster_id_fkey"
+            columns: ["cluster_id"]
+            isOneToOne: false
+            referencedRelation: "intelligence_clusters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      intelligence_clusters: {
+        Row: {
+          canonical_summary: string | null
+          cluster_key: string
+          escalation_velocity: number
+          first_seen_at: string
+          id: string
+          last_seen_at: string
+          organization_id: string
+          related_item_ids: string[]
+          source_count: number
+          trend_strength: number
+        }
+        Insert: {
+          canonical_summary?: string | null
+          cluster_key: string
+          escalation_velocity?: number
+          first_seen_at?: string
+          id?: string
+          last_seen_at?: string
+          organization_id: string
+          related_item_ids?: string[]
+          source_count?: number
+          trend_strength?: number
+        }
+        Update: {
+          canonical_summary?: string | null
+          cluster_key?: string
+          escalation_velocity?: number
+          first_seen_at?: string
+          id?: string
+          last_seen_at?: string
+          organization_id?: string
+          related_item_ids?: string[]
+          source_count?: number
+          trend_strength?: number
+        }
+        Relationships: []
+      }
+      intelligence_feedback: {
+        Row: {
+          brief_id: string | null
+          created_at: string
+          feedback: Database["public"]["Enums"]["intelligence_feedback_kind"]
+          feedback_reason: string | null
+          feedback_weight: number
+          id: string
+          intelligence_item_id: string | null
+          organization_id: string
+          user_id: string
+        }
+        Insert: {
+          brief_id?: string | null
+          created_at?: string
+          feedback: Database["public"]["Enums"]["intelligence_feedback_kind"]
+          feedback_reason?: string | null
+          feedback_weight?: number
+          id?: string
+          intelligence_item_id?: string | null
+          organization_id: string
+          user_id: string
+        }
+        Update: {
+          brief_id?: string | null
+          created_at?: string
+          feedback?: Database["public"]["Enums"]["intelligence_feedback_kind"]
+          feedback_reason?: string | null
+          feedback_weight?: number
+          id?: string
+          intelligence_item_id?: string | null
+          organization_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intelligence_feedback_brief_id_fkey"
+            columns: ["brief_id"]
+            isOneToOne: false
+            referencedRelation: "intelligence_briefs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intelligence_feedback_intelligence_item_id_fkey"
+            columns: ["intelligence_item_id"]
+            isOneToOne: false
+            referencedRelation: "aicis_intelligence_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      intelligence_memory: {
+        Row: {
+          attribution_notes: string | null
+          effectiveness_rating: number | null
+          id: string
+          intelligence_item_id: string | null
+          observed_outcome: string | null
+          organization_id: string
+          recorded_at: string
+          recorded_by: string | null
+          route_id: string | null
+        }
+        Insert: {
+          attribution_notes?: string | null
+          effectiveness_rating?: number | null
+          id?: string
+          intelligence_item_id?: string | null
+          observed_outcome?: string | null
+          organization_id: string
+          recorded_at?: string
+          recorded_by?: string | null
+          route_id?: string | null
+        }
+        Update: {
+          attribution_notes?: string | null
+          effectiveness_rating?: number | null
+          id?: string
+          intelligence_item_id?: string | null
+          observed_outcome?: string | null
+          organization_id?: string
+          recorded_at?: string
+          recorded_by?: string | null
+          route_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intelligence_memory_intelligence_item_id_fkey"
+            columns: ["intelligence_item_id"]
+            isOneToOne: false
+            referencedRelation: "aicis_intelligence_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intelligence_memory_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "intelligence_routes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      intelligence_observability: {
+        Row: {
+          avg_processing_ms: number
+          conversion_rate: number
+          day: string
+          duplicates_suppressed: number
+          id: string
+          imports_failed: number
+          imports_total: number
+          items_to_decisions: number
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          avg_processing_ms?: number
+          conversion_rate?: number
+          day?: string
+          duplicates_suppressed?: number
+          id?: string
+          imports_failed?: number
+          imports_total?: number
+          items_to_decisions?: number
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          avg_processing_ms?: number
+          conversion_rate?: number
+          day?: string
+          duplicates_suppressed?: number
+          id?: string
+          imports_failed?: number
+          imports_total?: number
+          items_to_decisions?: number
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       intelligence_product_verifications: {
         Row: {
           entity_id: string
@@ -5291,6 +5719,107 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      intelligence_relevance_scores: {
+        Row: {
+          business_impact_score: number
+          computed_at: string
+          decision_pressure_score: number
+          factors: Json
+          id: string
+          intelligence_item_id: string
+          operational_urgency_score: number
+          organization_id: string
+          organization_relevance_score: number
+        }
+        Insert: {
+          business_impact_score: number
+          computed_at?: string
+          decision_pressure_score?: number
+          factors?: Json
+          id?: string
+          intelligence_item_id: string
+          operational_urgency_score: number
+          organization_id: string
+          organization_relevance_score: number
+        }
+        Update: {
+          business_impact_score?: number
+          computed_at?: string
+          decision_pressure_score?: number
+          factors?: Json
+          id?: string
+          intelligence_item_id?: string
+          operational_urgency_score?: number
+          organization_id?: string
+          organization_relevance_score?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intelligence_relevance_scores_intelligence_item_id_fkey"
+            columns: ["intelligence_item_id"]
+            isOneToOne: true
+            referencedRelation: "aicis_intelligence_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      intelligence_routes: {
+        Row: {
+          brief_id: string | null
+          created_at: string
+          id: string
+          intelligence_item_id: string | null
+          organization_id: string
+          owner_user_id: string | null
+          reason: string | null
+          route_type: string
+          routed_by: string
+          target_id: string | null
+          target_table: string | null
+        }
+        Insert: {
+          brief_id?: string | null
+          created_at?: string
+          id?: string
+          intelligence_item_id?: string | null
+          organization_id: string
+          owner_user_id?: string | null
+          reason?: string | null
+          route_type: string
+          routed_by: string
+          target_id?: string | null
+          target_table?: string | null
+        }
+        Update: {
+          brief_id?: string | null
+          created_at?: string
+          id?: string
+          intelligence_item_id?: string | null
+          organization_id?: string
+          owner_user_id?: string | null
+          reason?: string | null
+          route_type?: string
+          routed_by?: string
+          target_id?: string | null
+          target_table?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intelligence_routes_brief_id_fkey"
+            columns: ["brief_id"]
+            isOneToOne: false
+            referencedRelation: "intelligence_briefs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intelligence_routes_intelligence_item_id_fkey"
+            columns: ["intelligence_item_id"]
+            isOneToOne: false
+            referencedRelation: "aicis_intelligence_items"
             referencedColumns: ["id"]
           },
         ]
@@ -8540,6 +9069,27 @@ export type Database = {
         | "bigquery"
         | "webhook"
       data_origin_type: "client" | "internal" | "external"
+      intelligence_advisory_kind:
+        | "operational"
+        | "risk_mitigation"
+        | "escalation"
+        | "strategic"
+      intelligence_feedback_kind:
+        | "useful"
+        | "not_useful"
+        | "false_positive"
+        | "acted_on"
+        | "ignored"
+      intelligence_status:
+        | "new"
+        | "scored"
+        | "briefed"
+        | "advised"
+        | "routed"
+        | "acknowledged"
+        | "acted_on"
+        | "resolved"
+        | "archived"
       org_role:
         | "owner"
         | "admin"
@@ -8708,6 +9258,30 @@ export const Constants = {
         "webhook",
       ],
       data_origin_type: ["client", "internal", "external"],
+      intelligence_advisory_kind: [
+        "operational",
+        "risk_mitigation",
+        "escalation",
+        "strategic",
+      ],
+      intelligence_feedback_kind: [
+        "useful",
+        "not_useful",
+        "false_positive",
+        "acted_on",
+        "ignored",
+      ],
+      intelligence_status: [
+        "new",
+        "scored",
+        "briefed",
+        "advised",
+        "routed",
+        "acknowledged",
+        "acted_on",
+        "resolved",
+        "archived",
+      ],
       org_role: ["owner", "admin", "analyst", "executive", "viewer", "steward"],
       visibility_scope_type: ["private", "org_shared", "global"],
       workspace_role: [
