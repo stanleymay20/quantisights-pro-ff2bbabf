@@ -68,12 +68,12 @@ Deno.serve(async (req) => {
   if (body.route_type === "decision") {
     const { data: dec, error } = await svc.from("decision_ledger").insert({
       organization_id: body.organization_id,
-      title,
-      description: `Auto-created from AICIS intelligence. Reason: ${body.reason || "n/a"}`,
-      status: "pending",
-      severity,
-      source: "aicis_intelligence",
-      created_by: auth.userId,
+      decision_type: "aicis_intelligence",
+      decision_status: "pending",
+      recommended_action: title,
+      decision_origin: "aicis_intelligence",
+      notes: `Auto-created from AICIS intelligence. Reason: ${body.reason || "n/a"}`,
+      decided_by: body.owner_user_id ?? auth.userId,
     }).select("id").single();
     if (error) return json({ error: `Decision insert failed: ${error.message}` }, 500);
     targetTable = "decision_ledger"; targetId = dec.id;
@@ -81,10 +81,10 @@ Deno.serve(async (req) => {
     const { data: plan, error } = await svc.from("execution_plans").insert({
       organization_id: body.organization_id,
       action_title: title,
+      action_description: `Auto-created from AICIS intelligence. ${body.reason || ""}`,
       status: "pending",
       priority: severity === "critical" ? "critical" : severity === "high" ? "high" : "medium",
       owner_user_id: body.owner_user_id ?? null,
-      created_by: auth.userId,
     }).select("id").single();
     if (error) return json({ error: `Plan insert failed: ${error.message}` }, 500);
     targetTable = "execution_plans"; targetId = plan.id;
