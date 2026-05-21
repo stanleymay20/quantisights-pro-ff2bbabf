@@ -43,6 +43,7 @@ const navSections: NavSection[] = [
   {
     label: "Explore",
     items: [
+      { icon: Inbox, label: "Intelligence Inbox", path: "/intelligence-inbox", badge: "New" },
       { icon: Lightbulb, label: "Insights", path: "/advisory" },
       { icon: TrendingUp, label: "Forecasting", path: "/forecasting" },
       { icon: BarChart3, label: "Analytics", path: "/decision-accuracy" },
