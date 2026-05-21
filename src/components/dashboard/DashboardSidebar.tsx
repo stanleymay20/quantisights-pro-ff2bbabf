@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Upload, Settings, LogOut,
   Menu, X, BookOpen, Brain, Target,
   ChevronDown, Clock, BarChart3, Shield,
-  Lightbulb, TrendingUp, FileText,
+  Lightbulb, TrendingUp, FileText, Inbox,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
