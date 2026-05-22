@@ -47,30 +47,37 @@ export interface Observability {
   conversion_rate: number;
 }
 
-export const useIntelligenceInbox = () => {
+export const useIntelligenceInbox = (opts: { includeTestMode?: boolean } = {}) => {
   const { orgId } = useActiveDataContext();
   const [items, setItems] = useState<IntelligenceItem[]>([]);
   const [briefs, setBriefs] = useState<IntelligenceBrief[]>([]);
   const [observability, setObservability] = useState<Observability | null>(null);
   const [loading, setLoading] = useState(false);
+  const includeTest = !!opts.includeTestMode;
 
   const refresh = useCallback(async () => {
     if (!orgId) return;
     setLoading(true);
     try {
+      let itemsQ = supabase
+        .from("aicis_intelligence_items")
+        .select("id,title,summary,severity,urgency,domain,geography,entities,status,global_criticality_score,ingested_at,last_transition_at,intelligence_relevance_scores(organization_relevance_score,business_impact_score,operational_urgency_score,decision_pressure_score)")
+        .eq("organization_id", orgId)
+        .order("ingested_at", { ascending: false })
+        .limit(100);
+      let briefsQ = supabase
+        .from("intelligence_briefs")
+        .select("id,title,summary,why_it_matters,affected_areas,recommended_actions,severity,item_ids,confidence,generated_at")
+        .eq("organization_id", orgId)
+        .order("generated_at", { ascending: false })
+        .limit(20);
+      if (!includeTest) {
+        itemsQ = itemsQ.not("title", "ilike", "[TEST]%");
+        briefsQ = briefsQ.not("title", "ilike", "[TEST]%");
+      }
       const [itemsRes, briefsRes, obsRes] = await Promise.all([
-        supabase
-          .from("aicis_intelligence_items")
-          .select("id,title,summary,severity,urgency,domain,geography,entities,status,global_criticality_score,ingested_at,last_transition_at,intelligence_relevance_scores(organization_relevance_score,business_impact_score,operational_urgency_score,decision_pressure_score)")
-          .eq("organization_id", orgId)
-          .order("ingested_at", { ascending: false })
-          .limit(100),
-        supabase
-          .from("intelligence_briefs")
-          .select("id,title,summary,why_it_matters,affected_areas,recommended_actions,severity,item_ids,confidence,generated_at")
-          .eq("organization_id", orgId)
-          .order("generated_at", { ascending: false })
-          .limit(20),
+        itemsQ,
+        briefsQ,
         supabase
           .from("intelligence_observability")
           .select("imports_total,imports_failed,duplicates_suppressed,avg_processing_ms,items_to_decisions,conversion_rate")
@@ -84,7 +91,7 @@ export const useIntelligenceInbox = () => {
     } finally {
       setLoading(false);
     }
-  }, [orgId]);
+  }, [orgId, includeTest]);
 
   useEffect(() => { refresh(); }, [refresh]);
 
