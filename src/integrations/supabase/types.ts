@@ -4879,73 +4879,122 @@ export type Database = {
       executive_interventions: {
         Row: {
           acknowledged_at: string | null
+          acted_at: string | null
+          assigned_at: string | null
+          business_impact: number
+          contributing_signals: Json
           created_at: string
           decision_id: string | null
           decision_pressure_score: number
-          escalation_status: string
+          escalation_count: number
+          escalation_tier: Database["public"]["Enums"]["intervention_tier"]
+          execution_plan_id: string | null
+          generated_at: string
           id: string
+          intervention_priority_score: number
           intervention_type: string
+          last_escalated_at: string | null
+          metadata: Json
           organization_id: string
-          owner_user_id: string | null
-          pressure_tier: string
+          organizational_exposure: number
+          outcome_score: number | null
+          owner_id: string | null
           rationale: string | null
-          recommended_action: string
+          recommended_action: string | null
+          resolution_notes: string | null
           resolved_at: string | null
-          scoring_factors: Json
+          scoring_breakdown: Json
+          scoring_version: number
           severity: string
-          supporting_advisory_ids: string[]
-          supporting_intelligence_ids: string[]
+          sla_due_at: string | null
+          source_id: string | null
+          source_type: string
+          status: Database["public"]["Enums"]["intervention_status"]
+          summary: string | null
+          title: string
+          uncertainty_score: number
           updated_at: string
+          urgency: string
         }
         Insert: {
           acknowledged_at?: string | null
+          acted_at?: string | null
+          assigned_at?: string | null
+          business_impact?: number
+          contributing_signals?: Json
           created_at?: string
           decision_id?: string | null
           decision_pressure_score?: number
-          escalation_status?: string
+          escalation_count?: number
+          escalation_tier?: Database["public"]["Enums"]["intervention_tier"]
+          execution_plan_id?: string | null
+          generated_at?: string
           id?: string
+          intervention_priority_score?: number
           intervention_type: string
+          last_escalated_at?: string | null
+          metadata?: Json
           organization_id: string
-          owner_user_id?: string | null
-          pressure_tier?: string
+          organizational_exposure?: number
+          outcome_score?: number | null
+          owner_id?: string | null
           rationale?: string | null
-          recommended_action: string
+          recommended_action?: string | null
+          resolution_notes?: string | null
           resolved_at?: string | null
-          scoring_factors?: Json
-          severity: string
-          supporting_advisory_ids?: string[]
-          supporting_intelligence_ids?: string[]
+          scoring_breakdown?: Json
+          scoring_version?: number
+          severity?: string
+          sla_due_at?: string | null
+          source_id?: string | null
+          source_type: string
+          status?: Database["public"]["Enums"]["intervention_status"]
+          summary?: string | null
+          title: string
+          uncertainty_score?: number
           updated_at?: string
+          urgency?: string
         }
         Update: {
           acknowledged_at?: string | null
+          acted_at?: string | null
+          assigned_at?: string | null
+          business_impact?: number
+          contributing_signals?: Json
           created_at?: string
           decision_id?: string | null
           decision_pressure_score?: number
-          escalation_status?: string
+          escalation_count?: number
+          escalation_tier?: Database["public"]["Enums"]["intervention_tier"]
+          execution_plan_id?: string | null
+          generated_at?: string
           id?: string
+          intervention_priority_score?: number
           intervention_type?: string
+          last_escalated_at?: string | null
+          metadata?: Json
           organization_id?: string
-          owner_user_id?: string | null
-          pressure_tier?: string
+          organizational_exposure?: number
+          outcome_score?: number | null
+          owner_id?: string | null
           rationale?: string | null
-          recommended_action?: string
+          recommended_action?: string | null
+          resolution_notes?: string | null
           resolved_at?: string | null
-          scoring_factors?: Json
+          scoring_breakdown?: Json
+          scoring_version?: number
           severity?: string
-          supporting_advisory_ids?: string[]
-          supporting_intelligence_ids?: string[]
+          sla_due_at?: string | null
+          source_id?: string | null
+          source_type?: string
+          status?: Database["public"]["Enums"]["intervention_status"]
+          summary?: string | null
+          title?: string
+          uncertainty_score?: number
           updated_at?: string
+          urgency?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "executive_interventions_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       executive_modes: {
         Row: {
@@ -6103,6 +6152,220 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      intervention_escalations: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          escalation_level: number
+          escalation_reason: string
+          escalation_summary: string | null
+          escalation_targets: Json
+          id: string
+          intervention_id: string
+          metadata: Json
+          organization_id: string
+          resolved: boolean
+          resolved_at: string | null
+          triggered_by: string
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          escalation_level?: number
+          escalation_reason: string
+          escalation_summary?: string | null
+          escalation_targets?: Json
+          id?: string
+          intervention_id: string
+          metadata?: Json
+          organization_id: string
+          resolved?: boolean
+          resolved_at?: string | null
+          triggered_by?: string
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          escalation_level?: number
+          escalation_reason?: string
+          escalation_summary?: string | null
+          escalation_targets?: Json
+          id?: string
+          intervention_id?: string
+          metadata?: Json
+          organization_id?: string
+          resolved?: boolean
+          resolved_at?: string | null
+          triggered_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intervention_escalations_intervention_id_fkey"
+            columns: ["intervention_id"]
+            isOneToOne: false
+            referencedRelation: "executive_interventions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      intervention_fatigue: {
+        Row: {
+          computed_at: string
+          escalation_density: number
+          fatigue_score: number
+          id: string
+          ignored_count: number
+          organization_id: string
+          overload_risk: string
+          repeat_advisories: number
+          scope_id: string
+          scope_type: string
+          suppression_recommendations: Json
+          total_interventions: number
+          unresolved_count: number
+          window_end: string
+          window_start: string
+        }
+        Insert: {
+          computed_at?: string
+          escalation_density?: number
+          fatigue_score?: number
+          id?: string
+          ignored_count?: number
+          organization_id: string
+          overload_risk?: string
+          repeat_advisories?: number
+          scope_id: string
+          scope_type: string
+          suppression_recommendations?: Json
+          total_interventions?: number
+          unresolved_count?: number
+          window_end: string
+          window_start: string
+        }
+        Update: {
+          computed_at?: string
+          escalation_density?: number
+          fatigue_score?: number
+          id?: string
+          ignored_count?: number
+          organization_id?: string
+          overload_risk?: string
+          repeat_advisories?: number
+          scope_id?: string
+          scope_type?: string
+          suppression_recommendations?: Json
+          total_interventions?: number
+          unresolved_count?: number
+          window_end?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
+      intervention_learning: {
+        Row: {
+          effectiveness_score: number | null
+          escalation_accuracy: number | null
+          false_positive: boolean
+          id: string
+          intervention_id: string
+          notes: string | null
+          operational_impact_reduction: number | null
+          organization_id: string
+          outcome: string | null
+          recommendation_confidence_adjustment: number
+          recorded_at: string
+          recurrence_count: number
+          time_to_resolution_hours: number | null
+        }
+        Insert: {
+          effectiveness_score?: number | null
+          escalation_accuracy?: number | null
+          false_positive?: boolean
+          id?: string
+          intervention_id: string
+          notes?: string | null
+          operational_impact_reduction?: number | null
+          organization_id: string
+          outcome?: string | null
+          recommendation_confidence_adjustment?: number
+          recorded_at?: string
+          recurrence_count?: number
+          time_to_resolution_hours?: number | null
+        }
+        Update: {
+          effectiveness_score?: number | null
+          escalation_accuracy?: number | null
+          false_positive?: boolean
+          id?: string
+          intervention_id?: string
+          notes?: string | null
+          operational_impact_reduction?: number | null
+          organization_id?: string
+          outcome?: string | null
+          recommendation_confidence_adjustment?: number
+          recorded_at?: string
+          recurrence_count?: number
+          time_to_resolution_hours?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intervention_learning_intervention_id_fkey"
+            columns: ["intervention_id"]
+            isOneToOne: true
+            referencedRelation: "executive_interventions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      intervention_observability: {
+        Row: {
+          avg_resolution_hours: number | null
+          avg_response_latency_minutes: number | null
+          computed_at: string
+          conversion_to_decision_rate: number
+          creation_count: number
+          day: string
+          effectiveness_avg: number | null
+          escalation_count: number
+          false_positive_count: number
+          fatigue_score: number
+          id: string
+          organization_id: string
+          resolution_count: number
+        }
+        Insert: {
+          avg_resolution_hours?: number | null
+          avg_response_latency_minutes?: number | null
+          computed_at?: string
+          conversion_to_decision_rate?: number
+          creation_count?: number
+          day: string
+          effectiveness_avg?: number | null
+          escalation_count?: number
+          false_positive_count?: number
+          fatigue_score?: number
+          id?: string
+          organization_id: string
+          resolution_count?: number
+        }
+        Update: {
+          avg_resolution_hours?: number | null
+          avg_response_latency_minutes?: number | null
+          computed_at?: string
+          conversion_to_decision_rate?: number
+          creation_count?: number
+          day?: string
+          effectiveness_avg?: number | null
+          escalation_count?: number
+          false_positive_count?: number
+          fatigue_score?: number
+          id?: string
+          organization_id?: string
+          resolution_count?: number
+        }
+        Relationships: []
       }
       iq_dimension_scores: {
         Row: {
@@ -9038,6 +9301,16 @@ export type Database = {
         Returns: Json
       }
       cleanup_old_copilot_messages: { Args: never; Returns: undefined }
+      compute_intervention_priority: {
+        Args: {
+          _business_impact: number
+          _decision_pressure: number
+          _organizational_exposure: number
+          _uncertainty: number
+          _urgency: string
+        }
+        Returns: Json
+      }
       connector_release_lock: {
         Args: { _connector_id: string }
         Returns: undefined
