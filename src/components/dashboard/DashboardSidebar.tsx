@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Upload, Settings, LogOut,
   Menu, X, BookOpen, Brain, Target,
   ChevronDown, Clock, BarChart3, Shield,
-  Lightbulb, TrendingUp, FileText, Inbox,
+  Lightbulb, TrendingUp, FileText, Inbox, ShieldAlert,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -43,7 +43,8 @@ const navSections: NavSection[] = [
   {
     label: "Explore",
     items: [
-      { icon: Inbox, label: "Intelligence Inbox", path: "/intelligence-inbox", badge: "New" },
+      { icon: ShieldAlert, label: "Executive Intelligence", path: "/executive-intelligence", badge: "New" },
+      { icon: Inbox, label: "Intelligence Inbox", path: "/intelligence-inbox" },
       { icon: Lightbulb, label: "Insights", path: "/advisory" },
       { icon: TrendingUp, label: "Forecasting", path: "/forecasting" },
       { icon: BarChart3, label: "Analytics", path: "/decision-accuracy" },

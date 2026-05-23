@@ -118,6 +118,7 @@ const BridgeHealth = lazy(() => import("@/pages/admin/BridgeHealth"));
 const CompetitiveAnalysis = lazy(() => import("@/pages/CompetitiveAnalysis"));
 const IntelligenceDashboard = lazy(() => import("@/pages/IntelligenceDashboard"));
 const IntelligenceInbox = lazy(() => import("@/pages/IntelligenceInbox"));
+const ExecutiveIntelligence = lazy(() => import("@/pages/ExecutiveIntelligence"));
 
 // ── Legal ──
 const Terms = lazy(() => import("@/pages/Terms"));
@@ -195,6 +196,7 @@ export const routes: RouteEntry[] = [
   { path: "/market-intelligence", element: <MarketIntelligence />, layout: "full" },
   { path: "/intelligence-dashboard", element: <IntelligenceDashboard />, layout: "full" },
   { path: "/intelligence-inbox", element: <IntelligenceInbox />, layout: "full" },
+  { path: "/executive-intelligence", element: <ExecutiveIntelligence />, layout: "full" },
 
   // ══════ Decision System ══════
   { path: "/decisions", element: <DecisionLedger />, layout: "full" },

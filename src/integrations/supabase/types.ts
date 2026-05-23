@@ -4732,6 +4732,221 @@ export type Database = {
           },
         ]
       }
+      executive_cross_domain_narratives: {
+        Row: {
+          affected_domains: string[]
+          combined_pressure_score: number
+          expires_at: string | null
+          generated_at: string
+          id: string
+          metadata: Json
+          narrative: string
+          narrative_strength: number
+          organization_id: string
+          projected_window_days: number | null
+          supporting_signal_ids: string[]
+        }
+        Insert: {
+          affected_domains?: string[]
+          combined_pressure_score?: number
+          expires_at?: string | null
+          generated_at?: string
+          id?: string
+          metadata?: Json
+          narrative: string
+          narrative_strength?: number
+          organization_id: string
+          projected_window_days?: number | null
+          supporting_signal_ids?: string[]
+        }
+        Update: {
+          affected_domains?: string[]
+          combined_pressure_score?: number
+          expires_at?: string | null
+          generated_at?: string
+          id?: string
+          metadata?: Json
+          narrative?: string
+          narrative_strength?: number
+          organization_id?: string
+          projected_window_days?: number | null
+          supporting_signal_ids?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "executive_cross_domain_narratives_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      executive_exposure_snapshots: {
+        Row: {
+          computed_at: string
+          dependency_graph: Json
+          entity_exposure: Json
+          exposure_reasoning: string | null
+          exposure_score: number
+          geography_exposure: Json
+          id: string
+          organization_id: string
+          sector_exposure: Json
+          supplier_exposure: Json
+        }
+        Insert: {
+          computed_at?: string
+          dependency_graph?: Json
+          entity_exposure?: Json
+          exposure_reasoning?: string | null
+          exposure_score?: number
+          geography_exposure?: Json
+          id?: string
+          organization_id: string
+          sector_exposure?: Json
+          supplier_exposure?: Json
+        }
+        Update: {
+          computed_at?: string
+          dependency_graph?: Json
+          entity_exposure?: Json
+          exposure_reasoning?: string | null
+          exposure_score?: number
+          geography_exposure?: Json
+          id?: string
+          organization_id?: string
+          sector_exposure?: Json
+          supplier_exposure?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "executive_exposure_snapshots_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      executive_intel_observability: {
+        Row: {
+          advisory_adoption_rate: number
+          avg_response_latency_hours: number
+          computed_at: string
+          id: string
+          intervention_resolution_rate: number
+          items_to_decision_rate: number
+          memory_effectiveness_score: number
+          organization_id: string
+          snapshot_day: string
+          unresolved_critical_pressure: number
+        }
+        Insert: {
+          advisory_adoption_rate?: number
+          avg_response_latency_hours?: number
+          computed_at?: string
+          id?: string
+          intervention_resolution_rate?: number
+          items_to_decision_rate?: number
+          memory_effectiveness_score?: number
+          organization_id: string
+          snapshot_day?: string
+          unresolved_critical_pressure?: number
+        }
+        Update: {
+          advisory_adoption_rate?: number
+          avg_response_latency_hours?: number
+          computed_at?: string
+          id?: string
+          intervention_resolution_rate?: number
+          items_to_decision_rate?: number
+          memory_effectiveness_score?: number
+          organization_id?: string
+          snapshot_day?: string
+          unresolved_critical_pressure?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "executive_intel_observability_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      executive_interventions: {
+        Row: {
+          acknowledged_at: string | null
+          created_at: string
+          decision_id: string | null
+          decision_pressure_score: number
+          escalation_status: string
+          id: string
+          intervention_type: string
+          organization_id: string
+          owner_user_id: string | null
+          pressure_tier: string
+          rationale: string | null
+          recommended_action: string
+          resolved_at: string | null
+          scoring_factors: Json
+          severity: string
+          supporting_advisory_ids: string[]
+          supporting_intelligence_ids: string[]
+          updated_at: string
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          created_at?: string
+          decision_id?: string | null
+          decision_pressure_score?: number
+          escalation_status?: string
+          id?: string
+          intervention_type: string
+          organization_id: string
+          owner_user_id?: string | null
+          pressure_tier?: string
+          rationale?: string | null
+          recommended_action: string
+          resolved_at?: string | null
+          scoring_factors?: Json
+          severity: string
+          supporting_advisory_ids?: string[]
+          supporting_intelligence_ids?: string[]
+          updated_at?: string
+        }
+        Update: {
+          acknowledged_at?: string | null
+          created_at?: string
+          decision_id?: string | null
+          decision_pressure_score?: number
+          escalation_status?: string
+          id?: string
+          intervention_type?: string
+          organization_id?: string
+          owner_user_id?: string | null
+          pressure_tier?: string
+          rationale?: string | null
+          recommended_action?: string
+          resolved_at?: string | null
+          scoring_factors?: Json
+          severity?: string
+          supporting_advisory_ids?: string[]
+          supporting_intelligence_ids?: string[]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "executive_interventions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       executive_modes: {
         Row: {
           alert_thresholds: Json
