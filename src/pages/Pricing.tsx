@@ -60,7 +60,7 @@ const Pricing = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh bg-background">
       <Navbar />
       <section className="pt-32 pb-16">
         <div className="container mx-auto px-6">

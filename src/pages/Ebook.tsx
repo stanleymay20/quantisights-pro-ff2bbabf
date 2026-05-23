@@ -393,7 +393,7 @@ const Ebook = () => {
   const progress = Math.round((activeChapter / chapters.length) * 100);
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-dvh bg-background flex flex-col">
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
         <div className="flex items-center justify-between px-4 py-3 max-w-7xl mx-auto">

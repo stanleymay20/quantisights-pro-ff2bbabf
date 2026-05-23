@@ -3,7 +3,7 @@ import logo from "@/assets/quantivis-logo.png";
 import { CONTACT } from "@/lib/contact-config";
 
 const Terms = () => (
-  <div className="min-h-screen bg-background">
+  <div className="min-h-dvh bg-background">
     <header className="border-b border-border/30 bg-background/80 backdrop-blur-sm sticky top-0 z-30">
       <div className="container mx-auto px-6 h-14 flex items-center">
         <Link to="/"><img src={logo} alt="Quantivis Global" className="h-8" /></Link>

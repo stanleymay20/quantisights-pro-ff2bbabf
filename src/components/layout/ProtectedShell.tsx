@@ -10,7 +10,7 @@ export { SidebarMobileToggle };
  */
 const ProtectedShell = ({ children }: { children: ReactNode }) => {
   return (
-    <div className="flex min-h-screen min-h-[100dvh] bg-background">
+    <div className="flex min-h-dvh min-h-[100dvh] bg-background">
       {/* Skip to main content — accessibility */}
       <a
         href="#main-content"
@@ -19,7 +19,7 @@ const ProtectedShell = ({ children }: { children: ReactNode }) => {
         Skip to main content
       </a>
       <DashboardSidebar />
-      <div className="flex-1 flex flex-col min-h-screen min-h-[100dvh] overflow-hidden">
+      <div className="flex-1 flex flex-col min-h-dvh min-h-[100dvh] overflow-hidden">
         <GlobalContextBar />
         <main id="main-content" role="main" className="flex-1 overflow-y-auto">
           {children}
