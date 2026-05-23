@@ -9305,6 +9305,16 @@ export type Database = {
         | "acted_on"
         | "resolved"
         | "archived"
+      intervention_status:
+        | "proposed"
+        | "acknowledged"
+        | "assigned"
+        | "in_progress"
+        | "deferred"
+        | "escalated"
+        | "resolved"
+        | "dismissed"
+      intervention_tier: "informational" | "elevated" | "high" | "critical"
       org_role:
         | "owner"
         | "admin"
@@ -9497,6 +9507,17 @@ export const Constants = {
         "resolved",
         "archived",
       ],
+      intervention_status: [
+        "proposed",
+        "acknowledged",
+        "assigned",
+        "in_progress",
+        "deferred",
+        "escalated",
+        "resolved",
+        "dismissed",
+      ],
+      intervention_tier: ["informational", "elevated", "high", "critical"],
       org_role: ["owner", "admin", "analyst", "executive", "viewer", "steward"],
       visibility_scope_type: ["private", "org_shared", "global"],
       workspace_role: [
