@@ -151,7 +151,7 @@ export default function ExecutiveIntelligence() {
   }
 
   const pressureQueue = topByPressure.filter((i) => !i.resolved_at);
-  const emergingThreats = pressureQueue.filter((i) => i.pressure_tier === "high" || i.pressure_tier === "critical").slice(0, 8);
+  const emergingThreats = pressureQueue.filter((i) => i.escalation_tier === "high" || i.escalation_tier === "critical").slice(0, 8);
 
   return (
     <div className="container mx-auto p-4 md:p-6 space-y-6">
