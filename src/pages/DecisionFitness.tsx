@@ -174,7 +174,7 @@ const DecisionFitness = () => {
     const grade = getGrade(overallScore);
     const weakest = [...dimensionScores].sort((a, b) => a.score - b.score).slice(0, 3);
     return (
-      <div className="min-h-screen bg-background p-4 sm:p-6 lg:p-8">
+      <div className="min-h-dvh bg-background p-4 sm:p-6 lg:p-8">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center gap-3 mb-8">
             <SidebarMobileToggle />
@@ -282,7 +282,7 @@ const DecisionFitness = () => {
 
   return (
     <SectionErrorBoundary sectionName="Decision Fitness">
-    <div className="min-h-screen bg-background p-4 sm:p-6 lg:p-8">
+    <div className="min-h-dvh bg-background p-4 sm:p-6 lg:p-8">
       <div className="max-w-3xl mx-auto">
         <div className="flex items-center gap-3 mb-2">
           <SidebarMobileToggle />

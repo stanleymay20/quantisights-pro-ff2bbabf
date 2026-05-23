@@ -301,6 +301,7 @@ const Team = () => {
                               <Button
                                 variant="ghost"
                                 size="icon"
+                                aria-label="Remove member"
                                 className="h-8 w-8 text-destructive hover:text-destructive"
                                 onClick={() => removeMember(member.id, member.user_id)}
                               >

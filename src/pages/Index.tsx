@@ -16,7 +16,7 @@ import Footer from "@/components/landing/Footer";
  */
 const Index = forwardRef<HTMLDivElement>((_, ref) => {
   return (
-    <div ref={ref} className="min-h-screen bg-background">
+    <div ref={ref} className="min-h-dvh bg-background">
       <Navbar />
       <main id="main-content">
         <HeroSection />

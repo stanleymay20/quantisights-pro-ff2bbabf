@@ -123,7 +123,7 @@ const FreeAnalysis = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh bg-background">
       <Navbar />
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-6 max-w-4xl">

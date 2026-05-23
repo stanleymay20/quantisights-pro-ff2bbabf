@@ -360,10 +360,10 @@ function RulesTable({
               </TableCell>
               <TableCell>
                 <div className="flex items-center gap-1">
-                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onClone(rule)}>
+                  <Button variant="ghost" size="icon" aria-label="Clone rule" className="h-6 w-6" onClick={() => onClone(rule)}>
                     <Copy className="w-3 h-3" />
                   </Button>
-                  <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => onDelete(rule.id)}>
+                  <Button variant="ghost" size="icon" aria-label="Delete rule" className="h-6 w-6 text-destructive" onClick={() => onDelete(rule.id)}>
                     <Trash2 className="w-3 h-3" />
                   </Button>
                 </div>

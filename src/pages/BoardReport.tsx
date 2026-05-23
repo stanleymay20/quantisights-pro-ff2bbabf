@@ -67,7 +67,7 @@ const BoardReport = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0B1426] flex items-center justify-center">
+      <div className="min-h-dvh bg-[#0B1426] flex items-center justify-center">
         <div className="text-center space-y-4">
           <Loader2 className="w-12 h-12 text-cyan-400 animate-spin mx-auto" />
           <p className="text-slate-300 text-lg">Compiling Board Governance Report...</p>
@@ -78,7 +78,7 @@ const BoardReport = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-[#0B1426] flex items-center justify-center">
+      <div className="min-h-dvh bg-[#0B1426] flex items-center justify-center">
         <div className="text-center space-y-4">
           <p className="text-red-400 text-lg">{error}</p>
           <Button variant="outline" onClick={() => navigate("/executive")}>
@@ -103,7 +103,7 @@ const BoardReport = () => {
         </Button>
       </div>
 
-      <div className="min-h-screen bg-[#0B1426] text-slate-200 print:bg-white print:text-slate-900">
+      <div className="min-h-dvh bg-[#0B1426] text-slate-200 print:bg-white print:text-slate-900">
         {/* Cover */}
         <ReportHeader
           organizationName={report.organization_name}

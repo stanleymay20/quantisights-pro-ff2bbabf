@@ -191,7 +191,7 @@ const Onboarding = () => {
   const totalSteps = 5;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-dvh bg-background flex flex-col">
       <div className="border-b border-border/30 px-6 py-4 flex items-center justify-between bg-background/60 backdrop-blur-sm">
         <img src={logo} alt="Quantivis" className="h-8" />
         <div className="flex items-center gap-2">

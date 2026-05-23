@@ -122,7 +122,7 @@ const Demo = () => {
   const progress = ((currentStep + 1) / STEPS.length) * 100;
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center">
+    <div className="min-h-dvh bg-background flex items-center justify-center">
       <div className="text-center max-w-lg px-6">
         {/* Logo mark */}
         <motion.div

@@ -67,7 +67,7 @@ const ResetPassword = () => {
 
   if (!isRecovery) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background px-4">
+      <div className="min-h-dvh flex items-center justify-center bg-background px-4">
         <div className="glass-card p-8 w-full max-w-md text-center">
           <img src={logo} alt="Quantivis Global" className="h-10 mx-auto mb-6" />
           <h1 className="text-xl font-bold font-display mb-2">Invalid Reset Link</h1>
@@ -79,7 +79,7 @@ const ResetPassword = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
+    <div className="min-h-dvh flex items-center justify-center bg-background px-4">
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-primary/5 rounded-full blur-[120px]" />
       </div>
