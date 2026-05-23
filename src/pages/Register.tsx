@@ -56,7 +56,7 @@ const Register = forwardRef<HTMLDivElement>((_, ref) => {
   };
 
   return (
-    <div ref={ref} className="min-h-dvh min-h-[100dvh] flex items-center justify-center bg-background px-4 safe-area-bottom safe-area-top">
+    <div ref={ref} className="min-h-dvh flex items-center justify-center bg-background px-4 safe-area-bottom safe-area-top">
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/3 right-1/3 w-96 h-96 bg-primary/5 rounded-full blur-[120px]" />
       </div>
