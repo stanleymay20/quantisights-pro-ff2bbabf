@@ -14,11 +14,11 @@ import {
 } from "lucide-react";
 
 const TIER_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-  low: "outline", elevated: "secondary", high: "default", critical: "destructive",
+  informational: "outline", low: "outline", elevated: "secondary", high: "default", critical: "destructive",
 };
 
 const TIER_LABEL: Record<string, string> = {
-  low: "Low", elevated: "Elevated", high: "High", critical: "Critical",
+  informational: "Info", low: "Low", elevated: "Elevated", high: "High", critical: "Critical",
 };
 
 function ExecutiveBriefCard({ brief, onRegenerate, generating }: {
