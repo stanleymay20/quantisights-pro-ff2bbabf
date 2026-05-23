@@ -167,31 +167,38 @@ Deno.serve(async (req) => {
   const criticalCount = ranked.filter((r) => r.tier === "critical").length;
   const highCount = ranked.filter((r) => r.tier === "high").length;
 
-  // ─── Interventions: top items at high/critical pressure (idempotent by intelligence id) ───
+  // ─── Interventions: top items at high/critical pressure (idempotent by source id) ───
   const interventionRows: Array<Record<string, unknown>> = [];
   for (const r of ranked.filter((x) => x.tier === "high" || x.tier === "critical").slice(0, 10)) {
     const { data: existing } = await svc
       .from("executive_interventions")
       .select("id")
       .eq("organization_id", orgId)
-      .contains("supporting_intelligence_ids", [r.it.id])
-      .in("escalation_status", ["pending", "acknowledged", "assigned"])
+      .eq("source_type", "intelligence_item")
+      .eq("source_id", r.it.id)
+      .in("status", ["proposed", "acknowledged", "assigned", "in_progress"])
       .limit(1);
     if (existing && existing.length > 0) continue;
 
     interventionRows.push({
       organization_id: orgId,
+      source_type: "intelligence_item",
+      source_id: r.it.id,
       intervention_type: r.it.domain || "operational",
+      title: (r.it.title ?? "Intelligence signal").slice(0, 200),
+      summary: r.it.summary ?? null,
       severity: r.tier === "critical" ? "critical" : "high",
+      urgency: r.tier === "critical" ? "critical" : "high",
+      business_impact: Math.min(1, Math.max(0, (Number(r.factors.business_impact) || 50) / 100)),
+      organizational_exposure: Math.min(1, Math.max(0, (Number(r.factors.organizational_relevance) || 50) / 100)),
+      uncertainty_score: Math.min(1, Math.max(0, 1 - (Number(r.factors.uncertainty_multiplier) || 1))),
+      decision_pressure_score: Math.min(1, Math.max(0, r.pressure / 100)),
       recommended_action:
         r.tier === "critical"
           ? `Escalate "${(r.it.title ?? "intelligence signal").slice(0, 80)}" to executive sponsor within 24h.`
           : `Acknowledge and assign owner for "${(r.it.title ?? "intelligence signal").slice(0, 80)}" within 72h.`,
       rationale: `Pressure ${r.pressure}/100. Severity=${r.it.severity}, urgency=${r.it.urgency}, impact=${r.factors.business_impact}, relevance=${r.factors.organizational_relevance}.`,
-      supporting_intelligence_ids: [r.it.id],
-      decision_pressure_score: r.pressure,
-      pressure_tier: r.tier,
-      scoring_factors: r.factors,
+      contributing_signals: [{ intelligence_item_id: r.it.id, factors: r.factors }],
     });
   }
   let interventionsInserted = 0;
@@ -322,8 +329,8 @@ Deno.serve(async (req) => {
     .from("executive_interventions")
     .select("id", { count: "exact", head: true })
     .eq("organization_id", orgId)
-    .eq("pressure_tier", "critical")
-    .in("escalation_status", ["pending", "acknowledged", "assigned"]);
+    .eq("escalation_tier", "critical")
+    .in("status", ["proposed", "acknowledged", "assigned", "in_progress"]);
   const { data: resolvedIntv } = await svc
     .from("executive_interventions")
     .select("id,created_at,resolved_at")

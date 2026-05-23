@@ -14,11 +14,11 @@ import {
 } from "lucide-react";
 
 const TIER_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-  low: "outline", elevated: "secondary", high: "default", critical: "destructive",
+  informational: "outline", low: "outline", elevated: "secondary", high: "default", critical: "destructive",
 };
 
 const TIER_LABEL: Record<string, string> = {
-  low: "Low", elevated: "Elevated", high: "High", critical: "Critical",
+  informational: "Info", low: "Low", elevated: "Elevated", high: "High", critical: "Critical",
 };
 
 function ExecutiveBriefCard({ brief, onRegenerate, generating }: {
@@ -94,9 +94,9 @@ function InterventionRow({ iv, onUpdate }: { iv: Intervention; onUpdate: (id: st
     <div className="border rounded-lg p-3 space-y-2">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2 flex-wrap">
-          <Badge variant={TIER_VARIANT[iv.pressure_tier]}>{TIER_LABEL[iv.pressure_tier]} · {iv.decision_pressure_score}</Badge>
+          <Badge variant={TIER_VARIANT[iv.escalation_tier]}>{TIER_LABEL[iv.escalation_tier]} · {iv.decision_pressure_score}</Badge>
           <Badge variant="outline">{iv.intervention_type}</Badge>
-          <Badge variant="secondary">{iv.escalation_status}</Badge>
+          <Badge variant="secondary">{iv.status}</Badge>
           {resolved && <Badge variant="outline" className="text-green-600"><CheckCircle2 className="h-3 w-3 mr-1" /> Resolved</Badge>}
         </div>
         <span className="text-xs text-muted-foreground">{new Date(iv.created_at).toLocaleString()}</span>
@@ -105,15 +105,15 @@ function InterventionRow({ iv, onUpdate }: { iv: Intervention; onUpdate: (id: st
       {iv.rationale && <p className="text-xs text-muted-foreground">{iv.rationale}</p>}
       {!resolved && (
         <div className="flex gap-2 flex-wrap pt-1">
-          {iv.escalation_status !== "acknowledged" && (
-            <Button size="sm" variant="outline" onClick={() => onUpdate(iv.id, { escalation_status: "acknowledged", acknowledged: true })}>
+          {iv.status !== "acknowledged" && (
+            <Button size="sm" variant="outline" onClick={() => onUpdate(iv.id, { status: "acknowledged", acknowledged: true })}>
               Acknowledge
             </Button>
           )}
-          <Button size="sm" variant="outline" onClick={() => onUpdate(iv.id, { escalation_status: "deferred" })}>Defer</Button>
-          <Button size="sm" variant="outline" onClick={() => onUpdate(iv.id, { escalation_status: "escalated" })}>Escalate</Button>
-          <Button size="sm" variant="outline" onClick={() => onUpdate(iv.id, { escalation_status: "converted" })}>Convert to decision</Button>
-          <Button size="sm" onClick={() => onUpdate(iv.id, { escalation_status: "resolved", resolved: true })}>
+          <Button size="sm" variant="outline" onClick={() => onUpdate(iv.id, { status: "deferred" })}>Defer</Button>
+          <Button size="sm" variant="outline" onClick={() => onUpdate(iv.id, { status: "escalated" })}>Escalate</Button>
+          <Button size="sm" variant="outline" onClick={() => onUpdate(iv.id, { status: "converted" })}>Convert to decision</Button>
+          <Button size="sm" onClick={() => onUpdate(iv.id, { status: "resolved", resolved: true })}>
             Mark resolved
           </Button>
         </div>
@@ -151,7 +151,7 @@ export default function ExecutiveIntelligence() {
   }
 
   const pressureQueue = topByPressure.filter((i) => !i.resolved_at);
-  const emergingThreats = pressureQueue.filter((i) => i.pressure_tier === "high" || i.pressure_tier === "critical").slice(0, 8);
+  const emergingThreats = pressureQueue.filter((i) => i.escalation_tier === "high" || i.escalation_tier === "critical").slice(0, 8);
 
   return (
     <div className="container mx-auto p-4 md:p-6 space-y-6">
@@ -225,7 +225,7 @@ export default function ExecutiveIntelligence() {
                       <li key={iv.id} className="pl-4 relative">
                         <span className="absolute -left-[7px] top-1 w-3 h-3 rounded-full bg-primary" />
                         <div className="flex items-center gap-2 flex-wrap mb-1">
-                          <Badge variant={TIER_VARIANT[iv.pressure_tier]}>{TIER_LABEL[iv.pressure_tier]}</Badge>
+                          <Badge variant={TIER_VARIANT[iv.escalation_tier]}>{TIER_LABEL[iv.escalation_tier]}</Badge>
                           <Badge variant="outline">{iv.intervention_type}</Badge>
                           <span className="text-xs text-muted-foreground flex items-center gap-1"><Clock className="h-3 w-3" />{new Date(iv.created_at).toLocaleString()}</span>
                         </div>

@@ -28,17 +28,24 @@ export interface Intervention {
   id: string;
   intervention_type: string;
   severity: string;
-  recommended_action: string;
+  urgency: string;
+  title: string;
+  summary: string | null;
+  recommended_action: string | null;
   rationale: string | null;
-  supporting_intelligence_ids: string[];
+  contributing_signals: unknown[];
   decision_pressure_score: number;
-  pressure_tier: "low" | "elevated" | "high" | "critical";
-  escalation_status: string;
-  owner_user_id: string | null;
+  business_impact: number;
+  organizational_exposure: number;
+  intervention_priority_score: number;
+  escalation_tier: "informational" | "elevated" | "high" | "critical";
+  status: string;
+  owner_id: string | null;
   acknowledged_at: string | null;
   resolved_at: string | null;
+  sla_due_at: string | null;
   created_at: string;
-  scoring_factors: Record<string, number>;
+  scoring_breakdown: Record<string, number>;
 }
 
 export interface Narrative {
@@ -97,9 +104,9 @@ export const useExecutiveIntelligence = () => {
           .maybeSingle(),
         supabase
           .from("executive_interventions")
-          .select("id,intervention_type,severity,recommended_action,rationale,supporting_intelligence_ids,decision_pressure_score,pressure_tier,escalation_status,owner_user_id,acknowledged_at,resolved_at,created_at,scoring_factors")
+          .select("id,intervention_type,severity,urgency,title,summary,recommended_action,rationale,contributing_signals,decision_pressure_score,business_impact,organizational_exposure,intervention_priority_score,escalation_tier,status,owner_id,acknowledged_at,resolved_at,sla_due_at,created_at,scoring_breakdown")
           .eq("organization_id", orgId)
-          .order("decision_pressure_score", { ascending: false })
+          .order("intervention_priority_score", { ascending: false })
           .limit(50),
         supabase
           .from("executive_cross_domain_narratives")
@@ -166,10 +173,9 @@ export const useExecutiveIntelligence = () => {
 
   const updateIntervention = useCallback(async (
     id: string,
-    patch: Partial<Pick<Intervention, "escalation_status" | "owner_user_id">> & { resolved?: boolean; acknowledged?: boolean }
+    patch: { status?: string; owner_id?: string | null; resolved?: boolean; acknowledged?: boolean }
   ) => {
     if (!orgId) return;
-    // Optimistic UI
     setInterventions((cur) => cur.map((i) => i.id === id ? {
       ...i,
       ...patch,
@@ -177,16 +183,16 @@ export const useExecutiveIntelligence = () => {
       resolved_at: patch.resolved ? new Date().toISOString() : i.resolved_at,
     } as Intervention : i));
     const updates: Record<string, unknown> = {};
-    if (patch.escalation_status) updates.escalation_status = patch.escalation_status;
-    if (patch.owner_user_id !== undefined) updates.owner_user_id = patch.owner_user_id;
-    if (patch.acknowledged) updates.acknowledged_at = new Date().toISOString();
-    if (patch.resolved) updates.resolved_at = new Date().toISOString();
-    await supabase.from("executive_interventions").update(updates).eq("id", id).eq("organization_id", orgId);
+    if (patch.status) updates.status = patch.status;
+    if (patch.owner_id !== undefined) updates.owner_id = patch.owner_id;
+    if (patch.acknowledged && !patch.status) updates.status = "acknowledged";
+    if (patch.resolved && !patch.status) updates.status = "resolved";
+    await supabase.from("executive_interventions").update(updates as never).eq("id", id).eq("organization_id", orgId);
     refresh();
   }, [orgId, refresh]);
 
   const topByPressure = useMemo(
-    () => [...interventions].sort((a, b) => b.decision_pressure_score - a.decision_pressure_score),
+    () => [...interventions].sort((a, b) => b.intervention_priority_score - a.intervention_priority_score),
     [interventions]
   );
 
