@@ -108,10 +108,10 @@ export const EmbedManager = () => {
                   />
                 </div>
                 <div className="flex gap-1 ml-3">
-                  <Button size="icon" variant="ghost" onClick={() => copyEmbed(tk.token)}>
+                  <Button size="icon" variant="ghost" aria-label="Copy embed code" onClick={() => copyEmbed(tk.token)}>
                     <Copy className="w-4 h-4" />
                   </Button>
-                  <Button size="icon" variant="ghost" onClick={() => deleteToken.mutate(tk.id)}>
+                  <Button size="icon" variant="ghost" aria-label="Delete embed token" onClick={() => deleteToken.mutate(tk.id)}>
                     <Trash2 className="w-4 h-4 text-destructive" />
                   </Button>
                 </div>
