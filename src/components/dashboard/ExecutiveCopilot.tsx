@@ -326,6 +326,7 @@ const ExecutiveCopilot = ({ organizationId, roleType, riskScore, tier, datasetId
               onClick={() => sendMessage(input)}
               disabled={!input.trim() || isLoading || isThrottled}
               size="icon"
+              aria-label="Send message"
               className="shrink-0 h-[44px] w-[44px]"
             >
               {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
