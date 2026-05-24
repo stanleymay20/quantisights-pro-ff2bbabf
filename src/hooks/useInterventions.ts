@@ -62,6 +62,19 @@ export interface InterventionObservability {
   conversion_to_decision_rate: number;
 }
 
+export interface InterventionLearning {
+  id: string;
+  intervention_id: string;
+  outcome: string | null;
+  time_to_resolution_hours: number | null;
+  effectiveness_score: number | null;
+  recurrence_count: number;
+  false_positive: boolean;
+  recommendation_confidence_adjustment: number;
+  notes: string | null;
+  recorded_at: string;
+}
+
 export const useInterventions = () => {
   const { orgId } = useActiveDataContext();
   const [items, setItems] = useState<InterventionRow[]>([]);
@@ -69,11 +82,13 @@ export const useInterventions = () => {
   const [observability, setObservability] = useState<InterventionObservability | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const [learning, setLearning] = useState<InterventionLearning[]>([]);
+
   const refresh = useCallback(async () => {
     if (!orgId) return;
     setLoading(true);
     try {
-      const [itemsRes, escRes, obsRes] = await Promise.all([
+      const [itemsRes, escRes, obsRes, learnRes] = await Promise.all([
         supabase
           .from("executive_interventions")
           .select("*")
@@ -85,7 +100,7 @@ export const useInterventions = () => {
           .select("id,intervention_id,escalation_level,escalation_reason,escalation_summary,escalation_targets,triggered_by,created_at")
           .eq("organization_id", orgId)
           .order("created_at", { ascending: false })
-          .limit(100),
+          .limit(200),
         supabase
           .from("intervention_observability")
           .select("day,creation_count,resolution_count,escalation_count,avg_response_latency_minutes,avg_resolution_hours,fatigue_score,false_positive_count,effectiveness_avg,conversion_to_decision_rate")
@@ -93,10 +108,17 @@ export const useInterventions = () => {
           .order("day", { ascending: false })
           .limit(1)
           .maybeSingle(),
+        supabase
+          .from("intervention_learning")
+          .select("id,intervention_id,outcome,time_to_resolution_hours,effectiveness_score,recurrence_count,false_positive,recommendation_confidence_adjustment,notes,recorded_at")
+          .eq("organization_id", orgId)
+          .order("recorded_at", { ascending: false })
+          .limit(200),
       ]);
       setItems((itemsRes.data as unknown as InterventionRow[]) || []);
       setEscalations((escRes.data as unknown as InterventionEscalation[]) || []);
       setObservability((obsRes.data as unknown as InterventionObservability) || null);
+      setLearning((learnRes.data as unknown as InterventionLearning[]) || []);
     } finally {
       setLoading(false);
     }
@@ -166,5 +188,5 @@ export const useInterventions = () => {
     resolved: items.filter((i) => !!i.resolved_at),
   }), [items]);
 
-  return { items, escalations, observability, buckets, loading, refresh, updateStatus, assignOwner, escalate, resolve };
+  return { items, escalations, observability, learning, buckets, loading, refresh, updateStatus, assignOwner, escalate, resolve };
 };

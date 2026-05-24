@@ -53,6 +53,11 @@ function InterventionDrawer({ iv, onClose, ops }: {
   const [resolveNotes, setResolveNotes] = useState("");
   if (!iv) return null;
   const breakdown = iv.scoring_breakdown || {};
+  const ivEscalations = ops.escalations.filter((e) => e.intervention_id === iv.id);
+  const ivLearning = ops.learning.find((l) => l.intervention_id === iv.id);
+  const slaState = iv.sla_due_at
+    ? (new Date(iv.sla_due_at) < new Date() && !iv.resolved_at ? "breached" : "on-track")
+    : "—";
 
   return (
     <Sheet open={!!iv} onOpenChange={(o) => !o && onClose()}>
@@ -89,9 +94,78 @@ function InterventionDrawer({ iv, onClose, ops }: {
               ))}
             </ul>
           </div>
-          {iv.sla_due_at && !iv.resolved_at && (
-            <div className="text-xs flex items-center gap-1 text-muted-foreground">
-              <Clock className="h-3 w-3" /> SLA due: {new Date(iv.sla_due_at).toLocaleString()}
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="border rounded p-2">
+              <div className="text-muted-foreground">Owner</div>
+              <div className="font-mono truncate">{iv.owner_id ? iv.owner_id.slice(0, 8) : "Unassigned"}</div>
+            </div>
+            <div className="border rounded p-2">
+              <div className="text-muted-foreground">SLA</div>
+              <div className="flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                <Badge variant={slaState === "breached" ? "destructive" : "outline"} className="text-[10px]">
+                  {slaState}
+                </Badge>
+              </div>
+              {iv.sla_due_at && (
+                <div className="text-muted-foreground mt-1">{new Date(iv.sla_due_at).toLocaleString()}</div>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <h4 className="text-xs font-semibold uppercase text-muted-foreground mb-1">Supporting Intelligence</h4>
+            {Array.isArray(iv.contributing_signals) && iv.contributing_signals.length > 0 ? (
+              <ul className="text-xs space-y-1">
+                {(iv.contributing_signals as Array<Record<string, unknown>>).slice(0, 5).map((s, idx) => (
+                  <li key={idx} className="border-l-2 border-muted pl-2">
+                    {String(s.title ?? s.label ?? s.source ?? JSON.stringify(s)).slice(0, 140)}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Source: <span className="font-mono">{iv.source_type}{iv.source_id ? ` · ${iv.source_id.slice(0, 8)}` : ""}</span>
+              </p>
+            )}
+          </div>
+
+          <div>
+            <h4 className="text-xs font-semibold uppercase text-muted-foreground mb-1">
+              Escalation History {ivEscalations.length > 0 && <span className="text-foreground">({ivEscalations.length})</span>}
+            </h4>
+            {ivEscalations.length === 0 ? (
+              <p className="text-xs text-muted-foreground">No escalations.</p>
+            ) : (
+              <ol className="space-y-1.5">
+                {ivEscalations.map((e) => (
+                  <li key={e.id} className="text-xs border-l-2 border-primary pl-2">
+                    <div className="flex items-center gap-1 flex-wrap">
+                      <Badge variant="secondary" className="text-[10px]">L{e.escalation_level}</Badge>
+                      <Badge variant="outline" className="text-[10px]">{e.triggered_by}</Badge>
+                      <span className="text-muted-foreground">{new Date(e.created_at).toLocaleString()}</span>
+                    </div>
+                    <p>{e.escalation_reason}</p>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </div>
+
+          {(iv.resolution_notes || ivLearning) && (
+            <div className="border rounded p-2 bg-muted/30">
+              <h4 className="text-xs font-semibold uppercase text-muted-foreground mb-1">Outcome & Learning</h4>
+              {iv.resolution_notes && <p className="text-xs mb-1">{iv.resolution_notes}</p>}
+              {ivLearning && (
+                <div className="text-xs grid grid-cols-2 gap-1">
+                  <div><span className="text-muted-foreground">Outcome:</span> {ivLearning.outcome ?? "—"}</div>
+                  <div><span className="text-muted-foreground">Effectiveness:</span> {ivLearning.effectiveness_score ?? "—"}/100</div>
+                  <div><span className="text-muted-foreground">Time to resolve:</span> {ivLearning.time_to_resolution_hours ?? "—"} h</div>
+                  <div><span className="text-muted-foreground">Recurrence:</span> {ivLearning.recurrence_count}</div>
+                  {ivLearning.false_positive && <div className="col-span-2"><Badge variant="destructive" className="text-[10px]">False positive</Badge></div>}
+                  <div className="col-span-2 text-muted-foreground">Confidence adj: {(ivLearning.recommendation_confidence_adjustment * 100).toFixed(1)}pp</div>
+                </div>
+              )}
             </div>
           )}
 
@@ -166,13 +240,55 @@ export default function Interventions() {
         </p>
       </header>
 
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <Card><CardContent className="p-3"><div className="text-2xl font-bold text-destructive">{counts.critical.length}</div><div className="text-xs text-muted-foreground">Critical open</div></CardContent></Card>
-        <Card><CardContent className="p-3"><div className="text-2xl font-bold">{counts.high.length}</div><div className="text-xs text-muted-foreground">High open</div></CardContent></Card>
-        <Card><CardContent className="p-3"><div className="text-2xl font-bold">{counts.elevated.length}</div><div className="text-xs text-muted-foreground">Elevated open</div></CardContent></Card>
-        <Card><CardContent className="p-3"><div className="text-2xl font-bold">{obs?.escalation_count ?? 0}</div><div className="text-xs text-muted-foreground">Today: escalations</div></CardContent></Card>
-        <Card><CardContent className="p-3"><div className="text-2xl font-bold">{obs?.fatigue_score ?? 0}<span className="text-sm text-muted-foreground">/100</span></div><div className="text-xs text-muted-foreground">Fatigue score</div></CardContent></Card>
-      </div>
+      {(() => {
+        const resolutionRate = obs && obs.creation_count > 0
+          ? Math.round((obs.resolution_count / obs.creation_count) * 100) : null;
+        const escalationRate = obs && obs.creation_count > 0
+          ? Math.round((obs.escalation_count / obs.creation_count) * 100) : null;
+        const conversionRate = obs ? Math.round((obs.conversion_to_decision_rate ?? 0) * 100) : null;
+        return (
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <Card><CardContent className="p-3">
+                <div className="text-2xl font-bold text-destructive">{counts.critical.length}</div>
+                <div className="text-xs text-muted-foreground">Unresolved critical</div>
+              </CardContent></Card>
+              <Card><CardContent className="p-3">
+                <div className="text-2xl font-bold">{obs?.fatigue_score ?? 0}<span className="text-sm text-muted-foreground">/100</span></div>
+                <div className="text-xs text-muted-foreground">Fatigue score (today)</div>
+              </CardContent></Card>
+              <Card><CardContent className="p-3">
+                <div className="text-2xl font-bold">{escalationRate != null ? `${escalationRate}%` : "—"}</div>
+                <div className="text-xs text-muted-foreground">Escalation rate</div>
+              </CardContent></Card>
+              <Card><CardContent className="p-3">
+                <div className="text-2xl font-bold">
+                  {obs?.avg_response_latency_minutes != null ? `${Math.round(obs.avg_response_latency_minutes)}m` : "—"}
+                </div>
+                <div className="text-xs text-muted-foreground">Avg response latency</div>
+              </CardContent></Card>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <Card><CardContent className="p-3">
+                <div className="text-2xl font-bold">{resolutionRate != null ? `${resolutionRate}%` : "—"}</div>
+                <div className="text-xs text-muted-foreground">Resolution rate</div>
+              </CardContent></Card>
+              <Card><CardContent className="p-3">
+                <div className="text-2xl font-bold">{conversionRate != null ? `${conversionRate}%` : "—"}</div>
+                <div className="text-xs text-muted-foreground">→ Decision conversion</div>
+              </CardContent></Card>
+              <Card><CardContent className="p-3">
+                <div className="text-2xl font-bold">{counts.high.length}<span className="text-sm text-muted-foreground"> / {counts.elevated.length}</span></div>
+                <div className="text-xs text-muted-foreground">High / Elevated open</div>
+              </CardContent></Card>
+              <Card><CardContent className="p-3">
+                <div className="text-2xl font-bold">{obs?.effectiveness_avg != null ? Math.round(obs.effectiveness_avg) : "—"}<span className="text-sm text-muted-foreground">/100</span></div>
+                <div className="text-xs text-muted-foreground">Avg effectiveness</div>
+              </CardContent></Card>
+            </div>
+          </>
+        );
+      })()}
 
       <Tabs defaultValue="open">
         <TabsList>
