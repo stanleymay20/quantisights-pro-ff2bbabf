@@ -119,6 +119,7 @@ const CompetitiveAnalysis = lazy(() => import("@/pages/CompetitiveAnalysis"));
 const IntelligenceDashboard = lazy(() => import("@/pages/IntelligenceDashboard"));
 const IntelligenceInbox = lazy(() => import("@/pages/IntelligenceInbox"));
 const ExecutiveIntelligence = lazy(() => import("@/pages/ExecutiveIntelligence"));
+const Interventions = lazy(() => import("@/pages/Interventions"));
 
 // ── Legal ──
 const Terms = lazy(() => import("@/pages/Terms"));
