@@ -1,5 +1,5 @@
 // Intervention Fatigue Compute
-// Daily rollup: per-owner intervention volume, resolution latency, ack-rate, effectiveness.
+// Rolling 7-day per-owner fatigue: volume, unresolved, escalation density.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -17,43 +17,54 @@ Deno.serve(async (req) => {
   );
 
   try {
-    const since = new Date(Date.now() - 7 * 86400_000).toISOString();
+    const windowEnd = new Date();
+    const windowStart = new Date(windowEnd.getTime() - 7 * 86400_000);
+
     const { data: rows, error } = await supabase
       .from("executive_interventions")
-      .select("organization_id, owner_id, status, created_at, acknowledged_at, resolved_at, outcome_effectiveness")
-      .gte("created_at", since)
-      .limit(5000);
+      .select("organization_id, owner_id, status, escalation_tier, created_at, resolved_at")
+      .gte("created_at", windowStart.toISOString())
+      .limit(10000);
     if (error) throw error;
 
-    const buckets = new Map<string, { org: string; owner: string | null; total: number; acked: number; resolved: number; ackMs: number[]; resMs: number[]; eff: number[] }>();
+    const buckets = new Map<string, { org: string; owner: string; total: number; unresolved: number; escalated: number }>();
     for (const r of rows ?? []) {
-      const key = `${r.organization_id}::${r.owner_id ?? "unassigned"}`;
-      const b = buckets.get(key) ?? { org: r.organization_id, owner: r.owner_id ?? null, total: 0, acked: 0, resolved: 0, ackMs: [], resMs: [], eff: [] };
+      const owner = r.owner_id ?? "unassigned";
+      const key = `${r.organization_id}::${owner}`;
+      const b = buckets.get(key) ?? { org: r.organization_id, owner, total: 0, unresolved: 0, escalated: 0 };
       b.total += 1;
-      if (r.acknowledged_at) { b.acked += 1; b.ackMs.push(new Date(r.acknowledged_at).getTime() - new Date(r.created_at).getTime()); }
-      if (r.resolved_at) { b.resolved += 1; b.resMs.push(new Date(r.resolved_at).getTime() - new Date(r.created_at).getTime()); }
-      if (r.outcome_effectiveness != null) b.eff.push(Number(r.outcome_effectiveness));
+      if (!r.resolved_at) b.unresolved += 1;
+      if (r.escalation_tier && r.escalation_tier !== "none") b.escalated += 1;
       buckets.set(key, b);
     }
 
-    const today = new Date().toISOString().slice(0, 10);
-    const payload = Array.from(buckets.values()).map((b) => ({
-      organization_id: b.org,
-      owner_id: b.owner,
-      window_date: today,
-      total_interventions: b.total,
-      ack_rate: b.total ? b.acked / b.total : 0,
-      resolution_rate: b.total ? b.resolved / b.total : 0,
-      avg_ack_minutes: b.ackMs.length ? Math.round(b.ackMs.reduce((s, x) => s + x, 0) / b.ackMs.length / 60000) : null,
-      avg_resolution_minutes: b.resMs.length ? Math.round(b.resMs.reduce((s, x) => s + x, 0) / b.resMs.length / 60000) : null,
-      avg_effectiveness: b.eff.length ? b.eff.reduce((s, x) => s + x, 0) / b.eff.length : null,
-      fatigue_score: Math.min(100, b.total * 5 + (b.total - b.resolved) * 3),
-    }));
+    const payload = Array.from(buckets.values()).map((b) => {
+      const escDensity = b.total ? b.escalated / b.total : 0;
+      const fatigueScore = Math.min(100, Math.round(b.total * 4 + b.unresolved * 5 + escDensity * 20));
+      const overload =
+        fatigueScore >= 80 ? "severe" :
+        fatigueScore >= 60 ? "high" :
+        fatigueScore >= 35 ? "moderate" : "low";
+      return {
+        organization_id: b.org,
+        scope_type: "owner",
+        scope_id: b.owner,
+        window_start: windowStart.toISOString(),
+        window_end: windowEnd.toISOString(),
+        total_interventions: b.total,
+        unresolved_count: b.unresolved,
+        escalation_density: Number(escDensity.toFixed(3)),
+        repeat_advisories: 0,
+        ignored_count: 0,
+        fatigue_score: fatigueScore,
+        overload_risk: overload,
+      };
+    });
 
     if (payload.length) {
       const { error: upErr } = await supabase
         .from("intervention_fatigue")
-        .upsert(payload, { onConflict: "organization_id,owner_id,window_date" });
+        .upsert(payload, { onConflict: "organization_id,scope_type,scope_id,window_start" });
       if (upErr) throw upErr;
     }
 
