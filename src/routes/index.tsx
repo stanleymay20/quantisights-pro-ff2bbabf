@@ -198,6 +198,7 @@ export const routes: RouteEntry[] = [
   { path: "/intelligence-dashboard", element: <IntelligenceDashboard />, layout: "full" },
   { path: "/intelligence-inbox", element: <IntelligenceInbox />, layout: "full" },
   { path: "/executive-intelligence", element: <ExecutiveIntelligence />, layout: "full" },
+  { path: "/interventions", element: <Interventions />, layout: "full" },
 
   // ══════ Decision System ══════
   { path: "/decisions", element: <DecisionLedger />, layout: "full" },
