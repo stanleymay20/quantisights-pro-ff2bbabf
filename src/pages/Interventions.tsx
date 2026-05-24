@@ -240,13 +240,55 @@ export default function Interventions() {
         </p>
       </header>
 
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <Card><CardContent className="p-3"><div className="text-2xl font-bold text-destructive">{counts.critical.length}</div><div className="text-xs text-muted-foreground">Critical open</div></CardContent></Card>
-        <Card><CardContent className="p-3"><div className="text-2xl font-bold">{counts.high.length}</div><div className="text-xs text-muted-foreground">High open</div></CardContent></Card>
-        <Card><CardContent className="p-3"><div className="text-2xl font-bold">{counts.elevated.length}</div><div className="text-xs text-muted-foreground">Elevated open</div></CardContent></Card>
-        <Card><CardContent className="p-3"><div className="text-2xl font-bold">{obs?.escalation_count ?? 0}</div><div className="text-xs text-muted-foreground">Today: escalations</div></CardContent></Card>
-        <Card><CardContent className="p-3"><div className="text-2xl font-bold">{obs?.fatigue_score ?? 0}<span className="text-sm text-muted-foreground">/100</span></div><div className="text-xs text-muted-foreground">Fatigue score</div></CardContent></Card>
-      </div>
+      {(() => {
+        const resolutionRate = obs && obs.creation_count > 0
+          ? Math.round((obs.resolution_count / obs.creation_count) * 100) : null;
+        const escalationRate = obs && obs.creation_count > 0
+          ? Math.round((obs.escalation_count / obs.creation_count) * 100) : null;
+        const conversionRate = obs ? Math.round((obs.conversion_to_decision_rate ?? 0) * 100) : null;
+        return (
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <Card><CardContent className="p-3">
+                <div className="text-2xl font-bold text-destructive">{counts.critical.length}</div>
+                <div className="text-xs text-muted-foreground">Unresolved critical</div>
+              </CardContent></Card>
+              <Card><CardContent className="p-3">
+                <div className="text-2xl font-bold">{obs?.fatigue_score ?? 0}<span className="text-sm text-muted-foreground">/100</span></div>
+                <div className="text-xs text-muted-foreground">Fatigue score (today)</div>
+              </CardContent></Card>
+              <Card><CardContent className="p-3">
+                <div className="text-2xl font-bold">{escalationRate != null ? `${escalationRate}%` : "—"}</div>
+                <div className="text-xs text-muted-foreground">Escalation rate</div>
+              </CardContent></Card>
+              <Card><CardContent className="p-3">
+                <div className="text-2xl font-bold">
+                  {obs?.avg_response_latency_minutes != null ? `${Math.round(obs.avg_response_latency_minutes)}m` : "—"}
+                </div>
+                <div className="text-xs text-muted-foreground">Avg response latency</div>
+              </CardContent></Card>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <Card><CardContent className="p-3">
+                <div className="text-2xl font-bold">{resolutionRate != null ? `${resolutionRate}%` : "—"}</div>
+                <div className="text-xs text-muted-foreground">Resolution rate</div>
+              </CardContent></Card>
+              <Card><CardContent className="p-3">
+                <div className="text-2xl font-bold">{conversionRate != null ? `${conversionRate}%` : "—"}</div>
+                <div className="text-xs text-muted-foreground">→ Decision conversion</div>
+              </CardContent></Card>
+              <Card><CardContent className="p-3">
+                <div className="text-2xl font-bold">{counts.high.length}<span className="text-sm text-muted-foreground"> / {counts.elevated.length}</span></div>
+                <div className="text-xs text-muted-foreground">High / Elevated open</div>
+              </CardContent></Card>
+              <Card><CardContent className="p-3">
+                <div className="text-2xl font-bold">{obs?.effectiveness_avg != null ? Math.round(obs.effectiveness_avg) : "—"}<span className="text-sm text-muted-foreground">/100</span></div>
+                <div className="text-xs text-muted-foreground">Avg effectiveness</div>
+              </CardContent></Card>
+            </div>
+          </>
+        );
+      })()}
 
       <Tabs defaultValue="open">
         <TabsList>
