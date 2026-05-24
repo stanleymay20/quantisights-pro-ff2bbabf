@@ -188,5 +188,5 @@ export const useInterventions = () => {
     resolved: items.filter((i) => !!i.resolved_at),
   }), [items]);
 
-  return { items, escalations, observability, buckets, loading, refresh, updateStatus, assignOwner, escalate, resolve };
+  return { items, escalations, observability, learning, buckets, loading, refresh, updateStatus, assignOwner, escalate, resolve };
 };
