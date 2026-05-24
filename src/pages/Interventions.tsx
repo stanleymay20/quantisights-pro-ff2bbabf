@@ -58,10 +58,6 @@ function InterventionDrawer({ iv, onClose, ops }: {
   const slaState = iv.sla_due_at
     ? (new Date(iv.sla_due_at) < new Date() && !iv.resolved_at ? "breached" : "on-track")
     : "—";
-  const [escalateReason, setEscalateReason] = useState("");
-  const [resolveNotes, setResolveNotes] = useState("");
-  if (!iv) return null;
-  const breakdown = iv.scoring_breakdown || {};
 
   return (
     <Sheet open={!!iv} onOpenChange={(o) => !o && onClose()}>
