@@ -94,9 +94,78 @@ function InterventionDrawer({ iv, onClose, ops }: {
               ))}
             </ul>
           </div>
-          {iv.sla_due_at && !iv.resolved_at && (
-            <div className="text-xs flex items-center gap-1 text-muted-foreground">
-              <Clock className="h-3 w-3" /> SLA due: {new Date(iv.sla_due_at).toLocaleString()}
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="border rounded p-2">
+              <div className="text-muted-foreground">Owner</div>
+              <div className="font-mono truncate">{iv.owner_id ? iv.owner_id.slice(0, 8) : "Unassigned"}</div>
+            </div>
+            <div className="border rounded p-2">
+              <div className="text-muted-foreground">SLA</div>
+              <div className="flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                <Badge variant={slaState === "breached" ? "destructive" : "outline"} className="text-[10px]">
+                  {slaState}
+                </Badge>
+              </div>
+              {iv.sla_due_at && (
+                <div className="text-muted-foreground mt-1">{new Date(iv.sla_due_at).toLocaleString()}</div>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <h4 className="text-xs font-semibold uppercase text-muted-foreground mb-1">Supporting Intelligence</h4>
+            {Array.isArray(iv.contributing_signals) && iv.contributing_signals.length > 0 ? (
+              <ul className="text-xs space-y-1">
+                {(iv.contributing_signals as Array<Record<string, unknown>>).slice(0, 5).map((s, idx) => (
+                  <li key={idx} className="border-l-2 border-muted pl-2">
+                    {String(s.title ?? s.label ?? s.source ?? JSON.stringify(s)).slice(0, 140)}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Source: <span className="font-mono">{iv.source_type}{iv.source_id ? ` · ${iv.source_id.slice(0, 8)}` : ""}</span>
+              </p>
+            )}
+          </div>
+
+          <div>
+            <h4 className="text-xs font-semibold uppercase text-muted-foreground mb-1">
+              Escalation History {ivEscalations.length > 0 && <span className="text-foreground">({ivEscalations.length})</span>}
+            </h4>
+            {ivEscalations.length === 0 ? (
+              <p className="text-xs text-muted-foreground">No escalations.</p>
+            ) : (
+              <ol className="space-y-1.5">
+                {ivEscalations.map((e) => (
+                  <li key={e.id} className="text-xs border-l-2 border-primary pl-2">
+                    <div className="flex items-center gap-1 flex-wrap">
+                      <Badge variant="secondary" className="text-[10px]">L{e.escalation_level}</Badge>
+                      <Badge variant="outline" className="text-[10px]">{e.triggered_by}</Badge>
+                      <span className="text-muted-foreground">{new Date(e.created_at).toLocaleString()}</span>
+                    </div>
+                    <p>{e.escalation_reason}</p>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </div>
+
+          {(iv.resolution_notes || ivLearning) && (
+            <div className="border rounded p-2 bg-muted/30">
+              <h4 className="text-xs font-semibold uppercase text-muted-foreground mb-1">Outcome & Learning</h4>
+              {iv.resolution_notes && <p className="text-xs mb-1">{iv.resolution_notes}</p>}
+              {ivLearning && (
+                <div className="text-xs grid grid-cols-2 gap-1">
+                  <div><span className="text-muted-foreground">Outcome:</span> {ivLearning.outcome ?? "—"}</div>
+                  <div><span className="text-muted-foreground">Effectiveness:</span> {ivLearning.effectiveness_score ?? "—"}/100</div>
+                  <div><span className="text-muted-foreground">Time to resolve:</span> {ivLearning.time_to_resolution_hours ?? "—"} h</div>
+                  <div><span className="text-muted-foreground">Recurrence:</span> {ivLearning.recurrence_count}</div>
+                  {ivLearning.false_positive && <div className="col-span-2"><Badge variant="destructive" className="text-[10px]">False positive</Badge></div>}
+                  <div className="col-span-2 text-muted-foreground">Confidence adj: {(ivLearning.recommendation_confidence_adjustment * 100).toFixed(1)}pp</div>
+                </div>
+              )}
             </div>
           )}
 
