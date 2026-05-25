@@ -125,9 +125,10 @@ function InterventionRow({ iv, onUpdate }: { iv: Intervention; onUpdate: (id: st
 export default function ExecutiveIntelligence() {
   const { orgRole, isLoading: roleLoading } = usePermissions();
   const {
-    brief, interventions, topByPressure, narratives, exposure, observability,
+    brief, interventions, topByPressure, narratives, exposure, observability, snapshot,
     loading, generating, regenerate, updateIntervention,
   } = useExecutiveIntelligence();
+
 
   const allowed = useMemo(
     () => orgRole && ["owner", "admin", "executive"].includes(orgRole),
