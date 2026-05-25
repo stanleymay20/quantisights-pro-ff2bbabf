@@ -79,6 +79,37 @@ export interface ExecObservability {
   memory_effectiveness_score: number;
 }
 
+export interface ExecIntelSnapshot {
+  id: string;
+  snapshot_date: string;
+  generated_at: string;
+  generated_by: string;
+  headline: string | null;
+  top_interventions: Array<Record<string, unknown>>;
+  pressure_queue: Array<Record<string, unknown>>;
+  cross_domain_narratives: Array<Record<string, unknown>>;
+  emerging_threats: Array<Record<string, unknown>>;
+  fatigue_warning: {
+    avg_fatigue_score?: number;
+    high_fatigue_owner_count?: number;
+    breached_owners?: Array<Record<string, unknown>>;
+    triggered?: boolean;
+  };
+  conversion_metrics: {
+    items_evaluated?: number;
+    items_routed_to_decision?: number;
+    conversion_rate_pct?: number;
+    advisories_open?: number;
+    decisions_created_7d?: number;
+    intervention_resolution_rate_pct?: number;
+  };
+  recommended_actions: Array<{ label: string; value: string }>;
+  provenance: Record<string, unknown>;
+  risk_score: number | null;
+  confidence: number | null;
+}
+
+
 export const useExecutiveIntelligence = () => {
   const { orgId } = useActiveDataContext();
   const [brief, setBrief] = useState<ExecBrief | null>(null);
