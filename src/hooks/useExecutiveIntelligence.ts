@@ -126,7 +126,7 @@ export const useExecutiveIntelligence = () => {
     if (!orgId) return;
     setLoading(true);
     try {
-      const [b, iv, nar, exp, obs] = await Promise.all([
+      const [b, iv, nar, exp, obs, snap] = await Promise.all([
         supabase
           .from("executive_briefs")
           .select("id,summary_json,risk_score,generated_at")
@@ -161,12 +161,21 @@ export const useExecutiveIntelligence = () => {
           .order("snapshot_day", { ascending: false })
           .limit(1)
           .maybeSingle(),
+        (supabase as unknown as { from: (t: string) => { select: (s: string) => { eq: (k: string, v: string) => { order: (k: string, o: { ascending: boolean }) => { limit: (n: number) => { maybeSingle: () => Promise<{ data: unknown }> } } } } } })
+          .from("executive_intelligence_snapshots")
+          .select("id,snapshot_date,generated_at,generated_by,headline,top_interventions,pressure_queue,cross_domain_narratives,emerging_threats,fatigue_warning,conversion_metrics,recommended_actions,provenance,risk_score,confidence")
+          .eq("organization_id", orgId)
+          .order("snapshot_date", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
       ]);
       setBrief((b.data as unknown as ExecBrief) || null);
       setInterventions((iv.data as unknown as Intervention[]) || []);
       setNarratives((nar.data as unknown as Narrative[]) || []);
       setExposure((exp.data as unknown as Exposure) || null);
       setObservability((obs.data as unknown as ExecObservability) || null);
+      setSnapshot((snap.data as unknown as ExecIntelSnapshot) || null);
+
     } finally {
       setLoading(false);
     }
