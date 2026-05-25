@@ -239,7 +239,8 @@ export const useExecutiveIntelligence = () => {
   );
 
   return {
-    brief, interventions, topByPressure, narratives, exposure, observability,
+    brief, interventions, topByPressure, narratives, exposure, observability, snapshot,
     loading, generating, refresh, regenerate, updateIntervention,
   };
+
 };
