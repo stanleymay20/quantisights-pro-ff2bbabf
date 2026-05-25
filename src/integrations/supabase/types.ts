@@ -4876,6 +4876,77 @@ export type Database = {
           },
         ]
       }
+      executive_intelligence_snapshots: {
+        Row: {
+          brief_id: string | null
+          confidence: number | null
+          conversion_metrics: Json
+          cross_domain_narratives: Json
+          emerging_threats: Json
+          fatigue_warning: Json
+          generated_at: string
+          generated_by: string
+          headline: string | null
+          id: string
+          organization_id: string
+          pressure_queue: Json
+          provenance: Json
+          recommended_actions: Json
+          risk_score: number | null
+          snapshot_date: string
+          summary_json: Json
+          top_interventions: Json
+        }
+        Insert: {
+          brief_id?: string | null
+          confidence?: number | null
+          conversion_metrics?: Json
+          cross_domain_narratives?: Json
+          emerging_threats?: Json
+          fatigue_warning?: Json
+          generated_at?: string
+          generated_by?: string
+          headline?: string | null
+          id?: string
+          organization_id: string
+          pressure_queue?: Json
+          provenance?: Json
+          recommended_actions?: Json
+          risk_score?: number | null
+          snapshot_date?: string
+          summary_json?: Json
+          top_interventions?: Json
+        }
+        Update: {
+          brief_id?: string | null
+          confidence?: number | null
+          conversion_metrics?: Json
+          cross_domain_narratives?: Json
+          emerging_threats?: Json
+          fatigue_warning?: Json
+          generated_at?: string
+          generated_by?: string
+          headline?: string | null
+          id?: string
+          organization_id?: string
+          pressure_queue?: Json
+          provenance?: Json
+          recommended_actions?: Json
+          risk_score?: number | null
+          snapshot_date?: string
+          summary_json?: Json
+          top_interventions?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "executive_intelligence_snapshots_brief_id_fkey"
+            columns: ["brief_id"]
+            isOneToOne: false
+            referencedRelation: "executive_briefs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       executive_interventions: {
         Row: {
           acknowledged_at: string | null
