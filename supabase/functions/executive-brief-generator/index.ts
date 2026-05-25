@@ -366,8 +366,102 @@ Deno.serve(async (req) => {
     computed_at: new Date().toISOString(),
   }, { onConflict: "organization_id,snapshot_day" });
 
+  // ─── Intervention fatigue + conversion metrics ───
+  const { data: fatigueRows } = await svc
+    .from("intervention_fatigue")
+    .select("scope_type,scope_id,intervention_volume,unresolved_count,escalation_density,fatigue_score,window_start,window_end")
+    .eq("organization_id", orgId)
+    .gte("window_end", since)
+    .order("fatigue_score", { ascending: false })
+    .limit(20);
+  const avgFatigue = (fatigueRows && fatigueRows.length > 0)
+    ? Math.round(fatigueRows.reduce((s, r) => s + Number(r.fatigue_score ?? 0), 0) / fatigueRows.length)
+    : 0;
+  const highFatigueOwners = (fatigueRows || []).filter((r) => Number(r.fatigue_score ?? 0) >= 70);
+
+  const { data: routedItems } = await svc
+    .from("intelligence_routes")
+    .select("id,target_table,target_id,intelligence_item_id,created_at")
+    .eq("organization_id", orgId)
+    .eq("target_table", "decision_ledger")
+    .gte("created_at", since)
+    .limit(500);
+  const itemsToDecision = new Set((routedItems || []).map((r) => r.intelligence_item_id)).size;
+  const conversionRate = items.length > 0 ? Math.round((itemsToDecision / items.length) * 1000) / 10 : 0;
+
+  // ─── Persist Executive Intelligence Snapshot ───
+  const topInterventions = (await svc
+    .from("executive_interventions")
+    .select("id,title,intervention_type,severity,urgency,status,escalation_tier,intervention_priority_score,decision_pressure_score,owner_id,sla_due_at,created_at")
+    .eq("organization_id", orgId)
+    .in("status", ["new", "acknowledged", "in_progress", "escalated", "proposed", "assigned"])
+    .order("intervention_priority_score", { ascending: false })
+    .limit(10)).data ?? [];
+
+  const fatigueWarning = {
+    avg_fatigue_score: avgFatigue,
+    high_fatigue_owner_count: highFatigueOwners.length,
+    breached_owners: highFatigueOwners.slice(0, 5),
+    triggered: highFatigueOwners.length > 0 || avgFatigue >= 70,
+  };
+
+  const conversionMetrics = {
+    items_evaluated: items.length,
+    items_routed_to_decision: itemsToDecision,
+    conversion_rate_pct: conversionRate,
+    advisories_open: advisories?.length ?? 0,
+    decisions_created_7d: decisions?.length ?? 0,
+    intervention_resolution_rate_pct: intvResolutionRate,
+  };
+
+  const snapshot = await svc
+    .from("executive_intelligence_snapshots")
+    .upsert({
+      organization_id: orgId,
+      snapshot_date: new Date().toISOString().slice(0, 10),
+      generated_by: (body as { source?: string }).source === "cron" ? "cron" : "manual",
+      brief_id: brief?.id ?? null,
+      headline: briefSummary.headline,
+      summary_json: briefSummary,
+      top_interventions: topInterventions,
+      pressure_queue: top.map((r) => ({
+        intelligence_item_id: r.it.id,
+        title: r.it.title,
+        domain: r.it.domain,
+        pressure: r.pressure,
+        tier: r.tier,
+        factors: r.factors,
+      })),
+      cross_domain_narratives: narrativeRowId
+        ? [{ id: narrativeRowId, domains: activeDomains.map(([d]) => d) }]
+        : [],
+      emerging_threats: ranked
+        .filter((r) => r.tier === "high" || r.tier === "critical")
+        .slice(0, 12)
+        .map((r) => ({
+          intelligence_item_id: r.it.id,
+          title: r.it.title,
+          tier: r.tier,
+          pressure: r.pressure,
+          ingested_at: r.it.ingested_at,
+        })),
+      fatigue_warning: fatigueWarning,
+      conversion_metrics: conversionMetrics,
+      recommended_actions: briefSummary.recommended_executive_actions,
+      provenance: {
+        ...briefSummary.provenance,
+        intervention_count: topInterventions.length,
+        fatigue_rows_considered: fatigueRows?.length ?? 0,
+      },
+      risk_score: Math.min(100, exposureScore),
+      confidence: briefSummary.confidence,
+    }, { onConflict: "organization_id,snapshot_date" })
+    .select("id")
+    .single();
+
   return json({
     brief_id: brief?.id ?? null,
+    snapshot_id: snapshot.data?.id ?? null,
     narrative_id: narrativeRowId,
     interventions_created: interventionsInserted,
     items_evaluated: items.length,
@@ -377,5 +471,8 @@ Deno.serve(async (req) => {
     exposure_score: exposureScore,
     critical_pressure: criticalCount,
     high_pressure: highCount,
+    fatigue: fatigueWarning,
+    conversion: conversionMetrics,
   });
 });
+

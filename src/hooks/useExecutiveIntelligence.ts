@@ -79,6 +79,37 @@ export interface ExecObservability {
   memory_effectiveness_score: number;
 }
 
+export interface ExecIntelSnapshot {
+  id: string;
+  snapshot_date: string;
+  generated_at: string;
+  generated_by: string;
+  headline: string | null;
+  top_interventions: Array<Record<string, unknown>>;
+  pressure_queue: Array<Record<string, unknown>>;
+  cross_domain_narratives: Array<Record<string, unknown>>;
+  emerging_threats: Array<Record<string, unknown>>;
+  fatigue_warning: {
+    avg_fatigue_score?: number;
+    high_fatigue_owner_count?: number;
+    breached_owners?: Array<Record<string, unknown>>;
+    triggered?: boolean;
+  };
+  conversion_metrics: {
+    items_evaluated?: number;
+    items_routed_to_decision?: number;
+    conversion_rate_pct?: number;
+    advisories_open?: number;
+    decisions_created_7d?: number;
+    intervention_resolution_rate_pct?: number;
+  };
+  recommended_actions: Array<{ label: string; value: string }>;
+  provenance: Record<string, unknown>;
+  risk_score: number | null;
+  confidence: number | null;
+}
+
+
 export const useExecutiveIntelligence = () => {
   const { orgId } = useActiveDataContext();
   const [brief, setBrief] = useState<ExecBrief | null>(null);
@@ -86,6 +117,8 @@ export const useExecutiveIntelligence = () => {
   const [narratives, setNarratives] = useState<Narrative[]>([]);
   const [exposure, setExposure] = useState<Exposure | null>(null);
   const [observability, setObservability] = useState<ExecObservability | null>(null);
+  const [snapshot, setSnapshot] = useState<ExecIntelSnapshot | null>(null);
+
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
 
@@ -93,7 +126,7 @@ export const useExecutiveIntelligence = () => {
     if (!orgId) return;
     setLoading(true);
     try {
-      const [b, iv, nar, exp, obs] = await Promise.all([
+      const [b, iv, nar, exp, obs, snap] = await Promise.all([
         supabase
           .from("executive_briefs")
           .select("id,summary_json,risk_score,generated_at")
@@ -128,12 +161,21 @@ export const useExecutiveIntelligence = () => {
           .order("snapshot_day", { ascending: false })
           .limit(1)
           .maybeSingle(),
+        (supabase as unknown as { from: (t: string) => { select: (s: string) => { eq: (k: string, v: string) => { order: (k: string, o: { ascending: boolean }) => { limit: (n: number) => { maybeSingle: () => Promise<{ data: unknown }> } } } } } })
+          .from("executive_intelligence_snapshots")
+          .select("id,snapshot_date,generated_at,generated_by,headline,top_interventions,pressure_queue,cross_domain_narratives,emerging_threats,fatigue_warning,conversion_metrics,recommended_actions,provenance,risk_score,confidence")
+          .eq("organization_id", orgId)
+          .order("snapshot_date", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
       ]);
       setBrief((b.data as unknown as ExecBrief) || null);
       setInterventions((iv.data as unknown as Intervention[]) || []);
       setNarratives((nar.data as unknown as Narrative[]) || []);
       setExposure((exp.data as unknown as Exposure) || null);
       setObservability((obs.data as unknown as ExecObservability) || null);
+      setSnapshot((snap.data as unknown as ExecIntelSnapshot) || null);
+
     } finally {
       setLoading(false);
     }
@@ -197,7 +239,8 @@ export const useExecutiveIntelligence = () => {
   );
 
   return {
-    brief, interventions, topByPressure, narratives, exposure, observability,
+    brief, interventions, topByPressure, narratives, exposure, observability, snapshot,
     loading, generating, refresh, regenerate, updateIntervention,
   };
+
 };
