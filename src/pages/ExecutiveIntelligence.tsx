@@ -184,8 +184,17 @@ export default function ExecutiveIntelligence() {
         <ExecutiveBriefCard brief={brief} onRegenerate={regenerate} generating={generating} />
       </SectionErrorBoundary>
 
-      <Tabs defaultValue="pressure">
+      {!snapshot && !brief && !loading && interventions.length === 0 && (
+        <Card>
+          <CardContent className="p-8 text-center text-muted-foreground">
+            Awaiting intelligence activity. Generate a briefing to populate executive view.
+          </CardContent>
+        </Card>
+      )}
+
+      <Tabs defaultValue="briefing">
         <TabsList className="flex-wrap h-auto">
+          <TabsTrigger value="briefing"><Sparkles className="h-4 w-4 mr-1.5" /> Briefing</TabsTrigger>
           <TabsTrigger value="pressure"><Zap className="h-4 w-4 mr-1.5" /> Pressure Queue</TabsTrigger>
           <TabsTrigger value="threats"><AlertTriangle className="h-4 w-4 mr-1.5" /> Emerging Threats</TabsTrigger>
           <TabsTrigger value="interventions"><Activity className="h-4 w-4 mr-1.5" /> Interventions</TabsTrigger>
@@ -193,6 +202,95 @@ export default function ExecutiveIntelligence() {
           <TabsTrigger value="exposure"><Globe className="h-4 w-4 mr-1.5" /> Exposure</TabsTrigger>
           <TabsTrigger value="forecasts"><Compass className="h-4 w-4 mr-1.5" /> Forecasts</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="briefing" className="mt-4 space-y-4">
+          <SectionErrorBoundary sectionName="Top Critical Interventions">
+            <Card>
+              <CardHeader><CardTitle>Top Critical Interventions</CardTitle></CardHeader>
+              <CardContent className="space-y-2">
+                {(() => {
+                  const list = (snapshot?.top_interventions as Array<Record<string, unknown>> | undefined)
+                    ?? topByPressure.filter(i => i.escalation_tier === "critical" || i.escalation_tier === "high").slice(0, 10);
+                  if (!list || list.length === 0) return <p className="text-muted-foreground text-sm">No critical interventions.</p>;
+                  return list.slice(0, 10).map((iv, i) => (
+                    <div key={String(iv.id ?? i)} className="flex items-start justify-between gap-3 border rounded p-2.5">
+                      <div className="min-w-0">
+                        <div className="flex gap-2 flex-wrap mb-1">
+                          <Badge variant={TIER_VARIANT[String(iv.escalation_tier ?? "elevated")]}>{String(iv.escalation_tier ?? "elevated")}</Badge>
+                          <Badge variant="outline">{String(iv.intervention_type ?? "operational")}</Badge>
+                          <Badge variant="secondary">{String(iv.status ?? "new")}</Badge>
+                        </div>
+                        <p className="text-sm font-medium truncate">{String(iv.title ?? "Intervention")}</p>
+                      </div>
+                      <div className="text-right text-xs text-muted-foreground shrink-0">
+                        <div>Priority: {Number(iv.intervention_priority_score ?? 0)}</div>
+                        {iv.sla_due_at && <div>SLA: {new Date(String(iv.sla_due_at)).toLocaleString()}</div>}
+                      </div>
+                    </div>
+                  ));
+                })()}
+              </CardContent>
+            </Card>
+          </SectionErrorBoundary>
+
+          <div className="grid md:grid-cols-2 gap-4">
+            <SectionErrorBoundary sectionName="Intervention Fatigue">
+              <Card>
+                <CardHeader><CardTitle className="flex items-center gap-2"><Activity className="h-4 w-4" /> Intervention Fatigue</CardTitle></CardHeader>
+                <CardContent className="space-y-2 text-sm">
+                  {snapshot?.fatigue_warning?.triggered ? (
+                    <>
+                      <Badge variant="destructive">Fatigue alert</Badge>
+                      <p>Avg fatigue score: <span className="font-semibold">{snapshot.fatigue_warning.avg_fatigue_score ?? 0}/100</span></p>
+                      <p className="text-muted-foreground">{snapshot.fatigue_warning.high_fatigue_owner_count ?? 0} owner(s) above 70 in last 7d.</p>
+                    </>
+                  ) : (
+                    <p className="text-muted-foreground">No fatigue thresholds breached. Avg: {snapshot?.fatigue_warning?.avg_fatigue_score ?? 0}/100.</p>
+                  )}
+                </CardContent>
+              </Card>
+            </SectionErrorBoundary>
+
+            <SectionErrorBoundary sectionName="Intelligence-to-Decision Conversion">
+              <Card>
+                <CardHeader><CardTitle className="flex items-center gap-2"><GitBranch className="h-4 w-4" /> Intelligence → Decision</CardTitle></CardHeader>
+                <CardContent className="text-sm space-y-1">
+                  <p>Conversion rate: <span className="font-semibold">{snapshot?.conversion_metrics?.conversion_rate_pct ?? 0}%</span></p>
+                  <p className="text-muted-foreground">Items evaluated: {snapshot?.conversion_metrics?.items_evaluated ?? 0}</p>
+                  <p className="text-muted-foreground">Items routed to decisions: {snapshot?.conversion_metrics?.items_routed_to_decision ?? 0}</p>
+                  <p className="text-muted-foreground">Decisions (7d): {snapshot?.conversion_metrics?.decisions_created_7d ?? 0}</p>
+                  <p className="text-muted-foreground">Resolution rate: {snapshot?.conversion_metrics?.intervention_resolution_rate_pct ?? 0}%</p>
+                </CardContent>
+              </Card>
+            </SectionErrorBoundary>
+          </div>
+
+          <SectionErrorBoundary sectionName="Recommended Executive Actions">
+            <Card>
+              <CardHeader><CardTitle>Recommended Executive Actions</CardTitle></CardHeader>
+              <CardContent>
+                {(snapshot?.recommended_actions?.length ?? 0) === 0 ? (
+                  <p className="text-muted-foreground text-sm">No recommendations. Generate a briefing.</p>
+                ) : (
+                  <ul className="space-y-2">
+                    {snapshot!.recommended_actions.map((a, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm">
+                        <Badge variant={TIER_VARIANT[a.label.toLowerCase()] ?? "secondary"} className="shrink-0">{a.label}</Badge>
+                        <span className="text-muted-foreground">{a.value}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {snapshot && (
+                  <p className="text-xs text-muted-foreground mt-3 border-t pt-2">
+                    Snapshot {snapshot.snapshot_date} · {snapshot.generated_by} · Sources: {Number((snapshot.provenance as { items_evaluated?: number })?.items_evaluated ?? 0)} signals · Confidence: {snapshot.confidence ?? 0}%
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          </SectionErrorBoundary>
+        </TabsContent>
+
 
         <TabsContent value="pressure" className="mt-4">
           <SectionErrorBoundary sectionName="Decision Pressure Queue">
