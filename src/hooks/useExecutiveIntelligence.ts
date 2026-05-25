@@ -117,6 +117,8 @@ export const useExecutiveIntelligence = () => {
   const [narratives, setNarratives] = useState<Narrative[]>([]);
   const [exposure, setExposure] = useState<Exposure | null>(null);
   const [observability, setObservability] = useState<ExecObservability | null>(null);
+  const [snapshot, setSnapshot] = useState<ExecIntelSnapshot | null>(null);
+
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
 
