@@ -88,7 +88,7 @@ serve(async (req) => {
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
         errors.push({ file: key, reason: msg });
-        await deadLetter(svc, connector.organization_id, connector_id, "s3_object", { key }, msg);
+        await deadLetter(svc, { orgId: connector.organization_id, connectorId: connector_id, errorClass: "s3_object", payload: { key }, errorMessage: msg });
       }
     }
 

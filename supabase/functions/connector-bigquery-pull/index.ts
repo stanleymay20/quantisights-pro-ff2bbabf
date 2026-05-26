@@ -58,7 +58,7 @@ serve(async (req) => {
     if (estBytes > Number(maxBytes)) {
       const msg = `dry-run estimate ${estBytes} bytes exceeds cap ${maxBytes}`;
       await recordFailure(svc, connector_id, msg);
-      await deadLetter(svc, connector.organization_id, connector_id, "bigquery_query", { queryText, estBytes }, msg);
+      await deadLetter(svc, { orgId: connector.organization_id, connectorId: connector_id, errorClass: "bigquery_query", payload: { queryText, errorMessage: estBytes }, msg });
       return json({ error: msg, est_bytes: estBytes, cap_bytes: Number(maxBytes) }, 413, cors);
     }
 
@@ -76,7 +76,7 @@ serve(async (req) => {
     if (!res.ok) {
       const msg = `BigQuery ${res.status}: ${JSON.stringify(body).slice(0, 300)}`;
       await recordFailure(svc, connector_id, msg);
-      await deadLetter(svc, connector.organization_id, connector_id, "bigquery_query", { queryText }, msg);
+      await deadLetter(svc, { orgId: connector.organization_id, connectorId: connector_id, errorClass: "bigquery_query", payload: { queryText }, errorMessage: msg });
       return json({ error: msg }, 502, cors);
     }
 

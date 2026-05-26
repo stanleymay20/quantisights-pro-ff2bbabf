@@ -55,7 +55,7 @@ serve(async (req) => {
     if (!res.ok) {
       const msg = `Snowflake gateway ${res.status}: ${JSON.stringify(body).slice(0, 300)}`;
       await recordFailure(svc, connector_id, msg);
-      await deadLetter(svc, connector.organization_id, connector_id, "snowflake_query", { stmt }, msg);
+      await deadLetter(svc, { orgId: connector.organization_id, connectorId: connector_id, errorClass: "snowflake_query", payload: { stmt }, errorMessage: msg });
       return json({ error: msg }, 502, cors);
     }
 
