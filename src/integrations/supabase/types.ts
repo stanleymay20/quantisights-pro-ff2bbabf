@@ -1627,6 +1627,192 @@ export type Database = {
           },
         ]
       }
+      canonical_dimensions: {
+        Row: {
+          attributes: Json
+          created_at: string
+          dimension_key: string
+          id: string
+          label: string | null
+          organization_id: string
+          parent_dimension_id: string | null
+          value: string
+        }
+        Insert: {
+          attributes?: Json
+          created_at?: string
+          dimension_key: string
+          id?: string
+          label?: string | null
+          organization_id: string
+          parent_dimension_id?: string | null
+          value: string
+        }
+        Update: {
+          attributes?: Json
+          created_at?: string
+          dimension_key?: string
+          id?: string
+          label?: string | null
+          organization_id?: string
+          parent_dimension_id?: string | null
+          value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "canonical_dimensions_parent_dimension_id_fkey"
+            columns: ["parent_dimension_id"]
+            isOneToOne: false
+            referencedRelation: "canonical_dimensions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      canonical_entities: {
+        Row: {
+          attributes: Json
+          connector_id: string | null
+          created_at: string
+          display_name: string | null
+          entity_type: string
+          external_id: string
+          first_seen_at: string
+          id: string
+          last_seen_at: string
+          natural_key: string | null
+          organization_id: string
+          source_type: string
+        }
+        Insert: {
+          attributes?: Json
+          connector_id?: string | null
+          created_at?: string
+          display_name?: string | null
+          entity_type: string
+          external_id: string
+          first_seen_at?: string
+          id?: string
+          last_seen_at?: string
+          natural_key?: string | null
+          organization_id: string
+          source_type: string
+        }
+        Update: {
+          attributes?: Json
+          connector_id?: string | null
+          created_at?: string
+          display_name?: string | null
+          entity_type?: string
+          external_id?: string
+          first_seen_at?: string
+          id?: string
+          last_seen_at?: string
+          natural_key?: string | null
+          organization_id?: string
+          source_type?: string
+        }
+        Relationships: []
+      }
+      canonical_events: {
+        Row: {
+          attributes: Json
+          connector_id: string | null
+          entity_id: string | null
+          event_type: string
+          external_id: string | null
+          id: string
+          ingested_at: string
+          occurred_at: string
+          organization_id: string
+          source_type: string
+        }
+        Insert: {
+          attributes?: Json
+          connector_id?: string | null
+          entity_id?: string | null
+          event_type: string
+          external_id?: string | null
+          id?: string
+          ingested_at?: string
+          occurred_at: string
+          organization_id: string
+          source_type: string
+        }
+        Update: {
+          attributes?: Json
+          connector_id?: string | null
+          entity_id?: string | null
+          event_type?: string
+          external_id?: string | null
+          id?: string
+          ingested_at?: string
+          occurred_at?: string
+          organization_id?: string
+          source_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "canonical_events_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "canonical_entities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      canonical_metrics: {
+        Row: {
+          connector_id: string | null
+          dimensions: Json
+          entity_id: string | null
+          id: string
+          ingested_at: string
+          metric_key: string
+          organization_id: string
+          period_grain: string
+          period_start: string
+          source_type: string
+          unit: string | null
+          value: number
+        }
+        Insert: {
+          connector_id?: string | null
+          dimensions?: Json
+          entity_id?: string | null
+          id?: string
+          ingested_at?: string
+          metric_key: string
+          organization_id: string
+          period_grain?: string
+          period_start: string
+          source_type: string
+          unit?: string | null
+          value: number
+        }
+        Update: {
+          connector_id?: string | null
+          dimensions?: Json
+          entity_id?: string | null
+          id?: string
+          ingested_at?: string
+          metric_key?: string
+          organization_id?: string
+          period_grain?: string
+          period_start?: string
+          source_type?: string
+          unit?: string | null
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "canonical_metrics_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "canonical_entities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       causal_models: {
         Row: {
           confidence_score: number | null
@@ -1865,6 +2051,54 @@ export type Database = {
           },
         ]
       }
+      connector_circuit_state: {
+        Row: {
+          connector_id: string
+          consecutive_failures: number
+          failure_threshold: number
+          id: string
+          last_error: string | null
+          next_probe_at: string | null
+          opened_at: string | null
+          organization_id: string
+          retries_used_window: number
+          retry_budget_per_hour: number
+          state: string
+          updated_at: string
+          window_started_at: string
+        }
+        Insert: {
+          connector_id: string
+          consecutive_failures?: number
+          failure_threshold?: number
+          id?: string
+          last_error?: string | null
+          next_probe_at?: string | null
+          opened_at?: string | null
+          organization_id: string
+          retries_used_window?: number
+          retry_budget_per_hour?: number
+          state?: string
+          updated_at?: string
+          window_started_at?: string
+        }
+        Update: {
+          connector_id?: string
+          consecutive_failures?: number
+          failure_threshold?: number
+          id?: string
+          last_error?: string | null
+          next_probe_at?: string | null
+          opened_at?: string | null
+          organization_id?: string
+          retries_used_window?: number
+          retry_budget_per_hour?: number
+          state?: string
+          updated_at?: string
+          window_started_at?: string
+        }
+        Relationships: []
+      }
       connector_configs: {
         Row: {
           connection_status: string | null
@@ -1939,6 +2173,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      connector_dq_scores: {
+        Row: {
+          anomaly_score: number
+          completeness_score: number
+          computed_at: string
+          confidence_score: number
+          connector_id: string
+          duplicate_rate: number
+          freshness_score: number
+          id: string
+          notes: Json
+          null_rate: number
+          organization_id: string
+          sample_size: number
+          schema_stability_score: number
+          stream_key: string | null
+        }
+        Insert: {
+          anomaly_score?: number
+          completeness_score?: number
+          computed_at?: string
+          confidence_score?: number
+          connector_id: string
+          duplicate_rate?: number
+          freshness_score?: number
+          id?: string
+          notes?: Json
+          null_rate?: number
+          organization_id: string
+          sample_size?: number
+          schema_stability_score?: number
+          stream_key?: string | null
+        }
+        Update: {
+          anomaly_score?: number
+          completeness_score?: number
+          computed_at?: string
+          confidence_score?: number
+          connector_id?: string
+          duplicate_rate?: number
+          freshness_score?: number
+          id?: string
+          notes?: Json
+          null_rate?: number
+          organization_id?: string
+          sample_size?: number
+          schema_stability_score?: number
+          stream_key?: string | null
+        }
+        Relationships: []
       }
       connector_field_mappings: {
         Row: {
