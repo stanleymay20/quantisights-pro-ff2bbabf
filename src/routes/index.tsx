@@ -264,6 +264,7 @@ export const routes: RouteEntry[] = [
   { path: "/admin/internal-data", element: <InternalData />, layout: "full" },
   { path: "/admin/connectors", element: <AdminConnectors />, layout: "full" },
   { path: "/admin/ingestion-observability", element: <IngestionObservability />, layout: "full" },
+  { path: "/admin/connector-health", element: <ConnectorHealth />, layout: "full" },
 
   // ══════ Catch-all ══════
   { path: "*", element: <NotFound />, layout: "public" },
