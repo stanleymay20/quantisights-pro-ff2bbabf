@@ -68,6 +68,7 @@ serve(async (req) => {
       const msg = `dry-run estimate ${estBytes} bytes exceeds cap ${maxBytes}`;
       await recordFailure(svc, connector_id, msg);
       await deadLetter(svc, { orgId: connector.organization_id, connectorId: connector_id, errorClass: "bigquery_query", payload: { queryText, estBytes }, errorMessage: msg });
+      logConnectorEvent({ connector_type: "bigquery", connector_id, organization_id: connector.organization_id, phase: "cost_block", bytes_processed: estBytes, bytes_cap: Number(maxBytes), error: msg });
       return json({ error: msg, est_bytes: estBytes, cap_bytes: Number(maxBytes) }, 413, cors);
     }
 
@@ -110,12 +111,17 @@ serve(async (req) => {
       last_success_at: new Date().toISOString(), consecutive_failures: 0, health: errors.length ? "degraded" : "healthy",
     }).eq("id", connector_id);
 
-    return json({
-      success: true, rows_extracted: rows.length, rows_inserted: inserted, rows_invalid: errors.length,
-      bytes_processed: estBytes, sample_errors: errors.slice(0, 5), duration_ms: Date.now() - t0,
-    }, 200, cors);
+    const duration_ms = Date.now() - t0;
+    logConnectorEvent({
+      connector_type: "bigquery", connector_id, organization_id: connector.organization_id, phase: "complete",
+      rows_extracted: rows.length, rows_inserted: inserted, rows_failed: errors.length,
+      bytes_processed: estBytes, bytes_cap: Number(maxBytes), duration_ms,
+    });
+    return json({ success: true, rows_extracted: rows.length, rows_inserted: inserted, rows_invalid: errors.length, bytes_processed: estBytes, sample_errors: errors.slice(0, 5), duration_ms }, 200, cors);
   } catch (e) {
-    return json({ error: e instanceof Error ? e.message : String(e) }, 500, cors);
+    const msg = e instanceof Error ? e.message : String(e);
+    console.log(JSON.stringify({ ts: new Date().toISOString(), connector_type: "bigquery", phase: "error", error: msg }));
+    return json({ error: msg }, 500, cors);
   }
 });
 
