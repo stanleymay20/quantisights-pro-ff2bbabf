@@ -856,6 +856,7 @@ serve(async (req) => {
       bigquery: "connector-bigquery-pull",
       s3: "connector-s3-pull",
       hubspot: "connector-hubspot-pull",
+      salesforce: "connector-salesforce-pull",
     };
 
     if (delegated[connector_type]) {
