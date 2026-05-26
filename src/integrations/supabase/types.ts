@@ -9282,6 +9282,81 @@ export type Database = {
           },
         ]
       }
+      sap_schema_drift_alerts: {
+        Row: {
+          acknowledged: boolean
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          after_value: Json | null
+          before_value: Json | null
+          connector_id: string
+          created_at: string
+          detected_at: string
+          drift_type: string
+          entity_set: string
+          entity_type: string | null
+          field_name: string | null
+          id: string
+          operational_impact: string | null
+          organization_id: string
+          service_name: string
+          severity: string
+        }
+        Insert: {
+          acknowledged?: boolean
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          after_value?: Json | null
+          before_value?: Json | null
+          connector_id: string
+          created_at?: string
+          detected_at?: string
+          drift_type: string
+          entity_set: string
+          entity_type?: string | null
+          field_name?: string | null
+          id?: string
+          operational_impact?: string | null
+          organization_id: string
+          service_name: string
+          severity?: string
+        }
+        Update: {
+          acknowledged?: boolean
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          after_value?: Json | null
+          before_value?: Json | null
+          connector_id?: string
+          created_at?: string
+          detected_at?: string
+          drift_type?: string
+          entity_set?: string
+          entity_type?: string | null
+          field_name?: string | null
+          id?: string
+          operational_impact?: string | null
+          organization_id?: string
+          service_name?: string
+          severity?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sap_schema_drift_alerts_connector_id_fkey"
+            columns: ["connector_id"]
+            isOneToOne: false
+            referencedRelation: "data_connectors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sap_schema_drift_alerts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       scenario_assumptions: {
         Row: {
           adjustment_type: string
