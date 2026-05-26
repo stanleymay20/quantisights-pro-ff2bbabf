@@ -850,27 +850,35 @@ serve(async (req) => {
 
     let result: { records: number; errors: string[] };
 
-    switch (connector_type) {
-      case "stripe":
-        result = await pullStripe(config, serviceClient);
-        break;
-      case "ga4":
-        result = await pullGA4(config, serviceClient);
-        break;
-      case "hubspot":
-        result = await pullHubSpot(config, serviceClient);
-        break;
-      case "xero":
-        result = await pullXero(config, serviceClient);
-        break;
-      case "quickbooks":
-        result = await pullQuickBooks(config, serviceClient);
-        break;
-      case "salesforce":
-        result = await pullSalesforce(config, serviceClient);
-        break;
-      default:
-        result = { records: 0, errors: [`Unknown connector: ${connector_type}`] };
+    // Warehouse / lake connectors delegate to dedicated functions (canonical-mapper + circuit breaker)
+    const delegated: Record<string, string> = {
+      snowflake: "connector-snowflake-pull",
+      bigquery: "connector-bigquery-pull",
+      s3: "connector-s3-pull",
+    };
+
+    if (delegated[connector_type]) {
+      const dRes = await fetch(`${supabaseUrl}/functions/v1/${delegated[connector_type]}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${serviceKey}` },
+        body: JSON.stringify({ connector_id: data_source_id }),
+      });
+      const dBody = await dRes.json();
+      result = {
+        records: dBody.rows_inserted ?? 0,
+        errors: dBody.error ? [dBody.error] : (dBody.sample_errors ?? []).map((e: any) => e.reason ?? JSON.stringify(e)),
+      };
+    } else {
+      switch (connector_type) {
+        case "stripe":     result = await pullStripe(config, serviceClient); break;
+        case "ga4":        result = await pullGA4(config, serviceClient); break;
+        case "hubspot":    result = await pullHubSpot(config, serviceClient); break;
+        case "xero":       result = await pullXero(config, serviceClient); break;
+        case "quickbooks": result = await pullQuickBooks(config, serviceClient); break;
+        case "salesforce": result = await pullSalesforce(config, serviceClient); break;
+        default:
+          result = { records: 0, errors: [`Unknown connector: ${connector_type}`] };
+      }
     }
 
     // Update sync job
