@@ -452,6 +452,12 @@ export default function ExecutiveIntelligence() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="fusion" className="mt-4">
+          <SectionErrorBoundary sectionName="Narrative Fusion">
+            <NarrativeFusionPanel />
+          </SectionErrorBoundary>
+        </TabsContent>
       </Tabs>
     </div>
   );
