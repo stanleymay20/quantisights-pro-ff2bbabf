@@ -855,6 +855,7 @@ serve(async (req) => {
       snowflake: "connector-snowflake-pull",
       bigquery: "connector-bigquery-pull",
       s3: "connector-s3-pull",
+      hubspot: "connector-hubspot-pull",
     };
 
     if (delegated[connector_type]) {

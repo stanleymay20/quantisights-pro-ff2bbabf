@@ -1813,6 +1813,63 @@ export type Database = {
           },
         ]
       }
+      canonical_relationships: {
+        Row: {
+          attributes: Json
+          connector_id: string | null
+          created_at: string
+          first_seen_at: string
+          from_entity_id: string
+          id: string
+          last_seen_at: string
+          organization_id: string
+          relationship_type: string
+          source_type: string
+          to_entity_id: string
+        }
+        Insert: {
+          attributes?: Json
+          connector_id?: string | null
+          created_at?: string
+          first_seen_at?: string
+          from_entity_id: string
+          id?: string
+          last_seen_at?: string
+          organization_id: string
+          relationship_type: string
+          source_type: string
+          to_entity_id: string
+        }
+        Update: {
+          attributes?: Json
+          connector_id?: string | null
+          created_at?: string
+          first_seen_at?: string
+          from_entity_id?: string
+          id?: string
+          last_seen_at?: string
+          organization_id?: string
+          relationship_type?: string
+          source_type?: string
+          to_entity_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "canonical_relationships_from_entity_id_fkey"
+            columns: ["from_entity_id"]
+            isOneToOne: false
+            referencedRelation: "canonical_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "canonical_relationships_to_entity_id_fkey"
+            columns: ["to_entity_id"]
+            isOneToOne: false
+            referencedRelation: "canonical_entities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       causal_models: {
         Row: {
           confidence_score: number | null
@@ -2610,6 +2667,65 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      connector_throttle_state: {
+        Row: {
+          adaptive_backoff_ms: number
+          connector_id: string
+          consecutive_throttle_events: number
+          daily_remaining: number | null
+          id: string
+          last_observed_at: string
+          last_retry_after_ms: number | null
+          last_status_code: number | null
+          last_throttled_at: string | null
+          organization_id: string
+          remaining_quota: number | null
+          reset_at: string | null
+          updated_at: string
+          vendor: string
+        }
+        Insert: {
+          adaptive_backoff_ms?: number
+          connector_id: string
+          consecutive_throttle_events?: number
+          daily_remaining?: number | null
+          id?: string
+          last_observed_at?: string
+          last_retry_after_ms?: number | null
+          last_status_code?: number | null
+          last_throttled_at?: string | null
+          organization_id: string
+          remaining_quota?: number | null
+          reset_at?: string | null
+          updated_at?: string
+          vendor: string
+        }
+        Update: {
+          adaptive_backoff_ms?: number
+          connector_id?: string
+          consecutive_throttle_events?: number
+          daily_remaining?: number | null
+          id?: string
+          last_observed_at?: string
+          last_retry_after_ms?: number | null
+          last_status_code?: number | null
+          last_throttled_at?: string | null
+          organization_id?: string
+          remaining_quota?: number | null
+          reset_at?: string | null
+          updated_at?: string
+          vendor?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "connector_throttle_state_connector_id_fkey"
+            columns: ["connector_id"]
+            isOneToOne: true
+            referencedRelation: "data_connectors"
             referencedColumns: ["id"]
           },
         ]
