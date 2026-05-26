@@ -96,6 +96,8 @@ export default function ConnectorHealth() {
   const [dq, setDq] = useState<DqRow[]>([]);
   const [coverage, setCoverage] = useState<CoverageRow[]>([]);
   const [sfSchemas, setSfSchemas] = useState<SfSchemaRow[]>([]);
+  const [runs, setRuns] = useState<SyncRunRow[]>([]);
+  const [checkpoints, setCheckpoints] = useState<CheckpointRow[]>([]);
 
   async function loadAll() {
     if (!currentOrg?.id) return;
