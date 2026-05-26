@@ -64,6 +64,14 @@ interface SfSchemaRow {
   is_custom: boolean; last_discovered_at: string;
   fields: unknown; relationships: unknown;
 }
+interface SyncRunRow {
+  connector_id: string; status: string; started_at: string; completed_at: string | null;
+  duration_ms: number | null; rows_inserted: number; rows_extracted: number;
+}
+interface CheckpointRow {
+  connector_id: string; cursor_field: string; cursor_value: string | null;
+  high_watermark: string | null; change_event_ready: boolean; updated_at: string;
+}
 
 function fmtAgo(ts: string | null): string {
   if (!ts) return "—";
@@ -88,13 +96,16 @@ export default function ConnectorHealth() {
   const [dq, setDq] = useState<DqRow[]>([]);
   const [coverage, setCoverage] = useState<CoverageRow[]>([]);
   const [sfSchemas, setSfSchemas] = useState<SfSchemaRow[]>([]);
+  const [runs, setRuns] = useState<SyncRunRow[]>([]);
+  const [checkpoints, setCheckpoints] = useState<CheckpointRow[]>([]);
 
   async function loadAll() {
     if (!currentOrg?.id) return;
     setLoading(true);
     try {
       const orgId = currentOrg.id;
-      const [c, cs, ts, tk, dqq, ce, cev, cmt, crel, sfs] = await Promise.all([
+      const sevenDaysAgo = new Date(Date.now() - 7 * 86400_000).toISOString();
+      const [c, cs, ts, tk, dqq, ce, cev, cmt, crel, sfs, rr, ck] = await Promise.all([
         supabase.from("data_connectors")
           .select("id,name,connector_type,status,health,organization_id")
           .eq("organization_id", orgId).order("name"),
@@ -117,6 +128,13 @@ export default function ConnectorHealth() {
         supabase.from("salesforce_object_schemas")
           .select("connector_id,object_name,api_version,is_custom,last_discovered_at,fields,relationships")
           .eq("organization_id", orgId).order("object_name"),
+        supabase.from("connector_sync_runs")
+          .select("connector_id,status,started_at,completed_at,duration_ms,rows_inserted,rows_extracted")
+          .eq("organization_id", orgId).gte("started_at", sevenDaysAgo)
+          .order("started_at", { ascending: false }).limit(2000),
+        supabase.from("connector_sync_checkpoints")
+          .select("connector_id,cursor_field,cursor_value,high_watermark,change_event_ready,updated_at")
+          .eq("organization_id", orgId),
       ]);
       setConnectors(((c.data as unknown) as ConnectorRow[]) ?? []);
       setCircuits(((cs.data as unknown) as CircuitRow[]) ?? []);
@@ -124,6 +142,8 @@ export default function ConnectorHealth() {
       setTokens(((tk.data as unknown) as TokenRow[]) ?? []);
       setDq(((dqq.data as unknown) as DqRow[]) ?? []);
       setSfSchemas(((sfs.data as unknown) as SfSchemaRow[]) ?? []);
+      setRuns(((rr.data as unknown) as SyncRunRow[]) ?? []);
+      setCheckpoints(((ck.data as unknown) as CheckpointRow[]) ?? []);
 
       const tally = new Map<string, CoverageRow>();
       const add = (rows: any[] | null, key: keyof CoverageRow) => {
@@ -155,6 +175,48 @@ export default function ConnectorHealth() {
     return m;
   }, [dq]);
   const coverageById = useMemo(() => new Map(coverage.map(r => [r.connector_id, r])), [coverage]);
+
+  // Per-connector 7-day operational rollup
+  const opsByConnector = useMemo(() => {
+    const m = new Map<string, {
+      runs7d: number; succeeded: number; failed: number;
+      rowsInserted7d: number; lastSuccess: string | null; lastFailure: string | null;
+      p50Ms: number | null; p95Ms: number | null;
+    }>();
+    const buckets = new Map<string, number[]>();
+    for (const r of runs) {
+      const cid = r.connector_id;
+      const cur = m.get(cid) ?? { runs7d: 0, succeeded: 0, failed: 0, rowsInserted7d: 0, lastSuccess: null, lastFailure: null, p50Ms: null, p95Ms: null };
+      cur.runs7d += 1;
+      cur.rowsInserted7d += r.rows_inserted ?? 0;
+      if (r.status === "succeeded") {
+        cur.succeeded += 1;
+        if (!cur.lastSuccess || r.started_at > cur.lastSuccess) cur.lastSuccess = r.started_at;
+      } else if (r.status === "failed") {
+        cur.failed += 1;
+        if (!cur.lastFailure || r.started_at > cur.lastFailure) cur.lastFailure = r.started_at;
+      }
+      if (typeof r.duration_ms === "number") {
+        const arr = buckets.get(cid) ?? []; arr.push(r.duration_ms); buckets.set(cid, arr);
+      }
+      m.set(cid, cur);
+    }
+    for (const [cid, arr] of buckets) {
+      arr.sort((a, b) => a - b);
+      const pick = (p: number) => arr[Math.min(arr.length - 1, Math.floor(arr.length * p))];
+      const cur = m.get(cid)!;
+      cur.p50Ms = pick(0.5); cur.p95Ms = pick(0.95);
+    }
+    return m;
+  }, [runs]);
+
+  const checkpointsByConnector = useMemo(() => {
+    const m = new Map<string, CheckpointRow[]>();
+    for (const r of checkpoints) {
+      const list = m.get(r.connector_id) ?? []; list.push(r); m.set(r.connector_id, list);
+    }
+    return m;
+  }, [checkpoints]);
 
   const overall = useMemo(() => {
     const open = circuits.filter(c => c.state === "open").length;
@@ -193,15 +255,91 @@ export default function ConnectorHealth() {
             tone={overall.lowStability > 0 ? "warn" : "ok"} />
         </div>
 
-        <Tabs defaultValue="coverage" className="w-full">
-          <TabsList>
+        <Tabs defaultValue="operations" className="w-full">
+          <TabsList className="flex-wrap h-auto">
+            <TabsTrigger value="operations">Operations (7d)</TabsTrigger>
             <TabsTrigger value="coverage">Canonical coverage</TabsTrigger>
             <TabsTrigger value="dq">Data quality</TabsTrigger>
             <TabsTrigger value="circuits">Circuit breakers</TabsTrigger>
             <TabsTrigger value="throttle">Throttle & quota</TabsTrigger>
             <TabsTrigger value="tokens">OAuth tokens</TabsTrigger>
+            <TabsTrigger value="checkpoints">Checkpoints</TabsTrigger>
             <TabsTrigger value="salesforce">Salesforce schema</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="operations">
+            <Card>
+              <CardHeader><CardTitle className="text-base flex items-center gap-2"><Activity className="h-4 w-4" /> Per-connector sync rollup (last 7 days)</CardTitle></CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[420px]">
+                  <table className="w-full text-sm">
+                    <thead className="text-xs uppercase text-muted-foreground border-b">
+                      <tr><th className="text-left py-2">Connector</th>
+                        <th className="text-right">Runs</th><th className="text-right">Success %</th>
+                        <th className="text-right">Rows inserted</th>
+                        <th className="text-right">P50 (ms)</th><th className="text-right">P95 (ms)</th>
+                        <th className="text-right">Last success</th><th className="text-right">Last failure</th></tr>
+                    </thead>
+                    <tbody>
+                      {connectors.length === 0 && <tr><td colSpan={8} className="py-6 text-center text-muted-foreground">No connectors linked yet.</td></tr>}
+                      {connectors.map(c => {
+                        const o = opsByConnector.get(c.id);
+                        const successPct = o && o.runs7d > 0 ? (o.succeeded / o.runs7d) * 100 : null;
+                        const tone = successPct == null ? "text-muted-foreground"
+                          : successPct >= 95 ? "text-emerald-600"
+                          : successPct >= 80 ? "text-yellow-600" : "text-destructive";
+                        return (
+                          <tr key={c.id} className="border-b last:border-0">
+                            <td className="py-2 font-medium">{c.name}<div className="text-xs text-muted-foreground">{c.connector_type}</div></td>
+                            <td className="text-right tabular-nums">{o?.runs7d ?? 0}</td>
+                            <td className={`text-right tabular-nums ${tone}`}>{successPct == null ? "—" : `${successPct.toFixed(1)}%`}</td>
+                            <td className="text-right tabular-nums">{fmtNum(o?.rowsInserted7d ?? 0)}</td>
+                            <td className="text-right tabular-nums">{o?.p50Ms != null ? fmtNum(Math.round(o.p50Ms)) : "—"}</td>
+                            <td className="text-right tabular-nums">{o?.p95Ms != null ? fmtNum(Math.round(o.p95Ms)) : "—"}</td>
+                            <td className="text-right text-muted-foreground">{fmtAgo(o?.lastSuccess ?? null)}</td>
+                            <td className="text-right text-muted-foreground">{fmtAgo(o?.lastFailure ?? null)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="checkpoints">
+            <Card>
+              <CardHeader><CardTitle className="text-base">Incremental sync checkpoints</CardTitle></CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[420px]">
+                  <table className="w-full text-sm">
+                    <thead className="text-xs uppercase text-muted-foreground border-b">
+                      <tr><th className="text-left py-2">Connector</th><th className="text-left">Cursor field</th>
+                        <th className="text-left">Cursor value</th><th className="text-right">High watermark</th>
+                        <th className="text-right">CDC ready</th><th className="text-right">Updated</th></tr>
+                    </thead>
+                    <tbody>
+                      {checkpoints.length === 0 && <tr><td colSpan={6} className="py-6 text-center text-muted-foreground">No checkpoints recorded — connectors will sync from scratch on next run.</td></tr>}
+                      {Array.from(checkpointsByConnector.entries()).flatMap(([cid, list]) =>
+                        list.map(r => (
+                          <tr key={`${cid}-${r.cursor_field}`} className="border-b last:border-0">
+                            <td className="py-2 font-medium">{connectorById.get(cid)?.name ?? cid.slice(0, 8)}</td>
+                            <td className="text-muted-foreground">{r.cursor_field}</td>
+                            <td className="text-muted-foreground truncate max-w-[240px]">{r.cursor_value ?? "—"}</td>
+                            <td className="text-right text-muted-foreground">{fmtAgo(r.high_watermark)}</td>
+                            <td className="text-right">{r.change_event_ready ? <Badge variant="outline" className="text-emerald-600 border-emerald-600/40">yes</Badge> : <span className="text-muted-foreground text-xs">no</span>}</td>
+                            <td className="text-right text-muted-foreground">{fmtAgo(r.updated_at)}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
 
           <TabsContent value="coverage">
             <Card>
