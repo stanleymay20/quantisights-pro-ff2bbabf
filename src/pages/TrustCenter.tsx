@@ -136,6 +136,40 @@ const TrustCenter = () => {
         ))}
       </div>
 
+      <Separator />
+
+      <div>
+        <h2 className="text-lg font-semibold mb-3">Procurement &amp; Compliance Documents</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {[
+            { path: "/toms", label: "Technical & Organizational Measures", desc: "GDPR Art. 32 control catalogue (TOMs / AVV annex)" },
+            { path: "/ai-governance", label: "AI Governance", desc: "EU AI Act alignment, human oversight, explainability" },
+            { path: "/auditability", label: "Auditability", desc: "Audit log, lineage, decision ledger, calibration history" },
+            { path: "/incident-response", label: "Incident Response", desc: "Severity SLAs, GDPR Art. 33 notification, runbook" },
+            { path: "/subprocessors", label: "Sub-processor Registry", desc: "Listed processors and EU data region" },
+            { path: "/dpa", label: "Data Processing Agreement", desc: "DPA / AVV template available on request" },
+            { path: "/security-questionnaire", label: "Security Questionnaire", desc: "Standard pre-filled procurement Q&A" },
+            { path: "/data-retention", label: "Data Retention Policy", desc: "Category-level retention and erasure" },
+          ].map((doc) => (
+            <Card
+              key={doc.path}
+              className="border-border/50 hover:border-primary/50 cursor-pointer transition-colors"
+              onClick={() => navigate(doc.path)}
+            >
+              <CardContent className="pt-4 pb-3">
+                <div className="flex items-start gap-2">
+                  <FileText className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium">{doc.label}</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">{doc.desc}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+
       <div className="flex flex-wrap gap-3 pt-2">
         <Button variant="outline" size="sm" onClick={() => navigate("/system-health")}>
           <FileText className="w-3.5 h-3.5 mr-1.5" /> System Health

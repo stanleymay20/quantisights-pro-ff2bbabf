@@ -130,6 +130,10 @@ const DataProcessing = lazy(() => import("@/pages/DataProcessing"));
 const DataRetention = lazy(() => import("@/pages/DataRetention"));
 const Subprocessors = lazy(() => import("@/pages/Subprocessors"));
 const Impressum = lazy(() => import("@/pages/Impressum"));
+const TOMs = lazy(() => import("@/pages/TOMs"));
+const AIGovernance = lazy(() => import("@/pages/AIGovernance"));
+const IncidentResponse = lazy(() => import("@/pages/IncidentResponse"));
+const Auditability = lazy(() => import("@/pages/Auditability"));
 
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
@@ -182,6 +186,10 @@ export const routes: RouteEntry[] = [
   { path: "/dpa", element: <DataProcessing />, layout: "public" },
   { path: "/data-retention", element: <DataRetention />, layout: "public" },
   { path: "/subprocessors", element: <Subprocessors />, layout: "public" },
+  { path: "/toms", element: <TOMs />, layout: "public" },
+  { path: "/ai-governance", element: <AIGovernance />, layout: "public" },
+  { path: "/incident-response", element: <IncidentResponse />, layout: "public" },
+  { path: "/auditability", element: <Auditability />, layout: "public" },
   { path: "/impressum", element: <Impressum />, layout: "public" },
 
   // ══════ Standalone protected (no sidebar) ══════
