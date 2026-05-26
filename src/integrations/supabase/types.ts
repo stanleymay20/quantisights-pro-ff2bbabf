@@ -8751,6 +8751,106 @@ export type Database = {
           },
         ]
       }
+      procurement_pack_versions: {
+        Row: {
+          bundle_integrity_id: string
+          bundle_sha256: string
+          bundle_signature: string | null
+          download_count: number
+          generated_at: string
+          generated_by: string | null
+          id: string
+          manifest: Json
+          signature_algorithm: string | null
+          size_bytes: number | null
+          trust_snapshot_id: string | null
+          version: string
+        }
+        Insert: {
+          bundle_integrity_id: string
+          bundle_sha256: string
+          bundle_signature?: string | null
+          download_count?: number
+          generated_at?: string
+          generated_by?: string | null
+          id?: string
+          manifest?: Json
+          signature_algorithm?: string | null
+          size_bytes?: number | null
+          trust_snapshot_id?: string | null
+          version: string
+        }
+        Update: {
+          bundle_integrity_id?: string
+          bundle_sha256?: string
+          bundle_signature?: string | null
+          download_count?: number
+          generated_at?: string
+          generated_by?: string | null
+          id?: string
+          manifest?: Json
+          signature_algorithm?: string | null
+          size_bytes?: number | null
+          trust_snapshot_id?: string | null
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "procurement_pack_versions_trust_snapshot_id_fkey"
+            columns: ["trust_snapshot_id"]
+            isOneToOne: false
+            referencedRelation: "trust_metrics_snapshots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      procurement_readiness_items: {
+        Row: {
+          category: string
+          control_key: string
+          control_label: string
+          evidence_payload: Json
+          evidence_ref: string | null
+          id: string
+          last_verified_at: string | null
+          snapshot_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          control_key: string
+          control_label: string
+          evidence_payload?: Json
+          evidence_ref?: string | null
+          id?: string
+          last_verified_at?: string | null
+          snapshot_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          control_key?: string
+          control_label?: string
+          evidence_payload?: Json
+          evidence_ref?: string | null
+          id?: string
+          last_verified_at?: string | null
+          snapshot_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "procurement_readiness_items_snapshot_id_fkey"
+            columns: ["snapshot_id"]
+            isOneToOne: false
+            referencedRelation: "trust_metrics_snapshots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -9697,6 +9797,63 @@ export type Database = {
         }
         Relationships: []
       }
+      subprocessor_registry: {
+        Row: {
+          active: boolean
+          created_at: string
+          data_categories: string[]
+          dpa_status: string
+          hosting_location: string | null
+          hosting_region: string
+          id: string
+          purpose: string
+          retention_policy: string | null
+          security_url: string | null
+          service_category: string
+          sort_order: number
+          transfer_mechanism: string | null
+          updated_at: string
+          vendor_name: string
+          website_url: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          data_categories?: string[]
+          dpa_status?: string
+          hosting_location?: string | null
+          hosting_region: string
+          id?: string
+          purpose: string
+          retention_policy?: string | null
+          security_url?: string | null
+          service_category: string
+          sort_order?: number
+          transfer_mechanism?: string | null
+          updated_at?: string
+          vendor_name: string
+          website_url?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          data_categories?: string[]
+          dpa_status?: string
+          hosting_location?: string | null
+          hosting_region?: string
+          id?: string
+          purpose?: string
+          retention_policy?: string | null
+          security_url?: string | null
+          service_category?: string
+          sort_order?: number
+          transfer_mechanism?: string | null
+          updated_at?: string
+          vendor_name?: string
+          website_url?: string | null
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           billing_interval: string | null
@@ -9905,6 +10062,72 @@ export type Database = {
           quota_limit?: number | null
           quota_period?: string | null
           tier?: string
+        }
+        Relationships: []
+      }
+      trust_metrics_snapshots: {
+        Row: {
+          audit_coverage_pct: number | null
+          computed_at: string
+          computed_by: string
+          connector_health_pct: number | null
+          dq_confidence_avg: number | null
+          drift_monitor_coverage_pct: number | null
+          evidence_generated_at: string
+          evidence_hash: string
+          evidence_scope: string
+          evidence_version: string
+          explainability_coverage_pct: number | null
+          failed_auth_24h: number | null
+          id: string
+          intervention_traceability_pct: number | null
+          provenance: Json
+          retention_compliance_pct: number | null
+          rls_coverage_pct: number | null
+          snapshot_date: string
+          unresolved_critical_incidents: number | null
+        }
+        Insert: {
+          audit_coverage_pct?: number | null
+          computed_at?: string
+          computed_by?: string
+          connector_health_pct?: number | null
+          dq_confidence_avg?: number | null
+          drift_monitor_coverage_pct?: number | null
+          evidence_generated_at?: string
+          evidence_hash: string
+          evidence_scope?: string
+          evidence_version?: string
+          explainability_coverage_pct?: number | null
+          failed_auth_24h?: number | null
+          id?: string
+          intervention_traceability_pct?: number | null
+          provenance?: Json
+          retention_compliance_pct?: number | null
+          rls_coverage_pct?: number | null
+          snapshot_date: string
+          unresolved_critical_incidents?: number | null
+        }
+        Update: {
+          audit_coverage_pct?: number | null
+          computed_at?: string
+          computed_by?: string
+          connector_health_pct?: number | null
+          dq_confidence_avg?: number | null
+          drift_monitor_coverage_pct?: number | null
+          evidence_generated_at?: string
+          evidence_hash?: string
+          evidence_scope?: string
+          evidence_version?: string
+          explainability_coverage_pct?: number | null
+          failed_auth_24h?: number | null
+          id?: string
+          intervention_traceability_pct?: number | null
+          provenance?: Json
+          retention_compliance_pct?: number | null
+          rls_coverage_pct?: number | null
+          snapshot_date?: string
+          unresolved_critical_incidents?: number | null
         }
         Relationships: []
       }
@@ -10346,12 +10569,69 @@ export type Database = {
         Args: { _org_id: string; _user_id: string; _validity_minutes?: number }
         Returns: boolean
       }
+      get_active_subprocessors: {
+        Args: never
+        Returns: {
+          active: boolean
+          created_at: string
+          data_categories: string[]
+          dpa_status: string
+          hosting_location: string | null
+          hosting_region: string
+          id: string
+          purpose: string
+          retention_policy: string | null
+          security_url: string | null
+          service_category: string
+          sort_order: number
+          transfer_mechanism: string | null
+          updated_at: string
+          vendor_name: string
+          website_url: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "subprocessor_registry"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       get_connector_secret: { Args: { _secret_name: string }; Returns: string }
       get_ingest_cron_secret: { Args: never; Returns: string }
       get_ingest_service_token: { Args: never; Returns: string }
       get_iq_composite_score: {
         Args: { _dataset_id: string; _org_id: string }
         Returns: Json
+      }
+      get_latest_trust_metrics: {
+        Args: never
+        Returns: {
+          audit_coverage_pct: number | null
+          computed_at: string
+          computed_by: string
+          connector_health_pct: number | null
+          dq_confidence_avg: number | null
+          drift_monitor_coverage_pct: number | null
+          evidence_generated_at: string
+          evidence_hash: string
+          evidence_scope: string
+          evidence_version: string
+          explainability_coverage_pct: number | null
+          failed_auth_24h: number | null
+          id: string
+          intervention_traceability_pct: number | null
+          provenance: Json
+          retention_compliance_pct: number | null
+          rls_coverage_pct: number | null
+          snapshot_date: string
+          unresolved_critical_incidents: number | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "trust_metrics_snapshots"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       get_metrics_summary: {
         Args: { _dataset_id: string; _org_id: string }
@@ -10364,6 +10644,27 @@ export type Database = {
           total: number
           trend: string
         }[]
+      }
+      get_procurement_readiness: {
+        Args: never
+        Returns: {
+          category: string
+          control_key: string
+          control_label: string
+          evidence_payload: Json
+          evidence_ref: string | null
+          id: string
+          last_verified_at: string | null
+          snapshot_id: string | null
+          status: string
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "procurement_readiness_items"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       get_user_org_role: {
         Args: { _org_id: string; _user_id: string }
