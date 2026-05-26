@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown, RefreshCw, TrendingUp, TrendingDown, Minus, Layers } from "lucide-react";
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, AreaChart, Area, BarChart, Bar, Legend, CartesianGrid } from "recharts";
-import { IntelligenceDisclaimer } from "@/components/IntelligenceDisclaimer";
+import IntelligenceDisclaimer from "@/components/IntelligenceDisclaimer";
 
 function trendIcon(t: string) {
   if (t === "rising") return <TrendingUp className="h-3.5 w-3.5 text-destructive" />;
