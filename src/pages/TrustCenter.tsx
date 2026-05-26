@@ -6,7 +6,9 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 import AttestedEvidence from "@/components/security/AttestedEvidence";
-import { Download } from "lucide-react";
+import LiveTrustMetrics from "@/components/security/LiveTrustMetrics";
+import ProcurementReadinessChecklist from "@/components/security/ProcurementReadinessChecklist";
+import DownloadProcurementPack from "@/components/security/DownloadProcurementPack";
 
 const sections = [
   {
@@ -82,126 +84,124 @@ const TrustCenter = () => {
 
   return (
     <SectionErrorBoundary sectionName="Trust Center">
-    <div className="space-y-8 max-w-4xl">
-      <div>
-        <div className="flex items-center gap-3 mb-2">
-          <Shield className="w-7 h-7 text-primary" />
-          <h1 className="text-2xl font-bold font-display">Trust Center</h1>
-        </div>
-        <p className="text-muted-foreground text-sm leading-relaxed max-w-2xl">
-          Quantivis is built for enterprises that require provable, auditable intelligence.
-          This page documents exactly how the system works — no marketing, only mechanisms.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        {[
-          { label: "Tables with RLS", value: "100%", desc: "Row-level security on all data" },
-          { label: "Audit Trail", value: "Immutable", desc: "Write-once, no UPDATE/DELETE" },
-          { label: "AI Dependency", value: "Narrative only", desc: "Core scoring is deterministic" },
-        ].map((stat) => (
-          <Card key={stat.label} className="border-border/50">
-            <CardContent className="pt-4 pb-3 text-center">
-              <div className="text-xl font-bold text-primary">{stat.value}</div>
-              <div className="text-xs font-medium mt-1">{stat.label}</div>
-              <div className="text-[10px] text-muted-foreground mt-0.5">{stat.desc}</div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      <Separator />
-
-      <div className="space-y-4">
-        {sections.map((section) => (
-          <Card key={section.title} className="border-border/50">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <section.icon className="w-5 h-5 text-primary" />
-                  <CardTitle className="text-base">{section.title}</CardTitle>
-                </div>
-                <Badge variant="secondary" className="text-[10px]">{section.badge}</Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <ul className="space-y-2">
-                {section.content.map((point, i) => (
-                  <li key={i} className="flex gap-2 text-sm text-muted-foreground leading-relaxed">
-                    <span className="text-primary/50 mt-1 shrink-0">•</span>
-                    {point}
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      <Separator />
-
-      <AttestedEvidence />
-
-      <Separator />
-
-      <div className="flex items-center justify-between gap-3 flex-wrap">
+      <div className="space-y-8 max-w-4xl">
         <div>
-          <h2 className="text-lg font-semibold">Procurement &amp; Compliance Documents</h2>
-          <p className="text-xs text-muted-foreground mt-0.5">Browse individually or download the complete pack as a single PDF.</p>
+          <div className="flex items-center gap-3 mb-2">
+            <Shield className="w-7 h-7 text-primary" />
+            <h1 className="text-2xl font-bold font-display">Trust Center</h1>
+          </div>
+          <p className="text-muted-foreground text-sm leading-relaxed max-w-2xl">
+            Quantivis is built for enterprises that require provable, auditable intelligence. Every claim on this page
+            is anchored to real operational evidence — daily snapshots, immutable hashes, and per-metric provenance.
+          </p>
         </div>
-        <Button size="sm" onClick={() => navigate("/procurement-pack")}>
-          <Download className="w-3.5 h-3.5 mr-1.5" /> Procurement Pack
-        </Button>
-      </div>
 
-      <div>
+        {/* Evidence-backed live metrics */}
+        <LiveTrustMetrics />
 
-        <h2 className="text-lg font-semibold mb-3">Procurement &amp; Compliance Documents</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {[
-            { path: "/toms", label: "Technical & Organizational Measures", desc: "GDPR Art. 32 control catalogue (TOMs / AVV annex)" },
-            { path: "/ai-governance", label: "AI Governance", desc: "EU AI Act alignment, human oversight, explainability" },
-            { path: "/auditability", label: "Auditability", desc: "Audit log, lineage, decision ledger, calibration history" },
-            { path: "/incident-response", label: "Incident Response", desc: "Severity SLAs, GDPR Art. 33 notification, runbook" },
-            { path: "/subprocessors", label: "Sub-processor Registry", desc: "Listed processors and EU data region" },
-            { path: "/dpa", label: "Data Processing Agreement", desc: "DPA / AVV template available on request" },
-            { path: "/security-questionnaire", label: "Security Questionnaire", desc: "Standard pre-filled procurement Q&A" },
-            { path: "/data-retention", label: "Data Retention Policy", desc: "Category-level retention and erasure" },
-          ].map((doc) => (
-            <Card
-              key={doc.path}
-              className="border-border/50 hover:border-primary/50 cursor-pointer transition-colors"
-              onClick={() => navigate(doc.path)}
-            >
-              <CardContent className="pt-4 pb-3">
-                <div className="flex items-start gap-2">
-                  <FileText className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium">{doc.label}</p>
-                    <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">{doc.desc}</p>
+        {/* Evidence-derived procurement readiness */}
+        <ProcurementReadinessChecklist />
+
+        {/* Procurement pack download */}
+        <Card className="border-border/50">
+          <CardContent className="pt-6 flex items-center justify-between gap-4 flex-wrap">
+            <div>
+              <h2 className="text-base font-semibold">Procurement Pack</h2>
+              <p className="text-xs text-muted-foreground mt-0.5 max-w-md">
+                Versioned ZIP bundle — DPA, TOMs, AI Governance, Incident Response, Auditability, Security Overview,
+                Sub-processor Registry, AI Usage Transparency, and the current Trust Snapshot. Includes sha256 manifest
+                and bundle integrity ID.
+              </p>
+            </div>
+            <DownloadProcurementPack />
+          </CardContent>
+        </Card>
+
+        <Separator />
+
+        <div className="space-y-4">
+          {sections.map((section) => (
+            <Card key={section.title} className="border-border/50">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <section.icon className="w-5 h-5 text-primary" />
+                    <CardTitle className="text-base">{section.title}</CardTitle>
                   </div>
+                  <Badge variant="secondary" className="text-[10px]">{section.badge}</Badge>
                 </div>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <ul className="space-y-2">
+                  {section.content.map((point, i) => (
+                    <li key={i} className="flex gap-2 text-sm text-muted-foreground leading-relaxed">
+                      <span className="text-primary/50 mt-1 shrink-0">•</span>
+                      {point}
+                    </li>
+                  ))}
+                </ul>
               </CardContent>
             </Card>
           ))}
         </div>
-      </div>
 
-      <div className="flex flex-wrap gap-3 pt-2">
-        <Button variant="outline" size="sm" onClick={() => navigate("/system-health")}>
-          <FileText className="w-3.5 h-3.5 mr-1.5" /> System Health
-        </Button>
-        <Button variant="outline" size="sm" onClick={() => navigate("/decision-accuracy")}>
-          <Eye className="w-3.5 h-3.5 mr-1.5" /> Decision Accuracy
-        </Button>
-        <Button variant="outline" size="sm" onClick={() => navigate("/lineage")}>
-          <GitBranch className="w-3.5 h-3.5 mr-1.5" /> Data Lineage
-        </Button>
-        <Button variant="outline" size="sm" onClick={() => navigate("/security")}>
-          <Lock className="w-3.5 h-3.5 mr-1.5" /> Security
-        </Button>
+        <Separator />
+
+        <AttestedEvidence />
+
+        <Separator />
+
+        <div>
+          <h2 className="text-lg font-semibold mb-3">Procurement &amp; Compliance Documents</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {[
+              { path: "/toms", label: "Technical & Organizational Measures", desc: "GDPR Art. 32 control catalogue (TOMs / AVV annex)" },
+              { path: "/ai-governance", label: "AI Governance", desc: "EU AI Act alignment, human oversight, explainability" },
+              { path: "/ai-system-classification", label: "AI System Classification", desc: "EU AI Act risk matrix per capability" },
+              { path: "/how-ai-is-used", label: "How AI Is Used", desc: "Deterministic / statistical / AI / human / autonomous boundary" },
+              { path: "/auditability", label: "Auditability", desc: "Audit log, lineage, decision ledger, calibration history" },
+              { path: "/incident-response", label: "Incident Response", desc: "Severity SLAs, GDPR Art. 33 notification, runbook" },
+              { path: "/security-overview", label: "Security Overview", desc: "Auth, RBAC, isolation, secrets, breakers, DLQ" },
+              { path: "/security-policy", label: "Vulnerability Disclosure", desc: "Reporting channels, SLAs, scope, safe harbour" },
+              { path: "/subprocessors", label: "Sub-processor Registry", desc: "Live DB-backed registry with DPA + transfer mechanism" },
+              { path: "/dpa", label: "Data Processing Agreement", desc: "DPA / AVV template available on request" },
+              { path: "/security-questionnaire", label: "Security Questionnaire", desc: "Standard pre-filled procurement Q&A" },
+              { path: "/data-retention", label: "Data Retention Policy", desc: "Category-level retention and erasure" },
+            ].map((doc) => (
+              <Card
+                key={doc.path}
+                className="border-border/50 hover:border-primary/50 cursor-pointer transition-colors"
+                onClick={() => navigate(doc.path)}
+              >
+                <CardContent className="pt-4 pb-3">
+                  <div className="flex items-start gap-2">
+                    <FileText className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium">{doc.label}</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">{doc.desc}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-3 pt-2">
+          <Button variant="outline" size="sm" onClick={() => navigate("/system-health")}>
+            <FileText className="w-3.5 h-3.5 mr-1.5" /> System Health
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => navigate("/decision-accuracy")}>
+            <Eye className="w-3.5 h-3.5 mr-1.5" /> Decision Accuracy
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => navigate("/lineage")}>
+            <GitBranch className="w-3.5 h-3.5 mr-1.5" /> Data Lineage
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => navigate("/security")}>
+            <Lock className="w-3.5 h-3.5 mr-1.5" /> Security
+          </Button>
+        </div>
       </div>
-    </div>
     </SectionErrorBoundary>
   );
 };
