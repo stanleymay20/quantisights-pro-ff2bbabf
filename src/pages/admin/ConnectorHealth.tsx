@@ -37,13 +37,14 @@ interface ConnectorRow {
   organization_id: string;
 }
 interface CircuitRow {
-  connector_id: string; state: string; failure_count: number;
-  last_failure_at: string | null; opened_at: string | null; cooldown_until: string | null;
+  connector_id: string; state: string; consecutive_failures: number;
+  opened_at: string | null; next_probe_at: string | null; last_error: string | null;
+  updated_at: string;
 }
 interface ThrottleRow {
   connector_id: string; vendor: string; remaining_quota: number | null;
-  reset_at: string | null; adaptive_backoff_ms: number; consecutive_throttled: number;
-  updated_at: string;
+  reset_at: string | null; adaptive_backoff_ms: number; consecutive_throttle_events: number;
+  last_observed_at: string;
 }
 interface TokenRow {
   connector_id: string; vendor: string; expires_at: string | null;
@@ -51,9 +52,9 @@ interface TokenRow {
   rotation_count: number; last_rotated_at: string | null;
 }
 interface DqRow {
-  connector_id: string; computed_at: string; completeness: number | null;
-  freshness_minutes: number | null; distinctness: number | null;
-  schema_drift_count: number | null; rows_evaluated: number | null;
+  connector_id: string; computed_at: string;
+  completeness_score: number; freshness_score: number; schema_stability_score: number;
+  anomaly_score: number; confidence_score: number; sample_size: number;
 }
 interface CoverageRow {
   connector_id: string; entities: number; events: number; metrics: number; relationships: number;
