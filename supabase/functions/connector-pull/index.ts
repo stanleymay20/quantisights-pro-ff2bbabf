@@ -857,6 +857,7 @@ serve(async (req) => {
       s3: "connector-s3-pull",
       hubspot: "connector-hubspot-pull",
       salesforce: "connector-salesforce-pull",
+      sap_odata: "connector-sap-pull",
     };
 
     if (delegated[connector_type]) {
