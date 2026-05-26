@@ -134,6 +134,7 @@ const TOMs = lazy(() => import("@/pages/TOMs"));
 const AIGovernance = lazy(() => import("@/pages/AIGovernance"));
 const IncidentResponse = lazy(() => import("@/pages/IncidentResponse"));
 const Auditability = lazy(() => import("@/pages/Auditability"));
+const ProcurementPack = lazy(() => import("@/pages/ProcurementPack"));
 
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
@@ -190,6 +191,7 @@ export const routes: RouteEntry[] = [
   { path: "/ai-governance", element: <AIGovernance />, layout: "public" },
   { path: "/incident-response", element: <IncidentResponse />, layout: "public" },
   { path: "/auditability", element: <Auditability />, layout: "public" },
+  { path: "/procurement-pack", element: <ProcurementPack />, layout: "public" },
   { path: "/impressum", element: <Impressum />, layout: "public" },
 
   // ══════ Standalone protected (no sidebar) ══════
