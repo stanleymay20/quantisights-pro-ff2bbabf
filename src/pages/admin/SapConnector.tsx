@@ -67,12 +67,12 @@ function SapConnectorInner() {
         supabase.from("sap_object_schemas").select("*").eq("connector_id", selectedId).order("service_name"),
         supabase.from("sap_schema_drift_alerts").select("*").eq("connector_id", selectedId).order("detected_at", { ascending: false }).limit(100),
         supabase.from("connector_sync_checkpoints").select("id,cursor_field,cursor_value,last_change_token,high_watermark,change_event_ready,updated_at").eq("connector_id", selectedId),
-        supabase.from("connector_dq_scores").select("entity_name,freshness_score,completeness_score,overall_score,computed_at").eq("connector_id", selectedId).order("computed_at", { ascending: false }).limit(50),
+        supabase.from("connector_dq_scores").select("stream_key,freshness_score,completeness_score,confidence_score,computed_at").eq("connector_id", selectedId).order("computed_at", { ascending: false }).limit(50),
       ]);
-      setSchemas((s.data as Schema[]) ?? []);
-      setDrift((d.data as DriftAlert[]) ?? []);
-      setCheckpoints((c.data as Checkpoint[]) ?? []);
-      setDq((q.data as DqScore[]) ?? []);
+      setSchemas(((s.data ?? []) as unknown as Schema[]));
+      setDrift(((d.data ?? []) as unknown as DriftAlert[]));
+      setCheckpoints(((c.data ?? []) as unknown as Checkpoint[]));
+      setDq(((q.data ?? []) as unknown as DqScore[]));
     })();
   }, [selectedId, organizationId]);
 
