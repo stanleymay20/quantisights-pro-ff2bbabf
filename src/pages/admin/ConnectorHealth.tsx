@@ -255,15 +255,91 @@ export default function ConnectorHealth() {
             tone={overall.lowStability > 0 ? "warn" : "ok"} />
         </div>
 
-        <Tabs defaultValue="coverage" className="w-full">
-          <TabsList>
+        <Tabs defaultValue="operations" className="w-full">
+          <TabsList className="flex-wrap h-auto">
+            <TabsTrigger value="operations">Operations (7d)</TabsTrigger>
             <TabsTrigger value="coverage">Canonical coverage</TabsTrigger>
             <TabsTrigger value="dq">Data quality</TabsTrigger>
             <TabsTrigger value="circuits">Circuit breakers</TabsTrigger>
             <TabsTrigger value="throttle">Throttle & quota</TabsTrigger>
             <TabsTrigger value="tokens">OAuth tokens</TabsTrigger>
+            <TabsTrigger value="checkpoints">Checkpoints</TabsTrigger>
             <TabsTrigger value="salesforce">Salesforce schema</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="operations">
+            <Card>
+              <CardHeader><CardTitle className="text-base flex items-center gap-2"><Activity className="h-4 w-4" /> Per-connector sync rollup (last 7 days)</CardTitle></CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[420px]">
+                  <table className="w-full text-sm">
+                    <thead className="text-xs uppercase text-muted-foreground border-b">
+                      <tr><th className="text-left py-2">Connector</th>
+                        <th className="text-right">Runs</th><th className="text-right">Success %</th>
+                        <th className="text-right">Rows inserted</th>
+                        <th className="text-right">P50 (ms)</th><th className="text-right">P95 (ms)</th>
+                        <th className="text-right">Last success</th><th className="text-right">Last failure</th></tr>
+                    </thead>
+                    <tbody>
+                      {connectors.length === 0 && <tr><td colSpan={8} className="py-6 text-center text-muted-foreground">No connectors linked yet.</td></tr>}
+                      {connectors.map(c => {
+                        const o = opsByConnector.get(c.id);
+                        const successPct = o && o.runs7d > 0 ? (o.succeeded / o.runs7d) * 100 : null;
+                        const tone = successPct == null ? "text-muted-foreground"
+                          : successPct >= 95 ? "text-emerald-600"
+                          : successPct >= 80 ? "text-yellow-600" : "text-destructive";
+                        return (
+                          <tr key={c.id} className="border-b last:border-0">
+                            <td className="py-2 font-medium">{c.name}<div className="text-xs text-muted-foreground">{c.connector_type}</div></td>
+                            <td className="text-right tabular-nums">{o?.runs7d ?? 0}</td>
+                            <td className={`text-right tabular-nums ${tone}`}>{successPct == null ? "—" : `${successPct.toFixed(1)}%`}</td>
+                            <td className="text-right tabular-nums">{fmtNum(o?.rowsInserted7d ?? 0)}</td>
+                            <td className="text-right tabular-nums">{o?.p50Ms != null ? fmtNum(Math.round(o.p50Ms)) : "—"}</td>
+                            <td className="text-right tabular-nums">{o?.p95Ms != null ? fmtNum(Math.round(o.p95Ms)) : "—"}</td>
+                            <td className="text-right text-muted-foreground">{fmtAgo(o?.lastSuccess ?? null)}</td>
+                            <td className="text-right text-muted-foreground">{fmtAgo(o?.lastFailure ?? null)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="checkpoints">
+            <Card>
+              <CardHeader><CardTitle className="text-base">Incremental sync checkpoints</CardTitle></CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[420px]">
+                  <table className="w-full text-sm">
+                    <thead className="text-xs uppercase text-muted-foreground border-b">
+                      <tr><th className="text-left py-2">Connector</th><th className="text-left">Cursor field</th>
+                        <th className="text-left">Cursor value</th><th className="text-right">High watermark</th>
+                        <th className="text-right">CDC ready</th><th className="text-right">Updated</th></tr>
+                    </thead>
+                    <tbody>
+                      {checkpoints.length === 0 && <tr><td colSpan={6} className="py-6 text-center text-muted-foreground">No checkpoints recorded — connectors will sync from scratch on next run.</td></tr>}
+                      {Array.from(checkpointsByConnector.entries()).flatMap(([cid, list]) =>
+                        list.map(r => (
+                          <tr key={`${cid}-${r.cursor_field}`} className="border-b last:border-0">
+                            <td className="py-2 font-medium">{connectorById.get(cid)?.name ?? cid.slice(0, 8)}</td>
+                            <td className="text-muted-foreground">{r.cursor_field}</td>
+                            <td className="text-muted-foreground truncate max-w-[240px]">{r.cursor_value ?? "—"}</td>
+                            <td className="text-right text-muted-foreground">{fmtAgo(r.high_watermark)}</td>
+                            <td className="text-right">{r.change_event_ready ? <Badge variant="outline" className="text-emerald-600 border-emerald-600/40">yes</Badge> : <span className="text-muted-foreground text-xs">no</span>}</td>
+                            <td className="text-right text-muted-foreground">{fmtAgo(r.updated_at)}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
 
           <TabsContent value="coverage">
             <Card>
