@@ -6,7 +6,7 @@
  */
 
 export type CanonicalSourceType =
-  | "snowflake" | "bigquery" | "s3" | "hubspot" | "salesforce"
+  | "snowflake" | "bigquery" | "s3" | "hubspot" | "salesforce" | "sap"
   | "stripe" | "api" | "csv" | "webhook" | "ga4" | "quickbooks" | "xero";
 
 export interface CanonicalEntityInput {
