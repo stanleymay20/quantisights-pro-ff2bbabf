@@ -64,6 +64,14 @@ interface SfSchemaRow {
   is_custom: boolean; last_discovered_at: string;
   fields: unknown; relationships: unknown;
 }
+interface SyncRunRow {
+  connector_id: string; status: string; started_at: string; completed_at: string | null;
+  duration_ms: number | null; rows_inserted: number; rows_extracted: number;
+}
+interface CheckpointRow {
+  connector_id: string; cursor_field: string; cursor_value: string | null;
+  high_watermark: string | null; change_event_ready: boolean; updated_at: string;
+}
 
 function fmtAgo(ts: string | null): string {
   if (!ts) return "—";
