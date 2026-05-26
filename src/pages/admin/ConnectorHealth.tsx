@@ -176,6 +176,48 @@ export default function ConnectorHealth() {
   }, [dq]);
   const coverageById = useMemo(() => new Map(coverage.map(r => [r.connector_id, r])), [coverage]);
 
+  // Per-connector 7-day operational rollup
+  const opsByConnector = useMemo(() => {
+    const m = new Map<string, {
+      runs7d: number; succeeded: number; failed: number;
+      rowsInserted7d: number; lastSuccess: string | null; lastFailure: string | null;
+      p50Ms: number | null; p95Ms: number | null;
+    }>();
+    const buckets = new Map<string, number[]>();
+    for (const r of runs) {
+      const cid = r.connector_id;
+      const cur = m.get(cid) ?? { runs7d: 0, succeeded: 0, failed: 0, rowsInserted7d: 0, lastSuccess: null, lastFailure: null, p50Ms: null, p95Ms: null };
+      cur.runs7d += 1;
+      cur.rowsInserted7d += r.rows_inserted ?? 0;
+      if (r.status === "succeeded") {
+        cur.succeeded += 1;
+        if (!cur.lastSuccess || r.started_at > cur.lastSuccess) cur.lastSuccess = r.started_at;
+      } else if (r.status === "failed") {
+        cur.failed += 1;
+        if (!cur.lastFailure || r.started_at > cur.lastFailure) cur.lastFailure = r.started_at;
+      }
+      if (typeof r.duration_ms === "number") {
+        const arr = buckets.get(cid) ?? []; arr.push(r.duration_ms); buckets.set(cid, arr);
+      }
+      m.set(cid, cur);
+    }
+    for (const [cid, arr] of buckets) {
+      arr.sort((a, b) => a - b);
+      const pick = (p: number) => arr[Math.min(arr.length - 1, Math.floor(arr.length * p))];
+      const cur = m.get(cid)!;
+      cur.p50Ms = pick(0.5); cur.p95Ms = pick(0.95);
+    }
+    return m;
+  }, [runs]);
+
+  const checkpointsByConnector = useMemo(() => {
+    const m = new Map<string, CheckpointRow[]>();
+    for (const r of checkpoints) {
+      const list = m.get(r.connector_id) ?? []; list.push(r); m.set(r.connector_id, list);
+    }
+    return m;
+  }, [checkpoints]);
+
   const overall = useMemo(() => {
     const open = circuits.filter(c => c.state === "open").length;
     const quarantined = tokens.filter(t => t.quarantined || t.revoked).length;
