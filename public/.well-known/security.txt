@@ -2,11 +2,13 @@
 # https://securitytxt.org/
 
 Contact: mailto:security@quantivis.io
-Contact: https://www.quantivis.io/incident-response
+Contact: https://www.quantivis.io/security-policy
+Encryption: https://www.quantivis.io/pgp-key.txt
+Acknowledgments: https://www.quantivis.io/security-policy#acknowledgments
 Expires: 2027-05-26T00:00:00.000Z
 Preferred-Languages: en, de
 Canonical: https://www.quantivis.io/.well-known/security.txt
-Policy: https://www.quantivis.io/incident-response
+Policy: https://www.quantivis.io/security-policy
 Hiring: https://www.quantivis.io/
 
 # Coordinated Disclosure
