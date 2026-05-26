@@ -12,7 +12,7 @@ import { Loader2, RefreshCw, AlertTriangle, CheckCircle2, Database, GitBranch, A
 import { invokeWithRetry } from "@/lib/edge-function-retry";
 import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 
-type Connector = { id: string; name: string; connector_type: string; config: any; connection_status: string };
+type Connector = { id: string; name: string; connector_type: string; config: any; status: string; health: string };
 type Schema = {
   id: string; service_name: string; entity_set: string; entity_type: string;
   odata_version: string; is_custom: boolean; key_fields: any; fields: any[];
@@ -29,7 +29,7 @@ type Checkpoint = {
   last_change_token: string | null; high_watermark: string | null;
   change_event_ready: boolean; updated_at: string;
 };
-type DqScore = { entity_name: string; freshness_score: number; completeness_score: number; overall_score: number; computed_at: string };
+type DqScore = { stream_key: string | null; freshness_score: number; completeness_score: number; confidence_score: number; computed_at: string };
 
 const severityVariant = (s: string) =>
   s === "critical" ? "destructive" : s === "warning" ? "default" : "secondary";
