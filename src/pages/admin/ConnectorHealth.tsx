@@ -244,21 +244,24 @@ export default function ConnectorHealth() {
                   <table className="w-full text-sm">
                     <thead className="text-xs uppercase text-muted-foreground border-b">
                       <tr><th className="text-left py-2">Connector</th>
-                        <th className="text-right">Completeness</th><th className="text-right">Freshness (min)</th>
-                        <th className="text-right">Distinctness</th><th className="text-right">Drift</th>
-                        <th className="text-right">Rows</th><th className="text-right">Computed</th></tr>
+                        <th className="text-right">Completeness</th><th className="text-right">Freshness</th>
+                        <th className="text-right">Schema stability</th><th className="text-right">Anomaly</th>
+                        <th className="text-right">Confidence</th><th className="text-right">Sample</th>
+                        <th className="text-right">Computed</th></tr>
                     </thead>
                     <tbody>
                       {connectors.map(c => {
                         const r = dqLatestByConnector.get(c.id);
+                        const pct = (v: number | null | undefined) => v == null ? "—" : `${(Number(v) * 100).toFixed(1)}%`;
                         return (
                           <tr key={c.id} className="border-b last:border-0">
                             <td className="py-2 font-medium">{c.name}</td>
-                            <td className="text-right tabular-nums">{r?.completeness != null ? `${(r.completeness * 100).toFixed(1)}%` : "—"}</td>
-                            <td className="text-right tabular-nums">{r?.freshness_minutes ?? "—"}</td>
-                            <td className="text-right tabular-nums">{r?.distinctness != null ? `${(r.distinctness * 100).toFixed(1)}%` : "—"}</td>
-                            <td className="text-right tabular-nums">{r?.schema_drift_count ?? 0}</td>
-                            <td className="text-right tabular-nums">{fmtNum(r?.rows_evaluated)}</td>
+                            <td className="text-right tabular-nums">{pct(r?.completeness_score)}</td>
+                            <td className="text-right tabular-nums">{pct(r?.freshness_score)}</td>
+                            <td className="text-right tabular-nums">{pct(r?.schema_stability_score)}</td>
+                            <td className="text-right tabular-nums">{pct(r?.anomaly_score)}</td>
+                            <td className="text-right tabular-nums">{pct(r?.confidence_score)}</td>
+                            <td className="text-right tabular-nums">{fmtNum(r?.sample_size ?? null)}</td>
                             <td className="text-right text-muted-foreground">{fmtAgo(r?.computed_at ?? null)}</td>
                           </tr>
                         );
