@@ -35,7 +35,7 @@ const severityVariant = (s: string) =>
   s === "critical" ? "destructive" : s === "warning" ? "default" : "secondary";
 
 function SapConnectorInner() {
-  const { organizationId } = useActiveDataContext();
+  const { orgId: organizationId } = useActiveDataContext();
   const [loading, setLoading] = useState(true);
   const [connectors, setConnectors] = useState<Connector[]>([]);
   const [selectedId, setSelectedId] = useState<string>("");
