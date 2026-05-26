@@ -1147,6 +1147,39 @@ export type Database = {
           },
         ]
       }
+      attention_budget_config: {
+        Row: {
+          fatigue_demotion_threshold: number
+          max_active_exec_narratives: number
+          max_active_ops_narratives: number
+          max_daily_new_narratives: number
+          min_confidence_to_publish: number
+          min_pressure_to_publish: number
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          fatigue_demotion_threshold?: number
+          max_active_exec_narratives?: number
+          max_active_ops_narratives?: number
+          max_daily_new_narratives?: number
+          min_confidence_to_publish?: number
+          min_pressure_to_publish?: number
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          fatigue_demotion_threshold?: number
+          max_active_exec_narratives?: number
+          max_active_ops_narratives?: number
+          max_daily_new_narratives?: number
+          min_confidence_to_publish?: number
+          min_pressure_to_publish?: number
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       attribution_results: {
         Row: {
           computed_at: string
@@ -6468,22 +6501,34 @@ export type Database = {
           canonical_summary: string | null
           cluster_signature: string | null
           cluster_type: string
+          confidence_breakdown: Json
           confidence_score: number
           escalation_velocity: number
+          evidence_hash: string | null
           expires_at: string | null
+          first_seen_at: string
           generated_at: string
           id: string
+          llm_rendered: boolean
           narrative: string | null
+          narrative_class: string | null
+          narrative_domain_mix: Json
+          narrative_scope: string | null
+          narrative_severity: string | null
           narrative_strength: number
           organization_id: string
           pressure_score: number
+          stability_score: number
           status: string
+          superseded_by: string | null
           supporting_advisory_ids: string[]
           supporting_intervention_ids: string[]
           supporting_item_ids: string[]
           title: string
           trend_direction: string
           updated_at: string
+          version: number
+          volatility_score: number
         }
         Insert: {
           affected_domains?: string[]
@@ -6492,22 +6537,34 @@ export type Database = {
           canonical_summary?: string | null
           cluster_signature?: string | null
           cluster_type?: string
+          confidence_breakdown?: Json
           confidence_score?: number
           escalation_velocity?: number
+          evidence_hash?: string | null
           expires_at?: string | null
+          first_seen_at?: string
           generated_at?: string
           id?: string
+          llm_rendered?: boolean
           narrative?: string | null
+          narrative_class?: string | null
+          narrative_domain_mix?: Json
+          narrative_scope?: string | null
+          narrative_severity?: string | null
           narrative_strength?: number
           organization_id: string
           pressure_score?: number
+          stability_score?: number
           status?: string
+          superseded_by?: string | null
           supporting_advisory_ids?: string[]
           supporting_intervention_ids?: string[]
           supporting_item_ids?: string[]
           title: string
           trend_direction?: string
           updated_at?: string
+          version?: number
+          volatility_score?: number
         }
         Update: {
           affected_domains?: string[]
@@ -6516,24 +6573,44 @@ export type Database = {
           canonical_summary?: string | null
           cluster_signature?: string | null
           cluster_type?: string
+          confidence_breakdown?: Json
           confidence_score?: number
           escalation_velocity?: number
+          evidence_hash?: string | null
           expires_at?: string | null
+          first_seen_at?: string
           generated_at?: string
           id?: string
+          llm_rendered?: boolean
           narrative?: string | null
+          narrative_class?: string | null
+          narrative_domain_mix?: Json
+          narrative_scope?: string | null
+          narrative_severity?: string | null
           narrative_strength?: number
           organization_id?: string
           pressure_score?: number
+          stability_score?: number
           status?: string
+          superseded_by?: string | null
           supporting_advisory_ids?: string[]
           supporting_intervention_ids?: string[]
           supporting_item_ids?: string[]
           title?: string
           trend_direction?: string
           updated_at?: string
+          version?: number
+          volatility_score?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "intelligence_fusion_clusters_superseded_by_fkey"
+            columns: ["superseded_by"]
+            isOneToOne: false
+            referencedRelation: "intelligence_fusion_clusters"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       intelligence_memory: {
         Row: {
@@ -7900,6 +7977,116 @@ export type Database = {
           },
         ]
       }
+      narrative_audit_log: {
+        Row: {
+          actor: string
+          actor_user_id: string | null
+          cluster_id: string | null
+          cluster_signature: string | null
+          created_at: string
+          event_type: string
+          id: string
+          new_state: Json
+          organization_id: string
+          prior_state: Json
+          reason: string | null
+        }
+        Insert: {
+          actor?: string
+          actor_user_id?: string | null
+          cluster_id?: string | null
+          cluster_signature?: string | null
+          created_at?: string
+          event_type: string
+          id?: string
+          new_state?: Json
+          organization_id: string
+          prior_state?: Json
+          reason?: string | null
+        }
+        Update: {
+          actor?: string
+          actor_user_id?: string | null
+          cluster_id?: string | null
+          cluster_signature?: string | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          new_state?: Json
+          organization_id?: string
+          prior_state?: Json
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "narrative_audit_log_cluster_id_fkey"
+            columns: ["cluster_id"]
+            isOneToOne: false
+            referencedRelation: "intelligence_fusion_clusters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      narrative_conflicts: {
+        Row: {
+          affected_dimensions: string[]
+          conflict_type: string
+          detected_at: string
+          evidence_disagreement: Json
+          id: string
+          narrative_a_id: string
+          narrative_b_id: string
+          organization_id: string
+          resolution_notes: string | null
+          resolved_at: string | null
+          severity: string
+          status: string
+        }
+        Insert: {
+          affected_dimensions?: string[]
+          conflict_type: string
+          detected_at?: string
+          evidence_disagreement?: Json
+          id?: string
+          narrative_a_id: string
+          narrative_b_id: string
+          organization_id: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          severity?: string
+          status?: string
+        }
+        Update: {
+          affected_dimensions?: string[]
+          conflict_type?: string
+          detected_at?: string
+          evidence_disagreement?: Json
+          id?: string
+          narrative_a_id?: string
+          narrative_b_id?: string
+          organization_id?: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          severity?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "narrative_conflicts_narrative_a_id_fkey"
+            columns: ["narrative_a_id"]
+            isOneToOne: false
+            referencedRelation: "intelligence_fusion_clusters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "narrative_conflicts_narrative_b_id_fkey"
+            columns: ["narrative_b_id"]
+            isOneToOne: false
+            referencedRelation: "intelligence_fusion_clusters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       narrative_memory: {
         Row: {
           cluster_id: string | null
@@ -7967,6 +8154,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      narrative_suppression_log: {
+        Row: {
+          candidate_snapshot: Json
+          cluster_signature: string | null
+          id: string
+          organization_id: string
+          suppressed_at: string
+          suppression_details: Json
+          suppression_reason: string
+        }
+        Insert: {
+          candidate_snapshot?: Json
+          cluster_signature?: string | null
+          id?: string
+          organization_id: string
+          suppressed_at?: string
+          suppression_details?: Json
+          suppression_reason: string
+        }
+        Update: {
+          candidate_snapshot?: Json
+          cluster_signature?: string | null
+          id?: string
+          organization_id?: string
+          suppressed_at?: string
+          suppression_details?: Json
+          suppression_reason?: string
+        }
+        Relationships: []
       }
       nlq_queries: {
         Row: {
