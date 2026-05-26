@@ -293,10 +293,10 @@ function SapConnectorInner() {
                   <TableBody>
                     {dq.map((d, i) => (
                       <TableRow key={i}>
-                        <TableCell className="font-mono text-xs">{d.entity_name}</TableCell>
-                        <TableCell>{d.freshness_score?.toFixed?.(0) ?? "—"}</TableCell>
-                        <TableCell>{d.completeness_score?.toFixed?.(0) ?? "—"}</TableCell>
-                        <TableCell><Badge variant={d.overall_score >= 80 ? "default" : d.overall_score >= 60 ? "secondary" : "destructive"}>{d.overall_score?.toFixed?.(0) ?? "—"}</Badge></TableCell>
+                        <TableCell className="font-mono text-xs">{d.stream_key ?? "—"}</TableCell>
+                        <TableCell>{Number(d.freshness_score ?? 0).toFixed(0)}</TableCell>
+                        <TableCell>{Number(d.completeness_score ?? 0).toFixed(0)}</TableCell>
+                        <TableCell><Badge variant={Number(d.confidence_score) >= 80 ? "default" : Number(d.confidence_score) >= 60 ? "secondary" : "destructive"}>{Number(d.confidence_score ?? 0).toFixed(0)}</Badge></TableCell>
                         <TableCell className="text-xs">{new Date(d.computed_at).toLocaleString()}</TableCell>
                       </TableRow>
                     ))}
