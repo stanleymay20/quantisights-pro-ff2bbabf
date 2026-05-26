@@ -189,8 +189,8 @@ export default function ConnectorHealth() {
             tone={overall.quarantined > 0 ? "danger" : "ok"} />
           <StatTile icon={<Gauge className="h-4 w-4" />} label="Vendors throttled" value={overall.throttled}
             tone={overall.throttled > 0 ? "warn" : "ok"} />
-          <StatTile icon={<Workflow className="h-4 w-4" />} label="Schema drift events" value={overall.drift}
-            tone={overall.drift > 0 ? "warn" : "ok"} />
+          <StatTile icon={<Workflow className="h-4 w-4" />} label="Low schema stability" value={overall.lowStability}
+            tone={overall.lowStability > 0 ? "warn" : "ok"} />
         </div>
 
         <Tabs defaultValue="coverage" className="w-full">
