@@ -113,6 +113,7 @@ const DataVendors = lazy(() => import("@/pages/admin/DataVendors"));
 const InternalData = lazy(() => import("@/pages/admin/InternalData"));
 const AdminConnectors = lazy(() => import("@/pages/admin/Connectors"));
 const IngestionObservability = lazy(() => import("@/pages/admin/IngestionObservability"));
+const ConnectorHealth = lazy(() => import("@/pages/admin/ConnectorHealth"));
 const AicisSync = lazy(() => import("@/pages/admin/AicisSync"));
 const BridgeHealth = lazy(() => import("@/pages/admin/BridgeHealth"));
 const CompetitiveAnalysis = lazy(() => import("@/pages/CompetitiveAnalysis"));
