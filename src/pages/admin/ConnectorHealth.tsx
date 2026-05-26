@@ -104,7 +104,8 @@ export default function ConnectorHealth() {
     setLoading(true);
     try {
       const orgId = currentOrg.id;
-      const [c, cs, ts, tk, dqq, ce, cev, cmt, crel, sfs] = await Promise.all([
+      const sevenDaysAgo = new Date(Date.now() - 7 * 86400_000).toISOString();
+      const [c, cs, ts, tk, dqq, ce, cev, cmt, crel, sfs, rr, ck] = await Promise.all([
         supabase.from("data_connectors")
           .select("id,name,connector_type,status,health,organization_id")
           .eq("organization_id", orgId).order("name"),
@@ -127,6 +128,13 @@ export default function ConnectorHealth() {
         supabase.from("salesforce_object_schemas")
           .select("connector_id,object_name,api_version,is_custom,last_discovered_at,fields,relationships")
           .eq("organization_id", orgId).order("object_name"),
+        supabase.from("connector_sync_runs")
+          .select("connector_id,status,started_at,completed_at,duration_ms,rows_inserted,rows_extracted")
+          .eq("organization_id", orgId).gte("started_at", sevenDaysAgo)
+          .order("started_at", { ascending: false }).limit(2000),
+        supabase.from("connector_sync_checkpoints")
+          .select("connector_id,cursor_field,cursor_value,high_watermark,change_event_ready,updated_at")
+          .eq("organization_id", orgId),
       ]);
       setConnectors(((c.data as unknown) as ConnectorRow[]) ?? []);
       setCircuits(((cs.data as unknown) as CircuitRow[]) ?? []);
