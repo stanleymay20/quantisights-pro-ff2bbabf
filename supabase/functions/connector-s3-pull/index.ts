@@ -105,12 +105,19 @@ serve(async (req) => {
       health: errors.length ? "degraded" : "healthy",
     }).eq("id", connector_id);
 
+    const duration_ms = Date.now() - t0;
+    logConnectorEvent({
+      connector_type: "s3", connector_id, organization_id: connector.organization_id, phase: "complete",
+      rows_extracted: totalRows, rows_inserted: totalInserted, rows_failed: errors.length, duration_ms,
+    });
     return json({
       success: true, files_processed: targets.length, rows_extracted: totalRows, rows_inserted: totalInserted,
-      rows_invalid: errors.length, sample_errors: errors.slice(0, 5), duration_ms: Date.now() - t0,
+      rows_invalid: errors.length, sample_errors: errors.slice(0, 5), duration_ms,
     }, 200, cors);
   } catch (e) {
-    return json({ error: e instanceof Error ? e.message : String(e) }, 500, cors);
+    const msg = e instanceof Error ? e.message : String(e);
+    console.log(JSON.stringify({ ts: new Date().toISOString(), connector_type: "s3", phase: "error", error: msg }));
+    return json({ error: msg }, 500, cors);
   }
 });
 
