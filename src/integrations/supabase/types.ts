@@ -5482,6 +5482,57 @@ export type Database = {
           },
         ]
       }
+      fusion_observability: {
+        Row: {
+          avg_generation_latency_ms: number
+          clusters_count: number
+          compression_ratio: number
+          created_at: string
+          day: string
+          duplicates_suppressed: number
+          executive_interactions: number
+          id: string
+          ignored_narrative_pct: number
+          inputs_count: number
+          metadata: Json
+          narrative_resolution_effectiveness_pct: number
+          narrative_to_decision_conversion_pct: number
+          organization_id: string
+        }
+        Insert: {
+          avg_generation_latency_ms?: number
+          clusters_count?: number
+          compression_ratio?: number
+          created_at?: string
+          day?: string
+          duplicates_suppressed?: number
+          executive_interactions?: number
+          id?: string
+          ignored_narrative_pct?: number
+          inputs_count?: number
+          metadata?: Json
+          narrative_resolution_effectiveness_pct?: number
+          narrative_to_decision_conversion_pct?: number
+          organization_id: string
+        }
+        Update: {
+          avg_generation_latency_ms?: number
+          clusters_count?: number
+          compression_ratio?: number
+          created_at?: string
+          day?: string
+          duplicates_suppressed?: number
+          executive_interactions?: number
+          id?: string
+          ignored_narrative_pct?: number
+          inputs_count?: number
+          metadata?: Json
+          narrative_resolution_effectiveness_pct?: number
+          narrative_to_decision_conversion_pct?: number
+          organization_id?: string
+        }
+        Relationships: []
+      }
       governance_maturity_assessments: {
         Row: {
           assessed_by: string
@@ -5917,6 +5968,81 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      intelligence_fusion_clusters: {
+        Row: {
+          affected_domains: string[]
+          affected_entities: string[]
+          affected_geographies: string[]
+          canonical_summary: string | null
+          cluster_signature: string | null
+          cluster_type: string
+          confidence_score: number
+          escalation_velocity: number
+          expires_at: string | null
+          generated_at: string
+          id: string
+          narrative: string | null
+          narrative_strength: number
+          organization_id: string
+          pressure_score: number
+          status: string
+          supporting_advisory_ids: string[]
+          supporting_intervention_ids: string[]
+          supporting_item_ids: string[]
+          title: string
+          trend_direction: string
+          updated_at: string
+        }
+        Insert: {
+          affected_domains?: string[]
+          affected_entities?: string[]
+          affected_geographies?: string[]
+          canonical_summary?: string | null
+          cluster_signature?: string | null
+          cluster_type?: string
+          confidence_score?: number
+          escalation_velocity?: number
+          expires_at?: string | null
+          generated_at?: string
+          id?: string
+          narrative?: string | null
+          narrative_strength?: number
+          organization_id: string
+          pressure_score?: number
+          status?: string
+          supporting_advisory_ids?: string[]
+          supporting_intervention_ids?: string[]
+          supporting_item_ids?: string[]
+          title: string
+          trend_direction?: string
+          updated_at?: string
+        }
+        Update: {
+          affected_domains?: string[]
+          affected_entities?: string[]
+          affected_geographies?: string[]
+          canonical_summary?: string | null
+          cluster_signature?: string | null
+          cluster_type?: string
+          confidence_score?: number
+          escalation_velocity?: number
+          expires_at?: string | null
+          generated_at?: string
+          id?: string
+          narrative?: string | null
+          narrative_strength?: number
+          organization_id?: string
+          pressure_score?: number
+          status?: string
+          supporting_advisory_ids?: string[]
+          supporting_intervention_ids?: string[]
+          supporting_item_ids?: string[]
+          title?: string
+          trend_direction?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       intelligence_memory: {
         Row: {
@@ -7283,6 +7409,74 @@ export type Database = {
           },
         ]
       }
+      narrative_memory: {
+        Row: {
+          cluster_id: string | null
+          cluster_signature: string | null
+          created_at: string
+          decision_ids: string[]
+          false_positive: boolean
+          id: string
+          ignored: boolean
+          led_to_decision: boolean
+          narrative_effectiveness_score: number
+          narrative_resolution_rate: number
+          narrative_trust_score: number
+          notes: string | null
+          organization_id: string
+          outcome_effective: boolean | null
+          outcome_observed: boolean
+          resolution_time_hours: number | null
+          updated_at: string
+        }
+        Insert: {
+          cluster_id?: string | null
+          cluster_signature?: string | null
+          created_at?: string
+          decision_ids?: string[]
+          false_positive?: boolean
+          id?: string
+          ignored?: boolean
+          led_to_decision?: boolean
+          narrative_effectiveness_score?: number
+          narrative_resolution_rate?: number
+          narrative_trust_score?: number
+          notes?: string | null
+          organization_id: string
+          outcome_effective?: boolean | null
+          outcome_observed?: boolean
+          resolution_time_hours?: number | null
+          updated_at?: string
+        }
+        Update: {
+          cluster_id?: string | null
+          cluster_signature?: string | null
+          created_at?: string
+          decision_ids?: string[]
+          false_positive?: boolean
+          id?: string
+          ignored?: boolean
+          led_to_decision?: boolean
+          narrative_effectiveness_score?: number
+          narrative_resolution_rate?: number
+          narrative_trust_score?: number
+          notes?: string | null
+          organization_id?: string
+          outcome_effective?: boolean | null
+          outcome_observed?: boolean
+          resolution_time_hours?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "narrative_memory_cluster_id_fkey"
+            columns: ["cluster_id"]
+            isOneToOne: false
+            referencedRelation: "intelligence_fusion_clusters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       nlq_queries: {
         Row: {
           created_at: string
@@ -7686,6 +7880,63 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      organizational_pressure_models: {
+        Row: {
+          breakdown: Json
+          contributing_cluster_ids: string[]
+          cyber_pressure: number
+          execution_pressure: number
+          geopolitical_pressure: number
+          id: string
+          operational_pressure: number
+          organization_id: string
+          pressure_acceleration: number
+          pressure_score: number
+          pressure_velocity: number
+          regulatory_pressure: number
+          snapshot_at: string
+          stabilization_indicator: number
+          strategic_pressure: number
+          supply_chain_pressure: number
+        }
+        Insert: {
+          breakdown?: Json
+          contributing_cluster_ids?: string[]
+          cyber_pressure?: number
+          execution_pressure?: number
+          geopolitical_pressure?: number
+          id?: string
+          operational_pressure?: number
+          organization_id: string
+          pressure_acceleration?: number
+          pressure_score?: number
+          pressure_velocity?: number
+          regulatory_pressure?: number
+          snapshot_at?: string
+          stabilization_indicator?: number
+          strategic_pressure?: number
+          supply_chain_pressure?: number
+        }
+        Update: {
+          breakdown?: Json
+          contributing_cluster_ids?: string[]
+          cyber_pressure?: number
+          execution_pressure?: number
+          geopolitical_pressure?: number
+          id?: string
+          operational_pressure?: number
+          organization_id?: string
+          pressure_acceleration?: number
+          pressure_score?: number
+          pressure_velocity?: number
+          regulatory_pressure?: number
+          snapshot_at?: string
+          stabilization_indicator?: number
+          strategic_pressure?: number
+          supply_chain_pressure?: number
+        }
+        Relationships: []
       }
       organizations: {
         Row: {
