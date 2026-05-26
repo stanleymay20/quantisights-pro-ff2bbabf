@@ -280,8 +280,8 @@ export default function ConnectorHealth() {
                   <table className="w-full text-sm">
                     <thead className="text-xs uppercase text-muted-foreground border-b">
                       <tr><th className="text-left py-2">Connector</th><th className="text-left">State</th>
-                        <th className="text-right">Failures</th><th className="text-right">Last failure</th>
-                        <th className="text-right">Cooldown until</th></tr>
+                        <th className="text-right">Failures</th><th className="text-right">Opened</th>
+                        <th className="text-right">Next probe</th></tr>
                     </thead>
                     <tbody>
                       {circuits.length === 0 && <tr><td colSpan={5} className="py-6 text-center text-muted-foreground">No circuit state recorded.</td></tr>}
@@ -289,9 +289,9 @@ export default function ConnectorHealth() {
                         <tr key={r.connector_id} className="border-b last:border-0">
                           <td className="py-2 font-medium">{connectorById.get(r.connector_id)?.name ?? r.connector_id.slice(0, 8)}</td>
                           <td><CircuitBadge state={r.state} /></td>
-                          <td className="text-right tabular-nums">{r.failure_count}</td>
-                          <td className="text-right text-muted-foreground">{fmtAgo(r.last_failure_at)}</td>
-                          <td className="text-right text-muted-foreground">{fmtAgo(r.cooldown_until)}</td>
+                          <td className="text-right tabular-nums">{r.consecutive_failures}</td>
+                          <td className="text-right text-muted-foreground">{fmtAgo(r.opened_at)}</td>
+                          <td className="text-right text-muted-foreground">{fmtAgo(r.next_probe_at)}</td>
                         </tr>
                       ))}
                     </tbody>
