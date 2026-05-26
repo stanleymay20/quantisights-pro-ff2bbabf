@@ -5,6 +5,8 @@ import { Separator } from "@/components/ui/separator";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import SectionErrorBoundary from "@/components/SectionErrorBoundary";
+import AttestedEvidence from "@/components/security/AttestedEvidence";
+import { Download } from "lucide-react";
 
 const sections = [
   {
@@ -138,7 +140,22 @@ const TrustCenter = () => {
 
       <Separator />
 
+      <AttestedEvidence />
+
+      <Separator />
+
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <h2 className="text-lg font-semibold">Procurement &amp; Compliance Documents</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">Browse individually or download the complete pack as a single PDF.</p>
+        </div>
+        <Button size="sm" onClick={() => navigate("/procurement-pack")}>
+          <Download className="w-3.5 h-3.5 mr-1.5" /> Procurement Pack
+        </Button>
+      </div>
+
       <div>
+
         <h2 className="text-lg font-semibold mb-3">Procurement &amp; Compliance Documents</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {[
