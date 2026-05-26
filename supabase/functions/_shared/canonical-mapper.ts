@@ -124,3 +124,42 @@ export async function upsertCanonicalMetrics(svc: any, params: {
   await chunkUpsert(svc, "canonical_metrics", rows, "organization_id,metric_key,period_start,period_grain,connector_id,dimensions");
   return rows.length;
 }
+
+export interface CanonicalRelationshipInput {
+  relationship_type: string;            // 'contact_of' | 'deal_of' | 'owner_of' | 'activity_on_deal'
+  from_entity_type: string;
+  from_external_id: string;
+  to_entity_type: string;
+  to_external_id: string;
+  attributes?: Record<string, unknown>;
+}
+
+export async function upsertCanonicalRelationships(svc: any, params: {
+  orgId: string; connectorId?: string; sourceType: CanonicalSourceType;
+  relationships: CanonicalRelationshipInput[];
+  entityIdMap: Map<string, string>;
+}): Promise<number> {
+  if (!params.relationships.length) return 0;
+  const now = new Date().toISOString();
+  const rows: any[] = [];
+  for (const r of params.relationships) {
+    const fromId = params.entityIdMap.get(`${r.from_entity_type}:${r.from_external_id}`);
+    const toId   = params.entityIdMap.get(`${r.to_entity_type}:${r.to_external_id}`);
+    if (!fromId || !toId) continue;
+    rows.push({
+      organization_id: params.orgId,
+      connector_id: params.connectorId ?? null,
+      source_type: params.sourceType,
+      relationship_type: r.relationship_type,
+      from_entity_id: fromId,
+      to_entity_id: toId,
+      attributes: r.attributes ?? {},
+      last_seen_at: now,
+    });
+  }
+  if (!rows.length) return 0;
+  await chunkUpsert(svc, "canonical_relationships", rows,
+    "organization_id,source_type,relationship_type,from_entity_id,to_entity_id");
+  return rows.length;
+}
+
