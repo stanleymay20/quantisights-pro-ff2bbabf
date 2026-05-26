@@ -4,7 +4,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsPreflightResponse, getCorsHeaders } from "../_shared/cors.ts";
 import { shouldAllow, recordSuccess, recordFailure, deadLetter } from "../_shared/connector-isolation.ts";
 import { upsertCanonicalMetrics } from "../_shared/canonical-mapper.ts";
-import { enforceLimit, rowToCanonicalMetric, validateMapping, type SnowflakeConfig } from "../_shared/warehouse-config.ts";
+import { enforceLimit, assertSelectOnly, logConnectorEvent, rowToCanonicalMetric, validateMapping, type SnowflakeConfig } from "../_shared/warehouse-config.ts";
 
 const GATEWAY = "https://connector-gateway.lovable.dev/snowflake";
 
@@ -23,9 +23,18 @@ serve(async (req) => {
     const m = validateMapping(cfg.mapping);
     if (!m.ok) return json({ error: `config invalid: ${m.reason}` }, 400, cors);
     if (!cfg.query) return json({ error: "config.query required" }, 400, cors);
+    try { assertSelectOnly(cfg.query); }
+    catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      logConnectorEvent({ connector_type: "snowflake", connector_id, organization_id: connector.organization_id, phase: "error", error: msg });
+      return json({ error: `query rejected: ${msg}` }, 400, cors);
+    }
 
     const gate = await shouldAllow(svc, connector.organization_id, connector_id);
-    if (!gate.allow) return json({ skipped: true, reason: gate.reason }, 200, cors);
+    if (!gate.allow) {
+      logConnectorEvent({ connector_type: "snowflake", connector_id, organization_id: connector.organization_id, phase: "skipped", reason: gate.reason });
+      return json({ skipped: true, reason: gate.reason }, 200, cors);
+    }
 
     const LOVABLE = Deno.env.get("LOVABLE_API_KEY");
     const SF = Deno.env.get("SNOWFLAKE_API_KEY");

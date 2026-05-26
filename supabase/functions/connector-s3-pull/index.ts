@@ -4,7 +4,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsPreflightResponse, getCorsHeaders } from "../_shared/cors.ts";
 import { shouldAllow, recordSuccess, recordFailure, deadLetter } from "../_shared/connector-isolation.ts";
 import { upsertCanonicalMetrics } from "../_shared/canonical-mapper.ts";
-import { rowToCanonicalMetric, validateMapping, type S3Config } from "../_shared/warehouse-config.ts";
+import { logConnectorEvent, rowToCanonicalMetric, validateMapping, type S3Config } from "../_shared/warehouse-config.ts";
 
 const GW = "https://connector-gateway.lovable.dev/aws_s3";
 const API = "https://connector-gateway.lovable.dev/api/v1/sign_storage_url?provider=aws_s3&mode=read";
