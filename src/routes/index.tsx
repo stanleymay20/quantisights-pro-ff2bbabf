@@ -120,6 +120,7 @@ const IngestionObservability = lazy(() => import("@/pages/admin/IngestionObserva
 const ConnectorHealth = lazy(() => import("@/pages/admin/ConnectorHealth"));
 const AicisSync = lazy(() => import("@/pages/admin/AicisSync"));
 const BridgeHealth = lazy(() => import("@/pages/admin/BridgeHealth"));
+const SapConnector = lazy(() => import("@/pages/admin/SapConnector"));
 const CompetitiveAnalysis = lazy(() => import("@/pages/CompetitiveAnalysis"));
 const IntelligenceDashboard = lazy(() => import("@/pages/IntelligenceDashboard"));
 const IntelligenceInbox = lazy(() => import("@/pages/IntelligenceInbox"));
@@ -283,6 +284,7 @@ export const routes: RouteEntry[] = [
   { path: "/admin/connectors", element: <AdminConnectors />, layout: "full" },
   { path: "/admin/ingestion-observability", element: <IngestionObservability />, layout: "full" },
   { path: "/admin/connector-health", element: <ConnectorHealth />, layout: "full" },
+  { path: "/admin/connectors/sap", element: <SapConnector />, layout: "full" },
 
   // ══════ Catch-all ══════
   { path: "*", element: <NotFound />, layout: "public" },
