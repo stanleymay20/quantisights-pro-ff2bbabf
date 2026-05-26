@@ -5,6 +5,8 @@ import { Separator } from "@/components/ui/separator";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import SectionErrorBoundary from "@/components/SectionErrorBoundary";
+import AttestedEvidence from "@/components/security/AttestedEvidence";
+import { Download } from "lucide-react";
 
 const sections = [
   {
