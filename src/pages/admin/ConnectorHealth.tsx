@@ -142,6 +142,8 @@ export default function ConnectorHealth() {
       setTokens(((tk.data as unknown) as TokenRow[]) ?? []);
       setDq(((dqq.data as unknown) as DqRow[]) ?? []);
       setSfSchemas(((sfs.data as unknown) as SfSchemaRow[]) ?? []);
+      setRuns(((rr.data as unknown) as SyncRunRow[]) ?? []);
+      setCheckpoints(((ck.data as unknown) as CheckpointRow[]) ?? []);
 
       const tally = new Map<string, CoverageRow>();
       const add = (rows: any[] | null, key: keyof CoverageRow) => {
