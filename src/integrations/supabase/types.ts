@@ -2403,28 +2403,37 @@ export type Database = {
       }
       connector_sync_checkpoints: {
         Row: {
+          change_event_ready: boolean
           connector_id: string
           cursor_field: string
           cursor_value: string | null
+          high_watermark: string | null
           id: string
+          last_change_token: string | null
           last_sync_run_id: string | null
           organization_id: string
           updated_at: string
         }
         Insert: {
+          change_event_ready?: boolean
           connector_id: string
           cursor_field: string
           cursor_value?: string | null
+          high_watermark?: string | null
           id?: string
+          last_change_token?: string | null
           last_sync_run_id?: string | null
           organization_id: string
           updated_at?: string
         }
         Update: {
+          change_event_ready?: boolean
           connector_id?: string
           cursor_field?: string
           cursor_value?: string | null
+          high_watermark?: string | null
           id?: string
+          last_change_token?: string | null
           last_sync_run_id?: string | null
           organization_id?: string
           updated_at?: string
@@ -2726,6 +2735,87 @@ export type Database = {
             columns: ["connector_id"]
             isOneToOne: true
             referencedRelation: "data_connectors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      connector_token_state: {
+        Row: {
+          access_token_vault_name: string | null
+          connector_id: string
+          expires_at: string | null
+          id: string
+          instance_url: string | null
+          issued_at: string | null
+          last_rotated_at: string | null
+          organization_id: string
+          quarantine_reason: string | null
+          quarantined: boolean
+          quarantined_at: string | null
+          refresh_failure_count: number
+          refresh_token_vault_name: string | null
+          revoked: boolean
+          revoked_at: string | null
+          rotation_count: number
+          scope: string | null
+          updated_at: string
+          vendor: string
+        }
+        Insert: {
+          access_token_vault_name?: string | null
+          connector_id: string
+          expires_at?: string | null
+          id?: string
+          instance_url?: string | null
+          issued_at?: string | null
+          last_rotated_at?: string | null
+          organization_id: string
+          quarantine_reason?: string | null
+          quarantined?: boolean
+          quarantined_at?: string | null
+          refresh_failure_count?: number
+          refresh_token_vault_name?: string | null
+          revoked?: boolean
+          revoked_at?: string | null
+          rotation_count?: number
+          scope?: string | null
+          updated_at?: string
+          vendor: string
+        }
+        Update: {
+          access_token_vault_name?: string | null
+          connector_id?: string
+          expires_at?: string | null
+          id?: string
+          instance_url?: string | null
+          issued_at?: string | null
+          last_rotated_at?: string | null
+          organization_id?: string
+          quarantine_reason?: string | null
+          quarantined?: boolean
+          quarantined_at?: string | null
+          refresh_failure_count?: number
+          refresh_token_vault_name?: string | null
+          revoked?: boolean
+          revoked_at?: string | null
+          rotation_count?: number
+          scope?: string | null
+          updated_at?: string
+          vendor?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "connector_token_state_connector_id_fkey"
+            columns: ["connector_id"]
+            isOneToOne: true
+            referencedRelation: "data_connectors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "connector_token_state_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -8959,6 +9049,63 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "role_permissions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      salesforce_object_schemas: {
+        Row: {
+          api_version: string
+          connector_id: string
+          created_at: string
+          fields: Json
+          id: string
+          is_custom: boolean
+          last_discovered_at: string
+          object_name: string
+          organization_id: string
+          record_count_estimate: number | null
+          relationships: Json
+        }
+        Insert: {
+          api_version: string
+          connector_id: string
+          created_at?: string
+          fields?: Json
+          id?: string
+          is_custom?: boolean
+          last_discovered_at?: string
+          object_name: string
+          organization_id: string
+          record_count_estimate?: number | null
+          relationships?: Json
+        }
+        Update: {
+          api_version?: string
+          connector_id?: string
+          created_at?: string
+          fields?: Json
+          id?: string
+          is_custom?: boolean
+          last_discovered_at?: string
+          object_name?: string
+          organization_id?: string
+          record_count_estimate?: number | null
+          relationships?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salesforce_object_schemas_connector_id_fkey"
+            columns: ["connector_id"]
+            isOneToOne: false
+            referencedRelation: "data_connectors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesforce_object_schemas_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
