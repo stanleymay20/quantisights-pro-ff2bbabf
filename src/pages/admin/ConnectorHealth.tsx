@@ -320,7 +320,7 @@ export default function ConnectorHealth() {
                           <td className="text-right tabular-nums">{fmtNum(r.remaining_quota)}</td>
                           <td className="text-right text-muted-foreground">{fmtAgo(r.reset_at)}</td>
                           <td className="text-right tabular-nums">{r.adaptive_backoff_ms}</td>
-                          <td className="text-right tabular-nums">{r.consecutive_throttled}</td>
+                          <td className="text-right tabular-nums">{r.consecutive_throttle_events}</td>
                         </tr>
                       ))}
                     </tbody>
