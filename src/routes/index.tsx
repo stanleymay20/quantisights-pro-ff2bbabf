@@ -126,6 +126,7 @@ const IntelligenceDashboard = lazy(() => import("@/pages/IntelligenceDashboard")
 const IntelligenceInbox = lazy(() => import("@/pages/IntelligenceInbox"));
 const ExecutiveIntelligence = lazy(() => import("@/pages/ExecutiveIntelligence"));
 const Interventions = lazy(() => import("@/pages/Interventions"));
+const NarrativeCockpit = lazy(() => import("@/pages/NarrativeCockpit"));
 
 // ── Legal ──
 const Terms = lazy(() => import("@/pages/Terms"));
@@ -219,6 +220,7 @@ export const routes: RouteEntry[] = [
   { path: "/intelligence-inbox", element: <IntelligenceInbox />, layout: "full" },
   { path: "/executive-intelligence", element: <ExecutiveIntelligence />, layout: "full" },
   { path: "/interventions", element: <Interventions />, layout: "full" },
+  { path: "/narratives", element: <NarrativeCockpit />, layout: "full" },
 
   // ══════ Decision System ══════
   { path: "/decisions", element: <DecisionLedger />, layout: "full" },

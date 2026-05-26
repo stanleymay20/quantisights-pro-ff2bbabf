@@ -4,6 +4,15 @@ import { useActiveDataContext } from "@/hooks/useActiveDataContext";
 import { invokeWithRetry } from "@/lib/edge-function-retry";
 import { getVerifiedAuth, authHeaders } from "@/lib/auth-helpers";
 
+export interface ConfidenceBreakdown {
+  data_quality_confidence: number;
+  evidence_volume_confidence: number;
+  cross_source_consistency: number;
+  historical_reliability: number;
+  model_stability: number;
+  composite: number;
+}
+
 export interface FusionCluster {
   id: string;
   cluster_type: string;
@@ -24,6 +33,18 @@ export interface FusionCluster {
   status: string;
   generated_at: string;
   updated_at: string;
+  // Phase 5D
+  narrative_class?: string | null;
+  narrative_scope?: string | null;
+  narrative_severity?: string | null;
+  narrative_domain_mix?: Record<string, number>;
+  stability_score?: number;
+  volatility_score?: number;
+  confidence_breakdown?: ConfidenceBreakdown;
+  evidence_hash?: string | null;
+  version?: number;
+  first_seen_at?: string;
+  llm_rendered?: boolean;
 }
 
 export interface PressureModel {
@@ -54,11 +75,35 @@ export interface FusionObservability {
   narrative_resolution_effectiveness_pct: number;
 }
 
+export interface NarrativeConflict {
+  id: string;
+  narrative_a_id: string;
+  narrative_b_id: string;
+  conflict_type: string;
+  severity: "low" | "medium" | "high" | "critical";
+  affected_dimensions: string[];
+  evidence_disagreement: Record<string, unknown>;
+  status: string;
+  detected_at: string;
+}
+
+export interface NarrativeAuditEntry {
+  id: string;
+  cluster_id: string | null;
+  event_type: string;
+  prior_state: Record<string, unknown>;
+  new_state: Record<string, unknown>;
+  reason: string | null;
+  created_at: string;
+}
+
 export const useNarrativeFusion = () => {
   const { orgId } = useActiveDataContext();
   const [clusters, setClusters] = useState<FusionCluster[]>([]);
   const [pressureHistory, setPressureHistory] = useState<PressureModel[]>([]);
   const [observability, setObservability] = useState<FusionObservability | null>(null);
+  const [conflicts, setConflicts] = useState<NarrativeConflict[]>([]);
+  const [auditLog, setAuditLog] = useState<NarrativeAuditEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
 
@@ -66,10 +111,8 @@ export const useNarrativeFusion = () => {
     if (!orgId) return;
     setLoading(true);
     try {
-      const sb = supabase as unknown as {
-        from: (t: string) => any;
-      };
-      const [cl, ph, ob] = await Promise.all([
+      const sb = supabase as unknown as { from: (t: string) => any };
+      const [cl, ph, ob, cf, au] = await Promise.all([
         sb.from("intelligence_fusion_clusters")
           .select("*").eq("organization_id", orgId).eq("status", "active")
           .order("pressure_score", { ascending: false }).limit(25),
@@ -79,10 +122,18 @@ export const useNarrativeFusion = () => {
         sb.from("fusion_observability")
           .select("*").eq("organization_id", orgId)
           .order("day", { ascending: false }).limit(1).maybeSingle(),
+        sb.from("narrative_conflicts")
+          .select("*").eq("organization_id", orgId).eq("status", "open")
+          .order("detected_at", { ascending: false }).limit(20),
+        sb.from("narrative_audit_log")
+          .select("*").eq("organization_id", orgId)
+          .order("created_at", { ascending: false }).limit(50),
       ]);
       setClusters((cl.data as FusionCluster[]) || []);
       setPressureHistory(((ph.data as PressureModel[]) || []).slice().reverse());
       setObservability((ob.data as FusionObservability) || null);
+      setConflicts((cf.data as NarrativeConflict[]) || []);
+      setAuditLog((au.data as NarrativeAuditEntry[]) || []);
     } finally {
       setLoading(false);
     }
@@ -118,5 +169,8 @@ export const useNarrativeFusion = () => {
     }
   }, [orgId, refresh]);
 
-  return { clusters, pressureHistory, observability, loading, generating, refresh, regenerate };
+  return {
+    clusters, pressureHistory, observability, conflicts, auditLog,
+    loading, generating, refresh, regenerate,
+  };
 };
