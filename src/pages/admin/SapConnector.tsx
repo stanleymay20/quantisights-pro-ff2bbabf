@@ -9,8 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 import { Loader2, RefreshCw, AlertTriangle, CheckCircle2, Database, GitBranch, Activity } from "lucide-react";
-import { invokeWithRetry } from "@/lib/edge-retry";
-import { SectionErrorBoundary } from "@/components/SectionErrorBoundary";
+import { invokeWithRetry } from "@/lib/edge-function-retry";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 
 type Connector = { id: string; name: string; connector_type: string; config: any; connection_status: string };
 type Schema = {
