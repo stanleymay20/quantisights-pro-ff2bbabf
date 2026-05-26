@@ -50,11 +50,12 @@ function SapConnectorInner() {
     (async () => {
       const { data } = await supabase
         .from("data_connectors")
-        .select("id,name,connector_type,config,connection_status")
+        .select("id,name,connector_type,config,status,health")
         .eq("organization_id", organizationId)
         .eq("connector_type", "sap_odata");
-      setConnectors((data as Connector[]) ?? []);
-      if (data?.length && !selectedId) setSelectedId(data[0].id);
+      const rows = (data ?? []) as unknown as Connector[];
+      setConnectors(rows);
+      if (rows.length && !selectedId) setSelectedId(rows[0].id);
       setLoading(false);
     })();
   }, [organizationId]);
