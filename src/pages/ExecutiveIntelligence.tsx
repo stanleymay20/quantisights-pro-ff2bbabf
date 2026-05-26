@@ -10,8 +10,9 @@ import IntelligenceDisclaimer from "@/components/IntelligenceDisclaimer";
 import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 import {
   AlertTriangle, ShieldAlert, Activity, Compass, Sparkles,
-  Globe, GitBranch, Zap, CheckCircle2, ArrowUpRight, Clock,
+  Globe, GitBranch, Zap, CheckCircle2, ArrowUpRight, Clock, Layers,
 } from "lucide-react";
+import { NarrativeFusionPanel } from "@/components/executive/NarrativeFusionPanel";
 
 const TIER_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
   informational: "outline", low: "outline", elevated: "secondary", high: "default", critical: "destructive",
@@ -201,6 +202,7 @@ export default function ExecutiveIntelligence() {
           <TabsTrigger value="narratives"><GitBranch className="h-4 w-4 mr-1.5" /> Cross-Domain</TabsTrigger>
           <TabsTrigger value="exposure"><Globe className="h-4 w-4 mr-1.5" /> Exposure</TabsTrigger>
           <TabsTrigger value="forecasts"><Compass className="h-4 w-4 mr-1.5" /> Forecasts</TabsTrigger>
+          <TabsTrigger value="fusion"><Layers className="h-4 w-4 mr-1.5" /> Narrative Fusion</TabsTrigger>
         </TabsList>
 
         <TabsContent value="briefing" className="mt-4 space-y-4">
