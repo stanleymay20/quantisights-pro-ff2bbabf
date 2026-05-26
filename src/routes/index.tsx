@@ -75,6 +75,10 @@ const Compliance = lazy(() => import("@/pages/Compliance"));
 const AlertPlaybooks = lazy(() => import("@/pages/AlertPlaybooks"));
 const SystemHealth = lazy(() => import("@/pages/SystemHealth"));
 const TrustCenter = lazy(() => import("@/pages/TrustCenter"));
+const SecurityPolicy = lazy(() => import("@/pages/SecurityPolicy"));
+const SecurityOverview = lazy(() => import("@/pages/SecurityOverview"));
+const HowAIIsUsed = lazy(() => import("@/pages/HowAIIsUsed"));
+const AISystemClassification = lazy(() => import("@/pages/AISystemClassification"));
 const FairnessObservability = lazy(() => import("@/pages/FairnessObservability"));
 const DecisionMaturity = lazy(() => import("@/pages/DecisionMaturity"));
 
@@ -192,6 +196,10 @@ export const routes: RouteEntry[] = [
   { path: "/incident-response", element: <IncidentResponse />, layout: "public" },
   { path: "/auditability", element: <Auditability />, layout: "public" },
   { path: "/procurement-pack", element: <ProcurementPack />, layout: "public" },
+  { path: "/security-policy", element: <SecurityPolicy />, layout: "public" },
+  { path: "/security-overview", element: <SecurityOverview />, layout: "public" },
+  { path: "/how-ai-is-used", element: <HowAIIsUsed />, layout: "public" },
+  { path: "/ai-system-classification", element: <AISystemClassification />, layout: "public" },
   { path: "/impressum", element: <Impressum />, layout: "public" },
 
   // ══════ Standalone protected (no sidebar) ══════
