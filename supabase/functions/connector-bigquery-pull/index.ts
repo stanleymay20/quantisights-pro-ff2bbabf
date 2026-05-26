@@ -4,7 +4,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsPreflightResponse, getCorsHeaders } from "../_shared/cors.ts";
 import { shouldAllow, recordSuccess, recordFailure, deadLetter } from "../_shared/connector-isolation.ts";
 import { upsertCanonicalMetrics } from "../_shared/canonical-mapper.ts";
-import { enforceLimit, rowToCanonicalMetric, validateMapping, type BigQueryConfig } from "../_shared/warehouse-config.ts";
+import { enforceLimit, assertSelectOnly, logConnectorEvent, rowToCanonicalMetric, validateMapping, type BigQueryConfig } from "../_shared/warehouse-config.ts";
 
 const GW = "https://connector-gateway.lovable.dev/bigquery/bigquery/v2";
 
@@ -23,9 +23,18 @@ serve(async (req) => {
     const m = validateMapping(cfg.mapping);
     if (!m.ok) return json({ error: `config invalid: ${m.reason}` }, 400, cors);
     if (!cfg.query || !cfg.project_id) return json({ error: "config.query and config.project_id required" }, 400, cors);
+    try { assertSelectOnly(cfg.query); }
+    catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      logConnectorEvent({ connector_type: "bigquery", connector_id, organization_id: connector.organization_id, phase: "error", error: msg });
+      return json({ error: `query rejected: ${msg}` }, 400, cors);
+    }
 
     const gate = await shouldAllow(svc, connector.organization_id, connector_id);
-    if (!gate.allow) return json({ skipped: true, reason: gate.reason }, 200, cors);
+    if (!gate.allow) {
+      logConnectorEvent({ connector_type: "bigquery", connector_id, organization_id: connector.organization_id, phase: "skipped", reason: gate.reason });
+      return json({ skipped: true, reason: gate.reason }, 200, cors);
+    }
 
     const LOVABLE = Deno.env.get("LOVABLE_API_KEY");
     const BQ = Deno.env.get("BIGQUERY_API_KEY");
@@ -59,6 +68,7 @@ serve(async (req) => {
       const msg = `dry-run estimate ${estBytes} bytes exceeds cap ${maxBytes}`;
       await recordFailure(svc, connector_id, msg);
       await deadLetter(svc, { orgId: connector.organization_id, connectorId: connector_id, errorClass: "bigquery_query", payload: { queryText, estBytes }, errorMessage: msg });
+      logConnectorEvent({ connector_type: "bigquery", connector_id, organization_id: connector.organization_id, phase: "cost_block", bytes_processed: estBytes, bytes_cap: Number(maxBytes), error: msg });
       return json({ error: msg, est_bytes: estBytes, cap_bytes: Number(maxBytes) }, 413, cors);
     }
 
@@ -101,12 +111,17 @@ serve(async (req) => {
       last_success_at: new Date().toISOString(), consecutive_failures: 0, health: errors.length ? "degraded" : "healthy",
     }).eq("id", connector_id);
 
-    return json({
-      success: true, rows_extracted: rows.length, rows_inserted: inserted, rows_invalid: errors.length,
-      bytes_processed: estBytes, sample_errors: errors.slice(0, 5), duration_ms: Date.now() - t0,
-    }, 200, cors);
+    const duration_ms = Date.now() - t0;
+    logConnectorEvent({
+      connector_type: "bigquery", connector_id, organization_id: connector.organization_id, phase: "complete",
+      rows_extracted: rows.length, rows_inserted: inserted, rows_failed: errors.length,
+      bytes_processed: estBytes, bytes_cap: Number(maxBytes), duration_ms,
+    });
+    return json({ success: true, rows_extracted: rows.length, rows_inserted: inserted, rows_invalid: errors.length, bytes_processed: estBytes, sample_errors: errors.slice(0, 5), duration_ms }, 200, cors);
   } catch (e) {
-    return json({ error: e instanceof Error ? e.message : String(e) }, 500, cors);
+    const msg = e instanceof Error ? e.message : String(e);
+    console.log(JSON.stringify({ ts: new Date().toISOString(), connector_type: "bigquery", phase: "error", error: msg }));
+    return json({ error: msg }, 500, cors);
   }
 });
 

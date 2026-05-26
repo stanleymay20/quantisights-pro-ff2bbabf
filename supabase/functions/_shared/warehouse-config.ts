@@ -123,3 +123,41 @@ export function enforceLimit(query: string, maxRows: number): string {
   if (/\blimit\s+\d+\b/i.test(trimmed)) return trimmed;
   return `${trimmed} LIMIT ${maxRows}`;
 }
+
+/**
+ * Reject anything that isn't a read-only single SELECT/WITH statement.
+ * Blocks INSERT/UPDATE/DELETE/MERGE/CREATE/DROP/ALTER/TRUNCATE/GRANT/CALL and stacked statements.
+ */
+export function assertSelectOnly(query: string): void {
+  const stripped = query
+    .replace(/\/\*[\s\S]*?\*\//g, " ")
+    .replace(/--[^\n]*/g, " ")
+    .trim()
+    .replace(/;+\s*$/, "");
+  if (!stripped) throw new Error("query is empty");
+  if (stripped.includes(";")) throw new Error("multiple statements not allowed");
+  if (!/^\s*(select|with)\b/i.test(stripped)) {
+    throw new Error("only SELECT/WITH queries are allowed");
+  }
+  if (/\b(insert|update|delete|merge|create|drop|alter|truncate|grant|revoke|call|copy|use)\b/i.test(stripped)) {
+    throw new Error("write/DDL keywords are not allowed");
+  }
+}
+
+/** Structured JSON log line for connector telemetry — parseable by log aggregators. */
+export function logConnectorEvent(event: {
+  connector_type: string;
+  connector_id: string;
+  organization_id: string;
+  phase: "start" | "complete" | "error" | "skipped" | "cost_block";
+  rows_extracted?: number;
+  rows_inserted?: number;
+  rows_failed?: number;
+  bytes_processed?: number;
+  bytes_cap?: number;
+  duration_ms?: number;
+  error?: string;
+  reason?: string;
+}): void {
+  console.log(JSON.stringify({ ts: new Date().toISOString(), ...event }));
+}
