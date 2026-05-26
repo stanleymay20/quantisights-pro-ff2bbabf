@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useNarrativeFusion, type FusionCluster, type NarrativeConflict } from "@/hooks/useNarrativeFusion";
-import { SectionErrorBoundary } from "@/components/SectionErrorBoundary";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
