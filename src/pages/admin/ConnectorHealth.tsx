@@ -78,7 +78,7 @@ function arrLen(v: unknown): number {
 }
 
 export default function ConnectorHealth() {
-  const { organization } = useOrganization();
+  const { currentOrg } = useOrganization();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [connectors, setConnectors] = useState<ConnectorRow[]>([]);
@@ -90,46 +90,41 @@ export default function ConnectorHealth() {
   const [sfSchemas, setSfSchemas] = useState<SfSchemaRow[]>([]);
 
   async function loadAll() {
-    if (!organization?.id) return;
+    if (!currentOrg?.id) return;
     setLoading(true);
     try {
-      const orgId = organization.id;
+      const orgId = currentOrg.id;
       const [c, cs, ts, tk, dqq, ce, cev, cmt, crel, sfs] = await Promise.all([
         supabase.from("data_connectors")
           .select("id,name,connector_type,status,health,organization_id")
           .eq("organization_id", orgId).order("name"),
         supabase.from("connector_circuit_state")
-          .select("connector_id,state,failure_count,last_failure_at,opened_at,cooldown_until")
+          .select("connector_id,state,consecutive_failures,opened_at,next_probe_at,last_error,updated_at")
           .eq("organization_id", orgId),
         supabase.from("connector_throttle_state")
-          .select("connector_id,vendor,remaining_quota,reset_at,adaptive_backoff_ms,consecutive_throttled,updated_at")
+          .select("connector_id,vendor,remaining_quota,reset_at,adaptive_backoff_ms,consecutive_throttle_events,last_observed_at")
           .eq("organization_id", orgId),
         supabase.from("connector_token_state")
           .select("connector_id,vendor,expires_at,refresh_failure_count,quarantined,revoked,rotation_count,last_rotated_at")
           .eq("organization_id", orgId),
         supabase.from("connector_dq_scores")
-          .select("connector_id,computed_at,completeness,freshness_minutes,distinctness,schema_drift_count,rows_evaluated")
+          .select("connector_id,computed_at,completeness_score,freshness_score,schema_stability_score,anomaly_score,confidence_score,sample_size")
           .eq("organization_id", orgId).order("computed_at", { ascending: false }).limit(200),
-        supabase.from("canonical_entities").select("connector_id", { count: "exact", head: false })
-          .eq("organization_id", orgId).limit(10000),
-        supabase.from("canonical_events").select("connector_id", { count: "exact", head: false })
-          .eq("organization_id", orgId).limit(10000),
-        supabase.from("canonical_metrics").select("connector_id", { count: "exact", head: false })
-          .eq("organization_id", orgId).limit(10000),
-        supabase.from("canonical_relationships").select("connector_id", { count: "exact", head: false })
-          .eq("organization_id", orgId).limit(10000),
+        supabase.from("canonical_entities").select("connector_id").eq("organization_id", orgId).limit(10000),
+        supabase.from("canonical_events").select("connector_id").eq("organization_id", orgId).limit(10000),
+        supabase.from("canonical_metrics").select("connector_id").eq("organization_id", orgId).limit(10000),
+        supabase.from("canonical_relationships").select("connector_id").eq("organization_id", orgId).limit(10000),
         supabase.from("salesforce_object_schemas")
           .select("connector_id,object_name,api_version,is_custom,last_discovered_at,fields,relationships")
           .eq("organization_id", orgId).order("object_name"),
       ]);
-      setConnectors((c.data as ConnectorRow[]) ?? []);
-      setCircuits((cs.data as CircuitRow[]) ?? []);
-      setThrottles((ts.data as ThrottleRow[]) ?? []);
-      setTokens((tk.data as TokenRow[]) ?? []);
-      setDq((dqq.data as DqRow[]) ?? []);
-      setSfSchemas((sfs.data as SfSchemaRow[]) ?? []);
+      setConnectors(((c.data as unknown) as ConnectorRow[]) ?? []);
+      setCircuits(((cs.data as unknown) as CircuitRow[]) ?? []);
+      setThrottles(((ts.data as unknown) as ThrottleRow[]) ?? []);
+      setTokens(((tk.data as unknown) as TokenRow[]) ?? []);
+      setDq(((dqq.data as unknown) as DqRow[]) ?? []);
+      setSfSchemas(((sfs.data as unknown) as SfSchemaRow[]) ?? []);
 
-      // Group canonical rows by connector_id client-side (RLS scopes to org already)
       const tally = new Map<string, CoverageRow>();
       const add = (rows: any[] | null, key: keyof CoverageRow) => {
         for (const r of rows ?? []) {
@@ -151,7 +146,7 @@ export default function ConnectorHealth() {
     }
   }
 
-  useEffect(() => { void loadAll(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [organization?.id]);
+  useEffect(() => { void loadAll(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [currentOrg?.id]);
 
   const connectorById = useMemo(() => new Map(connectors.map(c => [c.id, c])), [connectors]);
   const dqLatestByConnector = useMemo(() => {
@@ -160,21 +155,13 @@ export default function ConnectorHealth() {
     return m;
   }, [dq]);
   const coverageById = useMemo(() => new Map(coverage.map(r => [r.connector_id, r])), [coverage]);
-  const sfByConnector = useMemo(() => {
-    const m = new Map<string, SfSchemaRow[]>();
-    for (const r of sfSchemas) {
-      const list = m.get(r.connector_id) ?? [];
-      list.push(r); m.set(r.connector_id, list);
-    }
-    return m;
-  }, [sfSchemas]);
 
   const overall = useMemo(() => {
     const open = circuits.filter(c => c.state === "open").length;
     const quarantined = tokens.filter(t => t.quarantined || t.revoked).length;
-    const throttled = throttles.filter(t => t.consecutive_throttled > 0).length;
-    const drift = dq.reduce((acc, r) => acc + (r.schema_drift_count ?? 0), 0);
-    return { open, quarantined, throttled, drift };
+    const throttled = throttles.filter(t => t.consecutive_throttle_events > 0).length;
+    const lowStability = dq.filter(r => Number(r.schema_stability_score) < 0.8).length;
+    return { open, quarantined, throttled, lowStability };
   }, [circuits, tokens, throttles, dq]);
 
   return (
