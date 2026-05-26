@@ -9113,6 +9113,75 @@ export type Database = {
           },
         ]
       }
+      sap_object_schemas: {
+        Row: {
+          api_version: string | null
+          connector_id: string
+          created_at: string
+          entity_set: string
+          entity_type: string
+          fields: Json
+          id: string
+          is_custom: boolean
+          key_fields: Json
+          last_discovered_at: string
+          navigation_properties: Json
+          odata_version: string
+          organization_id: string
+          record_count_estimate: number | null
+          service_name: string
+        }
+        Insert: {
+          api_version?: string | null
+          connector_id: string
+          created_at?: string
+          entity_set: string
+          entity_type: string
+          fields?: Json
+          id?: string
+          is_custom?: boolean
+          key_fields?: Json
+          last_discovered_at?: string
+          navigation_properties?: Json
+          odata_version?: string
+          organization_id: string
+          record_count_estimate?: number | null
+          service_name: string
+        }
+        Update: {
+          api_version?: string | null
+          connector_id?: string
+          created_at?: string
+          entity_set?: string
+          entity_type?: string
+          fields?: Json
+          id?: string
+          is_custom?: boolean
+          key_fields?: Json
+          last_discovered_at?: string
+          navigation_properties?: Json
+          odata_version?: string
+          organization_id?: string
+          record_count_estimate?: number | null
+          service_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sap_object_schemas_connector_id_fkey"
+            columns: ["connector_id"]
+            isOneToOne: false
+            referencedRelation: "data_connectors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sap_object_schemas_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       scenario_assumptions: {
         Row: {
           adjustment_type: string
@@ -10426,6 +10495,7 @@ export type Database = {
         | "snowflake"
         | "bigquery"
         | "webhook"
+        | "sap_odata"
       data_origin_type: "client" | "internal" | "external"
       intelligence_advisory_kind:
         | "operational"
@@ -10624,6 +10694,7 @@ export const Constants = {
         "snowflake",
         "bigquery",
         "webhook",
+        "sap_odata",
       ],
       data_origin_type: ["client", "internal", "external"],
       intelligence_advisory_kind: [
