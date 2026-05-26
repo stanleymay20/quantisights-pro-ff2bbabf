@@ -88,12 +88,15 @@ serve(async (req) => {
       last_success_at: new Date().toISOString(), consecutive_failures: 0, health: errors.length ? "degraded" : "healthy",
     }).eq("id", connector_id);
 
-    return json({
-      success: true, rows_extracted: rows.length, rows_inserted: inserted, rows_invalid: errors.length,
-      sample_errors: errors.slice(0, 5), duration_ms: Date.now() - t0,
-    }, 200, cors);
+    const duration_ms = Date.now() - t0;
+    logConnectorEvent({
+      connector_type: "snowflake", connector_id, organization_id: connector.organization_id,
+      phase: "complete", rows_extracted: rows.length, rows_inserted: inserted, rows_failed: errors.length, duration_ms,
+    });
+    return json({ success: true, rows_extracted: rows.length, rows_inserted: inserted, rows_invalid: errors.length, sample_errors: errors.slice(0, 5), duration_ms }, 200, cors);
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
+    console.log(JSON.stringify({ ts: new Date().toISOString(), connector_type: "snowflake", phase: "error", error: msg }));
     return json({ error: msg }, 500, cors);
   }
 });
