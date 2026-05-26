@@ -82,7 +82,8 @@ function SapConnectorInner() {
     try {
       const res = await invokeWithRetry("connector-sap-discover", { body: { connector_id: selectedId } });
       if (res.error) throw res.error;
-      toast.success(`Discovery complete: ${res.data?.discovered ?? 0} entities, ${res.data?.drift_alerts ?? 0} drift alerts`);
+      const d: any = res.data;
+      toast.success(`Discovery complete: ${d?.discovered ?? 0} entities, ${d?.drift_alerts ?? 0} drift alerts`);
       // refresh
       setSelectedId((id) => id);
       const ev = new Event("focus");
