@@ -6095,6 +6095,377 @@ export type Database = {
           },
         ]
       }
+      graph_attention_views: {
+        Row: {
+          abstraction_level: number
+          compressed_summary: string
+          expires_at: string
+          generated_at: string
+          id: string
+          organization_id: string
+          persona: string
+          priority_score: number
+          supporting_edges: Json
+          supporting_nodes: Json
+          title: string
+        }
+        Insert: {
+          abstraction_level?: number
+          compressed_summary: string
+          expires_at?: string
+          generated_at?: string
+          id?: string
+          organization_id: string
+          persona: string
+          priority_score?: number
+          supporting_edges?: Json
+          supporting_nodes?: Json
+          title: string
+        }
+        Update: {
+          abstraction_level?: number
+          compressed_summary?: string
+          expires_at?: string
+          generated_at?: string
+          id?: string
+          organization_id?: string
+          persona?: string
+          priority_score?: number
+          supporting_edges?: Json
+          supporting_nodes?: Json
+          title?: string
+        }
+        Relationships: []
+      }
+      graph_governance_events: {
+        Row: {
+          actor: string
+          created_at: string
+          edge_id: string | null
+          escalation_threshold_breached: boolean
+          event_type: string
+          id: string
+          new_state: Json
+          node_id: string | null
+          organization_id: string
+          prior_state: Json
+          reason: string | null
+          threshold_kind: string | null
+          threshold_value: number | null
+        }
+        Insert: {
+          actor?: string
+          created_at?: string
+          edge_id?: string | null
+          escalation_threshold_breached?: boolean
+          event_type: string
+          id?: string
+          new_state?: Json
+          node_id?: string | null
+          organization_id: string
+          prior_state?: Json
+          reason?: string | null
+          threshold_kind?: string | null
+          threshold_value?: number | null
+        }
+        Update: {
+          actor?: string
+          created_at?: string
+          edge_id?: string | null
+          escalation_threshold_breached?: boolean
+          event_type?: string
+          id?: string
+          new_state?: Json
+          node_id?: string | null
+          organization_id?: string
+          prior_state?: Json
+          reason?: string | null
+          threshold_kind?: string | null
+          threshold_value?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "graph_governance_events_edge_id_fkey"
+            columns: ["edge_id"]
+            isOneToOne: false
+            referencedRelation: "operational_graph_edges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "graph_governance_events_node_id_fkey"
+            columns: ["node_id"]
+            isOneToOne: false
+            referencedRelation: "operational_graph_nodes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      graph_memory_patterns: {
+        Row: {
+          created_at: string
+          historical_effectiveness: number | null
+          historical_outcomes: Json
+          id: string
+          last_seen_at: string
+          organization_id: string
+          pattern_signature: string
+          pattern_type: string
+          recurrence_frequency: number
+          recurring_path: Json
+        }
+        Insert: {
+          created_at?: string
+          historical_effectiveness?: number | null
+          historical_outcomes?: Json
+          id?: string
+          last_seen_at?: string
+          organization_id: string
+          pattern_signature: string
+          pattern_type: string
+          recurrence_frequency?: number
+          recurring_path?: Json
+        }
+        Update: {
+          created_at?: string
+          historical_effectiveness?: number | null
+          historical_outcomes?: Json
+          id?: string
+          last_seen_at?: string
+          organization_id?: string
+          pattern_signature?: string
+          pattern_type?: string
+          recurrence_frequency?: number
+          recurring_path?: Json
+        }
+        Relationships: []
+      }
+      graph_observability: {
+        Row: {
+          compression_ratio: number
+          conflict_count: number
+          day: string
+          edges_created: number
+          graph_density: number
+          id: string
+          nodes_created: number
+          organization_id: string
+          propagation_paths: number
+          reasoning_chain_count: number
+          recurring_pattern_count: number
+          topology_compute_ms: number
+          updated_at: string
+        }
+        Insert: {
+          compression_ratio?: number
+          conflict_count?: number
+          day?: string
+          edges_created?: number
+          graph_density?: number
+          id?: string
+          nodes_created?: number
+          organization_id: string
+          propagation_paths?: number
+          reasoning_chain_count?: number
+          recurring_pattern_count?: number
+          topology_compute_ms?: number
+          updated_at?: string
+        }
+        Update: {
+          compression_ratio?: number
+          conflict_count?: number
+          day?: string
+          edges_created?: number
+          graph_density?: number
+          id?: string
+          nodes_created?: number
+          organization_id?: string
+          propagation_paths?: number
+          reasoning_chain_count?: number
+          recurring_pattern_count?: number
+          topology_compute_ms?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      graph_snapshot_versions: {
+        Row: {
+          created_at: string
+          density: number
+          edge_count: number
+          edge_state: Json
+          id: string
+          node_count: number
+          node_state: Json
+          organization_id: string
+          snapshot_hash: string
+          snapshot_label: string
+          topology_state: Json
+        }
+        Insert: {
+          created_at?: string
+          density?: number
+          edge_count?: number
+          edge_state?: Json
+          id?: string
+          node_count?: number
+          node_state?: Json
+          organization_id: string
+          snapshot_hash: string
+          snapshot_label: string
+          topology_state?: Json
+        }
+        Update: {
+          created_at?: string
+          density?: number
+          edge_count?: number
+          edge_state?: Json
+          id?: string
+          node_count?: number
+          node_state?: Json
+          organization_id?: string
+          snapshot_hash?: string
+          snapshot_label?: string
+          topology_state?: Json
+        }
+        Relationships: []
+      }
+      graph_topology_scores: {
+        Row: {
+          blast_radius_breakdown: Json
+          blast_radius_score: number
+          centrality_score: number
+          computed_at: string
+          conflict_density: number
+          cross_source_consistency: number
+          decision_dependency_score: number
+          escalation_density: number
+          evidence_confidence: number
+          exposure_score: number
+          historical_accuracy: number
+          id: string
+          node_id: string
+          operational_criticality: number
+          organization_id: string
+          propagation_risk: number
+          relationship_stability: number
+          scoring_breakdown: Json
+          topology_reliability: number
+          volatility_score: number
+        }
+        Insert: {
+          blast_radius_breakdown?: Json
+          blast_radius_score?: number
+          centrality_score?: number
+          computed_at?: string
+          conflict_density?: number
+          cross_source_consistency?: number
+          decision_dependency_score?: number
+          escalation_density?: number
+          evidence_confidence?: number
+          exposure_score?: number
+          historical_accuracy?: number
+          id?: string
+          node_id: string
+          operational_criticality?: number
+          organization_id: string
+          propagation_risk?: number
+          relationship_stability?: number
+          scoring_breakdown?: Json
+          topology_reliability?: number
+          volatility_score?: number
+        }
+        Update: {
+          blast_radius_breakdown?: Json
+          blast_radius_score?: number
+          centrality_score?: number
+          computed_at?: string
+          conflict_density?: number
+          cross_source_consistency?: number
+          decision_dependency_score?: number
+          escalation_density?: number
+          evidence_confidence?: number
+          exposure_score?: number
+          historical_accuracy?: number
+          id?: string
+          node_id?: string
+          operational_criticality?: number
+          organization_id?: string
+          propagation_risk?: number
+          relationship_stability?: number
+          scoring_breakdown?: Json
+          topology_reliability?: number
+          volatility_score?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "graph_topology_scores_node_id_fkey"
+            columns: ["node_id"]
+            isOneToOne: true
+            referencedRelation: "operational_graph_nodes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      graph_traversal_cache: {
+        Row: {
+          confidence: number
+          confidence_breakdown: Json
+          created_at: string
+          evidence_refs: Json
+          expires_at: string
+          id: string
+          organization_id: string
+          reasoning_chain: Json
+          start_node_id: string
+          target_node_id: string | null
+          traversal_path: Json
+          traversal_type: string
+        }
+        Insert: {
+          confidence?: number
+          confidence_breakdown?: Json
+          created_at?: string
+          evidence_refs?: Json
+          expires_at?: string
+          id?: string
+          organization_id: string
+          reasoning_chain?: Json
+          start_node_id: string
+          target_node_id?: string | null
+          traversal_path?: Json
+          traversal_type: string
+        }
+        Update: {
+          confidence?: number
+          confidence_breakdown?: Json
+          created_at?: string
+          evidence_refs?: Json
+          expires_at?: string
+          id?: string
+          organization_id?: string
+          reasoning_chain?: Json
+          start_node_id?: string
+          target_node_id?: string | null
+          traversal_path?: Json
+          traversal_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "graph_traversal_cache_start_node_id_fkey"
+            columns: ["start_node_id"]
+            isOneToOne: false
+            referencedRelation: "operational_graph_nodes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "graph_traversal_cache_target_node_id_fkey"
+            columns: ["target_node_id"]
+            isOneToOne: false
+            referencedRelation: "operational_graph_nodes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       industry_benchmarks: {
         Row: {
           created_at: string
@@ -8385,6 +8756,141 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      operational_graph_edges: {
+        Row: {
+          confidence: number
+          created_at: string
+          directionality: string
+          edge_staleness_state: string
+          edge_type: string
+          evidence_refs: Json
+          id: string
+          last_validated_at: string
+          max_propagation_influence: number
+          organization_id: string
+          propagation_saturation_score: number
+          propagation_weight: number
+          provenance: Json
+          relationship_semantics: string
+          source_node_id: string
+          strength: number
+          target_node_id: string
+          updated_at: string
+          validity_decay_score: number
+        }
+        Insert: {
+          confidence?: number
+          created_at?: string
+          directionality?: string
+          edge_staleness_state?: string
+          edge_type: string
+          evidence_refs?: Json
+          id?: string
+          last_validated_at?: string
+          max_propagation_influence?: number
+          organization_id: string
+          propagation_saturation_score?: number
+          propagation_weight?: number
+          provenance?: Json
+          relationship_semantics?: string
+          source_node_id: string
+          strength?: number
+          target_node_id: string
+          updated_at?: string
+          validity_decay_score?: number
+        }
+        Update: {
+          confidence?: number
+          created_at?: string
+          directionality?: string
+          edge_staleness_state?: string
+          edge_type?: string
+          evidence_refs?: Json
+          id?: string
+          last_validated_at?: string
+          max_propagation_influence?: number
+          organization_id?: string
+          propagation_saturation_score?: number
+          propagation_weight?: number
+          provenance?: Json
+          relationship_semantics?: string
+          source_node_id?: string
+          strength?: number
+          target_node_id?: string
+          updated_at?: string
+          validity_decay_score?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "operational_graph_edges_source_node_id_fkey"
+            columns: ["source_node_id"]
+            isOneToOne: false
+            referencedRelation: "operational_graph_nodes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "operational_graph_edges_target_node_id_fkey"
+            columns: ["target_node_id"]
+            isOneToOne: false
+            referencedRelation: "operational_graph_nodes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      operational_graph_nodes: {
+        Row: {
+          canonical_key: string
+          created_at: string
+          exposure_score: number
+          id: string
+          metadata: Json
+          node_ref_id: string | null
+          node_type: string
+          operational_criticality: number
+          operational_state: string | null
+          organization_id: string
+          status: string
+          summary: string | null
+          title: string
+          updated_at: string
+          volatility_score: number
+        }
+        Insert: {
+          canonical_key: string
+          created_at?: string
+          exposure_score?: number
+          id?: string
+          metadata?: Json
+          node_ref_id?: string | null
+          node_type: string
+          operational_criticality?: number
+          operational_state?: string | null
+          organization_id: string
+          status?: string
+          summary?: string | null
+          title: string
+          updated_at?: string
+          volatility_score?: number
+        }
+        Update: {
+          canonical_key?: string
+          created_at?: string
+          exposure_score?: number
+          id?: string
+          metadata?: Json
+          node_ref_id?: string | null
+          node_type?: string
+          operational_criticality?: number
+          operational_state?: string | null
+          organization_id?: string
+          status?: string
+          summary?: string | null
+          title?: string
+          updated_at?: string
+          volatility_score?: number
+        }
+        Relationships: []
       }
       orchestration_runs: {
         Row: {
