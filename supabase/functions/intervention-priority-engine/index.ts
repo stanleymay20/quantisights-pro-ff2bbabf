@@ -23,7 +23,7 @@ Deno.serve(async (req) => {
     let q = supabase
       .from("executive_interventions")
       .select("id, organization_id, sla_due_at, status")
-      .in("status", ["new", "acknowledged", "in_progress", "escalated"])
+      .in("status", ["proposed", "acknowledged", "assigned", "in_progress", "escalated"])
       .limit(500);
     if (orgId) q = q.eq("organization_id", orgId);
 
