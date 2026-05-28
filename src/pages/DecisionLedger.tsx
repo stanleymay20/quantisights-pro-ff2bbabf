@@ -425,7 +425,7 @@ const DecisionLedgerPage = () => {
               <CardContent className="p-4">
                 <p className="text-xs text-muted-foreground flex items-center gap-1"><TrendingUp className="w-3 h-3" /> Avg Outcome</p>
                 <p className={`text-2xl font-bold mt-1 ${avgOutcomeDelta !== null && avgOutcomeDelta > 0 ? "text-success" : avgOutcomeDelta !== null && avgOutcomeDelta < 0 ? "text-destructive" : ""}`}>
-                  {avgOutcomeDelta !== null ? `${avgOutcomeDelta > 0 ? "+" : ""}${avgOutcomeDelta.toFixed(1)}%` : "—"}
+                  {avgOutcomeDelta !== null ? `${avgOutcomeDelta > 0 ? "+" : ""}${formatCompact(avgOutcomeDelta)}` : "—"}
                 </p>
               </CardContent>
             </Card>
