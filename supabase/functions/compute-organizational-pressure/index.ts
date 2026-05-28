@@ -121,6 +121,8 @@ async function gatherForOrg(sb: any, orgId: string) {
   const ins = await sb.from("insights")
     .select("id,message,severity,category,confidence_score,created_at")
     .eq("organization_id", orgId).gte("created_at", sinceIso).limit(800);
+  if (ins.error) console.error("[pressure] insights query error:", ins.error);
+  console.log(`[pressure] insights since=${sinceIso} returned=${(ins.data ?? []).length}`);
   for (const r of (ins.data ?? [])) {
     const sw = severityWeight(r.severity);
     const confMod = Number(r.confidence_score ?? 60) / 100;
