@@ -195,7 +195,6 @@ serve(async (req) => {
 
     const result = {
       organization_id,
-      dataset_id,
       decision_id: decision_id || null,
       revenue_delta_pct,
       cost_delta_pct,
@@ -261,7 +260,7 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ success: true, simulation_id: inserted.id, ...result, baselines_used, ...responseMeta }),
+      JSON.stringify({ success: true, simulation_id: inserted.id, ...result, dataset_id, baselines_used, ...responseMeta }),
 
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
