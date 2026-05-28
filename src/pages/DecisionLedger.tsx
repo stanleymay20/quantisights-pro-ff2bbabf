@@ -34,6 +34,7 @@ import DecisionEvidencePanel from "@/components/decision-intelligence/DecisionEv
 import ExplainDecisionPanel from "@/components/dashboard/ExplainDecisionPanel";
 import type { ExplanationMetadata } from "@/components/dashboard/ExplainDecisionPanel";
 import { onDecisionApproved, onExecutionStatusChanged, checkEvaluability, evaluabilityColor, evaluabilityBadgeVariant } from "@/lib/decision-lifecycle";
+import { formatCompact } from "@/lib/format-locale";
 import type { EvaluabilityResult } from "@/lib/decision-lifecycle";
 
 interface Decision {
