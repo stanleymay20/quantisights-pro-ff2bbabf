@@ -374,8 +374,18 @@ serve(async (req) => {
     let inserted = 0;
     const writeErrors: RecordError[] = [];
 
+    // Dedupe within each batch on the upsert conflict key — Postgres rejects
+    // ON CONFLICT when the same key appears twice in one statement.
+    const CONFLICT_KEYS = ["organization_id", "metric_type", "date", "region", "segment", "source_id"] as const;
+    const dedupeKey = (r: Record<string, unknown>) =>
+      CONFLICT_KEYS.map((k) => (r[k] ?? "")).join("|");
+
     for (let i = 0; i < metrics.length; i += BATCH_SIZE) {
-      const batch = metrics.slice(i, i + BATCH_SIZE);
+      const rawBatch = metrics.slice(i, i + BATCH_SIZE);
+      // Last-write-wins dedupe inside the batch
+      const seen = new Map<string, Record<string, unknown>>();
+      for (const row of rawBatch) seen.set(dedupeKey(row as Record<string, unknown>), row);
+      const batch = Array.from(seen.values());
       const batchIndex = Math.floor(i / BATCH_SIZE);
 
       const { error: upsertErr } = await supabase
@@ -416,6 +426,7 @@ serve(async (req) => {
         inserted += batch.length;
       }
     }
+
 
     /* ── 11. Finalize job ────────────────────────────────────── */
     const allErrors = [
