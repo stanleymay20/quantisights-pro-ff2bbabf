@@ -28,8 +28,8 @@ const ALL_DIMS: Dim[] = [
   "geopolitical_pressure",
 ];
 
-const HALF_LIFE_HOURS = 72;          // recency decay
-const LOOKBACK_HOURS = 14 * 24;      // 14 days
+const HALF_LIFE_HOURS = 14 * 24;     // recency decay (slower so older demo signals still register)
+const LOOKBACK_HOURS = 60 * 24;      // 60 days
 const ACCEL_LOOKBACK_HOURS = 24;     // pressure_acceleration window
 
 function clamp(n: number, lo = 0, hi = 100) { return Math.max(lo, Math.min(hi, n)); }
