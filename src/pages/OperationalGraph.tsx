@@ -11,7 +11,8 @@ import { DependencyChainPanel } from "@/components/graph/DependencyChainPanel";
 import { NarrativeConflictMatrix } from "@/components/graph/NarrativeConflictMatrix";
 import { GovernanceLineageExplorer } from "@/components/graph/GovernanceLineageExplorer";
 import { GraphReasoningTrace } from "@/components/graph/GraphReasoningTrace";
-
+import GovernanceIntegrityBadge from "@/components/executive/GovernanceIntegrityBadge";
+import { Link } from "react-router-dom";
 export default function OperationalGraph() {
   const { nodes, edges, scores, attention, patterns, governance, loading, busy, rebuildGraph } = useOperationalGraph();
 
