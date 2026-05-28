@@ -256,7 +256,7 @@ Deno.serve(async (req) => {
           canonical_key: `advisory:${a.id}`,
           title: a.title ?? a.action ?? "Advisory",
           status: a.status === "expired" || a.status === "resolved" ? "retired" : "active",
-          operational_criticality: Math.round((a.confidence ?? 0.5) * 80),
+          operational_criticality: Math.round(Math.min(1, (a.confidence ?? 0.5) > 1 ? (a.confidence ?? 50) / 100 : (a.confidence ?? 0.5)) * 80),
           metadata: {
             confidence: a.confidence,
             priority: a.priority,
