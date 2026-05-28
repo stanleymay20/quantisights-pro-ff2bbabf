@@ -123,7 +123,17 @@ Deno.serve(async (req) => {
         });
       }
     }
-    await admin.from("metrics").insert(metricRows);
+    const { error: metricsErr } = await admin.from("metrics").insert(metricRows);
+    if (metricsErr) throw new Error("Failed to seed demo metrics: " + metricsErr.message);
+
+    // Dashboard first paint depends on precomputed summaries. Without this,
+    // demo data exists but the dashboard still reads hasData=false and shows
+    // the empty-state CTA again.
+    const { error: summaryErr } = await admin.rpc("refresh_metric_summaries", {
+      _org_id: orgId,
+      _dataset_id: datasetId,
+    });
+    if (summaryErr) throw new Error("Failed to prepare demo metric summaries: " + summaryErr.message);
 
     // ─── Executive Risk Index ───
     await admin.from("executive_risk_index").insert([
@@ -379,6 +389,7 @@ Deno.serve(async (req) => {
     // has narrative clusters, pressure snapshots, graph nodes/edges, and
     // prioritised interventions — instead of empty panels.
     const activationChain = [
+      "refresh-aggregates",
       "executive-brief-generator",
       "narrative-fusion-engine",
       "compute-organizational-pressure",
@@ -397,7 +408,9 @@ Deno.serve(async (req) => {
               apikey: serviceKey,
               Authorization: `Bearer ${serviceKey}`,
             },
-            body: JSON.stringify({ organization_id: orgId }),
+            body: JSON.stringify(fn === "refresh-aggregates"
+              ? { organization_id: orgId, dataset_id: datasetId, workspace_id: workspaceId }
+              : { organization_id: orgId }),
           });
         } catch (e) {
           console.error(`[demo-activation] ${fn} failed:`, (e as Error).message);

@@ -53,7 +53,15 @@ export const useMetricsSummary = (orgId: string | null, datasetId: string | null
       });
 
       if (error || !data) {
-        if (!cached) setLoading(false);
+        if (!cached) {
+          const { count } = await supabase
+            .from("metrics")
+            .select("id", { count: "exact", head: true })
+            .eq("organization_id", orgId)
+            .eq("dataset_id", datasetId);
+          setHasData((count ?? 0) > 0);
+          setLoading(false);
+        }
         return;
       }
 
@@ -69,7 +77,16 @@ export const useMetricsSummary = (orgId: string | null, datasetId: string | null
       }));
 
       setSummaries(mapped);
-      setHasData(mapped.length > 0);
+      if (mapped.length > 0) {
+        setHasData(true);
+      } else {
+        const { count } = await supabase
+          .from("metrics")
+          .select("id", { count: "exact", head: true })
+          .eq("organization_id", orgId)
+          .eq("dataset_id", datasetId);
+        setHasData((count ?? 0) > 0);
+      }
       setLoading(false);
 
       // Cache for instant repeat loads
