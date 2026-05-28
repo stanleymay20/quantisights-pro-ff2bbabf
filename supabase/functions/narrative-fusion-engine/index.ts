@@ -323,7 +323,9 @@ function buildNarrative(c: {
   const itemCount = c.signals.filter((s) => s.source === "item").length;
   const intvCount = c.signals.filter((s) => s.source === "intervention").length;
   const advCount = c.signals.filter((s) => s.source === "advisory").length;
-  parts.push(`Fused from ${itemCount} intelligence items, ${intvCount} interventions, ${advCount} advisories.`);
+  const insCount = c.signals.filter((s) => s.source === "insight").length;
+  const aiCount = c.signals.filter((s) => s.source === "advisory_instance").length;
+  parts.push(`Fused from ${itemCount} intelligence items, ${intvCount} interventions, ${advCount} advisories, ${insCount} insights, ${aiCount} advisory instances.`);
   if (c.entities.length) parts.push(`Affecting ${c.entities.slice(0, 3).join(", ")}.`);
   parts.push(`Pressure: ${Math.round(c.pressure)} / Velocity: ${c.velocity.toFixed(1)}.`);
   return parts.join(" ");
@@ -434,9 +436,9 @@ async function enforceBudgets(sb: any, orgId: string, budget: AnyRec, today: str
 // ============ Main per-org pipeline ============
 async function fuseForOrg(sb: any, orgId: string): Promise<AnyRec> {
   const t0 = Date.now();
-  const signals = await gatherInputs(sb, orgId);
+  const { signals, counts: input_counts } = await gatherInputs(sb, orgId);
   if (!signals.length) {
-    return { organization_id: orgId, inputs_count: 0, clusters_count: 0, message: "no signals" };
+    return { organization_id: orgId, inputs_count: 0, input_counts, clusters_count: 0, message: "no signals" };
   }
 
   // Load budget config
