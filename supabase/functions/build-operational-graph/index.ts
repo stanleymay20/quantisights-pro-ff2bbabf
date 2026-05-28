@@ -88,29 +88,28 @@ Deno.serve(async (req) => {
           .maybeSingle(),
         supabase
           .from("executive_interventions")
-          .select("id,title,intervention_type,status,priority,created_at,source_type,source_id,resolved_at,outcome_score")
+          .select("id,title,intervention_type,status,severity,urgency,created_at,source_type,source_id,decision_id,resolved_at,outcome_score")
           .eq("organization_id", organization_id)
-          .in("status", ["pending", "in_progress", "resolved", "deferred"])
+          .in("status", ["pending", "in_progress", "resolved", "deferred", "acknowledged", "assigned", "acted"])
           .order("created_at", { ascending: false })
           .limit(200),
         supabase
           .from("decision_ledger")
-          .select("id,title,status,confidence,priority,decision_type,created_at,intelligence_item_id,advisory_id,evidence_sources")
+          .select("id,recommended_action,chosen_action,decision_status,confidence_at_decision,decision_type,decided_at,created_at,advisory_instance_id,linked_aicis_recommendation_id,evidence_sources")
           .eq("organization_id", organization_id)
           .order("created_at", { ascending: false })
           .limit(200),
         supabase
-          .from("prescriptive_advisories")
-          .select("id,title,recommended_action,confidence_score,status,created_at,supporting_signal_ids")
+          .from("advisory_instances")
+          .select("id,title,action,confidence,status,priority,created_at,source_evidence,advisory_lane")
           .eq("organization_id", organization_id)
           .order("created_at", { ascending: false })
           .limit(150),
         supabase
-          .from("intelligence_inbox")
-          .select("id,title,status,severity,created_at,domain,country_iso3")
+          .from("aicis_intelligence_items")
+          .select("id,title,status,severity,urgency,ingested_at,occurred_at,domain,geography")
           .eq("organization_id", organization_id)
-          .in("status", ["new", "scored", "briefed", "advised", "routed"])
-          .order("created_at", { ascending: false })
+          .order("ingested_at", { ascending: false })
           .limit(100),
         supabase
           .from("narrative_conflicts")
@@ -119,6 +118,14 @@ Deno.serve(async (req) => {
           .eq("status", "open")
           .limit(50),
       ]);
+
+    if (narratives.error) console.warn("narratives select error:", narratives.error.message);
+    if (pressures.error) console.warn("pressures select error:", pressures.error.message);
+    if (interventions.error) console.warn("interventions select error:", interventions.error.message);
+    if (decisions.error) console.warn("decisions select error:", decisions.error.message);
+    if (advisories.error) console.warn("advisories select error:", advisories.error.message);
+    if (inbox.error) console.warn("inbox select error:", inbox.error.message);
+    if (conflicts.error) console.warn("conflicts select error:", conflicts.error.message);
 
     const nodeBuf: NodeUpsert[] = [];
     const refToKey: Record<string, string> = {}; // ref_type:ref_id → canonical_key
