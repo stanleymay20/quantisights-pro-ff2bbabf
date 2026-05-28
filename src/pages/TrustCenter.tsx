@@ -10,6 +10,17 @@ import LiveTrustMetrics from "@/components/security/LiveTrustMetrics";
 import ProcurementReadinessChecklist from "@/components/security/ProcurementReadinessChecklist";
 import DownloadProcurementPack from "@/components/security/DownloadProcurementPack";
 
+const reasoningPrinciples: { label: string; value: string }[] = [
+  { label: "Deterministic reasoning", value: "All scoring, propagation, and classification run through pure-function engines. LLMs never compute numbers." },
+  { label: "Confidence decomposition", value: "Every composite confidence is a sum of five named contributors: evidence strength, relationship stability, cross-source consistency, topology reliability, historical accuracy." },
+  { label: "Causal restrictions", value: "Edges declare 'deterministic', 'statistical', 'heuristic', or 'correlation_only'. We never promote correlation into causation without governance approval." },
+  { label: "Suppression transparency", value: "Every node, edge, or narrative suppressed by the engine is logged with reason, threshold, and actor in an append-only governance log." },
+  { label: "Evidence lineage", value: "Every executive surface traces back to raw signals through documented hops. No claim exists without a chain of evidence_refs." },
+  { label: "No hallucinated topology", value: "Edges are only created from observed co-occurrence, declared dependencies, or governance-approved patterns. The graph never invents relationships." },
+  { label: "Confidence cap", value: "Composite confidence is hard-capped at 0.85. Reaching 1.0 would imply certainty we cannot honestly claim." },
+  { label: "Append-only audit", value: "Decision ledger, narrative audit log, and graph governance events are DENIED UPDATE/DELETE at the database level." },
+];
+
 const sections = [
   {
     icon: Brain,
