@@ -22,7 +22,7 @@ Deno.serve(async (req) => {
 
     let q = supabase
       .from("executive_interventions")
-      .select("id, organization_id, sla_target_at, status")
+      .select("id, organization_id, sla_due_at, status")
       .in("status", ["new", "acknowledged", "in_progress", "escalated"])
       .limit(500);
     if (orgId) q = q.eq("organization_id", orgId);
@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
     for (const row of rows ?? []) {
       // Trigger recompute by no-op update (auto_score trigger fires on UPDATE)
       const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
-      if (row.sla_target_at && new Date(row.sla_target_at).getTime() < now && row.status !== "escalated") {
+      if (row.sla_due_at && new Date(row.sla_due_at).getTime() < now && row.status !== "escalated") {
         updates.status = "escalated";
         updates.escalation_tier = "executive";
         breached += 1;
