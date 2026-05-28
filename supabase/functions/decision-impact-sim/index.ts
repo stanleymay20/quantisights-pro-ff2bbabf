@@ -261,7 +261,8 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ success: true, simulation_id: inserted.id, ...result, ...responseMeta }),
+      JSON.stringify({ success: true, simulation_id: inserted.id, ...result, baselines_used, ...responseMeta }),
+
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (e) {
