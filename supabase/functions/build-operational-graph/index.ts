@@ -195,6 +195,8 @@ Deno.serve(async (req) => {
 
     // Interventions
     for (const iv of (interventions.data ?? []) as any[]) {
+      const sev = (iv.severity ?? "").toLowerCase();
+      const crit = sev === "critical" ? 90 : sev === "high" ? 70 : sev === "medium" ? 50 : 35;
       pushNode(
         {
           organization_id,
@@ -204,11 +206,12 @@ Deno.serve(async (req) => {
           title: iv.title ?? "Intervention",
           status: iv.status === "resolved" ? "retired" : "active",
           operational_state: iv.status,
-          operational_criticality: iv.priority === "critical" ? 90 : iv.priority === "high" ? 70 : 40,
+          operational_criticality: crit,
           metadata: {
             type: iv.intervention_type,
             source_type: iv.source_type,
             source_id: iv.source_id,
+            decision_id: iv.decision_id,
             outcome_score: iv.outcome_score,
             created_at: iv.created_at,
           },
@@ -219,21 +222,24 @@ Deno.serve(async (req) => {
 
     // Decisions
     for (const d of (decisions.data ?? []) as any[]) {
+      const dStatus = d.decision_status ?? "open";
+      const conf = d.confidence_at_decision ?? 0.5;
+      const crit = conf >= 0.8 ? 80 : conf >= 0.6 ? 65 : 50;
       pushNode(
         {
           organization_id,
           node_type: "decision",
           node_ref_id: d.id,
           canonical_key: `decision:${d.id}`,
-          title: d.title ?? "Decision",
-          status: d.status === "executed" || d.status === "rejected" ? "retired" : "active",
-          operational_criticality: d.priority === "critical" ? 90 : d.priority === "high" ? 70 : 50,
+          title: d.recommended_action ?? d.chosen_action ?? "Decision",
+          status: dStatus === "executed" || dStatus === "rejected" || dStatus === "completed" ? "retired" : "active",
+          operational_criticality: crit,
           metadata: {
             type: d.decision_type,
-            confidence: d.confidence,
-            advisory_id: d.advisory_id,
-            intelligence_item_id: d.intelligence_item_id,
-            created_at: d.created_at,
+            confidence: conf,
+            advisory_instance_id: d.advisory_instance_id,
+            linked_aicis_recommendation_id: d.linked_aicis_recommendation_id,
+            created_at: d.created_at ?? d.decided_at,
           },
         },
         `decision:${d.id}`,
@@ -248,10 +254,15 @@ Deno.serve(async (req) => {
           node_type: "advisory",
           node_ref_id: a.id,
           canonical_key: `advisory:${a.id}`,
-          title: a.title ?? a.recommended_action ?? "Advisory",
-          status: a.status === "expired" ? "retired" : "active",
-          operational_criticality: Math.round((a.confidence_score ?? 0.5) * 80),
-          metadata: { confidence: a.confidence_score, created_at: a.created_at, supporting_signal_ids: a.supporting_signal_ids },
+          title: a.title ?? a.action ?? "Advisory",
+          status: a.status === "expired" || a.status === "resolved" ? "retired" : "active",
+          operational_criticality: Math.round((a.confidence ?? 0.5) * 80),
+          metadata: {
+            confidence: a.confidence,
+            priority: a.priority,
+            lane: a.advisory_lane,
+            created_at: a.created_at,
+          },
         },
         `advisory:${a.id}`,
       );
@@ -259,6 +270,7 @@ Deno.serve(async (req) => {
 
     // Inbox signals
     for (const s of (inbox.data ?? []) as any[]) {
+      const sev = (s.severity ?? "").toLowerCase();
       pushNode(
         {
           organization_id,
@@ -266,8 +278,8 @@ Deno.serve(async (req) => {
           node_ref_id: s.id,
           canonical_key: `signal:${s.id}`,
           title: s.title ?? "Signal",
-          operational_criticality: s.severity === "critical" ? 85 : s.severity === "high" ? 65 : 35,
-          metadata: { domain: s.domain, country_iso3: s.country_iso3, created_at: s.created_at },
+          operational_criticality: sev === "critical" ? 85 : sev === "high" ? 65 : 35,
+          metadata: { domain: s.domain, geography: s.geography, created_at: s.ingested_at ?? s.occurred_at },
         },
         `signal:${s.id}`,
       );
