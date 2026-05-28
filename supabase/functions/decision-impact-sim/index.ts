@@ -217,15 +217,11 @@ serve(async (req) => {
       sample_size: sampleSize,
       data_sufficiency: conf.data_sufficiency,
       correlation_assumptions: correlations,
-      baselines_used: {
-        revenue: baseRevenue !== null ? { value: baseRevenue, source: "dataset", data_points: revenueValues.length } : { value: null, source: "unavailable" },
-        cost: baseCost !== null ? { value: baseCost, source: "dataset", data_points: costValues.length } : { value: null, source: "unavailable" },
-        churn_rate: baseChurn !== null ? { value: baseChurn, source: "dataset", data_points: churnValues.length } : { value: null, source: "unavailable" },
-      },
       model_version: 1,
       simulation_runs: runs,
       created_by: user.id,
     };
+
 
     const baselines_used = {
       revenue: baseRevenue !== null ? { value: baseRevenue, source: "dataset", data_points: revenueValues.length } : { value: null, source: "unavailable" },
