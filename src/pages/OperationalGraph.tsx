@@ -27,9 +27,15 @@ export default function OperationalGraph() {
             Governed operational topology. Deterministic traversal. No invented causality.
           </p>
         </div>
-        <Button onClick={rebuildGraph} disabled={busy}>
-          {busy ? "Rebuilding..." : "Rebuild graph"}
-        </Button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <GovernanceIntegrityBadge />
+          <Button asChild variant="outline" size="sm">
+            <Link to="/boardroom">Open Boardroom</Link>
+          </Button>
+          <Button onClick={rebuildGraph} disabled={busy}>
+            {busy ? "Rebuilding..." : "Rebuild graph"}
+          </Button>
+        </div>
       </header>
 
       <div className="grid gap-3 md:grid-cols-5">
