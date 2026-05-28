@@ -746,6 +746,7 @@ async function fuseForOrg(sb: any, orgId: string): Promise<AnyRec> {
   return {
     organization_id: orgId,
     inputs_count: inputs,
+    input_counts,
     clusters_count: clustersCount,
     new_narratives: accepted.length,
     suppressed: suppressed + overflow.length,
