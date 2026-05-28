@@ -403,28 +403,30 @@ Deno.serve(async (req) => {
 
     // decision → advisory (caused_by) and decision → intelligence (informed_by)
     for (const d of (decisions.data ?? []) as any[]) {
-      if (d.advisory_id) {
+      const conf = d.confidence_at_decision ?? 0.6;
+      const at = d.created_at ?? d.decided_at;
+      if (d.advisory_instance_id) {
         pushEdge(
-          `advisory:${d.advisory_id}`,
+          `advisory:${d.advisory_instance_id}`,
           `decision:${d.id}`,
           "caused_by",
           0.75,
-          d.confidence ?? 0.6,
+          conf,
           "causal",
-          [{ kind: "decision_advisory_link", decision_id: d.id, advisory_id: d.advisory_id }],
-          d.created_at,
+          [{ kind: "decision_advisory_link", decision_id: d.id, advisory_id: d.advisory_instance_id }],
+          at,
         );
       }
-      if (d.intelligence_item_id) {
+      if (d.linked_aicis_recommendation_id) {
         pushEdge(
-          `signal:${d.intelligence_item_id}`,
+          `signal:${d.linked_aicis_recommendation_id}`,
           `decision:${d.id}`,
           "informed_by",
           0.65,
-          d.confidence ?? 0.6,
+          conf,
           "governance-linked",
-          [{ kind: "decision_signal_link", decision_id: d.id, signal_id: d.intelligence_item_id }],
-          d.created_at,
+          [{ kind: "decision_signal_link", decision_id: d.id, signal_id: d.linked_aicis_recommendation_id }],
+          at,
         );
       }
     }
