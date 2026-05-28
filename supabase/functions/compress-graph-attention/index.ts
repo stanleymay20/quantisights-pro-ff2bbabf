@@ -6,7 +6,33 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Phase 5E.5 — hard cap of 5 executive abstractions, mapped to 5 executive categories.
 const BUDGETS: Record<string, number> = { executive: 5, operations: 12, governance: 8, board: 5 };
+const EXEC_BUDGET = 5; // absolute ceiling for executive abstraction surface
+
+type ExecCategory =
+  | "Critical Operational Pressure"
+  | "Governance Instability"
+  | "Execution Bottleneck"
+  | "Strategic Exposure"
+  | "Escalation Cluster";
+
+function classifyExecutiveCategory(s: any, n: any): ExecCategory {
+  const propagation = Number(s.propagation_risk ?? 0);
+  const blast = Number(s.blast_radius_score ?? 0);
+  const escalation = Number(s.escalation_density ?? 0);
+  const conflict = Number(s.conflict_density ?? 0);
+  const criticality = Number(s.operational_criticality ?? 0);
+
+  if (escalation >= 60) return "Escalation Cluster";
+  if (conflict >= 50) return "Governance Instability";
+  if (propagation >= 65 && blast >= 60) return "Critical Operational Pressure";
+  if ((n?.node_type === "intervention" || n?.node_type === "dependency") && propagation >= 50) {
+    return "Execution Bottleneck";
+  }
+  if (criticality >= 55) return "Strategic Exposure";
+  return "Critical Operational Pressure";
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -88,25 +114,39 @@ Deno.serve(async (req) => {
       return true;
     });
 
-    // Materialize per-persona views with 4-level hierarchy
+    // Materialize per-persona views.
+    // Phase 5E.5: executive persona is hard-capped at EXEC_BUDGET (5) and one slot per
+    // exec category, so leadership never faces more than 5 simultaneous concepts.
     const inserts: any[] = [];
     for (const persona of Object.keys(BUDGETS)) {
       const budget = BUDGETS[persona];
-      const slice = filtered.slice(0, budget);
-      let level1 = 0;
+      const isExec = persona === "executive" || persona === "board";
+      let slice = filtered.slice(0, budget);
+      if (isExec) {
+        const byCategory = new Map<string, typeof filtered[number]>();
+        for (const c of filtered) {
+          const cat = classifyExecutiveCategory(c.score, c.node);
+          if (!byCategory.has(cat)) byCategory.set(cat, c);
+          if (byCategory.size >= EXEC_BUDGET) break;
+        }
+        slice = Array.from(byCategory.values()).slice(0, EXEC_BUDGET);
+      }
+      let i = 0;
       for (const c of slice) {
-        const lvl = level1 < Math.ceil(budget / 3) ? 1 : level1 < Math.ceil((budget * 2) / 3) ? 2 : 3;
-        level1++;
+        const budgetForLevels = isExec ? EXEC_BUDGET : budget;
+        const lvl = i < Math.ceil(budgetForLevels / 3) ? 1 : i < Math.ceil((budgetForLevels * 2) / 3) ? 2 : 3;
+        i++;
+        const execCategory = isExec ? classifyExecutiveCategory(c.score, c.node) : null;
         inserts.push({
           organization_id,
           persona,
           abstraction_level: lvl,
-          title: c.node.title,
+          title: execCategory ? `${execCategory} — ${c.node.title}` : c.node.title,
           compressed_summary:
             `${c.node.node_type.toUpperCase()} — blast radius ${c.score.blast_radius_score.toFixed(0)}, ` +
             `propagation risk ${c.score.propagation_risk.toFixed(0)}, criticality ${c.score.operational_criticality.toFixed(0)}`,
           priority_score: c.priority,
-          supporting_nodes: [{ node_id: c.node.id, type: c.node.node_type }],
+          supporting_nodes: [{ node_id: c.node.id, type: c.node.node_type, exec_category: execCategory }],
           supporting_edges: [],
         });
       }

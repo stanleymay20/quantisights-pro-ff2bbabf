@@ -292,6 +292,124 @@ Deno.serve(async (req) => {
       },
     ]);
 
+    // ─── Phase 5E.5: Additional intelligence signals (16–24 total) ───
+    // Increases semantic density naturally so topology activation happens
+    // WITHOUT lowering governance thresholds or fabricating relationships.
+    await admin.from("insights").insert([
+      {
+        organization_id: orgId, severity: "high", dataset_id: datasetId,
+        message: "Enterprise pipeline coverage dropped to 2.6x — below the 3.5x healthy threshold. Three enterprise opportunities ($340K combined ACV) slipped from Q2 to Q3 due to procurement delays. Sales cycle elongated from 87 to 112 days.",
+        category: "sales", confidence_score: 76, raw_confidence: 84, capped_confidence: 76,
+        data_quality_index: 85, sample_size: 14,
+        confidence_cap_reason: "Limited enterprise deal sample over the last quarter",
+      },
+      {
+        organization_id: orgId, severity: "medium", dataset_id: datasetId,
+        message: "Engineering velocity declined 18% over the last 6 sprints. Cycle time from PR open to merge increased from 1.4 to 2.1 days. The single largest contributor is review latency on the platform team (4 PRs blocked >5 days).",
+        category: "operations", confidence_score: 72, raw_confidence: 81, capped_confidence: 72,
+        data_quality_index: 78, sample_size: 6,
+        confidence_cap_reason: "Velocity attribution moderately confounded by holiday window",
+      },
+      {
+        organization_id: orgId, severity: "medium", dataset_id: datasetId,
+        message: "Two contract renewals (combined $96K ARR) approach their auto-renew window in 21 days with NPS scores below 30. Without a structured save-motion, base-case loss probability is 55%.",
+        category: "retention", confidence_score: 68, raw_confidence: 76, capped_confidence: 68,
+        data_quality_index: 82, sample_size: 2,
+        confidence_cap_reason: "Small n; loss probability uses peer-benchmarked priors",
+      },
+      {
+        organization_id: orgId, severity: "info", dataset_id: datasetId,
+        message: "Self-serve trial activation rate improved 14% after onboarding redesign (37% → 42%). Time-to-first-value dropped from 14 days to 9 days for SMB cohort. Mid-market cohort still lags at 17 days.",
+        category: "activation", confidence_score: 80, raw_confidence: 87, capped_confidence: 80,
+        data_quality_index: 88, sample_size: 24,
+        confidence_cap_reason: "Cohort split limits per-segment precision",
+      },
+      {
+        organization_id: orgId, severity: "high", dataset_id: datasetId,
+        message: "Compliance attention required: 4 of 12 sub-processors are missing renewed DPAs as of last review. DSGVO Art. 28 exposure if not refreshed before next quarterly procurement review.",
+        category: "governance", confidence_score: 88, raw_confidence: 95, capped_confidence: 85,
+        data_quality_index: 92, sample_size: 12,
+        confidence_cap_reason: "Directly observed; capped per governance policy",
+      },
+      {
+        organization_id: orgId, severity: "medium", dataset_id: datasetId,
+        message: "Support deflection rate from the help center dropped from 38% to 29% over 8 weeks. Three high-traffic articles fall outside their freshness window; the team has not opened maintenance tickets.",
+        category: "support", confidence_score: 70, raw_confidence: 78, capped_confidence: 70,
+        data_quality_index: 80, sample_size: 8,
+        confidence_cap_reason: "Deflection attribution is partly inferential",
+      },
+      {
+        organization_id: orgId, severity: "info", dataset_id: datasetId,
+        message: "Outbound campaign A/B test concluded: variant B (value-led messaging) outperformed variant A (feature-led) by 31% in reply rate at p<0.05 over 1,420 sends.",
+        category: "marketing", confidence_score: 83, raw_confidence: 90, capped_confidence: 83,
+        data_quality_index: 89, sample_size: 1420,
+        confidence_cap_reason: "Large n, controlled experiment",
+      },
+      {
+        organization_id: orgId, severity: "medium", dataset_id: datasetId,
+        message: "Hiring funnel conversion from screen → offer dropped from 7% to 4% over the last two quarters. Time-to-fill on senior engineering roles is now 71 days vs. 49 day target. Two roles open >120 days.",
+        category: "people", confidence_score: 74, raw_confidence: 82, capped_confidence: 74,
+        data_quality_index: 81, sample_size: 38,
+        confidence_cap_reason: "Funnel attribution sensitive to role-mix shifts",
+      },
+    ]);
+
+    await admin.from("advisory_instances").insert([
+      {
+        organization_id: orgId, title: "Sub-processor DPA Refresh — DSGVO Art. 28 Window Closing",
+        action: "Initiate DPA renewal with the four flagged sub-processors before the next quarterly review",
+        advisory_type: "prescriptive", priority: "high", category: "compliance", status: "open",
+        rationale: "Four sub-processors lack renewed DPAs. Under DSGVO Art. 28 controllers must maintain current processor agreements. Procurement reviews on a quarterly cadence and the next window closes in 38 days.",
+        expected_impact: "Closes a high-visibility procurement audit finding before it surfaces in DE enterprise reviews.",
+        impact_score: 70, capped_confidence: 75, raw_confidence: 84, data_quality_index: 90,
+        confidence_cap_reason: "Directly observed registry state; governance cap applied.",
+        dataset_id: datasetId,
+        source_evidence: [
+          { type: "registry", description: "subprocessor_registry rows missing renewal", weight: 0.6 },
+          { type: "policy", description: "DSGVO Art. 28 quarterly cadence", weight: 0.4 },
+        ],
+        playbook_steps: [
+          { step: 1, action: "Pull current sub-processor registry snapshot", owner: "DPO" },
+          { step: 2, action: "Draft renewal request emails to the four vendors", owner: "DPO" },
+          { step: 3, action: "Log renewal status in registry as evidence", owner: "DPO" },
+        ],
+      },
+      {
+        organization_id: orgId, title: "Engineering Throughput — Review Latency Bottleneck",
+        action: "Rebalance platform-team PR review load and introduce a 2-day review SLA for blocking reviews",
+        advisory_type: "prescriptive", priority: "medium", category: "operations", status: "open",
+        rationale: "Engineering cycle time increased 50% over six sprints. The root cause is concentrated: four blocking PRs await review for >5 days, all on the platform team. Re-distributing review load is a single-step intervention.",
+        expected_impact: "Return cycle time to the 1.5-day target within two sprints.",
+        impact_score: 55, capped_confidence: 62, raw_confidence: 73, data_quality_index: 78,
+        confidence_cap_reason: "Velocity attribution moderately confounded.",
+        dataset_id: datasetId,
+        source_evidence: [
+          { type: "metric_trend", description: "Cycle time 1.4d → 2.1d over 6 sprints", weight: 0.5 },
+          { type: "concentration", description: "4 of 7 blocked PRs on platform team", weight: 0.5 },
+        ],
+        playbook_steps: [
+          { step: 1, action: "Open the four blocked PRs in a single review session", owner: "Eng Manager" },
+          { step: 2, action: "Publish a 2-day review SLA for blocking reviews", owner: "Eng Manager" },
+          { step: 3, action: "Track cycle time weekly until 1.5-day target restored", owner: "Eng Manager" },
+        ],
+      },
+      {
+        organization_id: orgId, title: "Mid-Market Activation Gap — Replicate SMB Onboarding Playbook",
+        action: "Port the SMB onboarding flow into the mid-market segment with one tailoring change per persona",
+        advisory_type: "strategic", priority: "medium", category: "activation", status: "open",
+        rationale: "SMB activation improved 14% after redesign. Mid-market time-to-first-value remains nearly 2x SMB. The redesign is portable and has measured uplift in the adjacent segment.",
+        expected_impact: "Cut mid-market time-to-first-value from 17 to 11 days, reducing 60-day churn risk.",
+        impact_score: 48, capped_confidence: 56, raw_confidence: 67, data_quality_index: 80,
+        confidence_cap_reason: "Cross-segment portability is partly inferential.",
+        dataset_id: datasetId,
+        source_evidence: [
+          { type: "experiment", description: "SMB activation +14% post-redesign", weight: 0.6 },
+          { type: "benchmark", description: "Mid-market TTV nearly 2x SMB", weight: 0.4 },
+        ],
+      },
+    ]);
+
+
     // ─── Simulation Results ───
     await admin.from("simulation_results").insert([
       {

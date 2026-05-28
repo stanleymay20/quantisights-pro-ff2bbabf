@@ -10,6 +10,17 @@ import LiveTrustMetrics from "@/components/security/LiveTrustMetrics";
 import ProcurementReadinessChecklist from "@/components/security/ProcurementReadinessChecklist";
 import DownloadProcurementPack from "@/components/security/DownloadProcurementPack";
 
+const reasoningPrinciples: { label: string; value: string }[] = [
+  { label: "Deterministic reasoning", value: "All scoring, propagation, and classification run through pure-function engines. LLMs never compute numbers." },
+  { label: "Confidence decomposition", value: "Every composite confidence is a sum of five named contributors: evidence strength, relationship stability, cross-source consistency, topology reliability, historical accuracy." },
+  { label: "Causal restrictions", value: "Edges declare 'deterministic', 'statistical', 'heuristic', or 'correlation_only'. We never promote correlation into causation without governance approval." },
+  { label: "Suppression transparency", value: "Every node, edge, or narrative suppressed by the engine is logged with reason, threshold, and actor in an append-only governance log." },
+  { label: "Evidence lineage", value: "Every executive surface traces back to raw signals through documented hops. No claim exists without a chain of evidence_refs." },
+  { label: "No hallucinated topology", value: "Edges are only created from observed co-occurrence, declared dependencies, or governance-approved patterns. The graph never invents relationships." },
+  { label: "Confidence cap", value: "Composite confidence is hard-capped at 0.85. Reaching 1.0 would imply certainty we cannot honestly claim." },
+  { label: "Append-only audit", value: "Decision ledger, narrative audit log, and graph governance events are DENIED UPDATE/DELETE at the database level." },
+];
+
 const sections = [
   {
     icon: Brain,
@@ -114,6 +125,32 @@ const TrustCenter = () => {
               </p>
             </div>
             <DownloadProcurementPack />
+          </CardContent>
+        </Card>
+
+        <Separator />
+
+        {/* ─── Phase 5E.5 — How Quantivis Reasons (procurement trust) ─── */}
+        <Card className="border-primary/30 bg-primary/[0.02]">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2.5">
+                <Brain className="w-5 h-5 text-primary" />
+                <CardTitle className="text-base">How Quantivis Reasons</CardTitle>
+              </div>
+              <Badge variant="outline" className="text-[10px]">Procurement-grade explainability</Badge>
+            </div>
+            <p className="text-xs text-muted-foreground pt-1 max-w-2xl">
+              Eight reasoning commitments that govern every executive surface. These are enforced in code, not policy.
+            </p>
+          </CardHeader>
+          <CardContent className="pt-0 space-y-2">
+            {reasoningPrinciples.map((p) => (
+              <div key={p.label} className="grid grid-cols-[180px,1fr] gap-3 text-sm py-1.5 border-b border-border/30 last:border-0">
+                <div className="text-foreground/80 font-medium">{p.label}:</div>
+                <div className="text-muted-foreground leading-relaxed">{p.value}</div>
+              </div>
+            ))}
           </CardContent>
         </Card>
 
