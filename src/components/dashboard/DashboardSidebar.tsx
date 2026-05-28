@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Upload, Settings, LogOut,
   Menu, X, BookOpen, Brain, Target,
   ChevronDown, Clock, BarChart3, Shield,
-  Lightbulb, TrendingUp, FileText, Inbox, ShieldAlert,
+  Lightbulb, TrendingUp, FileText, Inbox, ShieldAlert, Plug,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -52,6 +52,7 @@ const navSections: NavSection[] = [
       { icon: Clock, label: "History", path: "/history" },
       { icon: FileText, label: "Reports", path: "/reports" },
       { icon: Upload, label: "Upload Data", path: "/data-upload" },
+      { icon: Plug, label: "Data Connectors", path: "/data-connectors" },
     ],
   },
   {
