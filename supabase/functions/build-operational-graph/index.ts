@@ -130,7 +130,11 @@ Deno.serve(async (req) => {
     const nodeBuf: NodeUpsert[] = [];
     const refToKey: Record<string, string> = {}; // ref_type:ref_id → canonical_key
 
+    const clamp100 = (v: any) => Math.max(0, Math.min(100, Math.round(Number(v) || 0)));
     const pushNode = (n: NodeUpsert, refKey?: string) => {
+      n.operational_criticality = clamp100(n.operational_criticality);
+      n.exposure_score = clamp100(n.exposure_score);
+      n.volatility_score = clamp100(n.volatility_score);
       nodeBuf.push(n);
       if (refKey) refToKey[refKey] = n.canonical_key;
     };
