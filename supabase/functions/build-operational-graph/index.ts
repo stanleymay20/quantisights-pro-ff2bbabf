@@ -90,7 +90,7 @@ Deno.serve(async (req) => {
           .from("executive_interventions")
           .select("id,title,intervention_type,status,severity,urgency,created_at,source_type,source_id,decision_id,resolved_at,outcome_score")
           .eq("organization_id", organization_id)
-          .in("status", ["pending", "in_progress", "resolved", "deferred", "acknowledged", "assigned", "acted"])
+          .in("status", ["proposed", "acknowledged", "assigned", "in_progress", "deferred", "escalated", "resolved"])
           .order("created_at", { ascending: false })
           .limit(200),
         supabase
