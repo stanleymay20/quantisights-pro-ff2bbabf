@@ -6,7 +6,33 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Phase 5E.5 — hard cap of 5 executive abstractions, mapped to 5 executive categories.
 const BUDGETS: Record<string, number> = { executive: 5, operations: 12, governance: 8, board: 5 };
+const EXEC_BUDGET = 5; // absolute ceiling for executive abstraction surface
+
+type ExecCategory =
+  | "Critical Operational Pressure"
+  | "Governance Instability"
+  | "Execution Bottleneck"
+  | "Strategic Exposure"
+  | "Escalation Cluster";
+
+function classifyExecutiveCategory(s: any, n: any): ExecCategory {
+  const propagation = Number(s.propagation_risk ?? 0);
+  const blast = Number(s.blast_radius_score ?? 0);
+  const escalation = Number(s.escalation_density ?? 0);
+  const conflict = Number(s.conflict_density ?? 0);
+  const criticality = Number(s.operational_criticality ?? 0);
+
+  if (escalation >= 60) return "Escalation Cluster";
+  if (conflict >= 50) return "Governance Instability";
+  if (propagation >= 65 && blast >= 60) return "Critical Operational Pressure";
+  if ((n?.node_type === "intervention" || n?.node_type === "dependency") && propagation >= 50) {
+    return "Execution Bottleneck";
+  }
+  if (criticality >= 55) return "Strategic Exposure";
+  return "Critical Operational Pressure";
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
