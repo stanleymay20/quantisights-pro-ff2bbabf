@@ -88,29 +88,28 @@ Deno.serve(async (req) => {
           .maybeSingle(),
         supabase
           .from("executive_interventions")
-          .select("id,title,intervention_type,status,priority,created_at,source_type,source_id,resolved_at,outcome_score")
+          .select("id,title,intervention_type,status,severity,urgency,created_at,source_type,source_id,decision_id,resolved_at,outcome_score")
           .eq("organization_id", organization_id)
-          .in("status", ["pending", "in_progress", "resolved", "deferred"])
+          .in("status", ["proposed", "acknowledged", "assigned", "in_progress", "deferred", "escalated", "resolved"])
           .order("created_at", { ascending: false })
           .limit(200),
         supabase
           .from("decision_ledger")
-          .select("id,title,status,confidence,priority,decision_type,created_at,intelligence_item_id,advisory_id,evidence_sources")
+          .select("id,recommended_action,chosen_action,decision_status,confidence_at_decision,decision_type,decided_at,created_at,advisory_instance_id,linked_aicis_recommendation_id,evidence_sources")
           .eq("organization_id", organization_id)
           .order("created_at", { ascending: false })
           .limit(200),
         supabase
-          .from("prescriptive_advisories")
-          .select("id,title,recommended_action,confidence_score,status,created_at,supporting_signal_ids")
+          .from("advisory_instances")
+          .select("id,title,action,confidence,status,priority,created_at,source_evidence,advisory_lane")
           .eq("organization_id", organization_id)
           .order("created_at", { ascending: false })
           .limit(150),
         supabase
-          .from("intelligence_inbox")
-          .select("id,title,status,severity,created_at,domain,country_iso3")
+          .from("aicis_intelligence_items")
+          .select("id,title,status,severity,urgency,ingested_at,occurred_at,domain,geography")
           .eq("organization_id", organization_id)
-          .in("status", ["new", "scored", "briefed", "advised", "routed"])
-          .order("created_at", { ascending: false })
+          .order("ingested_at", { ascending: false })
           .limit(100),
         supabase
           .from("narrative_conflicts")
@@ -120,10 +119,22 @@ Deno.serve(async (req) => {
           .limit(50),
       ]);
 
+    if (narratives.error) console.warn("narratives select error:", narratives.error.message);
+    if (pressures.error) console.warn("pressures select error:", pressures.error.message);
+    if (interventions.error) console.warn("interventions select error:", interventions.error.message);
+    if (decisions.error) console.warn("decisions select error:", decisions.error.message);
+    if (advisories.error) console.warn("advisories select error:", advisories.error.message);
+    if (inbox.error) console.warn("inbox select error:", inbox.error.message);
+    if (conflicts.error) console.warn("conflicts select error:", conflicts.error.message);
+
     const nodeBuf: NodeUpsert[] = [];
     const refToKey: Record<string, string> = {}; // ref_type:ref_id → canonical_key
 
+    const clamp100 = (v: any) => Math.max(0, Math.min(100, Math.round(Number(v) || 0)));
     const pushNode = (n: NodeUpsert, refKey?: string) => {
+      n.operational_criticality = clamp100(n.operational_criticality);
+      n.exposure_score = clamp100(n.exposure_score);
+      n.volatility_score = clamp100(n.volatility_score);
       nodeBuf.push(n);
       if (refKey) refToKey[refKey] = n.canonical_key;
     };
@@ -188,6 +199,8 @@ Deno.serve(async (req) => {
 
     // Interventions
     for (const iv of (interventions.data ?? []) as any[]) {
+      const sev = (iv.severity ?? "").toLowerCase();
+      const crit = sev === "critical" ? 90 : sev === "high" ? 70 : sev === "medium" ? 50 : 35;
       pushNode(
         {
           organization_id,
@@ -197,11 +210,12 @@ Deno.serve(async (req) => {
           title: iv.title ?? "Intervention",
           status: iv.status === "resolved" ? "retired" : "active",
           operational_state: iv.status,
-          operational_criticality: iv.priority === "critical" ? 90 : iv.priority === "high" ? 70 : 40,
+          operational_criticality: crit,
           metadata: {
             type: iv.intervention_type,
             source_type: iv.source_type,
             source_id: iv.source_id,
+            decision_id: iv.decision_id,
             outcome_score: iv.outcome_score,
             created_at: iv.created_at,
           },
@@ -212,21 +226,24 @@ Deno.serve(async (req) => {
 
     // Decisions
     for (const d of (decisions.data ?? []) as any[]) {
+      const dStatus = d.decision_status ?? "open";
+      const conf = d.confidence_at_decision ?? 0.5;
+      const crit = conf >= 0.8 ? 80 : conf >= 0.6 ? 65 : 50;
       pushNode(
         {
           organization_id,
           node_type: "decision",
           node_ref_id: d.id,
           canonical_key: `decision:${d.id}`,
-          title: d.title ?? "Decision",
-          status: d.status === "executed" || d.status === "rejected" ? "retired" : "active",
-          operational_criticality: d.priority === "critical" ? 90 : d.priority === "high" ? 70 : 50,
+          title: d.recommended_action ?? d.chosen_action ?? "Decision",
+          status: dStatus === "executed" || dStatus === "rejected" || dStatus === "completed" ? "retired" : "active",
+          operational_criticality: crit,
           metadata: {
             type: d.decision_type,
-            confidence: d.confidence,
-            advisory_id: d.advisory_id,
-            intelligence_item_id: d.intelligence_item_id,
-            created_at: d.created_at,
+            confidence: conf,
+            advisory_instance_id: d.advisory_instance_id,
+            linked_aicis_recommendation_id: d.linked_aicis_recommendation_id,
+            created_at: d.created_at ?? d.decided_at,
           },
         },
         `decision:${d.id}`,
@@ -241,10 +258,15 @@ Deno.serve(async (req) => {
           node_type: "advisory",
           node_ref_id: a.id,
           canonical_key: `advisory:${a.id}`,
-          title: a.title ?? a.recommended_action ?? "Advisory",
-          status: a.status === "expired" ? "retired" : "active",
-          operational_criticality: Math.round((a.confidence_score ?? 0.5) * 80),
-          metadata: { confidence: a.confidence_score, created_at: a.created_at, supporting_signal_ids: a.supporting_signal_ids },
+          title: a.title ?? a.action ?? "Advisory",
+          status: a.status === "expired" || a.status === "resolved" ? "retired" : "active",
+          operational_criticality: Math.round(Math.min(1, (a.confidence ?? 0.5) > 1 ? (a.confidence ?? 50) / 100 : (a.confidence ?? 0.5)) * 80),
+          metadata: {
+            confidence: a.confidence,
+            priority: a.priority,
+            lane: a.advisory_lane,
+            created_at: a.created_at,
+          },
         },
         `advisory:${a.id}`,
       );
@@ -252,6 +274,7 @@ Deno.serve(async (req) => {
 
     // Inbox signals
     for (const s of (inbox.data ?? []) as any[]) {
+      const sev = (s.severity ?? "").toLowerCase();
       pushNode(
         {
           organization_id,
@@ -259,8 +282,8 @@ Deno.serve(async (req) => {
           node_ref_id: s.id,
           canonical_key: `signal:${s.id}`,
           title: s.title ?? "Signal",
-          operational_criticality: s.severity === "critical" ? 85 : s.severity === "high" ? 65 : 35,
-          metadata: { domain: s.domain, country_iso3: s.country_iso3, created_at: s.created_at },
+          operational_criticality: sev === "critical" ? 85 : sev === "high" ? 65 : 35,
+          metadata: { domain: s.domain, geography: s.geography, created_at: s.ingested_at ?? s.occurred_at },
         },
         `signal:${s.id}`,
       );
@@ -384,28 +407,30 @@ Deno.serve(async (req) => {
 
     // decision → advisory (caused_by) and decision → intelligence (informed_by)
     for (const d of (decisions.data ?? []) as any[]) {
-      if (d.advisory_id) {
+      const conf = d.confidence_at_decision ?? 0.6;
+      const at = d.created_at ?? d.decided_at;
+      if (d.advisory_instance_id) {
         pushEdge(
-          `advisory:${d.advisory_id}`,
+          `advisory:${d.advisory_instance_id}`,
           `decision:${d.id}`,
           "caused_by",
           0.75,
-          d.confidence ?? 0.6,
+          conf,
           "causal",
-          [{ kind: "decision_advisory_link", decision_id: d.id, advisory_id: d.advisory_id }],
-          d.created_at,
+          [{ kind: "decision_advisory_link", decision_id: d.id, advisory_id: d.advisory_instance_id }],
+          at,
         );
       }
-      if (d.intelligence_item_id) {
+      if (d.linked_aicis_recommendation_id) {
         pushEdge(
-          `signal:${d.intelligence_item_id}`,
+          `signal:${d.linked_aicis_recommendation_id}`,
           `decision:${d.id}`,
           "informed_by",
           0.65,
-          d.confidence ?? 0.6,
+          conf,
           "governance-linked",
-          [{ kind: "decision_signal_link", decision_id: d.id, signal_id: d.intelligence_item_id }],
-          d.created_at,
+          [{ kind: "decision_signal_link", decision_id: d.id, signal_id: d.linked_aicis_recommendation_id }],
+          at,
         );
       }
     }
