@@ -40,8 +40,10 @@ async function sha256(s: string): Promise<string> {
 }
 
 // ============ types ============
+type SignalSource = "item" | "intervention" | "advisory" | "insight" | "advisory_instance";
 interface InputSignal {
-  source: "item" | "intervention" | "advisory";
+  source: SignalSource;
+  source_table: string;
   id: string;
   title: string;
   text: string;
@@ -192,18 +194,34 @@ async function suppressionEvent(sb: any, ev: {
   } catch (e) { console.error("suppression log fail", e); }
 }
 
-// ============ gather inputs (unchanged shape) ============
-async function gatherInputs(sb: any, orgId: string): Promise<InputSignal[]> {
-  const since = new Date(Date.now() - 14 * 24 * 3600 * 1000).toISOString();
-  const [items, intvs, advs] = await Promise.all([
+// ============ gather inputs (extended: native Quantivis signals included) ============
+async function gatherInputs(sb: any, orgId: string, lookbackHours = 60 * 24): Promise<{ signals: InputSignal[]; counts: Record<string, number> }> {
+  const since = new Date(Date.now() - lookbackHours * 3600 * 1000).toISOString();
+  const [items, intvs, advs, insightsRes, advInstRes] = await Promise.all([
     sb.from("aicis_intelligence_items").select("id,title,summary,domain,geography,entities,severity,global_criticality_score,ingested_at").eq("organization_id", orgId).gte("ingested_at", since).limit(500),
     sb.from("executive_interventions").select("id,title,summary,intervention_type,severity,decision_pressure_score,intervention_priority_score,created_at,status").eq("organization_id", orgId).neq("status", "resolved").gte("created_at", since).limit(300),
     sb.from("intelligence_advisories").select("id,title,summary,domain,severity,created_at").eq("organization_id", orgId).gte("created_at", since).limit(300),
+    sb.from("insights").select("id,message,severity,category,confidence_score,created_at").eq("organization_id", orgId).gte("created_at", since).limit(800),
+    sb.from("advisory_instances").select("id,title,category,priority,advisory_type,impact_score,confidence,status,created_at").eq("organization_id", orgId).gte("created_at", since).limit(500),
   ]);
+  const counts = {
+    aicis_intelligence_items: (items.data ?? []).length,
+    executive_interventions: (intvs.data ?? []).length,
+    intelligence_advisories: (advs.data ?? []).length,
+    insights: (insightsRes.data ?? []).length,
+    advisory_instances: (advInstRes.data ?? []).length,
+  };
   const out: InputSignal[] = [];
+  const seen = new Set<string>();
+  const push = (s: InputSignal) => {
+    const key = `${s.source_table}::${s.id}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    out.push(s);
+  };
   for (const r of (items.data ?? [])) {
-    out.push({
-      source: "item", id: r.id, title: r.title ?? "Intelligence item",
+    push({
+      source: "item", source_table: "aicis_intelligence_items", id: r.id, title: r.title ?? "Intelligence item",
       text: `${r.title ?? ""} ${r.summary ?? ""}`,
       domain: r.domain, geography: r.geography ?? [],
       entities: (r.entities ?? []).map((e: any) => typeof e === "string" ? e : e?.name).filter(Boolean),
@@ -212,8 +230,8 @@ async function gatherInputs(sb: any, orgId: string): Promise<InputSignal[]> {
     });
   }
   for (const r of (intvs.data ?? [])) {
-    out.push({
-      source: "intervention", id: r.id, title: r.title,
+    push({
+      source: "intervention", source_table: "executive_interventions", id: r.id, title: r.title,
       text: `${r.title} ${r.summary ?? ""}`,
       domain: r.intervention_type, geography: [], entities: [],
       severity: r.severity, pressure: Number(r.intervention_priority_score ?? r.decision_pressure_score ?? severityWeight(r.severity)),
@@ -221,15 +239,45 @@ async function gatherInputs(sb: any, orgId: string): Promise<InputSignal[]> {
     });
   }
   for (const r of (advs.data ?? [])) {
-    out.push({
-      source: "advisory", id: r.id, title: r.title ?? "Advisory",
+    push({
+      source: "advisory", source_table: "intelligence_advisories", id: r.id, title: r.title ?? "Advisory",
       text: `${r.title ?? ""} ${r.summary ?? ""}`,
       domain: r.domain, geography: [], entities: [],
       severity: r.severity, pressure: severityWeight(r.severity),
       ts: r.created_at,
     });
   }
-  return out;
+  // Native Quantivis: insights
+  for (const r of (insightsRes.data ?? [])) {
+    const conf = Number(r.confidence_score ?? 60);
+    push({
+      source: "insight", source_table: "insights", id: r.id,
+      title: (r.message ?? "Insight").slice(0, 120),
+      text: `${r.message ?? ""}`,
+      domain: r.category, geography: [], entities: [],
+      severity: r.severity,
+      pressure: clamp(severityWeight(r.severity) * (0.6 + 0.4 * (conf / 100))),
+      ts: r.created_at,
+    });
+  }
+  // Native Quantivis: advisory_instances
+  for (const r of (advInstRes.data ?? [])) {
+    if (["resolved", "dismissed"].includes((r.status || "").toLowerCase())) continue;
+    const conf = Number(r.confidence ?? 60);
+    const sw = severityWeight(r.priority);
+    const impact = Number(r.impact_score ?? 0);
+    push({
+      source: "advisory_instance", source_table: "advisory_instances", id: r.id,
+      title: r.title ?? "Advisory",
+      text: `${r.title ?? ""} ${r.advisory_type ?? ""}`,
+      domain: r.category, geography: [], entities: [],
+      severity: r.priority,
+      pressure: clamp(Math.max(sw, impact) * (0.55 + 0.45 * (conf / 100))),
+      ts: r.created_at,
+    });
+  }
+  console.log(`[narrative-fusion] org=${orgId} input_counts=${JSON.stringify(counts)} total=${out.length}`);
+  return { signals: out, counts };
 }
 
 function clusterize(signals: InputSignal[]): InputSignal[][] {
@@ -275,7 +323,9 @@ function buildNarrative(c: {
   const itemCount = c.signals.filter((s) => s.source === "item").length;
   const intvCount = c.signals.filter((s) => s.source === "intervention").length;
   const advCount = c.signals.filter((s) => s.source === "advisory").length;
-  parts.push(`Fused from ${itemCount} intelligence items, ${intvCount} interventions, ${advCount} advisories.`);
+  const insCount = c.signals.filter((s) => s.source === "insight").length;
+  const aiCount = c.signals.filter((s) => s.source === "advisory_instance").length;
+  parts.push(`Fused from ${itemCount} intelligence items, ${intvCount} interventions, ${advCount} advisories, ${insCount} insights, ${aiCount} advisory instances.`);
   if (c.entities.length) parts.push(`Affecting ${c.entities.slice(0, 3).join(", ")}.`);
   parts.push(`Pressure: ${Math.round(c.pressure)} / Velocity: ${c.velocity.toFixed(1)}.`);
   return parts.join(" ");
@@ -386,9 +436,9 @@ async function enforceBudgets(sb: any, orgId: string, budget: AnyRec, today: str
 // ============ Main per-org pipeline ============
 async function fuseForOrg(sb: any, orgId: string): Promise<AnyRec> {
   const t0 = Date.now();
-  const signals = await gatherInputs(sb, orgId);
+  const { signals, counts: input_counts } = await gatherInputs(sb, orgId);
   if (!signals.length) {
-    return { organization_id: orgId, inputs_count: 0, clusters_count: 0, message: "no signals" };
+    return { organization_id: orgId, inputs_count: 0, input_counts, clusters_count: 0, message: "no signals" };
   }
 
   // Load budget config
@@ -696,6 +746,7 @@ async function fuseForOrg(sb: any, orgId: string): Promise<AnyRec> {
   return {
     organization_id: orgId,
     inputs_count: inputs,
+    input_counts,
     clusters_count: clustersCount,
     new_narratives: accepted.length,
     suppressed: suppressed + overflow.length,
