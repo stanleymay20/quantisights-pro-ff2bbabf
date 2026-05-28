@@ -195,8 +195,8 @@ async function suppressionEvent(sb: any, ev: {
 }
 
 // ============ gather inputs (extended: native Quantivis signals included) ============
-async function gatherInputs(sb: any, orgId: string): Promise<{ signals: InputSignal[]; counts: Record<string, number> }> {
-  const since = new Date(Date.now() - 14 * 24 * 3600 * 1000).toISOString();
+async function gatherInputs(sb: any, orgId: string, lookbackHours = 60 * 24): Promise<{ signals: InputSignal[]; counts: Record<string, number> }> {
+  const since = new Date(Date.now() - lookbackHours * 3600 * 1000).toISOString();
   const [items, intvs, advs, insightsRes, advInstRes] = await Promise.all([
     sb.from("aicis_intelligence_items").select("id,title,summary,domain,geography,entities,severity,global_criticality_score,ingested_at").eq("organization_id", orgId).gte("ingested_at", since).limit(500),
     sb.from("executive_interventions").select("id,title,summary,intervention_type,severity,decision_pressure_score,intervention_priority_score,created_at,status").eq("organization_id", orgId).neq("status", "resolved").gte("created_at", since).limit(300),
