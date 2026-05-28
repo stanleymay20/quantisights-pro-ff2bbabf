@@ -2,6 +2,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders, corsPreflightResponse } from "../_shared/cors.ts";
 import { createLogger } from "../_shared/logger.ts";
 import { cronGuard } from "../_shared/cron-guard.ts";
+import { verifyCronSecret } from "../_shared/cron-secret.ts";
+
 
 /**
  * Health Check & SLO Monitor (v2.0)
@@ -40,7 +42,17 @@ Deno.serve(async (req) => {
   const log = createLogger("health-check", req);
 
   if (req.method === "OPTIONS") {
+  if (req.method === "OPTIONS") {
     return corsPreflightResponse(req);
+  }
+
+  // Public uptime probes get a minimal liveness response only.
+  // Detailed metrics require the cron secret to prevent internal-info disclosure.
+  if (!verifyCronSecret(req)) {
+    return new Response(
+      JSON.stringify({ status: "ok", timestamp: new Date().toISOString() }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-cache" } },
+    );
   }
 
   const guard = await cronGuard("health-check");

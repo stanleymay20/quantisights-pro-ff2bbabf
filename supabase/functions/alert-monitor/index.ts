@@ -2,6 +2,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders, corsPreflightResponse } from "../_shared/cors.ts";
 import { createLogger } from "../_shared/logger.ts";
 import { cronGuard } from "../_shared/cron-guard.ts";
+import { verifyCronSecret, cronSecretUnauthorized } from "../_shared/cron-secret.ts";
+
 
 /**
  * Alert Monitor — Enterprise observability alerting.
@@ -29,8 +31,11 @@ Deno.serve(async (req) => {
   const log = createLogger("alert-monitor", req);
 
   if (req.method === "OPTIONS") return corsPreflightResponse(req);
+  if (req.method === "OPTIONS") return corsPreflightResponse(req);
 
-  try {
+  if (!verifyCronSecret(req)) return cronSecretUnauthorized(corsHeaders);
+
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
