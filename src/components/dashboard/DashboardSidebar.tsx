@@ -52,6 +52,7 @@ const navSections: NavSection[] = [
       { icon: Clock, label: "History", path: "/history" },
       { icon: FileText, label: "Reports", path: "/reports" },
       { icon: Upload, label: "Upload Data", path: "/data-upload" },
+      { icon: Plug, label: "Data Connectors", path: "/data-connectors" },
     ],
   },
   {
