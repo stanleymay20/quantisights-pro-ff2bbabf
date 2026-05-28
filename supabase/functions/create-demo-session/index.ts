@@ -374,6 +374,45 @@ Deno.serve(async (req) => {
       },
     ]);
 
+    // ─── Activation pipeline (background; do NOT block sign-in) ───
+    // Fires downstream engines so the dashboard the user lands on actually
+    // has narrative clusters, pressure snapshots, graph nodes/edges, and
+    // prioritised interventions — instead of empty panels.
+    const activationChain = [
+      "executive-brief-generator",
+      "narrative-fusion-engine",
+      "compute-organizational-pressure",
+      "intervention-priority-engine",
+      "build-operational-graph",
+      "compute-graph-topology",
+      "compress-graph-attention",
+    ];
+    const runActivation = async () => {
+      for (const fn of activationChain) {
+        try {
+          await fetch(`${supabaseUrl}/functions/v1/${fn}`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              apikey: serviceKey,
+              Authorization: `Bearer ${serviceKey}`,
+            },
+            body: JSON.stringify({ organization_id: orgId }),
+          });
+        } catch (e) {
+          console.error(`[demo-activation] ${fn} failed:`, (e as Error).message);
+        }
+      }
+    };
+    // @ts-ignore - EdgeRuntime is available in Supabase Edge Functions
+    if (typeof EdgeRuntime !== "undefined" && EdgeRuntime?.waitUntil) {
+      // @ts-ignore
+      EdgeRuntime.waitUntil(runActivation());
+    } else {
+      // Fallback: fire-and-forget (still returns response promptly)
+      runActivation();
+    }
+
     // Sign in
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const userClient = createClient(supabaseUrl, anonKey);
