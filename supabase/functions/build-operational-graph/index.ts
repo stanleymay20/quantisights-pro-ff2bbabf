@@ -135,6 +135,8 @@ Deno.serve(async (req) => {
       n.operational_criticality = clamp100(n.operational_criticality);
       n.exposure_score = clamp100(n.exposure_score);
       n.volatility_score = clamp100(n.volatility_score);
+      if (n.status == null) n.status = "active";
+      if (n.operational_state == null) n.operational_state = "active";
       nodeBuf.push(n);
       if (refKey) refToKey[refKey] = n.canonical_key;
     };
