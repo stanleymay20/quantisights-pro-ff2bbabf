@@ -130,6 +130,32 @@ const TrustCenter = () => {
 
         <Separator />
 
+        {/* ─── Phase 5E.5 — How Quantivis Reasons (procurement trust) ─── */}
+        <Card className="border-primary/30 bg-primary/[0.02]">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2.5">
+                <Brain className="w-5 h-5 text-primary" />
+                <CardTitle className="text-base">How Quantivis Reasons</CardTitle>
+              </div>
+              <Badge variant="outline" className="text-[10px]">Procurement-grade explainability</Badge>
+            </div>
+            <p className="text-xs text-muted-foreground pt-1 max-w-2xl">
+              Eight reasoning commitments that govern every executive surface. These are enforced in code, not policy.
+            </p>
+          </CardHeader>
+          <CardContent className="pt-0 space-y-2">
+            {reasoningPrinciples.map((p) => (
+              <div key={p.label} className="grid grid-cols-[180px,1fr] gap-3 text-sm py-1.5 border-b border-border/30 last:border-0">
+                <div className="text-foreground/80 font-medium">{p.label}:</div>
+                <div className="text-muted-foreground leading-relaxed">{p.value}</div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        <Separator />
+
         <div className="space-y-4">
           {sections.map((section) => (
             <Card key={section.title} className="border-border/50">
