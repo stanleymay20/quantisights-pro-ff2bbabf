@@ -56,9 +56,9 @@ const PitchDeck = () => {
             <p className="text-muted-foreground mb-6">Decision Governance Infrastructure — investor-ready presentation.</p>
             <Button onClick={handleDownload} disabled={downloading} size="lg" className="gap-2">
               {downloading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
-              {downloading ? "Generating PDF…" : "Download Pitch Deck"}
-            </Button>
-          </motion.div>
+            <h1 className="text-3xl sm:text-4xl font-bold font-display mb-3">Berkeley 2-Minute Pitch</h1>
+            <p className="text-muted-foreground mb-1">Quantivis · Governed Operational Reasoning Infrastructure</p>
+            <p className="text-xs text-muted-foreground mb-6">Stanley Osei-Wusu (Founder) · Souley Kassoum (Co-Founder)</p>
         </div>
 
         <div className="max-w-2xl mx-auto px-6 space-y-6">
