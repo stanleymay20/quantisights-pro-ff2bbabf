@@ -323,6 +323,8 @@ export const routes: RouteEntry[] = [
   { path: "/admin/connector-health", element: <ConnectorHealth />, layout: "full" },
   { path: "/admin/connectors/sap", element: <SapConnector />, layout: "full" },
   { path: "/admin/localization-audit", element: <LocalizationAudit />, layout: "full" },
+  { path: "/admin/context-packs", element: <ContextPacks />, layout: "full" },
+  { path: "/admin/governance-simulation", element: <GovernanceSimulation />, layout: "full" },
 
   // ══════ Catch-all ══════
   { path: "*", element: <NotFound />, layout: "public" },
