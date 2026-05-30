@@ -63,7 +63,7 @@ const GovernanceSimulation = () => {
     if (selected.size === 0) return;
     setBusy(true);
     try {
-      const data = await invokeWithRetry<{ results: SimResult[] }>("governance-simulation", {
+      const { data } = await invokeWithRetry<{ results: SimResult[] }>("governance-simulation", {
         body: {
           organization_ids: Array.from(selected),
           signal: { risk_probability: 0.72, urgency_hours: 48, raw_confidence: 88, domain: "operational" },
