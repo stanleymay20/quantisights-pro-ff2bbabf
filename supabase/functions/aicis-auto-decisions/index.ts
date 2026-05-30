@@ -183,14 +183,26 @@ Deno.serve(async (req) => {
         const linkedPredIds = new Set((existing ?? []).map(r => r.linked_aicis_prediction_id).filter(Boolean));
         const linkedRecIds = new Set((existing ?? []).map(r => r.linked_aicis_recommendation_id).filter(Boolean));
 
-        // ── 4. Build decision rows ──
+        // ── 4. Build decision rows (Phase 6A: governance-stamped) ──
+        const governanceCtx = buildGovernanceContext(
+          profile, thresholdsApplied,
+          { required_approvals: requiredApprovals, chain: chainStages }, activePack,
+        );
+        const decisionDefaults = {
+          governance_profile_id: profile.id,
+          required_approvals: requiredApprovals,
+          approval_chain: chainStages,
+          governance_context: governanceCtx,
+        };
         const toInsert: Record<string, unknown>[] = [];
 
         for (const p of preds ?? []) {
           if (linkedPredIds.has(p.id)) { result.skipped_existing++; orgRes.skipped++; continue; }
           const country = p.country_iso3 ? ` in ${p.country_iso3}` : "";
           const horizon = p.horizon_days ? ` (${p.horizon_days}d horizon)` : "";
+          const govCeil = profile.governance_confidence_ceiling * 100;
           toInsert.push({
+            ...decisionDefaults,
             organization_id: orgId,
             decision_type: "risk_response",
             decision_status: "pending",
@@ -203,9 +215,9 @@ Deno.serve(async (req) => {
                      : "") +
                    `. Evidence count: ${p.evidence_count ?? "n/a"}.`,
             raw_confidence: p.confidence_upper ? Number(p.confidence_upper) * 100 : null,
-            capped_confidence: p.confidence_upper ? Math.min(Number(p.confidence_upper) * 100, 85) : null,
+            capped_confidence: p.confidence_upper ? Math.min(Number(p.confidence_upper) * 100, govCeil) : null,
             confidence_at_decision: p.confidence_upper ? Number(p.confidence_upper) * 100 : null,
-            confidence_cap_reason: p.confidence_upper && Number(p.confidence_upper) * 100 > 85 ? "ext_data_cap" : null,
+            confidence_cap_reason: p.confidence_upper && Number(p.confidence_upper) * 100 > govCeil ? "governance_ceiling" : null,
             linked_aicis_prediction_id: p.id,
             recommendation_logic_type: "aicis_risk_prediction",
             source_insight_summary: `AICIS prediction ${p.external_id}`,
@@ -224,7 +236,7 @@ Deno.serve(async (req) => {
               risk_probability: Number(p.risk_probability),
               domain: p.domain, country_iso3: p.country_iso3,
               horizon_days: p.horizon_days, evidence_count: p.evidence_count,
-              threshold_used: RISK_THRESHOLD, correlation_id: correlationId,
+              threshold_used: orgRiskThreshold, correlation_id: correlationId,
             },
           });
         }
@@ -233,7 +245,9 @@ Deno.serve(async (req) => {
           if (linkedRecIds.has(r.id)) { result.skipped_existing++; orgRes.skipped++; continue; }
           const cost = r.estimated_cost_eur ? `€${Number(r.estimated_cost_eur).toLocaleString()}` : "TBD";
           const roi = r.estimated_roi_eur ? `€${Number(r.estimated_roi_eur).toLocaleString()}` : "TBD";
+          const govCeil = profile.governance_confidence_ceiling * 100;
           toInsert.push({
+            ...decisionDefaults,
             organization_id: orgId,
             decision_type: "intervention",
             decision_status: "pending",
@@ -242,9 +256,9 @@ Deno.serve(async (req) => {
             recommended_action: r.intervention_title ?? `Execute ${r.intervention_type ?? "intervention"}`,
             notes: `${r.rationale_md ?? ""}\n\n— Estimated cost: ${cost} · Estimated ROI: ${roi} · Window: ${r.urgency_window ?? `${r.urgency_hours}h`}`.trim(),
             raw_confidence: r.confidence != null ? Number(r.confidence) * 100 : null,
-            capped_confidence: r.confidence != null ? Math.min(Number(r.confidence) * 100, 85) : null,
+            capped_confidence: r.confidence != null ? Math.min(Number(r.confidence) * 100, govCeil) : null,
             confidence_at_decision: r.confidence != null ? Number(r.confidence) * 100 : null,
-            confidence_cap_reason: r.confidence != null && Number(r.confidence) * 100 > 85 ? "ext_data_cap" : null,
+            confidence_cap_reason: r.confidence != null && Number(r.confidence) * 100 > govCeil ? "governance_ceiling" : null,
             linked_aicis_recommendation_id: r.id,
             recommendation_logic_type: "aicis_recommendation",
             source_insight_summary: `AICIS recommendation ${r.external_id}`,
@@ -266,19 +280,19 @@ Deno.serve(async (req) => {
               domain: r.domain, country_iso3: r.country_iso3,
               estimated_cost_eur: r.estimated_cost_eur,
               estimated_roi_eur: r.estimated_roi_eur,
-              threshold_used: URGENCY_HOURS_THRESHOLD,
+              threshold_used: orgUrgencyHours,
               correlation_id: correlationId,
             },
           });
         }
 
         if (dryRun) {
-          orgRes.created = toInsert.length; // would-be
+          orgRes.created = toInsert.length;
           perOrgResults.push(orgRes);
           continue;
         }
 
-        // ── 5. Bulk insert ──
+        // ── 5. Bulk insert + Phase 6A: approval-chain rows + governance audit ──
         if (toInsert.length > 0) {
           const CHUNK = 25;
           for (let i = 0; i < toInsert.length; i += CHUNK) {
@@ -291,6 +305,36 @@ Deno.serve(async (req) => {
             } else {
               const n = inserted?.length ?? 0;
               result.decisions_created += n; orgRes.created += n;
+
+              // Insert approval-chain stages for each new decision
+              if (chainStages.length > 0 && inserted) {
+                const chainRows = inserted.flatMap((d: { id: string }) =>
+                  chainStages.map((s) => ({
+                    decision_id: d.id,
+                    organization_id: orgId,
+                    approval_stage: s.approval_stage,
+                    sequence_order: s.sequence_order,
+                    required_quorum: s.required_quorum,
+                    approver_role: s.approver_role,
+                  }))
+                );
+                await service.from("approval_chain_stages").insert(chainRows);
+              }
+
+              // Governance audit (append-only) per decision
+              for (const d of inserted ?? []) {
+                await recordGovernanceUse(SUPABASE_URL, SERVICE_KEY, {
+                  organization_id: orgId,
+                  subject_type: "decision",
+                  subject_id: (d as { id: string }).id,
+                  profile,
+                  thresholds_applied: thresholdsApplied,
+                  approval_rules_applied: { required_approvals: requiredApprovals, chain: chainStages },
+                  decision_path: { source: "aicis_auto", correlation_id: correlationId },
+                  context_pack: activePack,
+                  engine_version: "aicis-auto-decisions/phase-6a",
+                });
+              }
             }
           }
         }
@@ -310,8 +354,11 @@ Deno.serve(async (req) => {
             decisions_created: orgRes.created,
             skipped_existing: orgRes.skipped,
             errors: orgRes.errors,
-            risk_threshold: RISK_THRESHOLD,
-            urgency_threshold_hours: URGENCY_HOURS_THRESHOLD,
+            risk_threshold: orgRiskThreshold,
+            urgency_threshold_hours: orgUrgencyHours,
+            governance_profile_version: profile.version,
+            governance_model: profile.governance_model,
+            context_pack: activePack,
           },
         });
 
