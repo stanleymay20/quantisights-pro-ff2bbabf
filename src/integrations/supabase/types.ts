@@ -6057,6 +6057,54 @@ export type Database = {
         }
         Relationships: []
       }
+      gdpr_requests: {
+        Row: {
+          created_at: string
+          fulfilled_at: string | null
+          honeypot_triggered: boolean
+          hour_bucket: number
+          id: string
+          message: string | null
+          organization_context: string | null
+          request_type: string
+          requester_email: string
+          source_ip: unknown
+          status: string
+          updated_at: string
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          fulfilled_at?: string | null
+          honeypot_triggered?: boolean
+          hour_bucket?: number
+          id?: string
+          message?: string | null
+          organization_context?: string | null
+          request_type: string
+          requester_email: string
+          source_ip?: unknown
+          status?: string
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          fulfilled_at?: string | null
+          honeypot_triggered?: boolean
+          hour_bucket?: number
+          id?: string
+          message?: string | null
+          organization_context?: string | null
+          request_type?: string
+          requester_email?: string
+          source_ip?: unknown
+          status?: string
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       governance_maturity_assessments: {
         Row: {
           assessed_by: string
