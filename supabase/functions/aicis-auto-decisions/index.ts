@@ -125,23 +125,50 @@ Deno.serve(async (req) => {
     for (const orgId of orgsToProcess) {
       const orgRes = { org_id: orgId, created: 0, skipped: 0, errors: 0 };
       try {
-        // ── 1. Predictions above risk threshold ──
+        // ── Phase 6A: per-org governance profile + configurable thresholds ──
+        const profile = await getGovernanceProfile(SUPABASE_URL, SERVICE_KEY, orgId);
+        const orgRiskThreshold = await getThreshold(
+          SUPABASE_URL, SERVICE_KEY, orgId, "aicis.risk_threshold",
+          profile.intervention_threshold ?? DEFAULT_RISK_THRESHOLD,
+        );
+        const orgUrgencyHours = await getThreshold(
+          SUPABASE_URL, SERVICE_KEY, orgId, "aicis.urgency_hours", DEFAULT_URGENCY_HOURS_THRESHOLD,
+        );
+        const chainStages = approvalChainForModel(profile.governance_model);
+        const requiredApprovals = chainStages.length;
+        const thresholdsApplied = {
+          "aicis.risk_threshold": orgRiskThreshold,
+          "aicis.urgency_hours": orgUrgencyHours,
+          "governance.confidence_ceiling": profile.governance_confidence_ceiling,
+        };
+
+        // Look up active context pack (first, if any) for audit attribution
+        const { data: packRow } = await service
+          .from("organization_context_packs")
+          .select("pack_key")
+          .eq("organization_id", orgId)
+          .order("enabled_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        const activePack: string | null = packRow?.pack_key ?? null;
+
+        // ── 1. Predictions above per-org risk threshold ──
         const { data: preds, error: predErr } = await service
           .from("aicis_predictions")
           .select("id, external_id, country_iso3, domain, risk_probability, confidence_lower, confidence_upper, horizon_days, evidence_count, generated_at")
           .eq("organization_id", orgId)
-          .gte("risk_probability", RISK_THRESHOLD)
+          .gte("risk_probability", orgRiskThreshold)
           .order("risk_probability", { ascending: false })
           .limit(MAX_DECISIONS_PER_RUN);
         if (predErr) throw new Error(`predictions query failed: ${predErr.message}`);
         result.scanned_predictions += preds?.length ?? 0;
 
-        // ── 2. Recommendations within urgency window ──
+        // ── 2. Recommendations within per-org urgency window ──
         const { data: recs, error: recErr } = await service
           .from("aicis_recommendations")
           .select("id, external_id, country_iso3, domain, intervention_type, intervention_title, rationale_md, urgency_hours, urgency_window, confidence, estimated_cost_eur, estimated_roi_eur, generated_at")
           .eq("organization_id", orgId)
-          .lte("urgency_hours", URGENCY_HOURS_THRESHOLD)
+          .lte("urgency_hours", orgUrgencyHours)
           .order("urgency_hours", { ascending: true })
           .limit(MAX_DECISIONS_PER_RUN);
         if (recErr) throw new Error(`recommendations query failed: ${recErr.message}`);
