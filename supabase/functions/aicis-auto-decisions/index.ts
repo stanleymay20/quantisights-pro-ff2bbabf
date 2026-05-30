@@ -11,10 +11,16 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { getCorsHeaders, corsPreflightResponse } from "../_shared/cors.ts";
+import { getGovernanceProfile, approvalChainForModel } from "../_shared/governance-profile.ts";
+import { getThreshold } from "../_shared/threshold-registry.ts";
+import { recordGovernanceUse, buildGovernanceContext } from "../_shared/governance-audit.ts";
 
-const RISK_THRESHOLD = 0.60;
-const URGENCY_HOURS_THRESHOLD = 72;
+// Phase 6A: defaults only — per-org values come from governance_profiles + governance_thresholds.
+const DEFAULT_RISK_THRESHOLD = 0.60;
+const DEFAULT_URGENCY_HOURS_THRESHOLD = 72;
 const MAX_DECISIONS_PER_RUN = 50;
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 interface AutoRunResult {
   scanned_predictions: number;
