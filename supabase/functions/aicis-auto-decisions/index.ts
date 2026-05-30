@@ -11,10 +11,16 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { getCorsHeaders, corsPreflightResponse } from "../_shared/cors.ts";
+import { getGovernanceProfile, approvalChainForModel } from "../_shared/governance-profile.ts";
+import { getThreshold } from "../_shared/threshold-registry.ts";
+import { recordGovernanceUse, buildGovernanceContext } from "../_shared/governance-audit.ts";
 
-const RISK_THRESHOLD = 0.60;
-const URGENCY_HOURS_THRESHOLD = 72;
+// Phase 6A: defaults only — per-org values come from governance_profiles + governance_thresholds.
+const DEFAULT_RISK_THRESHOLD = 0.60;
+const DEFAULT_URGENCY_HOURS_THRESHOLD = 72;
 const MAX_DECISIONS_PER_RUN = 50;
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 interface AutoRunResult {
   scanned_predictions: number;
@@ -63,12 +69,12 @@ Deno.serve(async (req) => {
     const { data: candidateOrgs } = await service
       .from("aicis_predictions")
       .select("organization_id")
-      .gte("risk_probability", RISK_THRESHOLD);
+      .gte("risk_probability", DEFAULT_RISK_THRESHOLD);
     const set = new Set<string>((candidateOrgs ?? []).map(r => r.organization_id as string));
     const { data: recOrgs } = await service
       .from("aicis_recommendations")
       .select("organization_id")
-      .lte("urgency_hours", URGENCY_HOURS_THRESHOLD);
+      .lte("urgency_hours", DEFAULT_URGENCY_HOURS_THRESHOLD);
     for (const r of recOrgs ?? []) set.add(r.organization_id as string);
     orgsToProcess = Array.from(set);
     log("info", "cron_mode_started", { org_count: orgsToProcess.length, correlation_id: correlationId });
@@ -119,23 +125,50 @@ Deno.serve(async (req) => {
     for (const orgId of orgsToProcess) {
       const orgRes = { org_id: orgId, created: 0, skipped: 0, errors: 0 };
       try {
-        // ── 1. Predictions above risk threshold ──
+        // ── Phase 6A: per-org governance profile + configurable thresholds ──
+        const profile = await getGovernanceProfile(SUPABASE_URL, SERVICE_KEY, orgId);
+        const orgRiskThreshold = await getThreshold(
+          SUPABASE_URL, SERVICE_KEY, orgId, "aicis.risk_threshold",
+          profile.intervention_threshold ?? DEFAULT_RISK_THRESHOLD,
+        );
+        const orgUrgencyHours = await getThreshold(
+          SUPABASE_URL, SERVICE_KEY, orgId, "aicis.urgency_hours", DEFAULT_URGENCY_HOURS_THRESHOLD,
+        );
+        const chainStages = approvalChainForModel(profile.governance_model);
+        const requiredApprovals = chainStages.length;
+        const thresholdsApplied = {
+          "aicis.risk_threshold": orgRiskThreshold,
+          "aicis.urgency_hours": orgUrgencyHours,
+          "governance.confidence_ceiling": profile.governance_confidence_ceiling,
+        };
+
+        // Look up active context pack (first, if any) for audit attribution
+        const { data: packRow } = await service
+          .from("organization_context_packs")
+          .select("pack_key")
+          .eq("organization_id", orgId)
+          .order("enabled_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        const activePack: string | null = packRow?.pack_key ?? null;
+
+        // ── 1. Predictions above per-org risk threshold ──
         const { data: preds, error: predErr } = await service
           .from("aicis_predictions")
           .select("id, external_id, country_iso3, domain, risk_probability, confidence_lower, confidence_upper, horizon_days, evidence_count, generated_at")
           .eq("organization_id", orgId)
-          .gte("risk_probability", RISK_THRESHOLD)
+          .gte("risk_probability", orgRiskThreshold)
           .order("risk_probability", { ascending: false })
           .limit(MAX_DECISIONS_PER_RUN);
         if (predErr) throw new Error(`predictions query failed: ${predErr.message}`);
         result.scanned_predictions += preds?.length ?? 0;
 
-        // ── 2. Recommendations within urgency window ──
+        // ── 2. Recommendations within per-org urgency window ──
         const { data: recs, error: recErr } = await service
           .from("aicis_recommendations")
           .select("id, external_id, country_iso3, domain, intervention_type, intervention_title, rationale_md, urgency_hours, urgency_window, confidence, estimated_cost_eur, estimated_roi_eur, generated_at")
           .eq("organization_id", orgId)
-          .lte("urgency_hours", URGENCY_HOURS_THRESHOLD)
+          .lte("urgency_hours", orgUrgencyHours)
           .order("urgency_hours", { ascending: true })
           .limit(MAX_DECISIONS_PER_RUN);
         if (recErr) throw new Error(`recommendations query failed: ${recErr.message}`);
@@ -150,14 +183,26 @@ Deno.serve(async (req) => {
         const linkedPredIds = new Set((existing ?? []).map(r => r.linked_aicis_prediction_id).filter(Boolean));
         const linkedRecIds = new Set((existing ?? []).map(r => r.linked_aicis_recommendation_id).filter(Boolean));
 
-        // ── 4. Build decision rows ──
+        // ── 4. Build decision rows (Phase 6A: governance-stamped) ──
+        const governanceCtx = buildGovernanceContext(
+          profile, thresholdsApplied,
+          { required_approvals: requiredApprovals, chain: chainStages }, activePack,
+        );
+        const decisionDefaults = {
+          governance_profile_id: profile.id,
+          required_approvals: requiredApprovals,
+          approval_chain: chainStages,
+          governance_context: governanceCtx,
+        };
         const toInsert: Record<string, unknown>[] = [];
 
         for (const p of preds ?? []) {
           if (linkedPredIds.has(p.id)) { result.skipped_existing++; orgRes.skipped++; continue; }
           const country = p.country_iso3 ? ` in ${p.country_iso3}` : "";
           const horizon = p.horizon_days ? ` (${p.horizon_days}d horizon)` : "";
+          const govCeil = profile.governance_confidence_ceiling * 100;
           toInsert.push({
+            ...decisionDefaults,
             organization_id: orgId,
             decision_type: "risk_response",
             decision_status: "pending",
@@ -170,9 +215,9 @@ Deno.serve(async (req) => {
                      : "") +
                    `. Evidence count: ${p.evidence_count ?? "n/a"}.`,
             raw_confidence: p.confidence_upper ? Number(p.confidence_upper) * 100 : null,
-            capped_confidence: p.confidence_upper ? Math.min(Number(p.confidence_upper) * 100, 85) : null,
+            capped_confidence: p.confidence_upper ? Math.min(Number(p.confidence_upper) * 100, govCeil) : null,
             confidence_at_decision: p.confidence_upper ? Number(p.confidence_upper) * 100 : null,
-            confidence_cap_reason: p.confidence_upper && Number(p.confidence_upper) * 100 > 85 ? "ext_data_cap" : null,
+            confidence_cap_reason: p.confidence_upper && Number(p.confidence_upper) * 100 > govCeil ? "governance_ceiling" : null,
             linked_aicis_prediction_id: p.id,
             recommendation_logic_type: "aicis_risk_prediction",
             source_insight_summary: `AICIS prediction ${p.external_id}`,
@@ -191,7 +236,7 @@ Deno.serve(async (req) => {
               risk_probability: Number(p.risk_probability),
               domain: p.domain, country_iso3: p.country_iso3,
               horizon_days: p.horizon_days, evidence_count: p.evidence_count,
-              threshold_used: RISK_THRESHOLD, correlation_id: correlationId,
+              threshold_used: orgRiskThreshold, correlation_id: correlationId,
             },
           });
         }
@@ -200,7 +245,9 @@ Deno.serve(async (req) => {
           if (linkedRecIds.has(r.id)) { result.skipped_existing++; orgRes.skipped++; continue; }
           const cost = r.estimated_cost_eur ? `€${Number(r.estimated_cost_eur).toLocaleString()}` : "TBD";
           const roi = r.estimated_roi_eur ? `€${Number(r.estimated_roi_eur).toLocaleString()}` : "TBD";
+          const govCeil = profile.governance_confidence_ceiling * 100;
           toInsert.push({
+            ...decisionDefaults,
             organization_id: orgId,
             decision_type: "intervention",
             decision_status: "pending",
@@ -209,9 +256,9 @@ Deno.serve(async (req) => {
             recommended_action: r.intervention_title ?? `Execute ${r.intervention_type ?? "intervention"}`,
             notes: `${r.rationale_md ?? ""}\n\n— Estimated cost: ${cost} · Estimated ROI: ${roi} · Window: ${r.urgency_window ?? `${r.urgency_hours}h`}`.trim(),
             raw_confidence: r.confidence != null ? Number(r.confidence) * 100 : null,
-            capped_confidence: r.confidence != null ? Math.min(Number(r.confidence) * 100, 85) : null,
+            capped_confidence: r.confidence != null ? Math.min(Number(r.confidence) * 100, govCeil) : null,
             confidence_at_decision: r.confidence != null ? Number(r.confidence) * 100 : null,
-            confidence_cap_reason: r.confidence != null && Number(r.confidence) * 100 > 85 ? "ext_data_cap" : null,
+            confidence_cap_reason: r.confidence != null && Number(r.confidence) * 100 > govCeil ? "governance_ceiling" : null,
             linked_aicis_recommendation_id: r.id,
             recommendation_logic_type: "aicis_recommendation",
             source_insight_summary: `AICIS recommendation ${r.external_id}`,
@@ -233,19 +280,19 @@ Deno.serve(async (req) => {
               domain: r.domain, country_iso3: r.country_iso3,
               estimated_cost_eur: r.estimated_cost_eur,
               estimated_roi_eur: r.estimated_roi_eur,
-              threshold_used: URGENCY_HOURS_THRESHOLD,
+              threshold_used: orgUrgencyHours,
               correlation_id: correlationId,
             },
           });
         }
 
         if (dryRun) {
-          orgRes.created = toInsert.length; // would-be
+          orgRes.created = toInsert.length;
           perOrgResults.push(orgRes);
           continue;
         }
 
-        // ── 5. Bulk insert ──
+        // ── 5. Bulk insert + Phase 6A: approval-chain rows + governance audit ──
         if (toInsert.length > 0) {
           const CHUNK = 25;
           for (let i = 0; i < toInsert.length; i += CHUNK) {
@@ -258,6 +305,36 @@ Deno.serve(async (req) => {
             } else {
               const n = inserted?.length ?? 0;
               result.decisions_created += n; orgRes.created += n;
+
+              // Insert approval-chain stages for each new decision
+              if (chainStages.length > 0 && inserted) {
+                const chainRows = inserted.flatMap((d: { id: string }) =>
+                  chainStages.map((s) => ({
+                    decision_id: d.id,
+                    organization_id: orgId,
+                    approval_stage: s.approval_stage,
+                    sequence_order: s.sequence_order,
+                    required_quorum: s.required_quorum,
+                    approver_role: s.approver_role,
+                  }))
+                );
+                await service.from("approval_chain_stages").insert(chainRows);
+              }
+
+              // Governance audit (append-only) per decision
+              for (const d of inserted ?? []) {
+                await recordGovernanceUse(SUPABASE_URL, SERVICE_KEY, {
+                  organization_id: orgId,
+                  subject_type: "decision",
+                  subject_id: (d as { id: string }).id,
+                  profile,
+                  thresholds_applied: thresholdsApplied,
+                  approval_rules_applied: { required_approvals: requiredApprovals, chain: chainStages },
+                  decision_path: { source: "aicis_auto", correlation_id: correlationId },
+                  context_pack: activePack,
+                  engine_version: "aicis-auto-decisions/phase-6a",
+                });
+              }
             }
           }
         }
@@ -277,8 +354,11 @@ Deno.serve(async (req) => {
             decisions_created: orgRes.created,
             skipped_existing: orgRes.skipped,
             errors: orgRes.errors,
-            risk_threshold: RISK_THRESHOLD,
-            urgency_threshold_hours: URGENCY_HOURS_THRESHOLD,
+            risk_threshold: orgRiskThreshold,
+            urgency_threshold_hours: orgUrgencyHours,
+            governance_profile_version: profile.version,
+            governance_model: profile.governance_model,
+            context_pack: activePack,
           },
         });
 

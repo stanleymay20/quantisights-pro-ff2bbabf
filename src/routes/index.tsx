@@ -156,6 +156,8 @@ const DPIA = lazy(() => import("@/pages/DPIA"));
 const GDPRRights = lazy(() => import("@/pages/GDPRRights"));
 const EnterpriseReadiness = lazy(() => import("@/pages/EnterpriseReadiness"));
 const LocalizationAudit = lazy(() => import("@/pages/admin/LocalizationAudit"));
+const ContextPacks = lazy(() => import("@/pages/admin/ContextPacks"));
+const GovernanceSimulation = lazy(() => import("@/pages/admin/GovernanceSimulation"));
 
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
@@ -321,6 +323,8 @@ export const routes: RouteEntry[] = [
   { path: "/admin/connector-health", element: <ConnectorHealth />, layout: "full" },
   { path: "/admin/connectors/sap", element: <SapConnector />, layout: "full" },
   { path: "/admin/localization-audit", element: <LocalizationAudit />, layout: "full" },
+  { path: "/admin/context-packs", element: <ContextPacks />, layout: "full" },
+  { path: "/admin/governance-simulation", element: <GovernanceSimulation />, layout: "full" },
 
   // ══════ Catch-all ══════
   { path: "*", element: <NotFound />, layout: "public" },
