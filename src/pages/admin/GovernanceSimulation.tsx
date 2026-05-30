@@ -113,6 +113,53 @@ const GovernanceSimulation = () => {
           </CardContent>
         </Card>
 
+        {results.length >= 2 && (
+          <Card>
+            <CardContent className="p-0 overflow-auto">
+              <div className="px-4 py-3 border-b border-border/40">
+                <div className="text-sm font-semibold">Side-by-side comparison</div>
+                <div className="text-[11px] text-muted-foreground">
+                  Same signal · different governance · real-engine resolution (no mocks)
+                </div>
+              </div>
+              <table className="w-full text-xs">
+                <thead className="bg-muted/40 text-muted-foreground">
+                  <tr>
+                    <th className="text-left px-3 py-2">Dimension</th>
+                    {results.map((r) => (
+                      <th key={r.organization_id} className="text-left px-3 py-2">{r.organization_name}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    { label: "Governance Model", get: (r: SimResult) => r.profile.governance_model },
+                    { label: "Risk Appetite", get: (r: SimResult) => r.profile.risk_appetite },
+                    { label: "Context Pack", get: (r: SimResult) => r.context_pack ?? "—" },
+                    { label: "Risk threshold", get: (r: SimResult) => r.thresholds_applied["aicis.risk_threshold"] },
+                    { label: "Urgency hours", get: (r: SimResult) => r.thresholds_applied["aicis.urgency_hours"] },
+                    { label: "High-tier intervention", get: (r: SimResult) => r.thresholds_applied["intervention.high_tier"] },
+                    { label: "Confidence ceiling", get: (r: SimResult) => r.thresholds_applied["governance.confidence_ceiling"] },
+                    { label: "Would trigger?", get: (r: SimResult) => (r.outcome.would_trigger_decision ? "yes" : "no") },
+                    { label: "Escalation tier", get: (r: SimResult) => r.outcome.escalation_tier },
+                    { label: "Required approvals", get: (r: SimResult) => r.outcome.required_approvals },
+                    { label: "Approval chain", get: (r: SimResult) => r.outcome.approval_chain.map((s) => s.approval_stage).join(" → ") },
+                    { label: "Raw → capped confidence", get: (r: SimResult) => `${r.outcome.raw_confidence}% → ${r.outcome.capped_confidence}%` },
+                    { label: "Recommendation", get: (r: SimResult) => r.outcome.intervention_recommendation },
+                  ].map((row) => (
+                    <tr key={row.label} className="border-t border-border/30">
+                      <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">{row.label}</td>
+                      {results.map((r) => (
+                        <td key={r.organization_id} className="px-3 py-2 align-top">{String(row.get(r))}</td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </CardContent>
+          </Card>
+        )}
+
         {results.length > 0 && (
           <div className="grid gap-3">
             {results.map((r) => (

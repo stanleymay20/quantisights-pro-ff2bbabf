@@ -130,7 +130,52 @@ const TrustCenter = () => {
 
         <Separator />
 
-        {/* ─── Phase 5E.5 — How Quantivis Reasons (procurement trust) ─── */}
+        {/* ─── Phase 6A.1 — Contextual Governance ─── */}
+        <Card className="border-primary/30 bg-primary/[0.02]">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2.5">
+                <Shield className="w-5 h-5 text-primary" />
+                <CardTitle className="text-base">Contextual Governance</CardTitle>
+              </div>
+              <Badge variant="outline" className="text-[10px]">Phase 6A — executable</Badge>
+            </div>
+            <p className="text-xs text-muted-foreground pt-1 max-w-2xl leading-relaxed">
+              Organizations define their own governance model, risk appetite, and approval
+              requirements. Quantivis executes those rules — it does not impose a universal
+              decision model. The same operational signal produces different thresholds,
+              escalation, and approval chains depending on each organization's configuration.
+            </p>
+          </CardHeader>
+          <CardContent className="pt-0 space-y-2">
+            {[
+              { label: "Human oversight", value: "Required for any decision that transitions to executable. AI-generated decisions cannot bypass the approval gate (DB-level trigger enforcement)." },
+              { label: "Approval chains", value: "Sequenced multi-stage approvals derived from the active governance_model (centralized / distributed / committee / founder_led). Versioned and enforced before execution." },
+              { label: "Context-aware thresholds", value: "Risk, urgency, intervention tiers, and governance confidence ceilings resolve per-org from governance_profiles + governance_thresholds — not from hardcoded constants." },
+              { label: "Explainable recommendations", value: "Every advisory / intervention / decision exposes 'Why did I receive this?' with the governance model, risk appetite, context pack, thresholds, and approval rules used." },
+              { label: "Governance versioning", value: "governance_profiles are append-versioned; the version that produced a recommendation is stamped on the audit row and shown in the UI." },
+              { label: "Audit logging", value: "context_governance_audit is append-only with DENY UPDATE/DELETE. Filterable and CSV-exportable from /admin/governance-audit." },
+            ].map((p) => (
+              <div key={p.label} className="grid grid-cols-[180px,1fr] gap-3 text-sm py-1.5 border-b border-border/30 last:border-0">
+                <div className="text-foreground/80 font-medium">{p.label}:</div>
+                <div className="text-muted-foreground leading-relaxed">{p.value}</div>
+              </div>
+            ))}
+            <div className="flex flex-wrap gap-2 pt-3">
+              <Button size="sm" variant="outline" onClick={() => navigate("/admin/governance-simulation")}>
+                Governance Simulation
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => navigate("/admin/governance-audit")}>
+                Governance Audit Explorer
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => navigate("/dpia")}>DPIA</Button>
+              <Button size="sm" variant="outline" onClick={() => navigate("/ai-system-classification")}>AI Classification</Button>
+              <Button size="sm" variant="outline" onClick={() => navigate("/how-ai-is-used")}>How Quantivis Reasons</Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Separator />
         <Card className="border-primary/30 bg-primary/[0.02]">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between flex-wrap gap-2">

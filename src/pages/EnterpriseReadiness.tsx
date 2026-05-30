@@ -3,7 +3,7 @@ import logo from "@/assets/quantivis-logo.png";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Shield, Lock, Brain, Globe, FileCheck, MapPin, ArrowRight, CheckCircle2 } from "lucide-react";
+import { Shield, Lock, Brain, Globe, FileCheck, MapPin, ArrowRight, CheckCircle2, ScrollText } from "lucide-react";
 
 /**
  * The page you send a procurement team first.
@@ -11,6 +11,18 @@ import { Shield, Lock, Brain, Globe, FileCheck, MapPin, ArrowRight, CheckCircle2
  */
 
 const pillars = [
+  {
+    icon: ScrollText,
+    title: "Contextual Governance",
+    badge: "Phase 6A — executable",
+    links: [
+      { to: "/admin/governance-simulation", label: "Cross-Domain Governance Simulation" },
+      { to: "/admin/context-packs", label: "Context Packs (University / Supply Chain / PE / Gov / Health)" },
+      { to: "/admin/governance-audit", label: "Governance Audit Explorer" },
+      { to: "/ai-governance", label: "Governance Principles" },
+      { to: "/auditability", label: "Approval-Chain Enforcement" },
+    ],
+  },
   {
     icon: Lock,
     title: "Security",

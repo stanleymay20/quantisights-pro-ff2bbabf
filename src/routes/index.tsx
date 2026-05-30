@@ -158,6 +158,7 @@ const EnterpriseReadiness = lazy(() => import("@/pages/EnterpriseReadiness"));
 const LocalizationAudit = lazy(() => import("@/pages/admin/LocalizationAudit"));
 const ContextPacks = lazy(() => import("@/pages/admin/ContextPacks"));
 const GovernanceSimulation = lazy(() => import("@/pages/admin/GovernanceSimulation"));
+const GovernanceAudit = lazy(() => import("@/pages/admin/GovernanceAudit"));
 
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
@@ -325,6 +326,7 @@ export const routes: RouteEntry[] = [
   { path: "/admin/localization-audit", element: <LocalizationAudit />, layout: "full" },
   { path: "/admin/context-packs", element: <ContextPacks />, layout: "full" },
   { path: "/admin/governance-simulation", element: <GovernanceSimulation />, layout: "full" },
+  { path: "/admin/governance-audit", element: <GovernanceAudit />, layout: "full" },
 
   // ══════ Catch-all ══════
   { path: "*", element: <NotFound />, layout: "public" },
