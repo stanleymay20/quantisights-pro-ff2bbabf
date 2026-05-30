@@ -26,7 +26,7 @@ interface Pack {
 }
 
 const ContextPacks = () => {
-  const { organizationId } = useActiveDataContext();
+  const { orgId: organizationId } = useActiveDataContext();
   const { toast } = useToast();
   const [packs, setPacks] = useState<Pack[]>([]);
   const [activated, setActivated] = useState<Set<string>>(new Set());
