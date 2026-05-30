@@ -69,7 +69,7 @@ Deno.serve(async (req) => {
     const { data: candidateOrgs } = await service
       .from("aicis_predictions")
       .select("organization_id")
-      .gte("risk_probability", RISK_THRESHOLD);
+      .gte("risk_probability", DEFAULT_RISK_THRESHOLD);
     const set = new Set<string>((candidateOrgs ?? []).map(r => r.organization_id as string));
     const { data: recOrgs } = await service
       .from("aicis_recommendations")
