@@ -189,21 +189,54 @@ const TrustCenter = () => {
         <Separator />
 
         <div>
+          <h2 className="text-lg font-semibold mb-3">Procurement Readiness</h2>
+          <Card className="border-border/50 mb-4">
+            <CardContent className="pt-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs">
+                {[
+                  { label: "AVV (DE)", to: "/de/avv" },
+                  { label: "TOMs (EN/DE)", to: "/toms" },
+                  { label: "DPIA Summary", to: "/dpia" },
+                  { label: "Data Residency", to: "/data-residency" },
+                  { label: "SCC Disclosure", to: "/data-residency" },
+                  { label: "AI Governance", to: "/ai-governance" },
+                  { label: "GDPR Rights", to: "/gdpr-rights" },
+                  { label: "Enterprise Readiness", to: "/enterprise-readiness" },
+                ].map((item) => (
+                  <button
+                    key={item.label}
+                    onClick={() => navigate(item.to)}
+                    className="flex items-center gap-2 px-3 py-2 rounded-md border border-border/40 hover:border-primary/40 text-left transition-colors"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5 text-primary shrink-0" />
+                    <span className="text-foreground/90">{item.label}</span>
+                  </button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
           <h2 className="text-lg font-semibold mb-3">Procurement &amp; Compliance Documents</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {[
+              { path: "/data-residency", label: "Data Residency & Transfers", desc: "Hosting region, SCC disclosure, AI provider transfers" },
+              { path: "/dpia", label: "DPIA Summary", desc: "Art. 35 GDPR — risk matrix, AI governance mapping" },
+              { path: "/gdpr-rights", label: "GDPR Rights & Erasure", desc: "8 rights, 30-day SLA, self-service request form" },
+              { path: "/enterprise-readiness", label: "Enterprise Readiness", desc: "Single-page summary for procurement teams" },
               { path: "/toms", label: "Technical & Organizational Measures", desc: "GDPR Art. 32 control catalogue (TOMs / AVV annex)" },
               { path: "/ai-governance", label: "AI Governance", desc: "EU AI Act alignment, human oversight, explainability" },
-              { path: "/ai-system-classification", label: "AI System Classification", desc: "EU AI Act risk matrix per capability" },
+              { path: "/ai-system-classification", label: "AI System Classification", desc: "Context-dependent capability matrix" },
               { path: "/how-ai-is-used", label: "How AI Is Used", desc: "Deterministic / statistical / AI / human / autonomous boundary" },
               { path: "/auditability", label: "Auditability", desc: "Audit log, lineage, decision ledger, calibration history" },
               { path: "/incident-response", label: "Incident Response", desc: "Severity SLAs, GDPR Art. 33 notification, runbook" },
               { path: "/security-overview", label: "Security Overview", desc: "Auth, RBAC, isolation, secrets, breakers, DLQ" },
               { path: "/security-policy", label: "Vulnerability Disclosure", desc: "Reporting channels, SLAs, scope, safe harbour" },
-              { path: "/subprocessors", label: "Sub-processor Registry", desc: "Live DB-backed registry with DPA + transfer mechanism" },
-              { path: "/dpa", label: "Data Processing Agreement", desc: "DPA / AVV template available on request" },
+              { path: "/subprocessors", label: "Sub-processor Registry", desc: "Live registry with hosting region + transfer mechanism" },
+              { path: "/dpa", label: "Data Processing Agreement (EN)", desc: "English DPA — companion to AVV (DE)" },
+              { path: "/de/avv", label: "Auftragsverarbeitungsvertrag (DE)", desc: "Beschaffungsreif — Anlagen I–III, Versionshistorie" },
               { path: "/security-questionnaire", label: "Security Questionnaire", desc: "Standard pre-filled procurement Q&A" },
               { path: "/data-retention", label: "Data Retention Policy", desc: "Category-level retention and erasure" },
+
             ].map((doc) => (
               <Card
                 key={doc.path}
