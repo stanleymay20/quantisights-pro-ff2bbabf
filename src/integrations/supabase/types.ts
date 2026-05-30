@@ -1147,6 +1147,51 @@ export type Database = {
           },
         ]
       }
+      approval_chain_stages: {
+        Row: {
+          approval_stage: string
+          approvals_received: number
+          approver_role: string | null
+          created_at: string
+          decision_id: string
+          id: string
+          metadata: Json
+          organization_id: string
+          required_quorum: number
+          satisfied: boolean
+          satisfied_at: string | null
+          sequence_order: number
+        }
+        Insert: {
+          approval_stage: string
+          approvals_received?: number
+          approver_role?: string | null
+          created_at?: string
+          decision_id: string
+          id?: string
+          metadata?: Json
+          organization_id: string
+          required_quorum?: number
+          satisfied?: boolean
+          satisfied_at?: string | null
+          sequence_order: number
+        }
+        Update: {
+          approval_stage?: string
+          approvals_received?: number
+          approver_role?: string | null
+          created_at?: string
+          decision_id?: string
+          id?: string
+          metadata?: Json
+          organization_id?: string
+          required_quorum?: number
+          satisfied?: boolean
+          satisfied_at?: string | null
+          sequence_order?: number
+        }
+        Relationships: []
+      }
       attention_budget_config: {
         Row: {
           fatigue_demotion_threshold: number
@@ -2853,6 +2898,105 @@ export type Database = {
           },
         ]
       }
+      context_governance_audit: {
+        Row: {
+          approval_rules_applied: Json
+          context_pack: string | null
+          created_at: string
+          decision_path: Json
+          engine_version: string | null
+          governance_model: string | null
+          governance_profile_id: string | null
+          governance_profile_version: number | null
+          id: string
+          organization_id: string
+          risk_profile: string | null
+          subject_id: string
+          subject_type: string
+          thresholds_applied: Json
+        }
+        Insert: {
+          approval_rules_applied?: Json
+          context_pack?: string | null
+          created_at?: string
+          decision_path?: Json
+          engine_version?: string | null
+          governance_model?: string | null
+          governance_profile_id?: string | null
+          governance_profile_version?: number | null
+          id?: string
+          organization_id: string
+          risk_profile?: string | null
+          subject_id: string
+          subject_type: string
+          thresholds_applied?: Json
+        }
+        Update: {
+          approval_rules_applied?: Json
+          context_pack?: string | null
+          created_at?: string
+          decision_path?: Json
+          engine_version?: string | null
+          governance_model?: string | null
+          governance_profile_id?: string | null
+          governance_profile_version?: number | null
+          id?: string
+          organization_id?: string
+          risk_profile?: string | null
+          subject_id?: string
+          subject_type?: string
+          thresholds_applied?: Json
+        }
+        Relationships: []
+      }
+      context_packs: {
+        Row: {
+          created_at: string
+          description: string | null
+          executive_views: Json
+          governance_defaults: Json
+          id: string
+          is_locked_default: boolean
+          is_system: boolean
+          kpi_templates: Json
+          name: string
+          pack_key: string
+          threshold_defaults: Json
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          executive_views?: Json
+          governance_defaults?: Json
+          id?: string
+          is_locked_default?: boolean
+          is_system?: boolean
+          kpi_templates?: Json
+          name: string
+          pack_key: string
+          threshold_defaults?: Json
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          executive_views?: Json
+          governance_defaults?: Json
+          id?: string
+          is_locked_default?: boolean
+          is_system?: boolean
+          kpi_templates?: Json
+          name?: string
+          pack_key?: string
+          threshold_defaults?: Json
+          updated_at?: string
+          version?: number
+        }
+        Relationships: []
+      }
       convergence_usage: {
         Row: {
           call_count: number
@@ -3883,6 +4027,7 @@ export type Database = {
         Row: {
           actual_value: number | null
           advisory_instance_id: string | null
+          approval_chain: Json
           baseline_value: number | null
           calibration_error: number | null
           capped_confidence: number | null
@@ -3907,6 +4052,8 @@ export type Database = {
           execution_status: string
           expected_value_at_decision: number | null
           explanation_metadata: Json | null
+          governance_context: Json
+          governance_profile_id: string | null
           id: string
           kpi_id: string | null
           linked_aicis_prediction_id: string | null
@@ -3923,6 +4070,7 @@ export type Database = {
           raw_confidence: number | null
           recommendation_logic_type: string | null
           recommended_action: string
+          required_approvals: number
           simulation_id: string | null
           source_insight_summary: string | null
           updated_at: string
@@ -3930,6 +4078,7 @@ export type Database = {
         Insert: {
           actual_value?: number | null
           advisory_instance_id?: string | null
+          approval_chain?: Json
           baseline_value?: number | null
           calibration_error?: number | null
           capped_confidence?: number | null
@@ -3954,6 +4103,8 @@ export type Database = {
           execution_status?: string
           expected_value_at_decision?: number | null
           explanation_metadata?: Json | null
+          governance_context?: Json
+          governance_profile_id?: string | null
           id?: string
           kpi_id?: string | null
           linked_aicis_prediction_id?: string | null
@@ -3970,6 +4121,7 @@ export type Database = {
           raw_confidence?: number | null
           recommendation_logic_type?: string | null
           recommended_action: string
+          required_approvals?: number
           simulation_id?: string | null
           source_insight_summary?: string | null
           updated_at?: string
@@ -3977,6 +4129,7 @@ export type Database = {
         Update: {
           actual_value?: number | null
           advisory_instance_id?: string | null
+          approval_chain?: Json
           baseline_value?: number | null
           calibration_error?: number | null
           capped_confidence?: number | null
@@ -4001,6 +4154,8 @@ export type Database = {
           execution_status?: string
           expected_value_at_decision?: number | null
           explanation_metadata?: Json | null
+          governance_context?: Json
+          governance_profile_id?: string | null
           id?: string
           kpi_id?: string | null
           linked_aicis_prediction_id?: string | null
@@ -4017,6 +4172,7 @@ export type Database = {
           raw_confidence?: number | null
           recommendation_logic_type?: string | null
           recommended_action?: string
+          required_approvals?: number
           simulation_id?: string | null
           source_insight_summary?: string | null
           updated_at?: string
@@ -6142,6 +6298,102 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      governance_profiles: {
+        Row: {
+          advisory_threshold: number
+          change_reason: string | null
+          created_at: string
+          effective_from: string
+          effective_to: string | null
+          escalation_threshold: number
+          governance_confidence_ceiling: number
+          governance_confidence_floor: number
+          governance_model: string
+          id: string
+          intervention_threshold: number
+          organization_id: string
+          risk_appetite: string
+          updated_at: string
+          updated_by: string | null
+          version: number
+        }
+        Insert: {
+          advisory_threshold?: number
+          change_reason?: string | null
+          created_at?: string
+          effective_from?: string
+          effective_to?: string | null
+          escalation_threshold?: number
+          governance_confidence_ceiling?: number
+          governance_confidence_floor?: number
+          governance_model?: string
+          id?: string
+          intervention_threshold?: number
+          organization_id: string
+          risk_appetite?: string
+          updated_at?: string
+          updated_by?: string | null
+          version?: number
+        }
+        Update: {
+          advisory_threshold?: number
+          change_reason?: string | null
+          created_at?: string
+          effective_from?: string
+          effective_to?: string | null
+          escalation_threshold?: number
+          governance_confidence_ceiling?: number
+          governance_confidence_floor?: number
+          governance_model?: string
+          id?: string
+          intervention_threshold?: number
+          organization_id?: string
+          risk_appetite?: string
+          updated_at?: string
+          updated_by?: string | null
+          version?: number
+        }
+        Relationships: []
+      }
+      governance_thresholds: {
+        Row: {
+          created_at: string
+          effective_from: string
+          effective_to: string | null
+          id: string
+          organization_id: string
+          source: string
+          source_ref: string | null
+          threshold_key: string
+          threshold_value: number
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          effective_from?: string
+          effective_to?: string | null
+          id?: string
+          organization_id: string
+          source?: string
+          source_ref?: string | null
+          threshold_key: string
+          threshold_value: number
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          effective_from?: string
+          effective_to?: string | null
+          id?: string
+          organization_id?: string
+          source?: string
+          source_ref?: string | null
+          threshold_key?: string
+          threshold_value?: number
+          updated_by?: string | null
+        }
+        Relationships: []
       }
       graph_attention_views: {
         Row: {
@@ -9031,6 +9283,44 @@ export type Database = {
           },
         ]
       }
+      organization_context_packs: {
+        Row: {
+          config_overrides: Json
+          derived_from_pack: string | null
+          enabled_at: string
+          enabled_by: string | null
+          is_locked: boolean
+          organization_id: string
+          pack_key: string
+        }
+        Insert: {
+          config_overrides?: Json
+          derived_from_pack?: string | null
+          enabled_at?: string
+          enabled_by?: string | null
+          is_locked?: boolean
+          organization_id: string
+          pack_key: string
+        }
+        Update: {
+          config_overrides?: Json
+          derived_from_pack?: string | null
+          enabled_at?: string
+          enabled_by?: string | null
+          is_locked?: boolean
+          organization_id?: string
+          pack_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_context_packs_pack_key_fkey"
+            columns: ["pack_key"]
+            isOneToOne: false
+            referencedRelation: "context_packs"
+            referencedColumns: ["pack_key"]
+          },
+        ]
+      }
       organization_members: {
         Row: {
           created_at: string
@@ -9072,6 +9362,7 @@ export type Database = {
           decision_speed_preference: string | null
           ethical_boundaries: Json | null
           governance_model: string | null
+          governance_model_config: Json
           id: string
           industry_context: string | null
           innovation_posture: string | null
@@ -9095,6 +9386,7 @@ export type Database = {
           decision_speed_preference?: string | null
           ethical_boundaries?: Json | null
           governance_model?: string | null
+          governance_model_config?: Json
           id?: string
           industry_context?: string | null
           innovation_posture?: string | null
@@ -9118,6 +9410,7 @@ export type Database = {
           decision_speed_preference?: string | null
           ethical_boundaries?: Json | null
           governance_model?: string | null
+          governance_model_config?: Json
           id?: string
           industry_context?: string | null
           innovation_posture?: string | null
@@ -11414,6 +11707,33 @@ export type Database = {
       exec_verify_step_up_auth: {
         Args: { _org_id: string; _user_id: string; _validity_minutes?: number }
         Returns: boolean
+      }
+      get_active_governance_profile: {
+        Args: { _org_id: string }
+        Returns: {
+          advisory_threshold: number
+          change_reason: string | null
+          created_at: string
+          effective_from: string
+          effective_to: string | null
+          escalation_threshold: number
+          governance_confidence_ceiling: number
+          governance_confidence_floor: number
+          governance_model: string
+          id: string
+          intervention_threshold: number
+          organization_id: string
+          risk_appetite: string
+          updated_at: string
+          updated_by: string | null
+          version: number
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "governance_profiles"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       get_active_subprocessors: {
         Args: never
