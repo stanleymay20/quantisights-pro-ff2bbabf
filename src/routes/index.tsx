@@ -144,7 +144,21 @@ const IncidentResponse = lazy(() => import("@/pages/IncidentResponse"));
 const Auditability = lazy(() => import("@/pages/Auditability"));
 const ProcurementPack = lazy(() => import("@/pages/ProcurementPack"));
 
+// ── Phase 5F: Procurement Localization & Compliance ──
+const DatenschutzDe = lazy(() => import("@/pages/de/Datenschutz"));
+const AGBDe = lazy(() => import("@/pages/de/AGB"));
+const AVVDe = lazy(() => import("@/pages/de/AVV"));
+const TOMsDe = lazy(() => import("@/pages/de/TOMs"));
+const CookiesDe = lazy(() => import("@/pages/de/Cookies"));
+const KINutzungDe = lazy(() => import("@/pages/de/KINutzung"));
+const DataResidency = lazy(() => import("@/pages/DataResidency"));
+const DPIA = lazy(() => import("@/pages/DPIA"));
+const GDPRRights = lazy(() => import("@/pages/GDPRRights"));
+const EnterpriseReadiness = lazy(() => import("@/pages/EnterpriseReadiness"));
+const LocalizationAudit = lazy(() => import("@/pages/admin/LocalizationAudit"));
+
 const NotFound = lazy(() => import("@/pages/NotFound"));
+
 
 export type RouteLayout = "none" | "public" | "full" | "minimal";
 
@@ -205,6 +219,21 @@ export const routes: RouteEntry[] = [
   { path: "/how-ai-is-used", element: <HowAIIsUsed />, layout: "public" },
   { path: "/ai-system-classification", element: <AISystemClassification />, layout: "public" },
   { path: "/impressum", element: <Impressum />, layout: "public" },
+
+  // ══════ Phase 5F — German Legal Localization ══════
+  { path: "/de/datenschutz", element: <DatenschutzDe />, layout: "public" },
+  { path: "/de/agb", element: <AGBDe />, layout: "public" },
+  { path: "/de/avv", element: <AVVDe />, layout: "public" },
+  { path: "/de/toms", element: <TOMsDe />, layout: "public" },
+  { path: "/de/cookies", element: <CookiesDe />, layout: "public" },
+  { path: "/de/ki-nutzung", element: <KINutzungDe />, layout: "public" },
+
+  // ══════ Phase 5F — Procurement Compliance ══════
+  { path: "/data-residency", element: <DataResidency />, layout: "public" },
+  { path: "/dpia", element: <DPIA />, layout: "public" },
+  { path: "/gdpr-rights", element: <GDPRRights />, layout: "public" },
+  { path: "/enterprise-readiness", element: <EnterpriseReadiness />, layout: "public" },
+
 
   // ══════ Standalone protected (no sidebar) ══════
   { path: "/onboarding", element: <Onboarding />, layout: "minimal" },
@@ -291,7 +320,9 @@ export const routes: RouteEntry[] = [
   { path: "/admin/ingestion-observability", element: <IngestionObservability />, layout: "full" },
   { path: "/admin/connector-health", element: <ConnectorHealth />, layout: "full" },
   { path: "/admin/connectors/sap", element: <SapConnector />, layout: "full" },
+  { path: "/admin/localization-audit", element: <LocalizationAudit />, layout: "full" },
 
   // ══════ Catch-all ══════
   { path: "*", element: <NotFound />, layout: "public" },
 ];
+
