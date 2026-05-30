@@ -74,7 +74,7 @@ Deno.serve(async (req) => {
     const { data: recOrgs } = await service
       .from("aicis_recommendations")
       .select("organization_id")
-      .lte("urgency_hours", URGENCY_HOURS_THRESHOLD);
+      .lte("urgency_hours", DEFAULT_URGENCY_HOURS_THRESHOLD);
     for (const r of recOrgs ?? []) set.add(r.organization_id as string);
     orgsToProcess = Array.from(set);
     log("info", "cron_mode_started", { org_count: orgsToProcess.length, correlation_id: correlationId });
