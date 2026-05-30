@@ -156,6 +156,8 @@ const DPIA = lazy(() => import("@/pages/DPIA"));
 const GDPRRights = lazy(() => import("@/pages/GDPRRights"));
 const EnterpriseReadiness = lazy(() => import("@/pages/EnterpriseReadiness"));
 const LocalizationAudit = lazy(() => import("@/pages/admin/LocalizationAudit"));
+const ContextPacks = lazy(() => import("@/pages/admin/ContextPacks"));
+const GovernanceSimulation = lazy(() => import("@/pages/admin/GovernanceSimulation"));
 
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
