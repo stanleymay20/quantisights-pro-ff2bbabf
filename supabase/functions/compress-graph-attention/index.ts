@@ -32,6 +32,7 @@ function classifyExecutiveCategory(s: any, n: any): ExecCategory {
 }
 
 Deno.serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   const started = Date.now();
 
@@ -47,6 +48,8 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    const guard = await requireCronOrOrgMember(req, organization_id);
+    if (!guard.ok) return guard.response;
 
     // Pull top-scored nodes
     const { data: scores } = await supabase
