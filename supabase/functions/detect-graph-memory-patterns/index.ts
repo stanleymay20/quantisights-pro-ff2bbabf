@@ -1,10 +1,7 @@
 // Phase 5E — Recurring Pattern Detection over cached traversals
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { getCorsHeaders } from "../_shared/cors.ts";
+import { requireCronOrOrgMember } from "../_shared/cron-or-user.ts";
 
 const TRAV_TO_PATTERN: Record<string, string> = {
   escalation_chain: "recurring_escalation",
@@ -16,6 +13,7 @@ const TRAV_TO_PATTERN: Record<string, string> = {
 };
 
 Deno.serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
@@ -30,6 +28,8 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    const guard = await requireCronOrOrgMember(req, organization_id);
+    if (!guard.ok) return guard.response;
 
     const since = new Date(Date.now() - 30 * 86400000).toISOString();
     const { data: travs } = await supabase

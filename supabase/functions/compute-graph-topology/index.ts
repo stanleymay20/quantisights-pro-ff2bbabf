@@ -1,14 +1,12 @@
 // Phase 5E — Deterministic Graph Topology (PageRank + blast radius + confidence decomposition)
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { getCorsHeaders } from "../_shared/cors.ts";
+import { requireCronOrOrgMember } from "../_shared/cron-or-user.ts";
 
 const clamp = (n: number, lo = 0, hi = 100) => Math.max(lo, Math.min(hi, n));
 
 Deno.serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   const started = Date.now();
 
@@ -24,6 +22,8 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    const guard = await requireCronOrOrgMember(req, organization_id);
+    if (!guard.ok) return guard.response;
 
     const [{ data: nodes }, { data: edges }] = await Promise.all([
       supabase

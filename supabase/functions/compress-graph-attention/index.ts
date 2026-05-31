@@ -1,10 +1,7 @@
 // Phase 5E — Executive Attention Compression with 4-level abstraction hierarchy
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { getCorsHeaders } from "../_shared/cors.ts";
+import { requireCronOrOrgMember } from "../_shared/cron-or-user.ts";
 
 // Phase 5E.5 — hard cap of 5 executive abstractions, mapped to 5 executive categories.
 const BUDGETS: Record<string, number> = { executive: 5, operations: 12, governance: 8, board: 5 };
@@ -35,6 +32,7 @@ function classifyExecutiveCategory(s: any, n: any): ExecCategory {
 }
 
 Deno.serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   const started = Date.now();
 
@@ -50,6 +48,8 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    const guard = await requireCronOrOrgMember(req, organization_id);
+    if (!guard.ok) return guard.response;
 
     // Pull top-scored nodes
     const { data: scores } = await supabase

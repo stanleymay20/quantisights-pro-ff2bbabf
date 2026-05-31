@@ -1,11 +1,8 @@
 // Phase 5E — Deterministic Operational Graph Construction
 // Builds nodes + edges from existing operational tables. No LLM reasoning.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { getCorsHeaders } from "../_shared/cors.ts";
+import { requireCronOrOrgMember } from "../_shared/cron-or-user.ts";
 
 interface NodeUpsert {
   organization_id: string;
@@ -52,6 +49,7 @@ function decayFor(ageD: number) {
 }
 
 Deno.serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   const started = Date.now();
 
@@ -69,6 +67,8 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    const guard = await requireCronOrOrgMember(req, organization_id);
+    if (!guard.ok) return guard.response;
 
     // ── 1. Pull source records (bounded) ──
     const [narratives, pressures, interventions, decisions, advisories, inbox, conflicts] =

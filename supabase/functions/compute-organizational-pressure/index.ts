@@ -2,8 +2,9 @@
 // Deterministic organizational pressure snapshot derived from real Quantivis tables.
 // No LLM, no synthetic data, no fabricated edges. If no inputs exist, returns zero-input status.
 // deno-lint-ignore-file no-explicit-any
-import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { getCorsHeaders } from "../_shared/cors.ts";
+import { requireCronOrOrgMember } from "../_shared/cron-or-user.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -314,13 +315,28 @@ async function snapshotForOrg(sb: any, orgId: string) {
 }
 
 Deno.serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   const sb = createClient(SUPABASE_URL, SERVICE_ROLE);
   try {
     const body = req.method === "POST" ? await req.json().catch(() => ({})) : {};
+    const requestedOrgId: string | undefined = body?.organization_id;
+
+    // Auth: cron secret can run all-tenant sweep; user JWT must scope to their own org.
+    const guard = await requireCronOrOrgMember(req, requestedOrgId);
+    if (!guard.ok) return guard.response;
+
     let orgIds: string[] = [];
-    if (body?.organization_id) orgIds = [body.organization_id];
-    if (!orgIds.length) {
+    if (requestedOrgId) {
+      orgIds = [requestedOrgId];
+    } else {
+      // Only cron callers may fan out across all organizations.
+      if (guard.via !== "cron") {
+        return new Response(JSON.stringify({ error: "organization_id required" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
       const { data } = await sb.from("organizations").select("id").limit(500);
       orgIds = (data ?? []).map((o: AnyRec) => o.id);
     }
