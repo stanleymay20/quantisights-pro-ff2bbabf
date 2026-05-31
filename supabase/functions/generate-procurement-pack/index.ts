@@ -63,7 +63,22 @@ Deno.serve(async (req) => {
             s.retention_policy, s.dpa_status, s.transfer_mechanism]
             .map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`).join(",")
         ).join("\n"),
-    "Trust-Metrics-Snapshot.json": JSON.stringify(snapshot ?? {}, null, 2),
+    "Trust-Metrics-Snapshot.json": JSON.stringify(((): Record<string, unknown> => {
+      if (!snapshot) return {};
+      // Public procurement pack: expose only attested coverage/posture fields.
+      // Internal operational KPIs (raw failure counts, unresolved incidents) are withheld.
+      const SAFE_KEYS = new Set([
+        "id", "snapshot_date", "evidence_hash",
+        "rls_coverage_pct", "audit_coverage_pct", "connector_health_pct",
+        "drift_monitor_coverage_pct", "encryption_at_rest", "encryption_in_transit",
+        "mfa_enforced", "sso_available", "region", "data_residency",
+      ]);
+      const redacted: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(snapshot)) {
+        if (SAFE_KEYS.has(k)) redacted[k] = v;
+      }
+      return redacted;
+    })(), null, 2),
     "Procurement-Readiness.json": JSON.stringify(readiness ?? [], null, 2),
   };
 
