@@ -1,10 +1,7 @@
 // Phase 5E — Executive Attention Compression with 4-level abstraction hierarchy
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { getCorsHeaders } from "../_shared/cors.ts";
+import { requireCronOrOrgMember } from "../_shared/cron-or-user.ts";
 
 // Phase 5E.5 — hard cap of 5 executive abstractions, mapped to 5 executive categories.
 const BUDGETS: Record<string, number> = { executive: 5, operations: 12, governance: 8, board: 5 };
