@@ -13,6 +13,7 @@ const TRAV_TO_PATTERN: Record<string, string> = {
 };
 
 Deno.serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
@@ -27,6 +28,8 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    const guard = await requireCronOrOrgMember(req, organization_id);
+    if (!guard.ok) return guard.response;
 
     const since = new Date(Date.now() - 30 * 86400000).toISOString();
     const { data: travs } = await supabase
