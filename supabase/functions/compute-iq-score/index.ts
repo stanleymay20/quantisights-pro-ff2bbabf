@@ -8,6 +8,7 @@ import { requireCronOrOrgMember } from '../_shared/cron-or-user.ts';
 interface Body { organization_id: string; dataset_id?: string }
 
 Deno.serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   const correlationId = req.headers.get('x-request-id') ?? crypto.randomUUID();
@@ -16,6 +17,8 @@ Deno.serve(async (req) => {
     if (!body?.organization_id) {
       return new Response(JSON.stringify({ error: 'organization_id required' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
+    const guard = await requireCronOrOrgMember(req, body.organization_id);
+    if (!guard.ok) return guard.response;
     const supa = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 
     // Pull metrics for the dataset (cap at 10k for runtime safety)
