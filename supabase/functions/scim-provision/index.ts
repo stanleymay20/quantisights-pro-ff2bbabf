@@ -281,7 +281,8 @@ Deno.serve(async (req) => {
           await serviceClient
             .from("profiles")
             .update({ full_name: op.value })
-            .eq("user_id", userId);
+            .eq("user_id", userId)
+            .eq("organization_id", orgId);
         }
       }
 
