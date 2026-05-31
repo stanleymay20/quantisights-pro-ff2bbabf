@@ -2,12 +2,8 @@
 // Reference: Data Engineering (Chan/Talburt/Talley, 2010), Ch. 14.
 // Dimensions: accuracy, completeness, consistency, timeliness, relevance, accessibility, believability.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-request-id',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
+import { getCorsHeaders } from '../_shared/cors.ts';
+import { requireCronOrOrgMember } from '../_shared/cron-or-user.ts';
 
 interface Body { organization_id: string; dataset_id?: string }
 
