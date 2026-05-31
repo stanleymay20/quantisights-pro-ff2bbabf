@@ -36,6 +36,7 @@ function extractConcepts(text: string): Set<string> {
 interface Body { organization_id: string; window_days?: number; min_support?: number; max_pairs?: number }
 
 Deno.serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   const correlationId = req.headers.get('x-request-id') ?? crypto.randomUUID();
   try {
@@ -43,6 +44,8 @@ Deno.serve(async (req) => {
     if (!body?.organization_id) {
       return new Response(JSON.stringify({ error: 'organization_id required' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
+    const guard = await requireCronOrOrgMember(req, body.organization_id);
+    if (!guard.ok) return guard.response;
     const windowDays = body.window_days ?? 30;
     const minSupport = body.min_support ?? 0.02; // 2% of corpus
     const maxPairs = body.max_pairs ?? 200;
