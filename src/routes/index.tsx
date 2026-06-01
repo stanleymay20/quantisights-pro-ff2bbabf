@@ -50,6 +50,9 @@ const Scenarios = lazy(() => import("@/pages/Scenarios"));
 const Simulations = lazy(() => import("@/pages/Simulations"));
 const ScenarioBranching = lazy(() => import("@/pages/ScenarioBranching"));
 
+// ── Enterprise Connectivity ──
+const DatabaseExplorerPage = lazy(() => import("@/pages/DatabaseExplorer"));
+
 // ── Data Platform ──
 const DataUpload = lazy(() => import("@/pages/DataUpload"));
 const DataConnectors = lazy(() => import("@/pages/DataConnectors"));
@@ -290,6 +293,7 @@ export const routes: RouteEntry[] = [
   { path: "/lineage", element: <DataLineage />, layout: "full" },
   { path: "/pipeline", element: <PipelineObservability />, layout: "full" },
   { path: "/data-hub", element: <DataHub />, layout: "full" },
+  { path: "/database", element: <DatabaseExplorerPage />, layout: "full" },
   { path: "/aicis-sync", element: <AicisSync />, layout: "full" },
   { path: "/admin/bridge-health", element: <BridgeHealth />, layout: "full" },
 
