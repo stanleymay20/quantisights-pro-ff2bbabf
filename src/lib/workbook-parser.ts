@@ -195,7 +195,7 @@ export async function parseWorkbookFile(
     });
   }
 
-  const workbookName = file.name.replace(/\.(xlsx|xls|xlsm|ods)$/i, "");
+  const workbookName = resolvedName.replace(/\.(xlsx|xls|xlsm|ods)$/i, "");
   return {
     workbookName,
     sheetCount: sheets.length,
