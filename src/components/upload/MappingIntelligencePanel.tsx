@@ -152,6 +152,9 @@ export default function MappingIntelligencePanel({ intelligence, relationships }
           </TooltipContent>
         </Tooltip>
 
+        {/* Executive Recommendation */}
+        <ExecutiveRecommendationCard intelligence={intelligence} grade={grade} />
+
         {/* Risk Assessment */}
         <RiskAssessmentCard intelligence={intelligence} grade={grade} />
 
