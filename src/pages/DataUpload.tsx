@@ -149,6 +149,24 @@ const DataUpload = () => {
 
     const cls = classifyDataset(hdrs, autoMap);
     setClassification(cls);
+
+    // Phase 8: build full ingestion intelligence (locale, repair report,
+    // dictionary, similarity, semantic schema) so the mapping UI can surface it.
+    try {
+      const diag = computeDiagnostics(dataRows, hdrs, autoMap, schema);
+      const intel = buildIngestionIntelligence({
+        headers: hdrs,
+        rows: dataRows,
+        schema,
+        mapping: autoMap,
+        diagnostics: diag,
+      });
+      setIngestionIntel(intel);
+    } catch (err) {
+      console.warn("[DataUpload] buildIngestionIntelligence failed:", err);
+      setIngestionIntel(null);
+    }
+
     setStep("autodetect");
   }, [toast]);
 
