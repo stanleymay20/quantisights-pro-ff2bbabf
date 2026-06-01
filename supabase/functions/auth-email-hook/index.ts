@@ -36,7 +36,7 @@ const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
 }
 
 // Configuration
-const SITE_NAME = "quantisights-pro"
+const SITE_NAME = "Quantivis"
 const SENDER_DOMAIN = "notify.www.quantivis.io"
 const ROOT_DOMAIN = "www.quantivis.io"
 const FROM_DOMAIN = "www.quantivis.io" // Domain shown in From address (may be root or sender subdomain)
