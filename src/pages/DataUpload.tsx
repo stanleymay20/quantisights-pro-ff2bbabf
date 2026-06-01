@@ -1253,7 +1253,7 @@ const DataUpload = () => {
                     <Button onClick={() => {
                       const intel = generateIntelligence(headers, allRows, mapping, validation, importMode);
                       setIntelligence(intel);
-                      const diag = computeDiagnostics(allRows, headers, mapping);
+                      const diag = computeDiagnostics(allRows, headers, mapping, detectedSchema);
                       setDiagnostics(diag);
                       setStep("intelligence");
                     }} className="gap-2">
