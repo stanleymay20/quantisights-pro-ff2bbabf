@@ -105,14 +105,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       clearSentryUser();
     };
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       // Skip if this is the initial event that duplicates getSession
       if (!initialSessionResolved || cancelled) return;
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        await fetchProfile(session.user.id);
         setSentryUser(session.user.id, session.user.email);
+        setTimeout(() => {
+          if (!cancelled) {
+            fetchProfile(session.user.id).catch((error: unknown) => {
+              console.error("[AuthContext] Failed to refresh profile after auth change:", error instanceof Error ? error.message : error);
+            });
+          }
+        }, 0);
       } else {
         setProfile(null);
         clearSentryUser();
