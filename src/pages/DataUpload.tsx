@@ -478,15 +478,88 @@ const DataUpload = () => {
         column: key.split(":")[1] || key,
         mappedAs: target,
       }));
-      
-      const { error: schemaErr } = await supabase.from("schema_evolution_log").insert([{
-        organization_id: currentOrgId,
-        dataset_id: dataset.id,
-        change_type: "initial_upload",
-        detected_by: user.id,
-        metadata: { columns: schemaColumns, row_count: allRows.length, import_mode: importMode },
-      }]);
+
+      // Phase 5: detect drift against the most recent prior dataset with the
+      // same name in this org. First snapshot is recorded as 'initial_upload'.
+      const toSnapshotColumns = (cols: { column: string; mappedAs: string }[]): SchemaColumn[] =>
+        cols.map((c) => {
+          const det = detectedSchema.find((d) => d.column === c.column);
+          const role = (c.mappedAs as SchemaColumn["role"]) ?? "skip";
+          const type: SchemaColumn["type"] = det
+            ? det.inferredType === "date"
+              ? "date"
+              : det.inferredType === "value"
+                ? "number"
+                : "text"
+            : "unknown";
+          return { name: c.column, type, role };
+        });
+
+      let driftReport: DriftReport | null = null;
+      try {
+        const { data: priorDatasets } = await supabase
+          .from("datasets")
+          .select("id, current_version, column_mapping")
+          .eq("organization_id", currentOrgId)
+          .eq("name", datasetName)
+          .neq("id", dataset.id)
+          .order("created_at", { ascending: false })
+          .limit(1);
+        const prior = priorDatasets?.[0];
+        if (prior?.column_mapping && typeof prior.column_mapping === "object") {
+          const priorCols = Object.entries(prior.column_mapping as Record<string, string>).map(
+            ([key, target]) => ({ column: key.split(":")[1] || key, mappedAs: target }),
+          );
+          const prevSnap = buildSnapshot(prior.id, prior.current_version ?? 1, toSnapshotColumns(priorCols));
+          const nextSnap = buildSnapshot(dataset.id, 1, toSnapshotColumns(schemaColumns));
+          driftReport = detectDrift(prevSnap, nextSnap);
+        }
+      } catch (err) {
+        console.warn("[SchemaEvolution] drift detection skipped:", err);
+      }
+      setDrift(driftReport);
+
+      const driftRows = driftReport && driftReport.totalChanges > 0
+        ? driftReport.changes.map((c) => ({
+            organization_id: currentOrgId,
+            dataset_id: dataset.id,
+            change_type: c.changeType,
+            column_name: c.columnName,
+            old_type: c.oldType ?? null,
+            new_type: c.newType ?? null,
+            detected_by: user.id,
+            metadata: {
+              confidence: c.confidence,
+              recommendation: c.recommendation,
+              old_name: c.oldName,
+              old_role: c.oldRole,
+              new_role: c.newRole,
+            },
+          }))
+        : [];
+
+      const { error: schemaErr } = await supabase.from("schema_evolution_log").insert([
+        {
+          organization_id: currentOrgId,
+          dataset_id: dataset.id,
+          change_type: "initial_upload",
+          detected_by: user.id,
+          metadata: {
+            columns: schemaColumns,
+            row_count: allRows.length,
+            import_mode: importMode,
+            drift_summary: driftReport
+              ? {
+                  total: driftReport.totalChanges,
+                  backward_compatible: driftReport.backwardCompatible,
+                }
+              : null,
+          },
+        },
+        ...driftRows,
+      ]);
       if (schemaErr) console.error("[SchemaEvolution] Failed to log:", schemaErr.message, schemaErr.details);
+
 
       // Record data lineage: CSV file → dataset → metrics
       const { error: lineageErr } = await supabase.from("data_lineage").insert([{
