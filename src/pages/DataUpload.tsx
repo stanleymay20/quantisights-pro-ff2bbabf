@@ -1110,9 +1110,52 @@ const DataUpload = () => {
                       </motion.div>
                     )}
 
-
+                    {/* Import Mode Toggle */}
+                    {valueColumnCount >= 2 && (
+                      <motion.div
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                        className="mt-4 p-4 rounded-lg border border-border bg-muted/20"
+                      >
+                        <p className="text-sm font-medium mb-3 flex items-center gap-2">
+                          <Layers className="w-4 h-4 text-primary" /> Import Mode
+                        </p>
+                        <div className="flex gap-3">
+                          <button
+                            onClick={() => setImportMode("single")}
+                            className={`flex-1 p-3 rounded-lg border text-left transition-all ${
+                              importMode === "single"
+                                ? "border-primary bg-primary/5 ring-1 ring-primary/20"
+                                : "border-border hover:border-primary/30"
+                            }`}
+                          >
+                            <p className="text-sm font-medium">Single Metric</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">One value column mapped to a metric type</p>
+                          </button>
+                          <button
+                            onClick={() => setImportMode("multi")}
+                            className={`flex-1 p-3 rounded-lg border text-left transition-all ${
+                              importMode === "multi"
+                                ? "border-primary bg-primary/5 ring-1 ring-primary/20"
+                                : "border-border hover:border-primary/30"
+                            }`}
+                          >
+                            <p className="text-sm font-medium">Multi-Metric Dataset</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              Each numeric column becomes a separate metric ({valueColumnCount} detected)
+                            </p>
+                          </button>
+                        </div>
+                        {importMode === "multi" && (
+                          <p className="text-xs text-primary mt-2 flex items-center gap-1">
+                            <Zap className="w-3 h-3" />
+                            Wide format will be automatically normalized to long format during import.
+                          </p>
+                        )}
+                      </motion.div>
+                    )}
                   </CardContent>
                 </Card>
+
 
                 {/* Ingestion Intelligence — surfaced BEFORE mapping rows & sample data */}
                 {ingestionIntel && (
