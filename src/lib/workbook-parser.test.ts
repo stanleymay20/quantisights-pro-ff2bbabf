@@ -19,7 +19,7 @@ function buildWorkbookBuffer(
 
 describe("workbook parser", () => {
   it("parses a single-sheet XLSX with headers and rows", async () => {
-    const file = buildWorkbookFile([
+    const buf = buildWorkbookBuffer([
       {
         name: "Sheet1",
         aoa: [
@@ -29,7 +29,7 @@ describe("workbook parser", () => {
         ],
       },
     ]);
-    const wb = await parseWorkbookFile(file);
+    const wb = await parseWorkbookFile(buf, "test.xlsx");
     expect(wb.sheetCount).toBe(1);
     expect(wb.sheets[0].headers).toEqual(["date", "revenue", "region"]);
     expect(wb.sheets[0].rowCount).toBe(2);
@@ -37,12 +37,12 @@ describe("workbook parser", () => {
   });
 
   it("flags hidden sheets and lists all sheets in a multi-sheet workbook", async () => {
-    const file = buildWorkbookFile([
+    const buf = buildWorkbookBuffer([
       { name: "Summary", aoa: [["metric", "value"], ["a", 1]] },
       { name: "Internal", aoa: [["x", "y"], [1, 2]], hidden: true },
       { name: "Detail", aoa: [["a", "b"], [1, 2]] },
     ]);
-    const wb = await parseWorkbookFile(file);
+    const wb = await parseWorkbookFile(buf, "test.xlsx");
     expect(wb.sheetCount).toBe(3);
     const hidden = wb.sheets.find(s => s.name === "Internal");
     expect(hidden?.hidden).toBe(true);
@@ -51,7 +51,7 @@ describe("workbook parser", () => {
   });
 
   it("detects header row when title rows precede the table", async () => {
-    const file = buildWorkbookFile([
+    const buf = buildWorkbookBuffer([
       {
         name: "Report",
         aoa: [
@@ -63,7 +63,7 @@ describe("workbook parser", () => {
         ],
       },
     ]);
-    const wb = await parseWorkbookFile(file);
+    const wb = await parseWorkbookFile(buf, "report.xlsx");
     expect(wb.sheets[0].headers).toEqual(["date", "revenue", "cost"]);
     expect(wb.sheets[0].rowCount).toBe(2);
   });
@@ -79,9 +79,7 @@ describe("workbook parser", () => {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
     const buf = XLSX.write(wb, { type: "array", bookType: "xlsx" }) as ArrayBuffer;
-    const file = new File([buf], "merged.xlsx");
-
-    const parsed = await parseWorkbookFile(file);
+    const parsed = await parseWorkbookFile(buf, "merged.xlsx");
     const rows = parsed.sheets[0].rows;
     expect(rows[0][0]).toBe("EMEA");
     expect(rows[1][0]).toBe("EMEA");
@@ -96,8 +94,7 @@ describe("workbook parser", () => {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
     const buf = XLSX.write(wb, { type: "array", bookType: "xlsx" }) as ArrayBuffer;
-    const file = new File([buf], "dates.xlsx");
-    const parsed = await parseWorkbookFile(file);
+    const parsed = await parseWorkbookFile(buf, "dates.xlsx");
     expect(parsed.sheets[0].rows[0][0]).toBe("2024-01-15");
   });
 });
