@@ -1342,47 +1342,89 @@ const DataUpload = () => {
                     <div className="space-y-3">
                       {headers.map((h, colIdx) => {
                         const currentTarget = mapping[colIdx] || "skip";
+                        const det = detectedSchema.find((d) => d.colIdx === colIdx);
+                        const conf = det?.confidence ?? 0;
+                        const confTone =
+                          conf >= 90 ? "text-success border-success/30 bg-success/5"
+                            : conf >= 70 ? "text-warning border-warning/30 bg-warning/5"
+                              : "text-destructive border-destructive/30 bg-destructive/5";
+                        const semantic = ingestionIntel?.semanticSchema.profiles.find((p) => p.colIdx === colIdx);
+                        const semBadge = (() => {
+                          if (!semantic) return null;
+                          const map: Record<string, { label: string; cls: string }> = {
+                            identifier: { label: "Identifier", cls: "bg-primary/10 text-primary border-primary/30" },
+                            currency: { label: "Currency", cls: "bg-success/10 text-success border-success/30" },
+                            percentage: { label: "Percentage", cls: "bg-success/10 text-success border-success/30" },
+                            ratio: { label: "Ratio", cls: "bg-success/10 text-success border-success/30" },
+                            pii: { label: "PII", cls: "bg-warning/10 text-warning border-warning/30" },
+                            date: { label: "Date", cls: "bg-primary/10 text-primary border-primary/30" },
+                            location: { label: "Location", cls: "bg-primary/10 text-primary border-primary/30" },
+                            boolean: { label: "Boolean", cls: "bg-muted text-foreground border-border" },
+                            categorical: { label: "Categorical", cls: "bg-muted text-foreground border-border" },
+                            metric: { label: "Metric", cls: "bg-success/10 text-success border-success/30" },
+                          };
+                          return map[semantic.semanticType] ?? null;
+                        })();
                         const displayLabel = (t: string) => {
                           if (t === "value" && importMode === "multi") return "metric";
                           if (t === "region_code") return "region_code (ID/ISO)";
                           return t;
                         };
                         return (
-    <SectionErrorBoundary sectionName="Data Upload">
-                          <div key={colIdx} className="flex items-center gap-4">
-                            <div className="w-44 shrink-0">
-                              <span className="text-sm font-medium truncate block">
-                                {h}
-                                <span className="text-[9px] text-muted-foreground/50 ml-1">#{colIdx}</span>
-                              </span>
-                              <div className="flex gap-1 mt-0.5">
-                                {(sampleValuesByColIdx[colIdx] || []).slice(0, 3).map((sv, i) => (
-                                  <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-muted/60 text-muted-foreground truncate max-w-[80px]">
-                                    {sv}
-                                  </span>
-                                ))}
+                          <SectionErrorBoundary key={colIdx} sectionName="Data Upload">
+                            <div className="flex items-center gap-4">
+                              <div className="w-48 shrink-0">
+                                <span className="text-sm font-medium truncate block">
+                                  {h}
+                                  <span className="text-[9px] text-muted-foreground/50 ml-1">#{colIdx}</span>
+                                </span>
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  {semBadge && (
+                                    <span className={`text-[10px] px-1.5 py-0.5 rounded border ${semBadge.cls}`}>
+                                      {semBadge.label}
+                                    </span>
+                                  )}
+                                  {semantic?.reviewRequired && (
+                                    <span className="text-[10px] px-1.5 py-0.5 rounded border border-warning/30 bg-warning/5 text-warning">
+                                      Review
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex gap-1 mt-1">
+                                  {(sampleValuesByColIdx[colIdx] || []).slice(0, 3).map((sv, i) => (
+                                    <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-muted/60 text-muted-foreground truncate max-w-[80px]">
+                                      {sv}
+                                    </span>
+                                  ))}
+                                </div>
                               </div>
+                              <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                              <div className="flex-1 flex flex-col gap-1">
+                                <select
+                                  value={currentTarget}
+                                  onChange={(e) => setMapping((prev) => ({ ...prev, [colIdx]: e.target.value as ColumnTarget }))}
+                                  className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                >
+                                  {COLUMN_TARGETS.map((t) => (
+                                    <option key={t} value={t}>{displayLabel(t)}</option>
+                                  ))}
+                                </select>
+                                {det && currentTarget !== "skip" && (
+                                  <span className={`text-[10px] px-1.5 py-0.5 rounded border self-start ${confTone}`}>
+                                    Confidence: {conf}%
+                                  </span>
+                                )}
+                              </div>
+                              {currentTarget !== "skip" && (
+                                <Badge variant="outline" className="text-xs">
+                                  {currentTarget === "value" && importMode === "multi"
+                                    ? <><TrendingUp className="w-3 h-3 mr-1" /> Metric</>
+                                    : <><Check className="w-3 h-3 mr-1" /> Mapped</>
+                                  }
+                                </Badge>
+                              )}
                             </div>
-                            <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0" />
-                            <select
-                              value={currentTarget}
-                              onChange={(e) => setMapping((prev) => ({ ...prev, [colIdx]: e.target.value as ColumnTarget }))}
-                              className="flex-1 px-3 py-2 rounded-lg bg-secondary border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-                            >
-                              {COLUMN_TARGETS.map((t) => (
-                                <option key={t} value={t}>{displayLabel(t)}</option>
-                              ))}
-                            </select>
-                            {currentTarget !== "skip" && (
-                              <Badge variant="outline" className="text-xs">
-                                {currentTarget === "value" && importMode === "multi"
-                                  ? <><TrendingUp className="w-3 h-3 mr-1" /> Metric</>
-                                  : <><Check className="w-3 h-3 mr-1" /> Mapped</>
-                                }
-                              </Badge>
-                            )}
-                          </div>
-    </SectionErrorBoundary>
+                          </SectionErrorBoundary>
                         );
                       })}
                     </div>
