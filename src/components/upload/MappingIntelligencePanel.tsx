@@ -128,6 +128,11 @@ export default function MappingIntelligencePanel({ intelligence, relationships }
           </div>
         </div>
 
+        {/* Risk Assessment */}
+        <RiskAssessmentCard intelligence={intelligence} grade={grade} />
+
+
+
         {/* Summary chips */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
           <div className="rounded-md border border-border bg-muted/20 p-2">
