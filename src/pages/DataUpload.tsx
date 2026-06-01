@@ -1703,6 +1703,7 @@ const DataUpload = () => {
                       setStep("upload"); setFile(null); setRows([]); setAllRows([]); setHeaders([]);
                       setValidation(null); setDetectedSchema([]); setIntelligence(null); setYearAutoFixed(false);
                       setDiagnostics(null); setClassification(null); setImportMode("single");
+                      setDrift(null); ingestion.reset();
                     }}>
                       Upload Another
                     </Button>
@@ -1714,6 +1715,15 @@ const DataUpload = () => {
                     </Button>
                   </div>
                 </div>
+
+
+                <PostUploadSummary
+                  rowsImported={importCount || allRows.length}
+                  healthScore={diagnostics?.healthScore ?? intelligence?.qualityScore ?? 0}
+                  classification={classification}
+                  diagnostics={diagnostics}
+                  drift={drift}
+                />
 
                 {/* Dataset sample preview — user can verify data was imported correctly */}
                 {allRows.length > 0 && headers.length > 0 && (
