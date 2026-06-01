@@ -93,6 +93,13 @@ const DataUpload = () => {
   const [classification, setClassification] = useState<DatasetClassification | null>(null);
   const [workbook, setWorkbook] = useState<ParsedWorkbook | null>(null);
   const [activeSheetName, setActiveSheetName] = useState<string | null>(null);
+  const [drift, setDrift] = useState<DriftReport | null>(null);
+  const lastFileRef = useRef<File | null>(null);
+
+  // Phase 4: chunked worker-driven ingestion. Used for CSVs ≥ 1 MB so the UI
+  // stays responsive on multi-100k-row uploads. Small CSVs keep the sync path.
+  const ingestion = useChunkedIngestion();
+
 
   const valueColumnCount = useMemo(() => {
     return Object.values(mapping).filter(v => v === "value").length;
