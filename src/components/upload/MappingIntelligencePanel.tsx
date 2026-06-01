@@ -152,14 +152,15 @@ export default function MappingIntelligencePanel({ intelligence, relationships }
           </TooltipContent>
         </Tooltip>
 
-        {/* Executive Recommendation */}
-        <ExecutiveRecommendationCard intelligence={intelligence} grade={grade} />
+        {/* Executive Recommendation (hero) */}
+        <ExecutiveRecommendationCard intelligence={intelligence} grade={grade} relationships={relationships} />
 
         {/* Risk Assessment */}
         <RiskAssessmentCard intelligence={intelligence} grade={grade} />
 
         {/* Governance Status */}
-        <GovernanceStatusCard intelligence={intelligence} grade={grade} />
+        <GovernanceStatusCard intelligence={intelligence} grade={grade} relationships={relationships} />
+
 
         {/* Summary chips */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
