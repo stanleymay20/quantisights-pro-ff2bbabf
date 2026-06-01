@@ -52,6 +52,7 @@ const ScenarioBranching = lazy(() => import("@/pages/ScenarioBranching"));
 
 // ── Enterprise Connectivity ──
 const DatabaseExplorerPage = lazy(() => import("@/pages/DatabaseExplorer"));
+const SQLAgentPage = lazy(() => import("@/pages/SQLAgent"));
 
 // ── Data Platform ──
 const DataUpload = lazy(() => import("@/pages/DataUpload"));
@@ -294,6 +295,7 @@ export const routes: RouteEntry[] = [
   { path: "/pipeline", element: <PipelineObservability />, layout: "full" },
   { path: "/data-hub", element: <DataHub />, layout: "full" },
   { path: "/database", element: <DatabaseExplorerPage />, layout: "full" },
+  { path: "/sql-agent", element: <SQLAgentPage />, layout: "full" },
   { path: "/aicis-sync", element: <AicisSync />, layout: "full" },
   { path: "/admin/bridge-health", element: <BridgeHealth />, layout: "full" },
 
