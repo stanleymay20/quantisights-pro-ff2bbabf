@@ -268,6 +268,29 @@ export default function MappingIntelligencePanel({ intelligence, relationships }
           </Section>
         )}
 
+        {/* Dictionary Summary */}
+        <Section
+          title="Data Dictionary Summary"
+          icon={<BookOpen className="w-3.5 h-3.5 text-primary" />}
+          badge={<Badge variant="outline" className="text-[10px]">{dict.fieldCount} fields</Badge>}
+        >
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+            {[
+              { label: "Metrics", value: dict.summary.metricCount, tone: "text-success" },
+              { label: "Dimensions", value: dict.summary.dimensionCount, tone: "text-primary" },
+              { label: "Identifiers", value: dict.summary.identifierCount, tone: "text-primary" },
+              { label: "PII", value: dict.summary.piiCount, tone: dict.summary.piiCount > 0 ? "text-warning" : "text-muted-foreground" },
+              { label: "Review", value: dict.summary.reviewRequiredCount, tone: dict.summary.reviewRequiredCount > 0 ? "text-warning" : "text-muted-foreground" },
+            ].map((s) => (
+              <div key={s.label} className="rounded-md border border-border bg-muted/20 p-2 text-center">
+                <div className={`text-lg font-bold ${s.tone}`}>{s.value}</div>
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{s.label}</div>
+              </div>
+            ))}
+          </div>
+          <p className="text-muted-foreground mt-2">Avg field confidence: <strong>{Math.round(dict.summary.averageConfidence * 100)}%</strong></p>
+        </Section>
+
         {/* Locale detail */}
         <Section
           title="Locale Detection"
@@ -283,3 +306,67 @@ export default function MappingIntelligencePanel({ intelligence, relationships }
     </Card>
   );
 }
+
+function RiskAssessmentCard({
+  intelligence,
+  grade,
+}: {
+  intelligence: IngestionIntelligenceResult;
+  grade: Grade;
+}) {
+  const r = intelligence.repairReport;
+  const dict = intelligence.dictionary;
+  const reviewCount = dict.summary.reviewRequiredCount;
+  const piiCount = dict.summary.piiCount;
+  const trust = r.summary.trustSignal;
+
+  const { level, headline, detail, tone } = useMemo(() => {
+    if (grade === "A" && reviewCount === 0) {
+      return {
+        level: "Low Risk",
+        headline: "Dataset ready for executive analysis.",
+        detail: "No critical schema issues detected. All key fields meet the trust threshold.",
+        tone: "success" as const,
+      };
+    }
+    if (grade === "D" || trust === "weak") {
+      return {
+        level: "High Risk",
+        headline: "Manual review recommended before import.",
+        detail: `${reviewCount} field${reviewCount === 1 ? "" : "s"} flagged for review${piiCount > 0 ? `, ${piiCount} PII field${piiCount === 1 ? "" : "s"} present` : ""}.`,
+        tone: "destructive" as const,
+      };
+    }
+    return {
+      level: "Medium Risk",
+      headline: reviewCount > 0
+        ? `Review ${reviewCount} field${reviewCount === 1 ? "" : "s"} before import.`
+        : "Review the auto-repair report before import.",
+      detail: `${piiCount > 0 ? `${piiCount} PII field${piiCount === 1 ? "" : "s"} detected. ` : ""}Trust signal: ${trust}.`,
+      tone: "warning" as const,
+    };
+  }, [grade, reviewCount, piiCount, trust]);
+
+  const cls =
+    tone === "success"
+      ? "border-success/30 bg-success/5"
+      : tone === "warning"
+      ? "border-warning/30 bg-warning/5"
+      : "border-destructive/30 bg-destructive/5";
+  const iconCls =
+    tone === "success" ? "text-success" : tone === "warning" ? "text-warning" : "text-destructive";
+
+  return (
+    <div className={`rounded-lg border p-3 flex items-start gap-3 ${cls}`}>
+      <Gauge className={`w-5 h-5 mt-0.5 shrink-0 ${iconCls}`} />
+      <div className="flex-1">
+        <div className="flex items-center gap-2">
+          <p className={`text-sm font-semibold ${iconCls}`}>Import Risk Assessment: {level}</p>
+        </div>
+        <p className="text-xs mt-0.5">{headline}</p>
+        <p className="text-[11px] text-muted-foreground mt-0.5">{detail}</p>
+      </div>
+    </div>
+  );
+}
+
