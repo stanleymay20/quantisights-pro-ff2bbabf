@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { SidebarMobileToggle } from "@/components/layout/ProtectedShell";
 import { useAuth } from "@/contexts/AuthContext";
@@ -38,6 +38,15 @@ import {
   parseWorkbookFile,
 } from "@/lib/workbook-parser";
 import SectionErrorBoundary from "@/components/SectionErrorBoundary";
+import { useChunkedIngestion } from "@/hooks/useChunkedIngestion";
+import IngestionProgressCard from "@/components/upload/IngestionProgressCard";
+import PostUploadSummary from "@/components/upload/PostUploadSummary";
+import {
+  buildSnapshot,
+  detectDrift,
+  type DriftReport,
+  type SchemaColumn,
+} from "@/lib/schema-evolution";
 
 type Step = "upload" | "autodetect" | "mapping" | "validation" | "intelligence" | "importing" | "done";
 
