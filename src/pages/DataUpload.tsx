@@ -488,6 +488,9 @@ const DataUpload = () => {
       if (dsError) throw dsError;
 
       // Create dataset version
+      const ingestionMetadataSnapshot = ingestionIntel
+        ? toIngestionMetadataSnapshot(ingestionIntel, crossSheet)
+        : null;
       const { data: versionData } = await supabase.from("dataset_versions").insert({
         dataset_id: dataset.id,
         organization_id: currentOrgId,
@@ -499,6 +502,7 @@ const DataUpload = () => {
         change_summary: importMode === "multi" ? `Multi-metric import (${findAllMappedColIdx("value").length} metrics normalized)` : "Initial upload",
         created_by: user.id,
         is_active: true,
+        metadata: (ingestionMetadataSnapshot ?? {}) as never,
       }).select("id").single();
 
       // ═══════════════════════════════════════════════════════
