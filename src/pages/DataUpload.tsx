@@ -826,10 +826,10 @@ const DataUpload = () => {
                 onClick={() => document.getElementById("csv-input")?.click()}
               >
                 <Upload className="w-16 h-16 text-muted-foreground mb-4" />
-                <h2 className="text-xl font-semibold font-display mb-2">Upload CSV File</h2>
+                <h2 className="text-xl font-semibold font-display mb-2">Upload Dataset</h2>
                 <p className="text-muted-foreground text-sm mb-4">Drag & drop or click to browse</p>
-                <p className="text-xs text-muted-foreground">Supports: CSV files up to 20MB — date column optional</p>
-                <input id="csv-input" type="file" accept=".csv" className="hidden" onChange={handleFileSelect} />
+                <p className="text-xs text-muted-foreground">CSV, XLSX, XLS, XLSM, ODS · up to 20MB · up to 50,000 rows</p>
+                <input id="csv-input" type="file" accept=".csv,.xlsx,.xls,.xlsm,.ods" className="hidden" onChange={handleFileSelect} />
                 <UploadTrustBadges />
               </motion.div>
             )}
