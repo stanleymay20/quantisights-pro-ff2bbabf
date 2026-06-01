@@ -108,6 +108,21 @@ const TEXT_DIMENSION_HEADER_PATTERNS = [
   /(^|_)decision_flag($|_)/i, /(^|_)status($|_)/i, /(^|_)type($|_)/i,
 ];
 
+const PERIOD_HEADER_PATTERNS = [
+  /^date$/i,
+  /^month$/i,
+  /^quarter$/i,
+  /^period$/i,
+  /^fiscal_period$/i,
+  /^reporting_period$/i,
+  /^week$/i,
+  /^year$/i,
+  /(^|_)date$/i,
+  /(^|_)month$/i,
+  /(^|_)quarter$/i,
+  /(^|_)period$/i,
+];
+
 const METRIC_HEADER_KEYWORDS = [
   "value", "amount", "revenue", "gdp", "price", "cost", "total", "income",
   "profit", "spend", "rate", "inflation", "unemployment", "expectancy", "growth",
@@ -123,6 +138,10 @@ function isNotDateHeader(header: string): boolean {
 
 function normalizeHeader(header: string): string {
   return header.toLowerCase().trim().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+}
+
+function isProtectedPeriodHeader(lower: string): boolean {
+  return PERIOD_HEADER_PATTERNS.some(p => p.test(lower));
 }
 
 function cleanNumericString(raw: string | undefined): string {
@@ -152,6 +171,8 @@ function isDateValue(raw: string | undefined): boolean {
   if (/^\d{4}$/.test(value)) return true;
   if (/^\d{4}-\d{2}$/.test(value)) return true;
   if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return true;
+  if (/^Q[1-4][-_ ]?\d{4}$/i.test(value)) return true;
+  if (/^\d{4}[-_ ]?Q[1-4]$/i.test(value)) return true;
   return !Number.isNaN(Date.parse(value));
 }
 
@@ -160,6 +181,18 @@ function toDateValue(raw: string | undefined): string | null {
   if (!value) return null;
   if (/^\d{4}$/.test(value)) return `${value}-01-01`;
   if (/^\d{4}-\d{2}$/.test(value)) return `${value}-01`;
+  if (/^Q([1-4])[-_ ]?(\d{4})$/i.test(value)) {
+    const match = value.match(/^Q([1-4])[-_ ]?(\d{4})$/i);
+    const q = Number(match?.[1] ?? 1);
+    const y = match?.[2] ?? value;
+    return `${y}-${String((q - 1) * 3 + 1).padStart(2, "0")}-01`;
+  }
+  if (/^(\d{4})[-_ ]?Q([1-4])$/i.test(value)) {
+    const match = value.match(/^(\d{4})[-_ ]?Q([1-4])$/i);
+    const y = match?.[1] ?? value;
+    const q = Number(match?.[2] ?? 1);
+    return `${y}-${String((q - 1) * 3 + 1).padStart(2, "0")}-01`;
+  }
   if (isDateValue(value)) return value;
   return null;
 }
@@ -237,6 +270,24 @@ export function inferSchema(headers: string[], rows: string[][]): DetectedSchema
         reason: "No sample values found",
         sampleValues: [],
         rulesApplied: ["empty_samples"],
+      };
+    }
+
+    // Protected time bucket rule. Month/quarter/period fields are never numeric metrics.
+    if (!isNotDateHeader(header) && isProtectedPeriodHeader(lower)) {
+      const allYears = samples.every(s => /^\d{4}$/.test(s.trim()));
+      const inferredType: ColumnTarget = dateRate >= 0.6 ? "date" : "segment";
+      return {
+        column: header,
+        colIdx,
+        inferredType,
+        confidence: inferredType === "date" ? 96 : 86,
+        reason: inferredType === "date"
+          ? "Protected period/time column detected"
+          : "Protected period label kept as segment",
+        sampleValues: samples.slice(0, 3),
+        autoFix: allYears ? "year_to_date" : undefined,
+        rulesApplied: ["protected_period_header", `dateRate=${(dateRate * 100).toFixed(0)}%`, `numericRate=${(numericRate * 100).toFixed(0)}%`],
       };
     }
 
@@ -398,7 +449,7 @@ export function inferSchema(headers: string[], rows: string[][]): DetectedSchema
         const uniqueValues = cardinality(samples);
         (d as { inferredType: ColumnTarget }).inferredType = "segment";
         d.reason = "Secondary date-like column kept as segment for grouping";
-        d.confidence = 65;
+        d.confidence = 75;
         d.rulesApplied = [...d.rulesApplied, "single_date_rule:demoted_to_segment", `uniqueValues=${uniqueValues}`];
       }
     });
