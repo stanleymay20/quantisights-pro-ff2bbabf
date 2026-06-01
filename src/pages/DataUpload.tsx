@@ -93,9 +93,22 @@ const DataUpload = () => {
     return Object.values(mapping).filter(v => v === "date").length;
   }, [mapping]);
 
-  const handleParse = useCallback((text: string) => {
-    const { headers: hdrs, rows: dataRows } = parseCSVText(text);
+  // Shared post-parse pipeline. Accepts already-parsed headers + rows so both
+  // CSV text and workbook sheets feed into the same inference/classification.
+  const ingestParsed = useCallback((hdrs: string[], dataRows: string[][]) => {
     if (hdrs.length === 0) return;
+
+    // Large-dataset guard: route >50k rows to the server-side pipeline rather
+    // than freeze the browser. We still let smaller-than-50k workbooks through.
+    if (dataRows.length > 50_000) {
+      toast({
+        title: "Large dataset detected",
+        description: `${dataRows.length.toLocaleString()} rows exceeds the 50k browser limit. Use Data Connectors (Settings → Connectors) for server-side ingestion.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     setHeaders(hdrs);
     setAllRows(dataRows);
     setRows(dataRows.slice(0, 100));
@@ -103,7 +116,6 @@ const DataUpload = () => {
     const schema = inferSchema(hdrs, dataRows);
     setDetectedSchema(schema);
 
-    // Build mapping keyed by colIdx
     const autoMap: ColumnMapping = {};
     schema.forEach(s => { autoMap[s.colIdx] = s.inferredType; });
     setMapping(autoMap);
@@ -115,48 +127,78 @@ const DataUpload = () => {
 
     const cls = classifyDataset(hdrs, autoMap);
     setClassification(cls);
-  }, []);
+    setStep("autodetect");
+  }, [toast]);
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
-    if (!f) return;
+  const handleParse = useCallback((text: string) => {
+    const { headers: hdrs, rows: dataRows } = parseCSVText(text);
+    ingestParsed(hdrs, dataRows);
+  }, [ingestParsed]);
+
+  const loadWorkbookSheet = useCallback((wb: ParsedWorkbook, sheetName: string) => {
+    const sheet = wb.sheets.find(s => s.name === sheetName);
+    if (!sheet || sheet.headers.length === 0 || sheet.rows.length === 0) {
+      toast({ title: "Empty sheet", description: `"${sheetName}" has no usable data.`, variant: "destructive" });
+      return;
+    }
+    setActiveSheetName(sheetName);
+    setDatasetName(wb.sheetCount > 1 ? `${wb.workbookName} — ${sheetName}` : wb.workbookName);
+    ingestParsed(sheet.headers, sheet.rows);
+  }, [ingestParsed, toast]);
+
+  const handleWorkbookFile = useCallback(async (f: File) => {
+    try {
+      const parsed = await parseWorkbookFile(f);
+      const visibleSheets = parsed.sheets.filter(s => !s.hidden && s.rows.length > 0);
+      if (visibleSheets.length === 0) {
+        toast({ title: "No data sheets found", description: "Workbook contains no readable sheets.", variant: "destructive" });
+        return;
+      }
+      setWorkbook(parsed);
+      if (visibleSheets.length === 1) {
+        loadWorkbookSheet(parsed, visibleSheets[0].name);
+      } else {
+        // Multi-sheet: open the first by default, user can switch via selector
+        loadWorkbookSheet(parsed, visibleSheets[0].name);
+      }
+    } catch (err) {
+      console.error("[DataUpload] workbook parse failed", err);
+      toast({ title: "Could not read workbook", description: String(err), variant: "destructive" });
+    }
+  }, [loadWorkbookSheet, toast]);
+
+  const acceptFile = useCallback((f: File) => {
     if (f.size > 20 * 1024 * 1024) {
       toast({ title: "File too large", description: "Maximum file size is 20MB.", variant: "destructive" });
       return;
     }
-    if (!f.name.endsWith(".csv")) {
-      toast({ title: "Invalid file type", description: "Only CSV files are supported.", variant: "destructive" });
+    if (!isSupportedDataFile(f.name)) {
+      toast({ title: "Unsupported file type", description: "Use CSV, XLSX, XLS, XLSM, or ODS.", variant: "destructive" });
       return;
     }
     setFile(f);
-    setDatasetName(f.name.replace(/\.csv$/i, ""));
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      handleParse(ev.target?.result as string);
-      setStep("autodetect");
-    };
-    reader.readAsText(f);
+    setWorkbook(null);
+    setActiveSheetName(null);
+    if (isWorkbookFile(f.name)) {
+      setDatasetName(f.name.replace(/\.(xlsx|xls|xlsm|ods)$/i, ""));
+      handleWorkbookFile(f);
+    } else {
+      setDatasetName(f.name.replace(/\.csv$/i, ""));
+      const reader = new FileReader();
+      reader.onload = (ev) => handleParse(ev.target?.result as string);
+      reader.readAsText(f);
+    }
+  }, [handleParse, handleWorkbookFile, toast]);
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (f) acceptFile(f);
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     const f = e.dataTransfer.files[0];
-    if (!f || !f.name.endsWith(".csv")) {
-      toast({ title: "Only CSV files supported", variant: "destructive" });
-      return;
-    }
-    if (f.size > 20 * 1024 * 1024) {
-      toast({ title: "File too large", description: "Maximum 20MB.", variant: "destructive" });
-      return;
-    }
-    setFile(f);
-    setDatasetName(f.name.replace(/\.csv$/i, ""));
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      handleParse(ev.target?.result as string);
-      setStep("autodetect");
-    };
-    reader.readAsText(f);
+    if (f) acceptFile(f);
   };
 
   // Helper: find colIdx mapped to a target type
