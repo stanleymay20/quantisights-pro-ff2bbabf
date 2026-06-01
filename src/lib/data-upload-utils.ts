@@ -255,6 +255,36 @@ export function inferSchema(headers: string[], rows: string[][]): DetectedSchema
       };
     }
 
+    // Identifier guard — never treat IDs/SKUs/UUIDs as numeric metrics.
+    const idValueRate =
+      samples.filter(s => isIdentifierLike(s)).length / Math.max(samples.length, 1);
+    if (isIdentifierHeader(header) || idValueRate > 0.6) {
+      return {
+        column: header,
+        colIdx,
+        inferredType: "segment",
+        confidence: 90,
+        reason: "Identifier column detected (kept as segment, not a metric)",
+        sampleValues: samples.slice(0, 3),
+        rulesApplied: ["identifier_guard", `idValueRate=${(idValueRate * 100).toFixed(0)}%`],
+      };
+    }
+
+    // Boolean guard — true/false, yes/no, y/n, 0/1.
+    const boolRate =
+      samples.filter(s => isBooleanLike(s)).length / Math.max(samples.length, 1);
+    if (boolRate >= 0.9 && uniqueValues <= 3) {
+      return {
+        column: header,
+        colIdx,
+        inferredType: "segment",
+        confidence: 88,
+        reason: "Boolean-like column detected",
+        sampleValues: samples.slice(0, 3),
+        rulesApplied: ["boolean_guard", `boolRate=${(boolRate * 100).toFixed(0)}%`],
+      };
+    }
+
     // Protected time bucket rule. Month/quarter/period fields are never numeric metrics.
     if (!isNotDateHeader(header) && isProtectedPeriodHeader(lower)) {
       const allYears = samples.every(s => /^\d{4}$/.test(s.trim()));
