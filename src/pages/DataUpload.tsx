@@ -1277,6 +1277,9 @@ const DataUpload = () => {
                 initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}
                 className="space-y-6"
               >
+                {ingestionIntel && (
+                  <MappingIntelligencePanel intelligence={ingestionIntel} relationships={crossSheet} />
+                )}
                 <Card>
                   <CardContent className="p-6">
                     <h2 className="text-lg font-semibold font-display mb-1">Adjust Column Mapping</h2>
