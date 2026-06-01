@@ -19,10 +19,13 @@ import {
   Brain,
 } from "lucide-react";
 import type { DatasetClassification, DatasetDiagnostics } from "@/lib/data-upload-utils";
+import { inferSchema } from "@/lib/data-upload-utils";
 import type { DriftReport } from "@/lib/schema-evolution";
 import { summarizeDrift } from "@/lib/schema-evolution";
 import { buildCopilotBrief } from "@/lib/semantic/data-copilot";
 import type { TrustGrade } from "@/lib/semantic/trust-score";
+import { buildIngestionIntelligence } from "@/lib/ingestion-intelligence";
+import IngestionIntelligenceCard from "@/components/upload/IngestionIntelligenceCard";
 
 interface Props {
   rowsImported: number;
@@ -69,6 +72,21 @@ const TRUST_TONE: Record<TrustGrade, string> = {
   D: "bg-destructive/10 text-destructive border-destructive/20",
 };
 
+function normalizeSampleRows(
+  input: Array<Record<string, unknown> | unknown[]> | undefined,
+  headers: string[] | undefined,
+): string[][] {
+  if (!input || !headers || headers.length === 0) return [];
+
+  return input.map((row) => {
+    if (Array.isArray(row)) {
+      return row.map((value) => String(value ?? ""));
+    }
+
+    return headers.map((header) => String(row?.[header] ?? ""));
+  });
+}
+
 export default function PostUploadSummary({
   rowsImported,
   healthScore,
@@ -98,6 +116,21 @@ export default function PostUploadSummary({
       hasLineage: !!hasLineage,
     });
   }, [headers, sampleRows, diagnostics, drift, hasLineage]);
+
+  // Ingestion repair intelligence — uses the same post-upload artifacts already
+  // available to this component, so it does not disturb the upload/import flow.
+  const ingestionIntelligence = useMemo(() => {
+    const rows = normalizeSampleRows(sampleRows, headers);
+    if (!headers || headers.length === 0 || rows.length === 0) return null;
+
+    const schema = inferSchema(headers, rows);
+    return buildIngestionIntelligence({
+      headers,
+      rows,
+      schema,
+      diagnostics,
+    });
+  }, [headers, sampleRows, diagnostics]);
 
   return (
     <Card className="overflow-hidden border-primary/20">
@@ -167,6 +200,10 @@ export default function PostUploadSummary({
             }
           />
         </div>
+
+        {ingestionIntelligence && (
+          <IngestionIntelligenceCard intelligence={ingestionIntelligence} />
+        )}
 
         {brief && (
           <>
