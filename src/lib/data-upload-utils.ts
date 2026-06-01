@@ -690,7 +690,11 @@ export function generateIntelligence(
   };
 }
 
-export function computeDiagnostics(rows: string[][], mapping: ColumnMapping): DatasetDiagnostics {
+export function computeDiagnostics(
+  rows: string[][],
+  headers: string[],
+  mapping: ColumnMapping,
+): DatasetDiagnostics {
   const dateIdx = findMappedIdx(mapping, "date");
   const valueIndices = findAllMappedIdx(mapping, "value");
   let missing = 0;
@@ -735,12 +739,29 @@ export function computeDiagnostics(rows: string[][], mapping: ColumnMapping): Da
     }
   }
 
+  // PII detection — flag columns that look like personal data.
+  const sampleRows = rows.slice(0, Math.min(rows.length, 200));
+  const piiColumns: string[] = [];
+  headers.forEach((header, idx) => {
+    const headerHit = isPotentialPiiHeader(header);
+    const samples = sampleRows.map(r => r[idx]).filter(v => v && v.trim());
+    if (samples.length === 0 && !headerHit) return;
+    const emailRate = samples.filter(isEmailLike).length / Math.max(samples.length, 1);
+    const phoneRate = samples.filter(isPhoneLike).length / Math.max(samples.length, 1);
+    if (headerHit || emailRate > 0.5 || phoneRate > 0.5) {
+      piiColumns.push(header);
+    }
+  });
+  const piiLevel: DatasetDiagnostics["piiRisk"]["level"] =
+    piiColumns.length === 0 ? "none" : piiColumns.length >= 2 ? "high" : "low";
+
   return {
     missingValuesPct: total > 0 ? Math.round((missing / total) * 100) : 0,
     outlierCount,
     duplicateRows,
     dateContinuity,
     dateGapCount,
+    piiRisk: { level: piiLevel, columns: piiColumns },
   };
 }
 
