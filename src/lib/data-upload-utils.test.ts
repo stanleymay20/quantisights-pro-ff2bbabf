@@ -111,13 +111,11 @@ ORD-003,CUST-003,true,cancelled,SKU-3,0,5,4.2`;
 
   it("parses European numbers, accounting negatives, magnitude suffixes, and scientific notation", () => {
     const csv = `date,revenue
-2024-01-01,€12.500,50
-2024-01-02,(1.500)
+2024-01-01,"€12.500,50"
+2024-01-02,(1500)
 2024-01-03,10K
 2024-01-04,1.2E6
-2024-01-05,1.234.567,89`;
-    // Note: CSV commas split European decimals — real apps export with semicolons.
-    // Validation should still recognise the values that survive parsing as numeric.
+2024-01-05,"1.234.567,89"`;
     const { headers, rows } = parseCSVText(csv);
     const schema = inferSchema(headers, rows);
     const revenueCol = schema.find((s) => s.column === "revenue");
