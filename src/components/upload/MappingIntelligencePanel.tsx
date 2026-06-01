@@ -539,53 +539,88 @@ function ExecutiveRecommendationCard({
   const warnings = r.summary.warnings.length;
   const driftCount = 0;
 
-  // Import Readiness Score (0-100)
-  const readiness = useMemo(() => {
-    const trustBase = grade === "A" ? 100 : grade === "B" ? 85 : grade === "C" ? 65 : 40;
-    const mappingConf = Math.round(dict.summary.averageConfidence * 100);
-    const repairPenalty = Math.min(15, warnings * 5);
-    const piiPenalty = Math.min(15, piiCount * 3);
-    const reviewPenalty = Math.min(20, reviewCount * 4);
-    const driftPenalty = Math.min(20, driftCount * 10);
-    const raw = Math.round(
-      trustBase * 0.45 +
-      mappingConf * 0.35 +
-      (100 - repairPenalty) * 0.2,
-    ) - piiPenalty - reviewPenalty - driftPenalty;
-    return Math.max(0, Math.min(100, raw));
-  }, [grade, dict.summary.averageConfidence, warnings, piiCount, reviewCount, driftCount]);
+  // Import Readiness Score (0-100) — with breakdown
+  const breakdown = useMemo(() => {
+    // Schema Quality (max 30)
+    const trustWeight = grade === "A" ? 30 : grade === "B" ? 25 : grade === "C" ? 18 : 10;
+    // Mapping Confidence (max 25)
+    const mappingWeight = Math.round(dict.summary.averageConfidence * 25);
+    // Validation Success (max 20)
+    const validationWeight = Math.max(0, 20 - Math.min(20, warnings * 5));
+    // Governance (max 15)
+    const governanceWeight = Math.max(0, 15 - Math.min(15, reviewCount * 3));
+    // PII / Drift Penalties (max -20 total)
+    const piiPenalty = Math.min(10, piiCount * 2);
+    const driftPenalty = Math.min(10, driftCount * 5);
+    const penalty = piiPenalty + driftPenalty;
+
+    const raw = trustWeight + mappingWeight + validationWeight + governanceWeight + 10 - penalty;
+    const total = Math.max(0, Math.min(100, raw));
+
+    return {
+      total,
+      components: [
+        { label: "Schema Quality", value: trustWeight, max: 30, tone: "success" as const },
+        { label: "Mapping Confidence", value: mappingWeight, max: 25, tone: "success" as const },
+        { label: "Validation Success", value: validationWeight, max: 20, tone: "success" as const },
+        { label: "Governance", value: governanceWeight, max: 15, tone: "success" as const },
+        { label: "Baseline", value: 10, max: 10, tone: "success" as const },
+        { label: "Penalties", value: -penalty, max: 20, tone: "destructive" as const },
+      ],
+    };
+  }, [grade, dict.summary.averageConfidence, warnings, reviewCount, piiCount, driftCount]);
+
+  const readiness = breakdown.total;
+
+  // Critical (blocking) issues
+  const criticalIssues = useMemo(() => {
+    const issues: string[] = [];
+    if (grade === "D") issues.push("Trust grade D — multiple integrity concerns");
+    if (trust === "weak") issues.push("Weak trust signal from ingestion engine");
+    if (driftCount > 0) issues.push(`${driftCount} schema drift event(s) detected`);
+    if (piiCount >= 5) issues.push(`${piiCount} PII fields require governance approval`);
+    if (reviewCount >= 3) issues.push(`${reviewCount} fields flagged for manual review`);
+    if (dict.fieldCount > 0 && dict.summary.identifierCount === 0) {
+      issues.push("No primary identifier detected — joins and lineage will be limited");
+    }
+    if (intelligence.locale.ambiguous) issues.push("Ambiguous locale — verify currency/date parsing");
+    return issues;
+  }, [grade, trust, driftCount, piiCount, reviewCount, dict.fieldCount, dict.summary.identifierCount, intelligence.locale.ambiguous]);
 
   const verdict = useMemo(() => {
-    if (grade === "D" || trust === "weak" || reviewCount >= 3 || piiCount >= 5 || driftCount > 0) {
+    if (criticalIssues.length > 0 || grade === "D" || trust === "weak") {
       return {
-        action: "Manual Review" as const,
-        icon: <HandMetal className="w-5 h-5" />,
+        action: "Manual Review Required" as const,
+        statusLabel: "BLOCKED",
+        icon: <HandMetal className="w-7 h-7" />,
         tone: "destructive" as const,
-        headline: "Manual review required before import.",
+        headline: "Resolve blocking issues before import.",
       };
     }
     if (grade === "C" || trust === "moderate" || reviewCount > 0 || warnings > 1 || piiCount > 0) {
       return {
-        action: "Review" as const,
-        icon: <Eye className="w-5 h-5" />,
+        action: "Review Recommended" as const,
+        statusLabel: "REVIEW",
+        icon: <Eye className="w-7 h-7" />,
         tone: "warning" as const,
         headline: "Review intelligence panel before import.",
       };
     }
     return {
-      action: "Proceed with Import" as const,
-      icon: <Rocket className="w-5 h-5" />,
+      action: "Ready for Import" as const,
+      statusLabel: "READY",
+      icon: <Rocket className="w-7 h-7" />,
       tone: "success" as const,
-      headline: "Dataset cleared for executive analysis.",
+      headline: "No blocking issues detected.",
     };
-  }, [grade, trust, reviewCount, piiCount, warnings, driftCount]);
+  }, [criticalIssues.length, grade, trust, reviewCount, piiCount, warnings]);
 
   const toneCls =
     verdict.tone === "success"
-      ? "border-success/40 bg-success/5"
+      ? "border-success/50 bg-gradient-to-br from-success/10 to-success/5"
       : verdict.tone === "warning"
-      ? "border-warning/40 bg-warning/5"
-      : "border-destructive/40 bg-destructive/5";
+      ? "border-warning/50 bg-gradient-to-br from-warning/10 to-warning/5"
+      : "border-destructive/50 bg-gradient-to-br from-destructive/10 to-destructive/5";
   const accentCls =
     verdict.tone === "success" ? "text-success" : verdict.tone === "warning" ? "text-warning" : "text-destructive";
   const pillCls =
@@ -595,57 +630,128 @@ function ExecutiveRecommendationCard({
       ? "bg-warning text-warning-foreground"
       : "bg-destructive text-destructive-foreground";
   const readinessTone = readiness >= 85 ? "text-success" : readiness >= 65 ? "text-warning" : "text-destructive";
+  const readinessBar = readiness >= 85 ? "bg-success" : readiness >= 65 ? "bg-warning" : "bg-destructive";
 
-  const metrics: { label: string; value: React.ReactNode }[] = [
+  const heroMetrics = [
     { label: "Trust Score", value: grade },
-    {
-      label: "Risk",
-      value: verdict.tone === "success" ? "Low" : verdict.tone === "warning" ? "Medium" : "High",
-    },
-    { label: "Schema Drift", value: driftCount },
+    { label: "Risk", value: verdict.tone === "success" ? "Low" : verdict.tone === "warning" ? "Medium" : "High" },
+    { label: "Schema Drift", value: driftCount === 0 ? "None" : driftCount },
     { label: "PII Fields", value: piiCount },
-    { label: "Relationships", value: relationships?.relationships.length ?? 0 },
   ];
 
   return (
-    <div className={`rounded-lg border-2 p-4 space-y-3 ${toneCls}`}>
-      <div className="flex items-start gap-3">
-        <div className={`w-10 h-10 rounded-full bg-background border ${accentCls} flex items-center justify-center shrink-0`}>
+    <div className={`rounded-xl border-2 p-5 space-y-4 shadow-sm ${toneCls}`}>
+      {/* Hero header */}
+      <div className="flex items-start gap-4">
+        <div className={`w-14 h-14 rounded-2xl bg-background border-2 ${accentCls} flex items-center justify-center shrink-0`}>
           {verdict.icon}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+            <span className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground font-bold">
               Recommended Action
             </span>
-            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${pillCls}`}>
-              {verdict.action}
+            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold tracking-wider ${pillCls}`}>
+              {verdict.statusLabel}
             </span>
           </div>
-          <p className={`text-base font-bold mt-1 ${accentCls}`}>{verdict.headline}</p>
+          <p className={`text-xl font-bold mt-0.5 leading-tight ${accentCls}`}>{verdict.action}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">{verdict.headline}</p>
         </div>
         <div className="text-right shrink-0">
           <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
             Import Readiness
           </div>
-          <div className={`text-2xl font-bold leading-none ${readinessTone}`}>
-            {readiness}<span className="text-sm text-muted-foreground font-normal">/100</span>
+          <div className={`text-3xl font-bold leading-none ${readinessTone}`}>
+            {readiness}
+            <span className="text-sm text-muted-foreground font-normal">/100</span>
+          </div>
+          <div className="mt-1.5 w-24 h-1.5 rounded-full bg-muted overflow-hidden">
+            <div className={`h-full ${readinessBar} transition-all`} style={{ width: `${readiness}%` }} />
           </div>
         </div>
       </div>
 
       {/* Hero metric strip */}
-      <div className="grid grid-cols-5 gap-2 pt-2 border-t border-border/40">
-        {metrics.map((m) => (
+      <div className="grid grid-cols-4 gap-2 pt-3 border-t border-border/40">
+        {heroMetrics.map((m) => (
           <div key={m.label} className="text-center">
-            <div className={`text-lg font-bold ${accentCls}`}>{m.value}</div>
+            <div className={`text-xl font-bold ${accentCls}`}>{m.value}</div>
             <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{m.label}</div>
           </div>
         ))}
       </div>
+
+      {/* Readiness breakdown */}
+      <Section
+        title="Import Readiness Components"
+        icon={<Gauge className="w-3.5 h-3.5 text-primary" />}
+        badge={<Badge variant="outline" className="text-[10px]">{readiness}/100</Badge>}
+      >
+        <ul className="space-y-1.5">
+          {breakdown.components.map((c) => {
+            const pct = c.max > 0 ? Math.abs(c.value) / c.max : 0;
+            const isPenalty = c.tone === "destructive";
+            return (
+              <li key={c.label} className="flex items-center gap-2">
+                <span className={`w-12 text-right font-mono text-[11px] font-semibold ${isPenalty ? "text-destructive" : "text-success"}`}>
+                  {c.value > 0 ? `+${c.value}` : c.value}
+                </span>
+                <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
+                  <div
+                    className={`h-full ${isPenalty ? "bg-destructive" : "bg-success"} transition-all`}
+                    style={{ width: `${Math.min(100, pct * 100)}%` }}
+                  />
+                </div>
+                <span className="text-[11px] text-muted-foreground w-36 truncate">{c.label}</span>
+              </li>
+            );
+          })}
+        </ul>
+        <div className="flex items-center justify-between pt-2 mt-2 border-t border-border/40">
+          <span className="text-xs font-semibold">Total</span>
+          <span className={`text-sm font-bold ${readinessTone}`}>{readiness}/100</span>
+        </div>
+      </Section>
+
+      {/* Critical Issues */}
+      <div
+        className={`rounded-lg border p-3 ${
+          criticalIssues.length === 0
+            ? "border-success/30 bg-success/5"
+            : "border-destructive/40 bg-destructive/5"
+        }`}
+      >
+        <div className="flex items-center gap-2 mb-1.5">
+          {criticalIssues.length === 0 ? (
+            <CheckCircle2 className="w-4 h-4 text-success" />
+          ) : (
+            <AlertTriangle className="w-4 h-4 text-destructive" />
+          )}
+          <p className="text-sm font-semibold">
+            Critical Issues{" "}
+            <span className="text-muted-foreground font-normal">
+              ({criticalIssues.length === 0 ? "0 blocking" : `${criticalIssues.length} blocking`})
+            </span>
+          </p>
+        </div>
+        {criticalIssues.length === 0 ? (
+          <p className="text-xs text-muted-foreground">No blocking issues detected. Dataset is safe to import.</p>
+        ) : (
+          <ul className="space-y-1">
+            {criticalIssues.map((issue, i) => (
+              <li key={i} className="text-xs flex items-start gap-1.5 text-destructive">
+                <span className="mt-1 w-1 h-1 rounded-full bg-destructive shrink-0" />
+                <span>{issue}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 }
+
 
 
 
