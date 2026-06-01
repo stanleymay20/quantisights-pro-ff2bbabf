@@ -263,13 +263,18 @@ export default function MappingIntelligencePanel({ intelligence, relationships }
         </Section>
 
 
-        {/* Cross-sheet relationships */}
-        {relationships && relationships.relationships.length > 0 && (
-          <Section
-            title="Cross-Sheet Relationships"
-            icon={<Link2 className="w-3.5 h-3.5 text-primary" />}
-            badge={<Badge variant="outline" className="text-[10px]">{relationships.relationships.length}</Badge>}
-          >
+        {/* Cross-sheet relationships — always rendered with empty state */}
+        <Section
+          title="Cross-Sheet Relationships"
+          icon={<Link2 className="w-3.5 h-3.5 text-primary" />}
+          badge={<Badge variant="outline" className="text-[10px]">{relationships?.relationships.length ?? 0}</Badge>}
+        >
+          {!relationships || relationships.relationships.length === 0 ? (
+            <p className="text-muted-foreground">
+              No cross-sheet relationships detected. Upload a multi-sheet workbook to surface foreign-key style joins (e.g.{" "}
+              <span className="font-mono">orders.customer_id → customers.id</span>).
+            </p>
+          ) : (
             <ul className="space-y-1.5">
               {relationships.relationships.map((rel, i) => (
                 <li key={i} className="flex items-center gap-2 font-mono text-[11px]">
@@ -280,8 +285,8 @@ export default function MappingIntelligencePanel({ intelligence, relationships }
                 </li>
               ))}
             </ul>
-          </Section>
-        )}
+          )}
+        </Section>
 
         {/* PII fields */}
         {intelligence.semanticSchema.piiColumns.length > 0 && (
