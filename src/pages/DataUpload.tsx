@@ -318,7 +318,7 @@ const DataUpload = () => {
     }
 
     try {
-      const diag = computeDiagnostics(allRows, headers, mapping);
+      const diag = computeDiagnostics(allRows, headers, mapping, detectedSchema);
       setDiagnostics(diag);
     } catch (err) {
       console.error("[DataUpload] computeDiagnostics threw:", err);
