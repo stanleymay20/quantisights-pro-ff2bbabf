@@ -991,7 +991,7 @@ export function classifyDataset(headers: string[], mapping: ColumnMapping): Data
       if (tokens.has(kw)) {
         score += 3;
         matched.push(kw);
-      } else if (normalized.some(h => h.includes(kw))) {
+      } else if (kw.length >= 4 && normalized.some(h => h.includes(kw))) {
         score += 1;
         matched.push(kw);
       }
