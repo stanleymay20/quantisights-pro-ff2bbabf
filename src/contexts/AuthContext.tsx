@@ -29,6 +29,36 @@ export const useAuth = () => {
   return ctx;
 };
 
+const clearTenantSession = () => {
+  sessionStorage.removeItem("quantivis_org_id");
+  sessionStorage.removeItem("quantivis_workspace_id");
+  sessionStorage.removeItem("quantivis_project_id");
+};
+
+const clearSupabaseAuthStorage = () => {
+  const keysToRemove: string[] = [];
+
+  for (let i = 0; i < localStorage.length; i += 1) {
+    const key = localStorage.key(i);
+    if (key && (key.startsWith("sb-") || key.includes("supabase.auth.token"))) {
+      keysToRemove.push(key);
+    }
+  }
+
+  keysToRemove.forEach((key) => localStorage.removeItem(key));
+  clearTenantSession();
+};
+
+const isBadJwtError = (error: unknown) => {
+  const message = error instanceof Error ? error.message : String(error ?? "");
+  return (
+    message.includes("bad_jwt") ||
+    message.includes("invalid claim") ||
+    message.includes("missing sub claim") ||
+    message.includes("JWT")
+  );
+};
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -66,10 +96,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     // Flag to prevent duplicate profile fetches from race between getSession and onAuthStateChange
     let initialSessionResolved = false;
+    let cancelled = false;
+
+    const resetAuthState = () => {
+      setSession(null);
+      setUser(null);
+      setProfile(null);
+      clearSentryUser();
+    };
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       // Skip if this is the initial event that duplicates getSession
-      if (!initialSessionResolved) return;
+      if (!initialSessionResolved || cancelled) return;
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
@@ -82,18 +120,49 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false);
     });
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      initialSessionResolved = true;
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        await fetchProfile(session.user.id);
-        setSentryUser(session.user.id, session.user.email);
-      }
-      setLoading(false);
-    });
+    const hydrateSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        initialSessionResolved = true;
 
-    return () => subscription.unsubscribe();
+        if (error) throw error;
+
+        // Some stale/corrupt local sessions pass getSession() but fail server validation.
+        if (session) {
+          const { data: userData, error: userError } = await supabase.auth.getUser();
+          if (userError) throw userError;
+          if (!userData.user?.id) throw new Error("bad_jwt: invalid claim: missing sub claim");
+        }
+
+        if (cancelled) return;
+        setSession(session);
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          await fetchProfile(session.user.id);
+          setSentryUser(session.user.id, session.user.email);
+        } else {
+          clearSentryUser();
+        }
+      } catch (error) {
+        if (isBadJwtError(error)) {
+          console.warn("[AuthContext] Clearing stale Supabase auth token after bad JWT:", error instanceof Error ? error.message : error);
+          clearSupabaseAuthStorage();
+          await supabase.auth.signOut({ scope: "local" }).catch(() => undefined);
+        } else {
+          console.error("[AuthContext] Failed to hydrate auth session:", error instanceof Error ? error.message : error);
+        }
+        if (!cancelled) resetAuthState();
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    hydrateSession();
+
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
   }, [fetchProfile]);
 
   const signUp = async (email: string, password: string, fullName: string) => {
@@ -109,14 +178,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signIn = async (email: string, password: string) => {
+    clearTenantSession();
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
   };
 
   const signOut = async () => {
-    sessionStorage.removeItem("quantivis_org_id");
-    sessionStorage.removeItem("quantivis_workspace_id");
-    sessionStorage.removeItem("quantivis_project_id");
+    clearTenantSession();
     setProfile(null);
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
