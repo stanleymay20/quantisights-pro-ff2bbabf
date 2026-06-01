@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   ChevronDown,
   ChevronRight,
@@ -15,6 +16,8 @@ import {
   Sparkles,
   BookOpen,
   Gauge,
+  Info,
+  ScrollText,
 } from "lucide-react";
 import type { IngestionIntelligenceResult } from "@/lib/ingestion-intelligence";
 import type { CrossSheetDiscoveryResult } from "@/lib/cross-sheet-discovery";
