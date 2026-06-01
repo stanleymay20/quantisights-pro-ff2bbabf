@@ -1,5 +1,5 @@
 import { isBooleanLike, isIdentifierHeader, isIdentifierLike, normalizeCell, parseMessyDate, parseMessyNumber } from "./messy-data-guards";
-import type { ColumnTarget } from "./data-upload-utils";
+import type { ColumnTarget, DetectedSchema } from "./data-upload-utils";
 
 export type SemanticColumnType =
   | "date"
@@ -40,6 +40,15 @@ export interface SemanticColumnProfile {
   reason: string;
   reviewRequired: boolean;
   rulesApplied: string[];
+}
+
+export interface SemanticSchemaSummary {
+  profiles: SemanticColumnProfile[];
+  reviewRequiredCount: number;
+  averageConfidence: number;
+  kpiColumns: string[];
+  identifierColumns: string[];
+  piiColumns: string[];
 }
 
 const LOCATION_HEADER = /(^|_)(country|region|state|city|territory|postcode|postal_code|zip|zip_code|location)($|_)/i;
@@ -209,5 +218,34 @@ export function classifySemanticColumn(args: {
     reason: "No strong business semantic pattern detected.",
     reviewRequired: true,
     rulesApplied: ["semantic:low_confidence"],
+  };
+}
+
+export function classifySemanticSchema(args: {
+  schema: DetectedSchema[];
+  rows: string[][];
+  sampleSize?: number;
+}): SemanticSchemaSummary {
+  const { schema, rows, sampleSize = 100 } = args;
+  const sampleRows = rows.slice(0, Math.min(rows.length, sampleSize));
+  const profiles = schema.map((col) => classifySemanticColumn({
+    column: col.column,
+    colIdx: col.colIdx,
+    baseType: col.inferredType,
+    baseConfidence: col.confidence,
+    samples: sampleRows.map(row => row[col.colIdx]).filter(Boolean),
+  }));
+
+  const averageConfidence = profiles.length > 0
+    ? Math.round(profiles.reduce((sum, p) => sum + p.confidence, 0) / profiles.length)
+    : 0;
+
+  return {
+    profiles,
+    averageConfidence,
+    reviewRequiredCount: profiles.filter(p => p.reviewRequired).length,
+    kpiColumns: profiles.filter(p => p.businessRole.endsWith("_kpi")).map(p => p.column),
+    identifierColumns: profiles.filter(p => p.semanticType === "identifier" || p.businessRole === "entity_key").map(p => p.column),
+    piiColumns: profiles.filter(p => p.semanticType === "pii" || p.businessRole === "sensitive_attribute").map(p => p.column),
   };
 }
