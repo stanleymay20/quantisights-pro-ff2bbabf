@@ -100,6 +100,7 @@ const DataUpload = () => {
   const [drift, setDrift] = useState<DriftReport | null>(null);
   const [ingestionIntel, setIngestionIntel] = useState<IngestionIntelligenceResult | null>(null);
   const [crossSheet, setCrossSheet] = useState<CrossSheetDiscoveryResult | null>(null);
+  const lastFileRef = useRef<File | null>(null);
 
   // Phase 4: chunked worker-driven ingestion. Used for CSVs ≥ 1 MB so the UI
   // stays responsive on multi-100k-row uploads. Small CSVs keep the sync path.
