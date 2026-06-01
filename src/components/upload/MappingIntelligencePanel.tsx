@@ -243,8 +243,12 @@ export default function MappingIntelligencePanel({ intelligence, relationships }
           badge={<Badge variant="outline" className="text-[10px]">{sim.groups.length}</Badge>}
         >
           {sim.groups.length === 0 ? (
-            <p className="text-muted-foreground">No duplicate or semantically similar columns detected.</p>
+            <div className="space-y-1">
+              <p>No duplicate or semantically similar columns detected.</p>
+              <p className="text-muted-foreground">Column names appear distinct and unambiguous.</p>
+            </div>
           ) : (
+
             <ul className="space-y-2">
               {sim.groups.map((g, i) => (
                 <li key={i} className="rounded-md border border-border/60 bg-muted/20 p-2">
