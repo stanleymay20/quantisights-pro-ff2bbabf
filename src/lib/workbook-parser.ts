@@ -110,8 +110,17 @@ function applyMergedCells(
   }
 }
 
-export async function parseWorkbookFile(file: File): Promise<ParsedWorkbook> {
-  const buffer = await file.arrayBuffer();
+export async function parseWorkbookFile(
+  input: File | ArrayBuffer,
+  fileName?: string,
+): Promise<ParsedWorkbook> {
+  const buffer =
+    input instanceof ArrayBuffer
+      ? input
+      : typeof (input as File).arrayBuffer === "function"
+        ? await (input as File).arrayBuffer()
+        : await new Response(input as Blob).arrayBuffer();
+  const resolvedName = fileName ?? (input instanceof ArrayBuffer ? "workbook.xlsx" : (input as File).name);
   const workbook = XLSX.read(buffer, {
     type: "array",
     cellDates: true,
