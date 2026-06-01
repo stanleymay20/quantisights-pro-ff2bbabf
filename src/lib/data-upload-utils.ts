@@ -96,6 +96,10 @@ export interface DatasetDiagnostics {
   duplicateRows: number;
   dateContinuity: "OK" | "Gaps detected" | "N/A";
   dateGapCount: number;
+  piiRisk: {
+    level: "none" | "low" | "high";
+    columns: string[];
+  };
 }
 
 export interface DatasetClassification {
