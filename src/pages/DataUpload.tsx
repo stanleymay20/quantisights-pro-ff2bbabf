@@ -30,6 +30,13 @@ import {
   classifyDataset, confidenceColor, qualityColor, humanizeError, parseCSVText,
   slugifyMetric, deduplicateMetricSlugs,
 } from "@/lib/data-upload-utils";
+import {
+  type ParsedWorkbook,
+  type WorkbookSheet,
+  isSupportedDataFile,
+  isWorkbookFile,
+  parseWorkbookFile,
+} from "@/lib/workbook-parser";
 import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 
 type Step = "upload" | "autodetect" | "mapping" | "validation" | "intelligence" | "importing" | "done";
