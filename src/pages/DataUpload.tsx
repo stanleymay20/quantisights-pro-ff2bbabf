@@ -12,6 +12,7 @@ import { embedInsightsBatch } from "@/lib/decision-lifecycle";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import {
   Upload, FileSpreadsheet, ArrowRight, Check, X,
@@ -1196,9 +1197,17 @@ const DataUpload = () => {
                                 const profile = ingestionIntel?.semanticSchema.profiles.find((p) => p.colIdx === det.colIdx);
                                 const tags: string[] = [];
                                 if (profile?.semanticType === "pii") tags.push("PII");
-                                if (profile?.semanticType === "identifier" || profile?.businessRole === "entity_key") tags.push("Identifier");
+                                if (profile?.semanticType === "identifier" || profile?.businessRole === "entity_key") {
+                                  tags.push(profile?.businessRole === "entity_key" ? "Entity" : "Identifier");
+                                }
                                 if (det.inferredType === "date") tags.push("Date");
                                 if (profile?.businessRole === "financial_kpi") tags.push("Currency");
+                                if (
+                                  profile?.businessRole &&
+                                  ["financial_kpi", "operational_kpi", "customer_kpi", "workforce_kpi", "risk_kpi"].includes(profile.businessRole)
+                                ) {
+                                  tags.push("KPI");
+                                }
                                 return tags.map((t) => (
                                   <Badge
                                     key={t}
@@ -1206,11 +1215,13 @@ const DataUpload = () => {
                                     className={`text-[10px] ${
                                       t === "PII"
                                         ? "border-destructive/40 text-destructive bg-destructive/5"
-                                        : t === "Identifier"
+                                        : t === "Identifier" || t === "Entity"
                                           ? "border-primary/40 text-primary bg-primary/5"
                                           : t === "Date"
                                             ? "border-warning/40 text-warning bg-warning/5"
-                                            : "border-success/40 text-success bg-success/5"
+                                            : t === "KPI"
+                                              ? "border-accent/40 text-accent-foreground bg-accent/10"
+                                              : "border-success/40 text-success bg-success/5"
                                     }`}
                                   >
                                     {t}
@@ -1230,10 +1241,24 @@ const DataUpload = () => {
                               </div>
                             )}
                           </div>
-                          <Badge variant="outline" className={`text-[10px] shrink-0 ${confidenceColor(det.confidence)}`}>
-                            {det.confidence}%
-                          </Badge>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Badge variant="outline" className={`text-[10px] shrink-0 cursor-help ${confidenceColor(det.confidence)}`}>
+                                {det.confidence}%
+                              </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent side="left" className="max-w-xs text-xs p-3 space-y-1">
+                              <p className="font-semibold">Confidence is based on:</p>
+                              <ul className="space-y-0.5 text-muted-foreground">
+                                <li>• Column name patterns</li>
+                                <li>• Sample value distribution</li>
+                                <li>• Schema-level heuristics</li>
+                                <li>• Industry ontology match</li>
+                              </ul>
+                            </TooltipContent>
+                          </Tooltip>
                         </div>
+
                       ))}
                     </div>
 

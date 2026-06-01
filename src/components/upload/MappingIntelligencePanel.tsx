@@ -152,14 +152,15 @@ export default function MappingIntelligencePanel({ intelligence, relationships }
           </TooltipContent>
         </Tooltip>
 
-        {/* Executive Recommendation */}
-        <ExecutiveRecommendationCard intelligence={intelligence} grade={grade} />
+        {/* Executive Recommendation (hero) */}
+        <ExecutiveRecommendationCard intelligence={intelligence} grade={grade} relationships={relationships} />
 
         {/* Risk Assessment */}
         <RiskAssessmentCard intelligence={intelligence} grade={grade} />
 
         {/* Governance Status */}
-        <GovernanceStatusCard intelligence={intelligence} grade={grade} />
+        <GovernanceStatusCard intelligence={intelligence} grade={grade} relationships={relationships} />
+
 
         {/* Summary chips */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
@@ -411,22 +412,26 @@ function RiskAssessmentCard({
 function GovernanceStatusCard({
   intelligence,
   grade,
+  relationships,
 }: {
   intelligence: IngestionIntelligenceResult;
   grade: Grade;
+  relationships?: CrossSheetDiscoveryResult | null;
 }) {
   const dict = intelligence.dictionary;
   const piiCount = dict.summary.piiCount;
   const reviewCount = dict.summary.reviewRequiredCount;
   const driftCount = 0;
   const lineageAvailable = true;
+  const relationshipCount = relationships?.relationships.length ?? 0;
 
   const items: { label: string; value: React.ReactNode; tone: string }[] = [
     { label: "PII Fields", value: piiCount, tone: piiCount > 0 ? "text-warning" : "text-success" },
     { label: "Review Required", value: reviewCount, tone: reviewCount > 0 ? "text-warning" : "text-success" },
-    { label: "Trust Score", value: grade, tone: grade === "A" || grade === "B" ? "text-success" : grade === "C" ? "text-warning" : "text-destructive" },
     { label: "Schema Drift", value: driftCount, tone: driftCount > 0 ? "text-warning" : "text-success" },
     { label: "Lineage", value: lineageAvailable ? "Yes" : "No", tone: lineageAvailable ? "text-success" : "text-destructive" },
+    { label: "Relationships", value: relationshipCount, tone: "text-primary" },
+    { label: "Trust Grade", value: grade, tone: grade === "A" || grade === "B" ? "text-success" : grade === "C" ? "text-warning" : "text-destructive" },
   ];
 
   return (
@@ -435,7 +440,7 @@ function GovernanceStatusCard({
         <ScrollText className="w-4 h-4 text-primary" aria-hidden="true" />
         <p className="text-sm font-semibold">Governance Status</p>
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-xs">
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-2 text-xs">
         {items.map((it) => (
           <div key={it.label} className="rounded-md border border-border bg-background p-2 text-center">
             <div className={`text-base font-bold ${it.tone}`}>{it.value}</div>
@@ -446,6 +451,7 @@ function GovernanceStatusCard({
     </div>
   );
 }
+
 
 function DictionaryDrillDown({ dict }: { dict: IngestionIntelligenceResult["dictionary"] }) {
   const groups = useMemo(() => {
@@ -519,9 +525,11 @@ function DictionaryGroup({
 function ExecutiveRecommendationCard({
   intelligence,
   grade,
+  relationships,
 }: {
   intelligence: IngestionIntelligenceResult;
   grade: Grade;
+  relationships?: CrossSheetDiscoveryResult | null;
 }) {
   const r = intelligence.repairReport;
   const dict = intelligence.dictionary;
@@ -529,54 +537,48 @@ function ExecutiveRecommendationCard({
   const reviewCount = dict.summary.reviewRequiredCount;
   const trust = r.summary.trustSignal;
   const warnings = r.summary.warnings.length;
-  const driftCount = 0; // schema drift placeholder (intelligence pipeline emits warnings instead)
+  const driftCount = 0;
+
+  // Import Readiness Score (0-100)
+  const readiness = useMemo(() => {
+    const trustBase = grade === "A" ? 100 : grade === "B" ? 85 : grade === "C" ? 65 : 40;
+    const mappingConf = Math.round(dict.summary.averageConfidence * 100);
+    const repairPenalty = Math.min(15, warnings * 5);
+    const piiPenalty = Math.min(15, piiCount * 3);
+    const reviewPenalty = Math.min(20, reviewCount * 4);
+    const driftPenalty = Math.min(20, driftCount * 10);
+    const raw = Math.round(
+      trustBase * 0.45 +
+      mappingConf * 0.35 +
+      (100 - repairPenalty) * 0.2,
+    ) - piiPenalty - reviewPenalty - driftPenalty;
+    return Math.max(0, Math.min(100, raw));
+  }, [grade, dict.summary.averageConfidence, warnings, piiCount, reviewCount, driftCount]);
 
   const verdict = useMemo(() => {
-    // Manual Review: any condition forcing a human-in-the-loop gate
     if (grade === "D" || trust === "weak" || reviewCount >= 3 || piiCount >= 5 || driftCount > 0) {
       return {
         action: "Manual Review" as const,
         icon: <HandMetal className="w-5 h-5" />,
         tone: "destructive" as const,
         headline: "Manual review required before import.",
-        rationale: [
-          grade === "D" && "Trust grade D — multiple integrity concerns",
-          trust === "weak" && "Weak trust signal from ingestion engine",
-          reviewCount >= 3 && `${reviewCount} fields flagged for review`,
-          piiCount >= 5 && `${piiCount} PII fields require governance approval`,
-          driftCount > 0 && `${driftCount} schema drift event(s) detected`,
-        ].filter(Boolean) as string[],
       };
     }
-    // Review: caution, but not blocking
     if (grade === "C" || trust === "moderate" || reviewCount > 0 || warnings > 1 || piiCount > 0) {
       return {
         action: "Review" as const,
         icon: <Eye className="w-5 h-5" />,
         tone: "warning" as const,
         headline: "Review intelligence panel before import.",
-        rationale: [
-          grade === "C" && "Trust grade C — manual verification advised",
-          reviewCount > 0 && `${reviewCount} field${reviewCount === 1 ? "" : "s"} need review`,
-          piiCount > 0 && `${piiCount} PII field${piiCount === 1 ? "" : "s"} present`,
-          warnings > 1 && `${warnings} ingestion warnings`,
-          trust === "moderate" && "Moderate trust signal",
-        ].filter(Boolean) as string[],
       };
     }
-    // Proceed: clean, governed, ready
     return {
-      action: "Proceed" as const,
+      action: "Proceed with Import" as const,
       icon: <Rocket className="w-5 h-5" />,
       tone: "success" as const,
       headline: "Dataset cleared for executive analysis.",
-      rationale: [
-        `Trust grade ${grade}`,
-        `${r.summary.repairsApplied} auto-repair${r.summary.repairsApplied === 1 ? "" : "s"} applied`,
-        "No PII or review gates triggered",
-      ],
     };
-  }, [grade, trust, reviewCount, piiCount, warnings, driftCount, r.summary.repairsApplied]);
+  }, [grade, trust, reviewCount, piiCount, warnings, driftCount]);
 
   const toneCls =
     verdict.tone === "success"
@@ -592,9 +594,21 @@ function ExecutiveRecommendationCard({
       : verdict.tone === "warning"
       ? "bg-warning text-warning-foreground"
       : "bg-destructive text-destructive-foreground";
+  const readinessTone = readiness >= 85 ? "text-success" : readiness >= 65 ? "text-warning" : "text-destructive";
+
+  const metrics: { label: string; value: React.ReactNode }[] = [
+    { label: "Trust Score", value: grade },
+    {
+      label: "Risk",
+      value: verdict.tone === "success" ? "Low" : verdict.tone === "warning" ? "Medium" : "High",
+    },
+    { label: "Schema Drift", value: driftCount },
+    { label: "PII Fields", value: piiCount },
+    { label: "Relationships", value: relationships?.relationships.length ?? 0 },
+  ];
 
   return (
-    <div className={`rounded-lg border-2 p-4 ${toneCls}`}>
+    <div className={`rounded-lg border-2 p-4 space-y-3 ${toneCls}`}>
       <div className="flex items-start gap-3">
         <div className={`w-10 h-10 rounded-full bg-background border ${accentCls} flex items-center justify-center shrink-0`}>
           {verdict.icon}
@@ -602,28 +616,37 @@ function ExecutiveRecommendationCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
-              Executive Recommendation
+              Recommended Action
             </span>
             <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${pillCls}`}>
               {verdict.action}
             </span>
           </div>
-          <p className={`text-sm font-semibold mt-1 ${accentCls}`}>{verdict.headline}</p>
-          {verdict.rationale.length > 0 && (
-            <ul className="mt-2 space-y-0.5">
-              {verdict.rationale.map((reason, i) => (
-                <li key={i} className="text-[11px] text-muted-foreground flex items-start gap-1.5">
-                  <span className={`mt-1 w-1 h-1 rounded-full shrink-0 ${accentCls.replace("text-", "bg-")}`} />
-                  <span>{reason}</span>
-                </li>
-              ))}
-            </ul>
-          )}
+          <p className={`text-base font-bold mt-1 ${accentCls}`}>{verdict.headline}</p>
         </div>
+        <div className="text-right shrink-0">
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+            Import Readiness
+          </div>
+          <div className={`text-2xl font-bold leading-none ${readinessTone}`}>
+            {readiness}<span className="text-sm text-muted-foreground font-normal">/100</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Hero metric strip */}
+      <div className="grid grid-cols-5 gap-2 pt-2 border-t border-border/40">
+        {metrics.map((m) => (
+          <div key={m.label} className="text-center">
+            <div className={`text-lg font-bold ${accentCls}`}>{m.value}</div>
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{m.label}</div>
+          </div>
+        ))}
       </div>
     </div>
   );
 }
+
 
 
 
