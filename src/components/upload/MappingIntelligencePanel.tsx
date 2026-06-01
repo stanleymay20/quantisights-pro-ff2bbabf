@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import {
   ChevronDown,
   ChevronRight,
@@ -12,6 +13,8 @@ import {
   AlertTriangle,
   CheckCircle2,
   Sparkles,
+  BookOpen,
+  Gauge,
 } from "lucide-react";
 import type { IngestionIntelligenceResult } from "@/lib/ingestion-intelligence";
 import type { CrossSheetDiscoveryResult } from "@/lib/cross-sheet-discovery";
