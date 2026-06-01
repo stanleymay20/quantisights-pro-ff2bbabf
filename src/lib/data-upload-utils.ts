@@ -1,9 +1,23 @@
 // ---- Data Upload Utility Functions ----
 // Extracted from DataUpload.tsx for maintainability.
+// All ingestion stages (parse → infer → validate → diagnose) share a single
+// normalization layer from messy-data-guards.ts so behavior stays consistent.
 // The inference rules intentionally let sampled values override header keywords.
 // Example: sales_channel contains "sales" but values are text, so it must be a segment, not a metric.
 
 import Papa from "papaparse";
+import {
+  deduplicateHeaders,
+  isBooleanLike,
+  isEmailLike,
+  isIdentifierHeader,
+  isIdentifierLike,
+  isPhoneLike,
+  isPotentialPiiHeader,
+  normalizeCell,
+  parseMessyDate,
+  parseMessyNumber,
+} from "./messy-data-guards";
 
 export const COUNTRY_SAMPLES = new Set([
   "united states", "usa", "us", "china", "india", "germany", "france", "japan",
@@ -82,6 +96,10 @@ export interface DatasetDiagnostics {
   duplicateRows: number;
   dateContinuity: "OK" | "Gaps detected" | "N/A";
   dateGapCount: number;
+  piiRisk: {
+    level: "none" | "low" | "high";
+    columns: string[];
+  };
 }
 
 export interface DatasetClassification {
@@ -144,57 +162,20 @@ function isProtectedPeriodHeader(lower: string): boolean {
   return PERIOD_HEADER_PATTERNS.some(p => p.test(lower));
 }
 
-function cleanNumericString(raw: string | undefined): string {
-  if (!raw) return "";
-  return raw
-    .trim()
-    .replace(/[\s$€£¥₹,]/g, "")
-    .replace(/%$/, "")
-    .replace(/^\(([^)]+)\)$/, "-$1");
-}
-
 function cleanNumericVal(raw: string | undefined): number {
-  const cleaned = cleanNumericString(raw);
-  if (!cleaned) return NaN;
-  if (!/^-?\d+(\.\d+)?$/.test(cleaned)) return NaN;
-  return Number(cleaned);
+  return parseMessyNumber(raw);
 }
 
 function isNumericValue(raw: string | undefined): boolean {
-  const n = cleanNumericVal(raw);
-  return Number.isFinite(n);
+  return Number.isFinite(parseMessyNumber(raw));
 }
 
 function isDateValue(raw: string | undefined): boolean {
-  const value = raw?.trim();
-  if (!value) return false;
-  if (/^\d{4}$/.test(value)) return true;
-  if (/^\d{4}-\d{2}$/.test(value)) return true;
-  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return true;
-  if (/^Q[1-4][-_ ]?\d{4}$/i.test(value)) return true;
-  if (/^\d{4}[-_ ]?Q[1-4]$/i.test(value)) return true;
-  return !Number.isNaN(Date.parse(value));
+  return parseMessyDate(raw) !== null;
 }
 
 function toDateValue(raw: string | undefined): string | null {
-  const value = raw?.trim();
-  if (!value) return null;
-  if (/^\d{4}$/.test(value)) return `${value}-01-01`;
-  if (/^\d{4}-\d{2}$/.test(value)) return `${value}-01`;
-  if (/^Q([1-4])[-_ ]?(\d{4})$/i.test(value)) {
-    const match = value.match(/^Q([1-4])[-_ ]?(\d{4})$/i);
-    const q = Number(match?.[1] ?? 1);
-    const y = match?.[2] ?? value;
-    return `${y}-${String((q - 1) * 3 + 1).padStart(2, "0")}-01`;
-  }
-  if (/^(\d{4})[-_ ]?Q([1-4])$/i.test(value)) {
-    const match = value.match(/^(\d{4})[-_ ]?Q([1-4])$/i);
-    const y = match?.[1] ?? value;
-    const q = Number(match?.[2] ?? 1);
-    return `${y}-${String((q - 1) * 3 + 1).padStart(2, "0")}-01`;
-  }
-  if (isDateValue(value)) return value;
-  return null;
+  return parseMessyDate(raw);
 }
 
 function cardinality(samples: string[]): number {
@@ -207,11 +188,12 @@ export function parseCSVText(text: string): { headers: string[]; rows: string[][
     header: false,
     skipEmptyLines: "greedy",
     transformHeader: (h: string) => h.trim(),
-    transform: (val: string) => val.trim(),
+    transform: (val: string) => normalizeCell(val),
   });
   const data = result.data as string[][];
   if (data.length < 2) return { headers: [], rows: [] };
-  const headers = data[0].map(h => h.replace(/^"|"$/g, "").trim());
+  const rawHeaders = data[0].map(h => (h ?? "").replace(/^"|"$/g, "").trim());
+  const headers = deduplicateHeaders(rawHeaders);
   const rows = data.slice(1).filter(row => row.some(cell => cell && cell.trim()));
   return { headers, rows };
 }
@@ -270,6 +252,47 @@ export function inferSchema(headers: string[], rows: string[][]): DetectedSchema
         reason: "No sample values found",
         sampleValues: [],
         rulesApplied: ["empty_samples"],
+      };
+    }
+
+    const looksLikeDateHeader =
+      !isNotDateHeader(header) &&
+      (isProtectedPeriodHeader(lower) ||
+        lower === "date" || lower === "year" || lower === "time" ||
+        lower.endsWith("_date") || lower.startsWith("date_"));
+
+    // Identifier guard — never treat IDs/SKUs/UUIDs as numeric metrics.
+    // Skip when the column is clearly a date/period column or the values parse as dates.
+    if (!looksLikeDateHeader && dateRate < 0.5) {
+      const idValueRate =
+        samples.filter(s => isIdentifierLike(s) && !isDateValue(s)).length /
+        Math.max(samples.length, 1);
+      if (isIdentifierHeader(header) || idValueRate > 0.6) {
+        return {
+          column: header,
+          colIdx,
+          inferredType: "segment",
+          confidence: 90,
+          reason: "Identifier column detected (kept as segment, not a metric)",
+          sampleValues: samples.slice(0, 3),
+          rulesApplied: ["identifier_guard", `idValueRate=${(idValueRate * 100).toFixed(0)}%`],
+        };
+      }
+    }
+
+    // Boolean guard — true/false, yes/no, y/n. Skip pure 0/1 since it conflicts with numeric metrics.
+    const boolRate =
+      samples.filter(s => isBooleanLike(s) && !/^[01]$/.test(normalizeCell(s))).length /
+      Math.max(samples.length, 1);
+    if (boolRate >= 0.9 && uniqueValues <= 3) {
+      return {
+        column: header,
+        colIdx,
+        inferredType: "segment",
+        confidence: 88,
+        reason: "Boolean-like column detected",
+        sampleValues: samples.slice(0, 3),
+        rulesApplied: ["boolean_guard", `boolRate=${(boolRate * 100).toFixed(0)}%`],
       };
     }
 
@@ -678,7 +701,11 @@ export function generateIntelligence(
   };
 }
 
-export function computeDiagnostics(rows: string[][], mapping: ColumnMapping): DatasetDiagnostics {
+export function computeDiagnostics(
+  rows: string[][],
+  headers: string[],
+  mapping: ColumnMapping,
+): DatasetDiagnostics {
   const dateIdx = findMappedIdx(mapping, "date");
   const valueIndices = findAllMappedIdx(mapping, "value");
   let missing = 0;
@@ -723,12 +750,29 @@ export function computeDiagnostics(rows: string[][], mapping: ColumnMapping): Da
     }
   }
 
+  // PII detection — flag columns that look like personal data.
+  const sampleRows = rows.slice(0, Math.min(rows.length, 200));
+  const piiColumns: string[] = [];
+  headers.forEach((header, idx) => {
+    const headerHit = isPotentialPiiHeader(header);
+    const samples = sampleRows.map(r => r[idx]).filter(v => v && v.trim());
+    if (samples.length === 0 && !headerHit) return;
+    const emailRate = samples.filter(isEmailLike).length / Math.max(samples.length, 1);
+    const phoneRate = samples.filter(isPhoneLike).length / Math.max(samples.length, 1);
+    if (headerHit || emailRate > 0.5 || phoneRate > 0.5) {
+      piiColumns.push(header);
+    }
+  });
+  const piiLevel: DatasetDiagnostics["piiRisk"]["level"] =
+    piiColumns.length === 0 ? "none" : piiColumns.length >= 2 ? "high" : "low";
+
   return {
     missingValuesPct: total > 0 ? Math.round((missing / total) * 100) : 0,
     outlierCount,
     duplicateRows,
     dateContinuity,
     dateGapCount,
+    piiRisk: { level: piiLevel, columns: piiColumns },
   };
 }
 

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   type ColumnMapping,
+  computeDiagnostics,
   inferSchema,
   parseCSVText,
   validateData,
@@ -87,5 +88,112 @@ ORD-003,CUST-003,true,cancelled,SKU-3,0,5,4.2`;
     expect(typeOf(schema, "units_sold")).toBe("value");
     expect(typeOf(schema, "returns_units")).toBe("value");
     expect(typeOf(schema, "customer_satisfaction_score")).toBe("value");
+  });
+
+  it("deduplicates duplicate headers before inference", () => {
+    const csv = `date,revenue,revenue,revenue
+2024-01-01,100,200,300
+2024-01-02,110,210,310`;
+    const { headers } = parseCSVText(csv);
+    expect(headers).toEqual(["date", "revenue", "revenue_2", "revenue_3"]);
+  });
+
+  it("normalizes null-like tokens to empty strings", () => {
+    const csv = `date,revenue
+2024-01-01,N/A
+2024-01-02,NULL
+2024-01-03,1500`;
+    const { rows } = parseCSVText(csv);
+    expect(rows[0][1]).toBe("");
+    expect(rows[1][1]).toBe("");
+    expect(rows[2][1]).toBe("1500");
+  });
+
+  it("parses European numbers, accounting negatives, magnitude suffixes, and scientific notation", () => {
+    const csv = `date,revenue
+2024-01-01,"€12.500,50"
+2024-01-02,(1500)
+2024-01-03,10K
+2024-01-04,1.2E6
+2024-01-05,"1.234.567,89"`;
+    const { headers, rows } = parseCSVText(csv);
+    const schema = inferSchema(headers, rows);
+    const revenueCol = schema.find((s) => s.column === "revenue");
+    expect(revenueCol?.inferredType).toBe("value");
+  });
+
+  it("parses Excel serial dates, ISO week, quarters, and FY periods", () => {
+    const csv = `date,revenue
+45292,1000
+2024-W03,1100
+Q2-2024,1200
+FY24-Q3,1300
+2024-01,1400`;
+    const { headers, rows } = parseCSVText(csv);
+    const schema = inferSchema(headers, rows);
+    const mapping: ColumnMapping = Object.fromEntries(
+      schema.map((s) => [s.colIdx, s.inferredType]),
+    );
+    const result = validateData(rows, headers, mapping, "single");
+    expect(result.errors.filter((e) => e.friendlyTitle.toLowerCase().includes("date"))).toHaveLength(0);
+    expect(result.dateRange).not.toBeNull();
+  });
+
+  it("classifies identifier columns as segments, never metrics", () => {
+    const csv = `order_id,customer_id,uuid,sku,revenue
+ORD-001,CUST-1001,550e8400-e29b-41d4-a716-446655440000,SKU-9001,1200
+ORD-002,CUST-1002,550e8400-e29b-41d4-a716-446655440001,SKU-9002,1300`;
+    const { headers, rows } = parseCSVText(csv);
+    const schema = inferSchema(headers, rows);
+    for (const col of ["order_id", "customer_id", "uuid", "sku"]) {
+      const t = schema.find((s) => s.column === col)?.inferredType;
+      expect(t).not.toBe("value");
+    }
+    expect(schema.find((s) => s.column === "revenue")?.inferredType).toBe("value");
+  });
+
+  it("detects PII columns in diagnostics", () => {
+    const csv = `customer_id,email,phone,revenue
+C001,alice@example.com,+1 555 123 4567,1000
+C002,bob@example.com,+1 555 987 6543,1100`;
+    const { headers, rows } = parseCSVText(csv);
+    const schema = inferSchema(headers, rows);
+    const mapping: ColumnMapping = Object.fromEntries(
+      schema.map((s) => [s.colIdx, s.inferredType]),
+    );
+    const diag = computeDiagnostics(rows, headers, mapping);
+    expect(diag.piiRisk.level).toBe("high");
+    expect(diag.piiRisk.columns).toEqual(expect.arrayContaining(["email", "phone"]));
+  });
+
+  it("HR dataset: tenure/headcount stay metrics, employee_id stays segment", () => {
+    const csv = `period,department,employee_id,headcount,attrition_rate,tenure_years
+2024-01,Engineering,EMP-1001,120,0.08,3.4
+2024-02,Engineering,EMP-1002,122,0.07,3.5
+2024-03,Sales,EMP-1003,98,0.11,2.9`;
+    const { headers, rows } = parseCSVText(csv);
+    const schema = inferSchema(headers, rows);
+    expect(schema.find((s) => s.column === "employee_id")?.inferredType).toBe("segment");
+    expect(schema.find((s) => s.column === "headcount")?.inferredType).toBe("value");
+    expect(schema.find((s) => s.column === "attrition_rate")?.inferredType).toBe("value");
+    expect(schema.find((s) => s.column === "tenure_years")?.inferredType).toBe("value");
+  });
+
+  it("validation errors include column name and a suggestion", () => {
+    const csv = `date,revenue
+2024-01-01,not_a_number
+2024-01-02,1500`;
+    const { headers, rows } = parseCSVText(csv);
+    const schema = inferSchema(headers, rows);
+    const mapping: ColumnMapping = Object.fromEntries(
+      schema.map((s) => [s.colIdx, s.inferredType]),
+    );
+    // Force revenue as value even if inference demoted it
+    const revIdx = headers.indexOf("revenue");
+    mapping[revIdx] = "value";
+    const result = validateData(rows, headers, mapping, "single");
+    expect(result.errors.length).toBeGreaterThan(0);
+    expect(result.errors[0].friendlyDescription).toContain("revenue");
+    expect(result.errors[0].suggestion).toBeTruthy();
   });
 });
