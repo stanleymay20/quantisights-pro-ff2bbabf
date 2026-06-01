@@ -275,11 +275,15 @@ export default function MappingIntelligencePanel({ intelligence, relationships }
           badge={<Badge variant="outline" className="text-[10px]">{relationships?.relationships.length ?? 0}</Badge>}
         >
           {!relationships || relationships.relationships.length === 0 ? (
-            <p className="text-muted-foreground">
-              No cross-sheet relationships detected. Upload a multi-sheet workbook to surface foreign-key style joins (e.g.{" "}
-              <span className="font-mono">orders.customer_id → customers.id</span>).
-            </p>
+            <div className="space-y-1">
+              <p>No relationships discovered.</p>
+              <p className="text-muted-foreground">
+                Upload multi-sheet workbooks or linked datasets to enable foreign-key style relationship detection
+                (e.g. <span className="font-mono">orders.customer_id → customers.id</span>).
+              </p>
+            </div>
           ) : (
+
             <ul className="space-y-1.5">
               {relationships.relationships.map((rel, i) => (
                 <li key={i} className="flex items-center gap-2 font-mono text-[11px]">
