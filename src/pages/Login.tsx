@@ -128,14 +128,15 @@ const Login = forwardRef<HTMLDivElement>((_, ref) => {
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectTo)}`,
-        },
+      const { lovable } = await import("@/integrations/lovable");
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectTo)}`,
       });
-      if (error) throw error;
+      if (result.error) throw result.error;
       logAuthEvent({ eventType: "login", metadata: { method: "google_redirect_started" } });
+      if (!result.redirected) {
+        window.location.href = redirectTo;
+      }
     } catch (err: unknown) {
       toast({ title: "Google sign-in failed", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
       setGoogleLoading(false);
