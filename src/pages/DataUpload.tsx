@@ -884,6 +884,51 @@ const DataUpload = () => {
                       </motion.div>
                     )}
 
+                    {/* Workbook sheet selector — only when an XLSX/ODS contained multiple sheets */}
+                    {workbook && workbook.sheets.filter(s => !s.hidden && s.rows.length > 0).length > 1 && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
+                        className="mt-4 p-3 rounded-lg border border-border bg-muted/20"
+                      >
+                        <div className="flex items-center justify-between gap-3 mb-2">
+                          <div className="flex items-center gap-2">
+                            <FileSpreadsheet className="w-4 h-4 text-primary" />
+                            <p className="text-sm font-medium">
+                              Workbook: <span className="text-primary">{workbook.workbookName}</span>
+                            </p>
+                          </div>
+                          <Badge variant="outline" className="text-[10px]">
+                            {workbook.sheetCount} sheet{workbook.sheetCount === 1 ? "" : "s"}
+                          </Badge>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground mb-2">
+                          Select the sheet to import. Hidden sheets are excluded.
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {workbook.sheets
+                            .filter(s => !s.hidden && s.rows.length > 0)
+                            .map(s => (
+                              <button
+                                key={s.name}
+                                type="button"
+                                onClick={() => loadWorkbookSheet(workbook, s.name)}
+                                className={`text-xs px-2.5 py-1 rounded-md border transition-colors ${
+                                  activeSheetName === s.name
+                                    ? "bg-primary/15 border-primary/40 text-primary"
+                                    : "bg-background border-border hover:border-primary/40"
+                                }`}
+                              >
+                                {s.name}
+                                <span className="ml-1.5 text-[10px] text-muted-foreground">
+                                  {s.rowCount.toLocaleString()}r · {s.columnCount}c
+                                </span>
+                              </button>
+                            ))}
+                        </div>
+                      </motion.div>
+                    )}
+
+
                     {/* Import Mode Toggle */}
                     {valueColumnCount >= 2 && (
                       <motion.div
