@@ -6,14 +6,13 @@ function buildWorkbookBuffer(
   sheets: Array<{ name: string; aoa: unknown[][]; hidden?: boolean }>,
 ): ArrayBuffer {
   const wb = XLSX.utils.book_new();
-  sheets.forEach(({ name, aoa, hidden }) => {
+  sheets.forEach(({ name, aoa }) => {
     const ws = XLSX.utils.aoa_to_sheet(aoa);
     XLSX.utils.book_append_sheet(wb, ws, name);
-    if (hidden) {
-      const meta = wb.Workbook?.Sheets?.find((s: { name: string }) => s.name === name);
-      if (meta) meta.Hidden = 1;
-    }
   });
+  wb.Workbook = {
+    Sheets: sheets.map(({ name, hidden }) => ({ name, Hidden: hidden ? 1 : 0 })),
+  };
   return XLSX.write(wb, { type: "array", bookType: "xlsx" }) as ArrayBuffer;
 }
 
