@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   ChevronDown,
   ChevronRight,
@@ -15,6 +16,8 @@ import {
   Sparkles,
   BookOpen,
   Gauge,
+  Info,
+  ScrollText,
 } from "lucide-react";
 import type { IngestionIntelligenceResult } from "@/lib/ingestion-intelligence";
 import type { CrossSheetDiscoveryResult } from "@/lib/cross-sheet-discovery";
@@ -114,24 +117,43 @@ export default function MappingIntelligencePanel({ intelligence, relationships }
   return (
     <Card>
       <CardContent className="p-5 space-y-4">
-        {/* Trust Score Banner */}
-        <div className={`rounded-lg border p-4 flex items-center gap-4 ${bannerCls}`}>
-          <div className={`w-12 h-12 rounded-full border-2 flex items-center justify-center text-2xl font-bold ${bannerCls}`}>
-            {grade}
-          </div>
-          <div className="flex-1">
-            <p className="text-sm font-semibold">Dataset Trust Score: {grade}</p>
-            <p className="text-xs opacity-90">{label}</p>
-            <p className="text-[11px] text-muted-foreground mt-1">
-              {r.summary.recommendedAction} · {r.summary.repairsApplied} auto-repair{r.summary.repairsApplied === 1 ? "" : "s"} applied
-            </p>
-          </div>
-        </div>
+        {/* Trust Score Banner with explanation */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className={`rounded-lg border p-4 flex items-center gap-4 cursor-help ${bannerCls}`}>
+              <div className={`w-12 h-12 rounded-full border-2 flex items-center justify-center text-2xl font-bold ${bannerCls}`}>
+                {grade}
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-semibold flex items-center gap-1.5">
+                  Dataset Trust Score: {grade}
+                  <Info className="w-3.5 h-3.5 opacity-70" aria-label="How is this calculated?" />
+                </p>
+                <p className="text-xs opacity-90">{label}</p>
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  {r.summary.recommendedAction} · {r.summary.repairsApplied} auto-repair{r.summary.repairsApplied === 1 ? "" : "s"} applied
+                </p>
+              </div>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="max-w-sm text-xs space-y-1 p-3">
+            <p className="font-semibold">Calculated from:</p>
+            <ul className="space-y-0.5 text-muted-foreground">
+              <li>• Schema confidence</li>
+              <li>• Missing value ratio</li>
+              <li>• Repair volume &amp; warnings</li>
+              <li>• Data consistency (mixed-type repairs)</li>
+              <li>• PII exposure</li>
+              <li>• Health score from diagnostics</li>
+            </ul>
+          </TooltipContent>
+        </Tooltip>
 
         {/* Risk Assessment */}
         <RiskAssessmentCard intelligence={intelligence} grade={grade} />
 
-
+        {/* Governance Status */}
+        <GovernanceStatusCard intelligence={intelligence} grade={grade} />
 
         {/* Summary chips */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
@@ -207,18 +229,20 @@ export default function MappingIntelligencePanel({ intelligence, relationships }
           )}
         </Section>
 
-        {/* Column similarity */}
-        {sim.groups.length > 0 && (
-          <Section
-            title="Column Similarity Groups"
-            icon={<Layers className="w-3.5 h-3.5 text-primary" />}
-            badge={<Badge variant="outline" className="text-[10px]">{sim.groups.length}</Badge>}
-          >
+        {/* Column similarity (always render, with empty state) */}
+        <Section
+          title="Column Similarity Groups"
+          icon={<Layers className="w-3.5 h-3.5 text-primary" />}
+          badge={<Badge variant="outline" className="text-[10px]">{sim.groups.length}</Badge>}
+        >
+          {sim.groups.length === 0 ? (
+            <p className="text-muted-foreground">No duplicate or semantically similar columns detected.</p>
+          ) : (
             <ul className="space-y-2">
               {sim.groups.map((g, i) => (
                 <li key={i} className="rounded-md border border-border/60 bg-muted/20 p-2">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="font-mono text-[11px] text-primary">{g.canonicalName}</span>
+                    <span className="font-mono text-[11px] text-primary">Group #{i + 1} · {g.canonicalName}</span>
                     <Badge variant="outline" className="text-[10px]">{Math.round(g.confidence * 100)}%</Badge>
                   </div>
                   <div className="flex flex-wrap gap-1">
@@ -229,8 +253,9 @@ export default function MappingIntelligencePanel({ intelligence, relationships }
                 </li>
               ))}
             </ul>
-          </Section>
-        )}
+          )}
+        </Section>
+
 
         {/* Cross-sheet relationships */}
         {relationships && relationships.relationships.length > 0 && (
@@ -268,13 +293,13 @@ export default function MappingIntelligencePanel({ intelligence, relationships }
           </Section>
         )}
 
-        {/* Dictionary Summary */}
+        {/* Interactive Dictionary Drill-Down */}
         <Section
-          title="Data Dictionary Summary"
+          title="Data Dictionary"
           icon={<BookOpen className="w-3.5 h-3.5 text-primary" />}
           badge={<Badge variant="outline" className="text-[10px]">{dict.fieldCount} fields</Badge>}
         >
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-3">
             {[
               { label: "Metrics", value: dict.summary.metricCount, tone: "text-success" },
               { label: "Dimensions", value: dict.summary.dimensionCount, tone: "text-primary" },
@@ -288,8 +313,10 @@ export default function MappingIntelligencePanel({ intelligence, relationships }
               </div>
             ))}
           </div>
+          <DictionaryDrillDown dict={intelligence.dictionary} />
           <p className="text-muted-foreground mt-2">Avg field confidence: <strong>{Math.round(dict.summary.averageConfidence * 100)}%</strong></p>
         </Section>
+
 
         {/* Locale detail */}
         <Section
@@ -369,4 +396,113 @@ function RiskAssessmentCard({
     </div>
   );
 }
+
+function GovernanceStatusCard({
+  intelligence,
+  grade,
+}: {
+  intelligence: IngestionIntelligenceResult;
+  grade: Grade;
+}) {
+  const dict = intelligence.dictionary;
+  const piiCount = dict.summary.piiCount;
+  const reviewCount = dict.summary.reviewRequiredCount;
+  const driftCount = 0;
+  const lineageAvailable = true;
+
+  const items: { label: string; value: React.ReactNode; tone: string }[] = [
+    { label: "PII Fields", value: piiCount, tone: piiCount > 0 ? "text-warning" : "text-success" },
+    { label: "Review Required", value: reviewCount, tone: reviewCount > 0 ? "text-warning" : "text-success" },
+    { label: "Trust Score", value: grade, tone: grade === "A" || grade === "B" ? "text-success" : grade === "C" ? "text-warning" : "text-destructive" },
+    { label: "Schema Drift", value: driftCount, tone: driftCount > 0 ? "text-warning" : "text-success" },
+    { label: "Lineage", value: lineageAvailable ? "Yes" : "No", tone: lineageAvailable ? "text-success" : "text-destructive" },
+  ];
+
+  return (
+    <div className="rounded-lg border border-border bg-muted/10 p-3">
+      <div className="flex items-center gap-2 mb-2">
+        <ScrollText className="w-4 h-4 text-primary" aria-hidden="true" />
+        <p className="text-sm font-semibold">Governance Status</p>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-xs">
+        {items.map((it) => (
+          <div key={it.label} className="rounded-md border border-border bg-background p-2 text-center">
+            <div className={`text-base font-bold ${it.tone}`}>{it.value}</div>
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{it.label}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function DictionaryDrillDown({ dict }: { dict: IngestionIntelligenceResult["dictionary"] }) {
+  const groups = useMemo(() => {
+    const byCategory: Record<string, { name: string; description: string }[]> = {
+      Metrics: [],
+      Dimensions: [],
+      Identifiers: [],
+      PII: [],
+    };
+    dict.fields.forEach((f) => {
+      if (f.semanticType === "pii" || f.governanceFlags.includes("pii")) {
+        byCategory.PII.push({ name: f.name, description: f.description });
+      }
+      if (f.semanticType === "identifier" || f.businessRole === "entity_key") {
+        byCategory.Identifiers.push({ name: f.name, description: f.description });
+      }
+      if (f.inferredType === "value") {
+        byCategory.Metrics.push({ name: f.name, description: f.description });
+      } else if (["segment", "region", "region_code", "date"].includes(f.inferredType)) {
+        byCategory.Dimensions.push({ name: f.name, description: f.description });
+      }
+    });
+    return byCategory;
+  }, [dict]);
+
+  return (
+    <div className="space-y-1.5">
+      {(Object.keys(groups) as Array<keyof typeof groups>).map((cat) => {
+        const items = groups[cat];
+        if (items.length === 0) return null;
+        return <DictionaryGroup key={cat} title={cat} items={items} />;
+      })}
+    </div>
+  );
+}
+
+function DictionaryGroup({
+  title,
+  items,
+}: {
+  title: string;
+  items: { name: string; description: string }[];
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="rounded-md border border-border/60 bg-background/40 overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="w-full flex items-center gap-2 px-2.5 py-1.5 hover:bg-muted/30 transition-colors text-left"
+      >
+        {open ? <ChevronDown className="w-3 h-3 text-muted-foreground" /> : <ChevronRight className="w-3 h-3 text-muted-foreground" />}
+        <span className="text-xs font-medium flex-1">{title}</span>
+        <Badge variant="outline" className="text-[10px]">{items.length}</Badge>
+      </button>
+      {open && (
+        <ul className="px-3 py-2 space-y-1 border-t border-border/40">
+          {items.map((it) => (
+            <li key={it.name} className="flex items-start gap-2 text-[11px]">
+              <span className="font-mono text-primary shrink-0">{it.name}</span>
+              <span className="text-muted-foreground line-clamp-1">— {it.description}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 
