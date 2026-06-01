@@ -947,7 +947,22 @@ const DataUpload = () => {
         <main className="flex-1 p-8 overflow-auto">
           <AnimatePresence mode="wait">
             {/* Step: Upload */}
-            {step === "upload" && (
+            {step === "upload" && ingestion.status !== "idle" && ingestion.status !== "done" && (
+              <motion.div
+                key="upload-progress"
+                initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}
+              >
+                <IngestionProgressCard
+                  fileName={file?.name ?? "dataset"}
+                  status={ingestion.status}
+                  progress={ingestion.progress}
+                  error={ingestion.error}
+                  onCancel={ingestion.cancel}
+                  onRetry={retryIngestion}
+                />
+              </motion.div>
+            )}
+            {step === "upload" && (ingestion.status === "idle" || ingestion.status === "done") && (
               <motion.div
                 key="upload"
                 initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}
@@ -959,7 +974,7 @@ const DataUpload = () => {
                 <Upload className="w-16 h-16 text-muted-foreground mb-4" />
                 <h2 className="text-xl font-semibold font-display mb-2">Upload Dataset</h2>
                 <p className="text-muted-foreground text-sm mb-4">Drag & drop or click to browse</p>
-                <p className="text-xs text-muted-foreground">CSV, XLSX, XLS, XLSM, ODS · up to 20MB · up to 50,000 rows</p>
+                <p className="text-xs text-muted-foreground">CSV, XLSX, XLS, XLSM, ODS · up to 20MB · up to 50,000 rows in-browser · larger routes to server pipeline</p>
                 <input id="csv-input" type="file" accept=".csv,.xlsx,.xls,.xlsm,.ods" className="hidden" onChange={handleFileSelect} />
                 <UploadTrustBadges />
               </motion.div>
