@@ -2,10 +2,9 @@ import { describe, expect, it } from "vitest";
 import * as XLSX from "xlsx";
 import { parseWorkbookFile } from "./workbook-parser";
 
-function buildWorkbookFile(
+function buildWorkbookBuffer(
   sheets: Array<{ name: string; aoa: unknown[][]; hidden?: boolean }>,
-  filename = "test.xlsx",
-): File {
+): ArrayBuffer {
   const wb = XLSX.utils.book_new();
   sheets.forEach(({ name, aoa, hidden }) => {
     const ws = XLSX.utils.aoa_to_sheet(aoa);
@@ -15,10 +14,7 @@ function buildWorkbookFile(
       if (meta) meta.Hidden = 1;
     }
   });
-  const buf = XLSX.write(wb, { type: "array", bookType: "xlsx" }) as ArrayBuffer;
-  return new File([buf], filename, {
-    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-  });
+  return XLSX.write(wb, { type: "array", bookType: "xlsx" }) as ArrayBuffer;
 }
 
 describe("workbook parser", () => {
