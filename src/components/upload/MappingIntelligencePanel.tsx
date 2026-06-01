@@ -18,6 +18,9 @@ import {
   Gauge,
   Info,
   ScrollText,
+  Rocket,
+  Eye,
+  HandMetal,
 } from "lucide-react";
 import type { IngestionIntelligenceResult } from "@/lib/ingestion-intelligence";
 import type { CrossSheetDiscoveryResult } from "@/lib/cross-sheet-discovery";
