@@ -82,6 +82,8 @@ const DataUpload = () => {
   const [importMode, setImportMode] = useState<ImportMode>("single");
   const [diagnostics, setDiagnostics] = useState<DatasetDiagnostics | null>(null);
   const [classification, setClassification] = useState<DatasetClassification | null>(null);
+  const [workbook, setWorkbook] = useState<ParsedWorkbook | null>(null);
+  const [activeSheetName, setActiveSheetName] = useState<string | null>(null);
 
   const valueColumnCount = useMemo(() => {
     return Object.values(mapping).filter(v => v === "value").length;
