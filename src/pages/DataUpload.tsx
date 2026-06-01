@@ -195,6 +195,12 @@ const DataUpload = () => {
         return;
       }
       setWorkbook(parsed);
+      try {
+        setCrossSheet(discoverCrossSheetRelationships(parsed));
+      } catch (err) {
+        console.warn("[DataUpload] cross-sheet discovery failed:", err);
+        setCrossSheet(null);
+      }
       if (visibleSheets.length === 1) {
         loadWorkbookSheet(parsed, visibleSheets[0].name);
       } else {
