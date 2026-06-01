@@ -162,57 +162,20 @@ function isProtectedPeriodHeader(lower: string): boolean {
   return PERIOD_HEADER_PATTERNS.some(p => p.test(lower));
 }
 
-function cleanNumericString(raw: string | undefined): string {
-  if (!raw) return "";
-  return raw
-    .trim()
-    .replace(/[\s$€£¥₹,]/g, "")
-    .replace(/%$/, "")
-    .replace(/^\(([^)]+)\)$/, "-$1");
-}
-
 function cleanNumericVal(raw: string | undefined): number {
-  const cleaned = cleanNumericString(raw);
-  if (!cleaned) return NaN;
-  if (!/^-?\d+(\.\d+)?$/.test(cleaned)) return NaN;
-  return Number(cleaned);
+  return parseMessyNumber(raw);
 }
 
 function isNumericValue(raw: string | undefined): boolean {
-  const n = cleanNumericVal(raw);
-  return Number.isFinite(n);
+  return Number.isFinite(parseMessyNumber(raw));
 }
 
 function isDateValue(raw: string | undefined): boolean {
-  const value = raw?.trim();
-  if (!value) return false;
-  if (/^\d{4}$/.test(value)) return true;
-  if (/^\d{4}-\d{2}$/.test(value)) return true;
-  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return true;
-  if (/^Q[1-4][-_ ]?\d{4}$/i.test(value)) return true;
-  if (/^\d{4}[-_ ]?Q[1-4]$/i.test(value)) return true;
-  return !Number.isNaN(Date.parse(value));
+  return parseMessyDate(raw) !== null;
 }
 
 function toDateValue(raw: string | undefined): string | null {
-  const value = raw?.trim();
-  if (!value) return null;
-  if (/^\d{4}$/.test(value)) return `${value}-01-01`;
-  if (/^\d{4}-\d{2}$/.test(value)) return `${value}-01`;
-  if (/^Q([1-4])[-_ ]?(\d{4})$/i.test(value)) {
-    const match = value.match(/^Q([1-4])[-_ ]?(\d{4})$/i);
-    const q = Number(match?.[1] ?? 1);
-    const y = match?.[2] ?? value;
-    return `${y}-${String((q - 1) * 3 + 1).padStart(2, "0")}-01`;
-  }
-  if (/^(\d{4})[-_ ]?Q([1-4])$/i.test(value)) {
-    const match = value.match(/^(\d{4})[-_ ]?Q([1-4])$/i);
-    const y = match?.[1] ?? value;
-    const q = Number(match?.[2] ?? 1);
-    return `${y}-${String((q - 1) * 3 + 1).padStart(2, "0")}-01`;
-  }
-  if (isDateValue(value)) return value;
-  return null;
+  return parseMessyDate(raw);
 }
 
 function cardinality(samples: string[]): number {
@@ -225,11 +188,12 @@ export function parseCSVText(text: string): { headers: string[]; rows: string[][
     header: false,
     skipEmptyLines: "greedy",
     transformHeader: (h: string) => h.trim(),
-    transform: (val: string) => val.trim(),
+    transform: (val: string) => normalizeCell(val),
   });
   const data = result.data as string[][];
   if (data.length < 2) return { headers: [], rows: [] };
-  const headers = data[0].map(h => h.replace(/^"|"$/g, "").trim());
+  const rawHeaders = data[0].map(h => (h ?? "").replace(/^"|"$/g, "").trim());
+  const headers = deduplicateHeaders(rawHeaders);
   const rows = data.slice(1).filter(row => row.some(cell => cell && cell.trim()));
   return { headers, rows };
 }
