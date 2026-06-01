@@ -1167,48 +1167,55 @@ const DataUpload = () => {
                   <CardContent className="p-6">
                     <h2 className="text-lg font-semibold font-display mb-1">Column Mapping</h2>
                     <p className="text-xs text-muted-foreground mb-4">Detected field types and confidence per column.</p>
+                    {/* Column header strip */}
+                    <div className="hidden md:grid grid-cols-[1.6fr_1.4fr_1.6fr_1fr_1.1fr] gap-3 px-3 pb-2 mb-1 border-b border-border/50 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+                      <div>Column</div>
+                      <div>Badges</div>
+                      <div>Sample Values</div>
+                      <div>Detected Type</div>
+                      <div>Confidence</div>
+                    </div>
                     <div className="space-y-2">
-                      {detectedSchema.map((det) => (
-                        <div key={det.colIdx} className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 border border-border/40">
-                          <div className="flex items-center gap-2 w-44 shrink-0">
-                            {typeIcon(det.inferredType)}
-                            <div className="min-w-0">
-                              <span className="text-sm font-medium truncate block">
-                                {det.column}
-                                <span className="text-[9px] text-muted-foreground/50 ml-1">#{det.colIdx}</span>
-                              </span>
-                              {/* Sample value chips */}
-                              <div className="flex gap-1 mt-0.5">
-                                {(det.sampleValues || []).slice(0, 3).map((sv, i) => (
-                                  <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-muted/60 text-muted-foreground truncate max-w-[80px]">
-                                    {sv}
-                                  </span>
-                                ))}
+                      {detectedSchema.map((det) => {
+                        const profile = ingestionIntel?.semanticSchema.profiles.find((p) => p.colIdx === det.colIdx);
+                        const tags: string[] = [];
+                        if (profile?.semanticType === "pii") tags.push("PII");
+                        if (profile?.semanticType === "identifier" || profile?.businessRole === "entity_key") {
+                          tags.push(profile?.businessRole === "entity_key" ? "Entity" : "Identifier");
+                        }
+                        if (det.inferredType === "date") tags.push("Date");
+                        if (profile?.businessRole === "financial_kpi") tags.push("Currency");
+                        if (
+                          profile?.businessRole &&
+                          ["financial_kpi", "operational_kpi", "customer_kpi", "workforce_kpi", "risk_kpi"].includes(profile.businessRole)
+                        ) {
+                          tags.push("KPI");
+                        }
+                        const confBar =
+                          det.confidence >= 85 ? "bg-success" : det.confidence >= 65 ? "bg-warning" : "bg-destructive";
+
+                        return (
+                          <div
+                            key={det.colIdx}
+                            className="grid grid-cols-1 md:grid-cols-[1.6fr_1.4fr_1.6fr_1fr_1.1fr] gap-3 p-3 rounded-lg bg-muted/30 border border-border/40 items-center"
+                          >
+                            {/* Column */}
+                            <div className="flex items-center gap-2 min-w-0">
+                              {typeIcon(det.inferredType)}
+                              <div className="min-w-0">
+                                <span className="text-sm font-medium truncate block">
+                                  {det.column}
+                                  <span className="text-[9px] text-muted-foreground/50 ml-1">#{det.colIdx}</span>
+                                </span>
                               </div>
                             </div>
-                          </div>
-                          <ArrowRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <Badge variant="outline" className={`text-xs ${confidenceColor(det.confidence)}`}>
-                                {det.inferredType === "skip" ? "Not mapped" : det.inferredType}
-                              </Badge>
-                              {(() => {
-                                const profile = ingestionIntel?.semanticSchema.profiles.find((p) => p.colIdx === det.colIdx);
-                                const tags: string[] = [];
-                                if (profile?.semanticType === "pii") tags.push("PII");
-                                if (profile?.semanticType === "identifier" || profile?.businessRole === "entity_key") {
-                                  tags.push(profile?.businessRole === "entity_key" ? "Entity" : "Identifier");
-                                }
-                                if (det.inferredType === "date") tags.push("Date");
-                                if (profile?.businessRole === "financial_kpi") tags.push("Currency");
-                                if (
-                                  profile?.businessRole &&
-                                  ["financial_kpi", "operational_kpi", "customer_kpi", "workforce_kpi", "risk_kpi"].includes(profile.businessRole)
-                                ) {
-                                  tags.push("KPI");
-                                }
-                                return tags.map((t) => (
+
+                            {/* Badges */}
+                            <div className="flex flex-wrap gap-1">
+                              {tags.length === 0 ? (
+                                <span className="text-[10px] text-muted-foreground italic">—</span>
+                              ) : (
+                                tags.map((t) => (
                                   <Badge
                                     key={t}
                                     variant="outline"
@@ -1226,41 +1233,77 @@ const DataUpload = () => {
                                   >
                                     {t}
                                   </Badge>
-                                ));
-                              })()}
-                              <span className="text-xs text-muted-foreground">{det.reason}</span>
+                                ))
+                              )}
                             </div>
-                            {/* Rules applied (Why this mapping?) */}
-                            {det.rulesApplied && det.rulesApplied.length > 0 && (
-                              <div className="flex gap-1 mt-1 flex-wrap">
-                                {det.rulesApplied.map((rule, ri) => (
-                                  <span key={ri} className="text-[9px] px-1.5 py-0.5 rounded bg-muted/50 text-muted-foreground font-mono">
-                                    {rule}
-                                  </span>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Badge variant="outline" className={`text-[10px] shrink-0 cursor-help ${confidenceColor(det.confidence)}`}>
-                                {det.confidence}%
-                              </Badge>
-                            </TooltipTrigger>
-                            <TooltipContent side="left" className="max-w-xs text-xs p-3 space-y-1">
-                              <p className="font-semibold">Confidence is based on:</p>
-                              <ul className="space-y-0.5 text-muted-foreground">
-                                <li>• Column name patterns</li>
-                                <li>• Sample value distribution</li>
-                                <li>• Schema-level heuristics</li>
-                                <li>• Industry ontology match</li>
-                              </ul>
-                            </TooltipContent>
-                          </Tooltip>
-                        </div>
 
-                      ))}
+                            {/* Sample values */}
+                            <div className="flex flex-wrap gap-1 min-w-0">
+                              {(det.sampleValues || []).slice(0, 3).map((sv, i) => (
+                                <span
+                                  key={i}
+                                  className="text-[10px] px-1.5 py-0.5 rounded bg-background border border-border/60 text-muted-foreground truncate max-w-[110px]"
+                                >
+                                  {sv}
+                                </span>
+                              ))}
+                              {(!det.sampleValues || det.sampleValues.length === 0) && (
+                                <span className="text-[10px] text-muted-foreground italic">No samples</span>
+                              )}
+                            </div>
+
+                            {/* Detected Type */}
+                            <div className="flex flex-col gap-0.5 min-w-0">
+                              <Badge variant="outline" className={`text-xs w-fit ${confidenceColor(det.confidence)}`}>
+                                {det.inferredType === "skip" ? "Not mapped" : det.inferredType}
+                              </Badge>
+                              <span className="text-[10px] text-muted-foreground line-clamp-1">{det.reason}</span>
+                            </div>
+
+                            {/* Confidence with progress bar */}
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="cursor-help">
+                                  <div className="flex items-center justify-between mb-1">
+                                    <span className={`text-xs font-semibold ${confidenceColor(det.confidence)}`}>
+                                      {det.confidence}%
+                                    </span>
+                                  </div>
+                                  <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                                    <div
+                                      className={`h-full ${confBar} transition-all`}
+                                      style={{ width: `${Math.max(4, Math.min(100, det.confidence))}%` }}
+                                    />
+                                  </div>
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent side="left" className="max-w-xs text-xs p-3 space-y-1">
+                                <p className="font-semibold">Confidence is based on:</p>
+                                <ul className="space-y-0.5 text-muted-foreground">
+                                  <li>• Column name patterns</li>
+                                  <li>• Sample value distribution</li>
+                                  <li>• Schema-level heuristics</li>
+                                  <li>• Industry ontology match</li>
+                                </ul>
+                                {det.rulesApplied && det.rulesApplied.length > 0 && (
+                                  <div className="pt-1 mt-1 border-t border-border/40">
+                                    <p className="font-semibold mb-0.5">Rules applied:</p>
+                                    <div className="flex flex-wrap gap-1">
+                                      {det.rulesApplied.map((rule, ri) => (
+                                        <span key={ri} className="font-mono text-[10px] px-1 py-0.5 rounded bg-muted/60">
+                                          {rule}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
+                        );
+                      })}
                     </div>
+
 
                     {/* Year-to-date auto-fix prompt */}
                     {hasYearOnlyDates && !yearAutoFixed && (
