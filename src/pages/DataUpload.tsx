@@ -227,6 +227,8 @@ const DataUpload = () => {
     setWorkbook(null);
     setActiveSheetName(null);
     setDrift(null);
+    setIngestionIntel(null);
+    setCrossSheet(null);
     if (isWorkbookFile(f.name)) {
       setDatasetName(f.name.replace(/\.(xlsx|xls|xlsm|ods)$/i, ""));
       handleWorkbookFile(f);
