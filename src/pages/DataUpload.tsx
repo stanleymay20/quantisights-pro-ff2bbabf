@@ -220,6 +220,33 @@ const DataUpload = () => {
     }
   }, [handleParse, handleWorkbookFile, ingestion, toast]);
 
+  // Phase 4: when the worker finishes, feed parsed rows into the shared
+  // post-parse pipeline (inference + classification). When the dataset is
+  // routed to the server pipeline, surface a guidance toast instead.
+  useEffect(() => {
+    if (ingestion.status === "done") {
+      if (ingestion.shouldRouteToServer) {
+        toast({
+          title: "Routed to server pipeline",
+          description: `${(ingestion.progress.totalRowsEstimate ?? 0).toLocaleString()} rows exceeds the in-browser ceiling. Use Data Connectors to finish ingestion server-side.`,
+        });
+      } else if (ingestion.result) {
+        ingestParsed(ingestion.result.headers, ingestion.result.rows);
+      }
+    }
+    if (ingestion.status === "error" && ingestion.error) {
+      toast({ title: "Ingestion error", description: ingestion.error, variant: "destructive" });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ingestion.status]);
+
+  const retryIngestion = useCallback(() => {
+    const last = lastFileRef.current;
+    if (!last) return;
+    ingestion.reset();
+    acceptFile(last);
+  }, [acceptFile, ingestion]);
+
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
