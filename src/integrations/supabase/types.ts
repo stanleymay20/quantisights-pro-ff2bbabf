@@ -3602,6 +3602,7 @@ export type Database = {
           file_path: string | null
           id: string
           is_active: boolean
+          metadata: Json
           organization_id: string
           row_count: number | null
           version_number: number
@@ -3616,6 +3617,7 @@ export type Database = {
           file_path?: string | null
           id?: string
           is_active?: boolean
+          metadata?: Json
           organization_id: string
           row_count?: number | null
           version_number?: number
@@ -3630,6 +3632,7 @@ export type Database = {
           file_path?: string | null
           id?: string
           is_active?: boolean
+          metadata?: Json
           organization_id?: string
           row_count?: number | null
           version_number?: number
