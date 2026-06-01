@@ -293,13 +293,13 @@ export default function MappingIntelligencePanel({ intelligence, relationships }
           </Section>
         )}
 
-        {/* Dictionary Summary */}
+        {/* Interactive Dictionary Drill-Down */}
         <Section
-          title="Data Dictionary Summary"
+          title="Data Dictionary"
           icon={<BookOpen className="w-3.5 h-3.5 text-primary" />}
           badge={<Badge variant="outline" className="text-[10px]">{dict.fieldCount} fields</Badge>}
         >
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-3">
             {[
               { label: "Metrics", value: dict.summary.metricCount, tone: "text-success" },
               { label: "Dimensions", value: dict.summary.dimensionCount, tone: "text-primary" },
@@ -313,8 +313,10 @@ export default function MappingIntelligencePanel({ intelligence, relationships }
               </div>
             ))}
           </div>
+          <DictionaryDrillDown dict={intelligence.dictionary} />
           <p className="text-muted-foreground mt-2">Avg field confidence: <strong>{Math.round(dict.summary.averageConfidence * 100)}%</strong></p>
         </Section>
+
 
         {/* Locale detail */}
         <Section
