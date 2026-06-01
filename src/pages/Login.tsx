@@ -5,10 +5,9 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuthThrottle } from "@/hooks/useAuthThrottle";
 import { useAuthEvents } from "@/hooks/useAuthEvents";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
 import MFAChallenge from "@/components/auth/MFAChallenge";
 import logo from "@/assets/quantivis-logo.png";
-import { Shield, AlertTriangle, Loader2 } from "lucide-react";
+import { Shield, Loader2 } from "lucide-react";
 
 const Login = forwardRef<HTMLDivElement>((_, ref) => {
   const [email, setEmail] = useState("");
@@ -126,6 +125,23 @@ const Login = forwardRef<HTMLDivElement>((_, ref) => {
     navigate(redirectTo);
   };
 
+  const handleGoogleSignIn = async () => {
+    setGoogleLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectTo)}`,
+        },
+      });
+      if (error) throw error;
+      logAuthEvent({ eventType: "login", metadata: { method: "google_redirect_started" } });
+    } catch (err: unknown) {
+      toast({ title: "Google sign-in failed", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
+      setGoogleLoading(false);
+    }
+  };
+
   return (
     <div ref={ref} className="min-h-dvh flex items-center justify-center bg-background px-4 safe-area-bottom safe-area-top">
       <div className="absolute inset-0 pointer-events-none">
@@ -224,25 +240,7 @@ const Login = forwardRef<HTMLDivElement>((_, ref) => {
               <button
                 type="button"
                 disabled={googleLoading || isLoading}
-                onClick={async () => {
-                  setGoogleLoading(true);
-                  try {
-                    const result = await lovable.auth.signInWithOAuth("google", {
-                      redirect_uri: window.location.origin,
-                    });
-                    if (result.error) {
-                      toast({ title: "Google sign-in failed", description: result.error instanceof Error ? result.error.message : String(result.error), variant: "destructive" });
-                    }
-                    if (result.redirected) return;
-                    // Session set — navigate
-                    logAuthEvent({ eventType: "login", metadata: { method: "google" } });
-                    navigate(redirectTo);
-                  } catch (err: unknown) {
-                    toast({ title: "Google sign-in failed", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
-                  } finally {
-                    setGoogleLoading(false);
-                  }
-                }}
+                onClick={handleGoogleSignIn}
                 className="w-full py-3 rounded-lg bg-secondary border border-border text-foreground font-medium text-sm hover:bg-accent transition-all disabled:opacity-50 flex items-center justify-center gap-3"
               >
                 {googleLoading ? (
