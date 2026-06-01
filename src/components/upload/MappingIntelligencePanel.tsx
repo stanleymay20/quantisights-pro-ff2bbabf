@@ -412,22 +412,26 @@ function RiskAssessmentCard({
 function GovernanceStatusCard({
   intelligence,
   grade,
+  relationships,
 }: {
   intelligence: IngestionIntelligenceResult;
   grade: Grade;
+  relationships?: CrossSheetDiscoveryResult | null;
 }) {
   const dict = intelligence.dictionary;
   const piiCount = dict.summary.piiCount;
   const reviewCount = dict.summary.reviewRequiredCount;
   const driftCount = 0;
   const lineageAvailable = true;
+  const relationshipCount = relationships?.relationships.length ?? 0;
 
   const items: { label: string; value: React.ReactNode; tone: string }[] = [
     { label: "PII Fields", value: piiCount, tone: piiCount > 0 ? "text-warning" : "text-success" },
     { label: "Review Required", value: reviewCount, tone: reviewCount > 0 ? "text-warning" : "text-success" },
-    { label: "Trust Score", value: grade, tone: grade === "A" || grade === "B" ? "text-success" : grade === "C" ? "text-warning" : "text-destructive" },
     { label: "Schema Drift", value: driftCount, tone: driftCount > 0 ? "text-warning" : "text-success" },
     { label: "Lineage", value: lineageAvailable ? "Yes" : "No", tone: lineageAvailable ? "text-success" : "text-destructive" },
+    { label: "Relationships", value: relationshipCount, tone: "text-primary" },
+    { label: "Trust Grade", value: grade, tone: grade === "A" || grade === "B" ? "text-success" : grade === "C" ? "text-warning" : "text-destructive" },
   ];
 
   return (
@@ -436,7 +440,7 @@ function GovernanceStatusCard({
         <ScrollText className="w-4 h-4 text-primary" aria-hidden="true" />
         <p className="text-sm font-semibold">Governance Status</p>
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-xs">
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-2 text-xs">
         {items.map((it) => (
           <div key={it.label} className="rounded-md border border-border bg-background p-2 text-center">
             <div className={`text-base font-bold ${it.tone}`}>{it.value}</div>
@@ -447,6 +451,7 @@ function GovernanceStatusCard({
     </div>
   );
 }
+
 
 function DictionaryDrillDown({ dict }: { dict: IngestionIntelligenceResult["dictionary"] }) {
   const groups = useMemo(() => {
