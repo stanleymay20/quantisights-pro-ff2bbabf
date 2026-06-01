@@ -728,6 +728,7 @@ export function computeDiagnostics(
   rows: string[][],
   headers: string[],
   mapping: ColumnMapping,
+  schema?: DetectedSchema[],
 ): DatasetDiagnostics {
   const dateIdx = findMappedIdx(mapping, "date");
   const valueIndices = findAllMappedIdx(mapping, "value");
@@ -741,6 +742,7 @@ export function computeDiagnostics(
     });
   });
 
+  // Exact duplicates
   const seen = new Set<string>();
   let duplicateRows = 0;
   rows.forEach(row => {
@@ -748,6 +750,24 @@ export function computeDiagnostics(
     if (seen.has(key)) duplicateRows += 1;
     seen.add(key);
   });
+
+  // Near-duplicates: same date + same segment values, but different numeric magnitudes.
+  // Heuristic: hash of all non-value cells. Two rows with identical dimensions but
+  // different metric values are flagged as near-dupes (often double-entry artifacts).
+  let nearDuplicateRows = 0;
+  if (valueIndices.length > 0) {
+    const dimSeen = new Map<string, number>();
+    rows.forEach(row => {
+      const dimKey = row
+        .map((cell, idx) => (valueIndices.includes(idx) ? "" : (cell ?? "").trim().toLowerCase()))
+        .join("||");
+      if (!dimKey.replace(/\|/g, "")) return;
+      const prior = dimSeen.get(dimKey) ?? 0;
+      if (prior > 0) nearDuplicateRows += 1;
+      dimSeen.set(dimKey, prior + 1);
+    });
+    nearDuplicateRows = Math.max(0, nearDuplicateRows - duplicateRows);
+  }
 
   const nums = valueIndices.flatMap(idx => rows.map(r => cleanNumericVal(r[idx])).filter(Number.isFinite));
   let outlierCount = 0;
@@ -759,6 +779,7 @@ export function computeDiagnostics(
 
   let dateContinuity: DatasetDiagnostics["dateContinuity"] = "N/A";
   let dateGapCount = 0;
+  let latestDate: Date | null = null;
   if (dateIdx >= 0) {
     const uniqueDates = [...new Set(rows.map(r => toDateValue(r[dateIdx])).filter(Boolean) as string[])].sort();
     if (uniqueDates.length > 2) {
@@ -771,9 +792,20 @@ export function computeDiagnostics(
       }
       if (dateGapCount > 0) dateContinuity = "Gaps detected";
     }
+    if (uniqueDates.length > 0) {
+      latestDate = new Date(uniqueDates[uniqueDates.length - 1]);
+    }
   }
 
-  // PII detection — flag columns that look like personal data.
+  // Data freshness
+  let dataFreshness: DatasetDiagnostics["dataFreshness"] = { label: "N/A", daysSinceLatest: null };
+  if (latestDate && !Number.isNaN(latestDate.getTime())) {
+    const days = Math.floor((Date.now() - latestDate.getTime()) / 86400000);
+    const label = days <= 30 ? "Fresh" : days <= 180 ? "Recent" : "Stale";
+    dataFreshness = { label, daysSinceLatest: days };
+  }
+
+  // PII detection
   const sampleRows = rows.slice(0, Math.min(rows.length, 200));
   const piiColumns: string[] = [];
   headers.forEach((header, idx) => {
@@ -789,31 +821,213 @@ export function computeDiagnostics(
   const piiLevel: DatasetDiagnostics["piiRisk"]["level"] =
     piiColumns.length === 0 ? "none" : piiColumns.length >= 2 ? "high" : "low";
 
+  // Schema confidence — average of inferred-column confidence scores.
+  const schemaConfidence = schema && schema.length > 0
+    ? Math.round(schema.reduce((sum, s) => sum + s.confidence, 0) / schema.length)
+    : 0;
+
+  const missingValuesPct = total > 0 ? Math.round((missing / total) * 100) : 0;
+  const completenessScore = Math.max(0, 100 - missingValuesPct);
+
+  // Composite health score (0–100). Weighted blend of dimensions that matter
+  // for downstream Quantivis analysis. Penalties never exceed each weight.
+  const dupRate = rows.length > 0 ? (duplicateRows + nearDuplicateRows) / rows.length : 0;
+  const outlierRate = nums.length > 0 ? outlierCount / nums.length : 0;
+  const continuityPenalty = dateContinuity === "Gaps detected" ? 8 : 0;
+  const piiPenalty = piiLevel === "high" ? 6 : piiLevel === "low" ? 2 : 0;
+  const freshnessPenalty =
+    dataFreshness.label === "Stale" ? 6 :
+    dataFreshness.label === "Recent" ? 2 : 0;
+
+  const healthScore = Math.max(0, Math.min(100, Math.round(
+    completenessScore * 0.35 +
+    (100 - dupRate * 100) * 0.15 +
+    (100 - Math.min(100, outlierRate * 200)) * 0.10 +
+    (schemaConfidence || 70) * 0.30 +
+    (100 - continuityPenalty - piiPenalty - freshnessPenalty) * 0.10,
+  )));
+
+  const recommendedAction: DatasetDiagnostics["recommendedAction"] =
+    healthScore >= 85 ? "Proceed with Import" :
+    healthScore >= 65 ? "Review before Import" :
+    "Fix Issues First";
+
   return {
-    missingValuesPct: total > 0 ? Math.round((missing / total) * 100) : 0,
+    missingValuesPct,
     outlierCount,
     duplicateRows,
+    nearDuplicateRows,
     dateContinuity,
     dateGapCount,
     piiRisk: { level: piiLevel, columns: piiColumns },
+    schemaConfidence,
+    completenessScore,
+    dataFreshness,
+    healthScore,
+    recommendedAction,
   };
 }
 
+// ---- Industry classification ----
+// Each industry has a list of strong keywords. We tokenize headers, score each
+// industry by hit count weighted by keyword specificity, and return the top
+// match. Confidence reflects how dominant the winner is over the runner-up.
+
+interface IndustrySignature {
+  industry: IndustryType;
+  type: string;
+  keywords: string[];
+  workflows: string[];
+}
+
+const INDUSTRY_SIGNATURES: IndustrySignature[] = [
+  {
+    industry: "Finance",
+    type: "Financial Performance",
+    keywords: [
+      "revenue", "ebitda", "cash_flow", "cashflow", "arr", "mrr", "gross_profit",
+      "net_income", "operating_income", "cogs", "opex", "capex", "ar", "ap",
+      "receivable", "payable", "margin", "ebit", "free_cash_flow", "burn",
+      "runway", "p_and_l", "balance_sheet", "general_ledger",
+    ],
+    workflows: ["CFO Dashboard", "Forecasting", "Risk & Compliance"],
+  },
+  {
+    industry: "Manufacturing",
+    type: "Manufacturing Operations",
+    keywords: [
+      "yield", "defect_rate", "defect", "downtime", "oee", "throughput",
+      "scrap", "rework", "first_pass_yield", "fpy", "mtbf", "mttr",
+      "production_volume", "line_id", "shift", "cycle_time", "takt_time",
+    ],
+    workflows: ["Operational Risk", "Process Reliability", "Executive Intelligence"],
+  },
+  {
+    industry: "HR",
+    type: "Workforce & People",
+    keywords: [
+      "employee_id", "employee", "headcount", "attrition", "attrition_rate",
+      "salary", "compensation", "tenure", "tenure_years", "hires", "terminations",
+      "promotion", "engagement_score", "performance_rating", "department",
+      "manager_id", "fte",
+    ],
+    workflows: ["Workforce Analytics", "Retention Modeling", "Executive Intelligence"],
+  },
+  {
+    industry: "CRM",
+    type: "Sales & Pipeline",
+    keywords: [
+      "lead_id", "lead_source", "opportunity", "opportunity_stage", "pipeline",
+      "stage", "deal_size", "close_date", "won", "lost", "sales_rep",
+      "account_id", "contact_id", "quota", "forecast", "conversion_rate",
+    ],
+    workflows: ["Pipeline Forecasting", "Sales Performance", "Executive Intelligence"],
+  },
+  {
+    industry: "Supply Chain",
+    type: "Supply Chain Operations",
+    keywords: [
+      "supplier", "vendor", "po_number", "purchase_order", "lead_time",
+      "inventory", "stock_level", "on_time_delivery", "otd", "fill_rate",
+      "warehouse", "sku", "units_shipped", "backorder", "freight_cost",
+    ],
+    workflows: ["Supplier Risk", "Inventory Optimization", "Operational Risk"],
+  },
+  {
+    industry: "Government",
+    type: "Public Sector / Government",
+    keywords: [
+      "fiscal_year", "agency", "department_code", "appropriation", "budget_line",
+      "grant_id", "obligation", "outlay", "program_code", "ministry",
+      "constituency", "permit_id", "case_id", "citizen_id",
+    ],
+    workflows: ["Public Reporting", "Budget Accountability", "Compliance"],
+  },
+  {
+    industry: "Healthcare",
+    type: "Healthcare Operations",
+    keywords: [
+      "patient_id", "encounter_id", "diagnosis", "icd", "icd10", "cpt",
+      "admission", "discharge", "los", "readmission", "mortality",
+      "claim_id", "payer", "provider_id", "bed_occupancy",
+    ],
+    workflows: ["Care Quality", "Operational Risk", "Compliance"],
+  },
+  {
+    industry: "Retail",
+    type: "Retail & Commerce",
+    keywords: [
+      "store_id", "store", "basket_size", "transactions", "footfall",
+      "same_store_sales", "comp_sales", "aov", "average_order_value",
+      "sku", "category", "shrinkage", "markdown", "gmv",
+    ],
+    workflows: ["Store Performance", "Demand Forecasting", "Executive Intelligence"],
+  },
+  {
+    industry: "SaaS",
+    type: "SaaS / Subscription",
+    keywords: [
+      "mrr", "arr", "churn", "churn_rate", "nrr", "grr", "logo_churn",
+      "expansion", "downgrade", "active_users", "mau", "dau", "subscription",
+      "plan", "trial", "cac", "ltv", "payback_period",
+    ],
+    workflows: ["Subscription Analytics", "Cohort Retention", "Forecasting"],
+  },
+];
+
 export function classifyDataset(headers: string[], mapping: ColumnMapping): DatasetClassification {
-  const lowerHeaders = headers.map(h => normalizeHeader(h));
-  const joined = lowerHeaders.join(" ");
+  const normalized = headers.map(h => normalizeHeader(h));
+  const tokens = new Set<string>();
+  normalized.forEach(h => {
+    tokens.add(h);
+    h.split("_").forEach(t => t && tokens.add(t));
+  });
+
+  const scores = INDUSTRY_SIGNATURES.map(sig => {
+    const matched: string[] = [];
+    let score = 0;
+    for (const kw of sig.keywords) {
+      // Whole-token match scores higher than substring.
+      if (tokens.has(kw)) {
+        score += 3;
+        matched.push(kw);
+      } else if (normalized.some(h => h.includes(kw))) {
+        score += 1;
+        matched.push(kw);
+      }
+    }
+    return { sig, score, matched };
+  }).sort((a, b) => b.score - a.score);
+
+  const top = scores[0];
+  const runnerUp = scores[1];
   const metricCount = Object.values(mapping).filter(v => v === "value").length;
 
-  if (/revenue|mrr|arr|churn|customer|subscription/.test(joined)) {
-    return { type: "Revenue & Growth", confidence: 86, subType: "Commercial KPIs", recommendedWorkflows: ["Executive Intelligence", "Forecasting", "Decision Ledger"] };
+  if (!top || top.score === 0) {
+    return {
+      type: metricCount > 1 ? "Multi-Metric Dataset" : "General Business Dataset",
+      industry: "General Business",
+      confidence: 50,
+      recommendedWorkflows: ["Data Exploration", "Decision Intelligence"],
+      matchedKeywords: [],
+    };
   }
-  if (/inventory|supplier|delivery|defect|units|lead_time|manufacturing|production/.test(joined)) {
-    return { type: "Manufacturing Operations", confidence: 90, subType: "Operations KPIs", recommendedWorkflows: ["Operational Risk", "Supplier Analysis", "Executive Intelligence"] };
-  }
-  if (/cash|payable|receivable|margin|cost|profit/.test(joined)) {
-    return { type: "Financial Performance", confidence: 84, subType: "Finance KPIs", recommendedWorkflows: ["CFO Dashboard", "Risk & Compliance", "Forecasting"] };
-  }
-  return { type: metricCount > 1 ? "Multi-Metric Dataset" : "General Business Dataset", confidence: 65, recommendedWorkflows: ["Data Exploration", "Decision Intelligence"] };
+
+  // Confidence: dominance over runner-up, scaled by absolute score.
+  const dominance = runnerUp && runnerUp.score > 0
+    ? top.score / (top.score + runnerUp.score)
+    : 1;
+  const absScore = Math.min(1, top.score / 12); // 4+ strong matches → full marks
+  const confidence = Math.round(50 + dominance * 30 + absScore * 20);
+
+  return {
+    type: top.sig.type,
+    industry: top.sig.industry,
+    confidence: Math.max(50, Math.min(98, confidence)),
+    subType: `${top.sig.industry} KPIs`,
+    recommendedWorkflows: top.sig.workflows,
+    matchedKeywords: top.matched.slice(0, 6),
+  };
 }
 
 export function confidenceColor(confidence: number): string {
