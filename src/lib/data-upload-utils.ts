@@ -1,16 +1,17 @@
 // ---- Data Upload Utility Functions ----
-// Extracted from DataUpload.tsx for maintainability
+// Extracted from DataUpload.tsx for maintainability.
+// The inference rules intentionally let sampled values override header keywords.
+// Example: sales_channel contains "sales" but values are text, so it must be a segment, not a metric.
 
 import Papa from "papaparse";
 
-// --- Country detection for region inference ---
 export const COUNTRY_SAMPLES = new Set([
   "united states", "usa", "us", "china", "india", "germany", "france", "japan",
   "united kingdom", "uk", "brazil", "canada", "australia", "italy", "spain",
   "mexico", "south korea", "russia", "indonesia", "turkey", "saudi arabia",
   "netherlands", "switzerland", "sweden", "norway", "denmark", "finland",
   "egypt", "nigeria", "south africa", "argentina", "colombia", "chile",
-  "uae", "qatar", "kuwait", "bahrain", "oman", "iraq", "iran", "israel",
+  "ghana", "uae", "qatar", "kuwait", "bahrain", "oman", "iraq", "iran", "israel",
   "thailand", "vietnam", "malaysia", "singapore", "philippines", "pakistan",
   "bangladesh", "poland", "portugal", "greece", "czech republic", "austria",
   "belgium", "ireland", "new zealand", "peru", "venezuela",
@@ -36,7 +37,6 @@ export interface DetectedSchema {
   autoFix?: "year_to_date";
 }
 
-/** Mapping is keyed by colIdx (column position), value is ColumnTarget */
 export type ColumnMapping = Record<number, ColumnTarget>;
 
 export interface ValidationResult {
@@ -93,20 +93,82 @@ export interface DatasetClassification {
 
 export type ImportMode = "single" | "multi";
 
-// ---- NOT-date header patterns ----
 const NOT_DATE_PATTERNS = [
   /_years$/i, /^life_expectancy/i, /^tenure/i, /^age$/i, /^duration/i,
   /_duration$/i, /_age$/i, /^experience/i, /^months$/i, /^days$/i,
   /_months$/i, /_days$/i, /_count$/i, /^headcount$/i,
 ];
 
+const TEXT_DIMENSION_HEADER_PATTERNS = [
+  /(^|_)channel($|_)/i, /(^|_)sales_channel($|_)/i, /(^|_)department($|_)/i,
+  /(^|_)region($|_)/i, /(^|_)country($|_)/i, /(^|_)supplier($|_)/i,
+  /(^|_)vendor($|_)/i, /(^|_)product($|_)/i, /(^|_)product_line($|_)/i,
+  /(^|_)category($|_)/i, /(^|_)segment($|_)/i, /(^|_)industry($|_)/i,
+  /(^|_)owner($|_)/i, /(^|_)executive_owner($|_)/i, /(^|_)flag($|_)/i,
+  /(^|_)decision_flag($|_)/i, /(^|_)status($|_)/i, /(^|_)type($|_)/i,
+];
+
+const METRIC_HEADER_KEYWORDS = [
+  "value", "amount", "revenue", "gdp", "price", "cost", "total", "income",
+  "profit", "spend", "rate", "inflation", "unemployment", "expectancy", "growth",
+  "index", "score", "throughput", "utilization", "headcount", "attrition", "nps",
+  "satisfaction", "conversion", "churn", "retention", "margin", "balance",
+  "receivable", "payable", "orders", "customers", "employees", "units", "turnover",
+  "delivery", "defect", "returns", "lead_time",
+];
+
 function isNotDateHeader(header: string): boolean {
   return NOT_DATE_PATTERNS.some(p => p.test(header.trim()));
 }
 
-// ---- Robust CSV Parser (PapaParse) ----
+function normalizeHeader(header: string): string {
+  return header.toLowerCase().trim().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+}
+
+function cleanNumericString(raw: string | undefined): string {
+  if (!raw) return "";
+  return raw
+    .trim()
+    .replace(/[\s$€£¥₹,]/g, "")
+    .replace(/%$/, "")
+    .replace(/^\(([^)]+)\)$/, "-$1");
+}
+
+function cleanNumericVal(raw: string | undefined): number {
+  const cleaned = cleanNumericString(raw);
+  if (!cleaned) return NaN;
+  if (!/^-?\d+(\.\d+)?$/.test(cleaned)) return NaN;
+  return Number(cleaned);
+}
+
+function isNumericValue(raw: string | undefined): boolean {
+  const n = cleanNumericVal(raw);
+  return Number.isFinite(n);
+}
+
+function isDateValue(raw: string | undefined): boolean {
+  const value = raw?.trim();
+  if (!value) return false;
+  if (/^\d{4}$/.test(value)) return true;
+  if (/^\d{4}-\d{2}$/.test(value)) return true;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return true;
+  return !Number.isNaN(Date.parse(value));
+}
+
+function toDateValue(raw: string | undefined): string | null {
+  const value = raw?.trim();
+  if (!value) return null;
+  if (/^\d{4}$/.test(value)) return `${value}-01-01`;
+  if (/^\d{4}-\d{2}$/.test(value)) return `${value}-01`;
+  if (isDateValue(value)) return value;
+  return null;
+}
+
+function cardinality(samples: string[]): number {
+  return new Set(samples.map(s => s.toLowerCase().trim()).filter(Boolean)).size;
+}
+
 export function parseCSVText(text: string): { headers: string[]; rows: string[][] } {
-  // Strip BOM and normalize line endings
   const cleaned = text.replace(/^\uFEFF/, "").replace(/\r\n?/g, "\n");
   const result = Papa.parse(cleaned.trim(), {
     header: false,
@@ -117,12 +179,10 @@ export function parseCSVText(text: string): { headers: string[]; rows: string[][
   const data = result.data as string[][];
   if (data.length < 2) return { headers: [], rows: [] };
   const headers = data[0].map(h => h.replace(/^"|"$/g, "").trim());
-  // Filter out completely empty rows
   const rows = data.slice(1).filter(row => row.some(cell => cell && cell.trim()));
   return { headers, rows };
 }
 
-// ---- Slugify metric name ----
 export function slugifyMetric(name: string): string {
   return name
     .toLowerCase()
@@ -134,7 +194,6 @@ export function slugifyMetric(name: string): string {
     .replace(/_+/g, "_");
 }
 
-/** Deduplicate metric slugs by appending _2, _3 etc */
 export function deduplicateMetricSlugs(slugs: string[]): string[] {
   const counts = new Map<string, number>();
   return slugs.map(s => {
@@ -144,7 +203,6 @@ export function deduplicateMetricSlugs(slugs: string[]): string[] {
   });
 }
 
-// ---- Helper: get colIdx from mapping by target type ----
 function findMappedIdx(mapping: ColumnMapping, target: string): number {
   const entry = Object.entries(mapping).find(([, v]) => v === target);
   return entry ? Number(entry[0]) : -1;
@@ -156,207 +214,192 @@ function findAllMappedIdx(mapping: ColumnMapping, target: string): number[] {
     .map(([k]) => Number(k));
 }
 
-// ---- Schema Autodetection Engine ----
 export function inferSchema(headers: string[], rows: string[][]): DetectedSchema[] {
-  const sampleSize = Math.min(rows.length, 50);
-  const sampleRows = rows.slice(0, sampleSize);
+  const sampleRows = rows.slice(0, Math.min(rows.length, 100));
 
-  // First pass: detect all types
   const detections: DetectedSchema[] = headers.map((header, colIdx) => {
-    const samples = sampleRows.map(r => r[colIdx]).filter(Boolean);
-    const lower = header.toLowerCase().trim();
-    const uniqueValues = new Set(samples.map(s => s.toLowerCase().trim()));
-    const numericRate = samples.filter(s => {
-      const cleaned = s.replace(/[\s$€£¥₹,]/g, "").replace(/\(([^)]+)\)/, "-$1");
-      return !isNaN(parseFloat(cleaned)) && isFinite(parseFloat(cleaned));
-    }).length / Math.max(samples.length, 1);
+    const samples = sampleRows.map(r => r[colIdx]).filter(v => v && v.trim());
+    const lower = normalizeHeader(header);
+    const uniqueValues = cardinality(samples);
+    const numericCount = samples.filter(isNumericValue).length;
+    const numericRate = numericCount / Math.max(samples.length, 1);
+    const dateCount = samples.filter(isDateValue).length;
+    const dateRate = dateCount / Math.max(samples.length, 1);
+    const isTextDimensionHeader = TEXT_DIMENSION_HEADER_PATTERNS.some(p => p.test(lower));
+    const metricKeyword = METRIC_HEADER_KEYWORDS.find(k => lower.includes(k));
 
-    // 0. Explicit NOT-date check
-    if (isNotDateHeader(header)) {
-      if (numericRate > 0.7) {
-        return {
-          column: header, colIdx, inferredType: "value" as const, confidence: 88,
-          reason: "Numeric duration/measurement column (not a date)",
-          sampleValues: samples.slice(0, 3),
-          rulesApplied: ["NOT_DATE_PATTERNS", `numericRate=${(numericRate * 100).toFixed(0)}%`],
-        };
-      }
-    }
-
-    // 1. Date detection
-    const isDateHeader = lower === "year" || lower === "date" || lower === "period" || lower === "time"
-      || lower === "month" || lower === "quarter" || lower.endsWith("_date") || lower.startsWith("date_");
-    if (isDateHeader) {
-      const allYears = samples.every(s => /^\d{4}$/.test(s.trim()) && parseInt(s) >= 1900 && parseInt(s) <= 2100);
-      const allDates = samples.every(s => !isNaN(Date.parse(s)));
-      if (allYears) {
-        return {
-          column: header, colIdx, inferredType: "date" as const, confidence: 92,
-          reason: "Year values detected (1900–2100 range)",
-          sampleValues: samples.slice(0, 3), autoFix: "year_to_date" as const,
-          rulesApplied: ["header_match:date_keyword", "allYears=true", "range:1900-2100"],
-        };
-      }
-      if (allDates) {
-        return {
-          column: header, colIdx, inferredType: "date" as const, confidence: 95,
-          reason: "Standard date format detected",
-          sampleValues: samples.slice(0, 3),
-          rulesApplied: ["header_match:date_keyword", "Date.parse:all_valid"],
-        };
-      }
+    if (samples.length === 0) {
       return {
-        column: header, colIdx, inferredType: "date" as const, confidence: 70,
-        reason: "Column name suggests date field",
-        sampleValues: samples.slice(0, 3),
-        rulesApplied: ["header_match:date_keyword", "values_inconclusive"],
+        column: header,
+        colIdx,
+        inferredType: "skip",
+        confidence: 30,
+        reason: "No sample values found",
+        sampleValues: [],
+        rulesApplied: ["empty_samples"],
       };
     }
 
-    // 1b. Year-like values with "year" in header
-    if (!isNotDateHeader(header)) {
-      const allYears = samples.length > 0 && samples.every(s => /^\d{4}$/.test(s.trim()) && parseInt(s) >= 1900 && parseInt(s) <= 2100);
-      if (allYears && (lower === "year" || lower.includes("year"))) {
-        return {
-          column: header, colIdx, inferredType: "date" as const, confidence: 88,
-          reason: "Year values detected in header containing 'year'",
-          sampleValues: samples.slice(0, 3), autoFix: "year_to_date" as const,
-          rulesApplied: ["header_contains:year", "allYears=true"],
-        };
-      }
-    }
-
-    // 2a. Region code detection
-    if (lower.includes("code") || lower.includes("iso") || lower.includes("site_id") || lower.includes("dept_id") || lower.includes("territory_code")) {
-      const codeRate = samples.filter(s => /^[A-Z0-9]{2,5}$/i.test(s.trim())).length / Math.max(samples.length, 1);
-      if (codeRate > 0.7) {
-        return {
-          column: header, colIdx, inferredType: "region_code" as const, confidence: 85,
-          reason: "Short codes detected (ISO/site/dept)",
-          sampleValues: samples.slice(0, 3),
-          rulesApplied: ["header_match:code_keyword", `codeRate=${(codeRate * 100).toFixed(0)}%`],
-        };
-      }
-    }
-
-    // 2b. Region detection
-    if (lower.includes("region") || lower.includes("country") || lower.includes("nation") || lower.includes("state") || lower.includes("territory") || lower === "country_code") {
+    if (isTextDimensionHeader && numericRate < 0.8) {
+      const type: ColumnTarget = lower.includes("region") || lower.includes("country") ? "region" : "segment";
       return {
-        column: header, colIdx, inferredType: "region" as const, confidence: 90,
-        reason: "Geographic identifiers detected",
+        column: header,
+        colIdx,
+        inferredType: type,
+        confidence: 92,
+        reason: "Categorical business dimension detected from header and text samples",
+        sampleValues: samples.slice(0, 3),
+        rulesApplied: ["header_match:text_dimension", `numericRate=${(numericRate * 100).toFixed(0)}%`],
+      };
+    }
+
+    const isDateHeader = !isNotDateHeader(header) && (
+      lower === "date" || lower === "year" || lower === "period" || lower === "time" ||
+      lower === "month" || lower === "quarter" || lower.endsWith("_date") || lower.startsWith("date_")
+    );
+
+    if (isDateHeader && dateRate >= 0.9) {
+      const allYears = samples.every(s => /^\d{4}$/.test(s.trim()));
+      return {
+        column: header,
+        colIdx,
+        inferredType: "date",
+        confidence: lower === "date" ? 98 : 90,
+        reason: allYears ? "Year values detected" : "Date-like values detected",
+        sampleValues: samples.slice(0, 3),
+        autoFix: allYears ? "year_to_date" : undefined,
+        rulesApplied: ["header_match:date_keyword", `dateRate=${(dateRate * 100).toFixed(0)}%`],
+      };
+    }
+
+    if ((lower.includes("region") || lower.includes("country") || lower.includes("nation") || lower.includes("state") || lower.includes("territory")) && numericRate < 0.8) {
+      return {
+        column: header,
+        colIdx,
+        inferredType: "region",
+        confidence: 90,
+        reason: "Geographic dimension detected",
         sampleValues: samples.slice(0, 3),
         rulesApplied: ["header_match:geo_keyword"],
       };
     }
+
     const countryMatchRate = samples.filter(s => COUNTRY_SAMPLES.has(s.toLowerCase().trim())).length / Math.max(samples.length, 1);
     if (countryMatchRate > 0.5) {
       return {
-        column: header, colIdx, inferredType: "region" as const, confidence: 85,
+        column: header,
+        colIdx,
+        inferredType: "region",
+        confidence: 88,
         reason: `${Math.round(countryMatchRate * 100)}% of values match known countries`,
         sampleValues: samples.slice(0, 3),
         rulesApplied: ["COUNTRY_SAMPLES", `matchRate=${(countryMatchRate * 100).toFixed(0)}%`],
       };
     }
 
-    // 3. Value detection: header hint
-    if (lower.includes("value") || lower.includes("amount") || lower.includes("revenue") ||
-        lower.includes("gdp") || lower.includes("price") || lower.includes("cost") ||
-        lower.includes("total") || lower.includes("sales") || lower.includes("income") ||
-        lower.includes("profit") || lower.includes("spend") || lower.includes("rate") ||
-        lower.includes("inflation") || lower.includes("unemployment") || lower.includes("expectancy") ||
-        lower.includes("growth") || lower.includes("index") || lower.includes("score") ||
-        lower.includes("throughput") || lower.includes("utilization") || lower.includes("headcount") ||
-        lower.includes("attrition") || lower.includes("nps") || lower.includes("satisfaction") ||
-        lower.includes("conversion") || lower.includes("churn") || lower.includes("retention")) {
-      const matchedKeyword = ["value","amount","revenue","gdp","price","cost","total","sales","income","profit","spend","rate","inflation","unemployment","expectancy","growth","index","score","throughput","utilization","headcount","attrition","nps","satisfaction","conversion","churn","retention"]
-        .find(k => lower.includes(k)) || "keyword";
-      return {
-        column: header, colIdx, inferredType: "value" as const, confidence: 90,
-        reason: "Numeric metric column detected",
-        sampleValues: samples.slice(0, 3),
-        rulesApplied: [`header_match:${matchedKeyword}`, `numericRate=${(numericRate * 100).toFixed(0)}%`],
-      };
-    }
-    // Value by statistics
-    const avgMagnitude = samples.reduce((sum, s) => sum + Math.abs(parseFloat(s) || 0), 0) / Math.max(samples.length, 1);
-    if (numericRate > 0.9 && avgMagnitude > 1) {
-      const allLookLikeYears = samples.every(s => {
-        const n = parseFloat(s);
-        return n >= 1900 && n <= 2100 && Number.isInteger(n);
-      });
-      if (allLookLikeYears && !lower.includes("value") && !lower.includes("amount")) {
+    if ((lower.includes("code") || lower.includes("iso") || lower.includes("site_id") || lower.includes("dept_id")) && numericRate < 0.8) {
+      const codeRate = samples.filter(s => /^[A-Z0-9_-]{2,12}$/i.test(s.trim())).length / Math.max(samples.length, 1);
+      if (codeRate > 0.7) {
         return {
-          column: header, colIdx, inferredType: "skip" as const, confidence: 50,
-          reason: "Ambiguous: looks like year values but header is unclear",
+          column: header,
+          colIdx,
+          inferredType: "region_code",
+          confidence: 82,
+          reason: "Short business/location codes detected",
           sampleValues: samples.slice(0, 3),
-          rulesApplied: ["numericRate>90%", "allLookLikeYears=true", "no_value_keyword"],
+          rulesApplied: ["header_match:code_keyword", `codeRate=${(codeRate * 100).toFixed(0)}%`],
         };
       }
+    }
+
+    // Critical guard: header keywords alone are not enough. Values must be numeric.
+    if (metricKeyword && numericRate >= 0.85) {
       return {
-        column: header, colIdx, inferredType: "value" as const, confidence: 80,
-        reason: `Numeric values (avg: ${avgMagnitude.toLocaleString(undefined, { maximumFractionDigits: 1 })})`,
+        column: header,
+        colIdx,
+        inferredType: "value",
+        confidence: Math.round(78 + numericRate * 20),
+        reason: "Numeric metric column detected from header and sampled values",
+        sampleValues: samples.slice(0, 3),
+        rulesApplied: [`header_match:${metricKeyword}`, `numericRate=${(numericRate * 100).toFixed(0)}%`],
+      };
+    }
+
+    if (metricKeyword && numericRate < 0.85) {
+      return {
+        column: header,
+        colIdx,
+        inferredType: "segment",
+        confidence: 86,
+        reason: "Header sounded like a metric, but sampled values are text",
+        sampleValues: samples.slice(0, 3),
+        rulesApplied: [`header_match:${metricKeyword}`, "value_guard:demoted_to_segment", `numericRate=${(numericRate * 100).toFixed(0)}%`],
+      };
+    }
+
+    const avgMagnitude = samples.reduce((sum, s) => sum + Math.abs(cleanNumericVal(s) || 0), 0) / Math.max(samples.length, 1);
+    if (numericRate >= 0.95 && avgMagnitude > 0) {
+      const allLookLikeYears = samples.every(s => {
+        const n = cleanNumericVal(s);
+        return n >= 1900 && n <= 2100 && Number.isInteger(n);
+      });
+      return {
+        column: header,
+        colIdx,
+        inferredType: allLookLikeYears && !lower.includes("amount") && !lower.includes("value") ? "skip" : "value",
+        confidence: allLookLikeYears ? 55 : 82,
+        reason: allLookLikeYears ? "Ambiguous year-like numeric values" : "Numeric values detected by sample statistics",
         sampleValues: samples.slice(0, 3),
         rulesApplied: [`numericRate=${(numericRate * 100).toFixed(0)}%`, `avgMagnitude=${avgMagnitude.toFixed(1)}`],
       };
     }
 
-    // 4. Segment detection
-    if (lower.includes("segment") || lower.includes("category") || lower.includes("sector") || lower.includes("industry") || lower.includes("group") || lower.includes("department") || lower.includes("team")) {
+    if (lower.includes("metric") || lower.includes("indicator") || lower.includes("measure")) {
       return {
-        column: header, colIdx, inferredType: "segment" as const, confidence: 85,
-        reason: "Categorical grouping detected",
+        column: header,
+        colIdx,
+        inferredType: "metric_type",
+        confidence: 80,
+        reason: "Metric identifier column detected",
         sampleValues: samples.slice(0, 3),
-        rulesApplied: ["header_match:segment_keyword"],
+        rulesApplied: ["header_match:metric_type"],
       };
     }
 
-    // 5. Metric type detection
-    if (lower.includes("metric") || lower.includes("type") || lower.includes("indicator") || lower.includes("measure")) {
+    if (uniqueValues <= Math.max(50, samples.length * 0.8) && numericRate < 0.3) {
       return {
-        column: header, colIdx, inferredType: "metric_type" as const, confidence: 80,
-        reason: "Metric type identifiers detected",
+        column: header,
+        colIdx,
+        inferredType: "segment",
+        confidence: uniqueValues <= 20 ? 75 : 62,
+        reason: `Text category detected (${uniqueValues} unique sampled values)`,
         sampleValues: samples.slice(0, 3),
-        rulesApplied: ["header_match:metric_keyword"],
-      };
-    }
-
-    // 6. Low-cardinality text → segment guess
-    if (uniqueValues.size > 1 && uniqueValues.size <= 20 && numericRate < 0.3) {
-      return {
-        column: header, colIdx, inferredType: "segment" as const, confidence: 60,
-        reason: `Low-cardinality text (${uniqueValues.size} unique values)`,
-        sampleValues: samples.slice(0, 3),
-        rulesApplied: [`uniqueValues=${uniqueValues.size}`, `numericRate=${(numericRate * 100).toFixed(0)}%`],
+        rulesApplied: [`uniqueValues=${uniqueValues}`, `numericRate=${(numericRate * 100).toFixed(0)}%`],
       };
     }
 
     return {
-      column: header, colIdx, inferredType: "skip" as const, confidence: 40,
+      column: header,
+      colIdx,
+      inferredType: "skip",
+      confidence: 40,
       reason: "No clear pattern detected",
       sampleValues: samples.slice(0, 3),
       rulesApplied: ["no_rule_matched"],
     };
   });
 
-  // Second pass: enforce single date column - pick highest confidence
   const dateDetections = detections.filter(d => d.inferredType === "date");
   if (dateDetections.length > 1) {
     const bestDate = dateDetections.reduce((best, d) => d.confidence > best.confidence ? d : best);
     detections.forEach((d) => {
       if (d.inferredType === "date" && d.colIdx !== bestDate.colIdx) {
-        const colSamples = sampleRows.map(r => r[d.colIdx]).filter(Boolean);
-        const numRate = colSamples.filter(s => !isNaN(parseFloat(s)) && isFinite(parseFloat(s))).length / Math.max(colSamples.length, 1);
-        if (numRate > 0.8) {
-          (d as { inferredType: string }).inferredType = "value";
-          d.reason = "Reclassified as value (another column chosen as date)";
-          d.confidence = 65;
-          d.rulesApplied = [...d.rulesApplied, "single_date_rule:demoted_to_value"];
-        } else {
-          (d as { inferredType: string }).inferredType = "skip";
-          d.reason = "Multiple date columns detected — demoted";
-          d.confidence = 40;
-          d.rulesApplied = [...d.rulesApplied, "single_date_rule:demoted_to_skip"];
-        }
+        const samples = sampleRows.map(r => r[d.colIdx]).filter(Boolean);
+        const uniqueValues = cardinality(samples);
+        (d as { inferredType: ColumnTarget }).inferredType = "segment";
+        d.reason = "Secondary date-like column kept as segment for grouping";
+        d.confidence = 65;
+        d.rulesApplied = [...d.rulesApplied, "single_date_rule:demoted_to_segment", `uniqueValues=${uniqueValues}`];
       }
     });
   }
@@ -364,7 +407,6 @@ export function inferSchema(headers: string[], rows: string[][]): DetectedSchema
   return detections;
 }
 
-// ---- Humanized Error Translation ----
 export function humanizeError(row: number, rawMessage: string): HumanizedError {
   const lower = rawMessage.toLowerCase();
 
@@ -383,7 +425,7 @@ export function humanizeError(row: number, rawMessage: string): HumanizedError {
       row, rawMessage,
       friendlyTitle: "Date format issue",
       friendlyDescription: `Row ${row} has an unrecognized date format.`,
-      suggestion: "Expected format: YYYY-MM-DD (e.g., 2024-01-15)",
+      suggestion: "Expected format: YYYY-MM-DD or YYYY-MM.",
       autoFixable: false,
     };
   }
@@ -409,11 +451,14 @@ export function humanizeError(row: number, rawMessage: string): HumanizedError {
   }
 
   if (lower.includes("non-numeric") || lower.includes("not a number")) {
+    const columnMatch = rawMessage.match(/column "([^"]+)"/i);
     return {
       row, rawMessage,
       friendlyTitle: "Non-numeric value detected",
-      friendlyDescription: `Row ${row} contains text where a number is expected.`,
-      suggestion: "Check for currency symbols, commas, or text in your value column.",
+      friendlyDescription: columnMatch
+        ? `Row ${row} contains text in metric column "${columnMatch[1]}".`
+        : `Row ${row} contains text where a number is expected.`,
+      suggestion: "Change text columns such as channel, supplier, product, status, or month to Segment instead of Metric.",
       autoFixable: false,
     };
   }
@@ -436,16 +481,6 @@ export function humanizeError(row: number, rawMessage: string): HumanizedError {
   };
 }
 
-// ---- Clean numeric value: strip currency symbols, thousand separators ----
-function cleanNumericVal(raw: string | undefined): number {
-  if (!raw) return NaN;
-  const cleaned = raw
-    .replace(/[\s$€£¥₹,]/g, "")
-    .replace(/\(([^)]+)\)/, "-$1"); // (123) → -123
-  return parseFloat(cleaned);
-}
-
-// ---- Validation (supports multi-metric mode, counts validPoints, date optional) ----
 export function validateData(
   rows: string[][],
   headers: string[],
@@ -466,72 +501,63 @@ export function validateData(
   let totalCells = 0;
   let filledCells = 0;
 
-  for (let i = 0; i < rows.length; i++) {
+  for (let i = 0; i < rows.length; i += 1) {
     const row = rows[i];
     let rowValid = true;
+    let dateValid = true;
 
     row.forEach((cell) => {
-      totalCells++;
-      if (cell && cell.trim()) filledCells++;
+      totalCells += 1;
+      if (cell && cell.trim()) filledCells += 1;
     });
 
-    // Date validation (only if a date column is mapped)
-    let dateValid = true;
     if (hasDateColumn) {
-      let d = row[dateIdx]?.trim();
-      if (d && /^\d{4}$/.test(d)) {
-        d = `${d}-01-01`;
-      }
-      if (!d) {
-        errors.push(humanizeError(i + 2, "Missing date value"));
-        rowValid = false;
-        dateValid = false;
-      } else if (isNaN(Date.parse(d))) {
-        errors.push(humanizeError(i + 2, `Invalid date format: "${d}"`));
+      const normalizedDate = toDateValue(row[dateIdx]);
+      if (!normalizedDate) {
+        errors.push(humanizeError(i + 2, `Invalid date format: "${row[dateIdx] ?? ""}"`));
         rowValid = false;
         dateValid = false;
       } else {
-        dates.push(d);
+        dates.push(normalizedDate);
       }
     }
 
-    // Validate values — count per metric-point pair
     const checkIndices = importMode === "multi" ? valueIndices : (primaryValueIdx >= 0 ? [primaryValueIdx] : []);
     for (const vIdx of checkIndices) {
-      const v = row[vIdx];
-      const num = cleanNumericVal(v);
-      if (!v || !v.trim()) {
+      const raw = row[vIdx];
+      const num = cleanNumericVal(raw);
+      if (!raw || !raw.trim()) {
         if (importMode === "single") {
-          errors.push(humanizeError(i + 2, "Missing value"));
+          errors.push(humanizeError(i + 2, `Missing value in column "${headers[vIdx] ?? vIdx}"`));
           rowValid = false;
         }
-        invalidPoints++;
-      } else if (isNaN(num) || !isFinite(num)) {
-        errors.push(humanizeError(i + 2, `Non-numeric value: "${v}"`));
+        invalidPoints += 1;
+      } else if (!Number.isFinite(num)) {
+        errors.push(humanizeError(i + 2, `Non-numeric value in column "${headers[vIdx] ?? vIdx}": "${raw}"`));
         rowValid = false;
-        invalidPoints++;
+        invalidPoints += 1;
       } else if (Math.abs(num) > 1e12) {
         errors.push(humanizeError(i + 2, `Value exceeds limit: ${num}`));
         rowValid = false;
-        invalidPoints++;
+        invalidPoints += 1;
       } else {
-        if (dateValid) validPoints++;
+        if (dateValid) validPoints += 1;
         values.push(num);
       }
     }
 
-    if (rowValid) validRows++;
+    if (rowValid) validRows += 1;
   }
 
   const totalPoints = importMode === "multi" ? rows.length * Math.max(1, valueIndices.length) : rows.length;
   const completeness = totalCells > 0 ? Math.round((filledCells / totalCells) * 100) : 0;
   const errorRate = rows.length > 0 ? (errors.length / rows.length) * 100 : 0;
-  // Quality score: date column gives bonus but is NOT required
   const structureBonus = (primaryValueIdx >= 0 ? 10 : 0) + (hasDateColumn ? 10 : 0);
   const qualityScore = Math.max(0, Math.min(100, Math.round(
     completeness * 0.4 + (100 - errorRate) * 0.4 + structureBonus
   )));
 
+  const sortedDates = [...dates].sort();
   return {
     totalRows: rows.length,
     validRows,
@@ -542,16 +568,13 @@ export function validateData(
     errors: errors.slice(0, 50),
     qualityScore,
     completeness,
-    dateRange: dates.length > 0
-      ? { min: dates.sort()[0], max: dates.sort()[dates.length - 1] }
-      : null,
+    dateRange: sortedDates.length > 0 ? { min: sortedDates[0], max: sortedDates[sortedDates.length - 1] } : null,
     valueRange: values.length > 0
-      ? { min: values.reduce((a, b) => Math.min(a, b), Infinity), max: values.reduce((a, b) => Math.max(a, b), -Infinity) }
+      ? { min: Math.min(...values), max: Math.max(...values) }
       : null,
   };
 }
 
-// ---- Dataset Intelligence Engine ----
 export function generateIntelligence(
   headers: string[],
   rows: string[][],
@@ -562,362 +585,128 @@ export function generateIntelligence(
   const regionIdx = findMappedIdx(mapping, "region");
   const metricIdx = findMappedIdx(mapping, "metric_type");
   const valueIndices = findAllMappedIdx(mapping, "value");
-  const dateIdx = findMappedIdx(mapping, "date");
-
-  const regions = regionIdx >= 0
-    ? [...new Set(rows.map(r => r[regionIdx]).filter(Boolean))]
-    : [];
-
+  const regions = regionIdx >= 0 ? [...new Set(rows.map(r => r[regionIdx]).filter(Boolean))] : [];
   const valueCols = valueIndices.map(i => headers[i] || `col_${i}`);
 
   let metricTypes: string[];
-  if (metricIdx >= 0) {
-    metricTypes = [...new Set(rows.map(r => r[metricIdx]).filter(Boolean))];
-  } else if (importMode === "multi" && valueCols.length > 1) {
-    metricTypes = valueCols.map(c => slugifyMetric(c));
-  } else {
-    metricTypes = [];
-  }
+  if (metricIdx >= 0) metricTypes = [...new Set(rows.map(r => r[metricIdx]).filter(Boolean))];
+  else if (importMode === "multi" && valueCols.length > 1) metricTypes = valueCols.map(c => slugifyMetric(c));
+  else metricTypes = valueCols.length ? [slugifyMetric(valueCols[0])] : [];
 
   const signals: { icon: string; title: string; description: string }[] = [];
-
   if (importMode === "multi" && valueCols.length > 1) {
     signals.push({
-      icon: "📊", title: `${valueCols.length} metrics detected`,
-      description: `Multi-metric dataset: ${valueCols.slice(0, 4).join(", ")}${valueCols.length > 4 ? ` +${valueCols.length - 4} more` : ""}. Cross-metric correlation analysis enabled.`,
+      icon: "📊",
+      title: `${valueCols.length} metrics detected`,
+      description: `Multi-metric dataset: ${valueCols.slice(0, 4).join(", ")}${valueCols.length > 4 ? ` +${valueCols.length - 4} more` : ""}.`,
     });
   }
-
-  // Volatility detection
-  const primaryValueIdx = valueIndices[0] ?? -1;
-  if (primaryValueIdx >= 0 && rows.length > 10) {
-    const values = rows.map(r => parseFloat(r[primaryValueIdx])).filter(v => !isNaN(v));
-    const mean = values.reduce((a, b) => a + b, 0) / values.length;
-    const stdDev = Math.sqrt(values.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / values.length);
-    const cv = (stdDev / Math.abs(mean)) * 100;
-    if (cv > 50) {
-      signals.push({
-        icon: "📊", title: "High value volatility detected",
-        description: `Coefficient of variation: ${cv.toFixed(0)}% — significant fluctuations across the dataset.`,
-      });
-    }
+  if (regions.length > 0) {
+    signals.push({ icon: "🌍", title: `${regions.length} regions detected`, description: `Regional analysis enabled across ${regions.slice(0, 5).join(", ")}.` });
   }
-
-  // Trend detection
-  if (primaryValueIdx >= 0 && dateIdx >= 0 && rows.length > 20) {
-    const sorted = [...rows].sort((a, b) => {
-      const da = Date.parse(a[dateIdx]) || 0;
-      const db = Date.parse(b[dateIdx]) || 0;
-      return da - db;
-    });
-    const third = Math.floor(sorted.length / 3);
-    const earlyAvg = sorted.slice(0, third).reduce((s, r) => s + (parseFloat(r[primaryValueIdx]) || 0), 0) / third;
-    const lateAvg = sorted.slice(-third).reduce((s, r) => s + (parseFloat(r[primaryValueIdx]) || 0), 0) / third;
-    const changePct = ((lateAvg - earlyAvg) / Math.abs(earlyAvg || 1)) * 100;
-    if (Math.abs(changePct) > 15) {
-      signals.push({
-        icon: changePct > 0 ? "📈" : "📉",
-        title: `${changePct > 0 ? "Growth" : "Decline"} trend detected`,
-        description: `${Math.abs(changePct).toFixed(0)}% ${changePct > 0 ? "increase" : "decrease"} between early and late periods.`,
-      });
-    }
-  }
-
-  // Multi-region diversity
-  if (regions.length > 3) {
-    signals.push({
-      icon: "🌍", title: "Multi-region dataset",
-      description: `${regions.length} distinct regions detected — cross-regional comparison available.`,
-    });
-  }
-
-  // Date span
-  let dateSpan: string | null = null;
-  if (validation.dateRange) {
-    const minYear = new Date(validation.dateRange.min).getFullYear();
-    const maxYear = new Date(validation.dateRange.max).getFullYear();
-    dateSpan = `${minYear}–${maxYear}`;
-    const span = maxYear - minYear;
-    if (span > 10) {
-      signals.push({
-        icon: "📅", title: "Long-term historical data",
-        description: `${span}-year span enables trend analysis and cycle detection.`,
-      });
-    }
-  }
-
-  // Quality signal
-  if (validation.qualityScore >= 90) {
-    signals.push({
-      icon: "✅", title: "Excellent data quality",
-      description: `Quality score: ${validation.qualityScore}/100 — ready for high-confidence analysis.`,
-    });
+  if (validation.qualityScore >= 85) {
+    signals.push({ icon: "✅", title: "High-quality dataset", description: "The uploaded data is ready for executive analysis." });
   } else if (validation.qualityScore < 60) {
-    signals.push({
-      icon: "⚠️", title: "Data quality concerns",
-      description: `Quality score: ${validation.qualityScore}/100 — insights will have reduced confidence.`,
-    });
+    signals.push({ icon: "⚠️", title: "Data quality needs review", description: "Some records require mapping or formatting attention before analysis." });
   }
 
-  const qScore = validation.qualityScore;
+  const dateSpan = validation.dateRange ? `${validation.dateRange.min} → ${validation.dateRange.max}` : null;
+  const qualityLabel = validation.qualityScore >= 85 ? "Excellent" : validation.qualityScore >= 70 ? "Good" : validation.qualityScore >= 50 ? "Fair" : "Needs review";
+
   return {
-    recordCount: validation.validPoints > 0 ? validation.validPoints : validation.validRows,
+    recordCount: rows.length,
     validPointCount: validation.validPoints,
     columnCount: headers.length,
     dateSpan,
     regionCount: regions.length,
-    regions: regions.slice(0, 8),
-    metricTypes: metricTypes.slice(0, 8),
+    regions: regions.slice(0, 50),
+    metricTypes,
     signals,
-    qualityScore: qScore,
-    qualityLabel: qScore >= 80 ? "Excellent" : qScore >= 50 ? "Fair" : "Poor",
+    qualityScore: validation.qualityScore,
+    qualityLabel,
   };
 }
 
-// ---- Dataset Diagnostics ----
-export function computeDiagnostics(
-  rows: string[][],
-  headers: string[],
-  mapping: ColumnMapping,
-): DatasetDiagnostics {
+export function computeDiagnostics(rows: string[][], mapping: ColumnMapping): DatasetDiagnostics {
   const dateIdx = findMappedIdx(mapping, "date");
   const valueIndices = findAllMappedIdx(mapping, "value");
+  let missing = 0;
+  let total = 0;
 
-  let totalCells = 0;
-  let emptyCells = 0;
   rows.forEach(row => {
-    headers.forEach((_, j) => {
-      totalCells++;
-      if (!row[j] || !row[j].trim()) emptyCells++;
+    row.forEach(cell => {
+      total += 1;
+      if (!cell || !cell.trim()) missing += 1;
     });
   });
-  const missingValuesPct = totalCells > 0 ? parseFloat(((emptyCells / totalCells) * 100).toFixed(1)) : 0;
 
-  let outlierCount = 0;
-  for (const vIdx of valueIndices) {
-    const values = rows.map(r => parseFloat(r[vIdx])).filter(v => !isNaN(v));
-    if (values.length < 10) continue;
-    const mean = values.reduce((a, b) => a + b, 0) / values.length;
-    const stdDev = Math.sqrt(values.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / values.length);
-    if (stdDev > 0) {
-      outlierCount += values.filter(v => Math.abs(v - mean) > 3 * stdDev).length;
-    }
-  }
-
-  const rowStrings = new Set<string>();
+  const seen = new Set<string>();
   let duplicateRows = 0;
   rows.forEach(row => {
-    const key = row.join("|");
-    if (rowStrings.has(key)) duplicateRows++;
-    else rowStrings.add(key);
+    const key = row.join("||");
+    if (seen.has(key)) duplicateRows += 1;
+    seen.add(key);
   });
 
-  let dateContinuity: "OK" | "Gaps detected" | "N/A" = "N/A";
+  const nums = valueIndices.flatMap(idx => rows.map(r => cleanNumericVal(r[idx])).filter(Number.isFinite));
+  let outlierCount = 0;
+  if (nums.length > 5) {
+    const mean = nums.reduce((a, b) => a + b, 0) / nums.length;
+    const sd = Math.sqrt(nums.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / nums.length);
+    outlierCount = sd > 0 ? nums.filter(v => Math.abs(v - mean) > sd * 3).length : 0;
+  }
+
+  let dateContinuity: DatasetDiagnostics["dateContinuity"] = "N/A";
   let dateGapCount = 0;
   if (dateIdx >= 0) {
-    const dates = rows
-      .map(r => {
-        let d = r[dateIdx]?.trim();
-        if (d && /^\d{4}$/.test(d)) d = `${d}-01-01`;
-        return Date.parse(d);
-      })
-      .filter(d => !isNaN(d))
-      .sort((a, b) => a - b);
-
-    if (dates.length > 2) {
-      const years = [...new Set(dates.map(d => new Date(d).getFullYear()))].sort((a, b) => a - b);
-      for (let i = 1; i < years.length; i++) {
-        if (years[i] - years[i - 1] > 1) dateGapCount++;
+    const uniqueDates = [...new Set(rows.map(r => toDateValue(r[dateIdx])).filter(Boolean) as string[])].sort();
+    if (uniqueDates.length > 2) {
+      dateContinuity = "OK";
+      for (let i = 1; i < uniqueDates.length; i += 1) {
+        const prev = new Date(uniqueDates[i - 1]).getTime();
+        const curr = new Date(uniqueDates[i]).getTime();
+        const days = (curr - prev) / 86400000;
+        if (days > 32) dateGapCount += 1;
       }
-      dateContinuity = dateGapCount === 0 ? "OK" : "Gaps detected";
+      if (dateGapCount > 0) dateContinuity = "Gaps detected";
     }
   }
 
-  return { missingValuesPct, outlierCount, duplicateRows, dateContinuity, dateGapCount };
+  return {
+    missingValuesPct: total > 0 ? Math.round((missing / total) * 100) : 0,
+    outlierCount,
+    duplicateRows,
+    dateContinuity,
+    dateGapCount,
+  };
 }
-
-// ---- Dataset Classification ----
-const DATASET_PATTERNS: { type: string; keywords: string[]; workflows: string[]; subTypes?: { type: string; keywords: string[] }[] }[] = [
-  {
-    type: "Macroeconomic Indicators",
-    keywords: ["gdp", "inflation", "unemployment", "interest_rate", "cpi", "ppi", "trade_balance", "fiscal", "monetary", "economic"],
-    workflows: ["Forecasting", "Scenario Modeling", "Anomaly Detection", "Cross-metric Correlation"],
-    subTypes: [
-      { type: "National Accounts", keywords: ["gdp", "gnp", "consumption", "investment"] },
-      { type: "Labor Market", keywords: ["unemployment", "employment", "labor", "workforce", "jobs"] },
-      { type: "Price Indices", keywords: ["inflation", "cpi", "ppi", "price_index", "deflator"] },
-    ],
-  },
-  {
-    type: "Sales Performance",
-    keywords: ["revenue", "sales", "orders", "conversion", "deal", "pipeline", "booking", "arr", "mrr"],
-    workflows: ["Forecasting", "KPI Monitoring", "Decision Ledger", "Scenario Planning"],
-  },
-  {
-    type: "Marketing Analytics",
-    keywords: ["marketing", "campaign", "leads", "cac", "cpl", "impressions", "clicks", "ctr", "roas", "funnel"],
-    workflows: ["Funnel Analysis", "Attribution Modeling", "Anomaly Detection", "Forecasting"],
-  },
-  {
-    type: "Operational Metrics",
-    keywords: ["operations", "throughput", "cycle_time", "utilization", "capacity", "sla", "uptime", "incidents"],
-    workflows: ["KPI Monitoring", "Anomaly Detection", "Scenario Planning", "Decision Ledger"],
-  },
-  {
-    type: "Financial Statements",
-    keywords: ["revenue", "expense", "profit", "ebitda", "margin", "balance", "assets", "liabilities", "equity", "cashflow"],
-    workflows: ["Forecasting", "Scenario Modeling", "Benchmarking", "Decision Ledger"],
-  },
-  {
-    type: "Customer Analytics",
-    keywords: ["customer", "churn", "retention", "nps", "satisfaction", "ltv", "arpu", "cohort", "engagement"],
-    workflows: ["Cohort Analysis", "Churn Prediction", "KPI Monitoring", "Scenario Planning"],
-  },
-  {
-    type: "People Analytics",
-    keywords: ["headcount", "attrition", "hiring", "compensation", "salary", "employee", "turnover", "tenure", "diversity"],
-    workflows: ["Workforce Planning", "Attrition Forecasting", "KPI Monitoring", "Benchmarking"],
-  },
-  {
-    type: "Energy & Commodities",
-    keywords: ["oil", "gas", "energy", "commodity", "crude", "barrel", "electricity", "mining", "production"],
-    workflows: ["Price Forecasting", "Scenario Modeling", "Anomaly Detection", "Cross-metric Correlation"],
-  },
-  {
-    type: "Product Analytics",
-    keywords: ["feature", "adoption", "dau", "mau", "session", "activation", "onboarding", "usage", "engagement"],
-    workflows: ["Engagement Analysis", "Funnel Optimization", "Anomaly Detection", "KPI Monitoring"],
-  },
-  {
-    type: "Risk & Compliance",
-    keywords: ["risk", "compliance", "incident", "audit", "violation", "exposure", "probability", "severity"],
-    workflows: ["Risk Monitoring", "Anomaly Detection", "Decision Ledger", "Scenario Planning"],
-  },
-];
 
 export function classifyDataset(headers: string[], mapping: ColumnMapping): DatasetClassification {
-  const allText = headers.map(h => h.toLowerCase().replace(/[_\-]/g, " ")).join(" ");
-  const valueIndices = findAllMappedIdx(mapping, "value");
-  const valueCols = valueIndices.map(i => (headers[i] || "").toLowerCase().replace(/[_\-]/g, " "));
-  const searchText = allText + " " + valueCols.join(" ");
+  const lowerHeaders = headers.map(h => normalizeHeader(h));
+  const joined = lowerHeaders.join(" ");
+  const metricCount = Object.values(mapping).filter(v => v === "value").length;
 
-  let bestMatch: DatasetClassification = { type: "General Dataset", confidence: 30, recommendedWorkflows: ["KPI Monitoring", "Forecasting", "Anomaly Detection"] };
-
-  for (const pattern of DATASET_PATTERNS) {
-    const matchCount = pattern.keywords.filter(k => searchText.includes(k)).length;
-    const score = Math.min(95, Math.round((matchCount / pattern.keywords.length) * 100) + 20);
-    if (matchCount > 0 && score > bestMatch.confidence) {
-      bestMatch = { type: pattern.type, confidence: score, recommendedWorkflows: pattern.workflows };
-
-      if (pattern.subTypes) {
-        for (const sub of pattern.subTypes) {
-          const subMatchCount = sub.keywords.filter(k => searchText.includes(k)).length;
-          if (subMatchCount > 0) {
-            bestMatch.subType = sub.type;
-            break;
-          }
-        }
-      }
-    }
+  if (/revenue|mrr|arr|churn|customer|subscription/.test(joined)) {
+    return { type: "Revenue & Growth", confidence: 86, subType: "Commercial KPIs", recommendedWorkflows: ["Executive Intelligence", "Forecasting", "Decision Ledger"] };
   }
-
-  return bestMatch;
+  if (/inventory|supplier|delivery|defect|units|lead_time|manufacturing|production/.test(joined)) {
+    return { type: "Manufacturing Operations", confidence: 90, subType: "Operations KPIs", recommendedWorkflows: ["Operational Risk", "Supplier Analysis", "Executive Intelligence"] };
+  }
+  if (/cash|payable|receivable|margin|cost|profit/.test(joined)) {
+    return { type: "Financial Performance", confidence: 84, subType: "Finance KPIs", recommendedWorkflows: ["CFO Dashboard", "Risk & Compliance", "Forecasting"] };
+  }
+  return { type: metricCount > 1 ? "Multi-Metric Dataset" : "General Business Dataset", confidence: 65, recommendedWorkflows: ["Data Exploration", "Decision Intelligence"] };
 }
 
-// ---- Confidence badge color (semantic tokens) ----
-export const confidenceColor = (c: number) =>
-  c >= 80 ? "bg-success/10 text-success border-success/20" :
-  c >= 60 ? "bg-warning/10 text-warning border-warning/20" :
-  "bg-muted text-muted-foreground border-border";
-
-export const qualityColor = (score: number) =>
-  score >= 80 ? "text-success" : score >= 50 ? "text-warning" : "text-destructive";
-
-// ═══════════════════════════════════════════════════════
-// CHUNKED LARGE-FILE INGESTION ENGINE
-// ═══════════════════════════════════════════════════════
-
-export const CHUNK_SIZE = 5000; // rows per chunk
-export const MAX_TOTAL_ROWS = 500000; // 500K row limit
-
-export interface ChunkProgress {
-  totalRows: number;
-  processedRows: number;
-  currentChunk: number;
-  totalChunks: number;
-  status: "idle" | "processing" | "complete" | "error";
-  errorMessage?: string;
+export function confidenceColor(confidence: number): string {
+  if (confidence >= 85) return "text-success";
+  if (confidence >= 65) return "text-warning";
+  return "text-muted-foreground";
 }
 
-/**
- * Splits parsed rows into processing chunks for progressive ingestion.
- * Handles datasets up to 500K rows by batching into CHUNK_SIZE groups.
- */
-export function createChunks(rows: string[][], chunkSize: number = CHUNK_SIZE): string[][][] {
-  if (rows.length <= chunkSize) return [rows];
-  const chunks: string[][][] = [];
-  for (let i = 0; i < rows.length; i += chunkSize) {
-    chunks.push(rows.slice(i, i + chunkSize));
-  }
-  return chunks;
-}
-
-/**
- * Progressive chunk processor with callback for progress updates.
- * Each chunk is independently validated and inserted, preventing
- * a single bad row from blocking the entire import.
- */
-export async function processChunkedUpload(
-  allRows: string[][],
-  headers: string[],
-  mapping: ColumnMapping,
-  importMode: ImportMode,
-  onProgress: (progress: ChunkProgress) => void,
-  insertChunk: (rows: string[][], chunkIndex: number) => Promise<{ inserted: number; errors: number }>,
-): Promise<{ totalInserted: number; totalErrors: number; totalChunks: number }> {
-  if (allRows.length > MAX_TOTAL_ROWS) {
-    onProgress({
-      totalRows: allRows.length,
-      processedRows: 0,
-      currentChunk: 0,
-      totalChunks: 0,
-      status: "error",
-      errorMessage: `Dataset exceeds maximum of ${MAX_TOTAL_ROWS.toLocaleString()} rows. Split into smaller files.`,
-    });
-    return { totalInserted: 0, totalErrors: 0, totalChunks: 0 };
-  }
-
-  const chunks = createChunks(allRows);
-  let totalInserted = 0;
-  let totalErrors = 0;
-
-  onProgress({
-    totalRows: allRows.length,
-    processedRows: 0,
-    currentChunk: 0,
-    totalChunks: chunks.length,
-    status: "processing",
-  });
-
-  for (let i = 0; i < chunks.length; i++) {
-    try {
-      const result = await insertChunk(chunks[i], i);
-      totalInserted += result.inserted;
-      totalErrors += result.errors;
-
-      onProgress({
-        totalRows: allRows.length,
-        processedRows: Math.min((i + 1) * CHUNK_SIZE, allRows.length),
-        currentChunk: i + 1,
-        totalChunks: chunks.length,
-        status: i === chunks.length - 1 ? "complete" : "processing",
-      });
-    } catch (err) {
-      totalErrors += chunks[i].length;
-      console.error(`Chunk ${i + 1}/${chunks.length} failed:`, err);
-      // Continue processing remaining chunks — don't block on one failure
-    }
-  }
-
-  return { totalInserted, totalErrors, totalChunks: chunks.length };
+export function qualityColor(score: number): string {
+  if (score >= 85) return "text-success";
+  if (score >= 70) return "text-primary";
+  if (score >= 50) return "text-warning";
+  return "text-destructive";
 }
