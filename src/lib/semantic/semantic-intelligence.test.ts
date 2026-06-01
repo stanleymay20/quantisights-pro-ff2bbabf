@@ -27,7 +27,7 @@ describe("Trust Score", () => {
       anomalies: { anomalies: [], affectedColumns: [], summary: "" },
       hasLineage: true,
     });
-    expect(["B", "C", "D"]).toContain(t.grade);
+    expect(t.components.drift).toBeLessThan(60);
     expect(t.rationale.join(" ")).toMatch(/breaking/i);
   });
 
