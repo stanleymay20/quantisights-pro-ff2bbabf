@@ -1,9 +1,23 @@
 // ---- Data Upload Utility Functions ----
 // Extracted from DataUpload.tsx for maintainability.
+// All ingestion stages (parse → infer → validate → diagnose) share a single
+// normalization layer from messy-data-guards.ts so behavior stays consistent.
 // The inference rules intentionally let sampled values override header keywords.
 // Example: sales_channel contains "sales" but values are text, so it must be a segment, not a metric.
 
 import Papa from "papaparse";
+import {
+  deduplicateHeaders,
+  isBooleanLike,
+  isEmailLike,
+  isIdentifierHeader,
+  isIdentifierLike,
+  isPhoneLike,
+  isPotentialPiiHeader,
+  normalizeCell,
+  parseMessyDate,
+  parseMessyNumber,
+} from "./messy-data-guards";
 
 export const COUNTRY_SAMPLES = new Set([
   "united states", "usa", "us", "china", "india", "germany", "france", "japan",
