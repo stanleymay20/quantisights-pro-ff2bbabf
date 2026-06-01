@@ -18,6 +18,9 @@ import {
   Gauge,
   Info,
   ScrollText,
+  Rocket,
+  Eye,
+  HandMetal,
 } from "lucide-react";
 import type { IngestionIntelligenceResult } from "@/lib/ingestion-intelligence";
 import type { CrossSheetDiscoveryResult } from "@/lib/cross-sheet-discovery";
@@ -149,6 +152,9 @@ export default function MappingIntelligencePanel({ intelligence, relationships }
           </TooltipContent>
         </Tooltip>
 
+        {/* Executive Recommendation */}
+        <ExecutiveRecommendationCard intelligence={intelligence} grade={grade} />
+
         {/* Risk Assessment */}
         <RiskAssessmentCard intelligence={intelligence} grade={grade} />
 
@@ -257,13 +263,18 @@ export default function MappingIntelligencePanel({ intelligence, relationships }
         </Section>
 
 
-        {/* Cross-sheet relationships */}
-        {relationships && relationships.relationships.length > 0 && (
-          <Section
-            title="Cross-Sheet Relationships"
-            icon={<Link2 className="w-3.5 h-3.5 text-primary" />}
-            badge={<Badge variant="outline" className="text-[10px]">{relationships.relationships.length}</Badge>}
-          >
+        {/* Cross-sheet relationships — always rendered with empty state */}
+        <Section
+          title="Cross-Sheet Relationships"
+          icon={<Link2 className="w-3.5 h-3.5 text-primary" />}
+          badge={<Badge variant="outline" className="text-[10px]">{relationships?.relationships.length ?? 0}</Badge>}
+        >
+          {!relationships || relationships.relationships.length === 0 ? (
+            <p className="text-muted-foreground">
+              No cross-sheet relationships detected. Upload a multi-sheet workbook to surface foreign-key style joins (e.g.{" "}
+              <span className="font-mono">orders.customer_id → customers.id</span>).
+            </p>
+          ) : (
             <ul className="space-y-1.5">
               {relationships.relationships.map((rel, i) => (
                 <li key={i} className="flex items-center gap-2 font-mono text-[11px]">
@@ -274,8 +285,8 @@ export default function MappingIntelligencePanel({ intelligence, relationships }
                 </li>
               ))}
             </ul>
-          </Section>
-        )}
+          )}
+        </Section>
 
         {/* PII fields */}
         {intelligence.semanticSchema.piiColumns.length > 0 && (
@@ -504,5 +515,115 @@ function DictionaryGroup({
     </div>
   );
 }
+
+function ExecutiveRecommendationCard({
+  intelligence,
+  grade,
+}: {
+  intelligence: IngestionIntelligenceResult;
+  grade: Grade;
+}) {
+  const r = intelligence.repairReport;
+  const dict = intelligence.dictionary;
+  const piiCount = dict.summary.piiCount;
+  const reviewCount = dict.summary.reviewRequiredCount;
+  const trust = r.summary.trustSignal;
+  const warnings = r.summary.warnings.length;
+  const driftCount = 0; // schema drift placeholder (intelligence pipeline emits warnings instead)
+
+  const verdict = useMemo(() => {
+    // Manual Review: any condition forcing a human-in-the-loop gate
+    if (grade === "D" || trust === "weak" || reviewCount >= 3 || piiCount >= 5 || driftCount > 0) {
+      return {
+        action: "Manual Review" as const,
+        icon: <HandMetal className="w-5 h-5" />,
+        tone: "destructive" as const,
+        headline: "Manual review required before import.",
+        rationale: [
+          grade === "D" && "Trust grade D — multiple integrity concerns",
+          trust === "weak" && "Weak trust signal from ingestion engine",
+          reviewCount >= 3 && `${reviewCount} fields flagged for review`,
+          piiCount >= 5 && `${piiCount} PII fields require governance approval`,
+          driftCount > 0 && `${driftCount} schema drift event(s) detected`,
+        ].filter(Boolean) as string[],
+      };
+    }
+    // Review: caution, but not blocking
+    if (grade === "C" || trust === "moderate" || reviewCount > 0 || warnings > 1 || piiCount > 0) {
+      return {
+        action: "Review" as const,
+        icon: <Eye className="w-5 h-5" />,
+        tone: "warning" as const,
+        headline: "Review intelligence panel before import.",
+        rationale: [
+          grade === "C" && "Trust grade C — manual verification advised",
+          reviewCount > 0 && `${reviewCount} field${reviewCount === 1 ? "" : "s"} need review`,
+          piiCount > 0 && `${piiCount} PII field${piiCount === 1 ? "" : "s"} present`,
+          warnings > 1 && `${warnings} ingestion warnings`,
+          trust === "moderate" && "Moderate trust signal",
+        ].filter(Boolean) as string[],
+      };
+    }
+    // Proceed: clean, governed, ready
+    return {
+      action: "Proceed" as const,
+      icon: <Rocket className="w-5 h-5" />,
+      tone: "success" as const,
+      headline: "Dataset cleared for executive analysis.",
+      rationale: [
+        `Trust grade ${grade}`,
+        `${r.summary.repairsApplied} auto-repair${r.summary.repairsApplied === 1 ? "" : "s"} applied`,
+        "No PII or review gates triggered",
+      ],
+    };
+  }, [grade, trust, reviewCount, piiCount, warnings, driftCount, r.summary.repairsApplied]);
+
+  const toneCls =
+    verdict.tone === "success"
+      ? "border-success/40 bg-success/5"
+      : verdict.tone === "warning"
+      ? "border-warning/40 bg-warning/5"
+      : "border-destructive/40 bg-destructive/5";
+  const accentCls =
+    verdict.tone === "success" ? "text-success" : verdict.tone === "warning" ? "text-warning" : "text-destructive";
+  const pillCls =
+    verdict.tone === "success"
+      ? "bg-success text-success-foreground"
+      : verdict.tone === "warning"
+      ? "bg-warning text-warning-foreground"
+      : "bg-destructive text-destructive-foreground";
+
+  return (
+    <div className={`rounded-lg border-2 p-4 ${toneCls}`}>
+      <div className="flex items-start gap-3">
+        <div className={`w-10 h-10 rounded-full bg-background border ${accentCls} flex items-center justify-center shrink-0`}>
+          {verdict.icon}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+              Executive Recommendation
+            </span>
+            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${pillCls}`}>
+              {verdict.action}
+            </span>
+          </div>
+          <p className={`text-sm font-semibold mt-1 ${accentCls}`}>{verdict.headline}</p>
+          {verdict.rationale.length > 0 && (
+            <ul className="mt-2 space-y-0.5">
+              {verdict.rationale.map((reason, i) => (
+                <li key={i} className="text-[11px] text-muted-foreground flex items-start gap-1.5">
+                  <span className={`mt-1 w-1 h-1 rounded-full shrink-0 ${accentCls.replace("text-", "bg-")}`} />
+                  <span>{reason}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 
 

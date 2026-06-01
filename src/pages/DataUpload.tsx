@@ -1281,9 +1281,13 @@ const DataUpload = () => {
                 initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}
                 className="space-y-6"
               >
-                {ingestionIntel && (
-                  <MappingIntelligencePanel intelligence={ingestionIntel} relationships={crossSheet} />
-                )}
+                <div className="grid grid-cols-1 xl:grid-cols-5 gap-6 items-start">
+                  {ingestionIntel && (
+                    <aside className="xl:col-span-2 xl:sticky xl:top-6 space-y-4">
+                      <MappingIntelligencePanel intelligence={ingestionIntel} relationships={crossSheet} />
+                    </aside>
+                  )}
+                  <div className={ingestionIntel ? "xl:col-span-3 space-y-6" : "xl:col-span-5 space-y-6"}>
                 <Card>
                   <CardContent className="p-6">
                     <h2 className="text-lg font-semibold font-display mb-1">Adjust Column Mapping</h2>
@@ -1470,6 +1474,8 @@ const DataUpload = () => {
                 <Button onClick={runValidation} className="gap-2">
                   Validate Data <ShieldCheck className="w-4 h-4" />
                 </Button>
+                  </div>
+                </div>
               </motion.div>
             )}
 
