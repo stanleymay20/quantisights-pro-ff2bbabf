@@ -31,12 +31,14 @@ function healthTone(score: number): { color: string; label: string } {
   return { color: "text-destructive", label: "Needs Attention" };
 }
 
+type PiiLevel = DatasetDiagnostics["piiRisk"]["level"];
+
 function recommendedAction(
   health: number,
   drift: DriftReport | null,
-  pii: DatasetDiagnostics["piiRisk"] | undefined,
+  piiLevel: PiiLevel | undefined,
 ): { label: string; tone: "success" | "warning" | "destructive" } {
-  if (pii === "high") {
+  if (piiLevel === "high") {
     return { label: "Review PII before publishing", tone: "destructive" };
   }
   if (drift && !drift.backwardCompatible) {
@@ -56,9 +58,10 @@ export default function PostUploadSummary({
   drift,
 }: Props) {
   const tone = healthTone(healthScore);
-  const action = recommendedAction(healthScore, drift, diagnostics?.piiRisk);
-  const piiLabel = diagnostics?.piiRisk
-    ? diagnostics.piiRisk.charAt(0).toUpperCase() + diagnostics.piiRisk.slice(1)
+  const piiLevel = diagnostics?.piiRisk?.level;
+  const action = recommendedAction(healthScore, drift, piiLevel);
+  const piiLabel = piiLevel
+    ? piiLevel.charAt(0).toUpperCase() + piiLevel.slice(1)
     : "Unknown";
 
   return (
@@ -104,7 +107,7 @@ export default function PostUploadSummary({
           />
           <Tile
             icon={
-              diagnostics?.piiRisk === "high" ? (
+              piiLevel === "high" ? (
                 <AlertTriangle className="w-3.5 h-3.5 text-destructive" />
               ) : (
                 <ShieldCheck className="w-3.5 h-3.5" />
@@ -113,9 +116,9 @@ export default function PostUploadSummary({
             label="PII Risk"
             value={piiLabel}
             valueClass={
-              diagnostics?.piiRisk === "high"
+              piiLevel === "high"
                 ? "text-destructive"
-                : diagnostics?.piiRisk === "low"
+                : piiLevel === "low"
                   ? "text-warning"
                   : "text-success"
             }
