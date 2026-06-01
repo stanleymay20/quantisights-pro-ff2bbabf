@@ -1414,9 +1414,19 @@ const DataUpload = () => {
                                   ))}
                                 </select>
                                 {det && currentTarget !== "skip" && (
-                                  <span className={`text-[10px] px-1.5 py-0.5 rounded border self-start ${confTone}`}>
-                                    Confidence: {conf}%
-                                  </span>
+                                  <div className="flex items-center gap-2">
+                                    <span className={`text-[10px] px-1.5 py-0.5 rounded border ${confTone}`}>
+                                      {conf}%
+                                    </span>
+                                    <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
+                                      <div
+                                        className={`h-full transition-all ${
+                                          conf >= 90 ? "bg-success" : conf >= 70 ? "bg-warning" : "bg-destructive"
+                                        }`}
+                                        style={{ width: `${Math.max(4, Math.min(100, conf))}%` }}
+                                      />
+                                    </div>
+                                  </div>
                                 )}
                               </div>
                               {currentTarget !== "skip" && (
