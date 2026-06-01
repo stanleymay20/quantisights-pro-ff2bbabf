@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthThrottle } from "@/hooks/useAuthThrottle";
-import { lovable } from "@/integrations/lovable/index";
+import { supabase } from "@/integrations/supabase/client";
 import { Check, X, Loader2 } from "lucide-react";
 import logo from "@/assets/quantivis-logo.png";
 
@@ -46,12 +46,35 @@ const Register = forwardRef<HTMLDivElement>((_, ref) => {
     setIsLoading(true);
     try {
       await signUp(email, password, fullName);
-      toast({ title: "Account created!", description: "Check your email to verify your account." });
-      navigate("/login");
+      toast({ title: "Verification email sent", description: "Confirm your email to continue setting up your Quantivis workspace." });
+      navigate(`/verify-email?email=${encodeURIComponent(email)}`);
     } catch (err: unknown) {
-      toast({ title: "Registration failed", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
+      const message = err instanceof Error ? err.message : "Unknown error";
+      toast({
+        title: "Registration failed",
+        description: message.includes("weak")
+          ? "This password appears in a known weak-password database. Please choose a more unique password."
+          : message,
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleGoogleSignUp = async () => {
+    setGoogleLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback?next=/onboarding`,
+        },
+      });
+      if (error) throw error;
+    } catch (err: unknown) {
+      toast({ title: "Google sign-up failed", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
+      setGoogleLoading(false);
     }
   };
 
@@ -122,6 +145,11 @@ const Register = forwardRef<HTMLDivElement>((_, ref) => {
                     </div>
                   ))}
                 </div>
+                {allPassed && (
+                  <p className="text-[11px] text-muted-foreground">
+                    Final password approval happens securely on the server. Avoid reused or common passwords.
+                  </p>
+                )}
               </div>
             )}
           </div>
@@ -144,23 +172,7 @@ const Register = forwardRef<HTMLDivElement>((_, ref) => {
         <button
           type="button"
           disabled={googleLoading || isLoading}
-          onClick={async () => {
-            setGoogleLoading(true);
-            try {
-              const result = await lovable.auth.signInWithOAuth("google", {
-                redirect_uri: window.location.origin,
-              });
-              if (result.error) {
-                toast({ title: "Google sign-up failed", description: result.error instanceof Error ? result.error.message : String(result.error), variant: "destructive" });
-              }
-              if (result.redirected) return;
-              navigate("/dashboard");
-            } catch (err: unknown) {
-              toast({ title: "Google sign-up failed", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
-            } finally {
-              setGoogleLoading(false);
-            }
-          }}
+          onClick={handleGoogleSignUp}
           className="w-full py-3 rounded-lg bg-secondary border border-border text-foreground font-medium text-sm hover:bg-accent transition-all disabled:opacity-50 flex items-center justify-center gap-3"
         >
           {googleLoading ? (
