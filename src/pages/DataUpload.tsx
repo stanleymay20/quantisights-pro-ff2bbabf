@@ -1110,7 +1110,6 @@ const DataUpload = () => {
                       </motion.div>
                     )}
 
-
                     {/* Import Mode Toggle */}
                     {valueColumnCount >= 2 && (
                       <motion.div
@@ -1154,8 +1153,20 @@ const DataUpload = () => {
                         )}
                       </motion.div>
                     )}
+                  </CardContent>
+                </Card>
 
-                    <div className="mt-6 space-y-2">
+
+                {/* Ingestion Intelligence — surfaced BEFORE mapping rows & sample data */}
+                {ingestionIntel && (
+                  <MappingIntelligencePanel intelligence={ingestionIntel} relationships={crossSheet} />
+                )}
+
+                <Card>
+                  <CardContent className="p-6">
+                    <h2 className="text-lg font-semibold font-display mb-1">Column Mapping</h2>
+                    <p className="text-xs text-muted-foreground mb-4">Detected field types and confidence per column.</p>
+                    <div className="space-y-2">
                       {detectedSchema.map((det) => (
                         <div key={det.colIdx} className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 border border-border/40">
                           <div className="flex items-center gap-2 w-44 shrink-0">
@@ -1177,10 +1188,35 @@ const DataUpload = () => {
                           </div>
                           <ArrowRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
                               <Badge variant="outline" className={`text-xs ${confidenceColor(det.confidence)}`}>
                                 {det.inferredType === "skip" ? "Not mapped" : det.inferredType}
                               </Badge>
+                              {(() => {
+                                const profile = ingestionIntel?.semanticSchema.profiles.find((p) => p.colIdx === det.colIdx);
+                                const tags: string[] = [];
+                                if (profile?.semanticType === "pii") tags.push("PII");
+                                if (profile?.semanticType === "identifier" || profile?.businessRole === "entity_key") tags.push("Identifier");
+                                if (det.inferredType === "date") tags.push("Date");
+                                if (profile?.businessRole === "financial_kpi") tags.push("Currency");
+                                return tags.map((t) => (
+                                  <Badge
+                                    key={t}
+                                    variant="outline"
+                                    className={`text-[10px] ${
+                                      t === "PII"
+                                        ? "border-destructive/40 text-destructive bg-destructive/5"
+                                        : t === "Identifier"
+                                          ? "border-primary/40 text-primary bg-primary/5"
+                                          : t === "Date"
+                                            ? "border-warning/40 text-warning bg-warning/5"
+                                            : "border-success/40 text-success bg-success/5"
+                                    }`}
+                                  >
+                                    {t}
+                                  </Badge>
+                                ));
+                              })()}
                               <span className="text-xs text-muted-foreground">{det.reason}</span>
                             </div>
                             {/* Rules applied (Why this mapping?) */}
@@ -1259,9 +1295,6 @@ const DataUpload = () => {
                   </CardContent>
                 </Card>
 
-                {ingestionIntel && (
-                  <MappingIntelligencePanel intelligence={ingestionIntel} relationships={crossSheet} />
-                )}
 
                 <div className="flex gap-3">
                   <Button variant="outline" onClick={() => setStep("mapping")} className="gap-2">
