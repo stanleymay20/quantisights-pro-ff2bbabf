@@ -1474,6 +1474,8 @@ const DataUpload = () => {
                 <Button onClick={runValidation} className="gap-2">
                   Validate Data <ShieldCheck className="w-4 h-4" />
                 </Button>
+                  </div>
+                </div>
               </motion.div>
             )}
 
