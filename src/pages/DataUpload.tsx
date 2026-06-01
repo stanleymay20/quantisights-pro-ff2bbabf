@@ -193,18 +193,33 @@ const DataUpload = () => {
       return;
     }
     setFile(f);
+    lastFileRef.current = f;
     setWorkbook(null);
     setActiveSheetName(null);
+    setDrift(null);
     if (isWorkbookFile(f.name)) {
       setDatasetName(f.name.replace(/\.(xlsx|xls|xlsm|ods)$/i, ""));
       handleWorkbookFile(f);
     } else {
       setDatasetName(f.name.replace(/\.csv$/i, ""));
-      const reader = new FileReader();
-      reader.onload = (ev) => handleParse(ev.target?.result as string);
-      reader.readAsText(f);
+      // Phase 4: route large CSVs (>1MB) through the Web Worker pipeline so the
+      // UI thread stays free. Smaller files keep the fast synchronous path.
+      if (f.size > 1024 * 1024) {
+        ingestion.start(f).catch((err) => {
+          toast({
+            title: "Ingestion failed to start",
+            description: err instanceof Error ? err.message : String(err),
+            variant: "destructive",
+          });
+        });
+      } else {
+        const reader = new FileReader();
+        reader.onload = (ev) => handleParse(ev.target?.result as string);
+        reader.readAsText(f);
+      }
     }
-  }, [handleParse, handleWorkbookFile, toast]);
+  }, [handleParse, handleWorkbookFile, ingestion, toast]);
+
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
