@@ -1362,7 +1362,7 @@ const DataUpload = () => {
                         <Activity className="w-5 h-5 text-primary" />
                         <h3 className="text-base font-semibold font-display">Data Diagnostics</h3>
                       </div>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                         <div className="p-3 rounded-lg bg-muted/30 border border-border/40">
                           <p className={`text-lg font-bold ${diagnostics.missingValuesPct > 5 ? "text-warning" : "text-success"}`}>
                             {diagnostics.missingValuesPct}%
@@ -1387,6 +1387,14 @@ const DataUpload = () => {
                           </p>
                           <p className="text-xs text-muted-foreground">
                             Date continuity{diagnostics.dateGapCount > 0 ? ` (${diagnostics.dateGapCount} gap${diagnostics.dateGapCount > 1 ? "s" : ""})` : ""}
+                          </p>
+                        </div>
+                        <div className="p-3 rounded-lg bg-muted/30 border border-border/40">
+                          <p className={`text-lg font-bold ${diagnostics.piiRisk.level === "high" ? "text-destructive" : diagnostics.piiRisk.level === "low" ? "text-warning" : "text-success"}`}>
+                            {diagnostics.piiRisk.level === "none" ? "None" : diagnostics.piiRisk.level === "low" ? "Low" : "High"}
+                          </p>
+                          <p className="text-xs text-muted-foreground" title={diagnostics.piiRisk.columns.join(", ")}>
+                            PII risk{diagnostics.piiRisk.columns.length > 0 ? ` (${diagnostics.piiRisk.columns.length})` : ""}
                           </p>
                         </div>
                       </div>
