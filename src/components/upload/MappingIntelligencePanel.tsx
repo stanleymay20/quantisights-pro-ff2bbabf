@@ -397,3 +397,112 @@ function RiskAssessmentCard({
   );
 }
 
+function GovernanceStatusCard({
+  intelligence,
+  grade,
+}: {
+  intelligence: IngestionIntelligenceResult;
+  grade: Grade;
+}) {
+  const dict = intelligence.dictionary;
+  const piiCount = dict.summary.piiCount;
+  const reviewCount = dict.summary.reviewRequiredCount;
+  const driftCount = 0;
+  const lineageAvailable = true;
+
+  const items: { label: string; value: React.ReactNode; tone: string }[] = [
+    { label: "PII Fields", value: piiCount, tone: piiCount > 0 ? "text-warning" : "text-success" },
+    { label: "Review Required", value: reviewCount, tone: reviewCount > 0 ? "text-warning" : "text-success" },
+    { label: "Trust Score", value: grade, tone: grade === "A" || grade === "B" ? "text-success" : grade === "C" ? "text-warning" : "text-destructive" },
+    { label: "Schema Drift", value: driftCount, tone: driftCount > 0 ? "text-warning" : "text-success" },
+    { label: "Lineage", value: lineageAvailable ? "Yes" : "No", tone: lineageAvailable ? "text-success" : "text-destructive" },
+  ];
+
+  return (
+    <div className="rounded-lg border border-border bg-muted/10 p-3">
+      <div className="flex items-center gap-2 mb-2">
+        <ScrollText className="w-4 h-4 text-primary" aria-hidden="true" />
+        <p className="text-sm font-semibold">Governance Status</p>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-xs">
+        {items.map((it) => (
+          <div key={it.label} className="rounded-md border border-border bg-background p-2 text-center">
+            <div className={`text-base font-bold ${it.tone}`}>{it.value}</div>
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{it.label}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function DictionaryDrillDown({ dict }: { dict: IngestionIntelligenceResult["dictionary"] }) {
+  const groups = useMemo(() => {
+    const byCategory: Record<string, { name: string; description: string }[]> = {
+      Metrics: [],
+      Dimensions: [],
+      Identifiers: [],
+      PII: [],
+    };
+    dict.fields.forEach((f) => {
+      if (f.semanticType === "pii" || f.governanceFlags.includes("pii")) {
+        byCategory.PII.push({ name: f.name, description: f.description });
+      }
+      if (f.semanticType === "identifier" || f.businessRole === "entity_key") {
+        byCategory.Identifiers.push({ name: f.name, description: f.description });
+      }
+      if (f.inferredType === "value") {
+        byCategory.Metrics.push({ name: f.name, description: f.description });
+      } else if (["segment", "region", "region_code", "date"].includes(f.inferredType)) {
+        byCategory.Dimensions.push({ name: f.name, description: f.description });
+      }
+    });
+    return byCategory;
+  }, [dict]);
+
+  return (
+    <div className="space-y-1.5">
+      {(Object.keys(groups) as Array<keyof typeof groups>).map((cat) => {
+        const items = groups[cat];
+        if (items.length === 0) return null;
+        return <DictionaryGroup key={cat} title={cat} items={items} />;
+      })}
+    </div>
+  );
+}
+
+function DictionaryGroup({
+  title,
+  items,
+}: {
+  title: string;
+  items: { name: string; description: string }[];
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="rounded-md border border-border/60 bg-background/40 overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="w-full flex items-center gap-2 px-2.5 py-1.5 hover:bg-muted/30 transition-colors text-left"
+      >
+        {open ? <ChevronDown className="w-3 h-3 text-muted-foreground" /> : <ChevronRight className="w-3 h-3 text-muted-foreground" />}
+        <span className="text-xs font-medium flex-1">{title}</span>
+        <Badge variant="outline" className="text-[10px]">{items.length}</Badge>
+      </button>
+      {open && (
+        <ul className="px-3 py-2 space-y-1 border-t border-border/40">
+          {items.map((it) => (
+            <li key={it.name} className="flex items-start gap-2 text-[11px]">
+              <span className="font-mono text-primary shrink-0">{it.name}</span>
+              <span className="text-muted-foreground line-clamp-1">— {it.description}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+
