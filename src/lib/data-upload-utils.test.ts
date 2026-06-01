@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   type ColumnMapping,
+  computeDiagnostics,
   inferSchema,
   parseCSVText,
   validateData,
