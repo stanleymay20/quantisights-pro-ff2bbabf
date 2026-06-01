@@ -1723,6 +1723,9 @@ const DataUpload = () => {
                   classification={classification}
                   diagnostics={diagnostics}
                   drift={drift}
+                  headers={headers}
+                  sampleRows={allRows.slice(0, 500)}
+                  hasLineage
                 />
 
                 {/* Dataset sample preview — user can verify data was imported correctly */}
