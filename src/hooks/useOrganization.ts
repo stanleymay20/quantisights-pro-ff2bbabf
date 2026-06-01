@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -11,16 +11,102 @@ interface Organization {
 interface OrgMemberRow {
   organization_id: string;
   role: string;
-  organizations: { id: string; name: string };
+  organizations: { id: string; name: string } | null;
 }
 
+const ORG_STORAGE_KEY = "quantivis_org_id";
+
+const toSlug = (name: string) =>
+  name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 48) || "workspace";
+
 export const useOrganization = () => {
-  const { user } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [currentOrgId, setCurrentOrgId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const fetchMembershipOrgs = useCallback(async () => {
+    if (!user) return [];
+
+    const { data, error } = await supabase
+      .from("organization_members")
+      .select("organization_id, role, organizations(id, name)")
+      .eq("user_id", user.id);
+
+    if (error) throw error;
+
+    return ((data ?? []) as unknown as OrgMemberRow[])
+      .filter((m) => m.organizations?.id)
+      .map((m) => ({
+        id: m.organizations!.id,
+        name: m.organizations!.name,
+        role: m.role,
+      }));
+  }, [user]);
+
+  const ensurePersonalTenant = useCallback(async (): Promise<Organization | null> => {
+    if (!user) return null;
+
+    const displayName =
+      user.user_metadata?.full_name ||
+      user.email?.split("@")[0] ||
+      "My";
+    const orgName = `${displayName}'s Organization`.slice(0, 200);
+
+    const { data: org, error: orgError } = await supabase
+      .from("organizations")
+      .insert({ name: orgName, created_by: user.id })
+      .select("id, name")
+      .single();
+
+    if (orgError || !org) throw orgError || new Error("Failed to create organization");
+
+    const { error: profileError } = await supabase
+      .from("profiles")
+      .upsert({
+        user_id: user.id,
+        full_name: user.user_metadata?.full_name ?? user.email ?? null,
+        avatar_url: user.user_metadata?.avatar_url ?? null,
+        organization_id: org.id,
+      }, { onConflict: "user_id" });
+
+    if (profileError) throw profileError;
+
+    const { error: memberError } = await supabase
+      .from("organization_members")
+      .insert({ organization_id: org.id, user_id: user.id, role: "owner" });
+
+    if (memberError) throw memberError;
+
+    const workspaceName = "Default Workspace";
+    const { data: workspace, error: workspaceError } = await supabase
+      .from("workspaces")
+      .insert({
+        organization_id: org.id,
+        name: workspaceName,
+        slug: toSlug(workspaceName),
+        created_by: user.id,
+      })
+      .select("id")
+      .single();
+
+    if (workspaceError || !workspace) throw workspaceError || new Error("Failed to create workspace");
+
+    await supabase.from("workspace_quotas").insert({ workspace_id: workspace.id });
+    await supabase.from("workspace_members").insert({
+      workspace_id: workspace.id,
+      user_id: user.id,
+      role: "workspace_admin",
+    });
+
+    await refreshProfile();
+
+    return { id: org.id, name: org.name, role: "owner" };
+  }, [refreshProfile, user]);
+
   useEffect(() => {
+    let cancelled = false;
+
     if (!user) {
       setOrganizations([]);
       setCurrentOrgId(null);
@@ -28,38 +114,55 @@ export const useOrganization = () => {
       return;
     }
 
-    const fetchOrgs = async () => {
-      const { data, error } = await supabase
-        .from("organization_members")
-        .select("organization_id, role, organizations(id, name)")
-        .eq("user_id", user.id);
+    const fetchOrCreateOrgs = async () => {
+      setLoading(true);
+      try {
+        let orgs = await fetchMembershipOrgs();
 
-      if (error || !data) {
-        setLoading(false);
-        return;
+        if (orgs.length === 0) {
+          const fallbackOrg = await ensurePersonalTenant();
+          orgs = fallbackOrg ? [fallbackOrg] : [];
+        }
+
+        if (cancelled) return;
+        setOrganizations(orgs);
+
+        // Restore from session only if it belongs to this user.
+        const stored = sessionStorage.getItem(ORG_STORAGE_KEY);
+        const valid = orgs.find((o) => o.id === stored);
+        const profileOrg = profile?.organization_id ? orgs.find((o) => o.id === profile.organization_id) : null;
+        const nextOrgId = valid?.id ?? profileOrg?.id ?? orgs[0]?.id ?? null;
+
+        setCurrentOrgId(nextOrgId);
+        if (nextOrgId) sessionStorage.setItem(ORG_STORAGE_KEY, nextOrgId);
+        else sessionStorage.removeItem(ORG_STORAGE_KEY);
+      } catch (error) {
+        console.error("[useOrganization] Failed to load or provision organization:", error instanceof Error ? error.message : error);
+        if (!cancelled) {
+          setOrganizations([]);
+          setCurrentOrgId(null);
+          sessionStorage.removeItem(ORG_STORAGE_KEY);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-
-      const orgs: Organization[] = (data as unknown as OrgMemberRow[]).map((m) => ({
-        id: m.organizations.id,
-        name: m.organizations.name,
-        role: m.role,
-      }));
-
-      setOrganizations(orgs);
-
-      // Restore from session or use first
-      const stored = sessionStorage.getItem("quantivis_org_id");
-      const valid = orgs.find((o) => o.id === stored);
-      setCurrentOrgId(valid ? valid.id : orgs[0]?.id ?? null);
-      setLoading(false);
     };
 
-    fetchOrgs();
-  }, [user]);
+    fetchOrCreateOrgs();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [ensurePersonalTenant, fetchMembershipOrgs, profile?.organization_id, user]);
 
   const switchOrganization = (orgId: string) => {
+    const validOrg = organizations.find((org) => org.id === orgId);
+    if (!validOrg) {
+      console.error("[useOrganization] Refusing to switch to organization outside current membership scope");
+      return;
+    }
     setCurrentOrgId(orgId);
-    sessionStorage.setItem("quantivis_org_id", orgId);
+    sessionStorage.setItem(ORG_STORAGE_KEY, orgId);
     // Cascade: clear downstream context to prevent cross-org data leakage
     sessionStorage.removeItem("quantivis_workspace_id");
     sessionStorage.removeItem("quantivis_project_id");
