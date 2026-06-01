@@ -94,19 +94,42 @@ export interface DatasetDiagnostics {
   missingValuesPct: number;
   outlierCount: number;
   duplicateRows: number;
+  nearDuplicateRows: number;
   dateContinuity: "OK" | "Gaps detected" | "N/A";
   dateGapCount: number;
   piiRisk: {
     level: "none" | "low" | "high";
     columns: string[];
   };
+  schemaConfidence: number;
+  completenessScore: number;
+  dataFreshness: {
+    label: "Fresh" | "Recent" | "Stale" | "N/A";
+    daysSinceLatest: number | null;
+  };
+  healthScore: number;
+  recommendedAction: "Proceed with Import" | "Review before Import" | "Fix Issues First";
 }
+
+export type IndustryType =
+  | "Finance"
+  | "Manufacturing"
+  | "HR"
+  | "CRM"
+  | "Supply Chain"
+  | "Government"
+  | "Healthcare"
+  | "Retail"
+  | "SaaS"
+  | "General Business";
 
 export interface DatasetClassification {
   type: string;
+  industry: IndustryType;
   confidence: number;
   subType?: string;
   recommendedWorkflows: string[];
+  matchedKeywords: string[];
 }
 
 export type ImportMode = "single" | "multi";
