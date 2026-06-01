@@ -117,22 +117,38 @@ export default function MappingIntelligencePanel({ intelligence, relationships }
   return (
     <Card>
       <CardContent className="p-5 space-y-4">
-        {/* Trust Score Banner */}
-        <div className={`rounded-lg border p-4 flex items-center gap-4 ${bannerCls}`}>
-          <div className={`w-12 h-12 rounded-full border-2 flex items-center justify-center text-2xl font-bold ${bannerCls}`}>
-            {grade}
-          </div>
-          <div className="flex-1">
-            <p className="text-sm font-semibold">Dataset Trust Score: {grade}</p>
-            <p className="text-xs opacity-90">{label}</p>
-            <p className="text-[11px] text-muted-foreground mt-1">
-              {r.summary.recommendedAction} · {r.summary.repairsApplied} auto-repair{r.summary.repairsApplied === 1 ? "" : "s"} applied
-            </p>
-          </div>
-        </div>
+        {/* Trust Score Banner with explanation */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className={`rounded-lg border p-4 flex items-center gap-4 cursor-help ${bannerCls}`}>
+              <div className={`w-12 h-12 rounded-full border-2 flex items-center justify-center text-2xl font-bold ${bannerCls}`}>
+                {grade}
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-semibold flex items-center gap-1.5">
+                  Dataset Trust Score: {grade}
+                  <Info className="w-3.5 h-3.5 opacity-70" aria-label="How is this calculated?" />
+                </p>
+                <p className="text-xs opacity-90">{label}</p>
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  {r.summary.recommendedAction} · {r.summary.repairsApplied} auto-repair{r.summary.repairsApplied === 1 ? "" : "s"} applied
+                </p>
+              </div>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="max-w-sm text-xs space-y-1 p-3">
+            <p className="font-semibold">Calculated from:</p>
+            <ul className="space-y-0.5 text-muted-foreground">
+              <li>• Schema confidence</li>
+              <li>• Missing value ratio</li>
+              <li>• Repair volume &amp; warnings</li>
+              <li>• Data consistency (mixed-type repairs)</li>
+              <li>• PII exposure</li>
+              <li>• Health score from diagnostics</li>
+            </ul>
+          </TooltipContent>
+        </Tooltip>
 
-        {/* Risk Assessment */}
-        <RiskAssessmentCard intelligence={intelligence} grade={grade} />
 
 
 
