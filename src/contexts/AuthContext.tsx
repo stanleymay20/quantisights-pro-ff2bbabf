@@ -6,13 +6,14 @@ import { setSentryUser, clearSentryUser } from "@/lib/sentry";
 interface UserProfile {
   full_name: string | null;
   avatar_url: string | null;
-  organization_id: string;
+  organization_id: string | null;
 }
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  profileLoading: boolean;
   profile: UserProfile | null;
   refreshProfile: () => Promise<void>;
   signUp: (email: string, password: string, fullName: string) => Promise<void>;
@@ -33,14 +34,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [profileLoading, setProfileLoading] = useState(false);
 
   const fetchProfile = useCallback(async (userId: string) => {
-    const { data } = await supabase
-      .from("profiles")
-      .select("full_name, avatar_url, organization_id")
-      .eq("user_id", userId)
-      .maybeSingle();
-    setProfile(data as UserProfile | null);
+    setProfileLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("full_name, avatar_url, organization_id")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (error) {
+        console.error("[AuthContext] Failed to fetch profile:", error.message);
+        setProfile(null);
+        return null;
+      }
+
+      const nextProfile = data as UserProfile | null;
+      setProfile(nextProfile);
+      return nextProfile;
+    } finally {
+      setProfileLoading(false);
+    }
   }, []);
 
   const refreshProfile = useCallback(async () => {
@@ -51,13 +67,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Flag to prevent duplicate profile fetches from race between getSession and onAuthStateChange
     let initialSessionResolved = false;
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       // Skip if this is the initial event that duplicates getSession
       if (!initialSessionResolved) return;
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchProfile(session.user.id);
+        await fetchProfile(session.user.id);
         setSentryUser(session.user.id, session.user.email);
       } else {
         setProfile(null);
@@ -66,12 +82,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false);
     });
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       initialSessionResolved = true;
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchProfile(session.user.id);
+        await fetchProfile(session.user.id);
         setSentryUser(session.user.id, session.user.email);
       }
       setLoading(false);
@@ -86,7 +102,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       password,
       options: {
         data: { full_name: fullName },
-        emailRedirectTo: window.location.origin,
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=/onboarding`,
       },
     });
     if (error) throw error;
@@ -98,12 +114,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signOut = async () => {
+    sessionStorage.removeItem("quantivis_org_id");
+    sessionStorage.removeItem("quantivis_workspace_id");
+    sessionStorage.removeItem("quantivis_project_id");
+    setProfile(null);
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, profile, refreshProfile, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, profileLoading, profile, refreshProfile, signUp, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   );
