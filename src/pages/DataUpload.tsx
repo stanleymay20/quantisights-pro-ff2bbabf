@@ -1255,6 +1255,10 @@ const DataUpload = () => {
                   </CardContent>
                 </Card>
 
+                {ingestionIntel && (
+                  <MappingIntelligencePanel intelligence={ingestionIntel} relationships={crossSheet} />
+                )}
+
                 <div className="flex gap-3">
                   <Button variant="outline" onClick={() => setStep("mapping")} className="gap-2">
                     <Eye className="w-4 h-4" /> Adjust Mapping
