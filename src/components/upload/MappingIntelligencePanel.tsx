@@ -229,18 +229,20 @@ export default function MappingIntelligencePanel({ intelligence, relationships }
           )}
         </Section>
 
-        {/* Column similarity */}
-        {sim.groups.length > 0 && (
-          <Section
-            title="Column Similarity Groups"
-            icon={<Layers className="w-3.5 h-3.5 text-primary" />}
-            badge={<Badge variant="outline" className="text-[10px]">{sim.groups.length}</Badge>}
-          >
+        {/* Column similarity (always render, with empty state) */}
+        <Section
+          title="Column Similarity Groups"
+          icon={<Layers className="w-3.5 h-3.5 text-primary" />}
+          badge={<Badge variant="outline" className="text-[10px]">{sim.groups.length}</Badge>}
+        >
+          {sim.groups.length === 0 ? (
+            <p className="text-muted-foreground">No duplicate or semantically similar columns detected.</p>
+          ) : (
             <ul className="space-y-2">
               {sim.groups.map((g, i) => (
                 <li key={i} className="rounded-md border border-border/60 bg-muted/20 p-2">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="font-mono text-[11px] text-primary">{g.canonicalName}</span>
+                    <span className="font-mono text-[11px] text-primary">Group #{i + 1} · {g.canonicalName}</span>
                     <Badge variant="outline" className="text-[10px]">{Math.round(g.confidence * 100)}%</Badge>
                   </div>
                   <div className="flex flex-wrap gap-1">
@@ -251,8 +253,9 @@ export default function MappingIntelligencePanel({ intelligence, relationships }
                 </li>
               ))}
             </ul>
-          </Section>
-        )}
+          )}
+        </Section>
+
 
         {/* Cross-sheet relationships */}
         {relationships && relationships.relationships.length > 0 && (
