@@ -65,13 +65,15 @@ const Register = forwardRef<HTMLDivElement>((_, ref) => {
   const handleGoogleSignUp = async () => {
     setGoogleLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback?next=/onboarding`,
-        },
+      const { lovable } = await import("@/integrations/lovable");
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: `${window.location.origin}/auth/callback?next=/onboarding`,
       });
-      if (error) throw error;
+      if (result.error) throw result.error;
+      // If redirected, browser is leaving; otherwise tokens already set.
+      if (!result.redirected) {
+        window.location.href = "/onboarding";
+      }
     } catch (err: unknown) {
       toast({ title: "Google sign-up failed", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
       setGoogleLoading(false);
