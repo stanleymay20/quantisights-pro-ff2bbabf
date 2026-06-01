@@ -84,9 +84,11 @@ export function toIngestionMetadataSnapshot(
     },
     semanticSchema: {
       kpiColumns: intelligence.semanticSchema.kpiColumns,
-      entityColumns: intelligence.semanticSchema.entityColumns,
+      entityColumns: intelligence.semanticSchema.identifierColumns,
       piiColumns: intelligence.semanticSchema.piiColumns,
-      reviewRequiredColumns: intelligence.semanticSchema.reviewRequiredColumns,
+      reviewRequiredColumns: intelligence.semanticSchema.profiles
+        .filter((p) => p.reviewRequired)
+        .map((p) => p.column),
     },
     columnSimilarity: {
       groupCount: intelligence.columnSimilarity.groups.length,
