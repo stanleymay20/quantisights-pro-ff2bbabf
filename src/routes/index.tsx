@@ -17,6 +17,7 @@ import Index from "@/pages/Index";
 // ── Auth ──
 const Login = lazy(() => import("@/pages/Login"));
 const Register = lazy(() => import("@/pages/Register"));
+const AuthCallback = lazy(() => import("@/pages/AuthCallback"));
 const ForgotPassword = lazy(() => import("@/pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("@/pages/ResetPassword"));
 
@@ -178,6 +179,7 @@ export const routes: RouteEntry[] = [
   // ══════ Auth ══════
   { path: "/login", element: <Login />, layout: "public" },
   { path: "/register", element: <Register />, layout: "public" },
+  { path: "/auth/callback", element: <AuthCallback />, layout: "public" },
   { path: "/forgot-password", element: <ForgotPassword />, layout: "public" },
   { path: "/reset-password", element: <ResetPassword />, layout: "public" },
   { path: "/accept-invite", element: <AcceptInvite />, layout: "public" },
@@ -204,6 +206,9 @@ export const routes: RouteEntry[] = [
   { path: "/ebook", element: <Ebook />, layout: "public" },
   { path: "/enterprise/contact", element: <EnterpriseContact />, layout: "public" },
   { path: "/competitive-analysis", element: <CompetitiveAnalysis />, layout: "public" },
+  { path: "/trust-center", element: <TrustCenter />, layout: "public" },
+  { path: "/docs", element: <Documentation />, layout: "public" },
+  { path: "/api-docs", element: <APIDocs />, layout: "public" },
 
   // ══════ Legal ══════
   { path: "/terms", element: <Terms />, layout: "public" },
@@ -256,7 +261,6 @@ export const routes: RouteEntry[] = [
   { path: "/interventions", element: <Interventions />, layout: "full" },
   { path: "/narratives", element: <NarrativeCockpit />, layout: "full" },
   { path: "/operational-graph", element: <OperationalGraph />, layout: "full" },
-  { path: "/operational-graph", element: <OperationalGraph />, layout: "full" },
   { path: "/boardroom", element: <Boardroom />, layout: "minimal" },
   // ══════ Decision System ══════
   { path: "/decisions", element: <DecisionLedger />, layout: "full" },
@@ -303,7 +307,6 @@ export const routes: RouteEntry[] = [
   { path: "/compliance", element: <Compliance />, layout: "full" },
   { path: "/alert-playbooks", element: <AlertPlaybooks />, layout: "full" },
   { path: "/system-health", element: <SystemHealth />, layout: "full" },
-  { path: "/trust-center", element: <TrustCenter />, layout: "full" },
   { path: "/fairness", element: <FairnessObservability />, layout: "full" },
   { path: "/decision-maturity", element: <DecisionMaturity />, layout: "full" },
 
@@ -314,8 +317,6 @@ export const routes: RouteEntry[] = [
   { path: "/settings", element: <Settings />, layout: "full" },
   { path: "/sso", element: <SSOConfig />, layout: "full" },
   { path: "/privacy-dashboard", element: <PrivacyDashboard />, layout: "full" },
-  { path: "/docs", element: <Documentation />, layout: "full" },
-  { path: "/api-docs", element: <APIDocs />, layout: "full" },
   { path: "/pilot-audit", element: <PilotAudit />, layout: "full" },
   { path: "/admin/data-vendors", element: <DataVendors />, layout: "full" },
   { path: "/admin/internal-data", element: <InternalData />, layout: "full" },
@@ -331,4 +332,3 @@ export const routes: RouteEntry[] = [
   // ══════ Catch-all ══════
   { path: "*", element: <NotFound />, layout: "public" },
 ];
-
