@@ -66,11 +66,11 @@ const Register = forwardRef<HTMLDivElement>((_, ref) => {
     setGoogleLoading(true);
     const finishPath = "/onboarding";
     let completed = false;
-    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    const timeoutRef: { current?: ReturnType<typeof setTimeout> } = {};
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user && !completed) {
         completed = true;
-        if (timeoutId) clearTimeout(timeoutId);
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
         subscription.unsubscribe();
         navigate(finishPath, { replace: true });
       }
@@ -80,7 +80,7 @@ const Register = forwardRef<HTMLDivElement>((_, ref) => {
       const { data } = await supabase.auth.getSession();
       if (data.session && !completed) {
         completed = true;
-        if (timeoutId) clearTimeout(timeoutId);
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
         subscription.unsubscribe();
         navigate(finishPath, { replace: true });
         return true;
@@ -88,7 +88,7 @@ const Register = forwardRef<HTMLDivElement>((_, ref) => {
       return Boolean(data.session);
     };
 
-    timeoutId = setTimeout(() => {
+    timeoutRef.current = setTimeout(() => {
       finishIfSessionExists().then((hasSession) => {
         if (!hasSession && !completed) {
           subscription.unsubscribe();
@@ -115,7 +115,7 @@ const Register = forwardRef<HTMLDivElement>((_, ref) => {
       }
     } catch (err: unknown) {
       if (completed) return;
-      if (timeoutId) clearTimeout(timeoutId);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
       subscription.unsubscribe();
       toast({ title: "Google sign-up failed", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
       setGoogleLoading(false);
