@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { SidebarMobileToggle } from "@/components/layout/ProtectedShell";
 import { useAuth } from "@/contexts/AuthContext";
@@ -38,6 +38,15 @@ import {
   parseWorkbookFile,
 } from "@/lib/workbook-parser";
 import SectionErrorBoundary from "@/components/SectionErrorBoundary";
+import { useChunkedIngestion } from "@/hooks/useChunkedIngestion";
+import IngestionProgressCard from "@/components/upload/IngestionProgressCard";
+import PostUploadSummary from "@/components/upload/PostUploadSummary";
+import {
+  buildSnapshot,
+  detectDrift,
+  type DriftReport,
+  type SchemaColumn,
+} from "@/lib/schema-evolution";
 
 type Step = "upload" | "autodetect" | "mapping" | "validation" | "intelligence" | "importing" | "done";
 
@@ -84,6 +93,13 @@ const DataUpload = () => {
   const [classification, setClassification] = useState<DatasetClassification | null>(null);
   const [workbook, setWorkbook] = useState<ParsedWorkbook | null>(null);
   const [activeSheetName, setActiveSheetName] = useState<string | null>(null);
+  const [drift, setDrift] = useState<DriftReport | null>(null);
+  const lastFileRef = useRef<File | null>(null);
+
+  // Phase 4: chunked worker-driven ingestion. Used for CSVs ≥ 1 MB so the UI
+  // stays responsive on multi-100k-row uploads. Small CSVs keep the sync path.
+  const ingestion = useChunkedIngestion();
+
 
   const valueColumnCount = useMemo(() => {
     return Object.values(mapping).filter(v => v === "value").length;
@@ -177,18 +193,60 @@ const DataUpload = () => {
       return;
     }
     setFile(f);
+    lastFileRef.current = f;
     setWorkbook(null);
     setActiveSheetName(null);
+    setDrift(null);
     if (isWorkbookFile(f.name)) {
       setDatasetName(f.name.replace(/\.(xlsx|xls|xlsm|ods)$/i, ""));
       handleWorkbookFile(f);
     } else {
       setDatasetName(f.name.replace(/\.csv$/i, ""));
-      const reader = new FileReader();
-      reader.onload = (ev) => handleParse(ev.target?.result as string);
-      reader.readAsText(f);
+      // Phase 4: route large CSVs (>1MB) through the Web Worker pipeline so the
+      // UI thread stays free. Smaller files keep the fast synchronous path.
+      if (f.size > 1024 * 1024) {
+        ingestion.start(f).catch((err) => {
+          toast({
+            title: "Ingestion failed to start",
+            description: err instanceof Error ? err.message : String(err),
+            variant: "destructive",
+          });
+        });
+      } else {
+        const reader = new FileReader();
+        reader.onload = (ev) => handleParse(ev.target?.result as string);
+        reader.readAsText(f);
+      }
     }
-  }, [handleParse, handleWorkbookFile, toast]);
+  }, [handleParse, handleWorkbookFile, ingestion, toast]);
+
+  // Phase 4: when the worker finishes, feed parsed rows into the shared
+  // post-parse pipeline (inference + classification). When the dataset is
+  // routed to the server pipeline, surface a guidance toast instead.
+  useEffect(() => {
+    if (ingestion.status === "done") {
+      if (ingestion.shouldRouteToServer) {
+        toast({
+          title: "Routed to server pipeline",
+          description: `${(ingestion.progress.totalRowsEstimate ?? 0).toLocaleString()} rows exceeds the in-browser ceiling. Use Data Connectors to finish ingestion server-side.`,
+        });
+      } else if (ingestion.result) {
+        ingestParsed(ingestion.result.headers, ingestion.result.rows);
+      }
+    }
+    if (ingestion.status === "error" && ingestion.error) {
+      toast({ title: "Ingestion error", description: ingestion.error, variant: "destructive" });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ingestion.status]);
+
+  const retryIngestion = useCallback(() => {
+    const last = lastFileRef.current;
+    if (!last) return;
+    ingestion.reset();
+    acceptFile(last);
+  }, [acceptFile, ingestion]);
+
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -420,15 +478,88 @@ const DataUpload = () => {
         column: key.split(":")[1] || key,
         mappedAs: target,
       }));
-      
-      const { error: schemaErr } = await supabase.from("schema_evolution_log").insert([{
-        organization_id: currentOrgId,
-        dataset_id: dataset.id,
-        change_type: "initial_upload",
-        detected_by: user.id,
-        metadata: { columns: schemaColumns, row_count: allRows.length, import_mode: importMode },
-      }]);
+
+      // Phase 5: detect drift against the most recent prior dataset with the
+      // same name in this org. First snapshot is recorded as 'initial_upload'.
+      const toSnapshotColumns = (cols: { column: string; mappedAs: string }[]): SchemaColumn[] =>
+        cols.map((c) => {
+          const det = detectedSchema.find((d) => d.column === c.column);
+          const role = (c.mappedAs as SchemaColumn["role"]) ?? "skip";
+          const type: SchemaColumn["type"] = det
+            ? det.inferredType === "date"
+              ? "date"
+              : det.inferredType === "value"
+                ? "number"
+                : "text"
+            : "unknown";
+          return { name: c.column, type, role };
+        });
+
+      let driftReport: DriftReport | null = null;
+      try {
+        const { data: priorDatasets } = await supabase
+          .from("datasets")
+          .select("id, current_version, column_mapping")
+          .eq("organization_id", currentOrgId)
+          .eq("name", datasetName)
+          .neq("id", dataset.id)
+          .order("created_at", { ascending: false })
+          .limit(1);
+        const prior = priorDatasets?.[0];
+        if (prior?.column_mapping && typeof prior.column_mapping === "object") {
+          const priorCols = Object.entries(prior.column_mapping as Record<string, string>).map(
+            ([key, target]) => ({ column: key.split(":")[1] || key, mappedAs: target }),
+          );
+          const prevSnap = buildSnapshot(prior.id, prior.current_version ?? 1, toSnapshotColumns(priorCols));
+          const nextSnap = buildSnapshot(dataset.id, 1, toSnapshotColumns(schemaColumns));
+          driftReport = detectDrift(prevSnap, nextSnap);
+        }
+      } catch (err) {
+        console.warn("[SchemaEvolution] drift detection skipped:", err);
+      }
+      setDrift(driftReport);
+
+      const driftRows = driftReport && driftReport.totalChanges > 0
+        ? driftReport.changes.map((c) => ({
+            organization_id: currentOrgId,
+            dataset_id: dataset.id,
+            change_type: c.changeType,
+            column_name: c.columnName,
+            old_type: c.oldType ?? null,
+            new_type: c.newType ?? null,
+            detected_by: user.id,
+            metadata: {
+              confidence: c.confidence,
+              recommendation: c.recommendation,
+              old_name: c.oldName,
+              old_role: c.oldRole,
+              new_role: c.newRole,
+            },
+          }))
+        : [];
+
+      const { error: schemaErr } = await supabase.from("schema_evolution_log").insert([
+        {
+          organization_id: currentOrgId,
+          dataset_id: dataset.id,
+          change_type: "initial_upload",
+          detected_by: user.id,
+          metadata: {
+            columns: schemaColumns,
+            row_count: allRows.length,
+            import_mode: importMode,
+            drift_summary: driftReport
+              ? {
+                  total: driftReport.totalChanges,
+                  backward_compatible: driftReport.backwardCompatible,
+                }
+              : null,
+          },
+        },
+        ...driftRows,
+      ]);
       if (schemaErr) console.error("[SchemaEvolution] Failed to log:", schemaErr.message, schemaErr.details);
+
 
       // Record data lineage: CSV file → dataset → metrics
       const { error: lineageErr } = await supabase.from("data_lineage").insert([{
@@ -816,7 +947,22 @@ const DataUpload = () => {
         <main className="flex-1 p-8 overflow-auto">
           <AnimatePresence mode="wait">
             {/* Step: Upload */}
-            {step === "upload" && (
+            {step === "upload" && ingestion.status !== "idle" && ingestion.status !== "done" && (
+              <motion.div
+                key="upload-progress"
+                initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}
+              >
+                <IngestionProgressCard
+                  fileName={file?.name ?? "dataset"}
+                  status={ingestion.status}
+                  progress={ingestion.progress}
+                  error={ingestion.error}
+                  onCancel={ingestion.cancel}
+                  onRetry={retryIngestion}
+                />
+              </motion.div>
+            )}
+            {step === "upload" && (ingestion.status === "idle" || ingestion.status === "done") && (
               <motion.div
                 key="upload"
                 initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}
@@ -828,7 +974,7 @@ const DataUpload = () => {
                 <Upload className="w-16 h-16 text-muted-foreground mb-4" />
                 <h2 className="text-xl font-semibold font-display mb-2">Upload Dataset</h2>
                 <p className="text-muted-foreground text-sm mb-4">Drag & drop or click to browse</p>
-                <p className="text-xs text-muted-foreground">CSV, XLSX, XLS, XLSM, ODS · up to 20MB · up to 50,000 rows</p>
+                <p className="text-xs text-muted-foreground">CSV, XLSX, XLS, XLSM, ODS · up to 20MB · up to 50,000 rows in-browser · larger routes to server pipeline</p>
                 <input id="csv-input" type="file" accept=".csv,.xlsx,.xls,.xlsm,.ods" className="hidden" onChange={handleFileSelect} />
                 <UploadTrustBadges />
               </motion.div>
@@ -1557,6 +1703,7 @@ const DataUpload = () => {
                       setStep("upload"); setFile(null); setRows([]); setAllRows([]); setHeaders([]);
                       setValidation(null); setDetectedSchema([]); setIntelligence(null); setYearAutoFixed(false);
                       setDiagnostics(null); setClassification(null); setImportMode("single");
+                      setDrift(null); ingestion.reset();
                     }}>
                       Upload Another
                     </Button>
@@ -1568,6 +1715,15 @@ const DataUpload = () => {
                     </Button>
                   </div>
                 </div>
+
+
+                <PostUploadSummary
+                  rowsImported={importCount || allRows.length}
+                  healthScore={diagnostics?.healthScore ?? intelligence?.qualityScore ?? 0}
+                  classification={classification}
+                  diagnostics={diagnostics}
+                  drift={drift}
+                />
 
                 {/* Dataset sample preview — user can verify data was imported correctly */}
                 {allRows.length > 0 && headers.length > 0 && (
