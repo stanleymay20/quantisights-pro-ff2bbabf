@@ -41,6 +41,10 @@ import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 import { useChunkedIngestion } from "@/hooks/useChunkedIngestion";
 import IngestionProgressCard from "@/components/upload/IngestionProgressCard";
 import PostUploadSummary from "@/components/upload/PostUploadSummary";
+import MappingIntelligencePanel from "@/components/upload/MappingIntelligencePanel";
+import { buildIngestionIntelligence, type IngestionIntelligenceResult } from "@/lib/ingestion-intelligence";
+import { toIngestionMetadataSnapshot } from "@/lib/ingestion-metadata";
+import { discoverCrossSheetRelationships, type CrossSheetDiscoveryResult } from "@/lib/cross-sheet-discovery";
 import {
   buildSnapshot,
   detectDrift,
