@@ -255,24 +255,35 @@ export function inferSchema(headers: string[], rows: string[][]): DetectedSchema
       };
     }
 
+    const looksLikeDateHeader =
+      !isNotDateHeader(header) &&
+      (isProtectedPeriodHeader(lower) ||
+        lower === "date" || lower === "year" || lower === "time" ||
+        lower.endsWith("_date") || lower.startsWith("date_"));
+
     // Identifier guard — never treat IDs/SKUs/UUIDs as numeric metrics.
-    const idValueRate =
-      samples.filter(s => isIdentifierLike(s)).length / Math.max(samples.length, 1);
-    if (isIdentifierHeader(header) || idValueRate > 0.6) {
-      return {
-        column: header,
-        colIdx,
-        inferredType: "segment",
-        confidence: 90,
-        reason: "Identifier column detected (kept as segment, not a metric)",
-        sampleValues: samples.slice(0, 3),
-        rulesApplied: ["identifier_guard", `idValueRate=${(idValueRate * 100).toFixed(0)}%`],
-      };
+    // Skip when the column is clearly a date/period column or the values parse as dates.
+    if (!looksLikeDateHeader && dateRate < 0.5) {
+      const idValueRate =
+        samples.filter(s => isIdentifierLike(s) && !isDateValue(s)).length /
+        Math.max(samples.length, 1);
+      if (isIdentifierHeader(header) || idValueRate > 0.6) {
+        return {
+          column: header,
+          colIdx,
+          inferredType: "segment",
+          confidence: 90,
+          reason: "Identifier column detected (kept as segment, not a metric)",
+          sampleValues: samples.slice(0, 3),
+          rulesApplied: ["identifier_guard", `idValueRate=${(idValueRate * 100).toFixed(0)}%`],
+        };
+      }
     }
 
-    // Boolean guard — true/false, yes/no, y/n, 0/1.
+    // Boolean guard — true/false, yes/no, y/n. Skip pure 0/1 since it conflicts with numeric metrics.
     const boolRate =
-      samples.filter(s => isBooleanLike(s)).length / Math.max(samples.length, 1);
+      samples.filter(s => isBooleanLike(s) && !/^[01]$/.test(normalizeCell(s))).length /
+      Math.max(samples.length, 1);
     if (boolRate >= 0.9 && uniqueValues <= 3) {
       return {
         column: header,
