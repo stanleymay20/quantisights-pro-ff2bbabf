@@ -127,17 +127,61 @@ const Login = forwardRef<HTMLDivElement>((_, ref) => {
 
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
+    let completed = false;
+    const timeoutRef: { current?: ReturnType<typeof setTimeout> } = {};
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user && !completed) {
+        completed = true;
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        subscription.unsubscribe();
+        logAuthEvent({ eventType: "login", metadata: { method: "google" } });
+        navigate(redirectTo, { replace: true });
+      }
+    });
+
+    const finishIfSessionExists = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (data.session && !completed) {
+        completed = true;
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        subscription.unsubscribe();
+        logAuthEvent({ eventType: "login", metadata: { method: "google" } });
+        navigate(redirectTo, { replace: true });
+        return true;
+      }
+      return Boolean(data.session);
+    };
+
+    timeoutRef.current = setTimeout(() => {
+      finishIfSessionExists().then((hasSession) => {
+        if (!hasSession && !completed) {
+          subscription.unsubscribe();
+          setGoogleLoading(false);
+          toast({ title: "Google sign-in paused", description: "Complete the Google window, then try again if this page does not move forward.", variant: "destructive" });
+        }
+      }).catch(() => {
+        subscription.unsubscribe();
+        setGoogleLoading(false);
+      });
+    }, 15_000);
+
     try {
       const { lovable } = await import("@/integrations/lovable");
+      const existingSession = await finishIfSessionExists();
+      if (existingSession) return;
       const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectTo)}`,
+        redirect_uri: window.location.origin,
       });
+      if (completed) return;
       if (result.error) throw result.error;
       logAuthEvent({ eventType: "login", metadata: { method: "google_redirect_started" } });
-      if (!result.redirected) {
-        window.location.href = redirectTo;
+      if (!result.redirected && !(await finishIfSessionExists())) {
+        navigate(redirectTo, { replace: true });
       }
     } catch (err: unknown) {
+      if (completed) return;
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      subscription.unsubscribe();
       toast({ title: "Google sign-in failed", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
       setGoogleLoading(false);
     }

@@ -64,17 +64,59 @@ const Register = forwardRef<HTMLDivElement>((_, ref) => {
 
   const handleGoogleSignUp = async () => {
     setGoogleLoading(true);
+    const finishPath = "/onboarding";
+    let completed = false;
+    const timeoutRef: { current?: ReturnType<typeof setTimeout> } = {};
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user && !completed) {
+        completed = true;
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        subscription.unsubscribe();
+        navigate(finishPath, { replace: true });
+      }
+    });
+
+    const finishIfSessionExists = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (data.session && !completed) {
+        completed = true;
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        subscription.unsubscribe();
+        navigate(finishPath, { replace: true });
+        return true;
+      }
+      return Boolean(data.session);
+    };
+
+    timeoutRef.current = setTimeout(() => {
+      finishIfSessionExists().then((hasSession) => {
+        if (!hasSession && !completed) {
+          subscription.unsubscribe();
+          setGoogleLoading(false);
+          toast({ title: "Google sign-up paused", description: "Complete the Google window, then try again if this page does not move forward.", variant: "destructive" });
+        }
+      }).catch(() => {
+        subscription.unsubscribe();
+        setGoogleLoading(false);
+      });
+    }, 15_000);
+
     try {
       const { lovable } = await import("@/integrations/lovable");
+      const existingSession = await finishIfSessionExists();
+      if (existingSession) return;
       const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: `${window.location.origin}/auth/callback?next=/onboarding`,
+        redirect_uri: window.location.origin,
       });
+      if (completed) return;
       if (result.error) throw result.error;
-      // If redirected, browser is leaving; otherwise tokens already set.
-      if (!result.redirected) {
-        window.location.href = "/onboarding";
+      if (!result.redirected && !(await finishIfSessionExists())) {
+        navigate(finishPath, { replace: true });
       }
     } catch (err: unknown) {
+      if (completed) return;
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      subscription.unsubscribe();
       toast({ title: "Google sign-up failed", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
       setGoogleLoading(false);
     }
