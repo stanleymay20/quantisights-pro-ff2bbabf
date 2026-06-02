@@ -127,12 +127,12 @@ export function applyAutoFixes(args: {
 
       if (numericColumns.has(columnIndex) && after) {
         const parsed = parseMessyNumber(after);
-        if (parsed.valid && Number.isFinite(parsed.value)) after = String(parsed.value);
+        if (Number.isFinite(parsed)) after = String(parsed);
       }
 
       if (dateColumns.has(columnIndex) && after) {
         const parsed = parseMessyDate(after);
-        if (parsed.valid && parsed.isoDate) after = parsed.isoDate;
+        if (parsed) after = parsed;
       }
 
       if (piiColumns.has(columnIndex) && after) {
