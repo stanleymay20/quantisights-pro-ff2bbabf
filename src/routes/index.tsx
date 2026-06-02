@@ -177,6 +177,10 @@ const GovernanceAudit = lazy(() => import("@/pages/admin/GovernanceAudit"));
 
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
+// ── Phase 4: Enterprise Platform ──
+const RealtimeDashboard = lazy(() => import("@/pages/RealtimeDashboard"));
+const PolicyEnginePage = lazy(() => import("@/pages/PolicyEnginePage"));
+const OutcomeIntelligencePage = lazy(() => import("@/pages/OutcomeIntelligencePage"));
 
 export type RouteLayout = "none" | "public" | "full" | "minimal";
 
@@ -352,6 +356,11 @@ export const routes: RouteEntry[] = [
   { path: "/admin/context-packs", element: <ContextPacks />, layout: "full" },
   { path: "/admin/governance-simulation", element: <GovernanceSimulation />, layout: "full" },
   { path: "/admin/governance-audit", element: <GovernanceAudit />, layout: "full" },
+
+  // ══════ Phase 4: Enterprise Platform ══════
+  { path: "/realtime", element: <RealtimeDashboard />, layout: "full" },
+  { path: "/policy-engine", element: <PolicyEnginePage />, layout: "full" },
+  { path: "/outcome-intelligence", element: <OutcomeIntelligencePage />, layout: "full" },
 
   // ══════ Catch-all ══════
   { path: "*", element: <NotFound />, layout: "public" },
