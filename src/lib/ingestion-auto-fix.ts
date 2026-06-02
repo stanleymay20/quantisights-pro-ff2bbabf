@@ -1,5 +1,4 @@
-import { deduplicateHeaders } from "./data-upload-utils";
-import { parseMessyDate, parseMessyNumber } from "./messy-data-guards";
+import { deduplicateHeaders, parseMessyDate, parseMessyNumber } from "./messy-data-guards";
 
 export type AutoFixKind =
   | "deduplicate_headers"
