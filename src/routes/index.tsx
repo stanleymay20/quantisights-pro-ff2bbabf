@@ -140,6 +140,11 @@ const NarrativeCockpit = lazy(() => import("@/pages/NarrativeCockpit"));
 const OperationalGraph = lazy(() => import("@/pages/OperationalGraph"));
 const Boardroom = lazy(() => import("@/pages/Boardroom"));
 
+// ── Phase 3: AI Intelligence ──
+const RootCauseExplorer = lazy(() => import("@/pages/RootCauseExplorer"));
+const DecisionIntelligenceEngine = lazy(() => import("@/pages/DecisionIntelligenceEngine"));
+const PredictiveIntelligence = lazy(() => import("@/pages/PredictiveIntelligence"));
+
 // ── Legal ──
 const Terms = lazy(() => import("@/pages/Terms"));
 const Privacy = lazy(() => import("@/pages/Privacy"));
@@ -306,6 +311,11 @@ export const routes: RouteEntry[] = [
   { path: "/observability", element: <ObservabilityDashboardPage />, layout: "full" },
   { path: "/credential-vault", element: <CredentialVaultPage />, layout: "full" },
   { path: "/admin/bridge-health", element: <BridgeHealth />, layout: "full" },
+
+  // ══════ Phase 3: AI Intelligence ══════
+  { path: "/root-cause", element: <RootCauseExplorer />, layout: "full" },
+  { path: "/decision-engine", element: <DecisionIntelligenceEngine />, layout: "full" },
+  { path: "/predictive-intelligence", element: <PredictiveIntelligence />, layout: "full" },
 
   // ══════ Reporting & Strategy ══════
   { path: "/reports", element: <Reports />, layout: "full" },
