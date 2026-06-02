@@ -667,7 +667,10 @@ export function validateData(
     completeness,
     dateRange: sortedDates.length > 0 ? { min: sortedDates[0], max: sortedDates[sortedDates.length - 1] } : null,
     valueRange: values.length > 0
-      ? { min: Math.min(...values), max: Math.max(...values) }
+      ? {
+          min: values.reduce((a, b) => (b < a ? b : a), values[0]),
+          max: values.reduce((a, b) => (b > a ? b : a), values[0]),
+        }
       : null,
   };
 }
