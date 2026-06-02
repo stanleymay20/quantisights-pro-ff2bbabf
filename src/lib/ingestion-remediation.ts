@@ -83,7 +83,7 @@ export function buildImportRemediationPlan(args: {
   const piiCount = intelligence.dictionary.summary.piiCount;
   const warningCount = intelligence.repairReport.summary.warnings.length;
   const validationHealth = diagnostics?.healthScore ?? 80;
-  const missingPenalty = Math.round((diagnostics?.missingPercent ?? 0) / 2);
+  const missingPenalty = Math.round((diagnostics?.missingValuesPct ?? 0) / 2);
 
   const components = [
     {
@@ -114,7 +114,7 @@ export function buildImportRemediationPlan(args: {
       label: "Completeness",
       score: clamp(15 - missingPenalty, 0, 15),
       max: 15,
-      reason: `${diagnostics?.missingPercent ?? 0}% missing values`,
+      reason: `${diagnostics?.missingValuesPct ?? 0}% missing values`,
     },
   ];
 
