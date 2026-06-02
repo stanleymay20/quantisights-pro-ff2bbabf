@@ -64,6 +64,11 @@ const DataLineage = lazy(() => import("@/pages/DataLineage"));
 const PipelineObservability = lazy(() => import("@/pages/PipelineObservability"));
 const DataHub = lazy(() => import("@/pages/DataHub"));
 
+// ── Phase 2: Enterprise Platform ──
+const MetadataGraphPage = lazy(() => import("@/pages/MetadataGraph"));
+const ObservabilityDashboardPage = lazy(() => import("@/pages/ObservabilityDashboard"));
+const CredentialVaultPage = lazy(() => import("@/pages/CredentialVault"));
+
 // ── Reporting & Strategy ──
 const Reports = lazy(() => import("@/pages/Reports"));
 const BoardReport = lazy(() => import("@/pages/BoardReport"));
@@ -297,6 +302,9 @@ export const routes: RouteEntry[] = [
   { path: "/database", element: <DatabaseExplorerPage />, layout: "full" },
   { path: "/sql-agent", element: <SQLAgentPage />, layout: "full" },
   { path: "/aicis-sync", element: <AicisSync />, layout: "full" },
+  { path: "/metadata-graph", element: <MetadataGraphPage />, layout: "full" },
+  { path: "/observability", element: <ObservabilityDashboardPage />, layout: "full" },
+  { path: "/credential-vault", element: <CredentialVaultPage />, layout: "full" },
   { path: "/admin/bridge-health", element: <BridgeHealth />, layout: "full" },
 
   // ══════ Reporting & Strategy ══════
