@@ -106,7 +106,7 @@ const DatasetExplorer = () => {
 
     // value
     const vals = metrics.map(m => Number(m.value));
-    cols.push({ name: "value", type: "numeric", nonNull: vals.length, unique: new Set(vals).size, min: Math.min(...vals), max: Math.max(...vals), mean: vals.reduce((s, v) => s + v, 0) / vals.length, sample: vals.slice(0, 5) });
+    cols.push({ name: "value", type: "numeric", nonNull: vals.length, unique: new Set(vals).size, min: vals.reduce((a, b) => (b < a ? b : a), vals[0] ?? 0), max: vals.reduce((a, b) => (b > a ? b : a), vals[0] ?? 0), mean: vals.reduce((s, v) => s + v, 0) / vals.length, sample: vals.slice(0, 5) });
 
     // date
     const dates = metrics.map(m => m.date);

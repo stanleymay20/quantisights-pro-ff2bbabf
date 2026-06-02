@@ -26,8 +26,8 @@ const TrendSparkline = ({
 }: TrendSparklineProps) => {
   const path = useMemo(() => {
     if (data.length < 2) return "";
-    const min = Math.min(...data);
-    const max = Math.max(...data);
+    const min = data.reduce((a, b) => (b < a ? b : a), data[0]);
+    const max = data.reduce((a, b) => (b > a ? b : a), data[0]);
     const range = max - min || 1;
     const padding = 4;
     const innerW = width - padding * 2;
@@ -43,8 +43,8 @@ const TrendSparkline = ({
 
   if (data.length < 2) return null;
 
-  const min = Math.min(...data);
-  const max = Math.max(...data);
+  const min = data.reduce((a, b) => (b < a ? b : a), data[0]);
+  const max = data.reduce((a, b) => (b > a ? b : a), data[0]);
   const range = max - min || 1;
   const padding = 4;
   const innerW = width - padding * 2;

@@ -59,3 +59,4 @@ export function ScenarioComparison({ scenarios }: Props) {
     </div>
   )
 }
+export default ScenarioComparison
