@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { useAuth } from "@/contexts/AuthContext";
@@ -9,6 +9,7 @@ import { useMetricsSummary } from "@/hooks/useMetricsSummary";
 import { useInsights } from "@/hooks/useInsights";
 import { filterCriticalInsights } from "@/lib/insight-filters";
 import { supabase } from "@/integrations/supabase/client";
+import { invokeWithRetry } from "@/lib/edge-function-retry";
 
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { DashboardEmptyState } from "@/components/dashboard/DashboardEmptyState";
@@ -22,7 +23,7 @@ const Dashboard = () => {
   const { user, signOut } = useAuth();
   const { organizations, currentOrgId, currentOrg, switchOrganization, loading: orgLoading } = useOrganization();
   const { currentWorkspaceId, loading: workspaceLoading } = useWorkspace();
-  const { currentProject, activeDatasetId, loading: projectLoading } = useProject();
+  const { activeDatasetId, loading: projectLoading } = useProject();
 
   // ── FAST PATH: server-aggregated summaries (~20 rows) instead of full metrics (~3K+ rows) ──
   const {
@@ -37,6 +38,7 @@ const Dashboard = () => {
 
   const [pendingDecisions, setPendingDecisions] = useState(0);
   const [calibrationScore, setCalibrationScore] = useState<number | null>(null);
+  const decisionSyncRef = useRef<Set<string>>(new Set());
 
   // Onboarding redirect — cached in sessionStorage to avoid repeated DB hits
   useEffect(() => {
@@ -59,33 +61,53 @@ const Dashboard = () => {
     checkOnboarding();
   }, [currentOrgId, orgLoading, navigate]);
 
+  const refreshDecisionStats = useCallback(async () => {
+    if (!currentOrgId) return;
+
+    const [decisionRes, calRes] = await Promise.all([
+      supabase.from("decision_ledger")
+        .select("id", { count: "exact", head: true })
+        .eq("organization_id", currentOrgId)
+        .eq("execution_status", "not_started"),
+      supabase.from("calibration_models")
+        .select("overall_calibration_score")
+        .eq("organization_id", currentOrgId)
+        .order("computed_at", { ascending: false })
+        .limit(1),
+    ]);
+
+    setPendingDecisions(decisionRes.count || 0);
+    setCalibrationScore(calRes.data?.[0]?.overall_calibration_score ?? null);
+  }, [currentOrgId]);
+
   // Fetch pending decisions & calibration — parallel, lightweight queries
   useEffect(() => {
     if (!currentOrgId) return;
-    const fetchCount = async () => {
-      if (!activeDatasetId) {
-        setPendingDecisions(0);
-        return;
-      }
-      const [decisionRes, calRes] = await Promise.all([
-        supabase.from("decision_ledger")
-          .select("id", { count: "exact", head: true })
-          .eq("organization_id", currentOrgId)
-          .eq("execution_status", "not_started"),
-        supabase.from("calibration_models")
-          .select("overall_calibration_score")
-          .eq("organization_id", currentOrgId)
-          .order("computed_at", { ascending: false })
-          .limit(1),
-      ]);
-      setPendingDecisions(decisionRes.count || 0);
-      setCalibrationScore(calRes.data?.[0]?.overall_calibration_score ?? null);
-    };
-    fetchCount();
-  }, [currentOrgId, activeDatasetId]);
+    refreshDecisionStats();
+  }, [currentOrgId, activeDatasetId, refreshDecisionStats]);
 
   // Memoize expensive insight filtering
   const criticalInsights = useMemo(() => filterCriticalInsights(insights), [insights]);
+
+  // Close the intelligence → decision gap: once high/critical insights exist,
+  // invoke the unified converter so the Decision Queue becomes the durable source of truth.
+  useEffect(() => {
+    if (!currentOrgId || !activeDatasetId || insightsLoading) return;
+    if (criticalInsights.length === 0) return;
+
+    const syncKey = `${currentOrgId}:${activeDatasetId}:${criticalInsights.map((i) => i.id).sort().join("|")}`;
+    if (decisionSyncRef.current.has(syncKey)) return;
+    decisionSyncRef.current.add(syncKey);
+
+    invokeWithRetry("auto-create-decisions", {
+      body: { organization_id: currentOrgId, dataset_id: activeDatasetId },
+    })
+      .then(() => refreshDecisionStats())
+      .catch((error) => {
+        console.warn("[Dashboard] auto-create-decisions sync failed", error);
+        decisionSyncRef.current.delete(syncKey);
+      });
+  }, [activeDatasetId, criticalInsights, currentOrgId, insightsLoading, refreshDecisionStats]);
 
   const isContextLoading = orgLoading || workspaceLoading || projectLoading;
   const isLoading = isContextLoading || metricsLoading || insightsLoading;
