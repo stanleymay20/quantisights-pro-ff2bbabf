@@ -1,15 +1,30 @@
 import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { Bell, User, RefreshCw, LogOut, ChevronDown, Settings, CreditCard, Users } from "lucide-react";
+import {
+  Bell,
+  BellRing,
+  Check,
+  ChevronDown,
+  CreditCard,
+  LogOut,
+  RefreshCw,
+  Settings,
+  ShieldCheck,
+  User,
+  Users,
+} from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { SidebarMobileToggle } from "@/components/layout/ProtectedShell";
 import OrgSwitcher from "@/components/dashboard/OrgSwitcher";
 import ProjectSwitcher from "@/components/dashboard/ProjectSwitcher";
 import { invokeWithRetry } from "@/lib/edge-function-retry";
 import { embedInsightsBatch } from "@/lib/decision-lifecycle";
 import { useToast } from "@/hooks/use-toast";
+import { useNotifications, type NotificationItem } from "@/hooks/useNotifications";
 
 interface Insight {
   category?: string;
@@ -31,6 +46,28 @@ interface DashboardHeaderProps {
   onSignOut: () => void;
 }
 
+function severityClass(severity: string) {
+  if (["critical", "high"].includes(severity)) return "text-destructive border-destructive/30 bg-destructive/10";
+  if (["medium", "warning"].includes(severity)) return "text-warning border-warning/30 bg-warning/10";
+  return "text-muted-foreground border-border bg-muted/40";
+}
+
+function formatRelativeTime(value: string) {
+  const createdAt = new Date(value).getTime();
+  const diffMs = Date.now() - createdAt;
+  if (!Number.isFinite(createdAt) || diffMs < 0) return "just now";
+  const minutes = Math.floor(diffMs / 60_000);
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.floor(hours / 24)}d ago`;
+}
+
+function notificationTitle(item: NotificationItem) {
+  return item.category?.replace(/_/g, " ") || `${item.severity || "Alert"} notification`;
+}
+
 export const DashboardHeader = ({
   organizations,
   currentOrg,
@@ -47,6 +84,17 @@ export const DashboardHeader = ({
   const { toast } = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const {
+    notifications,
+    unreadCount,
+    criticalUnreadCount,
+    isLoading: notificationsLoading,
+    isError: notificationsError,
+    isRealtimeConnected,
+    markRead,
+    markAllRead,
+    refetch: refetchNotifications,
+  } = useNotifications(currentOrgId, activeDatasetId);
 
   const handleRecalculate = useCallback(async () => {
     if (!currentOrgId || !activeDatasetId) {
@@ -80,6 +128,28 @@ export const DashboardHeader = ({
     }
   }, [currentOrgId, activeDatasetId, toast, queryClient]);
 
+  const handleOpenNotification = useCallback(async (item: NotificationItem) => {
+    try {
+      if (!item.is_read) await markRead(item.id);
+    } catch {
+      toast({ title: "Could not mark notification as read", variant: "destructive" });
+    }
+    navigate("/decisions");
+  }, [markRead, navigate, toast]);
+
+  const handleMarkAllRead = useCallback(async () => {
+    try {
+      await markAllRead();
+      toast({ title: "Notifications marked as read" });
+    } catch {
+      toast({ title: "Could not mark notifications as read", variant: "destructive" });
+    }
+  }, [markAllRead, toast]);
+
+  const fallbackUnread = criticalInsights.length;
+  const displayUnread = activeDatasetId ? unreadCount : fallbackUnread;
+  const hasUnread = displayUnread > 0;
+
   return (
     <header className="h-12 border-b border-border/30 flex items-center justify-between px-3 sm:px-6 shrink-0 bg-background/60 backdrop-blur-sm">
       <div className="flex items-center gap-2 min-w-0 overflow-hidden">
@@ -99,30 +169,104 @@ export const DashboardHeader = ({
             <span className="hidden sm:inline">{recalculating ? "Analyzing…" : "Refresh"}</span>
           </button>
         )}
-        <Popover>
+        <Popover onOpenChange={(open) => open && activeDatasetId && refetchNotifications()}>
           <PopoverTrigger asChild>
-            <button className="p-2 rounded-lg hover:bg-secondary/60 transition-colors relative" aria-label="Notifications">
-              <Bell className="w-4 h-4 text-muted-foreground" />
-              {criticalInsights.length > 0 && (
-                <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-destructive animate-pulse" />
+            <button
+              className="p-2 rounded-lg hover:bg-secondary/60 transition-colors relative"
+              aria-label={hasUnread ? `${displayUnread} unread notifications` : "Notifications"}
+            >
+              {criticalUnreadCount > 0 ? (
+                <BellRing className="w-4 h-4 text-destructive" />
+              ) : (
+                <Bell className="w-4 h-4 text-muted-foreground" />
+              )}
+              {hasUnread && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-destructive text-[10px] leading-4 text-destructive-foreground font-bold text-center shadow-sm">
+                  {displayUnread > 9 ? "9+" : displayUnread}
+                </span>
               )}
             </button>
           </PopoverTrigger>
-          <PopoverContent align="end" className="w-72 p-0">
-            <div className="p-3 border-b border-border/30">
-              <h4 className="text-sm font-semibold">Notifications</h4>
+          <PopoverContent align="end" className="w-96 max-w-[calc(100vw-1rem)] p-0">
+            <div className="p-3 border-b border-border/30 flex items-center justify-between gap-3">
+              <div>
+                <h4 className="text-sm font-semibold">Notification Center</h4>
+                <div className="flex items-center gap-2 mt-1 text-[11px] text-muted-foreground">
+                  <span>{displayUnread} unread</span>
+                  <span>•</span>
+                  <span className="inline-flex items-center gap-1">
+                    <span className={`w-1.5 h-1.5 rounded-full ${isRealtimeConnected ? "bg-success" : "bg-muted-foreground"}`} />
+                    {isRealtimeConnected ? "Live" : "Syncing"}
+                  </span>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={!hasUnread}
+                onClick={handleMarkAllRead}
+                className="h-7 px-2 text-xs"
+              >
+                <Check className="w-3.5 h-3.5" />
+                Mark all read
+              </Button>
             </div>
-            <div className="max-h-64 overflow-y-auto">
-              {criticalInsights.length === 0 ? (
-                <p className="p-4 text-sm text-muted-foreground text-center">No active alerts</p>
+            <div className="max-h-96 overflow-y-auto">
+              {!activeDatasetId ? (
+                <p className="p-4 text-sm text-muted-foreground text-center">Select a dataset to view notifications</p>
+              ) : notificationsLoading ? (
+                <p className="p-4 text-sm text-muted-foreground text-center">Loading notifications…</p>
+              ) : notificationsError ? (
+                <div className="p-4 text-center space-y-2">
+                  <p className="text-sm text-destructive">Notifications could not be loaded</p>
+                  <Button variant="outline" size="sm" onClick={() => refetchNotifications()}>Retry</Button>
+                </div>
+              ) : notifications.length === 0 ? (
+                <div className="p-6 text-center space-y-2">
+                  <ShieldCheck className="w-8 h-8 text-success mx-auto" />
+                  <p className="text-sm font-medium">No active notifications</p>
+                  <p className="text-xs text-muted-foreground">Quantivis will alert you when decisions, risks, or anomalies need attention.</p>
+                </div>
               ) : (
-                criticalInsights.slice(0, 5).map((insight, i) => (
-                  <div key={i} className="px-3 py-2.5 border-b border-border/10 last:border-0 hover:bg-muted/40 transition-colors">
-                    <p className="text-xs font-medium truncate">{insight.category || "Alert"}</p>
-                    <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{insight.message}</p>
+                notifications.map((item) => (
+                  <div
+                    key={item.id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => handleOpenNotification(item)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") handleOpenNotification(item);
+                    }}
+                    className={`px-3 py-3 border-b border-border/10 last:border-0 hover:bg-muted/40 transition-colors cursor-pointer ${!item.is_read ? "bg-primary/[0.03]" : ""}`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <span className={`mt-1 w-2 h-2 rounded-full shrink-0 ${item.is_read ? "bg-muted" : "bg-primary"}`} />
+                      <div className="flex-1 min-w-0 space-y-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-xs font-semibold truncate capitalize">{notificationTitle(item)}</p>
+                          <span className="text-[10px] text-muted-foreground shrink-0">{formatRelativeTime(item.created_at)}</span>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground line-clamp-2">{item.message}</p>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <Badge variant="outline" className={`text-[10px] h-5 ${severityClass(item.severity)}`}>{item.severity}</Badge>
+                          {item.capped_confidence != null && (
+                            <Badge variant="secondary" className="text-[10px] h-5">{Math.round(item.capped_confidence)}% confidence</Badge>
+                          )}
+                          {!item.is_read && <Badge variant="secondary" className="text-[10px] h-5">Unread</Badge>}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 ))
               )}
+            </div>
+            <div className="p-2 border-t border-border/30 flex items-center justify-between">
+              <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => navigate("/intelligence-inbox")}>
+                View inbox
+              </Button>
+              <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => navigate("/decisions")}>
+                Review decisions <ChevronDown className="w-3 h-3 -rotate-90" />
+              </Button>
             </div>
           </PopoverContent>
         </Popover>
