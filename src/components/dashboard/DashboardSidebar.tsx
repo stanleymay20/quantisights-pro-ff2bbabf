@@ -1,10 +1,35 @@
 import { createContext, useContext, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
-  LayoutDashboard, Upload, Settings, LogOut,
-  Menu, X, BookOpen, Brain, Target,
-  ChevronDown, Clock, BarChart3, Shield,
-  Lightbulb, TrendingUp, FileText, Inbox, ShieldAlert, Plug,
+  LayoutDashboard,
+  Upload,
+  Settings,
+  LogOut,
+  Menu,
+  X,
+  BookOpen,
+  Brain,
+  Target,
+  ChevronDown,
+  Clock,
+  BarChart3,
+  Shield,
+  Lightbulb,
+  TrendingUp,
+  FileText,
+  Inbox,
+  ShieldAlert,
+  Plug,
+  Database,
+  GitBranch,
+  Activity,
+  Network,
+  ListChecks,
+  PlayCircle,
+  Scale,
+  Users,
+  CreditCard,
+  GanttChartSquare,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -26,9 +51,11 @@ interface NavSection {
 }
 
 /**
- * Simplified sidebar nav — 3 primary actions always visible,
- * advanced features progressively disclosed under "Explore".
- * Inspired by InVideo's clean, task-oriented navigation.
+ * Quantivis operating-system sidebar.
+ *
+ * The app has evolved beyond a simple analytics menu. The sidebar now mirrors
+ * the real enterprise workflow:
+ * Data → Intelligence → Decisions → Execution → Outcomes → Governance.
  */
 const navSections: NavSection[] = [
   {
@@ -36,29 +63,61 @@ const navSections: NavSection[] = [
     defaultOpen: true,
     items: [
       { icon: LayoutDashboard, label: "Home", path: "/dashboard" },
-      { icon: Brain, label: "Decisions", path: "/decisions" },
+      { icon: Brain, label: "Decision Queue", path: "/decisions" },
       { icon: Target, label: "Outcomes", path: "/outcomes" },
     ],
   },
   {
-    label: "Explore",
+    label: "Decision OS",
     items: [
       { icon: ShieldAlert, label: "Executive Intelligence", path: "/executive-intelligence", badge: "New" },
-      { icon: ShieldAlert, label: "Interventions", path: "/interventions", badge: "New" },
+      { icon: Brain, label: "Decision Intelligence", path: "/decision-intelligence" },
+      { icon: PlayCircle, label: "Execution", path: "/execution" },
+      { icon: Network, label: "Simulations", path: "/simulations" },
+      { icon: ListChecks, label: "Decision Rules", path: "/decision-rules" },
+      { icon: Clock, label: "Decision History", path: "/history" },
+    ],
+  },
+  {
+    label: "Intelligence",
+    items: [
       { icon: Inbox, label: "Intelligence Inbox", path: "/intelligence-inbox" },
+      { icon: ShieldAlert, label: "Interventions", path: "/interventions", badge: "New" },
       { icon: Lightbulb, label: "Insights", path: "/advisory" },
       { icon: TrendingUp, label: "Forecasting", path: "/forecasting" },
       { icon: BarChart3, label: "Analytics", path: "/decision-accuracy" },
-      { icon: Clock, label: "History", path: "/history" },
       { icon: FileText, label: "Reports", path: "/reports" },
+    ],
+  },
+  {
+    label: "Data Platform",
+    items: [
       { icon: Upload, label: "Upload Data", path: "/data-upload" },
       { icon: Plug, label: "Data Connectors", path: "/data-connectors" },
+      { icon: Database, label: "Data Sources", path: "/data-sources" },
+      { icon: BarChart3, label: "Dataset Explorer", path: "/dataset-explorer" },
+      { icon: BookOpen, label: "Data Catalog", path: "/data-catalog" },
+      { icon: GitBranch, label: "Lineage", path: "/lineage" },
+      { icon: Activity, label: "Pipeline Health", path: "/pipeline" },
+      { icon: GanttChartSquare, label: "Data Hub", path: "/data-hub" },
+    ],
+  },
+  {
+    label: "Governance",
+    items: [
+      { icon: Shield, label: "Governance", path: "/governance" },
+      { icon: Scale, label: "Governance Maturity", path: "/governance-maturity" },
+      { icon: ShieldAlert, label: "Compliance", path: "/compliance" },
+      { icon: ListChecks, label: "Alert Playbooks", path: "/alert-playbooks" },
+      { icon: Activity, label: "System Health", path: "/system-health" },
+      { icon: Target, label: "Decision Maturity", path: "/decision-maturity" },
     ],
   },
   {
     label: "Admin",
     items: [
-      { icon: Shield, label: "Governance", path: "/governance" },
+      { icon: Users, label: "Team", path: "/team" },
+      { icon: CreditCard, label: "Billing", path: "/billing" },
       { icon: Settings, label: "Settings", path: "/settings" },
     ],
   },
@@ -159,7 +218,7 @@ const DashboardSidebar = () => {
   };
 
   const sidebarContent = (
-    <aside aria-label="Main navigation" className="w-56 h-dvh bg-sidebar border-r border-sidebar-border flex flex-col shrink-0 safe-area-left safe-area-top safe-area-bottom">
+    <aside aria-label="Main navigation" className="w-60 h-dvh bg-sidebar border-r border-sidebar-border flex flex-col shrink-0 safe-area-left safe-area-top safe-area-bottom">
       <div className="p-4 pb-3 flex items-center justify-between">
         <Link to="/" onClick={handleNavClick}>
           <img src={logo} alt="Quantivis" className="h-7 w-auto" />
