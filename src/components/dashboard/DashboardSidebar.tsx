@@ -72,6 +72,7 @@ const navSections: NavSection[] = [
     items: [
       { icon: ShieldAlert, label: "Executive Intelligence", path: "/executive-intelligence", badge: "New" },
       { icon: Brain, label: "Decision Intelligence", path: "/decision-intelligence" },
+      { icon: Scale, label: "Deliberation", path: "/deliberation", badge: "New" },
       { icon: PlayCircle, label: "Execution", path: "/execution" },
       { icon: Network, label: "Simulations", path: "/simulations" },
       { icon: ListChecks, label: "Decision Rules", path: "/decision-rules" },

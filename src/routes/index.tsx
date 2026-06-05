@@ -32,6 +32,7 @@ const MarketIntelligence = lazy(() => import("@/pages/MarketIntelligence"));
 
 // ── Decision System ──
 const DecisionLedger = lazy(() => import("@/pages/DecisionLedger"));
+const Deliberation = lazy(() => import("@/pages/Deliberation"));
 const DecisionIntelligence = lazy(() => import("@/pages/DecisionIntelligence"));
 const DecisionFitness = lazy(() => import("@/pages/DecisionFitness"));
 const ExecutionDashboard = lazy(() => import("@/pages/ExecutionDashboard"));
@@ -264,6 +265,7 @@ export const routes: RouteEntry[] = [
   { path: "/boardroom", element: <Boardroom />, layout: "minimal" },
   // ══════ Decision System ══════
   { path: "/decisions", element: <DecisionLedger />, layout: "full" },
+  { path: "/deliberation", element: <Deliberation />, layout: "full" },
   { path: "/decision-intelligence", element: <DecisionIntelligence />, layout: "full" },
   { path: "/decision-fitness", element: <DecisionFitness />, layout: "full" },
   { path: "/execution", element: <ExecutionDashboard />, layout: "full" },
