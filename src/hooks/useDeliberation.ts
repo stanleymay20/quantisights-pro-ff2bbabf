@@ -27,8 +27,25 @@ export interface DeliberationDecisionRow {
   created_at: string;
 }
 
+export interface DeliberationApprovalRow {
+  id?: string | null;
+  stage_name?: string | null;
+  stage_order?: number | null;
+  approver_role?: string | null;
+  approver_email?: string | null;
+  approver_id?: string | null;
+  verdict: string | null;
+  status: string;
+  decided_at?: string | null;
+  created_at?: string | null;
+  due_at?: string | null;
+  escalation_status?: string | null;
+  notes?: string | null;
+}
+
 export interface DeliberationData {
   decision: DeliberationDecisionRow;
+  approvals: DeliberationApprovalRow[];
   perspectives: Perspective[];
   summary: DeliberationSummary;
   inputs: DeliberationInputs;
@@ -73,13 +90,22 @@ export function useDeliberation(decisionId: string | null): { data: Deliberation
       setLoading(true);
       const [decRes, apprRes, thrRes, confRes] = await Promise.all([
         supabase.from("decision_ledger").select("*").eq("id", decisionId).eq("organization_id", orgId).maybeSingle(),
-        supabase.from("decision_approvals").select("verdict,status").eq("decision_id", decisionId).eq("organization_id", orgId),
+        supabase.from("decision_approvals").select("*").eq("decision_id", decisionId).eq("organization_id", orgId),
         supabase.from("governance_thresholds").select("threshold_key,threshold_value").eq("organization_id", orgId).is("effective_to", null),
         supabase.from("narrative_conflicts").select("id", { count: "exact", head: true }).eq("organization_id", orgId).eq("status", "open"),
       ]);
       if (!alive) return;
       if (!decRes.data) { setData(null); setLoading(false); return; }
       const decision = decRes.data as unknown as DeliberationDecisionRow;
+      const approvals = ((apprRes.data as unknown as DeliberationApprovalRow[]) ?? [])
+        .slice()
+        .sort((a, b) => {
+          const ao = Number(a.stage_order ?? Number.MAX_SAFE_INTEGER);
+          const bo = Number(b.stage_order ?? Number.MAX_SAFE_INTEGER);
+          if (ao !== bo) return ao - bo;
+          return String(a.created_at ?? "").localeCompare(String(b.created_at ?? ""));
+        });
+
       const inputs: DeliberationInputs = {
         decision: {
           id: decision.id,
@@ -100,11 +126,11 @@ export function useDeliberation(decisionId: string | null): { data: Deliberation
         },
         thresholds: (thrRes.data as Array<{ threshold_key: string; threshold_value: number }>) ?? [],
         openConflicts: confRes.count ?? 0,
-        approvals: (apprRes.data as Array<{ verdict: string | null; status: string }>) ?? [],
+        approvals: approvals.map((a) => ({ verdict: a.verdict, status: a.status })),
       };
       const perspectives = computePerspectives(inputs);
       const summary = summarize(perspectives, inputs);
-      setData({ decision, perspectives, summary, inputs });
+      setData({ decision, approvals, perspectives, summary, inputs });
       setLoading(false);
     })();
     return () => { alive = false; };
