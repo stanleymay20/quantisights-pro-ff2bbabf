@@ -33,6 +33,7 @@ const MarketIntelligence = lazy(() => import("@/pages/MarketIntelligence"));
 // ── Decision System ──
 const DecisionLedger = lazy(() => import("@/pages/DecisionLedger"));
 const Deliberation = lazy(() => import("@/pages/Deliberation"));
+const AIBoardroom = lazy(() => import("@/pages/AIBoardroom"));
 const DecisionIntelligence = lazy(() => import("@/pages/DecisionIntelligence"));
 const DecisionFitness = lazy(() => import("@/pages/DecisionFitness"));
 const ExecutionDashboard = lazy(() => import("@/pages/ExecutionDashboard"));
