@@ -8,8 +8,8 @@
  *   - Human votes only — surfaced from decision_approvals; not auto-generated.
  *   - Explanations use label/value surfaces anchored to source statistics.
  */
-import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useMemo } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -329,9 +329,31 @@ function Stat({ label, value, tone }: { label: string; value: string; tone?: str
   );
 }
 
-export default function Deliberation() {
+type DeliberationVariant = "deliberation" | "boardroom";
+
+const variantCopy: Record<DeliberationVariant, { eyebrow: string; title: string; description: string }> = {
+  deliberation: {
+    eyebrow: "Decision OS",
+    title: "Deterministic Boardroom",
+    description: "Enterprise-grade deliberation for pending decisions. It computes Financial, Risk, Execution, Outcome, and Contrarian perspectives from real evidence — never from LLM personas, synthetic votes, or fabricated consensus scores.",
+  },
+  boardroom: {
+    eyebrow: "Decision OS · AI Boardroom",
+    title: "AI Boardroom",
+    description: "Executive deliberation chamber. Select a pending decision to review evidence, perspective stances, cost of inaction, and human approval status — all computed deterministically from your governed signals.",
+  },
+};
+
+export default function Deliberation({ variant = "deliberation" }: { variant?: DeliberationVariant } = {}) {
   const { rows, loading } = usePendingDeliberations();
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const selectedId = searchParams.get("decision");
+  const setSelectedId = (id: string | null) => {
+    const next = new URLSearchParams(searchParams);
+    if (id) next.set("decision", id); else next.delete("decision");
+    setSearchParams(next, { replace: false });
+  };
+  const copy = variantCopy[variant];
 
   if (selectedId) return (
     <div className="container max-w-7xl mx-auto py-8 px-6">
@@ -342,11 +364,9 @@ export default function Deliberation() {
   return (
     <div className="container max-w-6xl mx-auto py-8 px-6 space-y-6">
       <header>
-        <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Decision OS</div>
-        <h1 className="text-2xl font-semibold tracking-tight">Deterministic Boardroom</h1>
-        <p className="text-sm text-muted-foreground mt-1 max-w-3xl">
-          Enterprise-grade deliberation for pending decisions. It computes Financial, Risk, Execution, Outcome, and Contrarian perspectives from real evidence — never from LLM personas, synthetic votes, or fabricated consensus scores.
-        </p>
+        <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">{copy.eyebrow}</div>
+        <h1 className="text-2xl font-semibold tracking-tight">{copy.title}</h1>
+        <p className="text-sm text-muted-foreground mt-1 max-w-3xl">{copy.description}</p>
       </header>
 
       <div className="grid gap-3 md:grid-cols-4">
