@@ -53,7 +53,7 @@ const EnterpriseContact = () => {
   };
 
   return (
-    <div className="min-h-dvh bg-background">
+    <div className="min-h-dvh bg-background flex flex-col">
       <Navbar />
       <main className="pt-32 pb-16">
         <div className="container mx-auto px-6 max-w-3xl">

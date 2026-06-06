@@ -79,7 +79,7 @@ const CellValue = ({ value }: { value: boolean | string }) => {
 
 const Compare = forwardRef<HTMLDivElement>((_, ref) => {
   return (
-    <div ref={ref} className="min-h-dvh bg-background">
+    <div ref={ref} className="min-h-dvh bg-background flex flex-col">
       <Navbar />
       <main className="pt-20 pb-16">
         <div className="container mx-auto px-5 sm:px-6">

@@ -320,7 +320,7 @@ const SECURITY_FAQ = [
 const Security = () => {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   return (
-  <div className="min-h-dvh bg-background">
+  <div className="min-h-dvh bg-background flex flex-col">
     {/* Header */}
     <header className="border-b border-border/30 bg-background/80 backdrop-blur-sm sticky top-0 z-30">
       <div className="container mx-auto px-6 h-14 flex items-center justify-between">
@@ -335,7 +335,7 @@ const Security = () => {
       </div>
     </header>
 
-    <main>
+    <main className="flex-1">
       {/* Hero */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent" />
