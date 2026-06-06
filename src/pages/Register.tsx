@@ -1,5 +1,5 @@
 import { useState, useMemo, forwardRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthThrottle } from "@/hooks/useAuthThrottle";
@@ -23,6 +23,9 @@ const Register = forwardRef<HTMLDivElement>((_, ref) => {
   const [googleLoading, setGoogleLoading] = useState(false);
   const { signUp } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const planParam = new URLSearchParams(location.search).get("plan");
+  const PLAN_LABELS: Record<string, string> = { starter: "Starter — €99/mo", growth: "Growth — €499/mo" };
   const { toast } = useToast();
   const throttle = useAuthThrottle(3, 120_000);
 
@@ -132,7 +135,14 @@ const Register = forwardRef<HTMLDivElement>((_, ref) => {
           <Link to="/"><img src={logo} alt="Quantivis Global" className="h-10" /></Link>
         </div>
         <h1 className="text-2xl font-bold font-display text-center mb-2">Create Account</h1>
-        <p className="text-muted-foreground text-center mb-8 text-sm">Start your free trial</p>
+        <p className="text-muted-foreground text-center mb-6 text-sm">Start your free trial</p>
+        {planParam && PLAN_LABELS[planParam] && (
+          <div className="mb-6 px-4 py-2.5 rounded-lg bg-primary/10 border border-primary/20 text-center">
+            <p className="text-xs text-muted-foreground">You're signing up for</p>
+            <p className="text-sm font-semibold text-primary">{PLAN_LABELS[planParam]}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">14-day free trial · No credit card required</p>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
