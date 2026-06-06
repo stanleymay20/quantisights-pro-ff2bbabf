@@ -252,6 +252,7 @@ const EnterpriseContact = () => {
             </div>
           </motion.div>
         </div>
+        </div>
       </main>
       <Footer />
     </div>
