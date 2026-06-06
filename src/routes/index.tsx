@@ -267,6 +267,7 @@ export const routes: RouteEntry[] = [
   // ══════ Decision System ══════
   { path: "/decisions", element: <DecisionLedger />, layout: "full" },
   { path: "/deliberation", element: <Deliberation />, layout: "full" },
+  { path: "/ai-boardroom", element: <AIBoardroom />, layout: "full" },
   { path: "/decision-intelligence", element: <DecisionIntelligence />, layout: "full" },
   { path: "/decision-fitness", element: <DecisionFitness />, layout: "full" },
   { path: "/execution", element: <ExecutionDashboard />, layout: "full" },
