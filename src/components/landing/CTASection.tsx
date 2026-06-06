@@ -1,7 +1,7 @@
 import { forwardRef } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { ArrowRight, Mail, Phone, Linkedin } from "lucide-react";
+import { ArrowRight, Mail, Linkedin } from "lucide-react";
 import { CONTACT } from "@/lib/contact-config";
 
 const TIMELINE = [
@@ -75,11 +75,11 @@ const CTASection = forwardRef<HTMLElement>((_, ref) => {
               {CONTACT.email.general}
             </a>
             <a
-              href={CONTACT.phone.href}
+              href={`mailto:${CONTACT.email.general}`}
               className="inline-flex items-center gap-2 text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
-              <Phone className="w-4 h-4 text-primary" />
-              {CONTACT.phone.display}
+              <Mail className="w-4 h-4 text-primary" />
+              {CONTACT.email.general}
             </a>
             <a
               href={CONTACT.linkedin}

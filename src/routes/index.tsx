@@ -10,6 +10,7 @@
  */
 
 import { lazy } from "react";
+import { Navigate } from "react-router-dom";
 
 // Eager: critical-path landing
 import Index from "@/pages/Index";
@@ -193,6 +194,7 @@ export const routes: RouteEntry[] = [
   { path: "/calibration", element: <CalibrationAssessment />, layout: "public" },
   { path: "/free-analysis", element: <FreeAnalysis />, layout: "public" },
   { path: "/status", element: <SystemStatus />, layout: "public" },
+  { path: "/system-status", element: <SystemStatus />, layout: "public" },
   { path: "/sla", element: <SLA />, layout: "public" },
 
   // ══════ Marketing / Trust / Comparison ══════
@@ -334,5 +336,9 @@ export const routes: RouteEntry[] = [
   { path: "/admin/governance-audit", element: <GovernanceAudit />, layout: "full" },
 
   // ══════ Catch-all ══════
+  // ── Redirects for anchor-based sections accessed as standalone URLs ──
+  { path: "/case-studies", element: <Navigate to="/#case-studies" replace />, layout: "none" },
+  { path: "/capabilities", element: <Navigate to="/#features" replace />, layout: "none" },
+
   { path: "*", element: <NotFound />, layout: "public" },
 ];

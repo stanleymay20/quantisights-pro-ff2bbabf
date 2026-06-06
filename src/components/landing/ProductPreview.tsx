@@ -1,4 +1,4 @@
-import { forwardRef } from "react";
+import { forwardRef, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Monitor, Smartphone, ArrowRight, Play, Shield, Brain, TrendingUp, Zap, BarChart3, Network } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -43,6 +43,17 @@ const MOCK_KPIS = [
 ];
 
 const ProductPreview = forwardRef<HTMLElement>((_, ref) => {
+  const [minutesAgo, setMinutesAgo] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setMinutesAgo(prev => (prev >= 4 ? 0 : prev + 1));
+    }, 60_000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const lastUpdatedLabel = minutesAgo === 0 ? "Just now" : `${minutesAgo} min ago`;
+
   return (
     <section className="py-16 relative overflow-hidden -mt-8">
       {/* Background glow */}
@@ -104,7 +115,7 @@ const ProductPreview = forwardRef<HTMLElement>((_, ref) => {
                 <span className="text-[10px] text-muted-foreground">·</span>
                 <span className="text-[10px] text-muted-foreground">47 decisions tracked · 12 outcomes measured · 3 recalibrations</span>
               </div>
-              <span className="text-[10px] text-muted-foreground">Last updated: 2 min ago</span>
+              <span className="text-[10px] text-muted-foreground">Last updated: {lastUpdatedLabel}</span>
             </div>
 
             {/* KPI row */}
@@ -199,7 +210,7 @@ const ProductPreview = forwardRef<HTMLElement>((_, ref) => {
         >
           {[
             "GDPR Ready",
-            "SOC 2–Aligned Controls",
+            "SOC 2 Audit In Progress",
             "256-bit Encryption",
             "Full Audit Trail",
             "99.9% Uptime SLA",

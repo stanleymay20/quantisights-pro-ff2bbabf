@@ -1,6 +1,6 @@
 import { forwardRef } from "react";
 import { Link } from "react-router-dom";
-import { Mail, Phone, MapPin, Linkedin } from "lucide-react";
+import { Mail, MapPin, Linkedin } from "lucide-react";
 import logo from "@/assets/quantivis-logo.png";
 import { CONTACT } from "@/lib/contact-config";
 
@@ -56,7 +56,7 @@ const Footer = forwardRef<HTMLElement>((_, ref) => (
               {CONTACT.email.general}
             </a>
             <a href={CONTACT.phone.href} className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
-              <Phone className="w-3.5 h-3.5 text-primary" />
+              <Mail className="w-3.5 h-3.5 text-primary" />
               {CONTACT.phone.display}
             </a>
             <div className="flex items-center gap-2 text-xs text-muted-foreground">

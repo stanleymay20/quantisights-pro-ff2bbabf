@@ -18,10 +18,10 @@ export const CONTACT = {
     dpo: "dpo@quantivis.io",
   },
 
-  // Phone
+  // Phone — removed; use email for all contact
   phone: {
-    display: "+49 179 145 5906",
-    href: "tel:+491791455906",
+    display: "hello@quantivis.io",
+    href: "mailto:hello@quantivis.io",
   },
 
   // Social
