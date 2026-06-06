@@ -100,7 +100,10 @@ export default function IntelligenceInbox() {
         <TabsContent value="items" className="space-y-3 mt-4">
           {loading && <p className="text-sm text-muted-foreground">Loading…</p>}
           {!loading && filtered.length === 0 && (
-            <Card><CardContent className="p-8 text-center text-muted-foreground">Awaiting AICIS intelligence exports.</CardContent></Card>
+            <Card><CardContent className="p-8 text-center">
+              <p className="text-muted-foreground font-medium mb-1">No intelligence signals yet</p>
+              <p className="text-xs text-muted-foreground max-w-sm mx-auto">Intelligence signals are generated automatically as your data is analysed. Upload a dataset or connect a data source to activate the AICIS engine.</p>
+            </CardContent></Card>
           )}
           {sortedByPressure.map((it) => {
             const scores = it.intelligence_relevance_scores;

@@ -174,22 +174,31 @@ const Outcomes = () => {
         {/* Pending measurement */}
         {pending.length > 0 && (
           <div className="space-y-3">
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-              Awaiting Outcome
-            </h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                Awaiting Outcome
+              </h2>
+              <span className="text-xs text-muted-foreground">Record outcomes to calibrate future predictions</span>
+            </div>
             {pending.slice(0, 10).map((r) => (
-              <Card key={r.id} className="opacity-70">
+              <Card key={r.id} className="opacity-80 hover:opacity-100 transition-opacity">
                 <CardContent className="p-4 flex items-center gap-3">
-                  <Minus className="w-4 h-4 text-muted-foreground" />
+                  <Minus className="w-4 h-4 text-muted-foreground shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{r.recommended_action}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      Confidence: {r.confidence_at_decision ?? "—"}% · Waiting for results
+                      Logged with {r.confidence_at_decision ?? "—"}% confidence · Outcome not yet recorded
                     </p>
                   </div>
+                  <span className="text-xs text-primary font-medium shrink-0 cursor-pointer hover:underline">
+                    Record outcome →
+                  </span>
                 </CardContent>
               </Card>
             ))}
+            <p className="text-xs text-muted-foreground px-1">
+              💡 Recording outcomes improves your team's prediction accuracy over time via Bayesian recalibration.
+            </p>
           </div>
         )}
 

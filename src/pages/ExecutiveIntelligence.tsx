@@ -34,7 +34,7 @@ function ExecutiveBriefCard({ brief, onRegenerate, generating }: {
           <CardTitle className="flex items-center gap-2"><Sparkles className="h-5 w-5 text-primary" /> Executive Brief</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <p className="text-muted-foreground">No brief generated yet for this organization.</p>
+          <p className="text-muted-foreground text-sm">Generate a briefing to get an AI-synthesised view of your organisation's strategic risk, pending decisions, and recommended interventions — calibrated to your actual data.</p>
           <Button onClick={onRegenerate} disabled={generating}>{generating ? "Generating…" : "Generate brief"}</Button>
         </CardContent>
       </Card>

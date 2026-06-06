@@ -258,7 +258,7 @@ const Billing = () => {
                   {activeTier === "starter" ? (
                     <Button onClick={() => navigate("/pricing")} size="lg" className="gap-2 shadow-lg shadow-primary/20">
                       <Zap className="w-4 h-4" />
-                      Upgrade to Growth — €249/mo
+                      Upgrade to Growth — €{TIERS.growth.price}/mo
                     </Button>
                   ) : (
                     <Button asChild size="lg" className="gap-2 shadow-lg shadow-primary/20">
