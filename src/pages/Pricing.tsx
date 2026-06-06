@@ -29,7 +29,7 @@ const Pricing = () => {
   const [annual, setAnnual] = useState(false);
 
   const handleCheckout = async (tierKey: TierKey) => {
-    if (!user) { navigate("/login"); return; }
+    if (!user) { navigate(`/register?plan=${tierKey}`); return; }
     const tier = TIERS[tierKey];
     const priceId = annual && tier.price_id_annual ? tier.price_id_annual : tier.price_id;
     if (!priceId) {
@@ -179,7 +179,7 @@ const Pricing = () => {
                         className={`w-full py-3 rounded-lg text-sm font-semibold transition-all disabled:opacity-50 ${
                           isPopular
                             ? "bg-primary text-primary-foreground hover:brightness-110"
-                            : "border border-border hover:bg-secondary"
+                            : "bg-secondary text-foreground border border-border hover:bg-secondary/80"
                         }`}
                       >
                         {loadingTier === key ? (
@@ -190,6 +190,14 @@ const Pricing = () => {
                           "Start 14-Day Free Trial"
                         )}
                       </button>
+                      {isPopular && !subscribed && (
+                        <button
+                          onClick={() => navigate("/enterprise/contact")}
+                          className="w-full pt-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          Talk to Sales instead →
+                        </button>
+                      )}
                     )}
                   </motion.div>
                 );
@@ -272,11 +280,82 @@ const Pricing = () => {
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="py-16">
-        <div className="container mx-auto px-6 text-center">
-          <p className="text-xs text-muted-foreground">
-            All plans include a 14-day free trial · GDPR compliance · Enterprise-grade security · Data encryption at rest & in transit
+      {/* FAQ Section */}
+      <section className="py-20 border-t border-border">
+        <div className="container mx-auto px-6 max-w-3xl">
+          <div className="text-center mb-12">
+            <p className="text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-3">FAQ</p>
+            <h2 className="text-2xl sm:text-3xl font-bold font-display">
+              Common <span className="gradient-text">Questions</span>
+            </h2>
+          </div>
+          <div className="space-y-6">
+            {[
+              {
+                q: "What counts as a dataset?",
+                a: "A dataset is any structured data source you connect — a CSV upload, database table, or API integration. Starter includes 2 datasets; Growth and Enterprise are unlimited.",
+              },
+              {
+                q: "What happens after the 14-day trial?",
+                a: "Your account stays active and you choose a plan. No automatic charges during the trial. We'll remind you 3 days before the trial ends.",
+              },
+              {
+                q: "Can I change plans at any time?",
+                a: "Yes. Upgrades take effect immediately with prorated billing. Downgrades apply at the next billing cycle.",
+              },
+              {
+                q: "Is GDPR compliance included in every plan?",
+                a: "Yes. Full audit trail, GDPR-compliant data handling, DPA available for all plans, and DPIA documentation available in the Trust Center.",
+              },
+              {
+                q: "Is there a setup fee?",
+                a: "No setup fees on Starter or Growth. Enterprise may include an optional onboarding engagement — discussed during the sales process.",
+              },
+              {
+                q: "Do you offer a DPA for enterprise procurement?",
+                a: "Yes. A standard DPA (EN) and AVV (DE) are available for download in the Trust Center. Custom DPAs are available on Enterprise plans.",
+              },
+              {
+                q: "What data do you store and where?",
+                a: "All data is stored in the EU (Frankfurt region) on Supabase infrastructure. We never use your data to train models. Full details in the Data Residency document.",
+              },
+              {
+                q: "How does the Bayesian calibration work?",
+                a: "Every decision you log includes a confidence estimate. When outcomes are recorded, the system compares your prediction to the actual result and adjusts your future confidence scores — reducing systematic overconfidence over time.",
+              },
+            ].map(({ q, a }) => (
+              <div key={q} className="glass-card p-6">
+                <h3 className="font-semibold mb-2">{q}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{a}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Bottom CTA */}
+      <section className="py-16 border-t border-border bg-card/20">
+        <div className="container mx-auto px-6 text-center max-w-2xl">
+          <h2 className="text-2xl font-bold font-display mb-3">Ready to Start?</h2>
+          <p className="text-muted-foreground mb-8">
+            14-day free trial · No credit card required · GDPR ready · Enterprise-grade security
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <button
+              onClick={() => navigate("/register")}
+              className="px-8 py-3 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:brightness-110 transition-all"
+            >
+              Start Free Trial
+            </button>
+            <button
+              onClick={() => navigate("/enterprise/contact")}
+              className="px-8 py-3 rounded-lg border border-border text-sm font-semibold hover:bg-secondary transition-colors"
+            >
+              Talk to Sales
+            </button>
+          </div>
+          <p className="text-xs text-muted-foreground mt-6">
+            All plans include full audit trail · Data encrypted at rest &amp; in transit · No vendor lock-in
           </p>
         </div>
       </section>

@@ -58,7 +58,7 @@ export const TIERS = {
     price_id: null,
     price_id_annual: null as string | null,
     product_id: "prod_U1oN5CDeptb9uY",
-    tagline: "Enterprise decision governance — €18K–€72K annually",
+    tagline: "Enterprise decision governance — custom pricing for your scale",
     contactSales: true,
     features: [
       "Everything in Growth, plus:",
