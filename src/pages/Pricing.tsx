@@ -173,31 +173,33 @@ const Pricing = () => {
                         Manage Subscription
                       </button>
                     ) : (
-                      <button
-                        onClick={() => handleCheckout(key)}
-                        disabled={loadingTier === key}
-                        className={`w-full py-3 rounded-lg text-sm font-semibold transition-all disabled:opacity-50 ${
-                          isPopular
-                            ? "bg-primary text-primary-foreground hover:brightness-110"
-                            : "bg-secondary text-foreground border border-border hover:bg-secondary/80"
-                        }`}
-                      >
-                        {loadingTier === key ? (
-                          <Loader2 className="w-4 h-4 animate-spin mx-auto" />
-                        ) : subscribed ? (
-                          "Switch Plan"
-                        ) : (
-                          "Start 14-Day Free Trial"
-                        )}
-                      </button>
-                      {isPopular && !subscribed && (
+                      <>
                         <button
-                          onClick={() => navigate("/enterprise/contact")}
-                          className="w-full pt-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                          onClick={() => handleCheckout(key)}
+                          disabled={loadingTier === key}
+                          className={`w-full py-3 rounded-lg text-sm font-semibold transition-all disabled:opacity-50 ${
+                            isPopular
+                              ? "bg-primary text-primary-foreground hover:brightness-110"
+                              : "bg-secondary text-foreground border border-border hover:bg-secondary/80"
+                          }`}
                         >
-                          Talk to Sales instead →
+                          {loadingTier === key ? (
+                            <Loader2 className="w-4 h-4 animate-spin mx-auto" />
+                          ) : subscribed ? (
+                            "Switch Plan"
+                          ) : (
+                            "Start 14-Day Free Trial"
+                          )}
                         </button>
-                      )}
+                        {isPopular && !subscribed && (
+                          <button
+                            onClick={() => navigate("/enterprise/contact")}
+                            className="w-full pt-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                          >
+                            Talk to Sales instead →
+                          </button>
+                        )}
+                      </>
                     )}
                   </motion.div>
                 );
