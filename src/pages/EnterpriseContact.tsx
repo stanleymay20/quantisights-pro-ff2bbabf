@@ -12,6 +12,7 @@ const EnterpriseContact = () => {
   const { toast } = useToast();
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [form, setForm] = useState({
     full_name: "",
     work_email: "",
@@ -21,12 +22,26 @@ const EnterpriseContact = () => {
     estimated_seats: "",
   });
 
+  const PERSONAL_DOMAINS = ["gmail.com","yahoo.com","hotmail.com","outlook.com","icloud.com","aol.com","protonmail.com","mail.com","gmx.com","yandex.com"];
+
+  const isPersonalEmail = (email: string) => {
+    const domain = email.split("@")[1]?.toLowerCase();
+    return domain ? PERSONAL_DOMAINS.includes(domain) : false;
+  };
+
+  const validate = () => {
+    const e: Record<string, string> = {};
+    if (!form.full_name.trim()) e.full_name = "Required";
+    if (!form.work_email.trim()) e.work_email = "Required";
+    else if (isPersonalEmail(form.work_email)) e.work_email = "Please use your company email";
+    if (!form.company.trim()) e.company = "Required";
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.full_name || !form.work_email || !form.company) {
-      toast({ title: "Missing fields", description: "Name, work email and company are required.", variant: "destructive" });
-      return;
-    }
+    if (!validate()) return;
 
     setSubmitting(true);
     try {
@@ -56,7 +71,7 @@ const EnterpriseContact = () => {
     <div className="min-h-dvh bg-background flex flex-col">
       <Navbar />
       <main className="pt-32 pb-16">
-        <div className="container mx-auto px-6 max-w-3xl">
+        <div className="container mx-auto px-6 max-w-5xl">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-10">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold mb-4">
               <Building2 className="w-3.5 h-3.5" /> Enterprise Sales
@@ -70,6 +85,9 @@ const EnterpriseContact = () => {
             </p>
           </motion.div>
 
+          <div className="grid md:grid-cols-5 gap-8 items-start">
+
+          <div className="md:col-span-3">
           {submitted ? (
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
@@ -103,10 +121,11 @@ const EnterpriseContact = () => {
                     type="text"
                     required
                     value={form.full_name}
-                    onChange={(e) => setForm({ ...form, full_name: e.target.value })}
-                    className="w-full px-3 py-2.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:border-primary"
+                    onChange={(e) => { setForm({ ...form, full_name: e.target.value }); setErrors({...errors, full_name: ""}); }}
+                    className={`w-full px-3 py-2.5 rounded-lg border bg-background text-sm focus:outline-none focus:border-primary ${errors.full_name ? "border-destructive" : "border-border"}`}
                     placeholder="Jane Doe"
                   />
+                  {errors.full_name && <p className="text-xs text-destructive mt-1">{errors.full_name}</p>}
                 </div>
                 <div>
                   <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5 block">Work email *</label>
@@ -114,10 +133,11 @@ const EnterpriseContact = () => {
                     type="email"
                     required
                     value={form.work_email}
-                    onChange={(e) => setForm({ ...form, work_email: e.target.value })}
-                    className="w-full px-3 py-2.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:border-primary"
+                    onChange={(e) => { setForm({ ...form, work_email: e.target.value }); setErrors({...errors, work_email: ""}); }}
+                    className={`w-full px-3 py-2.5 rounded-lg border bg-background text-sm focus:outline-none focus:border-primary ${errors.work_email ? "border-destructive" : "border-border"}`}
                     placeholder="jane@company.com"
                   />
+                  {errors.work_email && <p className="text-xs text-destructive mt-1">{errors.work_email}</p>}
                 </div>
               </div>
 
@@ -128,10 +148,11 @@ const EnterpriseContact = () => {
                     type="text"
                     required
                     value={form.company}
-                    onChange={(e) => setForm({ ...form, company: e.target.value })}
-                    className="w-full px-3 py-2.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:border-primary"
+                    onChange={(e) => { setForm({ ...form, company: e.target.value }); setErrors({...errors, company: ""}); }}
+                    className={`w-full px-3 py-2.5 rounded-lg border bg-background text-sm focus:outline-none focus:border-primary ${errors.company ? "border-destructive" : "border-border"}`}
                     placeholder="Acme Corp"
                   />
+                  {errors.company && <p className="text-xs text-destructive mt-1">{errors.company}</p>}
                 </div>
                 <div>
                   <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5 block">Company size</label>
@@ -184,6 +205,52 @@ const EnterpriseContact = () => {
               </div>
             </motion.form>
           )}
+          </div>
+
+          {/* What to Expect sidebar */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2 }}
+            className="md:col-span-2 space-y-4"
+          >
+            <div className="glass-card p-6">
+              <h3 className="font-semibold mb-4 text-sm uppercase tracking-wider text-muted-foreground">What to expect</h3>
+              <ol className="space-y-4">
+                {[
+                  { step: "1", title: "Response within 1 business day", desc: "A member of our enterprise team will reach out to your work email." },
+                  { step: "2", title: "Discovery call (30 min)", desc: "We map your strategic decision workflow, data sources, and compliance needs." },
+                  { step: "3", title: "Custom proposal", desc: "Tailored pricing, SLA, and implementation plan — no boilerplate." },
+                  { step: "4", title: "Pilot in 2 weeks", desc: "Start with your real data. No lengthy procurement required." },
+                ].map(({ step, title, desc }) => (
+                  <li key={step} className="flex gap-3">
+                    <span className="w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">{step}</span>
+                    <div>
+                      <p className="text-sm font-semibold">{title}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{desc}</p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </div>
+
+            <div className="glass-card p-6 space-y-3">
+              <h3 className="font-semibold text-sm">Enterprise includes</h3>
+              {["SSO / SAML integration","Custom SLA & uptime guarantee","Dedicated onboarding engineer","DPA & AVV (GDPR-ready)","Multi-org command center","Priority support & SLAs","On-premise option available"].map((item) => (
+                <div key={item} className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
+                  {item}
+                </div>
+              ))}
+            </div>
+
+            <div className="glass-card p-5 text-center">
+              <p className="text-xs text-muted-foreground mb-2">Prefer email?</p>
+              <a href="mailto:enterprise@quantivis.io" className="text-sm text-primary font-semibold hover:underline">
+                enterprise@quantivis.io
+              </a>
+            </div>
+          </motion.div>
         </div>
       </main>
       <Footer />
