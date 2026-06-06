@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import SectionErrorBoundary from "@/components/SectionErrorBoundary";
-import { usePendingDeliberations, useDeliberation } from "@/hooks/useDeliberation";
+import { usePendingDeliberations, useDeliberation, type DeliberationApprovalRow } from "@/hooks/useDeliberation";
 import type { PerspectiveStance } from "@/lib/deliberation/perspectives";
 import {
   Scale,
@@ -120,6 +120,23 @@ function approvalReadiness(summaryStatus: string) {
   return { label: "Ready for approval", tone: "positive", detail: "No deterministic blocker detected. Human vote still required." };
 }
 
+function approvalTone(approval: DeliberationApprovalRow) {
+  const verdict = String(approval.verdict ?? "").toLowerCase();
+  const status = String(approval.status ?? "").toLowerCase();
+  if (verdict === "reject" || verdict === "rejected" || status === "rejected") return "negative";
+  if (verdict === "approve" || verdict === "approved" || status === "approved") return "positive";
+  if (status === "pending" || status === "requested") return "warning";
+  return "neutral";
+}
+
+function approvalLabel(approval: DeliberationApprovalRow) {
+  return approval.stage_name || approval.approver_role || "Approval stage";
+}
+
+function approverLabel(approval: DeliberationApprovalRow) {
+  return approval.approver_email || approval.approver_role || approval.approver_id || "Unassigned approver";
+}
+
 function DeliberationDetail({ decisionId, onBack }: { decisionId: string; onBack: () => void }) {
   const { data, loading } = useDeliberation(decisionId);
   const navigate = useNavigate();
@@ -165,7 +182,7 @@ function DeliberationDetail({ decisionId, onBack }: { decisionId: string; onBack
     </Card>
   );
 
-  const { decision, perspectives, summary } = data;
+  const { decision, approvals, perspectives, summary } = data;
 
   return (
     <div className="space-y-6">
@@ -234,6 +251,8 @@ function DeliberationDetail({ decisionId, onBack }: { decisionId: string; onBack
         </div>
       </Card>
 
+      <ApprovalChainPanel approvals={approvals} requiredApprovals={summary.human_approvals_required} />
+
       <SectionErrorBoundary sectionName="Deliberation — Perspectives">
         <div className="grid gap-4 md:grid-cols-2">
           {perspectives.map((p) => {
@@ -295,6 +314,59 @@ function DeliberationDetail({ decisionId, onBack }: { decisionId: string; onBack
         <span>To approve or reject, use the human approval workflow in the Decision Ledger. Approval verdicts recorded there flow back into this deterministic boardroom automatically.</span>
       </Card>
     </div>
+  );
+}
+
+function ApprovalChainPanel({ approvals, requiredApprovals }: { approvals: DeliberationApprovalRow[]; requiredApprovals: number }) {
+  const received = approvals.filter((a) => ["approve", "approved"].includes(String(a.verdict ?? a.status).toLowerCase())).length;
+  const rejected = approvals.filter((a) => ["reject", "rejected"].includes(String(a.verdict ?? a.status).toLowerCase())).length;
+  const pending = Math.max(0, requiredApprovals - received - rejected);
+
+  return (
+    <Card className="p-5">
+      <SectionTitle icon={Users} title="Approval chain" subtitle="Human-governed approval stages from decision_approvals" />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+        <Stat label="Required" value={String(requiredApprovals)} />
+        <Stat label="Received" value={String(received)} tone={received >= requiredApprovals && requiredApprovals > 0 ? "positive" : undefined} />
+        <Stat label="Pending" value={String(pending)} tone={pending > 0 ? "warning" : undefined} />
+        <Stat label="Rejected" value={String(rejected)} tone={rejected > 0 ? "negative" : undefined} />
+      </div>
+      <Separator className="my-4" />
+      {approvals.length === 0 ? (
+        <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+          Approval chain has not been materialized yet. Decision remains human-governed; configure approval stages in Decision Ledger or governance settings.
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {approvals.map((approval, index) => {
+            const tone = approvalTone(approval);
+            return (
+              <div key={approval.id ?? `${approvalLabel(approval)}-${index}`} className="rounded-lg border p-3">
+                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Badge variant="outline" className="text-[10px]">Stage {approval.stage_order ?? index + 1}</Badge>
+                      <div className="font-medium text-sm">{approvalLabel(approval)}</div>
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">Approver: {approverLabel(approval)}</div>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Badge variant="outline" className={`text-[10px] ${toneClass(tone)}`}>Status: {approval.status ?? "unknown"}</Badge>
+                    <Badge variant="outline" className={`text-[10px] ${toneClass(tone)}`}>Verdict: {approval.verdict ?? "pending"}</Badge>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
+                  <Stat label="Due" value={fmtDate(approval.due_at)} />
+                  <Stat label="Decided" value={fmtDate(approval.decided_at)} />
+                  <Stat label="Escalation" value={approval.escalation_status ?? "none"} tone={approval.escalation_status ? "warning" : undefined} />
+                  <Stat label="Notes" value={approval.notes ?? "—"} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </Card>
   );
 }
 
