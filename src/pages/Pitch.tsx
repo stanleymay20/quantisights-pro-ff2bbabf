@@ -69,7 +69,7 @@ const Pitch = () => {
         </div>
       </nav>
 
-      <main className="pt-24">
+      <main className="flex-1 pt-24">
         {/* Hero */}
         <section className="py-16 sm:py-24">
           <div className="container mx-auto px-6 text-center">

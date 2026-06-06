@@ -133,7 +133,7 @@ export default function Boardroom() {
   }, [topNode, nodes]);
 
   return (
-    <div className="min-h-dvh bg-background">
+    <div className="min-h-dvh bg-background flex flex-col">
       <header className="border-b">
         <div className="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between gap-4 flex-wrap">
           <div>

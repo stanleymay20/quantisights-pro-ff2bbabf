@@ -47,7 +47,7 @@ const renderCell = (value: boolean | string) => {
 };
 
 const WhyVsMicrosoft = () => (
-  <div className="min-h-dvh bg-background">
+  <div className="min-h-dvh bg-background flex flex-col">
     {/* Header */}
     <header className="border-b border-border/30 bg-background/80 backdrop-blur-sm sticky top-0 z-30">
       <div className="container mx-auto px-6 h-14 flex items-center justify-between">
@@ -58,7 +58,7 @@ const WhyVsMicrosoft = () => (
       </div>
     </header>
 
-    <main className="container mx-auto px-6 py-16 max-w-4xl">
+    <main className="flex-1 container mx-auto px-6 py-16 max-w-4xl">
       {/* Hero */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-16">
         <p className="text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-4">Quantivis vs. Microsoft</p>

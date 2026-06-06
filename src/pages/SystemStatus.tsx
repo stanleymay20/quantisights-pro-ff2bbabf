@@ -119,7 +119,7 @@ const SystemStatus = () => {
     ok: { color: "text-success", bg: "bg-success/10", icon: CheckCircle2, label: "Healthy" },
     failed: { color: "text-destructive", bg: "bg-destructive/10", icon: XCircle, label: "Failed" },
     stale: { color: "text-warning", bg: "bg-warning/10", icon: Clock, label: "Stale" },
-    never: { color: "text-muted-foreground", bg: "bg-muted/30", icon: Clock, label: "No Runs" },
+    never: { color: "text-muted-foreground", bg: "bg-muted/30", icon: Clock, label: "Scheduled" },
   };
 
   const overall = metrics ? statusConfig[metrics.overallStatus] : statusConfig.operational;
@@ -147,7 +147,7 @@ const SystemStatus = () => {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+      <main className="flex-1 max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-8">
         {/* Overall Status Banner */}
         <Card className={`border-2 ${overall.bg}`}>
           <CardContent className="py-6 flex items-center gap-4">
@@ -237,7 +237,7 @@ const SystemStatus = () => {
                               {last.records_processed != null && <> · {last.records_processed} processed</>}
                             </>
                           ) : (
-                            "No runs recorded"
+                            "Awaiting first run · Jobs execute automatically on schedule"
                           )}
                         </div>
                         {status === "failed" && last?.error_message && (

@@ -9,8 +9,8 @@ const Block = ({ title, art, items }: { title: string; art: string; items: strin
 );
 
 const TOMsDe = () => (
-  <div className="min-h-dvh bg-background">
-    <main className="container mx-auto px-6 py-12 max-w-3xl">
+  <div className="min-h-dvh bg-background flex flex-col">
+    <main className="flex-1 container mx-auto px-6 py-12 max-w-3xl">
       <LegalDocHeader
         title="Technische und organisatorische Maßnahmen"
         subtitle="TOMs gemäß Art. 32 DSGVO"

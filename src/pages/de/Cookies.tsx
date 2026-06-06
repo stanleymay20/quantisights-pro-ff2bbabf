@@ -2,8 +2,8 @@ import LegalDocHeader from "@/components/legal/LegalDocHeader";
 import { CONTACT } from "@/lib/contact-config";
 
 const CookiesDe = () => (
-  <div className="min-h-dvh bg-background">
-    <main className="container mx-auto px-6 py-12 max-w-3xl">
+  <div className="min-h-dvh bg-background flex flex-col">
+    <main className="flex-1 container mx-auto px-6 py-12 max-w-3xl">
       <LegalDocHeader
         title="Cookie-Richtlinie"
         subtitle="Informationen zu Cookies und vergleichbaren Technologien (§ 25 TTDSG)"

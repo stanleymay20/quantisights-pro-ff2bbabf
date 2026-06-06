@@ -3,13 +3,13 @@ import logo from "@/assets/quantivis-logo.png";
 import { CONTACT } from "@/lib/contact-config";
 
 const SecurityPolicy = () => (
-  <div className="min-h-dvh bg-background">
+  <div className="min-h-dvh bg-background flex flex-col">
     <header className="border-b border-border/30 bg-background/80 backdrop-blur-sm sticky top-0 z-30">
       <div className="container mx-auto px-6 h-14 flex items-center">
         <Link to="/"><img src={logo} alt="Quantivis Global" className="h-8" /></Link>
       </div>
     </header>
-    <main className="container mx-auto px-6 py-12 max-w-3xl space-y-6 text-sm">
+    <main className="flex-1 container mx-auto px-6 py-12 max-w-3xl space-y-6 text-sm">
       <div>
         <h1 className="text-3xl font-bold font-display mb-2">Vulnerability Disclosure Policy</h1>
         <p className="text-muted-foreground">Last reviewed: May 26, 2026 · Version 2026.2</p>

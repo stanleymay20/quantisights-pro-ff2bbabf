@@ -88,14 +88,14 @@ const GDPRRights = () => {
   };
 
   return (
-    <div className="min-h-dvh bg-background">
+    <div className="min-h-dvh bg-background flex flex-col">
       <header className="border-b border-border/30 bg-background/80 backdrop-blur-sm sticky top-0 z-30">
         <div className="container mx-auto px-6 h-14 flex items-center">
           <Link to="/"><img src={logo} alt="Quantivis Global" className="h-8" /></Link>
         </div>
       </header>
 
-      <main className="container mx-auto px-6 py-12 max-w-3xl">
+      <main className="flex-1 container mx-auto px-6 py-12 max-w-3xl">
         <div className="flex items-center gap-3 mb-2">
           <Scale className="w-7 h-7 text-primary" />
           <h1 className="text-3xl font-bold font-display">Your GDPR Rights</h1>

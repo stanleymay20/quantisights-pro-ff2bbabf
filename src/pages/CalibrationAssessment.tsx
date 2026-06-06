@@ -319,7 +319,7 @@ const CalibrationAssessment = () => {
   };
 
   return (
-    <div className="min-h-dvh bg-background">
+    <div className="min-h-dvh bg-background flex flex-col">
       <SectionErrorBoundary sectionName="Calibration Assessment">
         <main className="flex-1 overflow-y-auto">
         <div className="p-4 lg:p-8 max-w-4xl mx-auto">

@@ -97,7 +97,7 @@ const SECTIONS: { title: string; icon: React.ElementType; items: QAItem[] }[] = 
 ];
 
 const SecurityQuestionnaire = () => (
-  <div className="min-h-dvh bg-background">
+  <div className="min-h-dvh bg-background flex flex-col">
     <header className="border-b border-border/30 bg-background/80 backdrop-blur-sm sticky top-0 z-30 print:hidden">
       <div className="container mx-auto px-6 h-14 flex items-center justify-between">
         <Link to="/"><img src={logo} alt="Quantivis Global" className="h-8" /></Link>
@@ -116,7 +116,7 @@ const SecurityQuestionnaire = () => (
     </header>
 
     <SectionErrorBoundary sectionName="Security Questionnaire">
-        <main className="container mx-auto px-6 py-16 max-w-4xl">
+        <main className="flex-1 container mx-auto px-6 py-16 max-w-4xl">
       {/* Header */}
       <div className="mb-12">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-medium mb-4">

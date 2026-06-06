@@ -70,7 +70,7 @@ const EnterpriseContact = () => {
   return (
     <div className="min-h-dvh bg-background flex flex-col">
       <Navbar />
-      <main className="pt-32 pb-16">
+      <main className="flex-1 pt-32 pb-16">
         <div className="container mx-auto px-6 max-w-5xl">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-10">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold mb-4">
