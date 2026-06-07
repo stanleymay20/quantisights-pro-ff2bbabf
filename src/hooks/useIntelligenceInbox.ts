@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveDataContext } from "@/hooks/useActiveDataContext";
 import { invokeWithRetry } from "@/lib/edge-function-retry";
@@ -47,18 +47,40 @@ export interface Observability {
   conversion_rate: number;
 }
 
+const INBOX_TIMEOUT_MS = 9000;
+
 export const useIntelligenceInbox = (opts: { includeTestMode?: boolean } = {}) => {
   const { orgId } = useActiveDataContext();
   const [items, setItems] = useState<IntelligenceItem[]>([]);
   const [briefs, setBriefs] = useState<IntelligenceBrief[]>([]);
   const [observability, setObservability] = useState<Observability | null>(null);
   const [loading, setLoading] = useState(false);
+  const [timedOut, setTimedOut] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const refreshSeq = useRef(0);
   const includeTest = !!opts.includeTestMode;
 
   const refresh = useCallback(async () => {
-    if (!orgId) return;
+    const seq = ++refreshSeq.current;
+    setTimedOut(false);
+    setError(null);
+
+    if (!orgId) {
+      setItems([]);
+      setBriefs([]);
+      setObservability(null);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
     try {
+      timeoutId = setTimeout(() => {
+        if (refreshSeq.current === seq) setTimedOut(true);
+      }, INBOX_TIMEOUT_MS);
+
       let itemsQ = supabase
         .from("aicis_intelligence_items")
         .select("id,title,summary,severity,urgency,domain,geography,entities,status,global_criticality_score,ingested_at,last_transition_at,intelligence_relevance_scores(organization_relevance_score,business_impact_score,operational_urgency_score,decision_pressure_score)")
@@ -71,10 +93,12 @@ export const useIntelligenceInbox = (opts: { includeTestMode?: boolean } = {}) =
         .eq("organization_id", orgId)
         .order("generated_at", { ascending: false })
         .limit(20);
+
       if (!includeTest) {
         itemsQ = itemsQ.not("title", "ilike", "[TEST]%");
         briefsQ = briefsQ.not("title", "ilike", "[TEST]%");
       }
+
       const [itemsRes, briefsRes, obsRes] = await Promise.all([
         itemsQ,
         briefsQ,
@@ -85,17 +109,30 @@ export const useIntelligenceInbox = (opts: { includeTestMode?: boolean } = {}) =
           .eq("day", new Date().toISOString().slice(0, 10))
           .maybeSingle(),
       ]);
+
+      if (refreshSeq.current !== seq) return;
+      if (itemsRes.error) throw itemsRes.error;
+      if (briefsRes.error) throw briefsRes.error;
+      if (obsRes.error) console.warn("Intelligence observability unavailable", obsRes.error);
+
       setItems((itemsRes.data as unknown as IntelligenceItem[]) || []);
       setBriefs((briefsRes.data as unknown as IntelligenceBrief[]) || []);
       setObservability((obsRes.data as unknown as Observability) || null);
+    } catch (err) {
+      if (refreshSeq.current !== seq) return;
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message);
+      setItems([]);
+      setBriefs([]);
+      setObservability(null);
     } finally {
-      setLoading(false);
+      if (timeoutId) clearTimeout(timeoutId);
+      if (refreshSeq.current === seq) setLoading(false);
     }
   }, [orgId, includeTest]);
 
   useEffect(() => { refresh(); }, [refresh]);
 
-  // Realtime
   useEffect(() => {
     if (!orgId) return;
     const ch = supabase
@@ -136,5 +173,5 @@ export const useIntelligenceInbox = (opts: { includeTestMode?: boolean } = {}) =
     });
   }, [orgId]);
 
-  return { items, briefs, observability, loading, refresh, routeItem, sendFeedback };
+  return { items, briefs, observability, loading, timedOut, error, refresh, routeItem, sendFeedback, orgId };
 };
