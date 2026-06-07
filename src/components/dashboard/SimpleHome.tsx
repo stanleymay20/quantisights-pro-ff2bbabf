@@ -223,7 +223,16 @@ const SimpleHome = ({
       ...criticalInsights.map(i => ({ ...i, _priority: "critical" as const })),
       ...insights.filter(i => i.severity === "medium").map(i => ({ ...i, _priority: "warning" as const })),
     ];
-    return all.slice(0, 4);
+    // Deduplicate by detected metric key so the same metric never appears twice in the brief cards.
+    const seenMetrics = new Set<string>();
+    const deduped = all.filter((i) => {
+      const metric = detectMetric(i.message, i.category);
+      const key = metric ?? `${i.category ?? ""}::${i.message.slice(0, 40)}`;
+      if (seenMetrics.has(key)) return false;
+      seenMetrics.add(key);
+      return true;
+    });
+    return deduped.slice(0, 4);
   }, [criticalInsights, insights]);
 
   const decisionBriefs = useMemo(() => alertInsights.map(toDecisionBrief), [alertInsights]);

@@ -33,7 +33,13 @@ const Dashboard = () => {
   const { insights, loading: insightsLoading } = useInsights(currentOrgId, activeDatasetId);
   const navigate = useNavigate();
 
-  const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "User";
+  const rawEmailPrefix = user?.email?.split("@")[0] ?? "";
+  // Capitalise the email prefix: "stanley.osei-wusu" → "Stanley Osei-Wusu", "jimp" → "Jimp"
+  const formattedEmailName = rawEmailPrefix
+    .split(/[._-]/)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+  const displayName = user?.user_metadata?.full_name || formattedEmailName || "User";
   const isDemoUser = Boolean(user?.user_metadata?.is_demo);
 
   const [pendingDecisions, setPendingDecisions] = useState(0);

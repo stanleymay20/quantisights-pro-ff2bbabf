@@ -123,7 +123,7 @@ const BoardReport = () => {
         <ReportHeader
           organizationName={report.organization_name}
           generatedAt={report.generated_at}
-          generatedBy={report.generated_by}
+          generatedBy={user?.user_metadata?.full_name || user?.email?.split("@")[0] || report.generated_by}
           tier={report.tier}
         />
 
