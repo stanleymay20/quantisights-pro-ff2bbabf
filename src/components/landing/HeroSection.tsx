@@ -2,6 +2,7 @@ import { forwardRef } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { ArrowRight, Sparkles, Play } from "lucide-react";
+import heroBg from "@/assets/hero-dashboard.jpg";
 
 const HeroSection = forwardRef<HTMLElement>((_, ref) => {
   return (
@@ -10,10 +11,19 @@ const HeroSection = forwardRef<HTMLElement>((_, ref) => {
       className="relative min-h-[90vh] min-h-[90dvh] flex items-center overflow-hidden pt-16 sm:pt-20"
       role="banner"
     >
-      {/* Soft gradient background — no heavy image */}
+      {/* Layered background: abstract data visualization + soft gradient wash */}
       <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-gradient-to-b from-primary/[0.04] via-background to-background" />
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-primary/[0.06] rounded-full blur-[180px]" />
+        <img
+          src={heroBg}
+          alt=""
+          aria-hidden="true"
+          width={1600}
+          height={1024}
+          className="absolute inset-0 w-full h-full object-cover opacity-30"
+          fetchPriority="high"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/70 via-background/85 to-background" />
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-primary/[0.08] rounded-full blur-[180px]" />
       </div>
 
       <div className="container mx-auto px-5 sm:px-6 relative z-10">
