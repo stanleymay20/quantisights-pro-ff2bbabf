@@ -46,6 +46,7 @@ const Diagnostics = () => {
   const { toast } = useToast();
   const [diagnostics, setDiagnostics] = useState<DiagnosticResult[]>([]);
   const [loading, setLoading] = useState(false);
+  const [hasRun, setHasRun] = useState(false);
   const [analyzedCount, setAnalyzedCount] = useState(0);
   const [metricTypesAnalyzed, setMetricTypesAnalyzed] = useState(0);
   const [skippedMetrics, setSkippedMetrics] = useState<string[]>([]);
@@ -68,6 +69,7 @@ const Diagnostics = () => {
       setAnalyzedCount((data?.analyzed_metrics as number) || 0);
       setMetricTypesAnalyzed((data?.metric_types_analyzed as string[])?.length || 0);
       setSkippedMetrics((data?.skipped_metrics as string[]) || []);
+      setHasRun(true);
       if ((data?.diagnostics as DiagnosticResult[])?.length === 0) {
         toast({ title: "No anomalies detected", description: "All metrics within expected ranges." });
       }
@@ -80,8 +82,9 @@ const Diagnostics = () => {
   }, [orgId, datasetId, activeContext?.id, toast]);
 
   useEffect(() => {
-    if (orgId && datasetId) runDiagnostics();
-  }, [runDiagnostics]);
+    // Do not auto-fire the expensive diagnostic-engine edge function on mount.
+    // Users trigger analysis manually via the Re-analyze button.
+  }, []);
 
   const criticalCount = diagnostics.filter(d => d.severity === "critical").length;
   const warningCount = diagnostics.filter(d => d.severity === "warning").length;
@@ -117,6 +120,8 @@ const Diagnostics = () => {
 
           {loading ? (
             <DiagnosticEmptyState variant="loading" />
+          ) : !hasRun ? (
+            <DiagnosticEmptyState variant="ready" onRun={runDiagnostics} />
           ) : diagnostics.length === 0 ? (
             <DiagnosticEmptyState variant="empty" />
           ) : (
