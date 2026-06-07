@@ -98,6 +98,7 @@ const AdvisoryPage = () => {
   const [advisories, setAdvisories] = useState<Advisory[]>([]);
   const [instances, setInstances] = useState<AdvisoryInstance[]>([]);
   const [loading, setLoading] = useState(false);
+  const [timedOut, setTimedOut] = useState(false);
   const [criticalCount, setCriticalCount] = useState(0);
   const [dataSufficiency, setDataSufficiency] = useState<string | null>(null);
   const [sampleSize, setSampleSize] = useState<number>(0);
@@ -121,6 +122,12 @@ const AdvisoryPage = () => {
   const fetchAdvisories = useCallback(async () => {
     if (!currentOrgId || !activeDatasetId) return;
     setLoading(true);
+    setTimedOut(false);
+    // Client-side 20s hard cap so the spinner never runs forever
+    const clientTimeout = setTimeout(() => {
+      setLoading(false);
+      setTimedOut(true);
+    }, 20_000);
     try {
       const { data, error } = await invokeWithRetry<Record<string, unknown>>("prescriptive-advisory", {
         body: {
@@ -128,7 +135,8 @@ const AdvisoryPage = () => {
           dataset_id: activeDatasetId,
           ...(activeContext?.id ? { decision_context_id: activeContext.id } : {}),
         },
-      });
+      }, { maxAttempts: 1, timeoutMs: 18_000 });
+      clearTimeout(clientTimeout);
       if (error) throw error;
       if (data?.error) throw new Error(data.error as string);
       setAdvisories((data?.advisories as Advisory[]) || []);
@@ -140,9 +148,16 @@ const AdvisoryPage = () => {
       // Embed new advisories into institutional memory (non-blocking)
       if (currentOrgId) embedAdvisoriesBatch(currentOrgId);
     } catch (err: unknown) {
+      clearTimeout(clientTimeout);
       const msg = err instanceof Error ? err.message : "Unknown error";
-      toast({ title: "Failed to load advisories", description: msg, variant: "destructive" });
+      const isTimeout = msg.includes("timed out");
+      if (isTimeout) {
+        setTimedOut(true);
+      } else {
+        toast({ title: "Failed to load advisories", description: msg, variant: "destructive" });
+      }
     } finally {
+      clearTimeout(clientTimeout);
       setLoading(false);
     }
   }, [currentOrgId, activeDatasetId, activeContext?.id, toast, fetchInstances]);
@@ -289,6 +304,18 @@ const AdvisoryPage = () => {
                 <Card><CardContent className="py-16 flex flex-col items-center gap-4">
                   <Loader2 className="w-10 h-10 animate-spin text-primary" />
                   <p className="text-muted-foreground">Generating strategic recommendations...</p>
+                  <p className="text-xs text-muted-foreground">This typically takes 10–20 seconds.</p>
+                </CardContent></Card>
+              ) : timedOut ? (
+                <Card><CardContent className="py-16 flex flex-col items-center gap-4">
+                  <AlertTriangle className="w-10 h-10 text-warning" />
+                  <h2 className="text-lg font-semibold">Analysis is taking longer than expected</h2>
+                  <p className="text-muted-foreground text-sm text-center max-w-md">
+                    The advisory engine is busy processing. Your data is intact — try again in a moment or check tracked advisories below.
+                  </p>
+                  <Button onClick={() => { setTimedOut(false); fetchAdvisories(); }} variant="outline" size="sm" className="mt-2 gap-2">
+                    <RefreshCw className="w-4 h-4" /> Try Again
+                  </Button>
                 </CardContent></Card>
               ) : advisories.length === 0 ? (
                 <Card>

@@ -46,11 +46,15 @@ const BoardReport = () => {
 
   useEffect(() => {
     const fetchReport = async () => {
-      if (!currentOrgId || !activeDatasetId) return;
+      if (!currentOrgId || !activeDatasetId) {
+        setError("No active dataset selected. Please select a project and dataset first.");
+        setLoading(false);
+        return;
+      }
       try {
         const { data, error: fnError } = await invokeWithRetry<ReportData & { error?: string }>("generate-board-report", {
           body: { organization_id: currentOrgId, dataset_id: activeDatasetId },
-        });
+        }, { maxAttempts: 1, timeoutMs: 20_000 });
         if (fnError) throw fnError;
         if (data?.error) throw new Error(data.error);
         if (data) setReport(data);

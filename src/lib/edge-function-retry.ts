@@ -18,6 +18,8 @@ interface InvokeOptions {
 interface RetryConfig {
   maxAttempts?: number;
   baseDelayMs?: number;
+  /** Hard wall-clock timeout in ms per attempt (default: 25_000 ms). */
+  timeoutMs?: number;
 }
 
 export interface UpgradeRequiredDetail {
@@ -58,11 +60,18 @@ export async function invokeWithRetry<T = unknown>(
   options?: InvokeOptions,
   retryConfig?: RetryConfig
 ): Promise<{ data: T | null; error: Error | null }> {
-  const { maxAttempts = 3, baseDelayMs = 300 } = retryConfig ?? {};
+  const { maxAttempts = 3, baseDelayMs = 300, timeoutMs = 25_000 } = retryConfig ?? {};
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     try {
-      const { data, error } = await supabase.functions.invoke(functionName, options);
+      // Wrap each attempt with a hard timeout so the UI never hangs indefinitely.
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error(`Edge function "${functionName}" timed out after ${timeoutMs}ms`)), timeoutMs)
+      );
+
+      const invokePromise = supabase.functions.invoke(functionName, options);
+
+      const { data, error } = await Promise.race([invokePromise, timeoutPromise]);
 
       if (error) {
         // Parse the error body — if it's a 402, surface upgrade event and stop.
