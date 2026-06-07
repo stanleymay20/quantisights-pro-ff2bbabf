@@ -141,11 +141,37 @@ export default function ExecutiveIntelligence() {
   }
   if (!allowed) {
     return (
-      <div className="container mx-auto p-6">
-        <Card>
-          <CardHeader><CardTitle>Restricted</CardTitle></CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">Executive Intelligence is restricted to owner, admin, and executive roles.</p>
+      <div className="container mx-auto p-6 flex items-center justify-center min-h-[60vh]">
+        <Card className="max-w-md w-full">
+          <CardHeader>
+            <div className="flex items-center gap-3 mb-1">
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <ShieldAlert className="w-5 h-5 text-primary" />
+              </div>
+              <CardTitle>Executive Access Required</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-muted-foreground text-sm leading-relaxed">
+              Executive Intelligence is available to <strong>Owner</strong>, <strong>Admin</strong>, and <strong>Executive</strong> roles. Your current role does not have access to this module.
+            </p>
+            <p className="text-muted-foreground text-sm leading-relaxed">
+              Contact your organization owner to request an elevated role, or upgrade to the Growth or Enterprise plan to unlock executive-tier features.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-2 pt-2">
+              <a
+                href="/billing"
+                className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:brightness-110 transition-all"
+              >
+                View Upgrade Options
+              </a>
+              <a
+                href="/enterprise/contact"
+                className="inline-flex items-center justify-center px-4 py-2 rounded-lg border border-border text-sm font-medium hover:bg-accent transition-all"
+              >
+                Contact Enterprise Sales
+              </a>
+            </div>
           </CardContent>
         </Card>
       </div>
