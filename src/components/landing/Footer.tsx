@@ -108,9 +108,9 @@ const Footer = forwardRef<HTMLElement>((_, ref) => (
               </Link>
             </li>
             <li>
-              <a href={`mailto:${CONTACT.email.general}`} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              <Link to="/demo" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                 Request Demo
-              </a>
+              </Link>
             </li>
             <li>
               <Link to="/docs" className="text-sm text-muted-foreground hover:text-foreground transition-colors">

@@ -208,6 +208,7 @@ export const routes: RouteEntry[] = [
   { path: "/competitions", element: <Competitions />, layout: "public" },
   { path: "/pitch-deck", element: <PitchDeck />, layout: "public" },
   { path: "/ebook", element: <Ebook />, layout: "public" },
+  { path: "/enterprise", element: <Navigate to="/enterprise/contact" replace />, layout: "none" },
   { path: "/enterprise/contact", element: <EnterpriseContact />, layout: "public" },
   { path: "/competitive-analysis", element: <CompetitiveAnalysis />, layout: "public" },
   { path: "/trust-center", element: <TrustCenter />, layout: "public" },
