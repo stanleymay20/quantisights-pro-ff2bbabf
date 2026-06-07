@@ -107,7 +107,7 @@ const MarketIntelligence = () => {
       fetchStoredSignals();
       toast({ title: "Market signals updated" });
     } catch (e: unknown) {
-      toast({ title: "Failed to fetch signals", description: e instanceof Error ? e.message : "Unknown error", variant: "destructive" });
+      toast({ title: "Signals unavailable", description: "Market signal generation is temporarily unavailable. Please try again in a moment or contact support if the issue persists.", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -163,6 +163,19 @@ const MarketIntelligence = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Empty state */}
+          {!data && !loading && (
+            <Card>
+              <CardContent className="p-12 flex flex-col items-center text-center gap-3">
+                <Globe className="w-10 h-10 text-muted-foreground/40" />
+                <p className="text-sm font-medium text-muted-foreground">No signals fetched yet</p>
+                <p className="text-xs text-muted-foreground/70 max-w-xs leading-relaxed">
+                  Select an industry sector and click "Fetch Signals" to generate AI-powered market intelligence signals for your sector.
+                </p>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Market Sentiment */}
           {data && (
