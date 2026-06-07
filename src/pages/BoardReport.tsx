@@ -79,11 +79,22 @@ const BoardReport = () => {
   if (error) {
     return (
       <div className="min-h-dvh bg-[#0B1426] flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <p className="text-red-400 text-lg">{error}</p>
-          <Button variant="outline" onClick={() => navigate("/executive")}>
-            <ArrowLeft className="w-4 h-4 mr-2" /> Back to Executive
-          </Button>
+        <div className="text-center space-y-4 max-w-md px-6">
+          <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center mx-auto">
+            <ArrowLeft className="w-6 h-6 text-red-400 rotate-[-90deg]" />
+          </div>
+          <h2 className="text-slate-200 text-xl font-semibold">Report generation failed</h2>
+          <p className="text-slate-400 text-sm leading-relaxed">
+            We couldn't compile your board report right now. This is usually a temporary issue — please try again in a moment. If the problem persists, contact <a href="mailto:hello@quantivis.io" className="text-cyan-400 hover:underline">hello@quantivis.io</a>.
+          </p>
+          <div className="flex gap-3 justify-center pt-2">
+            <Button variant="outline" onClick={() => window.location.reload()} className="bg-[#0B1426] border-slate-600 text-slate-200 hover:bg-slate-800">
+              Try Again
+            </Button>
+            <Button variant="outline" onClick={() => navigate("/executive")} className="bg-[#0B1426] border-slate-600 text-slate-200 hover:bg-slate-800">
+              <ArrowLeft className="w-4 h-4 mr-2" /> Back to Executive
+            </Button>
+          </div>
         </div>
       </div>
     );
