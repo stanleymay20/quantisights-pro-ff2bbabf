@@ -8,6 +8,9 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import IntelligenceDisclaimer from "@/components/IntelligenceDisclaimer";
 import SectionErrorBoundary from "@/components/SectionErrorBoundary";
+import TrustStrip from "@/components/trust/TrustStrip";
+import { trustFromExecutiveBrief } from "@/components/trust/trust-adapter";
+import { useActiveDataContext } from "@/contexts/ActiveDataContext";
 import {
   AlertTriangle, ShieldAlert, Activity, Compass, Sparkles,
   Globe, GitBranch, Zap, CheckCircle2, ArrowUpRight, Clock, Layers,
@@ -22,10 +25,11 @@ const TIER_LABEL: Record<string, string> = {
   informational: "Info", low: "Low", elevated: "Elevated", high: "High", critical: "Critical",
 };
 
-function ExecutiveBriefCard({ brief, onRegenerate, generating }: {
+function ExecutiveBriefCard({ brief, onRegenerate, generating, orgId }: {
   brief: ReturnType<typeof useExecutiveIntelligence>["brief"];
   onRegenerate: () => void;
   generating: boolean;
+  orgId: string | null;
 }) {
   if (!brief) {
     return (
@@ -55,6 +59,10 @@ function ExecutiveBriefCard({ brief, onRegenerate, generating }: {
         </Button>
       </CardHeader>
       <CardContent className="space-y-4">
+        <TrustStrip
+          record={trustFromExecutiveBrief(brief, orgId)}
+          variant="compact"
+        />
         <div>
           <h3 className="text-lg font-semibold">{s.headline}</h3>
           {s.escalation_recommended && (
@@ -125,6 +133,7 @@ function InterventionRow({ iv, onUpdate }: { iv: Intervention; onUpdate: (id: st
 
 export default function ExecutiveIntelligence() {
   const { orgRole, isLoading: roleLoading } = usePermissions();
+  const { orgId } = useActiveDataContext();
   const {
     brief, interventions, topByPressure, narratives, exposure, observability, snapshot,
     loading, generating, regenerate, updateIntervention,
@@ -208,7 +217,7 @@ export default function ExecutiveIntelligence() {
       <IntelligenceDisclaimer />
 
       <SectionErrorBoundary sectionName="Executive Brief">
-        <ExecutiveBriefCard brief={brief} onRegenerate={regenerate} generating={generating} />
+        <ExecutiveBriefCard brief={brief} onRegenerate={regenerate} generating={generating} orgId={orgId} />
       </SectionErrorBoundary>
 
       {!snapshot && !brief && !loading && interventions.length === 0 && (

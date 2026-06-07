@@ -17,6 +17,9 @@ import { Button } from "@/components/ui/button";
 import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 import { usePendingDeliberations, useDeliberation, type DeliberationApprovalRow } from "@/hooks/useDeliberation";
 import type { PerspectiveStance } from "@/lib/deliberation/perspectives";
+import TrustStrip from "@/components/trust/TrustStrip";
+import { trustFromBoardroomItem } from "@/components/trust/trust-adapter";
+import { useOrganization } from "@/hooks/useOrganization";
 import {
   Scale,
   Users,
@@ -140,6 +143,7 @@ function approverLabel(approval: DeliberationApprovalRow) {
 function DeliberationDetail({ decisionId, onBack }: { decisionId: string; onBack: () => void }) {
   const { data, loading } = useDeliberation(decisionId);
   const navigate = useNavigate();
+  const { currentOrgId } = useOrganization();
 
   const derived = useMemo(() => {
     const decision = (data?.decision ?? {}) as unknown as Record<string, unknown>;
@@ -210,6 +214,11 @@ function DeliberationDetail({ decisionId, onBack }: { decisionId: string; onBack
           </div>
         </div>
       </Card>
+
+      <TrustStrip
+        record={trustFromBoardroomItem(decision, currentOrgId)}
+        variant="compact"
+      />
 
       <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
         <Card className="p-5">

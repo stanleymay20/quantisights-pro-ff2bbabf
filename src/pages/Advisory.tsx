@@ -23,6 +23,8 @@ import ConfidenceBadge, { resolveConfidence } from "@/components/ConfidenceBadge
 import { useDecisionContexts } from "@/hooks/useDecisionContexts";
 import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 import DualLayerEvidencePanel from "@/components/dashboard/DualLayerEvidencePanel";
+import TrustStrip from "@/components/trust/TrustStrip";
+import { trustFromAdvisory } from "@/components/trust/trust-adapter";
 
 interface Advisory {
   id: string;
@@ -253,6 +255,10 @@ const AdvisoryPage = () => {
                     ))}
                   </ol>
                 </div>
+                <TrustStrip
+                  record={trustFromAdvisory(adv, currentOrgId)}
+                  variant="compact"
+                />
               </motion.div>
             )}
           </CardContent>
