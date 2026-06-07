@@ -29,8 +29,7 @@ const Impressum = () => (
         <section>
           <h2 className="text-lg font-semibold mb-2">Kontakt</h2>
           <p>
-            E-Mail: <a href={`mailto:${CONTACT.email.general}`} className="text-primary hover:underline">{CONTACT.email.general}</a><br />
-            Telefon: <a href={CONTACT.phone.href} className="text-primary hover:underline">{CONTACT.phone.display}</a>
+            E-Mail: <a href={`mailto:${CONTACT.email.general}`} className="text-primary hover:underline">{CONTACT.email.general}</a>
           </p>
         </section>
 

@@ -307,7 +307,7 @@ const Pitch = () => {
                 </a>
               </div>
               <p className="text-xs text-muted-foreground mt-6">
-                {CONTACT.email.general} · {CONTACT.phone.display} · {CONTACT.location} · GDPR ready
+                {CONTACT.email.general} · {CONTACT.location} · GDPR ready
               </p>
             </motion.div>
           </div>

@@ -304,7 +304,6 @@ const ProcurementPack = () => {
             <div><strong>DPO:</strong> {CONTACT.email.dpo}</div>
             <div><strong>Legal:</strong> {CONTACT.email.legal}</div>
             <div><strong>General:</strong> {CONTACT.email.general}</div>
-            <div><strong>Phone:</strong> {CONTACT.phone.display}</div>
             <div><strong>Web:</strong> {CONTACT.website}</div>
           </div>
           <p className="mt-3">

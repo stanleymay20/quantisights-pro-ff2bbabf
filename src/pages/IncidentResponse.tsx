@@ -165,7 +165,7 @@ const IncidentResponse = () => {
             </p>
             <div className="text-sm space-y-1">
               <div>Security: <a href={`mailto:${CONTACT.email.security}`} className="text-primary hover:underline">{CONTACT.email.security}</a></div>
-              <div>Emergency phone (business hours): <a href={CONTACT.phone.href} className="text-primary hover:underline">{CONTACT.phone.display}</a></div>
+              <div>Emergency contact (business hours): <a href={`mailto:${CONTACT.email.security}`} className="text-primary hover:underline">{CONTACT.email.security}</a></div>
               <div>Coordinated disclosure policy: <a href="/.well-known/security.txt" className="text-primary hover:underline">/.well-known/security.txt</a></div>
             </div>
           </CardContent>
