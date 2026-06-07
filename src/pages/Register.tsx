@@ -126,7 +126,18 @@ const Register = forwardRef<HTMLDivElement>((_, ref) => {
   };
 
   return (
-    <div ref={ref} className="min-h-dvh flex items-center justify-center bg-background px-4 safe-area-bottom safe-area-top">
+    <div ref={ref} className="min-h-dvh flex flex-col bg-background safe-area-bottom safe-area-top">
+      {/* Top nav bar with back link */}
+      <div className="w-full flex items-center justify-between px-6 py-4 border-b border-border/30">
+        <Link to="/" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+          Back to home
+        </Link>
+        <Link to="/"><img src={logo} alt="Quantivis Global" className="h-8" /></Link>
+        <Link to="/login" className="text-sm text-primary hover:underline">Sign in</Link>
+      </div>
+
+      <div className="flex-1 flex items-center justify-center px-4 py-10">
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/3 right-1/3 w-96 h-96 bg-primary/5 rounded-full blur-[120px]" />
       </div>
@@ -144,7 +155,7 @@ const Register = forwardRef<HTMLDivElement>((_, ref) => {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" autoComplete="on">
           <div>
             <label className="block text-sm font-medium mb-1.5">Full Name</label>
             <input
@@ -152,6 +163,7 @@ const Register = forwardRef<HTMLDivElement>((_, ref) => {
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               required
+              autoComplete="name"
               className="w-full px-4 py-3 rounded-lg bg-secondary border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
               placeholder="John Doe"
             />
@@ -163,6 +175,7 @@ const Register = forwardRef<HTMLDivElement>((_, ref) => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              autoComplete="email"
               className="w-full px-4 py-3 rounded-lg bg-secondary border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
               placeholder="you@company.com"
             />
@@ -174,6 +187,7 @@ const Register = forwardRef<HTMLDivElement>((_, ref) => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              autoComplete="new-password"
               className="w-full px-4 py-3 rounded-lg bg-secondary border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
               placeholder="••••••••"
             />
@@ -241,6 +255,7 @@ const Register = forwardRef<HTMLDivElement>((_, ref) => {
           Already have an account?{" "}
           <Link to="/login" className="text-primary hover:underline">Sign in</Link>
         </p>
+      </div>
       </div>
     </div>
   );

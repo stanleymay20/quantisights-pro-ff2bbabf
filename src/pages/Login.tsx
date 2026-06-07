@@ -188,7 +188,18 @@ const Login = forwardRef<HTMLDivElement>((_, ref) => {
   };
 
   return (
-    <div ref={ref} className="min-h-dvh flex items-center justify-center bg-background px-4 safe-area-bottom safe-area-top">
+    <div ref={ref} className="min-h-dvh flex flex-col bg-background safe-area-bottom safe-area-top">
+      {/* Top nav bar with back link */}
+      <div className="w-full flex items-center justify-between px-6 py-4 border-b border-border/30">
+        <Link to="/" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+          Back to home
+        </Link>
+        <Link to="/"><img src={logo} alt="Quantivis Global" className="h-8" /></Link>
+        <Link to="/register" className="text-sm text-primary hover:underline">Sign up</Link>
+      </div>
+
+      <div className="flex-1 flex items-center justify-center px-4 py-10">
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/3 left-1/3 w-96 h-96 bg-primary/5 rounded-full blur-[120px]" />
       </div>
@@ -204,7 +215,7 @@ const Login = forwardRef<HTMLDivElement>((_, ref) => {
             <h1 className="text-2xl font-bold font-display text-center mb-2">Welcome Back</h1>
             <p className="text-muted-foreground text-center mb-8 text-sm">Sign in to your account</p>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4" autoComplete="on">
               <div>
                 <label className="block text-sm font-medium mb-1.5">Email</label>
                 <input
@@ -215,6 +226,7 @@ const Login = forwardRef<HTMLDivElement>((_, ref) => {
                     checkSSODomain(e.target.value);
                   }}
                   required
+                  autoComplete="email"
                   className="w-full px-4 py-3 rounded-lg bg-secondary border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
                   placeholder="you@company.com"
                 />
@@ -257,6 +269,7 @@ const Login = forwardRef<HTMLDivElement>((_, ref) => {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required={!ssoRedirect}
+                      autoComplete="current-password"
                       className="w-full px-4 py-3 rounded-lg bg-secondary border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
                       placeholder="••••••••"
                     />
@@ -310,6 +323,7 @@ const Login = forwardRef<HTMLDivElement>((_, ref) => {
             </div>
           </>
         )}
+      </div>
       </div>
     </div>
   );
