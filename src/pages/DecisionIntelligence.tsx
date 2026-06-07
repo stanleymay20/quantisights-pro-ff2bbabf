@@ -283,7 +283,7 @@ const DecisionIntelligence = () => {
   const { performance: performanceData, loading: perfLoading } = useDecisionPerformance(currentOrgId);
 
   useEffect(() => {
-    if (!currentOrgId) return;
+    if (!currentOrgId) { setLoading(false); return; }
     const fetch = async () => {
       setLoading(true);
       const [decRes, simRes] = await Promise.all([

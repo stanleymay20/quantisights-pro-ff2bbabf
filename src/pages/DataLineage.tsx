@@ -44,7 +44,10 @@ const DataLineage = () => {
   const [datasetInfo, setDatasetInfo] = useState<{ name: string; row_count: number | null; column_mapping: any | null } | null>(null);
 
   useEffect(() => {
-    if (!currentOrgId) return;
+    if (!currentOrgId) {
+      setLoading(false);
+      return;
+    }
     const load = async () => {
       setLoading(true);
 

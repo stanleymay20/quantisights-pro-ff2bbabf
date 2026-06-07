@@ -133,7 +133,7 @@ const DataSources = () => {
   const [revealedKey, setRevealedKey] = useState<{ sourceId: string; rawKey: string } | null>(null);
 
   const fetchSources = async () => {
-    if (!currentOrgId) return;
+    if (!currentOrgId) { setLoading(false); return; }
     setLoading(true);
     const { data } = await supabase
       .from("data_sources")

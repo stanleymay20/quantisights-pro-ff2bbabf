@@ -63,7 +63,7 @@ const AlertPlaybooks = () => {
 
   // Dynamically discover metric types
   useEffect(() => {
-    if (!currentOrgId) return;
+    if (!currentOrgId) { setLoading(false); return; }
     const fetchTypes = async () => {
       const { data } = await supabase
         .from("metrics")
@@ -94,7 +94,7 @@ const AlertPlaybooks = () => {
   const [pbSteps, setPbSteps] = useState('[\n  {"action": "notify_slack", "channel": "#alerts", "delay_minutes": 0},\n  {"action": "email_executive", "role": "cfo", "delay_minutes": 15},\n  {"action": "create_advisory", "priority": "high", "delay_minutes": 30}\n]');
 
   const fetchData = useCallback(async () => {
-    if (!currentOrgId) return;
+    if (!currentOrgId) { setLoading(false); return; }
     setLoading(true);
     const [pbRes, exRes] = await Promise.all([
       supabase.from("alert_playbooks").select("*").eq("organization_id", currentOrgId).order("created_at", { ascending: false }),

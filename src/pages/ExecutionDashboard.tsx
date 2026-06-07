@@ -54,7 +54,7 @@ const ExecutionDashboard = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!currentOrgId) return;
+    if (!currentOrgId) { setLoading(false); return; }
 
     const fetchData = async () => {
       setLoading(true);

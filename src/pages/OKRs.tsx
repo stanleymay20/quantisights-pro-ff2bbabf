@@ -68,7 +68,7 @@ const OKRs = () => {
   const [krUnit, setKrUnit] = useState("%");
 
   const fetchOKRs = useCallback(async () => {
-    if (!currentOrgId) return;
+    if (!currentOrgId) { setLoading(false); return; }
     setLoading(true);
     const [objRes, krRes] = await Promise.all([
       supabase.from("objectives").select("*").eq("organization_id", currentOrgId).order("created_at", { ascending: false }),

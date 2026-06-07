@@ -50,7 +50,7 @@ const DatasetExplorer = () => {
   const [view, setView] = useState<"schema" | "sample" | "stats">("schema");
 
   useEffect(() => {
-    if (!currentOrgId) return;
+    if (!currentOrgId) { setLoading(false); return; }
     const fetch = async () => {
       setLoading(true);
       const { data } = await supabase
