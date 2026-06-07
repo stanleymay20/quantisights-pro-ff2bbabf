@@ -55,10 +55,6 @@ const Footer = forwardRef<HTMLElement>((_, ref) => (
               <Mail className="w-3.5 h-3.5 text-primary" />
               {CONTACT.email.general}
             </a>
-            <a href={CONTACT.phone.href} className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
-              <Mail className="w-3.5 h-3.5 text-primary" />
-              {CONTACT.phone.display}
-            </a>
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
               {CONTACT.location}

@@ -75,13 +75,6 @@ const CTASection = forwardRef<HTMLElement>((_, ref) => {
               {CONTACT.email.general}
             </a>
             <a
-              href={`mailto:${CONTACT.email.general}`}
-              className="inline-flex items-center gap-2 text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <Mail className="w-4 h-4 text-primary" />
-              {CONTACT.email.general}
-            </a>
-            <a
               href={CONTACT.linkedin}
               target="_blank"
               rel="noopener noreferrer"
