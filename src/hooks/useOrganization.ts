@@ -6,13 +6,13 @@ interface Organization {
   id: string;
   name: string;
   role: string;
-  industry?: string | null;
+  industry: string | null;
 }
 
 interface OrgMemberRow {
   organization_id: string;
   role: string;
-  organizations: { id: string; name: string; industry?: string | null } | null;
+  organizations: { id: string; name: string; industry: string | null } | null;
 }
 
 const ORG_STORAGE_KEY = "quantivis_org_id";
