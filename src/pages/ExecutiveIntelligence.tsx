@@ -10,7 +10,7 @@ import IntelligenceDisclaimer from "@/components/IntelligenceDisclaimer";
 import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 import TrustStrip from "@/components/trust/TrustStrip";
 import { trustFromExecutiveBrief } from "@/components/trust/trust-adapter";
-import { useActiveDataContext } from "@/contexts/ActiveDataContext";
+import { useActiveDataContext } from "@/hooks/useActiveDataContext";
 import {
   AlertTriangle, ShieldAlert, Activity, Compass, Sparkles,
   Globe, GitBranch, Zap, CheckCircle2, ArrowUpRight, Clock, Layers,
