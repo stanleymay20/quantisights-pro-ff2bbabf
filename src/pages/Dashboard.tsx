@@ -14,7 +14,7 @@ import { invokeWithRetry } from "@/lib/edge-function-retry";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { DashboardEmptyState } from "@/components/dashboard/DashboardEmptyState";
 import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
-import SimpleHome from "@/components/dashboard/SimpleHome";
+import CopilotHome from "@/components/dashboard/CopilotHome";
 import WelcomeFlow from "@/components/dashboard/WelcomeFlow";
 import DemoBanner from "@/components/dashboard/DemoBanner";
 import SectionErrorBoundary from "@/components/SectionErrorBoundary";
@@ -153,7 +153,7 @@ const Dashboard = () => {
           <DashboardEmptyState />
         ) : (
           <SectionErrorBoundary sectionName="Dashboard">
-            <SimpleHome
+            <CopilotHome
               displayName={displayName}
               insights={insights}
               pendingDecisions={pendingDecisions}
