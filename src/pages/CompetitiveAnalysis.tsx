@@ -63,7 +63,7 @@ const CATEGORY_META: Record<MatrixRow["category"], { label: string; icon: typeof
 };
 
 const COMPETITORS = [
-  { key: "quantivis", label: "Quantivis", positioning: "Decision OS" },
+  { key: "quantivis", label: "Quantivis", positioning: "Decision Intelligence Platform" },
   { key: "palantir", label: "Palantir", positioning: "Foundry / AIP" },
   { key: "anaplan", label: "Anaplan", positioning: "Connected Planning" },
   { key: "aera", label: "Aera", positioning: "Decision Cloud" },

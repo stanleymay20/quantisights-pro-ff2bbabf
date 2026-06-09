@@ -94,8 +94,15 @@ const Outcomes = () => {
           <Card>
             <CardContent className="p-4 text-center">
               <BarChart3 className="w-5 h-5 text-muted-foreground mx-auto mb-1" />
-              <p className="text-2xl font-bold">{avgAccuracy != null ? `${avgAccuracy}%` : "—"}</p>
-              <p className="text-xs text-muted-foreground">Accuracy</p>
+              <p
+                className="text-2xl font-bold"
+                title={avgAccuracy == null ? "No outcomes measured yet. Record an outcome on a decision to activate accuracy tracking." : undefined}
+              >
+                {avgAccuracy != null ? `${avgAccuracy}%` : "—"}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {avgAccuracy == null ? "No data yet" : "Accuracy"}
+              </p>
             </CardContent>
           </Card>
           <Card>

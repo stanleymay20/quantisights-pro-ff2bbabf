@@ -188,8 +188,38 @@ const Copilot = () => {
               ))}
             </div>
 
+            {/* Decision Brief lifecycle — Decision Brief Doctrine (IA v1.2) */}
+            <div className="mt-10 border-t border-border/30 pt-6">
+              <p className="text-[10px] text-muted-foreground/50 uppercase tracking-widest text-center mb-3">
+                Every decision follows the same path
+              </p>
+              <div className="flex items-center justify-center gap-1 flex-wrap">
+                {[
+                  { label: "Data",     path: "/data-upload" },
+                  { label: "Signals",  path: "/executive-intelligence" },
+                  { label: "Decision Brief", path: "/decisions" },
+                  { label: "Approval", path: "/decisions" },
+                  { label: "Execution",path: "/execution" },
+                  { label: "Outcome",  path: "/outcomes" },
+                  { label: "Learning", path: "/decision-accuracy" },
+                ].map((step, i, arr) => (
+                  <span key={step.label} className="flex items-center gap-1">
+                    <button
+                      onClick={() => navigate(step.path)}
+                      className="text-[11px] text-muted-foreground/60 hover:text-primary transition-colors"
+                    >
+                      {step.label}
+                    </button>
+                    {i < arr.length - 1 && (
+                      <span className="text-muted-foreground/30 text-[10px]">→</span>
+                    )}
+                  </span>
+                ))}
+              </div>
+            </div>
+
             {/* Advanced workspaces link */}
-            <div className="mt-10 text-center">
+            <div className="mt-6 text-center">
               <p className="text-xs text-muted-foreground">
                 Looking for a specific workspace?{" "}
                 <button
