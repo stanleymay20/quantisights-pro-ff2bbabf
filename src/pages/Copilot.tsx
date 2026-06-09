@@ -12,6 +12,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useOrganization } from "@/hooks/useOrganization";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useIndustryLabels } from "@/hooks/useIndustryLanguage";
+import { useCopilotTelemetry } from "@/hooks/useCopilotTelemetry";
 import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 
 /**
@@ -76,6 +77,7 @@ const Copilot = () => {
   const { currentOrg } = useOrganization();
   const { orgRole } = usePermissions();
   const lang = useIndustryLabels(currentOrg?.industry);
+  const { logQuery } = useCopilotTelemetry();
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
 
@@ -83,9 +85,10 @@ const Copilot = () => {
 
   const handleSubmit = () => {
     if (!query.trim()) return;
-    // Phase 3: wire to intent-routing engine.
-    // For now, navigate to Executive Intelligence as the default surface.
-    navigate("/executive-intelligence");
+    // Log the query and detect intent
+    const { destination } = logQuery(query);
+    navigate(destination);
+    setQuery("");
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -168,7 +171,10 @@ const Copilot = () => {
                 <Card
                   key={prompt.path}
                   className="border-border/40 hover:border-primary/40 cursor-pointer transition-all hover:bg-muted/30"
-                  onClick={() => navigate(prompt.path)}
+                  onClick={() => {
+                    logQuery(prompt.label, prompt.path, true);
+                    navigate(prompt.path);
+                  }}
                 >
                   <CardContent className="p-3 flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
@@ -219,7 +225,7 @@ const Copilot = () => {
             </div>
 
             {/* Advanced workspaces link */}
-            <div className="mt-6 text-center">
+            <div className="mt-6 text-center space-y-1">
               <p className="text-xs text-muted-foreground">
                 Looking for a specific workspace?{" "}
                 <button
@@ -227,6 +233,14 @@ const Copilot = () => {
                   className="text-primary hover:underline"
                 >
                   View all workspaces
+                </button>
+              </p>
+              <p className="text-xs text-muted-foreground">
+                <button
+                  onClick={() => navigate("/copilot/analytics")}
+                  className="text-muted-foreground/60 hover:text-primary transition-colors hover:underline"
+                >
+                  Copilot analytics & Phase 6 readiness →
                 </button>
               </p>
             </div>

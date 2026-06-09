@@ -13,8 +13,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import type { Insight } from "@/hooks/useInsights";
+import TrustCard from "@/components/trust/TrustCard";
 import { useOrganization } from "@/hooks/useOrganization";
 import { useIndustryLabels } from "@/hooks/useIndustryLanguage";
+import { useCopilotTelemetry } from "@/hooks/useCopilotTelemetry";
 import type { MetricTypeSummary } from "@/hooks/useMetrics";
 import { filterCriticalInsights } from "@/lib/insight-filters";
 
@@ -108,6 +110,7 @@ const CopilotHome = ({
   const navigate = useNavigate();
   const { currentOrg } = useOrganization();
   const lang = useIndustryLabels(currentOrg?.industry);
+  const { logQuery } = useCopilotTelemetry();
   const [query, setQuery] = useState("");
 
   const firstName = displayName.split(" ")[0];
@@ -157,8 +160,8 @@ const CopilotHome = ({
 
   const handleSubmit = () => {
     if (!query.trim()) return;
-    // Phase 3: intent routing. For now route to Executive Intelligence.
-    navigate("/executive-intelligence");
+    const { destination } = logQuery(query);
+    navigate(destination);
   };
 
   return (
@@ -329,6 +332,16 @@ const CopilotHome = ({
                   </div>
                   <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
                 </div>
+                <TrustCard
+                  data={{
+                    confidence: brief.confidence,
+                    evidenceStatus: brief.evidence && brief.evidence.length > 0 ? "verified" : "partial",
+                    evidenceSources: brief.evidence ? brief.evidence.map((e: string) => ({ label: e })) : [],
+                    governanceStatus: "compliant",
+                    sourceKind: "brief",
+                  }}
+                  className="mt-2"
+                />
                 <div className="grid gap-2 sm:grid-cols-3 text-xs">
                   <div className="rounded-md bg-muted/40 p-2 flex items-center gap-1.5">
                     <Euro className="w-3 h-3 text-success shrink-0" />

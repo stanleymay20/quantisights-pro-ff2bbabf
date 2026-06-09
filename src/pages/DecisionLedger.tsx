@@ -25,6 +25,7 @@ import IntelligenceDisclaimer from "@/components/IntelligenceDisclaimer";
 import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 import TrustStrip from "@/components/trust/TrustStrip";
 import { trustFromDecision } from "@/components/trust/trust-adapter";
+import TrustCard, { trustCardFromDecision } from "@/components/trust/TrustCard";
 import DecisionResponsibilityDialog from "@/components/DecisionResponsibilityDialog";
 import DecisionComments from "@/components/decisions/DecisionComments";
 import OutcomeFeedbackWidget from "@/components/decisions/OutcomeFeedbackWidget";
@@ -673,9 +674,8 @@ const DecisionLedgerPage = () => {
                           </Button>
                         </div>
                       </div>
-                      <TrustStrip
-                        record={trustFromDecision(d, currentOrgId)}
-                        variant="compact"
+                      <TrustCard
+                        data={trustCardFromDecision(d)}
                         className="mt-3"
                       />
                     </CardContent>
