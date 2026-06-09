@@ -34,6 +34,8 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOrganization } from "@/hooks/useOrganization";
+import { usePermissions } from "@/hooks/usePermissions";
+import { useRoleNav } from "@/hooks/useRoleNav";
 import { useIndustryLabels } from "@/hooks/useIndustryLanguage";
 import { useIsMobile } from "@/hooks/use-mobile";
 import logo from "@/assets/quantivis-logo.png";
@@ -272,6 +274,8 @@ const SectionBlock = ({
 const DashboardSidebar = () => {
   const { signOut } = useAuth();
   const { currentOrg } = useOrganization();
+  const { orgRole } = usePermissions();
+  const allowedPaths = useRoleNav(orgRole as any);
   const lang = useIndustryLabels(currentOrg?.industry);
   const navigate = useNavigate();
   const location = useLocation();
@@ -315,7 +319,7 @@ const DashboardSidebar = () => {
 
       {/* Nav */}
       <nav aria-label="Dashboard navigation" className="flex-1 px-2 overflow-y-auto space-y-0.5">
-        {navSections.map((section) => {
+        {navSections.filter(s => allowedPaths.has(s.path)).map((section) => {
           // Industry language layer: rename labels based on org industry
           const labelOverrides: Partial<Record<string, string>> = {
             "/decisions":   lang.decisions,
@@ -335,6 +339,13 @@ const DashboardSidebar = () => {
 
       {/* Footer */}
       <div className="p-2 border-t border-sidebar-border space-y-0.5">
+        {orgRole && orgRole !== "owner" && orgRole !== "admin" && (
+          <div className="px-2.5 py-1 mb-1">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60 bg-muted/40 px-2 py-0.5 rounded-full capitalize">
+              {orgRole}
+            </span>
+          </div>
+        )}
         <Link
           to="/docs"
           onClick={handleNavClick}

@@ -296,6 +296,39 @@ const Settings = () => {
                     </CardContent>
                   </Card>
 
+                  {/* Current Role — read-only display */}
+                  <Card className="mt-6">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        <Shield className="w-5 h-5 text-primary" /> Your Role
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm font-medium capitalize bg-primary/10 text-primary px-3 py-1 rounded-full">
+                          {orgRole ?? "member"}
+                        </span>
+                        <p className="text-xs text-muted-foreground">
+                          Your role controls which sections appear in your sidebar.
+                        </p>
+                      </div>
+                      <div className="text-xs text-muted-foreground space-y-1 bg-muted/30 rounded-lg p-3">
+                        {orgRole === "owner" || orgRole === "admin" ? (
+                          <p>Full access — all 9 sidebar sections visible.</p>
+                        ) : orgRole === "executive" ? (
+                          <p>Executive access — Home, Copilot, Decisions, Monitor, Reports, Governance, Team, Settings.</p>
+                        ) : orgRole === "analyst" ? (
+                          <p>Analyst access — Home, Copilot, Decisions, Reports, Data, Monitor, Settings.</p>
+                        ) : orgRole === "steward" ? (
+                          <p>Steward access — Home, Copilot, Decisions, Data, Governance, Settings.</p>
+                        ) : (
+                          <p>Viewer access — Home, Copilot, Decisions, Reports, Settings.</p>
+                        )}
+                        <p className="text-[10px] mt-1 opacity-70">To change your role, contact your organization owner.</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+
                   {/* Account Deletion — scroll-mt pushes this below the fold on page load */}
                   <Card className="border-destructive/30 mt-6 scroll-mt-8" id="danger-zone">
                     <CardHeader>

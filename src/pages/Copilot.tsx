@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOrganization } from "@/hooks/useOrganization";
+import { usePermissions } from "@/hooks/usePermissions";
 import { useIndustryLabels } from "@/hooks/useIndustryLanguage";
 import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 
@@ -73,6 +74,7 @@ const SUGGESTED_PROMPTS: SuggestedPrompt[] = [
 const Copilot = () => {
   const { profile } = useAuth();
   const { currentOrg } = useOrganization();
+  const { orgRole } = usePermissions();
   const lang = useIndustryLabels(currentOrg?.industry);
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
@@ -119,6 +121,11 @@ const Copilot = () => {
               <p className="text-muted-foreground text-sm">
                 What decision do you need to make today?
               </p>
+              {orgRole && orgRole !== "owner" && orgRole !== "admin" && (
+                <span className="inline-block mt-2 text-[11px] text-muted-foreground/60 bg-muted/40 px-2.5 py-1 rounded-full capitalize">
+                  {orgRole} view
+                </span>
+              )}
             </div>
 
             {/* Input */}
