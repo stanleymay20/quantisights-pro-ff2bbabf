@@ -385,7 +385,8 @@ const DashboardSidebar = () => {
               labelOverride={labelOverrides[section.path]}
             />
           );
-        })}
+        })
+        )}
       </nav>
 
       {/* Footer */}
