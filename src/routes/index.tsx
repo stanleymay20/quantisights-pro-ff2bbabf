@@ -24,6 +24,7 @@ const ResetPassword = lazy(() => import("@/pages/ResetPassword"));
 
 // ── Intelligence Core ──
 const Dashboard = lazy(() => import("@/pages/Dashboard"));
+const Copilot = lazy(() => import("@/pages/Copilot"));
 const KPIs = lazy(() => import("@/pages/KPIs"));
 const Diagnostics = lazy(() => import("@/pages/Diagnostics"));
 const Advisory = lazy(() => import("@/pages/Advisory"));
@@ -254,6 +255,7 @@ export const routes: RouteEntry[] = [
 
   // ══════ Intelligence Core ══════
   { path: "/dashboard", element: <Dashboard />, layout: "full" },
+  { path: "/copilot", element: <Copilot />, layout: "full" },
   { path: "/kpis", element: <KPIs />, layout: "full" },
   { path: "/diagnostics", element: <Diagnostics />, layout: "full" },
   { path: "/advisory", element: <Advisory />, layout: "full" },

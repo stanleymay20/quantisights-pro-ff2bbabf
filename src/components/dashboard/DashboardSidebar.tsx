@@ -2,34 +2,35 @@ import { createContext, useContext, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
-  Upload,
+  MessageSquareText,
+  ClipboardList,
+  BarChart2,
+  FileText,
+  Plug,
+  Shield,
+  Users,
   Settings,
   LogOut,
   Menu,
   X,
   BookOpen,
+  ChevronDown,
+  // sub-page icons
   Brain,
   Target,
-  ChevronDown,
-  Clock,
-  BarChart3,
-  Shield,
-  Lightbulb,
-  TrendingUp,
-  FileText,
-  Inbox,
-  ShieldAlert,
-  Plug,
-  Database,
-  GitBranch,
-  Activity,
-  Network,
-  ListChecks,
   PlayCircle,
   Scale,
-  Users,
+  Clock,
+  ShieldAlert,
+  Inbox,
+  TrendingUp,
+  BarChart3,
+  Upload,
+  Database,
+  BookOpen as CatalogIcon,
+  Activity,
+  CheckSquare,
   CreditCard,
-  GanttChartSquare,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -37,96 +38,122 @@ import logo from "@/assets/quantivis-logo.png";
 import WorkspaceSwitcher from "@/components/dashboard/WorkspaceSwitcher";
 import { cn } from "@/lib/utils";
 
+// ─── Types ────────────────────────────────────────────────────────────────────
 interface NavItem {
   icon: React.ElementType;
   label: string;
   path: string;
-  badge?: string;
 }
 
 interface NavSection {
+  icon: React.ElementType;
   label: string;
-  items: NavItem[];
+  path: string;           // primary route — clicking the label navigates here
+  subItems?: NavItem[];   // sub-pages rendered as indented items
   defaultOpen?: boolean;
 }
 
+// ─── Navigation — 9 top-level items per IA v1.1 ──────────────────────────────
 /**
- * Quantivis operating-system sidebar.
+ * Phase 2 sidebar restructure (IA Redesign v1.1).
  *
- * The app has evolved beyond a simple analytics menu. The sidebar now mirrors
- * the real enterprise workflow:
- * Data → Intelligence → Decisions → Execution → Outcomes → Governance.
+ * 9 outcome-oriented top-level items replace the 6 architecture-oriented groups.
+ * Sub-pages are indented under their parent — they are NOT separate top-level entries.
+ * "New" badges removed from all items — stable features do not signal beta status.
+ *
+ * Copilot (/copilot) is included as a first-class nav item.
+ * It will be promoted to a dedicated page in Phase 4 once intent-routing is validated.
  */
 const navSections: NavSection[] = [
   {
-    label: "Your Workflow",
-    defaultOpen: true,
-    items: [
-      { icon: LayoutDashboard, label: "Home", path: "/dashboard" },
-      { icon: Brain, label: "Decision Ledger", path: "/decisions" },
-      { icon: Target, label: "Outcomes", path: "/outcomes" },
+    icon: LayoutDashboard,
+    label: "Home",
+    path: "/dashboard",
+  },
+  {
+    icon: MessageSquareText,
+    label: "Copilot",
+    path: "/copilot",
+  },
+  {
+    icon: ClipboardList,
+    label: "Decisions",
+    path: "/decisions",
+    subItems: [
+      { icon: ClipboardList,  label: "Decision Ledger",  path: "/decisions" },
+      { icon: Scale,          label: "Deliberation",     path: "/deliberation" },
+      { icon: Users,          label: "AI Boardroom",     path: "/ai-boardroom" },
+      { icon: PlayCircle,     label: "Execution",        path: "/execution" },
+      { icon: Target,         label: "Outcomes",         path: "/outcomes" },
+      { icon: Clock,          label: "History",          path: "/history" },
     ],
   },
   {
-    label: "Decision OS",
-    items: [
-      { icon: ShieldAlert, label: "Executive Intelligence", path: "/executive-intelligence" },
-      { icon: Brain, label: "Decision Intelligence", path: "/decision-intelligence" },
-      { icon: Scale, label: "Deliberation", path: "/deliberation" },
-      { icon: Users, label: "AI Boardroom", path: "/ai-boardroom" },
-      { icon: PlayCircle, label: "Execution", path: "/execution" },
-      { icon: Network, label: "Simulations", path: "/simulations" },
-      { icon: ListChecks, label: "Decision Rules", path: "/decision-rules" },
-      { icon: Clock, label: "Decision History", path: "/history" },
+    icon: BarChart2,
+    label: "Monitor",
+    path: "/executive-intelligence",
+    subItems: [
+      { icon: ShieldAlert,    label: "Executive Intel",  path: "/executive-intelligence" },
+      { icon: ShieldAlert,    label: "Interventions",    path: "/interventions" },
+      { icon: Inbox,          label: "Intel Inbox",      path: "/intelligence-inbox" },
+      { icon: BarChart3,      label: "Decision Accuracy",path: "/decision-accuracy" },
     ],
   },
   {
-    label: "Intelligence",
-    items: [
-      { icon: Inbox, label: "Intelligence Inbox", path: "/intelligence-inbox" },
-      { icon: ShieldAlert, label: "Interventions", path: "/interventions" },
-      { icon: Lightbulb, label: "Insights", path: "/advisory" },
-      { icon: TrendingUp, label: "Forecasting", path: "/forecasting" },
-      { icon: BarChart3, label: "Analytics", path: "/decision-accuracy" },
-      { icon: FileText, label: "Reports", path: "/reports" },
+    icon: FileText,
+    label: "Reports",
+    path: "/reports",
+    subItems: [
+      { icon: FileText,       label: "Reports",          path: "/reports" },
+      { icon: TrendingUp,     label: "Forecasting",      path: "/forecasting" },
+      { icon: Brain,          label: "Simulations",      path: "/simulations" },
+      { icon: BarChart3,      label: "Advisory",         path: "/advisory" },
     ],
   },
   {
-    label: "Data Platform",
-    items: [
-      { icon: Upload, label: "Upload Data", path: "/data-upload" },
-      { icon: Plug, label: "Data Connectors", path: "/data-connectors" },
-      { icon: Database, label: "Data Sources", path: "/data-sources" },
-      { icon: BarChart3, label: "Dataset Explorer", path: "/dataset-explorer" },
-      { icon: BookOpen, label: "Data Catalog", path: "/data-catalog" },
-      { icon: GitBranch, label: "Lineage", path: "/lineage" },
-      { icon: Activity, label: "Pipeline Health", path: "/pipeline" },
-      { icon: GanttChartSquare, label: "Data Hub", path: "/data-hub" },
+    icon: Plug,
+    label: "Data",
+    path: "/data-upload",
+    subItems: [
+      { icon: Upload,         label: "Upload",           path: "/data-upload" },
+      { icon: Plug,           label: "Connectors",       path: "/data-connectors" },
+      { icon: Database,       label: "Dataset Explorer", path: "/dataset-explorer" },
+      { icon: CatalogIcon,    label: "Data Catalog",     path: "/data-catalog" },
+      { icon: Activity,       label: "Pipeline",         path: "/pipeline" },
     ],
   },
   {
+    icon: Shield,
     label: "Governance",
-    items: [
-      { icon: Shield, label: "Governance", path: "/governance" },
-      { icon: Scale, label: "Governance Maturity", path: "/governance-maturity" },
-      { icon: ShieldAlert, label: "Compliance", path: "/compliance" },
-      { icon: ListChecks, label: "Alert Playbooks", path: "/alert-playbooks" },
-      { icon: Activity, label: "System Health", path: "/system-health" },
-      { icon: Target, label: "Decision Maturity", path: "/decision-maturity" },
+    path: "/governance",
+    subItems: [
+      { icon: Shield,         label: "Command View",     path: "/governance" },
+      { icon: CheckSquare,    label: "Compliance",       path: "/compliance" },
+      { icon: Scale,          label: "Maturity",         path: "/governance-maturity" },
     ],
   },
   {
-    label: "Admin",
-    items: [
-      { icon: Users, label: "Team", path: "/team" },
-      { icon: CreditCard, label: "Billing", path: "/billing" },
-      { icon: Settings, label: "Settings", path: "/settings" },
+    icon: Users,
+    label: "Team",
+    path: "/team",
+  },
+  {
+    icon: Settings,
+    label: "Settings",
+    path: "/settings",
+    subItems: [
+      { icon: Settings,       label: "Settings",         path: "/settings" },
+      { icon: CreditCard,     label: "Billing",          path: "/billing" },
+      { icon: Activity,       label: "System Health",    path: "/system-health" },
     ],
   },
 ];
 
-// Context for mobile sidebar toggle
-const SidebarContext = createContext<{ open: boolean; toggle: () => void }>({ open: false, toggle: () => {} });
+// ─── Context ──────────────────────────────────────────────────────────────────
+const SidebarContext = createContext<{ open: boolean; toggle: () => void }>({
+  open: false,
+  toggle: () => {},
+});
 export const useSidebarToggle = () => useContext(SidebarContext);
 
 export const SidebarProvider = ({ children }: { children: React.ReactNode }) => {
@@ -138,39 +165,80 @@ export const SidebarProvider = ({ children }: { children: React.ReactNode }) => 
   );
 };
 
-/** Mobile hamburger button */
+/** Mobile hamburger */
 export const SidebarMobileToggle = () => {
   const isMobile = useIsMobile();
   const { toggle } = useSidebarToggle();
   if (!isMobile) return null;
   return (
-    <button onClick={toggle} className="p-2 -ml-2 rounded-lg hover:bg-secondary/60 transition-colors lg:hidden" aria-label="Open navigation menu">
+    <button
+      onClick={toggle}
+      className="p-2 -ml-2 rounded-lg hover:bg-secondary/60 transition-colors lg:hidden"
+      aria-label="Open navigation menu"
+    >
       <Menu className="w-5 h-5 text-muted-foreground" />
     </button>
   );
 };
 
-const SectionBlock = ({ section, location, onNavClick }: { section: NavSection; location: ReturnType<typeof useLocation>; onNavClick: () => void }) => {
-  const hasActiveChild = section.items.some(item => location.pathname === item.path);
+// ─── Section block ─────────────────────────────────────────────────────────────
+const SectionBlock = ({
+  section,
+  location,
+  onNavClick,
+}: {
+  section: NavSection;
+  location: ReturnType<typeof useLocation>;
+  onNavClick: () => void;
+}) => {
+  const hasActiveChild =
+    location.pathname === section.path ||
+    (section.subItems?.some(item => location.pathname === item.path) ?? false);
+
   const [open, setOpen] = useState(section.defaultOpen || hasActiveChild);
+
+  const isTopActive = location.pathname === section.path && !section.subItems;
 
   return (
     <div>
-      <button
-        onClick={() => setOpen(p => !p)}
-        className={cn(
-          "flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-[11px] font-semibold uppercase tracking-wider transition-colors",
-          hasActiveChild
-            ? "text-primary"
-            : "text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/50"
-        )}
-      >
-        <span className="flex-1 text-left">{section.label}</span>
-        <ChevronDown className={cn("w-3.5 h-3.5 transition-transform duration-200", open && "rotate-180")} />
-      </button>
-      {open && (
-        <div className="ml-3 pl-3 border-l border-border/40 mt-0.5 space-y-0.5">
-          {section.items.map((item) => {
+      {/* Top-level item */}
+      {section.subItems ? (
+        // Has sub-items — clicking label toggles collapse, also navigates
+        <button
+          onClick={() => { setOpen(p => !p); }}
+          className={cn(
+            "flex items-center gap-2.5 w-full px-2.5 py-2 rounded-lg text-[13px] font-medium transition-all duration-150",
+            hasActiveChild
+              ? "bg-primary/10 text-primary"
+              : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          )}
+        >
+          <section.icon className={cn("w-4 h-4 shrink-0", hasActiveChild ? "text-primary" : "text-muted-foreground")} />
+          <span className="flex-1 text-left">{section.label}</span>
+          <ChevronDown className={cn("w-3.5 h-3.5 transition-transform duration-200 text-muted-foreground", open && "rotate-180")} />
+        </button>
+      ) : (
+        // No sub-items — direct link
+        <Link
+          to={section.path}
+          onClick={onNavClick}
+          className={cn(
+            "flex items-center gap-2.5 w-full px-2.5 py-2 rounded-lg text-[13px] font-medium transition-all duration-150",
+            isTopActive
+              ? "bg-primary/10 text-primary"
+              : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          )}
+        >
+          <section.icon className={cn("w-4 h-4 shrink-0", isTopActive ? "text-primary" : "text-muted-foreground")} />
+          <span className="flex-1">{section.label}</span>
+          {isTopActive && <span className="w-1.5 h-1.5 rounded-full bg-primary" />}
+        </Link>
+      )}
+
+      {/* Sub-items */}
+      {section.subItems && open && (
+        <div className="ml-4 pl-3 border-l border-border/40 mt-0.5 space-y-0.5">
+          {section.subItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
               <Link
@@ -178,22 +246,15 @@ const SectionBlock = ({ section, location, onNavClick }: { section: NavSection; 
                 to={item.path}
                 onClick={onNavClick}
                 className={cn(
-                  "group flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[13px] font-medium transition-all duration-150",
+                  "group flex items-center gap-2 px-2 py-1.5 rounded-md text-[12px] font-medium transition-all duration-150",
                   isActive
                     ? "bg-primary/10 text-primary"
                     : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                 )}
               >
-                <item.icon className={cn("w-4 h-4 transition-colors", isActive ? "text-primary" : "text-muted-foreground group-hover:text-sidebar-accent-foreground")} />
+                <item.icon className={cn("w-3.5 h-3.5 shrink-0", isActive ? "text-primary" : "text-muted-foreground group-hover:text-sidebar-accent-foreground")} />
                 {item.label}
-                {item.badge && (
-                  <span className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">
-                    {item.badge}
-                  </span>
-                )}
-                {isActive && !item.badge && (
-                  <span className="ml-auto w-1.5 h-1.5 rounded-full bg-primary" />
-                )}
+                {isActive && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-primary" />}
               </Link>
             );
           })}
@@ -203,6 +264,7 @@ const SectionBlock = ({ section, location, onNavClick }: { section: NavSection; 
   );
 };
 
+// ─── Main sidebar ─────────────────────────────────────────────────────────────
 const DashboardSidebar = () => {
   const { signOut } = useAuth();
   const navigate = useNavigate();
@@ -220,23 +282,33 @@ const DashboardSidebar = () => {
   };
 
   const sidebarContent = (
-    <aside aria-label="Main navigation" className="w-60 h-dvh bg-sidebar border-r border-sidebar-border flex flex-col shrink-0 safe-area-left safe-area-top safe-area-bottom">
+    <aside
+      aria-label="Main navigation"
+      className="w-56 h-dvh bg-sidebar border-r border-sidebar-border flex flex-col shrink-0 safe-area-left safe-area-top safe-area-bottom"
+    >
+      {/* Logo */}
       <div className="p-4 pb-3 flex items-center justify-between">
         <Link to="/" onClick={handleNavClick}>
           <img src={logo} alt="Quantivis" className="h-7 w-auto" />
         </Link>
         {isMobile && (
-          <button onClick={toggle} className="p-1.5 rounded-lg hover:bg-sidebar-accent transition-colors" aria-label="Close navigation">
+          <button
+            onClick={toggle}
+            className="p-1.5 rounded-lg hover:bg-sidebar-accent transition-colors"
+            aria-label="Close navigation"
+          >
             <X className="w-5 h-5 text-sidebar-foreground" />
           </button>
         )}
       </div>
 
+      {/* Org switcher */}
       <div className="px-3 pb-3">
         <WorkspaceSwitcher />
       </div>
 
-      <nav aria-label="Dashboard navigation" className="flex-1 px-2 overflow-y-auto space-y-1">
+      {/* Nav */}
+      <nav aria-label="Dashboard navigation" className="flex-1 px-2 overflow-y-auto space-y-0.5">
         {navSections.map((section) => (
           <SectionBlock
             key={section.label}
@@ -247,6 +319,7 @@ const DashboardSidebar = () => {
         ))}
       </nav>
 
+      {/* Footer */}
       <div className="p-2 border-t border-sidebar-border space-y-0.5">
         <Link
           to="/docs"
@@ -277,7 +350,10 @@ const DashboardSidebar = () => {
   return (
     <>
       {open && (
-        <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={toggle} />
+        <div
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+          onClick={toggle}
+        />
       )}
       <div
         className={cn(
