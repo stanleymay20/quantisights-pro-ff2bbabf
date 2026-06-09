@@ -154,16 +154,27 @@ const navSections: NavSection[] = [
 ];
 
 // ─── Context ──────────────────────────────────────────────────────────────────
-const SidebarContext = createContext<{ open: boolean; toggle: () => void }>({
+const SidebarContext = createContext<{ open: boolean; toggle: () => void; collapsed: boolean; toggleCollapsed: () => void }>({
   open: false,
   toggle: () => {},
+  collapsed: false,
+  toggleCollapsed: () => {},
 });
 export const useSidebarToggle = () => useContext(SidebarContext);
+export const useSidebarCollapsed = () => useContext(SidebarContext).collapsed;
 
 export const SidebarProvider = ({ children }: { children: React.ReactNode }) => {
   const [open, setOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    try { return localStorage.getItem("sidebar_collapsed") === "true"; } catch { return false; }
+  });
+  const toggleCollapsed = () => setCollapsed(p => {
+    const next = !p;
+    try { localStorage.setItem("sidebar_collapsed", String(next)); } catch {}
+    return next;
+  });
   return (
-    <SidebarContext.Provider value={{ open, toggle: () => setOpen(p => !p) }}>
+    <SidebarContext.Provider value={{ open, toggle: () => setOpen(p => !p), collapsed, toggleCollapsed }}>
       {children}
     </SidebarContext.Provider>
   );
@@ -280,7 +291,7 @@ const DashboardSidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = useIsMobile();
-  const { open, toggle } = useSidebarToggle();
+  const { open, toggle, collapsed, toggleCollapsed } = useSidebarToggle();
 
   const handleSignOut = async () => {
     await signOut();
@@ -294,14 +305,21 @@ const DashboardSidebar = () => {
   const sidebarContent = (
     <aside
       aria-label="Main navigation"
-      className="w-56 h-dvh bg-sidebar border-r border-sidebar-border flex flex-col shrink-0 safe-area-left safe-area-top safe-area-bottom"
+      className={`${collapsed ? "w-16" : "w-56"} h-dvh bg-sidebar border-r border-sidebar-border flex flex-col shrink-0 safe-area-left safe-area-top safe-area-bottom transition-all duration-200`}
     >
       {/* Logo */}
       <div className="p-4 pb-3 flex items-center justify-between">
-        <Link to="/" onClick={handleNavClick}>
-          <img src={logo} alt="Quantivis" className="h-7 w-auto" />
-        </Link>
-        {isMobile && (
+        {!collapsed && (
+          <Link to="/" onClick={handleNavClick}>
+            <img src={logo} alt="Quantivis" className="h-7 w-auto" />
+          </Link>
+        )}
+        {collapsed && (
+          <Link to="/" onClick={handleNavClick} className="mx-auto">
+            <img src={logo} alt="Quantivis" className="h-6 w-6 object-contain" />
+          </Link>
+        )}
+        {isMobile ? (
           <button
             onClick={toggle}
             className="p-1.5 rounded-lg hover:bg-sidebar-accent transition-colors"
@@ -309,17 +327,50 @@ const DashboardSidebar = () => {
           >
             <X className="w-5 h-5 text-sidebar-foreground" />
           </button>
+        ) : (
+          <button
+            onClick={toggleCollapsed}
+            className="p-1.5 rounded-lg hover:bg-sidebar-accent transition-colors ml-auto"
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${collapsed ? "-rotate-90" : "rotate-90"}`} />
+          </button>
         )}
       </div>
 
       {/* Org switcher */}
-      <div className="px-3 pb-3">
-        <WorkspaceSwitcher />
-      </div>
+      {!collapsed && (
+        <div className="px-3 pb-3">
+          <WorkspaceSwitcher />
+        </div>
+      )}
 
       {/* Nav */}
-      <nav aria-label="Dashboard navigation" className="flex-1 px-2 overflow-y-auto space-y-0.5">
-        {navSections.filter(s => allowedPaths.has(s.path)).map((section) => {
+      <nav aria-label="Dashboard navigation" className={`flex-1 ${collapsed ? "px-1" : "px-2"} overflow-y-auto space-y-0.5`}>
+        {collapsed ? (
+          // Icon-only mode — top-level icons only, no labels, no sub-items
+          navSections.filter(s => allowedPaths.has(s.path)).map((section) => {
+            const isActive = location.pathname === section.path ||
+              (section.subItems?.some(i => location.pathname === i.path) ?? false);
+            return (
+              <Link
+                key={section.path}
+                to={section.path}
+                onClick={handleNavClick}
+                title={section.label}
+                className={`flex items-center justify-center w-10 h-10 mx-auto rounded-lg transition-colors ${
+                  isActive
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                }`}
+              >
+                <section.icon className="w-5 h-5" />
+              </Link>
+            );
+          })
+        ) : (
+        navSections.filter(s => allowedPaths.has(s.path)).map((section) => {
           // Industry language layer: rename labels based on org industry
           const labelOverrides: Partial<Record<string, string>> = {
             "/decisions":   lang.decisions,
@@ -349,22 +400,28 @@ const DashboardSidebar = () => {
         <Link
           to="/docs"
           onClick={handleNavClick}
+          title="Help & Docs"
           className={cn(
             "flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[12px] font-medium transition-colors w-full",
+            collapsed && "justify-center px-0",
             location.pathname === "/docs"
               ? "bg-primary/10 text-primary"
               : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
           )}
         >
           <BookOpen className="w-[15px] h-[15px] text-muted-foreground" />
-          Help & Docs
+          {!collapsed && "Help & Docs"}
         </Link>
         <button
           onClick={handleSignOut}
-          className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[12px] font-medium text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors w-full"
+          title="Sign Out"
+          className={cn(
+            "flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[12px] font-medium text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors w-full",
+            collapsed && "justify-center px-0"
+          )}
         >
           <LogOut className="w-[15px] h-[15px] text-muted-foreground" />
-          Sign Out
+          {!collapsed && "Sign Out"}
         </button>
       </div>
     </aside>
