@@ -50,6 +50,7 @@ const Settings = () => {
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
   const [deletingAccount, setDeletingAccount] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState("");
   const [seedingDemo, setSeedingDemo] = useState(false);
 
   // Profile
@@ -295,18 +296,25 @@ const Settings = () => {
                     </CardContent>
                   </Card>
 
-                  {/* Account Deletion */}
-                  <Card className="border-destructive/30 mt-6">
+                  {/* Account Deletion — scroll-mt pushes this below the fold on page load */}
+                  <Card className="border-destructive/30 mt-6 scroll-mt-8" id="danger-zone">
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2 text-destructive"><AlertTriangle className="w-5 h-5" /> Danger Zone</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-sm text-muted-foreground mb-4">
+                      <p className="text-sm text-muted-foreground mb-2">
                         Permanently delete your account and all associated data. This action cannot be undone. Your data will be purged per our <a href="/data-retention" className="text-primary hover:underline">Data Retention Policy</a>.
                       </p>
+                      <p className="text-xs text-muted-foreground mb-4">Type <strong>delete</strong> below to enable the button.</p>
+                      <Input
+                        value={deleteConfirm}
+                        onChange={(e) => setDeleteConfirm(e.target.value)}
+                        placeholder="Type delete to confirm"
+                        className="mb-3 max-w-xs"
+                      />
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button variant="destructive" className="gap-2"><Trash2 className="w-4 h-4" /> Delete Account</Button>
+                          <Button variant="destructive" className="gap-2" disabled={deleteConfirm !== "delete"}><Trash2 className="w-4 h-4" /> Delete Account</Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>

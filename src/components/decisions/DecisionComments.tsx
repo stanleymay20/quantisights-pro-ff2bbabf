@@ -44,7 +44,7 @@ const DecisionComments = ({ decisionId }: DecisionCommentsProps) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    if (!currentOrgId) return;
+    if (!currentOrgId) { setLoading(false); return; }
     fetchComments();
     fetchTeamMembers();
 

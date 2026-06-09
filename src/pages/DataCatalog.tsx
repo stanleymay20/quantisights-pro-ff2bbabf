@@ -235,9 +235,11 @@ export default function DataCatalog() {
                       <TableCell>v{ds.current_version || 1}</TableCell>
                       <TableCell>
                         {ds.is_stale ? (
-                          <Badge variant="destructive">Stale</Badge>
+                          <span title="Dataset has not been refreshed within its freshness policy window. This does not indicate data loss — upload a new version or adjust the freshness policy in settings.">
+                            <Badge variant="outline" className="text-amber-600 border-amber-500/40 cursor-help">Needs refresh</Badge>
+                          </span>
                         ) : (
-                          <Badge variant="outline">Fresh</Badge>
+                          <Badge variant="outline" className="text-emerald-600 border-emerald-500/40">Fresh</Badge>
                         )}
                       </TableCell>
                       <TableCell>

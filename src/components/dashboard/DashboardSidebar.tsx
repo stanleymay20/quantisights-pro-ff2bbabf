@@ -63,17 +63,17 @@ const navSections: NavSection[] = [
     defaultOpen: true,
     items: [
       { icon: LayoutDashboard, label: "Home", path: "/dashboard" },
-      { icon: Brain, label: "Decision Queue", path: "/decisions" },
+      { icon: Brain, label: "Decision Ledger", path: "/decisions" },
       { icon: Target, label: "Outcomes", path: "/outcomes" },
     ],
   },
   {
     label: "Decision OS",
     items: [
-      { icon: ShieldAlert, label: "Executive Intelligence", path: "/executive-intelligence", badge: "New" },
+      { icon: ShieldAlert, label: "Executive Intelligence", path: "/executive-intelligence" },
       { icon: Brain, label: "Decision Intelligence", path: "/decision-intelligence" },
-      { icon: Scale, label: "Deliberation", path: "/deliberation", badge: "New" },
-      { icon: Users, label: "AI Boardroom", path: "/ai-boardroom", badge: "New" },
+      { icon: Scale, label: "Deliberation", path: "/deliberation" },
+      { icon: Users, label: "AI Boardroom", path: "/ai-boardroom" },
       { icon: PlayCircle, label: "Execution", path: "/execution" },
       { icon: Network, label: "Simulations", path: "/simulations" },
       { icon: ListChecks, label: "Decision Rules", path: "/decision-rules" },
@@ -84,7 +84,7 @@ const navSections: NavSection[] = [
     label: "Intelligence",
     items: [
       { icon: Inbox, label: "Intelligence Inbox", path: "/intelligence-inbox" },
-      { icon: ShieldAlert, label: "Interventions", path: "/interventions", badge: "New" },
+      { icon: ShieldAlert, label: "Interventions", path: "/interventions" },
       { icon: Lightbulb, label: "Insights", path: "/advisory" },
       { icon: TrendingUp, label: "Forecasting", path: "/forecasting" },
       { icon: BarChart3, label: "Analytics", path: "/decision-accuracy" },
