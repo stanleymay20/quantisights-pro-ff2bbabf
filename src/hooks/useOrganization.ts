@@ -31,7 +31,7 @@ export const useOrganization = () => {
 
     const { data, error } = await supabase
       .from("organization_members")
-      .select("organization_id, role, organizations(id, name)")
+      .select("organization_id, role, organizations(id, name, industry)")
       .eq("user_id", user.id);
 
     if (error) throw error;
@@ -41,6 +41,7 @@ export const useOrganization = () => {
       .map((m) => ({
         id: m.organizations!.id,
         name: m.organizations!.name,
+        industry: m.organizations!.industry ?? null,
         role: m.role,
       }));
   }, [user]);
