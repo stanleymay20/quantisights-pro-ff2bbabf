@@ -103,7 +103,7 @@ export const useOrganization = () => {
 
     await refreshProfile();
 
-    return { id: org.id, name: org.name, role: "owner" };
+    return { id: org.id, name: org.name, role: "owner", industry: null };
   }, [refreshProfile, user]);
 
   useEffect(() => {
