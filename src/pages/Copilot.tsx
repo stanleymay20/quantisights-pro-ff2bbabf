@@ -9,6 +9,8 @@ import {
   TrendingUp, FileText, ShieldAlert, Sparkles,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useOrganization } from "@/hooks/useOrganization";
+import { useIndustryLabels } from "@/hooks/useIndustryLanguage";
 import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 
 /**
@@ -70,6 +72,8 @@ const SUGGESTED_PROMPTS: SuggestedPrompt[] = [
 
 const Copilot = () => {
   const { profile } = useAuth();
+  const { currentOrg } = useOrganization();
+  const lang = useIndustryLabels(currentOrg?.industry);
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
 
@@ -145,7 +149,15 @@ const Copilot = () => {
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
                 Suggested
               </p>
-              {SUGGESTED_PROMPTS.map((prompt) => (
+              {(lang.copilotPrompts.length > 0
+              ? lang.copilotPrompts.map((label, i) => ({
+                  label,
+                  icon: SUGGESTED_PROMPTS[i % SUGGESTED_PROMPTS.length].icon,
+                  path: SUGGESTED_PROMPTS[i % SUGGESTED_PROMPTS.length].path,
+                  description: SUGGESTED_PROMPTS[i % SUGGESTED_PROMPTS.length].description,
+                }))
+              : SUGGESTED_PROMPTS
+            ).map((prompt) => (
                 <Card
                   key={prompt.path}
                   className="border-border/40 hover:border-primary/40 cursor-pointer transition-all hover:bg-muted/30"

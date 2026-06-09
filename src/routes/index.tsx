@@ -54,7 +54,7 @@ const Scenarios = lazy(() => import("@/pages/Scenarios"));
 const Simulations = lazy(() => import("@/pages/Simulations"));
 const ScenarioBranching = lazy(() => import("@/pages/ScenarioBranching"));
 
-// ── Data Platform ──
+// ── Data ──
 const DataUpload = lazy(() => import("@/pages/DataUpload"));
 const DataConnectors = lazy(() => import("@/pages/DataConnectors"));
 const DataSources = lazy(() => import("@/pages/DataSources"));
@@ -290,7 +290,7 @@ export const routes: RouteEntry[] = [
   { path: "/simulations", element: <Simulations />, layout: "full" },
   { path: "/branching", element: <ScenarioBranching />, layout: "full" },
 
-  // ══════ Data Platform ══════
+  // ══════ Data ══════
   { path: "/data-upload", element: <DataUpload />, layout: "full" },
   { path: "/data-sources", element: <DataSources />, layout: "full" },
   { path: "/data-connectors", element: <DataConnectors />, layout: "full" },

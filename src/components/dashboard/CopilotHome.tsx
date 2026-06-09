@@ -13,6 +13,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import type { Insight } from "@/hooks/useInsights";
+import { useOrganization } from "@/hooks/useOrganization";
+import { useIndustryLabels } from "@/hooks/useIndustryLanguage";
 import type { MetricTypeSummary } from "@/hooks/useMetrics";
 import { filterCriticalInsights } from "@/lib/insight-filters";
 
@@ -104,6 +106,8 @@ const CopilotHome = ({
   topMetrics,
 }: CopilotHomeProps) => {
   const navigate = useNavigate();
+  const { currentOrg } = useOrganization();
+  const lang = useIndustryLabels(currentOrg?.industry);
   const [query, setQuery] = useState("");
 
   const firstName = displayName.split(" ")[0];
@@ -246,7 +250,14 @@ const CopilotHome = ({
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Suggested</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {PROMPTS.map(p => (
+            {(lang.copilotPrompts.length > 0
+              ? lang.copilotPrompts.map((label, i) => ({
+                  label,
+                  icon: PROMPTS[i % PROMPTS.length].icon,
+                  path: PROMPTS[i % PROMPTS.length].path,
+                }))
+              : PROMPTS
+            ).map(p => (
               <Card
                 key={p.path}
                 className="cursor-pointer hover:border-primary/40 transition-all hover:bg-muted/20"

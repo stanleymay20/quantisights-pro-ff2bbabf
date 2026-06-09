@@ -332,7 +332,7 @@ const DecisionQueue = memo(({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-primary" />
-              <h2 className="text-sm font-semibold">Decision Queue</h2>
+              <h2 className="text-sm font-semibold">Decision Ledger</h2>
               <span className="text-[10px] font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-full">{decisions.length}</span>
             </div>
             <span className="text-[11px] text-muted-foreground hidden sm:inline">

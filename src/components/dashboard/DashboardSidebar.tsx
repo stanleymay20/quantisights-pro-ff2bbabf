@@ -33,6 +33,8 @@ import {
   CreditCard,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useOrganization } from "@/hooks/useOrganization";
+import { useIndustryLabels } from "@/hooks/useIndustryLanguage";
 import { useIsMobile } from "@/hooks/use-mobile";
 import logo from "@/assets/quantivis-logo.png";
 import WorkspaceSwitcher from "@/components/dashboard/WorkspaceSwitcher";
@@ -186,10 +188,12 @@ const SectionBlock = ({
   section,
   location,
   onNavClick,
+  labelOverride,
 }: {
   section: NavSection;
   location: ReturnType<typeof useLocation>;
   onNavClick: () => void;
+  labelOverride?: string;
 }) => {
   const hasActiveChild =
     location.pathname === section.path ||
@@ -214,7 +218,7 @@ const SectionBlock = ({
           )}
         >
           <section.icon className={cn("w-4 h-4 shrink-0", hasActiveChild ? "text-primary" : "text-muted-foreground")} />
-          <span className="flex-1 text-left">{section.label}</span>
+          <span className="flex-1 text-left">{labelOverride ?? section.label}</span>
           <ChevronDown className={cn("w-3.5 h-3.5 transition-transform duration-200 text-muted-foreground", open && "rotate-180")} />
         </button>
       ) : (
@@ -230,7 +234,7 @@ const SectionBlock = ({
           )}
         >
           <section.icon className={cn("w-4 h-4 shrink-0", isTopActive ? "text-primary" : "text-muted-foreground")} />
-          <span className="flex-1">{section.label}</span>
+          <span className="flex-1">{labelOverride ?? section.label}</span>
           {isTopActive && <span className="w-1.5 h-1.5 rounded-full bg-primary" />}
         </Link>
       )}
@@ -267,6 +271,8 @@ const SectionBlock = ({
 // ─── Main sidebar ─────────────────────────────────────────────────────────────
 const DashboardSidebar = () => {
   const { signOut } = useAuth();
+  const { currentOrg } = useOrganization();
+  const lang = useIndustryLabels(currentOrg?.industry);
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = useIsMobile();
@@ -309,14 +315,22 @@ const DashboardSidebar = () => {
 
       {/* Nav */}
       <nav aria-label="Dashboard navigation" className="flex-1 px-2 overflow-y-auto space-y-0.5">
-        {navSections.map((section) => (
-          <SectionBlock
-            key={section.label}
-            section={section}
-            location={location}
-            onNavClick={handleNavClick}
-          />
-        ))}
+        {navSections.map((section) => {
+          // Industry language layer: rename labels based on org industry
+          const labelOverrides: Partial<Record<string, string>> = {
+            "/decisions":   lang.decisions,
+            "/governance":  lang.governance,
+          };
+          return (
+            <SectionBlock
+              key={section.label}
+              section={section}
+              location={location}
+              onNavClick={handleNavClick}
+              labelOverride={labelOverrides[section.path]}
+            />
+          );
+        })}
       </nav>
 
       {/* Footer */}

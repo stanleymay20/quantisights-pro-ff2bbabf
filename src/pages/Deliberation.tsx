@@ -414,12 +414,12 @@ type DeliberationVariant = "deliberation" | "boardroom";
 
 const variantCopy: Record<DeliberationVariant, { eyebrow: string; title: string; description: string }> = {
   deliberation: {
-    eyebrow: "Decision OS",
+    eyebrow: "Decisions",
     title: "Deterministic Boardroom",
     description: "Enterprise-grade deliberation for pending decisions. It computes Financial, Risk, Execution, Outcome, and Contrarian perspectives from real evidence — never from LLM personas, synthetic votes, or fabricated consensus scores.",
   },
   boardroom: {
-    eyebrow: "Decision OS · AI Boardroom",
+    eyebrow: "Decisions · AI Boardroom",
     title: "AI Boardroom",
     description: "Executive deliberation chamber. Select a pending decision to review evidence, perspective stances, cost of inaction, and human approval status — all computed deterministically from your governed signals.",
   },
