@@ -164,6 +164,7 @@ const Dashboard = () => {
             />
           </SectionErrorBoundary>
         )}
+        </div>
       </main>
     </>
   );
