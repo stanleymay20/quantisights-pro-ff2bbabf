@@ -41,12 +41,12 @@ const DEFAULT: IndustryLabels = {
   governance:      "Governance",
   dataConnectors:  "Connectors",
   copilotPrompts: [
-    "What are my biggest risks this week?",
+    "Why are sales slowing?",
+    "What should I prioritise this week?",
+    "Where are we losing money?",
     "What decisions need my approval?",
-    "Run a forecast for next quarter",
-    "Prepare a board report",
-    "Analyse uploaded data",
-    "Run a what-if scenario",
+    "What will happen if revenue drops 10%?",
+    "Which risks need my attention?",
   ],
 };
 

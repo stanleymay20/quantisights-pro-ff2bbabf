@@ -35,40 +35,40 @@ interface SuggestedPrompt {
 
 const SUGGESTED_PROMPTS: SuggestedPrompt[] = [
   {
-    label: "What are my biggest risks this week?",
-    icon: ShieldAlert,
+    label: "Why are sales slowing?",
+    icon: TrendingUp,
     path: "/executive-intelligence",
     description: "Opens Executive Intelligence",
   },
   {
-    label: "What decisions need my approval?",
+    label: "What should I prioritise this week?",
     icon: ClipboardList,
     path: "/decisions",
     description: "Opens Decision Ledger",
   },
   {
-    label: "Run a forecast for next quarter",
-    icon: TrendingUp,
-    path: "/forecasting",
-    description: "Opens Forecasting",
-  },
-  {
-    label: "Prepare a board report",
-    icon: FileText,
-    path: "/reports",
-    description: "Opens Reports",
-  },
-  {
-    label: "Analyse my latest data",
+    label: "Where are we losing money?",
     icon: BarChart2,
-    path: "/data-upload",
-    description: "Opens Data Upload",
+    path: "/executive-intelligence",
+    description: "Opens Executive Intelligence",
   },
   {
-    label: "Run a what-if scenario",
+    label: "What decisions need my approval?",
+    icon: ShieldAlert,
+    path: "/decisions",
+    description: "Opens Decision Ledger",
+  },
+  {
+    label: "What will happen if revenue drops 10%?",
     icon: Sparkles,
     path: "/simulations",
     description: "Opens Simulations",
+  },
+  {
+    label: "Which risks need my attention?",
+    icon: FileText,
+    path: "/interventions",
+    description: "Opens Interventions",
   },
 ];
 
@@ -105,9 +105,7 @@ const Copilot = () => {
           <SidebarMobileToggle />
           <MessageSquareText className="w-5 h-5 text-primary" />
           <h1 className="text-xl font-semibold font-display">Decision Copilot</h1>
-          <span className="ml-2 text-xs text-muted-foreground bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-            Phase 3 — intent routing coming
-          </span>
+
         </header>
 
         <main className="flex-1 overflow-auto">
@@ -122,7 +120,7 @@ const Copilot = () => {
                 Good to see you, {firstName}
               </h2>
               <p className="text-muted-foreground text-sm">
-                What decision do you need to make today?
+                Quantivis turns your data into decisions, tracks outcomes, and learns what works.
               </p>
               {orgRole && orgRole !== "owner" && orgRole !== "admin" && (
                 <span className="inline-block mt-2 text-[11px] text-muted-foreground/60 bg-muted/40 px-2.5 py-1 rounded-full capitalize">
@@ -157,7 +155,7 @@ const Copilot = () => {
             {/* Suggested prompts */}
             <div className="space-y-2">
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
-                Suggested
+                Try asking
               </p>
               {(lang.copilotPrompts.length > 0
               ? lang.copilotPrompts.map((label, i) => ({

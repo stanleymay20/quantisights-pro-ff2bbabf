@@ -38,18 +38,20 @@ export interface CopilotQueryEvent {
 
 // ─── Intent detection ─────────────────────────────────────────────────────────
 const INTENT_PATTERNS: Array<{ intent: string; keywords: string[]; destination: string }> = [
-  { intent: "view_decisions",       keywords: ["decision","approv","pending","ledger","review"],            destination: "/decisions" },
-  { intent: "view_risks",           keywords: ["risk","threat","critical","danger","biggest risk"],         destination: "/executive-intelligence" },
-  { intent: "run_forecast",         keywords: ["forecast","predict","next quarter","projection","revenue"], destination: "/forecasting" },
-  { intent: "run_simulation",       keywords: ["simulat","what if","what-if","scenario","impact"],          destination: "/simulations" },
-  { intent: "view_reports",         keywords: ["report","board","executive summary","brief"],               destination: "/reports" },
-  { intent: "upload_data",          keywords: ["upload","csv","dataset","data","import"],                   destination: "/data-upload" },
-  { intent: "view_governance",      keywords: ["govern","compliance","soc","iso","audit","gdpr"],           destination: "/governance" },
-  { intent: "view_outcomes",        keywords: ["outcome","result","did it work","performance","accuracy"],  destination: "/outcomes" },
-  { intent: "view_interventions",   keywords: ["intervention","alert","escalat","response"],                destination: "/interventions" },
-  { intent: "view_lineage",         keywords: ["lineage","source","provenance","trace","where did"],        destination: "/lineage" },
-  { intent: "view_trust",           keywords: ["trust","compliance","security","certif"],                   destination: "/trust-center" },
-  { intent: "view_execution",       keywords: ["execut","action","stall","overdue","blocked"],              destination: "/execution" },
+  { intent: "view_decisions",     keywords: ["decision","approv","pending","ledger","review","prioriti","what should i"],                        destination: "/decisions" },
+  { intent: "view_risks",         keywords: ["risk","threat","critical","danger","biggest risk","attention","need my attention","concern"],       destination: "/executive-intelligence" },
+  { intent: "diagnose_revenue",   keywords: ["sales slow","revenue drop","losing money","revenue declin","why are sales","where are we losing"],  destination: "/executive-intelligence" },
+  { intent: "run_forecast",       keywords: ["forecast","predict","next quarter","projection","happen if","what will happen","drops","revenue drop"], destination: "/simulations" },
+  { intent: "run_simulation",     keywords: ["simulat","what if","what-if","scenario","impact","10%","drop by"],                                  destination: "/simulations" },
+  { intent: "view_reports",       keywords: ["report","board","executive summary"],                                                               destination: "/reports" },
+  { intent: "upload_data",        keywords: ["upload","csv","dataset","import"],                                                                  destination: "/data-upload" },
+  { intent: "view_governance",    keywords: ["govern","compliance","soc","iso","audit","gdpr"],                                                   destination: "/governance" },
+  { intent: "view_outcomes",      keywords: ["outcome","result","did it work","performance","accuracy","track"],                                  destination: "/outcomes" },
+  { intent: "view_interventions", keywords: ["intervention","alert","escalat","response","attention","risks"],                                    destination: "/interventions" },
+  { intent: "view_lineage",       keywords: ["lineage","source","provenance","trace","where did"],                                                destination: "/lineage" },
+  { intent: "view_trust",         keywords: ["trust","security","certif","procurement"],                                                          destination: "/trust-center" },
+  { intent: "view_execution",     keywords: ["execut","action","stall","overdue","blocked"],                                                      destination: "/execution" },
+  { intent: "view_data",          keywords: ["data","dataset","analyse","analyze","analyze data"],                                                destination: "/dataset-explorer" },
 ];
 
 export function detectIntent(query: string): { intent: string; destination: string } {
