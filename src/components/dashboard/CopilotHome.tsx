@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import type { Insight } from "@/hooks/useInsights";
 import TrustCard from "@/components/trust/TrustCard";
+import WhatIsQuantivis from "@/components/dashboard/WhatIsQuantivis";
 import { useOrganization } from "@/hooks/useOrganization";
 import { useIndustryLabels } from "@/hooks/useIndustryLanguage";
 import { useCopilotTelemetry } from "@/hooks/useCopilotTelemetry";
@@ -166,6 +167,11 @@ const CopilotHome = ({
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
+
+      {/* ── First-time explainer: "What is Quantivis?" ──────────────────── */}
+      <WhatIsQuantivis />
+
+
 
       {/* ── Copilot input ─────────────────────────────────────────────────── */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>

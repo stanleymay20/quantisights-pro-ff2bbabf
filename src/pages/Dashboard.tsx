@@ -146,7 +146,8 @@ const Dashboard = () => {
 
       {isDemoUser && hasData && <DemoBanner />}
 
-      <main id="main-content" className="flex-1 p-4 sm:p-6 md:p-8 overflow-auto">
+      <main id="main-content" className="flex-1 overflow-auto">
+        <div className="p-4 sm:p-6 md:p-8">
         {(isLoading || isDemoHydrating) && !hasData ? (
           <DashboardSkeleton />
         ) : showEmptyState ? (
