@@ -45,8 +45,8 @@ const DEFAULT: IndustryLabels = {
     "What decisions need my approval?",
     "Run a forecast for next quarter",
     "Prepare a board report",
-    "Run a what-if scenario",
     "Analyse uploaded data",
+    "Run a what-if scenario",
   ],
 };
 
