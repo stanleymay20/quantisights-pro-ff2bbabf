@@ -3,7 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 
-const DISMISS_KEY = "quantivis_demo_banner_dismissed";
+const DISMISS_KEY = "quantivis_demo_banner_dismissed_v2";
+
+/**
+ * DemoBanner — full-width sandbox warning.
+ * Dismissal is persisted in localStorage so the exec only sees it once
+ * (not on every browser session restart).
+ */
 
 /**
  * DemoBanner — full-width, impossible-to-miss sandbox warning.
@@ -12,10 +18,10 @@ const DISMISS_KEY = "quantivis_demo_banner_dismissed";
  */
 const DemoBanner = () => {
   const navigate = useNavigate();
-  const [dismissed, setDismissed] = useState(() => sessionStorage.getItem(DISMISS_KEY) === "true");
+  const [dismissed, setDismissed] = useState(() => localStorage.getItem(DISMISS_KEY) === "true");
 
   const handleDismiss = () => {
-    sessionStorage.setItem(DISMISS_KEY, "true");
+    localStorage.setItem(DISMISS_KEY, "true");
     setDismissed(true);
   };
 
