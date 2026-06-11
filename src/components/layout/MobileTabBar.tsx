@@ -66,8 +66,10 @@ const MobileTabBar = () => {
   // Only render on mobile
   if (!isMobile) return null;
 
+  // Primary tabs filter by role's allowedPaths; MORE items always shown
+  // (route-level guards enforce access). Viewer keeps a clean shell anyway.
   const visibleTabs = PRIMARY_TABS.filter(t => allowedPaths.has(t.path));
-  const visibleMore = MORE_ITEMS.filter(t => allowedPaths.has(t.path));
+  const visibleMore = orgRole === "viewer" ? [] : MORE_ITEMS;
   const showMore = visibleMore.length > 0;
 
   // Check if current path is in the "More" drawer
