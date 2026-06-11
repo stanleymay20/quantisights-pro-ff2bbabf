@@ -1,14 +1,16 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { useOrganization } from "@/hooks/useOrganization";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { SidebarMobileToggle } from "@/components/layout/ProtectedShell";
 import {
   CheckCircle2, XCircle, TrendingUp, TrendingDown,
-  Target, BarChart3, Minus, Loader2,
+  Target, BarChart3, Minus, Loader2, ArrowRight,
 } from "lucide-react";
 
 interface OutcomeRecord {
@@ -25,6 +27,7 @@ interface OutcomeRecord {
 
 const Outcomes = () => {
   const { currentOrgId } = useOrganization();
+  const navigate = useNavigate();
   const [records, setRecords] = useState<OutcomeRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -212,13 +215,22 @@ const Outcomes = () => {
         {/* Empty state */}
         {records.length === 0 && (
           <div className="text-center py-16">
-            <div className="w-16 h-16 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto mb-4">
-              <BarChart3 className="w-8 h-8 text-muted-foreground" />
+            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+              <BarChart3 className="w-8 h-8 text-primary" />
             </div>
-            <h2 className="text-lg font-semibold mb-1">No decisions tracked yet</h2>
-            <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-              Approve decisions from the Review page to start tracking outcomes.
+            <h2 className="text-lg font-semibold mb-1">No outcomes tracked yet</h2>
+            <p className="text-sm text-muted-foreground max-w-sm mx-auto mb-5">
+              Quantivis tracks how each decision performed versus its prediction — building a
+              calibration record that improves future recommendations over time.
             </p>
+            <div className="flex items-center justify-center gap-3">
+              <Button size="sm" onClick={() => navigate("/decisions")}>
+                Go to Decision Ledger <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => navigate("/deliberation")}>
+                Review Pending
+              </Button>
+            </div>
           </div>
         )}
       </div>

@@ -862,9 +862,20 @@ const DecisionLedgerPage = () => {
 
             <TabsContent value="completed" className="space-y-3">
               {completedDecisions.length === 0 ? (
-                <Card className="border-dashed"><CardContent className="py-16 flex flex-col items-center gap-3">
-                  <Target className="w-10 h-10 text-muted-foreground" />
-                  <p className="text-muted-foreground text-sm">No completed decisions yet.</p>
+                <Card className="border-dashed"><CardContent className="py-16 flex flex-col items-center gap-4 text-center">
+                  <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
+                    <CheckCircle2 className="w-7 h-7 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-base">No completed decisions yet</p>
+                    <p className="text-sm text-muted-foreground mt-1 max-w-sm">
+                      Decisions appear here once they've been approved and executed.
+                      Log and approve your first decision to start building your outcome record.
+                    </p>
+                  </div>
+                  <Button size="sm" variant="outline" onClick={() => setShowCreate(true)}>
+                    <Plus className="w-4 h-4 mr-2" /> Log a Decision
+                  </Button>
                 </CardContent></Card>
               ) : completedDecisions.map(d => (
                 <Card key={d.id}>

@@ -271,7 +271,7 @@ const AdvisoryPage = () => {
   const closedInstances = instances.filter(i => i.status === "resolved" || i.status === "dismissed");
 
   return (
-    <DatasetRequired moduleName="Advisory">
+    <DatasetRequired moduleName="Advisory Engine" moduleDescription="Get AI-generated strategic advisories ranked by confidence and expected impact — calibrated to your actual performance data.">
       <SectionErrorBoundary sectionName="Advisory">
         <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
           <div className="flex items-center gap-3">

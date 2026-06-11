@@ -462,7 +462,21 @@ export default function Deliberation({ variant = "deliberation" }: { variant?: D
         {loading ? (
           <div className="p-6 text-sm text-muted-foreground">Loading queue…</div>
         ) : rows.length === 0 ? (
-          <div className="p-6 text-sm text-muted-foreground">No pending decisions to deliberate.</div>
+          <div className="p-8 flex flex-col items-center text-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+              <Scale className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <p className="font-semibold text-sm">No decisions pending deliberation</p>
+              <p className="text-xs text-muted-foreground mt-1 max-w-xs">
+                Log a decision in the Decision Ledger to trigger the deliberation pipeline —
+                evidence stances, cost of inaction, and approval chain are computed automatically.
+              </p>
+            </div>
+            <Button size="sm" variant="outline" onClick={() => navigate("/decisions")}>
+              <ArrowRight className="w-3.5 h-3.5 mr-1.5" /> Go to Decision Ledger
+            </Button>
+          </div>
         ) : (
           <ul className="divide-y">
             {rows.map((d) => (

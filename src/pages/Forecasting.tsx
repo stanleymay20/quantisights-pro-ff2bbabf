@@ -126,20 +126,26 @@ const Forecasting = () => {
           </Card>
 
           {noContext && (
-            <Card>
-              <CardContent className="p-12 flex flex-col items-center text-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Database className="w-6 h-6 text-primary" />
+            <Card className="border-dashed">
+              <CardContent className="p-12 flex flex-col items-center text-center gap-5">
+                <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
+                  <Database className="w-7 h-7 text-primary" />
                 </div>
                 <div>
-                  <h2 className="text-base font-semibold">No dataset connected</h2>
+                  <h2 className="text-base font-semibold">Connect your data to run forecasts</h2>
                   <p className="text-sm text-muted-foreground mt-1 max-w-md">
-                    Upload or connect a dataset to generate forecasts.
+                    Quantivis builds probabilistic forecasts from your operational metrics — revenue,
+                    costs, pipeline, or any time-series. Upload a CSV to get started in seconds.
                   </p>
                 </div>
-                <Button asChild className="gap-2">
-                  <Link to="/data-hub"><Upload className="w-4 h-4" />Upload data</Link>
-                </Button>
+                <div className="flex items-center gap-3">
+                  <Button asChild className="gap-2">
+                    <Link to="/data-upload"><Upload className="w-4 h-4" />Upload Data</Link>
+                  </Button>
+                  <Button asChild variant="outline" className="gap-2">
+                    <Link to="/demo"><Sparkles className="w-4 h-4" />Try Sample Data</Link>
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           )}

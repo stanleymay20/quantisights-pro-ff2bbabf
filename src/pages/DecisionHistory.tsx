@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { useOrganization } from "@/hooks/useOrganization";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SidebarMobileToggle } from "@/components/layout/ProtectedShell";
 import {
-  CheckCircle2, XCircle, Clock, Loader2, BookOpen,
+  CheckCircle2, XCircle, Clock, Loader2, BookOpen, ArrowRight,
 } from "lucide-react";
 import { format } from "date-fns";
 import ExplainDecisionPanel from "@/components/dashboard/ExplainDecisionPanel";
@@ -39,6 +41,7 @@ const STATUS_CONFIG: Record<string, { icon: typeof CheckCircle2; color: string; 
 
 const DecisionHistory = () => {
   const { currentOrgId } = useOrganization();
+  const navigate = useNavigate();
   const [records, setRecords] = useState<HistoryRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -82,13 +85,17 @@ const DecisionHistory = () => {
 
         {records.length === 0 ? (
           <div className="text-center py-16">
-            <div className="w-16 h-16 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto mb-4">
-              <BookOpen className="w-8 h-8 text-muted-foreground" />
+            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+              <BookOpen className="w-8 h-8 text-primary" />
             </div>
-            <h2 className="text-lg font-semibold mb-1">No history yet</h2>
-            <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-              Decisions will appear here once you start reviewing and acting on them.
+            <h2 className="text-lg font-semibold mb-1">No decision history yet</h2>
+            <p className="text-sm text-muted-foreground max-w-sm mx-auto mb-5">
+              Every decision you log, approve, and execute builds a permanent, board-defensible
+              audit trail here — including what was predicted and what actually happened.
             </p>
+            <Button size="sm" onClick={() => navigate("/decisions")}>
+              Go to Decision Ledger <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
           </div>
         ) : (
           <div className="space-y-2">

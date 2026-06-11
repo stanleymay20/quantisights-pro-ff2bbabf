@@ -91,7 +91,7 @@ const Simulations = () => {
   const latest = simulations?.[0];
 
   return (
-    <DatasetRequired moduleName="Simulations">
+    <DatasetRequired moduleName="Simulations" moduleDescription="Run what-if scenarios on your operational data — model the impact of price changes, headcount shifts, or supply chain disruptions before committing.">
     <SectionErrorBoundary sectionName="Monte Carlo Simulations">
         <main className="flex-1 overflow-y-auto">
         <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-lg border-b border-border px-6 py-4">
