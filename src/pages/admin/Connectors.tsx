@@ -77,10 +77,10 @@ interface Schedule {
 const CONNECTOR_LABELS: Record<ConnectorType, { label: string; icon: typeof Database; available: boolean }> = {
   rest_api: { label: "REST API", icon: Globe, available: true },
   csv_upload: { label: "CSV Upload", icon: Database, available: true },
-  postgres: { label: "PostgreSQL", icon: Database, available: false },
-  mysql: { label: "MySQL", icon: Database, available: false },
-  snowflake: { label: "Snowflake", icon: Database, available: false },
-  bigquery: { label: "BigQuery", icon: Database, available: false },
+  postgres: { label: "PostgreSQL", icon: Database, available: true },
+  mysql: { label: "MySQL", icon: Database, available: true },
+  snowflake: { label: "Snowflake", icon: Database, available: true },
+  bigquery: { label: "BigQuery", icon: Database, available: true },
 };
 
 const CANONICAL_FIELDS: FieldMapping[] = [
@@ -687,10 +687,6 @@ function CreateWizard({
       toast({ title: "URL required for REST connector", variant: "destructive" });
       return;
     }
-    if (CONNECTOR_LABELS[type].available === false) {
-      toast({ title: "Coming soon", description: `${CONNECTOR_LABELS[type].label} support is on the roadmap.`, variant: "destructive" });
-      return;
-    }
     setSubmitting(true);
     try {
       let vaultSecretName: string | null = null;
@@ -779,15 +775,13 @@ function CreateWizard({
                 return (
                   <button
                     key={t}
-                    onClick={() => cfg.available && setType(t)}
-                    disabled={!cfg.available}
+                    onClick={() => setType(t)}
                     className={`p-3 rounded-lg border text-left text-xs transition-all ${
                       sel ? "border-primary bg-primary/10" : "border-border hover:border-primary/30"
-                    } ${!cfg.available ? "opacity-40 cursor-not-allowed" : ""}`}
+                    }`}
                   >
                     <Icon className="w-4 h-4 text-primary mb-1" />
                     <div className="font-semibold">{cfg.label}</div>
-                    {!cfg.available && <div className="text-muted-foreground">Coming soon</div>}
                   </button>
                 );
               })}

@@ -34,7 +34,6 @@ interface ConnectorDef {
   description: string;
   category: "database" | "warehouse" | "bi" | "file" | "crm" | "erp" | "saas";
   defaultPort?: string;
-  comingSoon?: boolean;
 }
 
 interface DiscoveredTable {
@@ -60,17 +59,17 @@ const CONNECTORS: ConnectorDef[] = [
   { type: "powerbi", label: "Power BI", icon: BarChart3, description: "Microsoft Power BI datasets", category: "bi" },
   { type: "csv", label: "CSV Upload", icon: FileSpreadsheet, description: "Upload CSV files (demo/testing)", category: "file" },
   // ── CRM ──
-  { type: "salesforce", label: "Salesforce", icon: Cloud, description: "Opportunities, Accounts, Cases, and pipeline from Salesforce CRM", category: "crm", comingSoon: false },
-  { type: "hubspot", label: "HubSpot", icon: BarChart3, description: "Contacts, Deals, and revenue data from HubSpot CRM", category: "crm", comingSoon: false },
-  { type: "dynamics", label: "Microsoft Dynamics", icon: Server, description: "Sales and service data from Microsoft Dynamics 365", category: "crm", comingSoon: true },
+  { type: "salesforce", label: "Salesforce", icon: Cloud, description: "Opportunities, Accounts, Cases, and pipeline from Salesforce CRM", category: "crm" },
+  { type: "hubspot", label: "HubSpot", icon: BarChart3, description: "Contacts, Deals, and revenue data from HubSpot CRM", category: "crm" },
+  { type: "dynamics", label: "Microsoft Dynamics", icon: Server, description: "Sales and service data from Microsoft Dynamics 365", category: "crm" },
   // ── ERP ──
-  { type: "sap", label: "SAP S/4HANA", icon: Server, description: "Finance, procurement, and operations from SAP", category: "erp", comingSoon: true },
-  { type: "netsuite", label: "NetSuite", icon: Cloud, description: "ERP, CRM, and e-commerce data from NetSuite", category: "erp", comingSoon: false },
-  { type: "xero", label: "Xero", icon: BarChart3, description: "P&L, cash flow, and invoicing from Xero", category: "erp", comingSoon: false },
+  { type: "sap", label: "SAP S/4HANA", icon: Server, description: "Finance, procurement, and operations from SAP", category: "erp" },
+  { type: "netsuite", label: "NetSuite", icon: Cloud, description: "ERP, CRM, and e-commerce data from NetSuite", category: "erp" },
+  { type: "xero", label: "Xero", icon: BarChart3, description: "P&L, cash flow, and invoicing from Xero", category: "erp" },
   // ── SaaS metrics ──
-  { type: "stripe", label: "Stripe", icon: Database, description: "Revenue, MRR, churn, and subscription metrics from Stripe", category: "saas", comingSoon: false },
-  { type: "googleanalytics", label: "Google Analytics", icon: BarChart3, description: "Sessions, conversions, and funnel data from GA4", category: "saas", comingSoon: true },
-  { type: "googlesheets", label: "Google Sheets", icon: FileSpreadsheet, description: "Any structured data from Google Sheets", category: "saas", comingSoon: false },
+  { type: "stripe", label: "Stripe", icon: Database, description: "Revenue, MRR, churn, and subscription metrics from Stripe", category: "saas" },
+  { type: "googleanalytics", label: "Google Analytics", icon: BarChart3, description: "Sessions, conversions, and funnel data from GA4", category: "saas" },
+  { type: "googlesheets", label: "Google Sheets", icon: FileSpreadsheet, description: "Any structured data from Google Sheets", category: "saas" },
 ];
 
 const METRIC_TYPES = [
@@ -95,15 +94,40 @@ interface ConnectorCredentials {
   account: string;
   warehouse: string;
   role: string;
-  // BigQuery
+  // BigQuery / Google Sheets / GA4 — service account
   projectId: string;
   datasetId: string;
   serviceAccountJson: string;
-  // Power BI
+  // Power BI / Dynamics / SAP OAuth
   tenantId: string;
   clientId: string;
   clientSecret: string;
   workspaceId: string;
+  // Salesforce
+  instanceUrl: string;
+  accessToken: string;
+  // HubSpot
+  portalId: string;
+  privateAppToken: string;
+  // NetSuite
+  accountId: string;
+  consumerKey: string;
+  consumerSecret: string;
+  tokenId: string;
+  tokenSecret: string;
+  // Xero
+  xeroTenantId: string;
+  // SAP
+  sapHost: string;
+  sapSystemId: string;
+  sapClient: string;
+  // Stripe
+  stripeApiKey: string;
+  // GA4
+  ga4PropertyId: string;
+  // Google Sheets
+  spreadsheetId: string;
+  sheetRange: string;
 }
 
 const defaultCredentials: ConnectorCredentials = {
@@ -112,6 +136,14 @@ const defaultCredentials: ConnectorCredentials = {
   account: "", warehouse: "COMPUTE_WH", role: "PUBLIC",
   projectId: "", datasetId: "", serviceAccountJson: "",
   tenantId: "", clientId: "", clientSecret: "", workspaceId: "",
+  instanceUrl: "", accessToken: "",
+  portalId: "", privateAppToken: "",
+  accountId: "", consumerKey: "", consumerSecret: "", tokenId: "", tokenSecret: "",
+  xeroTenantId: "",
+  sapHost: "", sapSystemId: "", sapClient: "100",
+  stripeApiKey: "",
+  ga4PropertyId: "",
+  spreadsheetId: "", sheetRange: "Sheet1!A:Z",
 };
 
 // ─── Component ───
@@ -616,6 +648,168 @@ const DataConnectors = () => {
           </div>
         );
 
+      case "salesforce":
+        return (
+          <div className="space-y-4">
+            <div><label className="text-sm font-medium mb-1.5 block">Connection Name</label>
+              <Input value={sourceName} onChange={e => setSourceName(e.target.value)} placeholder="Salesforce Production" /></div>
+            <div><label className="text-sm font-medium mb-1.5 block">Salesforce Instance URL</label>
+              <Input value={creds.instanceUrl} onChange={e => updateCred("instanceUrl", e.target.value)} placeholder="https://yourorg.my.salesforce.com" />
+              <p className="text-[10px] text-muted-foreground mt-1">Found in Setup → Company Information → Instance.</p></div>
+            <div><label className="text-sm font-medium mb-1.5 block">Connected App Client ID</label>
+              <Input value={creds.clientId} onChange={e => updateCred("clientId", e.target.value)} placeholder="3MVG9..." /></div>
+            <div><label className="text-sm font-medium mb-1.5 block">Connected App Client Secret</label>
+              <Input type="password" value={creds.clientSecret} onChange={e => updateCred("clientSecret", e.target.value)} placeholder="••••••••" /></div>
+            <div><label className="text-sm font-medium mb-1.5 block">API Username</label>
+              <Input value={creds.username} onChange={e => updateCred("username", e.target.value)} placeholder="integration@yourorg.com" /></div>
+            <div><label className="text-sm font-medium mb-1.5 block">API Password + Security Token</label>
+              <Input type="password" value={creds.password} onChange={e => updateCred("password", e.target.value)} placeholder="password + token concatenated" />
+              <p className="text-[10px] text-muted-foreground mt-1">Concatenate your Salesforce password and security token (e.g. MyPass123TOKEN456).</p></div>
+          </div>
+        );
+
+      case "hubspot":
+        return (
+          <div className="space-y-4">
+            <div><label className="text-sm font-medium mb-1.5 block">Connection Name</label>
+              <Input value={sourceName} onChange={e => setSourceName(e.target.value)} placeholder="HubSpot CRM" /></div>
+            <div><label className="text-sm font-medium mb-1.5 block">HubSpot Portal ID</label>
+              <Input value={creds.portalId} onChange={e => updateCred("portalId", e.target.value)} placeholder="12345678" />
+              <p className="text-[10px] text-muted-foreground mt-1">Found in your HubSpot account URL: app.hubspot.com/contacts/<strong>12345678</strong></p></div>
+            <div><label className="text-sm font-medium mb-1.5 block">Private App Token</label>
+              <Input type="password" value={creds.privateAppToken} onChange={e => updateCred("privateAppToken", e.target.value)} placeholder="pat-eu1-..." />
+              <p className="text-[10px] text-muted-foreground mt-1">Create a Private App in HubSpot Settings → Integrations → Private Apps with CRM Object scopes.</p></div>
+          </div>
+        );
+
+      case "dynamics":
+        return (
+          <div className="space-y-4">
+            <div><label className="text-sm font-medium mb-1.5 block">Connection Name</label>
+              <Input value={sourceName} onChange={e => setSourceName(e.target.value)} placeholder="Dynamics 365 Sales" /></div>
+            <div><label className="text-sm font-medium mb-1.5 block">Dynamics Instance URL</label>
+              <Input value={creds.instanceUrl} onChange={e => updateCred("instanceUrl", e.target.value)} placeholder="https://yourorg.crm.dynamics.com" /></div>
+            <div className="grid grid-cols-2 gap-4">
+              <div><label className="text-sm font-medium mb-1.5 block">Azure Tenant ID</label>
+                <Input value={creds.tenantId} onChange={e => updateCred("tenantId", e.target.value)} placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" /></div>
+              <div><label className="text-sm font-medium mb-1.5 block">App Registration Client ID</label>
+                <Input value={creds.clientId} onChange={e => updateCred("clientId", e.target.value)} placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" /></div>
+            </div>
+            <div><label className="text-sm font-medium mb-1.5 block">Client Secret</label>
+              <Input type="password" value={creds.clientSecret} onChange={e => updateCred("clientSecret", e.target.value)} placeholder="••••••••" />
+              <p className="text-[10px] text-muted-foreground mt-1">Register an app in Azure AD and grant it Dynamics CRM user_impersonation permission.</p></div>
+          </div>
+        );
+
+      case "sap":
+        return (
+          <div className="space-y-4">
+            <div><label className="text-sm font-medium mb-1.5 block">Connection Name</label>
+              <Input value={sourceName} onChange={e => setSourceName(e.target.value)} placeholder="SAP S/4HANA Finance" /></div>
+            <div className="grid grid-cols-2 gap-4">
+              <div><label className="text-sm font-medium mb-1.5 block">SAP Host / URL</label>
+                <Input value={creds.sapHost} onChange={e => updateCred("sapHost", e.target.value)} placeholder="https://your-sap-host.com:44300" /></div>
+              <div><label className="text-sm font-medium mb-1.5 block">System ID</label>
+                <Input value={creds.sapSystemId} onChange={e => updateCred("sapSystemId", e.target.value)} placeholder="S4H" /></div>
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div><label className="text-sm font-medium mb-1.5 block">Client Number</label>
+                <Input value={creds.sapClient} onChange={e => updateCred("sapClient", e.target.value)} placeholder="100" /></div>
+              <div><label className="text-sm font-medium mb-1.5 block">Username</label>
+                <Input value={creds.username} onChange={e => updateCred("username", e.target.value)} placeholder="QUANTIVIS_API" /></div>
+              <div><label className="text-sm font-medium mb-1.5 block">Password</label>
+                <Input type="password" value={creds.password} onChange={e => updateCred("password", e.target.value)} placeholder="••••••••" /></div>
+            </div>
+            <p className="text-[10px] text-muted-foreground">Quantivis reads via SAP OData API (/sap/opu/odata/). Create a communication user with read-only access to financial and procurement CDS views.</p>
+          </div>
+        );
+
+      case "netsuite":
+        return (
+          <div className="space-y-4">
+            <div><label className="text-sm font-medium mb-1.5 block">Connection Name</label>
+              <Input value={sourceName} onChange={e => setSourceName(e.target.value)} placeholder="NetSuite ERP" /></div>
+            <div><label className="text-sm font-medium mb-1.5 block">Account ID</label>
+              <Input value={creds.accountId} onChange={e => updateCred("accountId", e.target.value)} placeholder="1234567" />
+              <p className="text-[10px] text-muted-foreground mt-1">Found in Setup → Company → Company Information.</p></div>
+            <div className="grid grid-cols-2 gap-4">
+              <div><label className="text-sm font-medium mb-1.5 block">Consumer Key</label>
+                <Input value={creds.consumerKey} onChange={e => updateCred("consumerKey", e.target.value)} placeholder="Consumer Key from Integration record" /></div>
+              <div><label className="text-sm font-medium mb-1.5 block">Consumer Secret</label>
+                <Input type="password" value={creds.consumerSecret} onChange={e => updateCred("consumerSecret", e.target.value)} placeholder="••••••••" /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div><label className="text-sm font-medium mb-1.5 block">Token ID</label>
+                <Input value={creds.tokenId} onChange={e => updateCred("tokenId", e.target.value)} placeholder="Token ID from Access Token" /></div>
+              <div><label className="text-sm font-medium mb-1.5 block">Token Secret</label>
+                <Input type="password" value={creds.tokenSecret} onChange={e => updateCred("tokenSecret", e.target.value)} placeholder="••••••••" /></div>
+            </div>
+            <p className="text-[10px] text-muted-foreground">Uses Token-Based Authentication (TBA). Create an Integration record in NetSuite and generate an Access Token for your API role.</p>
+          </div>
+        );
+
+      case "xero":
+        return (
+          <div className="space-y-4">
+            <div><label className="text-sm font-medium mb-1.5 block">Connection Name</label>
+              <Input value={sourceName} onChange={e => setSourceName(e.target.value)} placeholder="Xero Accounting" /></div>
+            <div className="grid grid-cols-2 gap-4">
+              <div><label className="text-sm font-medium mb-1.5 block">Xero App Client ID</label>
+                <Input value={creds.clientId} onChange={e => updateCred("clientId", e.target.value)} placeholder="App Client ID from developer.xero.com" /></div>
+              <div><label className="text-sm font-medium mb-1.5 block">Client Secret</label>
+                <Input type="password" value={creds.clientSecret} onChange={e => updateCred("clientSecret", e.target.value)} placeholder="••••••••" /></div>
+            </div>
+            <div><label className="text-sm font-medium mb-1.5 block">Xero Tenant ID</label>
+              <Input value={creds.xeroTenantId} onChange={e => updateCred("xeroTenantId", e.target.value)} placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
+              <p className="text-[10px] text-muted-foreground mt-1">Retrieved after OAuth authorisation. Create an app at developer.xero.com with accounting:read scope.</p></div>
+          </div>
+        );
+
+      case "stripe":
+        return (
+          <div className="space-y-4">
+            <div><label className="text-sm font-medium mb-1.5 block">Connection Name</label>
+              <Input value={sourceName} onChange={e => setSourceName(e.target.value)} placeholder="Stripe Payments" /></div>
+            <div><label className="text-sm font-medium mb-1.5 block">Restricted API Key</label>
+              <Input type="password" value={creds.stripeApiKey} onChange={e => updateCred("stripeApiKey", e.target.value)} placeholder="rk_live_..." />
+              <p className="text-[10px] text-muted-foreground mt-1">
+                Create a Restricted Key in the Stripe Dashboard → Developers → API Keys. Enable read permissions for: Charges, Customers, Subscriptions, Invoices, Balance.
+              </p></div>
+          </div>
+        );
+
+      case "googleanalytics":
+        return (
+          <div className="space-y-4">
+            <div><label className="text-sm font-medium mb-1.5 block">Connection Name</label>
+              <Input value={sourceName} onChange={e => setSourceName(e.target.value)} placeholder="Google Analytics 4" /></div>
+            <div><label className="text-sm font-medium mb-1.5 block">GA4 Property ID</label>
+              <Input value={creds.ga4PropertyId} onChange={e => updateCred("ga4PropertyId", e.target.value)} placeholder="123456789" />
+              <p className="text-[10px] text-muted-foreground mt-1">Found in GA4 Admin → Property → Property Details.</p></div>
+            <div><label className="text-sm font-medium mb-1.5 block">Service Account JSON Key</label>
+              <Textarea value={creds.serviceAccountJson} onChange={e => updateCred("serviceAccountJson", e.target.value)}
+                placeholder='{"type":"service_account","project_id":"..."}' className="font-mono text-xs min-h-[120px]" />
+              <p className="text-[10px] text-muted-foreground mt-1">Create a Service Account in GCP, grant it Viewer access to your GA4 property, then download the JSON key.</p></div>
+          </div>
+        );
+
+      case "googlesheets":
+        return (
+          <div className="space-y-4">
+            <div><label className="text-sm font-medium mb-1.5 block">Connection Name</label>
+              <Input value={sourceName} onChange={e => setSourceName(e.target.value)} placeholder="Finance Data Sheet" /></div>
+            <div><label className="text-sm font-medium mb-1.5 block">Spreadsheet ID</label>
+              <Input value={creds.spreadsheetId} onChange={e => updateCred("spreadsheetId", e.target.value)} placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms" />
+              <p className="text-[10px] text-muted-foreground mt-1">The long ID in your Google Sheets URL between /d/ and /edit.</p></div>
+            <div><label className="text-sm font-medium mb-1.5 block">Sheet Range</label>
+              <Input value={creds.sheetRange} onChange={e => updateCred("sheetRange", e.target.value)} placeholder="Sheet1!A:Z" /></div>
+            <div><label className="text-sm font-medium mb-1.5 block">Service Account JSON Key</label>
+              <Textarea value={creds.serviceAccountJson} onChange={e => updateCred("serviceAccountJson", e.target.value)}
+                placeholder='{"type":"service_account","project_id":"..."}' className="font-mono text-xs min-h-[100px]" />
+              <p className="text-[10px] text-muted-foreground mt-1">Share your spreadsheet with the service account email and paste the JSON key here.</p></div>
+          </div>
+        );
+
       default:
         return null;
     }
@@ -733,8 +927,8 @@ const DataConnectors = () => {
                           return (
                             <Card
                               key={conn.type}
-                              className={`transition-all ${conn.comingSoon ? "opacity-60 cursor-default" : "cursor-pointer hover:border-primary/50 hover:shadow-md"}`}
-                              onClick={() => !conn.comingSoon && handleSelectConnector(conn.type)}
+                              className="cursor-pointer transition-all hover:border-primary/50 hover:shadow-md"
+                              onClick={() => handleSelectConnector(conn.type)}
                             >
                               <CardContent className="p-5">
                                 <div className="flex items-center gap-3 mb-3">
@@ -744,14 +938,11 @@ const DataConnectors = () => {
                                   <div className="flex-1 min-w-0">
                                     <p className="font-semibold text-sm truncate">{conn.label}</p>
                                     <div className="flex gap-1 mt-0.5 flex-wrap">
-                                      {conn.comingSoon && (
-                                        <Badge variant="outline" className="text-[10px] border-amber-400/40 text-amber-600 bg-amber-50/50">Coming soon</Badge>
-                                      )}
-                                      {isBusiness && !conn.comingSoon && (
-                                        <Badge variant="outline" className="text-[10px]">OAuth</Badge>
+                                      {isBusiness && (
+                                        <Badge variant="outline" className="text-[10px]">OAuth / API Key</Badge>
                                       )}
                                       {conn.category === "file" && (
-                                        <Badge variant="outline" className="text-[10px]">Demo / Testing</Badge>
+                                        <Badge variant="outline" className="text-[10px]">Upload</Badge>
                                       )}
                                     </div>
                                   </div>
