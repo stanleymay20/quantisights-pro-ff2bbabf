@@ -850,6 +850,16 @@ serve(async (req) => {
 
     let result: { records: number; errors: string[] };
 
+    // Resolve per-connector credentials if connector_id is in the config
+    // This enables multi-tenant credential isolation
+    let perConnectorCreds: Record<string, string | undefined> = {};
+    if (config.connector_id) {
+      try {
+        const credModule = await import("../_shared/connector-credentials.ts");
+        perConnectorCreds = await credModule.resolveConnectorCredentials(serviceClient, config.connector_id);
+      } catch { /* fall through to env vars */ }
+    }
+
     // Warehouse / lake connectors delegate to dedicated functions (canonical-mapper + circuit breaker)
     const delegated: Record<string, string> = {
       snowflake: "connector-snowflake-pull",
@@ -858,6 +868,11 @@ serve(async (req) => {
       hubspot: "connector-hubspot-pull",
       salesforce: "connector-salesforce-pull",
       sap_odata: "connector-sap-pull",
+      sap: "connector-sap-pull",
+      netsuite: "connector-netsuite-pull",
+      dynamics: "connector-dynamics-pull",
+      googlesheets: "connector-sheets-pull",
+      google_sheets: "connector-sheets-pull",
     };
 
     if (delegated[connector_type]) {

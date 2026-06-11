@@ -161,6 +161,7 @@ const DataConnectors = () => {
 
   const [testResult, setTestResult] = useState<{ success: boolean; message: string; version?: string } | null>(null);
   const [testing, setTesting] = useState(false);
+  const [connecting, setConnecting] = useState(false);
 
   const [tables, setTables] = useState<DiscoveredTable[]>([]);
   const [discovering, setDiscovering] = useState(false);
@@ -206,51 +207,89 @@ const DataConnectors = () => {
     setCreds(prev => ({ ...prev, [field]: value }));
   };
 
-  const buildConnectorPayload = () => {
-    const base: any = {
-      organization_id: currentOrgId,
-      connector_type: selectedType,
-    };
+  const CRM_ERP_SAAS_TYPES = new Set([
+    "salesforce","hubspot","dynamics","sap","netsuite","xero","stripe","googleanalytics","googlesheets",
+  ]);
 
+  const buildConnectorPayload = () => {
+    const base: any = { organization_id: currentOrgId, connector_type: selectedType };
     switch (selectedType) {
-      case "postgresql":
-      case "mysql":
-      case "sqlserver":
-        return {
-          ...base,
-          host: creds.host, port: parseInt(creds.port),
-          database_name: creds.dbName, schema_name: creds.schemaName,
-          username: creds.username, password: creds.password, ssl_mode: creds.sslMode,
-        };
+      case "postgresql": case "mysql": case "sqlserver":
+        return { ...base, host: creds.host, port: parseInt(creds.port), database_name: creds.dbName, schema_name: creds.schemaName, username: creds.username, password: creds.password, ssl_mode: creds.sslMode };
       case "snowflake":
-        return {
-          ...base,
-          account: creds.account, warehouse: creds.warehouse,
-          database_name: creds.dbName, schema_name: creds.schemaName,
-          username: creds.username, password: creds.password, role: creds.role,
-        };
+        return { ...base, account: creds.account, warehouse: creds.warehouse, database_name: creds.dbName, schema_name: creds.schemaName, username: creds.username, password: creds.password, role: creds.role };
       case "bigquery":
-        return {
-          ...base,
-          project_id: creds.projectId, dataset_id: creds.datasetId,
-          service_account_json: creds.serviceAccountJson,
-        };
+        return { ...base, project_id: creds.projectId, dataset_id: creds.datasetId, service_account_json: creds.serviceAccountJson };
       case "powerbi":
-        return {
-          ...base,
-          tenant_id: creds.tenantId, client_id: creds.clientId,
-          client_secret: creds.clientSecret, workspace_id: creds.workspaceId,
-        };
-      default:
-        return base;
+        return { ...base, tenant_id: creds.tenantId, client_id: creds.clientId, client_secret: creds.clientSecret, workspace_id: creds.workspaceId };
+      default: return base;
+    }
+  };
+
+  const buildCredentialDict = (): Record<string, string> => {
+    switch (selectedType) {
+      case "salesforce": return { instanceUrl: creds.instanceUrl, clientId: creds.clientId, clientSecret: creds.clientSecret, username: creds.username, password: creds.password };
+      case "hubspot": return { portalId: creds.portalId, privateAppToken: creds.privateAppToken };
+      case "dynamics": return { tenantId: creds.tenantId, clientId: creds.clientId, clientSecret: creds.clientSecret, instanceUrl: creds.instanceUrl };
+      case "sap": return { sapHost: creds.sapHost, sapSystemId: creds.sapSystemId, sapClient: creds.sapClient, username: creds.username, password: creds.password };
+      case "netsuite": return { accountId: creds.accountId, consumerKey: creds.consumerKey, consumerSecret: creds.consumerSecret, tokenId: creds.tokenId, tokenSecret: creds.tokenSecret };
+      case "xero": return { clientId: creds.clientId, clientSecret: creds.clientSecret, xeroTenantId: creds.xeroTenantId };
+      case "stripe": return { stripeApiKey: creds.stripeApiKey };
+      case "googleanalytics": return { ga4PropertyId: creds.ga4PropertyId, serviceAccountJson: creds.serviceAccountJson };
+      case "googlesheets": return { spreadsheetId: creds.spreadsheetId, sheetRange: creds.sheetRange, serviceAccountJson: creds.serviceAccountJson };
+      default: return {};
+    }
+  };
+
+  const handleConnectCRM = async () => {
+    if (!currentOrgId) return;
+    setConnecting(true);
+    try {
+      const headers = await getAuthHeaders();
+      const credentials = buildCredentialDict();
+      const emptyFields = Object.entries(credentials).filter(([, v]) => !v?.trim()).map(([k]) => k);
+      if (emptyFields.length > 0) {
+        toast({ title: "Missing required fields", description: `Please fill in: ${emptyFields.join(", ")}`, variant: "destructive" });
+        setConnecting(false);
+        return;
+      }
+
+      // 1. Store credentials in Vault
+      const storeRes = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/connector-credential-store`, {
+        method: "POST", headers,
+        body: JSON.stringify({ organization_id: currentOrgId, connector_type: selectedType, name: sourceName, credentials, schedule_kind: "hourly" }),
+      });
+      const storeData = await storeRes.json();
+      if (!storeData.success) throw new Error(storeData.error || "Failed to save credentials");
+
+      const connectorId = storeData.connector_id;
+      toast({ title: "Credentials saved securely", description: "Starting initial data sync…" });
+
+      // 2. Trigger initial sync
+      const syncRes = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/connector-pull`, {
+        method: "POST", headers,
+        body: JSON.stringify({ connector_type: selectedType, data_source_id: connectorId, organization_id: currentOrgId, connector_id: connectorId }),
+      });
+      const syncData = await syncRes.json();
+
+      if (syncData.success || (syncData.records ?? 0) > 0) {
+        toast({ title: `${CONNECTORS.find(c => c.type === selectedType)?.label} connected`, description: `${syncData.records ?? 0} records synced. Your data is ready.` });
+      } else {
+        const errMsg = syncData.error || (syncData.errors || []).slice(0, 2).join("; ");
+        toast({ title: "Saved — sync issue", description: errMsg || "Credentials saved. Sync will retry automatically.", variant: "destructive" });
+      }
+      fetchExisting();
+      setStep("select");
+      navigate("/dataset-explorer");
+    } catch (err: unknown) {
+      toast({ title: "Connection failed", description: err instanceof Error ? err.message : "Check credentials and try again.", variant: "destructive" });
+    } finally {
+      setConnecting(false);
     }
   };
 
   const handleSelectConnector = (type: ConnectorType) => {
-    if (type === "csv") {
-      navigate("/data-upload");
-      return;
-    }
+    if (type === "csv") { navigate("/data-upload"); return; }
     setSelectedType(type);
     const def = CONNECTORS.find(c => c.type === type)!;
     setSourceName(`${def.label} Connection`);
@@ -978,7 +1017,11 @@ const DataConnectors = () => {
                 <h2 className="text-xl font-bold font-display mb-1">
                   {CONNECTORS.find(c => c.type === selectedType)?.label} Connection
                 </h2>
-                <p className="text-sm text-muted-foreground mb-6">Enter your credentials. We use read-only access only.</p>
+                <p className="text-sm text-muted-foreground mb-6">
+                  {CRM_ERP_SAAS_TYPES.has(selectedType)
+                    ? "Enter your credentials. They are encrypted and stored per-organisation in Vault."
+                    : "Enter your credentials. We use read-only access only."}
+                </p>
 
                 {renderCredentialForm()}
 
@@ -996,10 +1039,17 @@ const DataConnectors = () => {
                   <Button variant="outline" onClick={() => setStep("select")}>
                     <ArrowLeft className="w-4 h-4 mr-1.5" /> Back
                   </Button>
-                  <Button onClick={handleTestConnection} disabled={testing || !isCredentialsValid()}>
-                    {testing ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <TestTube className="w-4 h-4 mr-1.5" />}
-                    Test Connection
-                  </Button>
+                  {CRM_ERP_SAAS_TYPES.has(selectedType) ? (
+                    <Button onClick={handleConnectCRM} disabled={connecting}>
+                      {connecting ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <CheckCircle2 className="w-4 h-4 mr-1.5" />}
+                      {connecting ? "Connecting & syncing…" : "Connect & Sync Data"}
+                    </Button>
+                  ) : (
+                    <Button onClick={handleTestConnection} disabled={testing || !isCredentialsValid()}>
+                      {testing ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <TestTube className="w-4 h-4 mr-1.5" />}
+                      Test Connection
+                    </Button>
+                  )}
                 </div>
               </div>
             )}
