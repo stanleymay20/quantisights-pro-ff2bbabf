@@ -99,21 +99,28 @@ const Copilot = () => {
   const answerQuestion = async (text: string) => {
     const trimmed = text.trim();
     if (!trimmed) return;
-    const { destination } = logQuery(trimmed);
+    logQuery(trimmed);
     setAnswering(true);
     try {
-      if (!currentOrgId) {
-        setBrief(fallbackBrief(trimmed, destination));
-        return;
-      }
-      const { data } = await supabase
-        .from("decision_ledger")
-        .select("recommended_action, source_insight_summary, notes, capped_confidence, confidence_at_decision, raw_confidence, created_at")
-        .eq("organization_id", currentOrgId)
-        .order("created_at", { ascending: false })
-        .limit(1);
-      const decision = data?.[0];
-      setBrief(decision ? decisionToBrief(trimmed, destination, decision) : fallbackBrief(trimmed, destination));
+      // Generate a data-grounded answer from live org metrics and insights
+      const generated = generateAnswer(trimmed, {
+        insights,
+        metrics: topMetrics,
+        pendingDecisions,
+        orgName: currentOrg?.name?.trim() ?? "your organisation",
+      });
+      // Map CopilotAnswer → InlineBrief format
+      setBrief({
+        query: trimmed,
+        destination: generated.destination,
+        status: generated.dataSource === "live" ? "answered" : "needs_data",
+        title: generated.headline,
+        summary: generated.summary + (generated.lines.length > 0
+          ? "\n\n" + generated.lines.map(l => `${l.label}: ${l.value}`).join("  ·  ")
+          : ""),
+        action: generated.destinationLabel,
+        confidence: generated.confidence,
+      });
       setQuery("");
     } finally {
       setAnswering(false);
@@ -130,15 +137,7 @@ const Copilot = () => {
   };
 
   const handlePromptClick = (prompt: SuggestedPrompt) => {
-    logQuery(prompt.label, prompt.path, true);
-    // Generate answer for the suggested prompt too
-    const generated = generateAnswer(prompt.label, {
-      insights,
-      metrics: topMetrics,
-      pendingDecisions,
-      orgName: currentOrg?.name?.trim() ?? "your organisation",
-    });
-    setAnswer(generated);
+    answerQuestion(prompt.label);
   };
 
   return (

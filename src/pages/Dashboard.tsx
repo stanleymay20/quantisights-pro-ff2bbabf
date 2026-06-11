@@ -15,6 +15,7 @@ import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { DashboardEmptyState } from "@/components/dashboard/DashboardEmptyState";
 import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
 import CopilotHome from "@/components/dashboard/CopilotHome";
+import ExecutiveDailyDriver from "@/components/dashboard/ExecutiveDailyDriver";
 import WelcomeFlow from "@/components/dashboard/WelcomeFlow";
 import DemoBanner from "@/components/dashboard/DemoBanner";
 import SectionErrorBoundary from "@/components/SectionErrorBoundary";
@@ -156,13 +157,12 @@ const Dashboard = () => {
           <DashboardEmptyState />
         ) : (
           <SectionErrorBoundary sectionName="Dashboard">
-            <CopilotHome
+            <ExecutiveDailyDriver
               displayName={displayName}
+              orgId={currentOrgId ?? null}
               insights={insights}
+              topMetrics={topMetrics ?? []}
               pendingDecisions={pendingDecisions}
-              calibrationScore={calibrationScore}
-              topMetrics={topMetrics}
-              organizationId={currentOrgId!}
             />
           </SectionErrorBoundary>
         )}
