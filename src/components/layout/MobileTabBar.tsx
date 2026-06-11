@@ -22,8 +22,8 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, MessageSquareText, ClipboardList,
-  Plug, MoreHorizontal, X,
-  FileText, BarChart2, Shield, Users, Settings,
+  Target, Briefcase, MoreHorizontal, X,
+  FileText, BarChart2, Shield, Users, Settings, Upload, Plug, Activity,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -36,19 +36,24 @@ interface TabItem {
   path: string;
 }
 
+// Sprint A IA collapse: 5 primary tabs aligned with desktop sidebar
 const PRIMARY_TABS: TabItem[] = [
   { icon: LayoutDashboard,   label: "Home",      path: "/dashboard" },
   { icon: MessageSquareText, label: "Copilot",   path: "/copilot" },
   { icon: ClipboardList,     label: "Decisions", path: "/decisions" },
-  { icon: Plug,              label: "Data",      path: "/data-upload" },
+  { icon: Target,            label: "Outcomes",  path: "/outcomes" },
 ];
 
+// "More" reveals Workspace items + power-user pages
 const MORE_ITEMS: TabItem[] = [
-  { icon: FileText,  label: "Reports",    path: "/reports" },
-  { icon: BarChart2, label: "Monitor",    path: "/executive-intelligence" },
-  { icon: Shield,    label: "Governance", path: "/governance" },
-  { icon: Users,     label: "Team",       path: "/team" },
-  { icon: Settings,  label: "Settings",   path: "/settings" },
+  { icon: Briefcase, label: "Workspace",   path: "/settings" },
+  { icon: Users,     label: "Team",        path: "/team" },
+  { icon: Upload,    label: "Data",        path: "/data-upload" },
+  { icon: Shield,    label: "Governance",  path: "/governance" },
+  { icon: FileText,  label: "Reports",     path: "/reports" },
+  { icon: BarChart2, label: "Monitor",     path: "/executive-intelligence" },
+  { icon: Activity,  label: "System Health",path: "/system-health" },
+  { icon: Settings,  label: "Settings",    path: "/settings" },
 ];
 
 const MobileTabBar = () => {
@@ -61,8 +66,10 @@ const MobileTabBar = () => {
   // Only render on mobile
   if (!isMobile) return null;
 
+  // Primary tabs filter by role's allowedPaths; MORE items always shown
+  // (route-level guards enforce access). Viewer keeps a clean shell anyway.
   const visibleTabs = PRIMARY_TABS.filter(t => allowedPaths.has(t.path));
-  const visibleMore = MORE_ITEMS.filter(t => allowedPaths.has(t.path));
+  const visibleMore = orgRole === "viewer" ? [] : MORE_ITEMS;
   const showMore = visibleMore.length > 0;
 
   // Check if current path is in the "More" drawer
