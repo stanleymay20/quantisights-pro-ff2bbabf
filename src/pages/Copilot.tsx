@@ -160,7 +160,7 @@ const Copilot = () => {
               {orgRole && orgRole !== "owner" && orgRole !== "admin" && (
                 <span className="inline-block mt-2 text-[11px] text-muted-foreground/60 bg-muted/40 px-2.5 py-1 rounded-full capitalize">{orgRole} view</span>
               )}
-            </AnimatePresence>
+            </div>
 
             <div className="relative mb-8">
               <Textarea
