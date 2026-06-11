@@ -551,7 +551,7 @@ const Settings = () => {
                             maxLength={255}
                             onKeyDown={e => e.key === "Enter" && (e.preventDefault(), addRecipient())}
                           />
-                          <Button variant="outline" size="sm" onClick={addRecipient}><Mail className="w-4 h-4" /></Button>
+                          <Button variant="outline" size="sm" aria-label="Add email recipient" onClick={addRecipient}><Mail className="w-4 h-4" /></Button>
                         </div>
                         <div className="flex flex-wrap gap-2 mt-2">
                           {emailRecipients.map(email => (

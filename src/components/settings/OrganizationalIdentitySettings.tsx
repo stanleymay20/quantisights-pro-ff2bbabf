@@ -174,12 +174,12 @@ const OrganizationalIdentitySettings = ({ organizationId }: Props) => {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label>Vision Statement</Label>
-            <Textarea value={vision} onChange={(e) => setVision(e.target.value)} placeholder="Our long-term aspirational goal..." rows={3} />
+            <Label htmlFor="vision-statement">Vision Statement</Label>
+            <Textarea id="vision-statement" value={vision} onChange={(e) => setVision(e.target.value)} placeholder="Our long-term aspirational goal..." rows={3} />
           </div>
           <div className="space-y-2">
-            <Label>Mission Statement</Label>
-            <Textarea value={mission} onChange={(e) => setMission(e.target.value)} placeholder="Why our organization exists and what we do..." rows={3} />
+            <Label htmlFor="mission-statement">Mission Statement</Label>
+            <Textarea id="mission-statement" value={mission} onChange={(e) => setMission(e.target.value)} placeholder="Why our organization exists and what we do..." rows={3} />
           </div>
         </CardContent>
       </Card>
@@ -328,17 +328,17 @@ const OrganizationalIdentitySettings = ({ organizationId }: Props) => {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Industry Context</Label>
-              <Input value={industryContext} onChange={(e) => setIndustryContext(e.target.value)} placeholder="e.g., B2B SaaS, Healthcare, Manufacturing" />
+              <Label htmlFor="industry-context">Industry Context</Label>
+              <Input id="industry-context" value={industryContext} onChange={(e) => setIndustryContext(e.target.value)} placeholder="e.g., B2B SaaS, Healthcare, Manufacturing" />
             </div>
           </div>
           <div className="space-y-2">
-            <Label>Competitive Position</Label>
-            <Textarea value={competitivePosition} onChange={(e) => setCompetitivePosition(e.target.value)} placeholder="Key competitive advantages and market position..." rows={2} />
+            <Label htmlFor="competitive-position">Competitive Position</Label>
+            <Textarea id="competitive-position" value={competitivePosition} onChange={(e) => setCompetitivePosition(e.target.value)} placeholder="Key competitive advantages and market position..." rows={2} />
           </div>
           <div className="space-y-2">
-            <Label>Regulatory Environment</Label>
-            <Textarea value={regulatoryEnv} onChange={(e) => setRegulatoryEnv(e.target.value)} placeholder="Key regulations, compliance requirements, political factors..." rows={2} />
+            <Label htmlFor="regulatory-env">Regulatory Environment</Label>
+            <Textarea id="regulatory-env" value={regulatoryEnv} onChange={(e) => setRegulatoryEnv(e.target.value)} placeholder="Key regulations, compliance requirements, political factors..." rows={2} />
           </div>
         </CardContent>
       </Card>

@@ -87,7 +87,12 @@ const MobileTabBar = () => {
 
       {/* More drawer */}
       {moreOpen && (
-        <div className="fixed bottom-[56px] left-0 right-0 z-50 bg-background border-t border-border/50 rounded-t-2xl shadow-xl pb-2">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="More navigation options"
+          className="fixed bottom-[56px] left-0 right-0 z-50 bg-background border-t border-border/50 rounded-t-2xl shadow-xl pb-2"
+        >
           <div className="flex items-center justify-between px-4 py-3 border-b border-border/30">
             <span className="text-sm font-semibold text-foreground">More</span>
             <button

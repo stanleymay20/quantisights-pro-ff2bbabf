@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import {
@@ -67,6 +67,33 @@ const WelcomeFlow = ({ hasData, displayName }: WelcomeFlowProps) => {
   const [step, setStep] = useState(0);
   const [visible, setVisible] = useState(false);
   const navigate = useNavigate();
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  // Focus the dialog when it becomes visible (WCAG 2.4.3)
+  useEffect(() => {
+    if (visible && dialogRef.current) {
+      dialogRef.current.focus();
+    }
+  }, [visible]);
+
+  // Trap focus within the dialog while it is open (WCAG 2.1.2)
+  useEffect(() => {
+    if (!visible) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Tab" || !dialogRef.current) return;
+      const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey ? document.activeElement === first : document.activeElement === last) {
+        e.preventDefault();
+        (e.shiftKey ? last : first).focus();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [visible]);
 
   useEffect(() => {
     const isDemoMode = sessionStorage.getItem(DEMO_MODE_KEY) === "true";
@@ -117,14 +144,20 @@ const WelcomeFlow = ({ hasData, displayName }: WelcomeFlowProps) => {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          aria-hidden="true"
         >
           <motion.div
+            ref={dialogRef}
             key={step}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="welcome-dialog-title"
+            tabIndex={-1}
             initial={{ opacity: 0, y: 24, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -12, scale: 0.96 }}
             transition={{ duration: 0.3 }}
-            className="relative w-full max-w-lg bg-card border border-border/50 rounded-2xl shadow-2xl overflow-hidden"
+            className="relative w-full max-w-lg bg-card border border-border/50 rounded-2xl shadow-2xl overflow-hidden outline-none"
           >
             <div className="h-1 bg-muted">
               <motion.div
@@ -182,7 +215,7 @@ const WelcomeFlow = ({ hasData, displayName }: WelcomeFlowProps) => {
               </div>
 
               <p className="text-xs text-primary/80 font-medium mb-1">{current.subtitle}</p>
-              <h2 className="text-xl font-bold font-display mb-2">{current.title}</h2>
+              <h2 id="welcome-dialog-title" className="text-xl font-bold font-display mb-2">{current.title}</h2>
               <p className="text-sm text-muted-foreground leading-relaxed mb-4">
                 {current.description}
               </p>
