@@ -447,11 +447,12 @@ const ExecutiveDailyDriver = ({ displayName, orgId, insights, topMetrics, pendin
       </div>
 
       {/* ── Quick nav ── */}
-      <div className="grid grid-cols-3 gap-2 pt-2 border-t border-border/20">
+      <div className="grid grid-cols-4 gap-2 pt-2 border-t border-border/20">
         {[
           { label: "Decision Ledger", icon: Target, path: "/decisions", count: pendingDecisions },
           { label: "Executive Intelligence", icon: Sparkles, path: "/executive-intelligence" },
           { label: "Trust Center", icon: ShieldCheck, path: "/trust-center" },
+          { label: "Board Report", icon: BarChart3, path: "/board-report" },
         ].map(item => (
           <button
             key={item.path}

@@ -98,18 +98,24 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    // Build the data_connectors record
-    const connectorRecord = {
+    // Build the data_connectors record aligned with existing schema
+    const connectorRecord: Record<string, unknown> = {
       id: connectorId,
       organization_id,
-      connector_type,
       name,
-      status: "pending",
+      connector_type,        // Must be a valid connector_type enum value (migration adds new ones)
+      status: "draft",
+      created_by: user.id,   // Required NOT NULL field
+      updated_by: user.id,
+      // Store the primary vault secret name (the first credential for single-cred connectors)
+      vault_secret_name: Object.values(vaultKeys)[0] ?? null,
+      // Store full vault key mapping in config (multi-credential connectors)
       config: {
         ...config,
         vault_keys: vaultKeys,
-        // Store non-vaultable credentials encrypted in JSONB as fallback
+        connector_type_detail: connector_type,  // preserve exact type string
       },
+      // credential_vault_keys column added by enterprise migration
       credential_vault_keys: vaultKeys,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -120,16 +126,15 @@ Deno.serve(async (req: Request) => {
       .upsert(connectorRecord, { onConflict: "id" });
 
     if (insertErr) {
-      // Table might have different schema — try minimal insert
-      const { error: minErr } = await svc.from("data_connectors").insert({
-        id: connectorId,
-        organization_id,
-        connector_type,
-        name,
-        status: "pending",
-        config: { ...config, vault_keys: vaultKeys },
-      });
-      if (minErr) return json({ error: `Failed to save connector: ${minErr.message}` }, 500);
+      // If enum type validation fails, fall back to 'rest_api' as the stored type
+      // and keep the real type in config.connector_type_detail
+      const fallbackRecord = {
+        ...connectorRecord,
+        connector_type: "rest_api",   // valid base type as fallback
+        config: { ...connectorRecord.config as Record<string, unknown>, connector_type_detail: connector_type },
+      };
+      const { error: fbErr } = await svc.from("data_connectors").upsert(fallbackRecord, { onConflict: "id" });
+      if (fbErr) return json({ error: `Failed to save connector: ${fbErr.message}` }, 500);
     }
 
     // Create a data_sources record (used by the sync pipeline)

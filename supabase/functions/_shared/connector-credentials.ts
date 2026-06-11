@@ -40,7 +40,7 @@ export async function resolveConnectorCredentials(
 ): Promise<ResolvedCredentials> {
   const { data: connector, error } = await svc
     .from("data_connectors")
-    .select("config, credential_vault_keys")
+    .select("config, credential_vault_keys, vault_secret_name")
     .eq("id", connectorId)
     .single();
 
@@ -48,21 +48,40 @@ export async function resolveConnectorCredentials(
 
   const resolved: ResolvedCredentials = {};
   const cfg = connector.config ?? {};
-  const vaultKeys: Record<string, string> = connector.credential_vault_keys ?? cfg.vault_keys ?? {};
 
-  // Read from Vault
+  // Primary vault key mapping: credential_vault_keys (new column) OR config.vault_keys (fallback)
+  const vaultKeys: Record<string, string> =
+    connector.credential_vault_keys ?? cfg.vault_keys ?? {};
+
+  // Read each field from Vault
   for (const [field, vaultKey] of Object.entries(vaultKeys)) {
     const value = await vaultGet(svc, vaultKey as string);
     if (value) resolved[field] = value;
   }
 
-  // Fall back to config.credentials (non-vaulted embedded credentials)
+  // Also try the single vault_secret_name (single-credential connectors like Stripe)
+  if (Object.keys(resolved).length === 0 && connector.vault_secret_name) {
+    const primary = await vaultGet(svc, connector.vault_secret_name);
+    if (primary) {
+      // Determine the field name from config.connector_type_detail
+      const connType = cfg.connector_type_detail as string ?? cfg.connector_type;
+      const primaryFieldMap: Record<string, string> = {
+        stripe: "stripeApiKey",
+        hubspot: "privateAppToken",
+        xero: "clientSecret",
+      };
+      const field = primaryFieldMap[connType] ?? "apiKey";
+      resolved[field] = primary;
+    }
+  }
+
+  // Embedded credentials in config (non-vaulted fallback)
   const embedded = cfg.credentials ?? {};
   for (const [field, value] of Object.entries(embedded)) {
     if (!resolved[field] && value) resolved[field] = String(value);
   }
 
-  // Also check for credential_* prefix in config (second fallback)
+  // credential_* prefix pattern
   for (const [key, value] of Object.entries(cfg)) {
     if (key.startsWith("credential_") && value) {
       const field = key.replace("credential_", "");
