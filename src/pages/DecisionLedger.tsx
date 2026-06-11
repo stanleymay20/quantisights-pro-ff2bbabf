@@ -388,7 +388,9 @@ const DecisionLedgerPage = () => {
       / completedDecisions.filter(d => d.calibration_error !== null).length
     : null;
 
-  const decisionSuccessRate = completedDecisions.length > 0
+  // Require ≥10 completed decisions for a statistically meaningful success rate (WCAG plain-language: avoids "100%" on 1 decision)
+  const MIN_DECISIONS_FOR_RATE = 10;
+  const decisionSuccessRate = completedDecisions.length >= MIN_DECISIONS_FOR_RATE
     ? (completedDecisions.filter(d => (d.outcome_delta || 0) > 0).length / completedDecisions.length * 100)
     : null;
 

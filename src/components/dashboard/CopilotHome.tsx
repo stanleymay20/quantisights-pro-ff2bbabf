@@ -141,10 +141,15 @@ const CopilotHome = ({
   const briefs = useMemo(() => alertInsights.map(i => {
     const metric = detectMetric(i.message, i.category);
     const rule = metric ? metricDecisionRules[metric] : null;
+    // Convert raw category label (e.g. "sales", "operations") to a proper title
+    const rawCategory = i.category ?? "";
+    const readableIssue = rawCategory
+      ? rawCategory.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()) + " Performance"
+      : "Business anomaly requires review";
     return rule
       ? { ...rule, category: i.category, priority: i._priority }
       : {
-          issue: i.category ?? "Business anomaly requires review",
+          issue: readableIssue,
           recommendation: "Open the decision review and compare the affected metric.",
           expectedOutcome: "Reduce decision uncertainty and prevent reactive action based on a single signal.",
           expectedFinancialImpact: 15000, costOfDelayPerDay: 420, expectedRoi: 1.8,
@@ -329,7 +334,9 @@ const CopilotHome = ({
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-1">
-                      <p className="text-sm font-semibold">{brief.issue}</p>
+                      <p className="text-sm font-semibold leading-snug">
+                        {brief.issue.split(" ").slice(0, 7).join(" ")}{brief.issue.split(" ").length > 7 ? "…" : ""}
+                      </p>
                       <Badge variant="secondary" className="text-[10px]">{brief.confidence}% confidence</Badge>
                       <Badge variant="outline" className={`text-[10px] ${riskColor(brief.risk)}`}>{brief.risk} risk</Badge>
                       <Badge variant="secondary" className="text-[10px]">{formatEuro(brief.expectedFinancialImpact)} impact</Badge>

@@ -32,8 +32,9 @@ interface ConnectorDef {
   label: string;
   icon: React.ElementType;
   description: string;
-  category: "database" | "warehouse" | "bi" | "file";
+  category: "database" | "warehouse" | "bi" | "file" | "crm" | "erp" | "saas";
   defaultPort?: string;
+  comingSoon?: boolean;
 }
 
 interface DiscoveredTable {
@@ -58,6 +59,18 @@ const CONNECTORS: ConnectorDef[] = [
   { type: "bigquery", label: "BigQuery", icon: Cloud, description: "Google BigQuery datasets", category: "warehouse" },
   { type: "powerbi", label: "Power BI", icon: BarChart3, description: "Microsoft Power BI datasets", category: "bi" },
   { type: "csv", label: "CSV Upload", icon: FileSpreadsheet, description: "Upload CSV files (demo/testing)", category: "file" },
+  // ── CRM ──
+  { type: "salesforce", label: "Salesforce", icon: Cloud, description: "Opportunities, Accounts, Cases, and pipeline from Salesforce CRM", category: "crm", comingSoon: false },
+  { type: "hubspot", label: "HubSpot", icon: BarChart3, description: "Contacts, Deals, and revenue data from HubSpot CRM", category: "crm", comingSoon: false },
+  { type: "dynamics", label: "Microsoft Dynamics", icon: Server, description: "Sales and service data from Microsoft Dynamics 365", category: "crm", comingSoon: true },
+  // ── ERP ──
+  { type: "sap", label: "SAP S/4HANA", icon: Server, description: "Finance, procurement, and operations from SAP", category: "erp", comingSoon: true },
+  { type: "netsuite", label: "NetSuite", icon: Cloud, description: "ERP, CRM, and e-commerce data from NetSuite", category: "erp", comingSoon: false },
+  { type: "xero", label: "Xero", icon: BarChart3, description: "P&L, cash flow, and invoicing from Xero", category: "erp", comingSoon: false },
+  // ── SaaS metrics ──
+  { type: "stripe", label: "Stripe", icon: Database, description: "Revenue, MRR, churn, and subscription metrics from Stripe", category: "saas", comingSoon: false },
+  { type: "googleanalytics", label: "Google Analytics", icon: BarChart3, description: "Sessions, conversions, and funnel data from GA4", category: "saas", comingSoon: true },
+  { type: "googlesheets", label: "Google Sheets", icon: FileSpreadsheet, description: "Any structured data from Google Sheets", category: "saas", comingSoon: false },
 ];
 
 const METRIC_TYPES = [
@@ -699,31 +712,48 @@ const DataConnectors = () => {
                 )}
 
                 {/* Grouped connector cards */}
-                {(["database", "warehouse", "bi", "file"] as const).map(category => {
+                {(["crm", "erp", "saas", "warehouse", "bi", "database", "file"] as const).map(category => {
                   const group = CONNECTORS.filter(c => c.category === category);
-                  const categoryLabels = { database: "Connect Database", warehouse: "Connect Data Warehouse", bi: "Connect BI Tool", file: "Upload File (Demo)" };
+                  const categoryLabels = {
+                    crm: "CRM — Customer & Sales Data",
+                    erp: "ERP — Finance & Operations",
+                    saas: "SaaS & Payments",
+                    database: "Connect Database",
+                    warehouse: "Data Warehouse",
+                    bi: "BI Tool",
+                    file: "Upload File",
+                  };
                   return (
                     <div key={category} className="mb-6">
                       <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">{categoryLabels[category]}</h3>
                       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {group.map((conn) => {
                           const Icon = conn.icon;
+                          const isBusiness = ["crm","erp","saas"].includes(conn.category);
                           return (
                             <Card
                               key={conn.type}
-                              className="cursor-pointer transition-all hover:border-primary/50 hover:shadow-md"
-                              onClick={() => handleSelectConnector(conn.type)}
+                              className={`transition-all ${conn.comingSoon ? "opacity-60 cursor-default" : "cursor-pointer hover:border-primary/50 hover:shadow-md"}`}
+                              onClick={() => !conn.comingSoon && handleSelectConnector(conn.type)}
                             >
                               <CardContent className="p-5">
                                 <div className="flex items-center gap-3 mb-3">
                                   <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
                                     <Icon className="w-5 h-5 text-primary" />
                                   </div>
-                                  <div>
-                                    <p className="font-semibold text-sm">{conn.label}</p>
-                                    {conn.category === "file" && (
-                                      <Badge variant="outline" className="text-[10px]">Demo / Testing</Badge>
-                                    )}
+                                  <div className="flex-1 min-w-0">
+                                    <p className="font-semibold text-sm truncate">{conn.label}</p>
+                                    <div className="flex gap-1 mt-0.5 flex-wrap">
+                                      {conn.comingSoon && (
+                                        <Badge variant="outline" className="text-[10px] border-amber-400/40 text-amber-600 bg-amber-50/50">Coming soon</Badge>
+                                      )}
+                                      {isBusiness && !conn.comingSoon && (
+                                        <Badge variant="outline" className="text-[10px]">OAuth</Badge>
+                                      )}
+                                      {conn.category === "file" && (
+                                        <Badge variant="outline" className="text-[10px]">Demo / Testing</Badge>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
                                 <p className="text-xs text-muted-foreground">{conn.description}</p>
