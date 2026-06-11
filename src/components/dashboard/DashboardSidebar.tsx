@@ -4,20 +4,17 @@ import {
   LayoutDashboard,
   MessageSquareText,
   ClipboardList,
-  BarChart2,
-  FileText,
-  Plug,
-  Shield,
-  Users,
-  Settings,
+  Target,
+  Briefcase,
   LogOut,
   Menu,
   X,
   BookOpen,
   ChevronDown,
+  ChevronRight,
+  Sparkles,
   // sub-page icons
   Brain,
-  Target,
   PlayCircle,
   Scale,
   Clock,
@@ -25,12 +22,22 @@ import {
   Inbox,
   TrendingUp,
   BarChart3,
+  BarChart2,
   Upload,
   Database,
   BookOpen as CatalogIcon,
   Activity,
   CheckSquare,
   CreditCard,
+  Users,
+  Settings as SettingsIcon,
+  Shield,
+  FileText,
+  Plug,
+  Network,
+  GitBranch,
+  Layers,
+  Wrench,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOrganization } from "@/hooks/useOrganization";
@@ -52,22 +59,21 @@ interface NavItem {
 interface NavSection {
   icon: React.ElementType;
   label: string;
-  path: string;           // primary route — clicking the label navigates here
-  subItems?: NavItem[];   // sub-pages rendered as indented items
+  path: string;
+  subItems?: NavItem[];
   defaultOpen?: boolean;
 }
 
-// ─── Navigation — 9 top-level items per IA v1.1 ──────────────────────────────
-/**
- * Phase 2 sidebar restructure (IA Redesign v1.1).
- *
- * 9 outcome-oriented top-level items replace the 6 architecture-oriented groups.
- * Sub-pages are indented under their parent — they are NOT separate top-level entries.
- * "New" badges removed from all items — stable features do not signal beta status.
- *
- * Copilot (/copilot) is included as a first-class nav item.
- * It will be promoted to a dedicated page in Phase 4 once intent-routing is validated.
- */
+interface AdvancedGroup {
+  icon: React.ElementType;
+  label: string;
+  items: NavItem[];
+}
+
+// ─── PRIMARY NAV — 5 outcome-oriented items ──────────────────────────────────
+// Sprint A IA collapse: per audit recommendation
+//   Home · Copilot · Decisions · Outcomes · Workspace
+// Power-user pages live under "Advanced" at the bottom of the sidebar.
 const navSections: NavSection[] = [
   {
     icon: LayoutDashboard,
@@ -78,6 +84,10 @@ const navSections: NavSection[] = [
     icon: MessageSquareText,
     label: "Copilot",
     path: "/copilot",
+    subItems: [
+      { icon: MessageSquareText, label: "Ask Quantivis",      path: "/copilot" },
+      { icon: BarChart3,         label: "Copilot Analytics",  path: "/copilot/analytics" },
+    ],
   },
   {
     icon: ClipboardList,
@@ -88,67 +98,109 @@ const navSections: NavSection[] = [
       { icon: Scale,          label: "Deliberation",     path: "/deliberation" },
       { icon: Users,          label: "AI Boardroom",     path: "/ai-boardroom" },
       { icon: PlayCircle,     label: "Execution",        path: "/execution" },
-      { icon: Target,         label: "Outcomes",         path: "/outcomes" },
-      { icon: Clock,          label: "History",          path: "/history" },
+      { icon: Wrench,         label: "Decision Rules",   path: "/decision-rules" },
     ],
   },
   {
-    icon: BarChart2,
-    label: "Monitor",
-    path: "/executive-intelligence",
+    icon: Target,
+    label: "Outcomes",
+    path: "/outcomes",
     subItems: [
-      { icon: ShieldAlert,    label: "Executive Intel",  path: "/executive-intelligence" },
-      { icon: ShieldAlert,    label: "Interventions",    path: "/interventions" },
-      { icon: Inbox,          label: "Intel Inbox",      path: "/intelligence-inbox" },
-      { icon: BarChart3,      label: "Decision Accuracy",path: "/decision-accuracy" },
+      { icon: Target,         label: "Outcomes",          path: "/outcomes" },
+      { icon: BarChart3,      label: "Decision Accuracy", path: "/decision-accuracy" },
+      { icon: Clock,          label: "History",           path: "/history" },
+      { icon: ShieldAlert,    label: "Executive Intel",   path: "/executive-intelligence" },
+      { icon: ShieldAlert,    label: "Interventions",     path: "/interventions" },
+      { icon: Inbox,          label: "Intel Inbox",       path: "/intelligence-inbox" },
     ],
   },
+  {
+    icon: Briefcase,
+    label: "Workspace",
+    path: "/settings",
+    subItems: [
+      { icon: SettingsIcon,   label: "Settings",       path: "/settings" },
+      { icon: Users,          label: "Team",           path: "/team" },
+      { icon: CreditCard,     label: "Billing",        path: "/billing" },
+      { icon: Upload,         label: "Data",           path: "/data-upload" },
+      { icon: Shield,         label: "Governance",     path: "/governance" },
+      { icon: Activity,       label: "System Health",  path: "/system-health" },
+    ],
+  },
+];
+
+// ─── ADVANCED — power-user routes ────────────────────────────────────────────
+// Collapsed by default. Contains routes that overwhelmed first-time users.
+const advancedGroups: AdvancedGroup[] = [
   {
     icon: FileText,
-    label: "Reports",
-    path: "/reports",
-    subItems: [
-      { icon: FileText,       label: "Reports",          path: "/reports" },
-      { icon: TrendingUp,     label: "Forecasting",      path: "/forecasting" },
-      { icon: Brain,          label: "Simulations",      path: "/simulations" },
-      { icon: BarChart3,      label: "Advisory",         path: "/advisory" },
+    label: "Reports & Forecasting",
+    items: [
+      { icon: FileText,    label: "Reports",       path: "/reports" },
+      { icon: TrendingUp,  label: "Forecasting",   path: "/forecasting" },
+      { icon: Brain,       label: "Simulations",   path: "/simulations" },
+      { icon: BarChart3,   label: "Advisory",      path: "/advisory" },
+      { icon: BarChart2,   label: "Benchmarking",  path: "/benchmarking" },
+      { icon: Target,      label: "OKRs",          path: "/okrs" },
+      { icon: Briefcase,   label: "Portfolio",     path: "/portfolio" },
+      { icon: FileText,    label: "Strategy Pack", path: "/strategy-pack" },
+      { icon: FileText,    label: "Board Report",  path: "/board-report" },
     ],
   },
   {
-    icon: Plug,
-    label: "Data",
-    path: "/data-upload",
-    subItems: [
-      { icon: Upload,         label: "Upload",           path: "/data-upload" },
-      { icon: Plug,           label: "Connectors",       path: "/data-connectors" },
-      { icon: Database,       label: "Dataset Explorer", path: "/dataset-explorer" },
-      { icon: CatalogIcon,    label: "Data Catalog",     path: "/data-catalog" },
-      { icon: Activity,       label: "Pipeline",         path: "/pipeline" },
+    icon: Database,
+    label: "Data & Pipeline",
+    items: [
+      { icon: Upload,      label: "Upload",           path: "/data-upload" },
+      { icon: Plug,        label: "Connectors",       path: "/data-connectors" },
+      { icon: Database,    label: "Dataset Explorer", path: "/dataset-explorer" },
+      { icon: CatalogIcon, label: "Data Catalog",     path: "/data-catalog" },
+      { icon: GitBranch,   label: "Lineage",          path: "/lineage" },
+      { icon: Activity,    label: "Pipeline",         path: "/pipeline" },
     ],
   },
   {
     icon: Shield,
-    label: "Governance",
-    path: "/governance",
-    subItems: [
-      { icon: Shield,         label: "Command View",     path: "/governance" },
-      { icon: CheckSquare,    label: "Compliance",       path: "/compliance" },
-      { icon: Scale,          label: "Maturity",         path: "/governance-maturity" },
+    label: "Governance & Compliance",
+    items: [
+      { icon: Shield,       label: "Command View",       path: "/governance" },
+      { icon: CheckSquare,  label: "Compliance",         path: "/compliance" },
+      { icon: Scale,        label: "Maturity",           path: "/governance-maturity" },
+      { icon: Scale,        label: "Fairness Observ.",   path: "/fairness-observability" },
+      { icon: Shield,       label: "Trust Center",       path: "/trust-center" },
+      { icon: Shield,       label: "Security Overview",  path: "/security-overview" },
+      { icon: FileText,     label: "Procurement Pack",   path: "/procurement-pack" },
     ],
   },
   {
-    icon: Users,
-    label: "Team",
-    path: "/team",
+    icon: Brain,
+    label: "Deep Intelligence",
+    items: [
+      { icon: Layers,    label: "Narratives",          path: "/narratives" },
+      { icon: Network,   label: "Operational Graph",   path: "/operational-graph" },
+      { icon: TrendingUp,label: "Market Intelligence", path: "/market-intelligence" },
+      { icon: GitBranch, label: "Causal Inference",    path: "/causal-inference" },
+      { icon: Brain,     label: "Counterfactual",      path: "/counterfactual" },
+      { icon: ShieldAlert,label:"Bias Detection",      path: "/cognitive-bias" },
+      { icon: ShieldAlert,label:"Missed Signals",      path: "/misses" },
+      { icon: BarChart3, label: "Diagnostics",         path: "/diagnostics" },
+      { icon: BarChart3, label: "KPIs",                path: "/kpis" },
+    ],
   },
   {
-    icon: Settings,
-    label: "Settings",
-    path: "/settings",
-    subItems: [
-      { icon: Settings,       label: "Settings",         path: "/settings" },
-      { icon: CreditCard,     label: "Billing",          path: "/billing" },
-      { icon: Activity,       label: "System Health",    path: "/system-health" },
+    icon: Wrench,
+    label: "Admin",
+    items: [
+      { icon: Activity,  label: "AICIS Sync",            path: "/aicis-sync" },
+      { icon: Activity,  label: "Bridge Health",         path: "/admin/bridge-health" },
+      { icon: Plug,      label: "SAP Connector",         path: "/admin/sap-connector" },
+      { icon: Database,  label: "Internal Data",         path: "/admin/internal-data" },
+      { icon: Database,  label: "Data Vendors",          path: "/admin/data-vendors" },
+      { icon: Layers,    label: "Context Packs",         path: "/admin/context-packs" },
+      { icon: Scale,     label: "Governance Audit",      path: "/admin/governance-audit" },
+      { icon: Scale,     label: "Governance Simulation", path: "/admin/governance-simulation" },
+      { icon: BookOpen,  label: "Localization Audit",    path: "/admin/localization-audit" },
+      { icon: Shield,    label: "SSO Config",            path: "/sso-config" },
     ],
   },
 ];
@@ -218,11 +270,10 @@ const SectionBlock = ({
 
   return (
     <div>
-      {/* Top-level item */}
       {section.subItems ? (
-        // Has sub-items — clicking label toggles collapse, also navigates
         <button
           onClick={() => { setOpen(p => !p); }}
+          aria-expanded={open}
           className={cn(
             "flex items-center gap-2.5 w-full px-2.5 py-2 rounded-lg text-[13px] font-medium transition-all duration-150",
             hasActiveChild
@@ -235,7 +286,6 @@ const SectionBlock = ({
           <ChevronDown className={cn("w-3.5 h-3.5 transition-transform duration-200 text-muted-foreground", open && "rotate-180")} />
         </button>
       ) : (
-        // No sub-items — direct link
         <Link
           to={section.path}
           onClick={onNavClick}
@@ -252,7 +302,6 @@ const SectionBlock = ({
         </Link>
       )}
 
-      {/* Sub-items */}
       {section.subItems && open && (
         <div className="ml-4 pl-3 border-l border-border/40 mt-0.5 space-y-0.5">
           {section.subItems.map((item) => {
@@ -281,6 +330,122 @@ const SectionBlock = ({
   );
 };
 
+// ─── Advanced drawer ──────────────────────────────────────────────────────────
+const AdvancedDrawer = ({
+  location,
+  onNavClick,
+}: {
+  location: ReturnType<typeof useLocation>;
+  onNavClick: () => void;
+}) => {
+  // Auto-open if user is on any advanced route
+  const hasActiveAdvanced = advancedGroups.some(g =>
+    g.items.some(i => location.pathname === i.path)
+  );
+  const [drawerOpen, setDrawerOpen] = useState(() => {
+    try {
+      const stored = localStorage.getItem("sidebar_advanced_open");
+      if (stored !== null) return stored === "true";
+    } catch {}
+    return hasActiveAdvanced;
+  });
+
+  const toggle = () => {
+    setDrawerOpen(p => {
+      const next = !p;
+      try { localStorage.setItem("sidebar_advanced_open", String(next)); } catch {}
+      return next;
+    });
+  };
+
+  return (
+    <div className="mt-3 pt-3 border-t border-sidebar-border/60">
+      <button
+        onClick={toggle}
+        aria-expanded={drawerOpen}
+        className={cn(
+          "flex items-center gap-2 w-full px-2.5 py-1.5 rounded-lg text-[11px] font-semibold uppercase tracking-wider transition-colors",
+          hasActiveAdvanced
+            ? "text-primary"
+            : "text-muted-foreground/70 hover:text-foreground"
+        )}
+      >
+        <Sparkles className="w-3 h-3" />
+        <span className="flex-1 text-left">Advanced</span>
+        <ChevronRight className={cn("w-3 h-3 transition-transform duration-200", drawerOpen && "rotate-90")} />
+      </button>
+
+      {drawerOpen && (
+        <div className="mt-1 space-y-2">
+          {advancedGroups.map((group) => (
+            <AdvancedGroupBlock
+              key={group.label}
+              group={group}
+              location={location}
+              onNavClick={onNavClick}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const AdvancedGroupBlock = ({
+  group,
+  location,
+  onNavClick,
+}: {
+  group: AdvancedGroup;
+  location: ReturnType<typeof useLocation>;
+  onNavClick: () => void;
+}) => {
+  const hasActive = group.items.some(i => location.pathname === i.path);
+  const [open, setOpen] = useState(hasActive);
+
+  return (
+    <div>
+      <button
+        onClick={() => setOpen(p => !p)}
+        aria-expanded={open}
+        className={cn(
+          "flex items-center gap-2 w-full px-2.5 py-1.5 rounded-md text-[12px] font-medium transition-colors",
+          hasActive
+            ? "text-primary"
+            : "text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/50"
+        )}
+      >
+        <group.icon className="w-3.5 h-3.5 shrink-0" />
+        <span className="flex-1 text-left">{group.label}</span>
+        <ChevronDown className={cn("w-3 h-3 transition-transform duration-200", open && "rotate-180")} />
+      </button>
+      {open && (
+        <div className="ml-4 pl-3 border-l border-border/30 mt-0.5 space-y-0.5">
+          {group.items.map((item) => {
+            const isActive = location.pathname === item.path;
+            return (
+              <Link
+                key={item.path + item.label}
+                to={item.path}
+                onClick={onNavClick}
+                className={cn(
+                  "flex items-center gap-2 px-2 py-1 rounded-md text-[11.5px] font-medium transition-colors",
+                  isActive
+                    ? "bg-primary/10 text-primary"
+                    : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                )}
+              >
+                <item.icon className="w-3 h-3 shrink-0 text-muted-foreground" />
+                <span className="truncate">{item.label}</span>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ─── Main sidebar ─────────────────────────────────────────────────────────────
 const DashboardSidebar = () => {
   const { signOut } = useAuth();
@@ -292,6 +457,10 @@ const DashboardSidebar = () => {
   const location = useLocation();
   const isMobile = useIsMobile();
   const { open, toggle, collapsed, toggleCollapsed } = useSidebarToggle();
+
+  // Power-user roles see the Advanced drawer; viewer/analyst keep a clean shell
+  const showAdvanced =
+    !orgRole || orgRole === "owner" || orgRole === "admin" || orgRole === "executive" || orgRole === "steward";
 
   const handleSignOut = async () => {
     await signOut();
@@ -349,7 +518,6 @@ const DashboardSidebar = () => {
       {/* Nav */}
       <nav aria-label="Dashboard navigation" className={`flex-1 ${collapsed ? "px-1" : "px-2"} overflow-y-auto space-y-0.5`}>
         {collapsed ? (
-          // Icon-only mode — top-level icons only, no labels, no sub-items
           navSections.filter(s => allowedPaths.has(s.path)).map((section) => {
             const isActive = location.pathname === section.path ||
               (section.subItems?.some(i => location.pathname === i.path) ?? false);
@@ -370,22 +538,26 @@ const DashboardSidebar = () => {
             );
           })
         ) : (
-        navSections.filter(s => allowedPaths.has(s.path)).map((section) => {
-          // Industry language layer: rename labels based on org industry
-          const labelOverrides: Partial<Record<string, string>> = {
-            "/decisions":   lang.decisions,
-            "/governance":  lang.governance,
-          };
-          return (
-            <SectionBlock
-              key={section.label}
-              section={section}
-              location={location}
-              onNavClick={handleNavClick}
-              labelOverride={labelOverrides[section.path]}
-            />
-          );
-        })
+          <>
+            {navSections.filter(s => allowedPaths.has(s.path)).map((section) => {
+              const labelOverrides: Partial<Record<string, string>> = {
+                "/decisions": lang.decisions,
+              };
+              return (
+                <SectionBlock
+                  key={section.label}
+                  section={section}
+                  location={location}
+                  onNavClick={handleNavClick}
+                  labelOverride={labelOverrides[section.path]}
+                />
+              );
+            })}
+
+            {showAdvanced && (
+              <AdvancedDrawer location={location} onNavClick={handleNavClick} />
+            )}
+          </>
         )}
       </nav>
 
