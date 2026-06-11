@@ -20,7 +20,7 @@ import DemoBanner from "@/components/dashboard/DemoBanner";
 import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 
 const Dashboard = () => {
-  const { user, signOut } = useAuth();
+  const { user, profile, signOut } = useAuth();
   const { organizations, currentOrgId, currentOrg, switchOrganization, loading: orgLoading } = useOrganization();
   const { currentWorkspaceId, loading: workspaceLoading } = useWorkspace();
   const { activeDatasetId, loading: projectLoading } = useProject();
@@ -34,12 +34,14 @@ const Dashboard = () => {
   const navigate = useNavigate();
 
   const rawEmailPrefix = user?.email?.split("@")[0] ?? "";
-  // Capitalise the email prefix: "stanley.osei-wusu" → "Stanley Osei-Wusu", "jimp" → "Jimp"
+  // Capitalise the email prefix as a last-resort fallback
   const formattedEmailName = rawEmailPrefix
     .split(/[._-]/)
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
-  const displayName = user?.user_metadata?.full_name || formattedEmailName || "User";
+  // Prefer the user's actual full_name from the profiles table over auth metadata,
+  // which can contain the org/account name instead of the user's real name.
+  const displayName = profile?.full_name || formattedEmailName || "User";
   const isDemoUser = Boolean(user?.user_metadata?.is_demo);
 
   const [pendingDecisions, setPendingDecisions] = useState(0);

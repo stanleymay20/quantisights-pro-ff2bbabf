@@ -415,7 +415,7 @@ type DeliberationVariant = "deliberation" | "boardroom";
 const variantCopy: Record<DeliberationVariant, { eyebrow: string; title: string; description: string }> = {
   deliberation: {
     eyebrow: "Decisions",
-    title: "Deterministic Boardroom",
+    title: "Deliberation",
     description: "Enterprise-grade deliberation for pending decisions. It computes Financial, Risk, Execution, Outcome, and Contrarian perspectives from real evidence — never from LLM personas, synthetic votes, or fabricated consensus scores.",
   },
   boardroom: {

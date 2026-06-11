@@ -203,7 +203,11 @@ const DecisionLedgerPage = () => {
   }, [currentOrgId]);
 
   const createDecision = async () => {
-    if (!currentOrgId || !newAction.trim()) return;
+    if (!newAction.trim()) {
+      toast({ title: "Description required", description: "Please describe the recommended action before logging.", variant: "destructive" });
+      return;
+    }
+    if (!currentOrgId) return;
 
     // Optimistic: add to list immediately
     const optimisticId = crypto.randomUUID();
@@ -493,6 +497,13 @@ const DecisionLedgerPage = () => {
                     <Button onClick={createDecision} className="w-full" disabled={!newAction.trim()}>
                       Log Decision
                     </Button>
+                    <Button
+                      variant="ghost"
+                      className="w-full text-muted-foreground"
+                      onClick={() => { setShowCreate(false); setNewAction(""); }}
+                    >
+                      Cancel
+                    </Button>
                   </div>
                 </div>
               </CardContent>
@@ -627,7 +638,14 @@ const DecisionLedgerPage = () => {
           <Tabs defaultValue="active" className="space-y-4">
             <TabsList>
               <TabsTrigger value="active" className="gap-2"><PlayCircle className="w-4 h-4" /> Active ({activeDecisions.length})</TabsTrigger>
-              <TabsTrigger value="aicis" className="gap-2"><Zap className="w-4 h-4" /> AICIS Queue ({aicisQueue.length})</TabsTrigger>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <TabsTrigger value="aicis" className="gap-2"><Zap className="w-4 h-4" /> AICIS Queue ({aicisQueue.length})</TabsTrigger>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs text-xs">
+                  AICIS (Autonomous Intelligence for Corporate Intelligence Systems) — decisions surfaced automatically by the AI pipeline every 15 minutes from your governed signals.
+                </TooltipContent>
+              </Tooltip>
               <TabsTrigger value="completed" className="gap-2"><CheckCircle2 className="w-4 h-4" /> Completed ({completedDecisions.length})</TabsTrigger>
             </TabsList>
 

@@ -41,7 +41,7 @@ export default function Phase6Readiness({
         target: "10 WAU",
         progress: Math.min((weeklyActiveUsers / 10) * 100, 100),
         met: weeklyActiveUsers >= 10,
-        note: "Requires session analytics. Currently placeholder.",
+        note: weeklyActiveUsers === 0 ? "No weekly active users recorded yet." : undefined,
       },
       {
         label: "Gate 2 — Copilot Routing",
@@ -91,7 +91,7 @@ export default function Phase6Readiness({
           </Badge>
         </div>
         <p className="text-xs text-muted-foreground">
-          Phase 6 collapses to 5 surfaces. Deploy only when all 4 gates are met. Currently on IA v1.1.
+          Deploy when all 4 gates are met. Each gate is computed from live telemetry.
         </p>
       </CardHeader>
       <CardContent className="space-y-3">

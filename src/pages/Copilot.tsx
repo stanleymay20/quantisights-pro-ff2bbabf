@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { SidebarMobileToggle } from "@/components/layout/ProtectedShell";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,14 +16,8 @@ import { useCopilotTelemetry } from "@/hooks/useCopilotTelemetry";
 import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 
 /**
- * Copilot — Phase 3 placeholder.
- *
- * This page acts as the Decision Copilot entry point.
- * In Phase 3 the input box will be wired to an intent-routing engine
- * that surfaces the correct page, dataset, or action based on the user's query.
- *
- * For now it renders the conversational entry UI with suggested prompts
- * and navigates to the most relevant existing page when a prompt is selected.
+ * Decision Copilot — chat-first entry point.
+ * Intent routing navigates to the most relevant workspace based on the user's query.
  */
 
 interface SuggestedPrompt {
@@ -79,9 +73,16 @@ const Copilot = () => {
   const lang = useIndustryLabels(currentOrg?.industry);
   const { logQuery } = useCopilotTelemetry();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [query, setQuery] = useState("");
 
-  const firstName = profile?.full_name?.split(" ")[0] ?? "there";
+  // P1-12 fix: read ?q= URL param and pre-populate the input on mount
+  useEffect(() => {
+    const prefilledQuery = searchParams.get("q");
+    if (prefilledQuery) setQuery(prefilledQuery);
+  }, [searchParams]);
+
+  const firstName = profile?.full_name?.split(" ")[0] || "there";
 
   const handleSubmit = () => {
     if (!query.trim()) return;

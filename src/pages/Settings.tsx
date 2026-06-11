@@ -484,16 +484,23 @@ const Settings = () => {
                           className="gap-2"
                           onClick={async () => {
                             setSeedingDemo(true);
+                            toast({ title: "Seeding demo data…", description: "Loading 15 months of Acme Corp sample data." });
                             try {
                               const { data, error } = await supabase.functions.invoke("seed-demo-data");
                               if (error) throw error;
-                              if (data?.error) throw new Error(data.error);
+                              if (data?.error) throw new Error(String(data.error));
+                              const summary = data?.summary;
                               toast({
                                 title: "Demo data loaded",
-                                description: `${data.summary.metrics} metrics, ${data.summary.decisions} decisions, ${data.summary.advisories} advisories seeded.`,
+                                description: summary
+                                  ? `${summary.metrics ?? 0} metrics, ${summary.decisions ?? 0} decisions, ${summary.advisories ?? 0} advisories seeded.`
+                                  : "Sample data loaded. Refresh the dashboard to see it.",
                               });
+                              // Soft reload to reflect new data
+                              setTimeout(() => window.location.reload(), 1500);
                             } catch (err: unknown) {
-                              toast({ title: "Error", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
+                              const msg = err instanceof Error ? err.message : "The demo seed function could not be reached. Please try again.";
+                              toast({ title: "Demo seed failed", description: msg, variant: "destructive" });
                             } finally {
                               setSeedingDemo(false);
                             }

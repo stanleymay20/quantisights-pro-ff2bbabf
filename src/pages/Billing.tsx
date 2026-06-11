@@ -132,11 +132,15 @@ const Billing = () => {
                         <div className="flex items-center gap-2">
                           <h2 className="text-2xl font-bold font-display">{tierConfig.name}</h2>
                           <Badge className="bg-primary/10 text-primary border-none">
-                            {subscribed ? "Active" : "Free Trial"}
+                            {subscribed ? "Active" : "Trial"}
                           </Badge>
                         </div>
                         <p className="text-muted-foreground text-sm">
-                          {tierConfig.price !== null ? `${tierConfig.currency}${tierConfig.price}/${tierConfig.interval}` : "Custom pricing"}
+                          {tierConfig.price !== null
+                            ? subscribed
+                              ? `${tierConfig.currency}${tierConfig.price}/${tierConfig.interval}`
+                              : `${tierConfig.currency}${tierConfig.price}/${tierConfig.interval} after trial`
+                            : "Custom pricing"}
                         </p>
                       </div>
                     </div>

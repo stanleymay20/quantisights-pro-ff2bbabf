@@ -1,9 +1,7 @@
 /**
- * CopilotAnalytics — Phase 5.5
- *
- * Live dashboard showing Copilot usage metrics and Phase 6 gate readiness.
- * Route: /copilot/analytics
- * Access: Sidebar → Copilot → Analytics (owner/admin only)
+ * CopilotAnalytics — Phase 6 readiness gate dashboard.
+ * Tracks query telemetry, intent routing accuracy, and deployment gate criteria.
+ * Route: /copilot/analytics  |  Access: owner/admin only.
  */
 
 import { useMemo, useEffect, useState } from "react";
@@ -75,9 +73,6 @@ export default function CopilotAnalytics() {
             <SidebarMobileToggle />
             <BarChart3 className="w-5 h-5 text-primary" />
             <h1 className="text-xl font-semibold font-display">Copilot Analytics</h1>
-            <Badge variant="outline" className="text-[10px] bg-amber-500/10 text-amber-600 border-amber-500/30">
-              Phase 5.5 — Gate tracking
-            </Badge>
           </div>
           <Button size="sm" variant="outline" onClick={() => setRefreshKey(k => k + 1)} className="gap-1.5">
             <RefreshCw className="w-3.5 h-3.5" /> Refresh

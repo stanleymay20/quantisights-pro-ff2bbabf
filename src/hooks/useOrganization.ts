@@ -49,10 +49,11 @@ export const useOrganization = () => {
   const ensurePersonalTenant = useCallback(async (): Promise<Organization | null> => {
     if (!user) return null;
 
-    const displayName =
+    const displayName = (
       user.user_metadata?.full_name ||
       user.email?.split("@")[0] ||
-      "My";
+      "My"
+    ).trim();
     const orgName = `${displayName}'s Organization`.slice(0, 200);
 
     const { data: org, error: orgError } = await supabase
