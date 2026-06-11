@@ -13,5 +13,11 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     storage: localStorage,
     persistSession: true,
     autoRefreshToken: true,
-  }
+    // PKCE flow for OAuth (Google, SAML) — prevents authorization code interception attacks
+    flowType: "pkce",
+    // Detect session in URL (required for PKCE callback handling)
+    detectSessionInUrl: true,
+    // Suppress debug logs in production (avoids token leakage in console)
+    debug: false,
+  },
 });

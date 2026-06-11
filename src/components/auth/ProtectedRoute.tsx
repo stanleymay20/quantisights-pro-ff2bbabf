@@ -30,9 +30,10 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
           setMfaStatus("passed");
         }
       } catch (e: unknown) {
-        // MFA assurance check failure — allow access to avoid lockout
+        // MFA assurance check failed — fail CLOSED (deny access) to prevent bypass via network error
+        // User can retry by refreshing; this prevents an attacker from triggering failures to skip MFA
         console.error("[ProtectedRoute] MFA assurance check failed:", e instanceof Error ? e.message : e);
-        setMfaStatus("passed");
+        setMfaStatus("required");
       }
     };
 

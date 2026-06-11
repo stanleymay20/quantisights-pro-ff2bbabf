@@ -181,15 +181,17 @@ const Register = forwardRef<HTMLDivElement>((_, ref) => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1.5">Password</label>
+            <label htmlFor="register-password" className="block text-sm font-medium mb-1.5">Password</label>
             <input
+              id="register-password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              minLength={8}
               autoComplete="new-password"
               className="w-full px-4 py-3 rounded-lg bg-secondary border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
-              placeholder="••••••••"
+              placeholder="Min 8 characters"
             />
             {password.length > 0 && (
               <div className="mt-3 space-y-2">

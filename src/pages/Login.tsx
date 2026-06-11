@@ -78,6 +78,7 @@ const Login = forwardRef<HTMLDivElement>((_, ref) => {
     setIsLoading(true);
     try {
       await signIn(email, password);
+      throttle.recordSuccess(); // clear failed-attempt counter on success
 
       const { data: factorsData } = await supabase.auth.mfa.listFactors();
       const verifiedFactors = factorsData?.totp?.filter((f) => f.status === "verified") || [];
@@ -114,6 +115,7 @@ const Login = forwardRef<HTMLDivElement>((_, ref) => {
       navigate(redirectTo);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Unknown error";
+      throttle.recordFailure(); // increment failed-attempt counter
       logAuthEvent({ eventType: "failed_login", metadata: { email, reason: msg } });
       toast({ title: "Login failed", description: msg, variant: "destructive" });
     } finally {
@@ -276,10 +278,12 @@ const Login = forwardRef<HTMLDivElement>((_, ref) => {
                   </div>
                   <button
                     type="submit"
-                    disabled={isLoading || ssoChecking}
+                    disabled={isLoading || ssoChecking || throttle.secondsRemaining > 0}
                     className="w-full py-3 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:brightness-110 transition-all disabled:opacity-50"
                   >
-                    {isLoading ? "Signing in..." : "Sign In"}
+                    {throttle.secondsRemaining > 0
+                      ? `Too many attempts — wait ${throttle.secondsRemaining}s`
+                      : isLoading ? "Signing in..." : "Sign In"}
                   </button>
                 </>
               )}
