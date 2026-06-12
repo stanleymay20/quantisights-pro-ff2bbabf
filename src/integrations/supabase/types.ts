@@ -9634,10 +9634,15 @@ export type Database = {
           data_retention_days: number
           id: string
           industry: string | null
+          ip_allowlist: string[]
+          min_password_length: number
           name: string
           onboarding_completed: boolean
+          require_mfa: boolean
           revenue_band: string | null
+          session_timeout_minutes: number
           size_band: string | null
+          sso_enforced: boolean
         }
         Insert: {
           ai_raw_text_enabled?: boolean
@@ -9646,10 +9651,15 @@ export type Database = {
           data_retention_days?: number
           id?: string
           industry?: string | null
+          ip_allowlist?: string[]
+          min_password_length?: number
           name: string
           onboarding_completed?: boolean
+          require_mfa?: boolean
           revenue_band?: string | null
+          session_timeout_minutes?: number
           size_band?: string | null
+          sso_enforced?: boolean
         }
         Update: {
           ai_raw_text_enabled?: boolean
@@ -9658,10 +9668,15 @@ export type Database = {
           data_retention_days?: number
           id?: string
           industry?: string | null
+          ip_allowlist?: string[]
+          min_password_length?: number
           name?: string
           onboarding_completed?: boolean
+          require_mfa?: boolean
           revenue_band?: string | null
+          session_timeout_minutes?: number
           size_band?: string | null
+          sso_enforced?: boolean
         }
         Relationships: []
       }
@@ -11974,6 +11989,16 @@ export type Database = {
           row_count: number
           total: number
           trend: string
+        }[]
+      }
+      get_my_org_security_settings: {
+        Args: never
+        Returns: {
+          ip_allowlist: string[]
+          min_password_length: number
+          require_mfa: boolean
+          session_timeout_minutes: number
+          sso_enforced: boolean
         }[]
       }
       get_procurement_readiness: {
