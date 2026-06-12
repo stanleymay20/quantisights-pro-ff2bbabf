@@ -19,7 +19,9 @@ declare global {
   }
 }
 
-const POSTHOG_KEY = String(import.meta.env.VITE_POSTHOG_KEY ?? "");
+// PostHog project token — write-only, intentionally public (PostHog docs: "Safe to use in public apps")
+// EU Cloud · Project ID 200654 · https://eu.posthog.com
+const POSTHOG_KEY = String(import.meta.env.VITE_POSTHOG_KEY ?? "phc_DjH2zrVrNqqrBc74Luh9K6ZG96hkWZoC8kUfUjpHdjJw");
 const POSTHOG_HOST = String(import.meta.env.VITE_POSTHOG_HOST ?? "https://eu.posthog.com");
 
 let initialized = false;
