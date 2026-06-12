@@ -454,12 +454,12 @@ const DataConnectors = () => {
       });
 
       // 5. Run initial sync
-      const authHeaders = await getAuthHeaders();
+      const auth = await getVerifiedAuth();
+      if (!auth) throw new Error("Session expired — please log in again");
       const res = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/db-connector`,
         {
-
-          method: "POST", headers: authHeaders,
+          method: "POST", headers: { ...authHeaders(auth), "Content-Type": "application/json" },
           body: JSON.stringify({
             action: "sync", ...connPayload, data_source_id: ds.id,
             metric_mappings: mappings.filter(m => m.date_column && m.metric_type),

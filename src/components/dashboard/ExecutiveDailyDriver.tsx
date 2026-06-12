@@ -12,13 +12,11 @@ import {
   Euro, Minus,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useExecutiveIntelligence, type ExecBrief } from "@/hooks/useExecutiveIntelligence";
+import { useExecutiveIntelligence } from "@/hooks/useExecutiveIntelligence";
 import { useOrganization } from "@/hooks/useOrganization";
 import type { MetricTypeSummary } from "@/hooks/useMetrics";
 import type { Insight } from "@/hooks/useInsights";
 import { generateAnswer } from "@/lib/copilot-answer-engine";
-import { invokeWithRetry } from "@/lib/edge-function-retry";
-import { getVerifiedAuth, authHeaders } from "@/lib/auth-helpers";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
