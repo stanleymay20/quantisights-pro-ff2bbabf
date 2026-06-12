@@ -235,6 +235,9 @@ const ExecutiveDailyDriver = ({ displayName, orgId, insights, topMetrics, pendin
         decisions: decisions as unknown as DecisionSummary[],
       });
       setAnswer(result);
+      import("@/lib/analytics").then(({ trackCopilotQuery }) =>
+        trackCopilotQuery(result.destination)
+      );
     } finally {
       setAnswering(false);
     }
@@ -265,7 +268,10 @@ const ExecutiveDailyDriver = ({ displayName, orgId, insights, topMetrics, pendin
           size="sm"
           variant="outline"
           className="shrink-0 gap-1.5 text-xs"
-          onClick={() => regenerate()}
+          onClick={() => {
+            regenerate();
+            import("@/lib/analytics").then(({ trackBriefGenerated }) => trackBriefGenerated());
+          }}
           disabled={generating}
         >
           {generating ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}

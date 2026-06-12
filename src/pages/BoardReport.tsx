@@ -45,6 +45,10 @@ const BoardReport = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    import("@/lib/analytics").then(({ trackBoardReport }) => trackBoardReport());
+  }, []);
+
+  useEffect(() => {
     const fetchReport = async () => {
       if (!currentOrgId || !activeDatasetId) {
         setError("No active dataset selected. Please select a project and dataset first.");

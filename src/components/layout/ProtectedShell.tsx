@@ -3,6 +3,7 @@ import DashboardSidebar, { SidebarMobileToggle } from "@/components/dashboard/Da
 import GlobalContextBar from "@/components/layout/GlobalContextBar";
 import MobileTabBar from "@/components/layout/MobileTabBar";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useIdleTimeout } from "@/hooks/useIdleTimeout";
 
 export { SidebarMobileToggle };
 
@@ -21,6 +22,7 @@ export { SidebarMobileToggle };
  */
 const ProtectedShell = ({ children }: { children: ReactNode }) => {
   const isMobile = useIsMobile();
+  useIdleTimeout(); // enforces org-configured idle timeout → auto signOut
 
   return (
     <div className="flex min-h-dvh bg-background">

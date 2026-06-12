@@ -281,6 +281,9 @@ const DataConnectors = () => {
 
       if (syncData.success || (syncData.records ?? 0) > 0) {
         toast({ title: `${CONNECTORS.find(c => c.type === selectedType)?.label} connected`, description: `${syncData.records ?? 0} records synced. Your data is ready.` });
+        import("@/lib/analytics").then(({ trackConnectorConnected }) =>
+          trackConnectorConnected(selectedType)
+        );
       } else {
         const errMsg = syncData.error || (syncData.errors || []).slice(0, 2).join("; ");
         toast({ title: "Saved — sync issue", description: errMsg || "Credentials saved. Sync will retry automatically.", variant: "destructive" });

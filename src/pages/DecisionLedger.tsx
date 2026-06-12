@@ -339,6 +339,13 @@ const DecisionLedgerPage = () => {
 
     setUpdatingId(null);
 
+    // Track decision action for analytics
+    if (updates.decision_status === "approved" || updates.decision_status === "rejected") {
+      import("@/lib/analytics").then(({ trackDecisionActioned }) =>
+        trackDecisionActioned(updates.decision_status as "approved" | "rejected", decision.decision_type)
+      );
+    }
+
     // ── HEAVY PATH: lifecycle side effects run async, non-blocking ──
     if (updates.decision_status === "approved") {
       // Resolve dataset: use the advisory's dataset, the active project dataset, or null (server fallback)
