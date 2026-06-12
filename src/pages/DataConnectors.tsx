@@ -24,7 +24,14 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 
 // ─── Types ───
-type ConnectorType = "postgresql" | "mysql" | "sqlserver" | "snowflake" | "bigquery" | "powerbi" | "csv";
+type ConnectorType =
+  | "postgresql" | "mysql" | "sqlserver"
+  | "snowflake" | "bigquery" | "s3"
+  | "powerbi"
+  | "salesforce" | "hubspot" | "dynamics"
+  | "sap" | "netsuite" | "xero"
+  | "stripe" | "googleanalytics" | "googlesheets"
+  | "csv";
 type WizardStep = "select" | "credentials" | "testing" | "schema" | "tables" | "mapping" | "schedule" | "syncing" | "done";
 
 interface ConnectorDef {

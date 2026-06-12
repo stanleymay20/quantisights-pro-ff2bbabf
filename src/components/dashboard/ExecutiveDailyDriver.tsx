@@ -17,6 +17,7 @@ import { useOrganization } from "@/hooks/useOrganization";
 import type { MetricTypeSummary } from "@/hooks/useMetrics";
 import type { Insight } from "@/hooks/useInsights";
 import { generateAnswer } from "@/lib/copilot-answer-engine";
+import type { DecisionSummary } from "@/lib/copilot-answer-engine";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -225,7 +226,7 @@ const ExecutiveDailyDriver = ({ displayName, orgId, insights, topMetrics, pendin
         metrics: topMetrics,
         pendingDecisions,
         orgName: "your organisation",
-        decisions,
+        decisions: decisions as unknown as DecisionSummary[],
       });
       setAnswer(result);
     } finally {

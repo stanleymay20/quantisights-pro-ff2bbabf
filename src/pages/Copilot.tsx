@@ -21,11 +21,13 @@ import { useMetricsSummary } from "@/hooks/useMetricsSummary";
 import { supabase } from "@/integrations/supabase/client";
 import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 import { generateAnswer } from "@/lib/copilot-answer-engine";
+import type { DecisionSummary } from "@/lib/copilot-answer-engine";
 
 interface SuggestedPrompt {
   label: string;
   icon: React.ElementType;
   path: string;
+  description?: string;
 }
 
 interface InlineBrief {
@@ -91,7 +93,7 @@ const Copilot = () => {
   const [query, setQuery] = useState("");
   const [brief, setBrief] = useState<InlineBrief | null>(null);
   const [answering, setAnswering] = useState(false);
-  const [decisions, setDecisions] = useState<import("@/lib/copilot-answer-engine").DecisionSummary[]>([]);
+  const [decisions, setDecisions] = useState<DecisionSummary[]>([]);
   const [pendingDecisions, setPendingDecisions] = useState(0);
 
   // Load live data for the answer engine
@@ -108,7 +110,7 @@ const Copilot = () => {
       .order("created_at", { ascending: false })
       .limit(5)
       .then(({ data }) => {
-        setDecisions((data as import("@/lib/copilot-answer-engine").DecisionSummary[]) ?? []);
+        setDecisions((data as DecisionSummary[]) ?? []);
         setPendingDecisions(data?.length ?? 0);
       });
   }, [currentOrgId]);

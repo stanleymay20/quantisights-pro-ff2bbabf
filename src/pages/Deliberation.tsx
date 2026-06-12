@@ -428,6 +428,7 @@ const variantCopy: Record<DeliberationVariant, { eyebrow: string; title: string;
 export default function Deliberation({ variant = "deliberation" }: { variant?: DeliberationVariant } = {}) {
   const { rows, loading } = usePendingDeliberations();
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const selectedId = searchParams.get("decision");
   const setSelectedId = (id: string | null) => {
     const next = new URLSearchParams(searchParams);
