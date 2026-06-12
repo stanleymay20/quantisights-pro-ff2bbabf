@@ -1,11 +1,17 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select, SelectContent, SelectItem,
+  SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Shield, Clock, Lock, AlertTriangle, CheckCircle2 } from "lucide-react";
+import {
+  Shield, Clock, Lock, AlertTriangle, CheckCircle2,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrganization } from "@/hooks/useOrganization";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -34,18 +40,10 @@ const PW_LENGTH_OPTIONS = [
   { label: "16 characters (enterprise)", value: 16 },
 ];
 
-/**
- * OrgSecuritySettings
- *
- * Admin-only panel for org-wide security policy:
- *   - Require MFA for all members (blocks access until enrolled)
- *   - Session idle timeout
- *   - Minimum password length
- *   - SSO enforcement
- */
 export const OrgSecuritySettings = () => {
   const { currentOrgId } = useOrganization();
-  const { orgRole } = usePermissions();
+  const perms = usePermissions();
+  const orgRole = perms.orgRole;           // ← explicit property access avoids destructure mismatch
   const { toast } = useToast();
   const [settings, setSettings] = useState<OrgSecSettings>({
     require_mfa: false,
@@ -62,7 +60,7 @@ export const OrgSecuritySettings = () => {
     if (!currentOrgId) return;
     (async () => {
       try {
-        const { data } = await supabase
+        const { data } = await (supabase as any)
           .from("organizations")
           .select("require_mfa, session_timeout_minutes, min_password_length, sso_enforced")
           .eq("id", currentOrgId)
@@ -78,7 +76,7 @@ export const OrgSecuritySettings = () => {
     if (!currentOrgId || !isAdmin) return;
     setSaving(true);
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from("organizations")
         .update({
           require_mfa: settings.require_mfa,
@@ -90,8 +88,7 @@ export const OrgSecuritySettings = () => {
 
       if (error) throw error;
 
-      // Audit log — cast to any bypasses generated-type overload mismatch
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // Audit log — cast avoids generated-type overload mismatch
       await (supabase as any).from("audit_log").insert([{
         organization_id: currentOrgId,
         actor_type: "user",
@@ -101,7 +98,10 @@ export const OrgSecuritySettings = () => {
         payload: JSON.parse(JSON.stringify(settings)),
       }]);
 
-      toast({ title: "Security settings saved", description: "Policy changes take effect on next login for all members." });
+      toast({
+        title: "Security settings saved",
+        description: "Changes take effect on next login for all members.",
+      });
     } catch (err: unknown) {
       toast({
         title: "Save failed",
@@ -124,7 +124,9 @@ export const OrgSecuritySettings = () => {
             Organisation Security Policy
           </CardTitle>
           {!isAdmin && (
-            <Badge variant="outline" className="text-xs">View only — owners and admins can edit</Badge>
+            <Badge variant="outline" className="text-xs">
+              View only — owners and admins can edit
+            </Badge>
           )}
         </div>
       </CardHeader>
@@ -141,9 +143,11 @@ export const OrgSecuritySettings = () => {
               )}
             </div>
             <p className="text-xs text-muted-foreground">
-              Members without an authenticator app set up will be blocked from accessing the app until they enrol.
+              Members without an authenticator app are blocked until they enrol.
               {settings.require_mfa && (
-                <span className="block mt-0.5 text-warning">⚠ This setting is active — unenrolled members cannot log in.</span>
+                <span className="block mt-0.5 text-warning">
+                  ⚠ Active — unenrolled members cannot log in.
+                </span>
               )}
             </p>
           </div>
@@ -151,7 +155,6 @@ export const OrgSecuritySettings = () => {
             checked={settings.require_mfa}
             onCheckedChange={v => setSettings(s => ({ ...s, require_mfa: v }))}
             disabled={!isAdmin}
-            aria-label="Require MFA for all members"
           />
         </div>
 
@@ -163,7 +166,7 @@ export const OrgSecuritySettings = () => {
               <Label className="font-medium">Session idle timeout</Label>
             </div>
             <p className="text-xs text-muted-foreground">
-              Members are automatically signed out after this period of inactivity. Enterprise standard is 15–30 minutes.
+              Members are signed out after this period of inactivity.
             </p>
           </div>
           <Select
@@ -190,7 +193,7 @@ export const OrgSecuritySettings = () => {
               <Label className="font-medium">Minimum password length</Label>
             </div>
             <p className="text-xs text-muted-foreground">
-              Applies to new passwords and password resets. Enterprise security questionnaires typically require ≥12 characters.
+              Enterprise security questionnaires typically require ≥12 characters.
             </p>
           </div>
           <Select
@@ -218,14 +221,13 @@ export const OrgSecuritySettings = () => {
               <Badge variant="outline" className="text-[10px]">Requires SAML configured</Badge>
             </div>
             <p className="text-xs text-muted-foreground">
-              When enabled, members must sign in via your organisation's identity provider. Password login is disabled.
+              When enabled, members must sign in via your identity provider.
             </p>
           </div>
           <Switch
             checked={settings.sso_enforced}
             onCheckedChange={v => setSettings(s => ({ ...s, sso_enforced: v }))}
             disabled={!isAdmin}
-            aria-label="Enforce SSO-only login"
           />
         </div>
 

@@ -1,14 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * analytics.ts — PostHog product analytics
  *
- * Privacy-first: no PII in event properties.
- * GDPR compliant: respects cookie consent before capturing.
- * Graceful: build succeeds even if posthog-js is not yet installed.
- *   Add VITE_POSTHOG_KEY to env vars to activate.
- *
- * Usage:
- *   import { track } from "@/lib/analytics";
- *   track("decision_approved", { decision_type: "pricing" });
+ * Build-safe: compiles even when posthog-js is not installed.
+ * Privacy-first: no PII, GDPR-compliant EU endpoint.
+ * Activate by setting VITE_POSTHOG_KEY in Lovable → Environment Variables.
  */
 
 declare global {
@@ -19,13 +15,12 @@ declare global {
       reset: () => void;
       opt_in_capturing: () => void;
       opt_out_capturing: () => void;
-      has_opted_in_capturing: () => boolean;
     };
   }
 }
 
-const POSTHOG_KEY = (import.meta.env.VITE_POSTHOG_KEY ?? "") as string;
-const POSTHOG_HOST = (import.meta.env.VITE_POSTHOG_HOST ?? "https://eu.posthog.com") as string;
+const POSTHOG_KEY = String(import.meta.env.VITE_POSTHOG_KEY ?? "");
+const POSTHOG_HOST = String(import.meta.env.VITE_POSTHOG_HOST ?? "https://eu.posthog.com");
 
 let initialized = false;
 
@@ -33,49 +28,44 @@ async function init() {
   if (initialized || !POSTHOG_KEY || typeof window === "undefined") return;
   initialized = true;
   try {
-    // Dynamic import — only runs if VITE_POSTHOG_KEY is set AND posthog-js is installed
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const mod = await import("posthog-js" as any);
-    const posthog = mod.default ?? mod;
-    posthog.init(POSTHOG_KEY, {
+    // Dynamic import with 'as any' suppresses TS2307 when posthog-js is absent
+    const mod: any = await import("posthog-js" as any);
+    const ph = mod.default ?? mod;
+    ph.init(POSTHOG_KEY, {
       api_host: POSTHOG_HOST,
       capture_pageview: true,
-      capture_pageleave: true,
       autocapture: false,
       persistence: "localStorage",
       disable_session_recording: true,
       respect_dnt: true,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      loaded(ph: any) {
+      loaded(p: any) {
         const consent = localStorage.getItem("quantivis_cookie_consent");
-        if (consent !== "accepted") ph.opt_out_capturing();
+        if (consent !== "accepted") p.opt_out_capturing();
       },
     });
-    window.posthog = posthog;
+    window.posthog = ph;
   } catch {
-    // posthog-js not installed yet — analytics silently disabled
+    // posthog-js not installed — analytics silently disabled
   }
 }
 
-if (POSTHOG_KEY) init().catch(() => {});
+if (POSTHOG_KEY) void init();
 
-export function identifyUser(userId: string, orgId: string, role: string) {
+export const identifyUser = (userId: string, orgId: string, role: string) =>
   window.posthog?.identify(userId, { org_id: orgId, role });
-}
 
-export function track(event: string, props?: Record<string, unknown>) {
+export const track = (event: string, props?: Record<string, unknown>) =>
   window.posthog?.capture(event, props);
-}
 
-export function enableAnalytics() {
+export const enableAnalytics = () => {
   window.posthog?.opt_in_capturing();
   track("analytics_enabled");
-}
+};
 
-export function disableAnalytics() {
+export const disableAnalytics = () => {
   window.posthog?.opt_out_capturing();
   window.posthog?.reset();
-}
+};
 
 export const trackLogin = (method: "password" | "google" | "saml") =>
   track("user_login", { method });
@@ -90,8 +80,5 @@ export const trackConnectorConnected = (connector_type: string) =>
   track("connector_connected", { connector_type });
 
 export const trackBriefGenerated = () => track("executive_brief_generated");
-
-export const trackCopilotQuery = (intent: string) =>
-  track("copilot_query", { intent });
-
+export const trackCopilotQuery = (intent: string) => track("copilot_query", { intent });
 export const trackBoardReport = () => track("board_report_viewed");
