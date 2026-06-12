@@ -176,23 +176,27 @@ const ExecutiveDailyDriver = ({ displayName, orgId, insights, topMetrics, pendin
     regenerate();
   }, [brief, briefLoading, generating, orgId, regenerate]);
 
-  // Fetch pending decisions
+  // Fetch pending decisions — cast bypasses TS2589 from large generated schema
   useEffect(() => {
     if (!orgId) return;
-    supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (supabase as any)
       .from("decision_ledger")
       .select("id,recommended_action,decision_type,capped_confidence,predicted_net_impact,created_at")
       .eq("organization_id", orgId)
       .in("decision_status", ["pending", "active"])
       .order("created_at", { ascending: false })
       .limit(4)
-      .then(({ data }) => setDecisions((data as PendingDecision[]) ?? []));
+      .then(({ data }: { data: PendingDecision[] | null }) =>
+        setDecisions(data ?? [])
+      );
   }, [orgId]);
 
   const handleApprove = useCallback(async (id: string) => {
     setActing(id);
     try {
-      await supabase.from("decision_ledger").update({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any).from("decision_ledger").update({
         decision_status: "approved",
         decided_at: new Date().toISOString(),
       }).eq("id", id);
@@ -205,7 +209,8 @@ const ExecutiveDailyDriver = ({ displayName, orgId, insights, topMetrics, pendin
   const handleReject = useCallback(async (id: string) => {
     setActing(id);
     try {
-      await supabase.from("decision_ledger").update({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any).from("decision_ledger").update({
         decision_status: "rejected",
         decided_at: new Date().toISOString(),
       }).eq("id", id);

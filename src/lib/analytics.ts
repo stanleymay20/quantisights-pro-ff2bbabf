@@ -3,7 +3,8 @@
  *
  * Privacy-first: no PII in event properties.
  * GDPR compliant: respects cookie consent before capturing.
- * Lazy: only loads PostHog if the user has consented.
+ * Graceful: build succeeds even if posthog-js is not yet installed.
+ *   Add VITE_POSTHOG_KEY to env vars to activate.
  *
  * Usage:
  *   import { track } from "@/lib/analytics";
@@ -23,86 +24,74 @@ declare global {
   }
 }
 
-const POSTHOG_KEY = import.meta.env.VITE_POSTHOG_KEY as string | undefined;
-const POSTHOG_HOST = import.meta.env.VITE_POSTHOG_HOST as string | undefined ?? "https://eu.posthog.com";
+const POSTHOG_KEY = (import.meta.env.VITE_POSTHOG_KEY ?? "") as string;
+const POSTHOG_HOST = (import.meta.env.VITE_POSTHOG_HOST ?? "https://eu.posthog.com") as string;
 
 let initialized = false;
 
 async function init() {
   if (initialized || !POSTHOG_KEY || typeof window === "undefined") return;
   initialized = true;
-
-  // Dynamic import — zero bundle cost if PostHog isn't configured
-  const { default: posthog } = await import("posthog-js");
-  posthog.init(POSTHOG_KEY, {
-    api_host: POSTHOG_HOST,
-    capture_pageview: true,
-    capture_pageleave: true,
-    autocapture: false,            // Only explicit track() calls
-    persistence: "localStorage",
-    disable_session_recording: true, // Enable manually if needed
-    respect_dnt: true,
-    loaded(ph) {
-      // Check cookie consent — if not given, opt out
-      const consent = localStorage.getItem("quantivis_cookie_consent");
-      if (consent !== "accepted") {
-        ph.opt_out_capturing();
-      }
-    },
-  });
-  window.posthog = posthog as Window["posthog"];
+  try {
+    // Dynamic import — only runs if VITE_POSTHOG_KEY is set AND posthog-js is installed
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const mod = await import("posthog-js" as any);
+    const posthog = mod.default ?? mod;
+    posthog.init(POSTHOG_KEY, {
+      api_host: POSTHOG_HOST,
+      capture_pageview: true,
+      capture_pageleave: true,
+      autocapture: false,
+      persistence: "localStorage",
+      disable_session_recording: true,
+      respect_dnt: true,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      loaded(ph: any) {
+        const consent = localStorage.getItem("quantivis_cookie_consent");
+        if (consent !== "accepted") ph.opt_out_capturing();
+      },
+    });
+    window.posthog = posthog;
+  } catch {
+    // posthog-js not installed yet — analytics silently disabled
+  }
 }
 
-// Call init() as a side effect — non-blocking
 if (POSTHOG_KEY) init().catch(() => {});
 
-/** Identify the current user (call on login, no email or personal data) */
 export function identifyUser(userId: string, orgId: string, role: string) {
   window.posthog?.identify(userId, { org_id: orgId, role });
 }
 
-/** Track an event. Never include PII — use IDs not names/emails. */
 export function track(event: string, props?: Record<string, unknown>) {
   window.posthog?.capture(event, props);
 }
 
-/** Called when user accepts cookie consent */
 export function enableAnalytics() {
   window.posthog?.opt_in_capturing();
   track("analytics_enabled");
 }
 
-/** Called when user rejects cookie consent */
 export function disableAnalytics() {
   window.posthog?.opt_out_capturing();
   window.posthog?.reset();
 }
 
-// ─── Key product events to track ─────────────────────────────────────────────
-// Call these from the relevant components:
-
-/** User logs in */
 export const trackLogin = (method: "password" | "google" | "saml") =>
   track("user_login", { method });
 
-/** User creates a decision */
 export const trackDecisionCreated = (decision_type: string) =>
   track("decision_created", { decision_type });
 
-/** User approves or rejects a decision */
 export const trackDecisionActioned = (action: "approved" | "rejected", decision_type: string) =>
   track("decision_actioned", { action, decision_type });
 
-/** User connects a data source */
 export const trackConnectorConnected = (connector_type: string) =>
   track("connector_connected", { connector_type });
 
-/** User generates executive brief */
 export const trackBriefGenerated = () => track("executive_brief_generated");
 
-/** User asks Copilot a question */
 export const trackCopilotQuery = (intent: string) =>
   track("copilot_query", { intent });
 
-/** User reaches the board report */
 export const trackBoardReport = () => track("board_report_viewed");

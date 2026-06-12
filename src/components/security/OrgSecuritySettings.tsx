@@ -90,15 +90,16 @@ export const OrgSecuritySettings = () => {
 
       if (error) throw error;
 
-      // Audit log
-      await supabase.from("audit_log").insert({
+      // Audit log — cast to any bypasses generated-type overload mismatch
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any).from("audit_log").insert([{
         organization_id: currentOrgId,
         actor_type: "user",
         action_type: "org_security_settings_updated",
         resource_type: "organization",
         resource_id: currentOrgId,
         payload: JSON.parse(JSON.stringify(settings)),
-      });
+      }]);
 
       toast({ title: "Security settings saved", description: "Policy changes take effect on next login for all members." });
     } catch (err: unknown) {

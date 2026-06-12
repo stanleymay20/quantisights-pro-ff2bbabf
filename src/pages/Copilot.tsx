@@ -102,15 +102,16 @@ const Copilot = () => {
 
   useEffect(() => {
     if (!currentOrgId) return;
-    supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (supabase as any)
       .from("decision_ledger")
       .select("id,recommended_action,decision_type,capped_confidence,predicted_net_impact")
       .eq("organization_id", currentOrgId)
       .in("decision_status", ["pending", "active"])
       .order("created_at", { ascending: false })
       .limit(5)
-      .then(({ data }) => {
-        setDecisions((data as DecisionSummary[]) ?? []);
+      .then(({ data }: { data: DecisionSummary[] | null }) => {
+        setDecisions(data ?? []);
         setPendingDecisions(data?.length ?? 0);
       });
   }, [currentOrgId]);
