@@ -225,6 +225,7 @@ const ExecutiveDailyDriver = ({ displayName, orgId, insights, topMetrics, pendin
         metrics: topMetrics,
         pendingDecisions,
         orgName: "your organisation",
+        decisions,
       });
       setAnswer(result);
     } finally {

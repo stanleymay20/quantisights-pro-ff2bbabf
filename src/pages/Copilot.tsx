@@ -16,8 +16,11 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { useProject } from "@/contexts/ProjectContext";
 import { useIndustryLabels } from "@/hooks/useIndustryLanguage";
 import { useCopilotTelemetry } from "@/hooks/useCopilotTelemetry";
+import { useInsights } from "@/hooks/useInsights";
+import { useMetricsSummary } from "@/hooks/useMetricsSummary";
 import { supabase } from "@/integrations/supabase/client";
 import SectionErrorBoundary from "@/components/SectionErrorBoundary";
+import { generateAnswer } from "@/lib/copilot-answer-engine";
 
 interface SuggestedPrompt {
   label: string;
@@ -88,6 +91,27 @@ const Copilot = () => {
   const [query, setQuery] = useState("");
   const [brief, setBrief] = useState<InlineBrief | null>(null);
   const [answering, setAnswering] = useState(false);
+  const [decisions, setDecisions] = useState<import("@/lib/copilot-answer-engine").DecisionSummary[]>([]);
+  const [pendingDecisions, setPendingDecisions] = useState(0);
+
+  // Load live data for the answer engine
+  const { insights } = useInsights(currentOrgId ?? null, activeDatasetId ?? null);
+  const { topMetrics } = useMetricsSummary(currentOrgId ?? null, activeDatasetId ?? null);
+
+  useEffect(() => {
+    if (!currentOrgId) return;
+    supabase
+      .from("decisions")
+      .select("id,recommended_action,decision_type,capped_confidence,predicted_net_impact")
+      .eq("organization_id", currentOrgId)
+      .in("decision_status", ["pending", "active"])
+      .order("created_at", { ascending: false })
+      .limit(5)
+      .then(({ data }) => {
+        setDecisions((data as import("@/lib/copilot-answer-engine").DecisionSummary[]) ?? []);
+        setPendingDecisions(data?.length ?? 0);
+      });
+  }, [currentOrgId]);
 
   useEffect(() => {
     const prefilledQuery = searchParams.get("q");
@@ -105,9 +129,10 @@ const Copilot = () => {
       // Generate a data-grounded answer from live org metrics and insights
       const generated = generateAnswer(trimmed, {
         insights,
-        metrics: topMetrics,
+        metrics: topMetrics ?? [],
         pendingDecisions,
         orgName: currentOrg?.name?.trim() ?? "your organisation",
+        decisions,
       });
       // Map CopilotAnswer → InlineBrief format
       setBrief({
