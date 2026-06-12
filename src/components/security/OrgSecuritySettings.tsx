@@ -45,7 +45,7 @@ const PW_LENGTH_OPTIONS = [
  */
 export const OrgSecuritySettings = () => {
   const { currentOrgId } = useOrganization();
-  const { role } = usePermissions();
+  const { orgRole } = usePermissions();
   const { toast } = useToast();
   const [settings, setSettings] = useState<OrgSecSettings>({
     require_mfa: false,
@@ -56,19 +56,22 @@ export const OrgSecuritySettings = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  const isAdmin = role === "owner" || role === "admin";
+  const isAdmin = orgRole === "owner" || orgRole === "admin";
 
   useEffect(() => {
     if (!currentOrgId) return;
-    supabase
-      .from("organizations")
-      .select("require_mfa, session_timeout_minutes, min_password_length, sso_enforced")
-      .eq("id", currentOrgId)
-      .single()
-      .then(({ data }) => {
+    (async () => {
+      try {
+        const { data } = await supabase
+          .from("organizations")
+          .select("require_mfa, session_timeout_minutes, min_password_length, sso_enforced")
+          .eq("id", currentOrgId)
+          .single();
         if (data) setSettings(data as OrgSecSettings);
-      })
-      .finally(() => setLoading(false));
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, [currentOrgId]);
 
   const handleSave = async () => {
@@ -94,7 +97,7 @@ export const OrgSecuritySettings = () => {
         action_type: "org_security_settings_updated",
         resource_type: "organization",
         resource_id: currentOrgId,
-        payload: settings,
+        payload: JSON.parse(JSON.stringify(settings)),
       });
 
       toast({ title: "Security settings saved", description: "Policy changes take effect on next login for all members." });

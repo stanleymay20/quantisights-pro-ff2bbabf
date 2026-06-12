@@ -180,7 +180,7 @@ const ExecutiveDailyDriver = ({ displayName, orgId, insights, topMetrics, pendin
   useEffect(() => {
     if (!orgId) return;
     supabase
-      .from("decisions")
+      .from("decision_ledger")
       .select("id,recommended_action,decision_type,capped_confidence,predicted_net_impact,created_at")
       .eq("organization_id", orgId)
       .in("decision_status", ["pending", "active"])
@@ -192,7 +192,7 @@ const ExecutiveDailyDriver = ({ displayName, orgId, insights, topMetrics, pendin
   const handleApprove = useCallback(async (id: string) => {
     setActing(id);
     try {
-      await supabase.from("decisions").update({
+      await supabase.from("decision_ledger").update({
         decision_status: "approved",
         decided_at: new Date().toISOString(),
       }).eq("id", id);
@@ -205,7 +205,7 @@ const ExecutiveDailyDriver = ({ displayName, orgId, insights, topMetrics, pendin
   const handleReject = useCallback(async (id: string) => {
     setActing(id);
     try {
-      await supabase.from("decisions").update({
+      await supabase.from("decision_ledger").update({
         decision_status: "rejected",
         decided_at: new Date().toISOString(),
       }).eq("id", id);

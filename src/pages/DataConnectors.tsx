@@ -25,13 +25,13 @@ import { motion, AnimatePresence } from "framer-motion";
 
 // ─── Types ───
 type ConnectorType =
-  | "postgresql" | "mysql" | "sqlserver"
+  | "postgres" | "mysql" | "sqlserver"
   | "snowflake" | "bigquery" | "s3"
   | "powerbi"
   | "salesforce" | "hubspot" | "dynamics"
-  | "sap" | "netsuite" | "xero"
-  | "stripe" | "googleanalytics" | "googlesheets"
-  | "csv";
+  | "sap_odata" | "netsuite" | "xero"
+  | "stripe" | "google_analytics" | "google_sheets"
+  | "csv_upload" | "rest_api";
 type WizardStep = "select" | "credentials" | "testing" | "schema" | "tables" | "mapping" | "schedule" | "syncing" | "done";
 
 interface ConnectorDef {
@@ -58,7 +58,7 @@ interface MetricMapping {
 }
 
 const CONNECTORS: ConnectorDef[] = [
-  { type: "postgresql", label: "PostgreSQL", icon: Database, description: "Connect to any PostgreSQL database", category: "database", defaultPort: "5432" },
+  { type: "postgres", label: "PostgreSQL", icon: Database, description: "Connect to any PostgreSQL database", category: "database", defaultPort: "5432" },
   { type: "mysql", label: "MySQL", icon: Database, description: "Connect to MySQL / MariaDB databases", category: "database", defaultPort: "3306" },
   { type: "sqlserver", label: "SQL Server", icon: Server, description: "Microsoft SQL Server connection", category: "database", defaultPort: "1433" },
   { type: "snowflake", label: "Snowflake", icon: Cloud, description: "Snowflake cloud data warehouse", category: "warehouse" },
@@ -70,13 +70,13 @@ const CONNECTORS: ConnectorDef[] = [
   { type: "hubspot", label: "HubSpot", icon: BarChart3, description: "Contacts, Deals, and revenue data from HubSpot CRM", category: "crm" },
   { type: "dynamics", label: "Microsoft Dynamics", icon: Server, description: "Sales and service data from Microsoft Dynamics 365", category: "crm" },
   // ── ERP ──
-  { type: "sap", label: "SAP S/4HANA", icon: Server, description: "Finance, procurement, and operations from SAP", category: "erp" },
+  { type: "sap_odata", label: "SAP S/4HANA", icon: Server, description: "Finance, procurement, and operations from SAP", category: "erp" },
   { type: "netsuite", label: "NetSuite", icon: Cloud, description: "ERP, CRM, and e-commerce data from NetSuite", category: "erp" },
   { type: "xero", label: "Xero", icon: BarChart3, description: "P&L, cash flow, and invoicing from Xero", category: "erp" },
   // ── SaaS metrics ──
   { type: "stripe", label: "Stripe", icon: Database, description: "Revenue, MRR, churn, and subscription metrics from Stripe", category: "saas" },
-  { type: "googleanalytics", label: "Google Analytics", icon: BarChart3, description: "Sessions, conversions, and funnel data from GA4", category: "saas" },
-  { type: "googlesheets", label: "Google Sheets", icon: FileSpreadsheet, description: "Any structured data from Google Sheets", category: "saas" },
+  { type: "google_analytics", label: "Google Analytics", icon: BarChart3, description: "Sessions, conversions, and funnel data from GA4", category: "saas" },
+  { type: "google_sheets", label: "Google Sheets", icon: FileSpreadsheet, description: "Any structured data from Google Sheets", category: "saas" },
 ];
 
 const METRIC_TYPES = [
@@ -215,13 +215,13 @@ const DataConnectors = () => {
   };
 
   const CRM_ERP_SAAS_TYPES = new Set([
-    "salesforce","hubspot","dynamics","sap","netsuite","xero","stripe","googleanalytics","googlesheets",
+    "salesforce","hubspot","dynamics","sap_odata","netsuite","xero","stripe","google_analytics","google_sheets",
   ]);
 
   const buildConnectorPayload = () => {
     const base: any = { organization_id: currentOrgId, connector_type: selectedType };
     switch (selectedType) {
-      case "postgresql": case "mysql": case "sqlserver":
+      case "postgres": case "mysql": case "sqlserver":
         return { ...base, host: creds.host, port: parseInt(creds.port), database_name: creds.dbName, schema_name: creds.schemaName, username: creds.username, password: creds.password, ssl_mode: creds.sslMode };
       case "snowflake":
         return { ...base, account: creds.account, warehouse: creds.warehouse, database_name: creds.dbName, schema_name: creds.schemaName, username: creds.username, password: creds.password, role: creds.role };
@@ -238,12 +238,12 @@ const DataConnectors = () => {
       case "salesforce": return { instanceUrl: creds.instanceUrl, clientId: creds.clientId, clientSecret: creds.clientSecret, username: creds.username, password: creds.password };
       case "hubspot": return { portalId: creds.portalId, privateAppToken: creds.privateAppToken };
       case "dynamics": return { tenantId: creds.tenantId, clientId: creds.clientId, clientSecret: creds.clientSecret, instanceUrl: creds.instanceUrl };
-      case "sap": return { sapHost: creds.sapHost, sapSystemId: creds.sapSystemId, sapClient: creds.sapClient, username: creds.username, password: creds.password };
+      case "sap_odata": return { sapHost: creds.sapHost, sapSystemId: creds.sapSystemId, sapClient: creds.sapClient, username: creds.username, password: creds.password };
       case "netsuite": return { accountId: creds.accountId, consumerKey: creds.consumerKey, consumerSecret: creds.consumerSecret, tokenId: creds.tokenId, tokenSecret: creds.tokenSecret };
       case "xero": return { clientId: creds.clientId, clientSecret: creds.clientSecret, xeroTenantId: creds.xeroTenantId };
       case "stripe": return { stripeApiKey: creds.stripeApiKey };
-      case "googleanalytics": return { ga4PropertyId: creds.ga4PropertyId, serviceAccountJson: creds.serviceAccountJson };
-      case "googlesheets": return { spreadsheetId: creds.spreadsheetId, sheetRange: creds.sheetRange, serviceAccountJson: creds.serviceAccountJson };
+      case "google_analytics": return { ga4PropertyId: creds.ga4PropertyId, serviceAccountJson: creds.serviceAccountJson };
+      case "google_sheets": return { spreadsheetId: creds.spreadsheetId, sheetRange: creds.sheetRange, serviceAccountJson: creds.serviceAccountJson };
       default: return {};
     }
   };
@@ -296,7 +296,7 @@ const DataConnectors = () => {
   };
 
   const handleSelectConnector = (type: ConnectorType) => {
-    if (type === "csv") { navigate("/data-upload"); return; }
+    if (type === "csv_upload") { navigate("/data-upload"); return; }
     setSelectedType(type);
     const def = CONNECTORS.find(c => c.type === type)!;
     setSourceName(`${def.label} Connection`);
@@ -427,7 +427,7 @@ const DataConnectors = () => {
       // 2. Create connector config
       const { error: ccErr } = await supabase.from("connector_configs").insert({
         organization_id: currentOrgId, data_source_id: ds.id,
-        connector_type: selectedType || "postgresql",
+        connector_type: selectedType || "postgres",
         host: creds.host || null, port: creds.port ? parseInt(creds.port) : null,
         database_name: creds.dbName || null, schema_name: creds.schemaName || null,
         username: creds.username || null, ssl_mode: creds.sslMode || null,
@@ -498,7 +498,7 @@ const DataConnectors = () => {
 
   const isCredentialsValid = (): boolean => {
     switch (selectedType) {
-      case "postgresql":
+      case "postgres":
       case "mysql":
       case "sqlserver":
         return !!(creds.host && creds.dbName && creds.username);
@@ -531,7 +531,7 @@ const DataConnectors = () => {
 
   const renderCredentialForm = () => {
     switch (selectedType) {
-      case "postgresql":
+      case "postgres":
       case "mysql":
       case "sqlserver":
         return (
@@ -747,7 +747,7 @@ const DataConnectors = () => {
           </div>
         );
 
-      case "sap":
+      case "sap_odata":
         return (
           <div className="space-y-4">
             <div><label className="text-sm font-medium mb-1.5 block">Connection Name</label>
@@ -824,7 +824,7 @@ const DataConnectors = () => {
           </div>
         );
 
-      case "googleanalytics":
+      case "google_analytics":
         return (
           <div className="space-y-4">
             <div><label className="text-sm font-medium mb-1.5 block">Connection Name</label>
@@ -839,7 +839,7 @@ const DataConnectors = () => {
           </div>
         );
 
-      case "googlesheets":
+      case "google_sheets":
         return (
           <div className="space-y-4">
             <div><label className="text-sm font-medium mb-1.5 block">Connection Name</label>

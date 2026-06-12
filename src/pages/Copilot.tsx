@@ -103,7 +103,7 @@ const Copilot = () => {
   useEffect(() => {
     if (!currentOrgId) return;
     supabase
-      .from("decisions")
+      .from("decision_ledger")
       .select("id,recommended_action,decision_type,capped_confidence,predicted_net_impact")
       .eq("organization_id", currentOrgId)
       .in("decision_status", ["pending", "active"])
