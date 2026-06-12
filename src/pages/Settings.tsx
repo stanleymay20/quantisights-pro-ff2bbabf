@@ -22,6 +22,7 @@ import RetentionPolicySettings from "@/components/settings/RetentionPolicySettin
 import GovernanceKPIs from "@/components/dashboard/GovernanceKPIs";
 import MFAEnroll from "@/components/auth/MFAEnroll";
 import SecurityPosture from "@/components/security/SecurityPosture";
+import { OrgSecuritySettings } from "@/components/security/OrgSecuritySettings";
 import SessionManagement from "@/components/auth/SessionManagement";
 import AuthEventLog from "@/components/auth/AuthEventLog";
 import PasskeyManagement from "@/components/auth/PasskeyManagement";
@@ -425,6 +426,7 @@ const Settings = () => {
               <TabsContent value="security">
                 <SectionErrorBoundary sectionName="Security settings">
                 <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+                  <OrgSecuritySettings />
                   <SecurityPosture />
                   <MFAEnroll />
                   <PasskeyManagement />

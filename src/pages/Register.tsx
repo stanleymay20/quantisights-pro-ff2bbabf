@@ -188,10 +188,10 @@ const Register = forwardRef<HTMLDivElement>((_, ref) => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              minLength={8}
+              minLength={12}
               autoComplete="new-password"
               className="w-full px-4 py-3 rounded-lg bg-secondary border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
-              placeholder="Min 8 characters"
+              placeholder="Min 12 characters"
             />
             {password.length > 0 && (
               <div className="mt-3 space-y-2">
