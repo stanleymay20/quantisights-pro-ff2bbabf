@@ -18,8 +18,9 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       try {
         const { data, error } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
         if (error) {
+          // Supabase returned an error — fail CLOSED, not open
           console.error("MFA check error:", error);
-          setMfaStatus("passed");
+          setMfaStatus("required");
           return;
         }
 
