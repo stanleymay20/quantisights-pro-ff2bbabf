@@ -64,7 +64,7 @@ const CONNECTORS: ConnectorDef[] = [
   { type: "snowflake", label: "Snowflake", icon: Cloud, description: "Snowflake cloud data warehouse", category: "warehouse" },
   { type: "bigquery", label: "BigQuery", icon: Cloud, description: "Google BigQuery datasets", category: "warehouse" },
   { type: "powerbi", label: "Power BI", icon: BarChart3, description: "Microsoft Power BI datasets", category: "bi" },
-  { type: "csv", label: "CSV Upload", icon: FileSpreadsheet, description: "Upload CSV files (demo/testing)", category: "file" },
+  { type: "csv_upload", label: "CSV Upload", icon: FileSpreadsheet, description: "Upload CSV files (demo/testing)", category: "file" },
   // ── CRM ──
   { type: "salesforce", label: "Salesforce", icon: Cloud, description: "Opportunities, Accounts, Cases, and pipeline from Salesforce CRM", category: "crm" },
   { type: "hubspot", label: "HubSpot", icon: BarChart3, description: "Contacts, Deals, and revenue data from HubSpot CRM", category: "crm" },
