@@ -4,7 +4,8 @@
  *
  * Build-safe: compiles even when posthog-js is not installed.
  * Privacy-first: no PII, GDPR-compliant EU endpoint.
- * Activate by setting VITE_POSTHOG_KEY in Lovable → Environment Variables.
+ * Activate by setting POSTHOG_KEY in Lovable → Environment Variables.
+ * (Lovable exposes env vars without the VITE_ prefix)
  */
 
 declare global {
@@ -21,8 +22,17 @@ declare global {
 
 // PostHog project token — write-only, intentionally public (PostHog docs: "Safe to use in public apps")
 // EU Cloud · Project ID 200654 · https://eu.posthog.com
-const POSTHOG_KEY = String(import.meta.env.VITE_POSTHOG_KEY ?? "phc_DjH2zrVrNqqrBc74Luh9K6ZG96hkWZoC8kUfUjpHdjJw");
-const POSTHOG_HOST = String(import.meta.env.VITE_POSTHOG_HOST ?? "https://eu.posthog.com");
+// Lovable exposes env vars as POSTHOG_KEY (no VITE_ prefix); VITE_POSTHOG_KEY kept as fallback
+const POSTHOG_KEY = String(
+  import.meta.env.POSTHOG_KEY ??
+  import.meta.env.VITE_POSTHOG_KEY ??
+  "phc_DjH2zrVrNqqrBc74Luh9K6ZG96hkWZoC8kUfUjpHdjJw"
+);
+const POSTHOG_HOST = String(
+  import.meta.env.POSTHOG_HOST ??
+  import.meta.env.VITE_POSTHOG_HOST ??
+  "https://eu.posthog.com"
+);
 
 let initialized = false;
 
