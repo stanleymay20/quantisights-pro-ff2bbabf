@@ -1,5 +1,5 @@
 /**
- * CopilotAnalytics — Phase 6 readiness gate dashboard.
+ * CopilotAnalytics — query telemetry and deployment readiness dashboard.
  * Tracks query telemetry, intent routing accuracy, and deployment gate criteria.
  * Route: /copilot/analytics  |  Access: owner/admin only.
  */
@@ -114,7 +114,7 @@ export default function CopilotAnalytics() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-              {/* Phase 6 gates */}
+              {/* Deployment readiness gates */}
               <Phase6Readiness
                 decisionsWithEvidence={decisionsWithEvidence}
                 totalDecisions={totalDecisions}

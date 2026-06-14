@@ -213,7 +213,7 @@ export const DashboardHeader = ({
             </div>
             <div className="max-h-96 overflow-y-auto">
               {!activeDatasetId ? (
-                <p className="p-4 text-sm text-muted-foreground text-center">Select a dataset to view notifications</p>
+                <p className="p-4 text-sm text-muted-foreground text-center">No new notifications. Alerts appear here when your data sources trigger signals.</p>
               ) : notificationsLoading ? (
                 <p className="p-4 text-sm text-muted-foreground text-center">Loading notifications…</p>
               ) : notificationsError ? (

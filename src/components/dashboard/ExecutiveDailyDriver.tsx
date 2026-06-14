@@ -10,7 +10,7 @@ import {
   CheckCircle2, XCircle, AlertTriangle, TrendingUp, TrendingDown,
   MessageSquareText, ArrowRight, ChevronRight, Sparkles, Loader2,
   Clock, Target, BarChart3, ShieldCheck, AlertCircle, RefreshCw,
-  Euro, Minus,
+  Euro, Minus, Globe,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useExecutiveIntelligence } from "@/hooks/useExecutiveIntelligence";
@@ -277,6 +277,17 @@ const ExecutiveDailyDriver = ({ displayName, orgId, insights, topMetrics, pendin
           {generating ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
           {generating ? "Generating…" : "Refresh brief"}
         </Button>
+      </div>
+
+      {/* ── Sovereign AI Governance Banner ── */}
+      <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-primary/20 bg-primary/5">
+        <Globe className="w-4 h-4 text-primary shrink-0" />
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          <span className="font-semibold text-foreground">Sovereign AI governance</span>
+          {" "}— your data, your decisions, your audit trail.{" "}
+          <span className="text-primary font-medium">EU AI Act compliant</span>
+          {" "}· 72% of European enterprises are investing in sovereign AI governance (Accenture, 2025).
+        </p>
       </div>
 
       {/* ── Executive Brief ── */}

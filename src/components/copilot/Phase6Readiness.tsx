@@ -1,7 +1,5 @@
 /**
- * Phase6Readiness — Phase 5.5
- *
- * Displays the 4 deployment gates for Phase 6 (5-surface collapse).
+ * DeploymentReadiness — tracks deployment gate criteria via live telemetry.
  * Shows current vs target for each gate with live measurements.
  */
 
@@ -81,7 +79,7 @@ export default function Phase6Readiness({
         <div className="flex items-center justify-between flex-wrap gap-2">
           <CardTitle className="text-base flex items-center gap-2">
             <Target className="w-4 h-4 text-primary" />
-            Phase 6 Readiness
+            Deployment Readiness
           </CardTitle>
           <Badge variant="outline" className={gatesMet === 4
             ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/30"

@@ -1,4 +1,4 @@
-import { Shield, Brain, Database, Eye, Lock, GitBranch, CheckCircle2, FileText } from "lucide-react";
+import { Shield, Brain, Database, Eye, Lock, GitBranch, CheckCircle2, FileText, Globe } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -107,6 +107,30 @@ const TrustCenter = () => {
           </p>
         </div>
 
+        {/* Sovereign AI Governance */}
+        <Card className="border-primary/20 bg-primary/5">
+          <CardContent className="pt-5 pb-5">
+            <div className="flex items-start gap-3">
+              <Globe className="w-5 h-5 text-primary mt-0.5 shrink-0" />
+              <div>
+                <h2 className="text-base font-semibold mb-1">Sovereign AI Governance</h2>
+                <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl">
+                  Quantivis keeps your AI decisions on-premises, auditable, and under your control —
+                  meeting EU AI Act Articles 13 and 14. Your data never leaves the EU (Supabase EU region).
+                  Every decision is logged in a tamper-evident, sha256-hashed audit trail with human-only
+                  approval enforcement. 72% of European enterprises are increasing sovereign AI investment
+                  (Accenture, 2025). Quantivis is built for that mandate.
+                </p>
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {["EU AI Act Art. 13 — Transparency", "EU AI Act Art. 14 — Human Oversight", "GDPR / DSGVO", "EU Data Residency", "sha256 Audit Trail"].map(tag => (
+                    <Badge key={tag} variant="outline" className="text-[10px] border-primary/30 text-primary bg-primary/5">{tag}</Badge>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Evidence-backed live metrics */}
         <LiveTrustMetrics />
 
@@ -130,7 +154,7 @@ const TrustCenter = () => {
 
         <Separator />
 
-        {/* ─── Phase 6A.1 — Contextual Governance ─── */}
+        {/* ─── Contextual Governance ─── */}
         <Card className="border-primary/30 bg-primary/[0.02]">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between flex-wrap gap-2">
@@ -138,7 +162,7 @@ const TrustCenter = () => {
                 <Shield className="w-5 h-5 text-primary" />
                 <CardTitle className="text-base">Contextual Governance</CardTitle>
               </div>
-              <Badge variant="outline" className="text-[10px]">Phase 6A — executable</Badge>
+              <Badge variant="outline" className="text-[10px]">Live — Governance Enforced</Badge>
             </div>
             <p className="text-xs text-muted-foreground pt-1 max-w-2xl leading-relaxed">
               Organizations define their own governance model, risk appetite, and approval

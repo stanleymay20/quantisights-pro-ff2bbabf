@@ -14,7 +14,7 @@ const pillars = [
   {
     icon: ScrollText,
     title: "Contextual Governance",
-    badge: "Phase 6A — executable",
+    badge: "Live — Enforced",
     links: [
       { to: "/admin/governance-simulation", label: "Cross-Domain Governance Simulation" },
       { to: "/admin/context-packs", label: "Context Packs (University / Supply Chain / PE / Gov / Health)" },

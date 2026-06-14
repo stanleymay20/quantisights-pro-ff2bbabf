@@ -288,7 +288,7 @@ const Copilot = () => {
 
             <div className="mt-6 text-center space-y-1">
               <p className="text-xs text-muted-foreground">Looking for a specific workspace? <button onClick={() => navigate("/dashboard")} className="text-primary hover:underline">View all workspaces</button></p>
-              <p className="text-xs text-muted-foreground"><button onClick={() => navigate("/copilot/analytics")} className="text-muted-foreground/60 hover:text-primary transition-colors hover:underline">Copilot analytics and Phase 6 readiness -&gt;</button></p>
+              <p className="text-xs text-muted-foreground"><button onClick={() => navigate("/copilot/analytics")} className="text-muted-foreground/60 hover:text-primary transition-colors hover:underline">Copilot analytics →</button></p>
             </div>
           </div>
         </main>

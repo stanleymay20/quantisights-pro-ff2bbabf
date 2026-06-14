@@ -242,16 +242,18 @@ export default function ExecutiveIntelligence() {
       )}
 
       <Tabs defaultValue="briefing">
-        <TabsList className="flex-wrap h-auto">
-          <TabsTrigger value="briefing"><Sparkles className="h-4 w-4 mr-1.5" /> Briefing</TabsTrigger>
-          <TabsTrigger value="pressure"><Zap className="h-4 w-4 mr-1.5" /> Pressure Queue</TabsTrigger>
-          <TabsTrigger value="threats"><AlertTriangle className="h-4 w-4 mr-1.5" /> Emerging Threats</TabsTrigger>
-          <TabsTrigger value="interventions"><Activity className="h-4 w-4 mr-1.5" /> Interventions</TabsTrigger>
-          <TabsTrigger value="narratives"><GitBranch className="h-4 w-4 mr-1.5" /> Cross-Domain</TabsTrigger>
-          <TabsTrigger value="exposure"><Globe className="h-4 w-4 mr-1.5" /> Exposure</TabsTrigger>
-          <TabsTrigger value="forecasts"><Compass className="h-4 w-4 mr-1.5" /> Forecasts</TabsTrigger>
-          <TabsTrigger value="fusion"><Layers className="h-4 w-4 mr-1.5" /> Narrative Fusion</TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto scrollbar-hide">
+          <TabsList className="flex-nowrap h-auto gap-0.5 w-max min-w-full">
+            <TabsTrigger value="briefing"><Sparkles className="h-4 w-4 mr-1.5" /> Briefing</TabsTrigger>
+            <TabsTrigger value="pressure"><Zap className="h-4 w-4 mr-1.5" /> Pressure Queue</TabsTrigger>
+            <TabsTrigger value="threats"><AlertTriangle className="h-4 w-4 mr-1.5" /> Emerging Threats</TabsTrigger>
+            <TabsTrigger value="interventions"><Activity className="h-4 w-4 mr-1.5" /> Interventions</TabsTrigger>
+            <TabsTrigger value="narratives"><GitBranch className="h-4 w-4 mr-1.5" /> Cross-Domain</TabsTrigger>
+            <TabsTrigger value="exposure"><Globe className="h-4 w-4 mr-1.5" /> Exposure</TabsTrigger>
+            <TabsTrigger value="forecasts"><Compass className="h-4 w-4 mr-1.5" /> Forecasts</TabsTrigger>
+            <TabsTrigger value="fusion"><Layers className="h-4 w-4 mr-1.5" /> Narrative Fusion</TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="briefing" className="mt-4 space-y-4">
           <SectionErrorBoundary sectionName="Top Critical Interventions">
