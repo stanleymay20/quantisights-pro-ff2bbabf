@@ -32,13 +32,21 @@ const Pricing = () => {
     if (!user) { navigate(`/register?plan=${tierKey}`); return; }
     const tier = TIERS[tierKey];
     const priceId = annual && tier.price_id_annual ? tier.price_id_annual : tier.price_id;
-    if (!priceId) {
-      toast({ title: "Annual billing coming soon", description: "Annual price not yet available — switching to monthly.", variant: "default" });
+
+    // If annual toggle selected but no annual price ID yet, show toast and continue
+    // with monthly — tagging the session so sales team can follow up on annual billing
+    if (annual && !tier.price_id_annual) {
+      toast({
+        title: "Annual billing — our team will follow up",
+        description: "Starting your trial now. We'll contact you within 24 hours to set up annual billing at the discounted rate.",
+        variant: "default",
+      });
     }
+
     setLoadingTier(tierKey);
     try {
       const { data, error } = await invokeWithRetry<{ url?: string }>("create-checkout", {
-        body: { priceId: priceId ?? tier.price_id },
+        body: { priceId: priceId ?? tier.price_id, wantsAnnual: annual },
       });
       if (error) throw error;
       if (data?.url) window.location.href = data.url;
@@ -71,13 +79,14 @@ const Pricing = () => {
           >
             <p className="text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-3">Pricing</p>
             <h1 className="text-3xl sm:text-5xl font-bold font-display mb-4">
-              Decision Intelligence That <span className="gradient-text">Pays for Itself</span>
+              Priced Against the <span className="gradient-text">Alternative</span>
             </h1>
             <p className="text-muted-foreground text-lg max-w-xl mx-auto mb-3">
-              If this prevents a single 5% revenue leak, the system pays for itself in one decision.
+              EU AI Act fines reach €30M. McKinsey charges €50K for one governance project.
+              Building this internally costs €350K. Quantivis starts at €499/month.
             </p>
             <p className="text-xs text-muted-foreground/60 max-w-md mx-auto">
-              Built for scaling B2B teams with recurring strategic decisions. Every plan includes full audit trail and GDPR compliance.
+              Every plan includes full audit trail, EU AI Act compliance documentation, and GDPR-ready infrastructure.
             </p>
           </motion.div>
 
@@ -215,11 +224,11 @@ const Pricing = () => {
             className="max-w-5xl mx-auto mb-16 text-center"
           >
             <div className="inline-flex flex-wrap items-center justify-center gap-2 sm:gap-3 px-4 sm:px-6 py-3 rounded-2xl sm:rounded-full border border-border/50 bg-card/30">
-              <span className="text-xs sm:text-sm text-muted-foreground">Typical consulting project:</span>
+              <span className="text-xs sm:text-sm text-muted-foreground">vs. McKinsey governance project:</span>
               <span className="text-xs sm:text-sm font-bold line-through text-muted-foreground/60">€50,000+ one-time</span>
               <span className="text-xs text-muted-foreground">→</span>
-              <span className="text-xs sm:text-sm font-bold text-primary">From €99/mo continuous</span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold">Ongoing vs one-off</span>
+              <span className="text-xs sm:text-sm font-bold text-primary">From €499/mo continuous</span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold">100× cheaper, always on</span>
             </div>
           </motion.div>
 
@@ -294,8 +303,12 @@ const Pricing = () => {
           <div className="space-y-6">
             {[
               {
-                q: "What counts as a dataset?",
-                a: "A dataset is any structured data source you connect — a CSV upload, database table, or API integration. Starter includes 2 datasets; Growth and Enterprise are unlimited.",
+                q: "Why is Quantivis priced at €499/month when other SaaS tools are cheaper?",
+                a: "Because Quantivis is not a dashboard tool — it is a governance platform. EU AI Act fines reach €30M. McKinsey charges €50,000–€500,000 for a one-time governance project. Building this internally costs €350,000+ in Year 1. At €499/month (€5,988/year), Quantivis delivers continuous governance at less than 1.2% of the minimum consulting engagement cost.",
+              },
+              {
+                q: "What counts as a data connector?",
+                a: "A connector is a live integration with an enterprise data source — Stripe, Salesforce, HubSpot, SAP, NetSuite, Xero, Google Sheets, Snowflake, BigQuery, and others. Essentials includes 3 connectors. Governance unlocks all 15. CSV upload is available on every plan and does not count toward the connector limit.",
               },
               {
                 q: "What happens after the 14-day trial?",
@@ -306,24 +319,24 @@ const Pricing = () => {
                 a: "Yes. Upgrades take effect immediately with prorated billing. Downgrades apply at the next billing cycle.",
               },
               {
-                q: "Is GDPR compliance included in every plan?",
-                a: "Yes. Full audit trail, GDPR-compliant data handling, DPA available for all plans, and DPIA documentation available in the Trust Center.",
+                q: "Is EU AI Act compliance included in every plan?",
+                a: "Yes. Every plan includes the sha256-hashed audit trail, human-in-the-loop approval documentation, EU AI Act risk classification, and the compliance evidence required for Articles 13 and 14. The Trust Center at quantivis.io/trust-center shows the live compliance state — no login required.",
               },
               {
-                q: "Is there a setup fee?",
-                a: "No setup fees on Starter or Growth. Enterprise may include an optional onboarding engagement — discussed during the sales process.",
+                q: "What about customers outside the EU — Americas, Asia, Africa?",
+                a: "Quantivis works globally. The dashboard and all features are fully available regardless of location. For customers in the US, Canada, and UK, we can invoice in USD or GBP on Enterprise plans. For organisations in Asia and Africa, contact sales for regional pricing — the EU AI Act is increasingly being mirrored by regulators in Singapore (MAS), India (DPDP Act), and South Africa (POPIA), making governance infrastructure relevant globally.",
               },
               {
-                q: "Do you offer a DPA for enterprise procurement?",
-                a: "Yes. A standard DPA (EN) and AVV (DE) are available for download in the Trust Center. Custom DPAs are available on Enterprise plans.",
+                q: "Do you offer annual billing?",
+                a: "Yes — annual billing saves 20% (Essentials: €399/mo, Governance: €1,599/mo). Select Annual on the pricing page and we'll contact you within 24 hours to finalise the annual subscription. Annual price IDs are being activated in Stripe this week.",
+              },
+              {
+                q: "Is there a DPA for enterprise procurement?",
+                a: "Yes. A standard DPA (EN) and AVV (DE) are available for download in the Trust Center. Custom DPAs and MSAs are available on Enterprise plans.",
               },
               {
                 q: "What data do you store and where?",
-                a: "All data is stored in the EU (Frankfurt region) on Supabase infrastructure. We never use your data to train models. Full details in the Data Residency document.",
-              },
-              {
-                q: "How does the Bayesian calibration work?",
-                a: "Every decision you log includes a confidence estimate. When outcomes are recorded, the system compares your prediction to the actual result and adjusts your future confidence scores — reducing systematic overconfidence over time.",
+                a: "All data is stored in the EU (Frankfurt region) on Supabase infrastructure. We never use your data to train models. All subprocessors (Supabase, Cloudflare, PostHog EU, Sentry) are SOC 2 Type II certified.",
               },
             ].map(({ q, a }) => (
               <div key={q} className="glass-card p-6">
