@@ -177,18 +177,20 @@ const Login = forwardRef<HTMLDivElement>((_, ref) => {
     }, 15_000);
 
     try {
-      const { lovable } = await import("@/integrations/lovable");
       const existingSession = await finishIfSessionExists();
       if (existingSession) return;
-      const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
+      // Use Supabase native OAuth — bypasses Lovable's auth layer which shows Lovable branding.
+      // Always redirect to the production domain so users land on Quantivis, not Lovable.
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: "https://www.quantivis.io/auth/callback?next=" + encodeURIComponent(redirectTo),
+          queryParams: { access_type: "offline", prompt: "select_account" },
+        },
       });
       if (completed) return;
-      if (result.error) throw result.error;
+      if (error) throw error;
       logAuthEvent({ eventType: "login", metadata: { method: "google_redirect_started" } });
-      if (!result.redirected && !(await finishIfSessionExists())) {
-        navigate(redirectTo, { replace: true });
-      }
     } catch (err: unknown) {
       if (completed) return;
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
