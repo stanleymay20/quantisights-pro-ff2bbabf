@@ -13,6 +13,35 @@ const logStep = (step: string, details?: unknown) => {
   console.log(`[STRIPE-WEBHOOK] ${step}${details ? ` - ${JSON.stringify(details)}` : ""}`);
 };
 
+// Resolve subscription id from invoice across API versions.
+// Newer Stripe API moves it to invoice.parent.subscription_details.subscription.
+function getSubIdFromInvoice(invoice: any): string | null {
+  if (typeof invoice?.subscription === "string") return invoice.subscription;
+  const fromParent = invoice?.parent?.subscription_details?.subscription;
+  if (typeof fromParent === "string") return fromParent;
+  return null;
+}
+
+// Lookup auth user by email using GoTrue admin REST endpoint
+// (the JS client's listUsers does NOT support an email filter — it silently ignores it).
+async function findAuthUserByEmail(email: string): Promise<{ id: string; email: string } | null> {
+  const url = `${Deno.env.get("SUPABASE_URL")}/auth/v1/admin/users?email=${encodeURIComponent(email)}`;
+  const res = await fetch(url, {
+    headers: {
+      apikey: Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+      Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!}`,
+    },
+  });
+  if (!res.ok) {
+    logStep("admin/users lookup failed", { status: res.status });
+    return null;
+  }
+  const body = await res.json();
+  const users = body?.users ?? [];
+  const match = users.find((u: any) => u.email?.toLowerCase() === email.toLowerCase());
+  return match ? { id: match.id, email: match.email } : null;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return corsPreflightResponse(req);
   const corsHeaders = getCorsHeaders(req);
@@ -33,91 +62,69 @@ serve(async (req) => {
 
     logStep("Event received", { type: event.type, id: event.id });
 
-    // Idempotency: check if this Stripe event was already processed
-    const { data: existingEvent } = await supabase
-      .from("audit_log")
-      .select("id")
-      .eq("resource_type", "stripe_event")
-      .eq("resource_id", event.id)
-      .maybeSingle();
+    // Org-independent idempotency. Insert first; ON CONFLICT short-circuits duplicates.
+    const { error: dedupeError } = await supabase
+      .from("stripe_processed_events")
+      .insert({ event_id: event.id, event_type: event.type });
 
-    if (existingEvent) {
-      logStep("Duplicate event, skipping", { eventId: event.id });
-      return new Response(JSON.stringify({ received: true, duplicate: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      });
+    if (dedupeError) {
+      // Unique-violation = already processed
+      if ((dedupeError as any).code === "23505") {
+        logStep("Duplicate event, skipping", { eventId: event.id });
+        return new Response(JSON.stringify({ received: true, duplicate: true }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      }
+      // Any other DB error: fail loud so Stripe retries.
+      throw new Error(`Idempotency insert failed: ${dedupeError.message}`);
     }
-
-    // Record event processing in audit log for idempotency
-    // Resolve org from event metadata when possible; use system org as fallback
-    let auditOrgId: string | null = null;
-    const eventObj = event.data?.object as any;
-    if (eventObj?.metadata?.organization_id) {
-      auditOrgId = eventObj.metadata.organization_id;
-    }
-
-    // Defer audit_log insert until org is resolved (after processing)
-    const markEventProcessed = async (resolvedOrgId?: string) => {
-      const orgId = resolvedOrgId || auditOrgId;
-      if (!orgId) return; // Skip audit if no org can be resolved — idempotency still handled by check above
-      await supabase.from("audit_log").insert({
-        organization_id: orgId,
-        actor_type: "system",
-        action_type: "stripe_webhook",
-        resource_type: "stripe_event",
-        resource_id: event.id,
-        payload: { event_type: event.type },
-      }).then(({ error }) => {
-        if (error) logStep("Audit log insert warning", { error: error.message });
-      });
-    };
 
     const GRACE_PERIOD_DAYS = 7;
 
     switch (event.type) {
       case "invoice.payment_failed": {
         const invoice = event.data.object as Stripe.Invoice;
-        const subId = (invoice as any).subscription as string | null;
-        if (!subId) break;
+        const subId = getSubIdFromInvoice(invoice);
+        if (!subId) {
+          logStep("invoice.payment_failed: no subscription id on invoice");
+          break;
+        }
         const graceEnd = new Date(Date.now() + GRACE_PERIOD_DAYS * 24 * 60 * 60 * 1000).toISOString();
 
-        const { data: subRow, error } = await supabase
+        const { error } = await supabase
           .from("subscriptions")
           .update({
             payment_failed_at: new Date().toISOString(),
             grace_period_end: graceEnd,
             status: "past_due",
           })
-          .eq("stripe_subscription_id", subId)
-          .select("organization_id")
-          .maybeSingle();
+          .eq("stripe_subscription_id", subId);
 
         if (error) logStep("payment_failed update error", error);
         else logStep("Payment failed → grace period set", { subId, graceEnd });
-        await markEventProcessed(subRow?.organization_id);
         break;
       }
 
       case "invoice.payment_succeeded": {
         const invoice = event.data.object as Stripe.Invoice;
-        const subId = (invoice as any).subscription as string | null;
-        if (!subId) break;
+        const subId = getSubIdFromInvoice(invoice);
+        if (!subId) {
+          logStep("invoice.payment_succeeded: no subscription id on invoice");
+          break;
+        }
 
-        const { data: subRow, error } = await supabase
+        const { error } = await supabase
           .from("subscriptions")
           .update({
             payment_failed_at: null,
             grace_period_end: null,
             status: "active",
           })
-          .eq("stripe_subscription_id", subId)
-          .select("organization_id")
-          .maybeSingle();
+          .eq("stripe_subscription_id", subId);
 
         if (error) logStep("payment_succeeded update error", error);
         else logStep("Payment succeeded → grace period cleared", { subId });
-        await markEventProcessed(subRow?.organization_id);
         break;
       }
 
@@ -134,22 +141,7 @@ serve(async (req) => {
           break;
         }
 
-        // Look up user by email. Supabase admin SDK exposes listUsers with an email filter
-        // (getUserByEmail does not exist on the JS client, so the previous call always threw).
-        let authUser: any = null;
-        try {
-          const { data: list, error: listErr } = await supabase.auth.admin.listUsers({
-            page: 1,
-            perPage: 1,
-            // @ts-expect-error – `email` is a valid filter accepted by GoTrue admin API
-            email: customerEmail,
-          });
-          if (listErr) throw listErr;
-          authUser = list?.users?.find((u: any) => u.email?.toLowerCase() === customerEmail.toLowerCase()) ?? null;
-        } catch (e) {
-          logStep("listUsers email lookup failed for", { customerEmail, error: (e as Error).message });
-        }
-
+        const authUser = await findAuthUserByEmail(customerEmail);
         if (!authUser) {
           logStep("No auth user found for email", { customerEmail });
           break;
@@ -194,7 +186,6 @@ serve(async (req) => {
 
         if (error) logStep("Upsert error", error);
         else logStep("Subscription upserted", { tier, orgId: userProfile.organization_id });
-        await markEventProcessed(userProfile.organization_id);
         break;
       }
 
@@ -221,13 +212,6 @@ serve(async (req) => {
 
         if (error) logStep("Update error", error);
         else logStep("Subscription updated", { tier, status: sub.status });
-        // Resolve org from subscription record
-        const { data: subRecord } = await supabase
-          .from("subscriptions")
-          .select("organization_id")
-          .eq("stripe_subscription_id", sub.id)
-          .maybeSingle();
-        await markEventProcessed(subRecord?.organization_id);
         break;
       }
 
@@ -241,12 +225,6 @@ serve(async (req) => {
 
         if (error) logStep("Delete-update error", error);
         else logStep("Subscription canceled", { subId: sub.id });
-        const { data: cancelledSub } = await supabase
-          .from("subscriptions")
-          .select("organization_id")
-          .eq("stripe_subscription_id", sub.id)
-          .maybeSingle();
-        await markEventProcessed(cancelledSub?.organization_id);
         break;
       }
 
