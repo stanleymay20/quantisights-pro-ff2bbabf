@@ -12,21 +12,23 @@
  *
  * Governance:
  *   - Read-only REST calls (GET only)
- *   - Circuit breaker + throttle via connector-isolation / connector-throttle
- *   - Structured telemetry
+ *   - Caller auth: requireCronOrOrgMember (cron secret or verified org member)
+ *
+ * NOT YET WIRED (tracked as follow-up, present in other connectors like
+ * connector-hubspot-pull but not here): circuit breaker via connector-isolation,
+ * adaptive throttle/backoff via connector-throttle, structured logConnectorEvent
+ * telemetry. Do not assume these protections apply to this connector until
+ * they are actually imported and called below.
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { resolveConnectorCredentials } from "../_shared/connector-credentials.ts";
+import { requireCronOrOrgMember } from "../_shared/cron-or-user.ts";
+import { getCorsHeaders } from "../_shared/cors.ts";
 
-const cors = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
-
-function j(body: unknown, status = 200) {
+function j(body: unknown, status = 200, req?: Request) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...cors, "Content-Type": "application/json" },
+    headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
   });
 }
 
@@ -117,25 +119,34 @@ async function netsuiteGet(
 }
 
 Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
+  if (req.method === "OPTIONS") return new Response("ok", { headers: getCorsHeaders(req) });
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const svc = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
 
   try {
     const { connector_id } = await req.json().catch(() => ({}));
-    if (!connector_id) return j({ error: "connector_id required" }, 400);
+    if (!connector_id) return j({ error: "connector_id required" }, 400, req);
 
     const { data: connector, error: cErr } = await svc
       .from("data_connectors").select("*").eq("id", connector_id).single();
-    if (cErr || !connector) return j({ error: "connector not found" }, 404);
+    if (cErr || !connector) return j({ error: "connector not found" }, 404, req);
 
     const orgId = connector.organization_id;
+
+    // Auth guard: this function writes directly to the metrics table using the
+    // service role key, bypassing RLS. Without this check, anyone who learns or
+    // guesses a connector_id could trigger a sync and have arbitrary NetSuite
+    // data written into another org's metrics. Allows either the scheduler's
+    // cron secret or a verified user who is a member of the connector's org.
+    const guard = await requireCronOrOrgMember(req, orgId);
+    if (!guard.ok) return guard.response;
+
     const creds = await resolveConnectorCredentials(svc, connector_id);
     const { accountId, consumerKey, consumerSecret, tokenId, tokenSecret } = creds as Record<string, string>;
 
     if (!accountId || !consumerKey || !consumerSecret || !tokenId || !tokenSecret) {
-      return j({ error: "NetSuite credentials incomplete. Required: accountId, consumerKey, consumerSecret, tokenId, tokenSecret" }, 412);
+      return j({ error: "NetSuite credentials incomplete. Required: accountId, consumerKey, consumerSecret, tokenId, tokenSecret" }, 412, req);
     }
 
     const errors: string[] = [];
@@ -229,9 +240,9 @@ Deno.serve(async (req: Request) => {
         .eq("id", connector.data_source_id);
     }
 
-    return j({ success: true, records: metrics.length, errors });
+    return j({ success: true, records: metrics.length, errors }, 200, req);
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
-    return j({ error: msg }, 500);
+    return j({ error: msg }, 500, req);
   }
 });

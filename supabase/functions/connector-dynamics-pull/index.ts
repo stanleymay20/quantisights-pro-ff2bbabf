@@ -8,23 +8,23 @@
  * Objects synced via Dataverse Web API:
  *   - opportunities (pipeline, closed won revenue)
  *   - accounts (customer count)
- *   - leads
- *   - systemusers (for owner resolution)
+ *
+ * NOT YET IMPLEMENTED (tracked as follow-up): leads, systemusers (owner
+ * resolution). Do not assume these are synced until the corresponding
+ * dynamicsGet() calls are actually added below.
  *
  * Canonical metrics:
- *   revenue (closed won), pipeline_value, opportunities, leads, customers
+ *   revenue (closed won), pipeline_value, opportunities, customers
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { resolveConnectorCredentials } from "../_shared/connector-credentials.ts";
+import { requireCronOrOrgMember } from "../_shared/cron-or-user.ts";
+import { getCorsHeaders } from "../_shared/cors.ts";
 
-const cors = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
-function j(body: unknown, status = 200) {
+function j(body: unknown, status = 200, req?: Request) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...cors, "Content-Type": "application/json" },
+    headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
   });
 }
 
@@ -71,7 +71,7 @@ async function dynamicsGet(
 }
 
 Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
+  if (req.method === "OPTIONS") return new Response("ok", { headers: getCorsHeaders(req) });
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -79,18 +79,27 @@ Deno.serve(async (req: Request) => {
 
   try {
     const { connector_id } = await req.json().catch(() => ({}));
-    if (!connector_id) return j({ error: "connector_id required" }, 400);
+    if (!connector_id) return j({ error: "connector_id required" }, 400, req);
 
     const { data: connector, error: cErr } = await svc
       .from("data_connectors").select("*").eq("id", connector_id).single();
-    if (cErr || !connector) return j({ error: "connector not found" }, 404);
+    if (cErr || !connector) return j({ error: "connector not found" }, 404, req);
 
     const orgId = connector.organization_id;
+
+    // Auth guard: this function writes directly to the metrics table using the
+    // service role key, bypassing RLS. Without this check, anyone who learns or
+    // guesses a connector_id could trigger a sync and have arbitrary Dynamics
+    // data written into another org's metrics. Allows either the scheduler's
+    // cron secret or a verified user who is a member of the connector's org.
+    const guard = await requireCronOrOrgMember(req, orgId);
+    if (!guard.ok) return guard.response;
+
     const creds = await resolveConnectorCredentials(svc, connector_id);
     const { tenantId, clientId, clientSecret, instanceUrl } = creds as Record<string, string>;
 
     if (!tenantId || !clientId || !clientSecret || !instanceUrl) {
-      return j({ error: "Dynamics credentials incomplete: tenantId, clientId, clientSecret, instanceUrl required" }, 412);
+      return j({ error: "Dynamics credentials incomplete: tenantId, clientId, clientSecret, instanceUrl required" }, 412, req);
     }
 
     const errors: string[] = [];
@@ -114,7 +123,7 @@ Deno.serve(async (req: Request) => {
       const resource = instanceUrl.replace(/\/$/, "");
       token = await getAzureADToken(tenantId, clientId, clientSecret, resource);
     } catch (e) {
-      return j({ error: `Authentication failed: ${e instanceof Error ? e.message : String(e)}` }, 401);
+      return j({ error: `Authentication failed: ${e instanceof Error ? e.message : String(e)}` }, 401, req);
     }
 
     // Opportunities — pipeline value and closed-won revenue
@@ -185,9 +194,9 @@ Deno.serve(async (req: Request) => {
       updated_at: now.toISOString(),
     }).eq("id", connector_id);
 
-    return j({ success: true, records: metrics.length, errors });
+    return j({ success: true, records: metrics.length, errors }, 200, req);
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
-    return j({ error: msg }, 500);
+    return j({ error: msg }, 500, req);
   }
 });

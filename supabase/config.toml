@@ -23,6 +23,12 @@ project_id = "itpwpnwzzitkelffttyx"
     verify_jwt = false
   [functions.connector-pull]
     verify_jwt = false
+  [functions.connector-dynamics-pull]
+    verify_jwt = false
+  [functions.connector-netsuite-pull]
+    verify_jwt = false
+  [functions.connector-sheets-pull]
+    verify_jwt = false
   [functions.convergence-reconcile]
     verify_jwt = false
   [functions.counterfactual-explain]
