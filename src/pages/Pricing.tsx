@@ -328,7 +328,7 @@ const Pricing = () => {
               },
               {
                 q: "Do you offer annual billing?",
-                a: "Yes — annual billing saves 20% (Essentials: €399/mo, Governance: €1,599/mo). Select Annual on the pricing page and we'll contact you within 24 hours to finalise the annual subscription. Annual price IDs are being activated in Stripe this week.",
+                a: "Yes — annual billing saves 20% (Essentials: €399/mo billed yearly = €4,788/yr; Governance: €1,599/mo billed yearly = €19,188/yr). Toggle Annual on the pricing page and you'll be charged the annual amount directly at checkout.",
               },
               {
                 q: "Is there a DPA for enterprise procurement?",
