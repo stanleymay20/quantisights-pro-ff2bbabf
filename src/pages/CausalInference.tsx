@@ -100,6 +100,18 @@ const CausalInference = () => {
             </Card>
           )}
 
+          {loading && (
+            <Card className="border-dashed border-border/50">
+              <CardContent className="p-12 text-center space-y-4">
+                <Loader2 className="w-10 h-10 text-primary mx-auto animate-spin" />
+                <h2 className="text-lg font-semibold">Building causal model…</h2>
+                <p className="text-sm text-muted-foreground max-w-lg mx-auto">
+                  Running temporal precedence analysis across your metrics to identify directional cause-and-effect relationships. This can take up to 30 seconds.
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
           {result?.insufficient_data && (
             <Card className="border-warning/30">
               <CardContent className="p-6 flex items-center gap-4">
