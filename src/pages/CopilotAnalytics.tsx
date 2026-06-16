@@ -8,27 +8,35 @@ import { useMemo, useEffect, useState } from "react";
 import { SidebarMobileToggle } from "@/components/layout/ProtectedShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { BarChart3, MessageSquareText, TrendingUp, Target, RefreshCw } from "lucide-react";
+import { BarChart3, MessageSquareText, TrendingUp, Target, RefreshCw, ShieldAlert, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getCopilotQueryLog, type CopilotQueryEvent } from "@/hooks/useCopilotTelemetry";
 import Phase6Readiness from "@/components/copilot/Phase6Readiness";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrganization } from "@/hooks/useOrganization";
+import { usePermissions } from "@/hooks/usePermissions";
 import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 
 export default function CopilotAnalytics() {
   const { currentOrgId } = useOrganization();
+  const { orgRole, isLoading: roleLoading } = usePermissions();
   const [queries, setQueries] = useState<CopilotQueryEvent[]>([]);
   const [decisionsWithEvidence, setDecisionsWithEvidence] = useState(0);
   const [totalDecisions, setTotalDecisions] = useState(0);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  useEffect(() => {
-    setQueries(getCopilotQueryLog());
-  }, [refreshKey]);
+  const canView = useMemo(
+    () => orgRole === "owner" || orgRole === "admin",
+    [orgRole]
+  );
 
   useEffect(() => {
-    if (!currentOrgId) return;
+    if (!canView) return;
+    setQueries(getCopilotQueryLog(currentOrgId ?? null));
+  }, [refreshKey, canView]);
+
+  useEffect(() => {
+    if (!currentOrgId || !canView) return;
     (async () => {
       const { data } = await supabase
         .from("decision_ledger")
@@ -64,6 +72,36 @@ export default function CopilotAnalytics() {
 
     return { total, accuracy, topIntents, failedIntents: failedIntents.length, recentQueries };
   }, [queries]);
+
+  if (roleLoading) {
+    return (
+      <div className="min-h-dvh flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+      </div>
+    );
+  }
+
+  if (!canView) {
+    return (
+      <div className="container mx-auto p-6 flex items-center justify-center min-h-[60vh]">
+        <Card className="max-w-md w-full">
+          <CardHeader>
+            <div className="flex items-center gap-3 mb-1">
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <ShieldAlert className="w-5 h-5 text-primary" />
+              </div>
+              <CardTitle>Owner/Admin Access Required</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground text-sm leading-relaxed">
+              Copilot Analytics shows query telemetry for everyone in your organization and is restricted to <strong>Owner</strong> and <strong>Admin</strong> roles. Contact your organization owner if you need access.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <SectionErrorBoundary sectionName="Copilot Analytics">

@@ -9,6 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, Clock, Users, MessageSquareText, Shield, Target } from "lucide-react";
 import { getCopilotQueryLog } from "@/hooks/useCopilotTelemetry";
+import { useOrganization } from "@/hooks/useOrganization";
 
 interface Phase6ReadinessProps {
   decisionsWithEvidence?: number;
@@ -23,9 +24,10 @@ export default function Phase6Readiness({
   weeklyActiveUsers = 0,
   gate4Passed = false,
 }: Phase6ReadinessProps) {
+  const { currentOrgId } = useOrganization();
 
   const gates = useMemo(() => {
-    const queryLog = getCopilotQueryLog();
+    const queryLog = getCopilotQueryLog(currentOrgId ?? null);
     const totalQueries = queryLog.length;
     const knownQueries = queryLog.filter(q => q.detectedIntent !== "unknown").length;
     const routingAccuracy = totalQueries > 0 ? Math.round((knownQueries / totalQueries) * 100) : 0;
@@ -69,7 +71,7 @@ export default function Phase6Readiness({
         note: "Manual user test with 5 procurement personas required.",
       },
     ];
-  }, [decisionsWithEvidence, totalDecisions, weeklyActiveUsers, gate4Passed]);
+  }, [decisionsWithEvidence, totalDecisions, weeklyActiveUsers, gate4Passed, currentOrgId]);
 
   const gatesMet = gates.filter(g => g.met).length;
 

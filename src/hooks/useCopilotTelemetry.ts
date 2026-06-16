@@ -65,21 +65,42 @@ export function detectIntent(query: string): { intent: string; destination: stri
 }
 
 // ─── Storage ──────────────────────────────────────────────────────────────────
-const STORAGE_KEY = "quantivis_copilot_queries";
+// Scoped per-org (not a single global key) to prevent query logs from one
+// organization leaking into another when a user is a member of multiple orgs
+// and switches between them on the same browser. Also enforces a 30-day
+// expiry, consistent with the retention period this app's own Data Retention
+// Policy (/data-retention) commits to for "Copilot messages" — without this,
+// raw executive query text would persist in localStorage indefinitely with
+// no encryption and no relationship to the org's actual retention settings.
+const STORAGE_PREFIX = "quantivis_copilot_queries";
 const MAX_STORED = 500;
+const MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000; // 30 days, matches published retention policy
 
-export function getCopilotQueryLog(): CopilotQueryEvent[] {
+function storageKey(orgId: string | null): string {
+  return orgId ? `${STORAGE_PREFIX}_${orgId}` : STORAGE_PREFIX;
+}
+
+function pruneExpired(events: CopilotQueryEvent[]): CopilotQueryEvent[] {
+  const cutoff = Date.now() - MAX_AGE_MS;
+  return events.filter(e => {
+    const t = new Date(e.timestamp).getTime();
+    return Number.isFinite(t) && t >= cutoff;
+  });
+}
+
+export function getCopilotQueryLog(orgId: string | null = null): CopilotQueryEvent[] {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
+    const raw = localStorage.getItem(storageKey(orgId));
+    const parsed: CopilotQueryEvent[] = raw ? JSON.parse(raw) : [];
+    return pruneExpired(parsed);
   } catch { return []; }
 }
 
-function appendToLog(event: CopilotQueryEvent) {
+function appendToLog(orgId: string | null, event: CopilotQueryEvent) {
   try {
-    const existing = getCopilotQueryLog();
+    const existing = getCopilotQueryLog(orgId);
     const updated = [event, ...existing].slice(0, MAX_STORED);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    localStorage.setItem(storageKey(orgId), JSON.stringify(updated));
   } catch {}
 }
 
@@ -112,7 +133,7 @@ export function useCopilotTelemetry() {
       createdBriefId: createdBriefId ?? null,
     };
 
-    appendToLog(event);
+    appendToLog(currentOrgId ?? null, event);
     return { intent, destination: finalDestination };
   }, [user?.id, currentOrgId]);
 
