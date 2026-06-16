@@ -70,12 +70,13 @@ const DATA_OPTIONS = [
 
 const Onboarding = () => {
   const { user } = useAuth();
-  const { currentOrgId, currentOrg } = useOrganization();
+  const { currentOrgId, currentOrg, loading: orgLoading } = useOrganization();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [checkingStatus, setCheckingStatus] = useState(true);
 
   // Step 1 - Org profile
   const [orgName, setOrgName] = useState("");
@@ -96,6 +97,32 @@ const Onboarding = () => {
   useEffect(() => {
     if (currentOrg) setOrgName(currentOrg.name);
   }, [currentOrg]);
+
+  // Guard: if this org has already completed onboarding, don't show the wizard again.
+  // Without this, navigating to /onboarding directly (bookmark, back button, stale link)
+  // would always restart from Step 1 even for fully set-up organizations.
+  useEffect(() => {
+    if (!currentOrgId) {
+      if (!orgLoading) setCheckingStatus(false);
+      return;
+    }
+    let active = true;
+    supabase
+      .from("organizations")
+      .select("onboarding_completed")
+      .eq("id", currentOrgId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!active) return;
+        if (data?.onboarding_completed) {
+          sessionStorage.setItem(`onboarding_checked_${currentOrgId}`, "done");
+          navigate("/executive", { replace: true });
+        } else {
+          setCheckingStatus(false);
+        }
+      });
+    return () => { active = false; };
+  }, [currentOrgId, orgLoading, navigate]);
 
   useEffect(() => {
     supabase
@@ -190,21 +217,40 @@ const Onboarding = () => {
 
   const totalSteps = 5;
 
+  if (checkingStatus) {
+    return (
+      <div className="min-h-dvh bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-dvh bg-background flex flex-col">
       <div className="border-b border-border/30 px-6 py-4 flex items-center justify-between bg-background/60 backdrop-blur-sm">
-        <img src={logo} alt="Quantivis" className="h-8" />
-        <div className="flex items-center gap-2">
-          {Array.from({ length: totalSteps }).map((_, i) => (
-            <div
-              key={i}
-              className={`h-2 rounded-full transition-all duration-300 ${
-                i + 1 <= step ? "w-8 bg-primary" : "w-2 bg-muted"
-              }`}
-            />
-          ))}
+        <div className="flex-1 flex items-center">
+          <button
+            onClick={() => navigate("/executive")}
+            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            Exit setup
+          </button>
         </div>
-        <span className="text-sm text-muted-foreground">Step {step} of {totalSteps}</span>
+        <img src={logo} alt="Quantivis" className="h-8" />
+        <div className="flex-1 flex items-center justify-end gap-4">
+          <div className="flex items-center gap-2">
+            {Array.from({ length: totalSteps }).map((_, i) => (
+              <div
+                key={i}
+                className={`h-2 rounded-full transition-all duration-300 ${
+                  i + 1 <= step ? "w-8 bg-primary" : "w-2 bg-muted"
+                }`}
+              />
+            ))}
+          </div>
+          <span className="text-sm text-muted-foreground whitespace-nowrap">Step {step} of {totalSteps}</span>
+        </div>
       </div>
 
       <main className="flex-1 flex items-center justify-center p-8">
