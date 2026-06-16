@@ -22,7 +22,8 @@ for fn in \
   connector-sap-pull \
   connector-scheduler \
   morning-brief \
-  executive-brief-generator; do
+  executive-brief-generator \
+  auth-rate-limiter; do
   echo "  → $fn"
   supabase functions deploy $fn --project-ref $PROJECT
 done

@@ -60,13 +60,14 @@ Deno.serve(async (req: Request) => {
     const now = Math.floor(Date.now() / 1000);
 
     if (action === "record_failure") {
-      // Record a failed attempt
+      // Record a failed attempt. The increment_rate_limit RPC is the single
+      // source of truth for the sliding window — it inserts on first failure
+      // and atomically increments-or-resets on conflict. A prior version of
+      // this handler also ran a plain upsert before the RPC call, which
+      // unconditionally reset attempts=1/window_start=now on every call and
+      // silently defeated the email-based lockout (it could never accumulate
+      // past 1 attempt). Do not reintroduce that upsert.
       if (email) {
-        await svc.from("auth_rate_limits").upsert(
-          { key: `email:${email.toLowerCase()}`, attempts: 1, window_start: now, window_seconds: EMAIL_WINDOW_SECONDS },
-          { onConflict: "key", ignoreDuplicates: false }
-        ).then(() => {});
-        // Increment via RPC if upsert doesn't support increment
         await svc.rpc("increment_rate_limit", {
           _key: `email:${email.toLowerCase()}`,
           _window_seconds: EMAIL_WINDOW_SECONDS,

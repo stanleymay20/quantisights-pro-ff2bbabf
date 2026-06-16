@@ -76,10 +76,31 @@ const Login = forwardRef<HTMLDivElement>((_, ref) => {
       toast({ title: "Too many attempts", description: `Please wait ${waitSeconds}s before trying again.`, variant: "destructive" });
       return;
     }
+
+    // Server-side rate limit check — protects against direct API abuse that
+    // bypasses the client-side throttle entirely (curl, scripted attacks).
+    // Fails open on error so a rate-limiter outage never blocks real logins.
+    try {
+      const { data: rateCheck } = await supabase.functions.invoke("auth-rate-limiter", {
+        body: { email, action: "check" },
+      });
+      if (rateCheck && rateCheck.allowed === false) {
+        toast({
+          title: "Too many attempts",
+          description: rateCheck.message || `Please wait before trying again.`,
+          variant: "destructive",
+        });
+        return;
+      }
+    } catch (rateLimitErr) {
+      console.warn("[login] Rate limiter check failed, proceeding:", rateLimitErr);
+    }
+
     setIsLoading(true);
     try {
       await signIn(email, password);
       throttle.recordSuccess();
+      supabase.functions.invoke("auth-rate-limiter", { body: { email, action: "record_success" } }).catch(() => {});
       trackLogin("password");
       // Identify user for PostHog cohort analysis (no PII — only anonymous ID)
       const { data: { session } } = await supabase.auth.getSession();
@@ -124,7 +145,8 @@ const Login = forwardRef<HTMLDivElement>((_, ref) => {
       navigate(redirectTo);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Unknown error";
-      throttle.recordFailure(); // increment failed-attempt counter
+      throttle.recordFailure(); // increment failed-attempt counter (client-side UX)
+      supabase.functions.invoke("auth-rate-limiter", { body: { email, action: "record_failure" } }).catch(() => {}); // server-side lockout (fire-and-forget)
       logAuthEvent({ eventType: "failed_login", metadata: { email, reason: msg } });
       toast({ title: "Login failed", description: msg, variant: "destructive" });
     } finally {

@@ -14,14 +14,17 @@ import { useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrganization } from "@/hooks/useOrganization";
 import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "@/hooks/use-toast";
 
 const DEFAULT_TIMEOUT_MINUTES = 60;
+const WARNING_BEFORE_MS = 2 * 60 * 1000; // show warning 2 minutes before logout
 const ACTIVITY_EVENTS = ["mousemove", "keydown", "click", "touchstart", "scroll"] as const;
 
 export const useIdleTimeout = () => {
   const { currentOrgId } = useOrganization();
   const { user } = useAuth();
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const warningTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const timeoutMsRef = useRef(DEFAULT_TIMEOUT_MINUTES * 60 * 1000);
 
   // Load org session timeout setting
@@ -42,9 +45,24 @@ export const useIdleTimeout = () => {
 
   const resetTimer = useCallback(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
+    if (warningTimerRef.current) clearTimeout(warningTimerRef.current);
+
+    const timeoutMs = timeoutMsRef.current;
+    const warningDelay = Math.max(timeoutMs - WARNING_BEFORE_MS, 0);
+
+    // Show a warning before logging out, unless the timeout window is too short for one
+    if (warningDelay > 0) {
+      warningTimerRef.current = setTimeout(() => {
+        toast({
+          title: "You'll be signed out soon",
+          description: "Your session has been inactive. Move your mouse or click anywhere to stay signed in.",
+        });
+      }, warningDelay);
+    }
+
     timerRef.current = setTimeout(async () => {
       await supabase.auth.signOut();
-    }, timeoutMsRef.current);
+    }, timeoutMs);
   }, []);
 
   useEffect(() => {
@@ -58,6 +76,7 @@ export const useIdleTimeout = () => {
 
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
+      if (warningTimerRef.current) clearTimeout(warningTimerRef.current);
       ACTIVITY_EVENTS.forEach(event =>
         window.removeEventListener(event, resetTimer)
       );
