@@ -166,7 +166,7 @@ const advancedGroups: AdvancedGroup[] = [
       { icon: Shield,       label: "Command View",       path: "/governance" },
       { icon: CheckSquare,  label: "Compliance",         path: "/compliance" },
       { icon: Scale,        label: "Maturity",           path: "/governance-maturity" },
-      { icon: Scale,        label: "Fairness Observ.",   path: "/fairness-observability" },
+      { icon: Scale,        label: "Fairness Observ.",   path: "/fairness" },
       { icon: Shield,       label: "Trust Center",       path: "/trust-center" },
       { icon: Shield,       label: "Security Overview",  path: "/security-overview" },
       { icon: FileText,     label: "Procurement Pack",   path: "/procurement-pack" },
@@ -200,7 +200,7 @@ const advancedGroups: AdvancedGroup[] = [
       { icon: Scale,     label: "Governance Audit",      path: "/admin/governance-audit" },
       { icon: Scale,     label: "Governance Simulation", path: "/admin/governance-simulation" },
       { icon: BookOpen,  label: "Localization Audit",    path: "/admin/localization-audit" },
-      { icon: Shield,    label: "SSO Config",            path: "/sso-config" },
+      { icon: Shield,    label: "SSO Config",            path: "/sso" },
     ],
   },
 ];
