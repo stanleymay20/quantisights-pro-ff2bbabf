@@ -47,9 +47,8 @@ export const TIERS = {
     price_annual: 1599,     // €1,599/mo billed annually = €19,188/yr (20% off €23,988)
     currency: "€",
     interval: "month",
-    // ACTION REQUIRED: Replace with new Stripe price IDs at the new price points
-    price_id: "price_1TCfwlJYFIBeCvefvzY9z5m9",          // TODO: update to €1,999/mo price
-    price_id_annual: null as string | null,                // TODO: create €1,599/mo annual price
+    price_id: "price_1TCfwlJYFIBeCvefvzY9z5m9",          // €1,999/mo
+    price_id_annual: "price_1TiqiLJYFIBeCvef3CEFlzIL" as string | null,  // €19,188/yr = €1,599/mo billed yearly
     product_id: "prod_UB202T0yfALsxx",
     tagline: "Full decision intelligence OS for mid-market operations and leadership teams",
     features: [
