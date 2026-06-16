@@ -2,7 +2,7 @@ import { ReactNode } from "react";
 import { useActiveDataContext } from "@/hooks/useActiveDataContext";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Database, Upload, Sparkles } from "lucide-react";
+import { Database, Upload, Sparkles, Loader2 } from "lucide-react";
 
 interface DatasetRequiredProps {
   children: ReactNode;
@@ -21,8 +21,21 @@ const DatasetRequired = ({
   moduleName = "This feature",
   moduleDescription,
 }: DatasetRequiredProps) => {
-  const { hasOrg, hasProject, hasDataset } = useActiveDataContext();
+  const { hasOrg, hasProject, hasDataset, contextLoading } = useActiveDataContext();
   const navigate = useNavigate();
+
+  // The org/workspace/project/dataset context resolves asynchronously after
+  // this component mounts. Without this guard, a user who genuinely has an
+  // active dataset would still see a false "needs data to work" empty state
+  // on every cold navigation, for as long as those queries are in flight —
+  // hasOrg/hasProject/hasDataset all default to false until they resolve.
+  if (contextLoading) {
+    return (
+      <div className="flex-1 flex items-center justify-center p-8">
+        <Loader2 className="w-6 h-6 text-muted-foreground animate-spin" />
+      </div>
+    );
+  }
 
   if (!hasOrg || !hasProject || !hasDataset) {
     const headline = !hasDataset
