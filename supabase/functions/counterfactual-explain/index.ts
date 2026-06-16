@@ -124,6 +124,7 @@ serve(async (req) => {
           headers: { Authorization: `Bearer ${lovableApiKey}`, "Content-Type": "application/json" },
           body: JSON.stringify({
             model: "google/gemini-3-flash-preview",
+            response_format: { type: "json_object" },
             messages: [
               {
                 role: "system",
@@ -142,13 +143,26 @@ Also provide a single-sentence counterfactual scenario description. Format as JS
         });
         if (aiResp.ok) {
           const aiData = await aiResp.json();
-          const content = aiData.choices?.[0]?.message?.content || "";
+          const rawContent = aiData.choices?.[0]?.message?.content || "";
+          // Models frequently wrap JSON output in a ```json ... ``` markdown
+          // fence even when explicitly asked for raw JSON. JSON.parse() then
+          // throws, and the previous catch-block fallback showed the entire
+          // raw fenced response (fence markers, literal \n escapes and all)
+          // directly to the user as the "narrative" — strip any fence first.
+          const content = rawContent
+            .trim()
+            .replace(/^```(?:json)?\s*/i, "")
+            .replace(/\s*```$/, "")
+            .trim();
           try {
             const parsed = JSON.parse(content);
             narrative = parsed.narrative || content;
             counterfactualScenario = parsed.counterfactual_scenario || "";
           } catch {
-            narrative = content;
+            // Still not valid JSON after stripping fences — fall back to the
+            // de-fenced text rather than raw JSON-with-markdown, so a parse
+            // failure degrades to plain prose instead of visible JSON syntax.
+            narrative = content || rawContent;
             counterfactualScenario = "Alternative scenario where key factors shift beyond threshold";
           }
         }
