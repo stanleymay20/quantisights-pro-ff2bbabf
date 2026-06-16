@@ -25,9 +25,8 @@ export const TIERS = {
     price_annual: 399,      // €399/mo billed annually = €4,788/yr (20% off €5,988)
     currency: "€",
     interval: "month",
-    // ACTION REQUIRED: Replace with new Stripe price IDs at the new price points
-    price_id: "price_1T6Ji8JYFIBeCvef4RkHSCfw",          // TODO: update to €499/mo price
-    price_id_annual: null as string | null,                // TODO: create €399/mo annual price
+    price_id: "price_1T6Ji8JYFIBeCvef4RkHSCfw",          // €499/mo
+    price_id_annual: "price_1TiqhyJYFIBeCvefcRRwNfor" as string | null,  // €4,788/yr = €399/mo billed yearly
     product_id: "prod_U4SdCda1dcZAtu",
     tagline: "Decision governance for teams that need board-defensible AI decisions",
     features: [
