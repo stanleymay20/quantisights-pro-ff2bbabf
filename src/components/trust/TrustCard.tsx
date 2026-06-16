@@ -147,6 +147,12 @@ export default function TrustCard({ data, className, compact = false }: TrustCar
   const sources = normaliseEvidenceSources(data.evidenceSources);
   const gov = govBadge(data.governanceStatus);
   const freshnessLabel = formatDate(data.datasetFreshnessAt);
+  // Same heuristic-detection rule used by ConfidenceBadge.tsx and the trust
+  // adapter, kept consistent here so TrustCard doesn't silently show a
+  // heuristic-derived confidence percentage as if it were fully calibrated.
+  const isHeuristicConfidence = Boolean(
+    data.confidenceCapReason && String(data.confidenceCapReason).toLowerCase().includes("heuristic")
+  );
 
   return (
     <div className={cn("border border-border/40 rounded-lg overflow-hidden", className)}>
@@ -202,6 +208,11 @@ export default function TrustCard({ data, className, compact = false }: TrustCar
                     <span className={cn("text-xs font-medium", confidenceColor(data.confidence))}>
                       {confidenceLabel(data.confidence)}
                     </span>
+                    {isHeuristicConfidence && (
+                      <span className="text-[10px] text-amber-600 dark:text-amber-400" title="Heuristic estimate — not a fully calibrated statistical confidence">
+                        ⚠ heuristic
+                      </span>
+                    )}
                   </div>
                   <Progress value={data.confidence} className="h-1.5" />
                   {data.confidenceCapReason && (
