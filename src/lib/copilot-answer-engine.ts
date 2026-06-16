@@ -50,7 +50,16 @@ function metricDisplayName(type: string) {
 }
 
 function truncate(s: string, n = 80) {
-  return s.length > n ? s.slice(0, n) + "…" : s;
+  if (s.length <= n) return s;
+  // Break at the last whitespace before the limit rather than mid-word —
+  // a hard slice() was producing garbled output like "...exhibited a
+  // substantial tota…" (cut inside "total") when concatenated with a
+  // trailing label elsewhere in the UI. Falls back to the hard cut only if
+  // there's no reasonable word boundary (e.g. one long unbroken token).
+  const slice = s.slice(0, n);
+  const lastSpace = slice.lastIndexOf(" ");
+  const cut = lastSpace > n * 0.6 ? slice.slice(0, lastSpace) : slice;
+  return cut + "…";
 }
 
 function topCriticalInsights(insights: Insight[], n = 3) {
@@ -183,7 +192,7 @@ function answerRevenue(metrics: MetricTypeSummary[], insights: Insight[]): Copil
         headline: "Revenue signals from your decision intelligence",
         summary: "Your revenue metrics aren't connected yet, but these signals from your decision data are relevant:",
         lines: revenueInsights.map(i => ({
-          label: truncate(i.message, 70),
+          label: truncate(i.message, 110),
           value: i.severity,
           alert: i.severity === "critical" || i.severity === "high",
         })),

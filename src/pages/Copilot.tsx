@@ -145,7 +145,13 @@ const Copilot = () => {
         status: generated.dataSource === "live" ? "answered" : "needs_data",
         title: generated.headline,
         summary: generated.summary + (generated.lines.length > 0
-          ? "\n\n" + generated.lines.map(l => `${l.label}: ${l.value}`).join("  ·  ")
+          ? "\n\n" + generated.lines.map(l => {
+              // l.label may already end in an ellipsis from truncate() — joining
+              // straight into ": value" produced garbled output like "...tota…: high".
+              // A space before the colon keeps it readable in either case.
+              const sep = l.label.endsWith("…") ? " : " : ": ";
+              return `${l.label}${sep}${l.value}`;
+            }).join("  ·  ")
           : ""),
         action: generated.destinationLabel,
         confidence: generated.confidence,
