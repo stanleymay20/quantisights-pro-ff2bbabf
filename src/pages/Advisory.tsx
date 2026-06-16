@@ -23,6 +23,8 @@ import ConfidenceBadge, { resolveConfidence } from "@/components/ConfidenceBadge
 import { useDecisionContexts } from "@/hooks/useDecisionContexts";
 import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 import DualLayerEvidencePanel from "@/components/dashboard/DualLayerEvidencePanel";
+import TrustStrip from "@/components/trust/TrustStrip";
+import { trustFromAdvisory } from "@/components/trust/trust-adapter";
 
 interface Advisory {
   id: string;
@@ -98,6 +100,8 @@ const AdvisoryPage = () => {
   const [advisories, setAdvisories] = useState<Advisory[]>([]);
   const [instances, setInstances] = useState<AdvisoryInstance[]>([]);
   const [loading, setLoading] = useState(false);
+  const [hasRun, setHasRun] = useState(false);
+  const [timedOut, setTimedOut] = useState(false);
   const [criticalCount, setCriticalCount] = useState(0);
   const [dataSufficiency, setDataSufficiency] = useState<string | null>(null);
   const [sampleSize, setSampleSize] = useState<number>(0);
@@ -121,6 +125,12 @@ const AdvisoryPage = () => {
   const fetchAdvisories = useCallback(async () => {
     if (!currentOrgId || !activeDatasetId) return;
     setLoading(true);
+    setTimedOut(false);
+    // Client-side 20s hard cap so the spinner never runs forever
+    const clientTimeout = setTimeout(() => {
+      setLoading(false);
+      setTimedOut(true);
+    }, 20_000);
     try {
       const { data, error } = await invokeWithRetry<Record<string, unknown>>("prescriptive-advisory", {
         body: {
@@ -128,29 +138,39 @@ const AdvisoryPage = () => {
           dataset_id: activeDatasetId,
           ...(activeContext?.id ? { decision_context_id: activeContext.id } : {}),
         },
-      });
+      }, { maxAttempts: 1, timeoutMs: 18_000 });
+      clearTimeout(clientTimeout);
       if (error) throw error;
       if (data?.error) throw new Error(data.error as string);
       setAdvisories((data?.advisories as Advisory[]) || []);
       setCriticalCount((data?.critical_count as number) || 0);
       setDataSufficiency((data?.data_sufficiency as string) || null);
       setSampleSize((data?.sample_size as number) || 0);
+      setHasRun(true);
       // Refetch instances since the edge function inserts new ones
       fetchInstances();
       // Embed new advisories into institutional memory (non-blocking)
       if (currentOrgId) embedAdvisoriesBatch(currentOrgId);
     } catch (err: unknown) {
+      clearTimeout(clientTimeout);
       const msg = err instanceof Error ? err.message : "Unknown error";
-      toast({ title: "Failed to load advisories", description: msg, variant: "destructive" });
+      const isTimeout = msg.includes("timed out");
+      if (isTimeout) {
+        setTimedOut(true);
+      } else {
+        toast({ title: "Failed to load advisories", description: msg, variant: "destructive" });
+      }
     } finally {
+      clearTimeout(clientTimeout);
       setLoading(false);
     }
   }, [currentOrgId, activeDatasetId, activeContext?.id, toast, fetchInstances]);
 
-  // Only auto-fetch on org/dataset change (not on context change to avoid double-fire)
+  // Load existing instances immediately on mount — no auto-fire of the expensive edge function.
+  // Users can manually trigger "Run Analysis" from the Live Analysis tab.
   useEffect(() => {
     if (currentOrgId && activeDatasetId) {
-      fetchAdvisories();
+      fetchInstances();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentOrgId, activeDatasetId]);
@@ -235,6 +255,10 @@ const AdvisoryPage = () => {
                     ))}
                   </ol>
                 </div>
+                <TrustStrip
+                  record={trustFromAdvisory(adv, currentOrgId)}
+                  variant="compact"
+                />
               </motion.div>
             )}
           </CardContent>
@@ -247,7 +271,7 @@ const AdvisoryPage = () => {
   const closedInstances = instances.filter(i => i.status === "resolved" || i.status === "dismissed");
 
   return (
-    <DatasetRequired moduleName="Advisory">
+    <DatasetRequired moduleName="Advisory Engine" moduleDescription="Get AI-generated strategic advisories ranked by confidence and expected impact — calibrated to your actual performance data.">
       <SectionErrorBoundary sectionName="Advisory">
         <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
           <div className="flex items-center gap-3">
@@ -289,23 +313,52 @@ const AdvisoryPage = () => {
                 <Card><CardContent className="py-16 flex flex-col items-center gap-4">
                   <Loader2 className="w-10 h-10 animate-spin text-primary" />
                   <p className="text-muted-foreground">Generating strategic recommendations...</p>
+                  <p className="text-xs text-muted-foreground">This typically takes 10–20 seconds.</p>
+                </CardContent></Card>
+              ) : timedOut ? (
+                <Card><CardContent className="py-16 flex flex-col items-center gap-4">
+                  <AlertTriangle className="w-10 h-10 text-warning" />
+                  <h2 className="text-lg font-semibold">Analysis is taking longer than expected</h2>
+                  <p className="text-muted-foreground text-sm text-center max-w-md">
+                    The advisory engine is busy processing. Your data is intact — try again in a moment or check tracked advisories below.
+                  </p>
+                  <Button onClick={() => { setTimedOut(false); fetchAdvisories(); }} variant="outline" size="sm" className="mt-2 gap-2">
+                    <RefreshCw className="w-4 h-4" /> Try Again
+                  </Button>
                 </CardContent></Card>
               ) : advisories.length === 0 ? (
+                hasRun ? (
+                  <Card>
+                    <CardContent className="py-16 flex flex-col items-center gap-4">
+                      <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
+                        <CheckCircle2 className="w-7 h-7 text-primary" />
+                      </div>
+                      <h2 className="text-lg font-semibold font-display">All Clear — No Actions Required</h2>
+                      <p className="text-muted-foreground text-sm text-center max-w-md leading-relaxed">
+                        Your dataset has been analyzed ({sampleSize} records, data sufficiency: {dataSufficiency || "—"}).
+                        All metrics are within healthy thresholds. No strategic interventions are recommended at this time.
+                      </p>
+                      <Button onClick={fetchAdvisories} variant="outline" size="sm" className="mt-2 gap-2">
+                        <RefreshCw className="w-4 h-4" /> Re-run Analysis
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ) : (
                 <Card>
                   <CardContent className="py-16 flex flex-col items-center gap-4">
                     <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
-                      <CheckCircle2 className="w-7 h-7 text-primary" />
+                      <Lightbulb className="w-7 h-7 text-primary" />
                     </div>
-                    <h2 className="text-lg font-semibold font-display">All Clear — No Actions Required</h2>
+                    <h2 className="text-lg font-semibold font-display">Run Live Analysis</h2>
                     <p className="text-muted-foreground text-sm text-center max-w-md leading-relaxed">
-                      Your dataset has been analyzed ({sampleSize} records, data sufficiency: {dataSufficiency || "—"}).
-                      All metrics are within healthy thresholds. No strategic interventions are recommended at this time.
+                      Generate AI-powered strategic recommendations calibrated to your dataset. Analysis typically takes 10–20 seconds.
                     </p>
-                    <Button onClick={fetchAdvisories} variant="outline" size="sm" className="mt-2 gap-2">
-                      <RefreshCw className="w-4 h-4" /> Re-run Analysis
+                    <Button onClick={fetchAdvisories} size="sm" className="mt-2 gap-2">
+                      <Zap className="w-4 h-4" /> Run Analysis
                     </Button>
                   </CardContent>
                 </Card>
+                )
               ) : (
                 <div className="space-y-4">
                   {advisories.map((adv, i) => renderAdvisoryCard(adv, i))}

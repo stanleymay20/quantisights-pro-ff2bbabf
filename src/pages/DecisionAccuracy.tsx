@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { SidebarMobileToggle } from "@/components/layout/ProtectedShell";
 import { useOrganization } from "@/hooks/useOrganization";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,6 +33,7 @@ interface DecisionRecord {
 
 const DecisionAccuracy = () => {
   const { currentOrgId } = useOrganization();
+  const navigate = useNavigate();
   const [decisions, setDecisions] = useState<DecisionRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -163,14 +165,26 @@ const DecisionAccuracy = () => {
         </div>
 
         {evaluated.length === 0 ? (
-          <Card className="border-border/50">
-            <CardContent className="p-8 text-center">
-              <Target className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
-              <h3 className="text-sm font-semibold mb-1">No evaluated decisions yet</h3>
-              <p className="text-xs text-muted-foreground max-w-md mx-auto">
-                Approve decisions from the Decision Queue. The system will automatically evaluate outcomes
-                and build accuracy data as real-world results are measured.
-              </p>
+          <Card className="border-dashed">
+            <CardContent className="p-10 flex flex-col items-center text-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
+                <Target className="w-7 h-7 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-base mb-1">No evaluated decisions yet</h3>
+                <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                  Quantivis compares each decision's predicted confidence against its real-world outcome —
+                  building a calibration curve that makes every future recommendation more accurate.
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <Button size="sm" onClick={() => navigate("/decisions")}>
+                  Log a Decision <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => navigate("/deliberation")}>
+                  Review Pending
+                </Button>
+              </div>
             </CardContent>
           </Card>
         ) : (

@@ -105,17 +105,19 @@ const Register = forwardRef<HTMLDivElement>((_, ref) => {
     }, 15_000);
 
     try {
-      const { lovable } = await import("@/integrations/lovable");
       const existingSession = await finishIfSessionExists();
       if (existingSession) return;
-      const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
+      // Use Supabase native OAuth — bypasses Lovable's auth layer which shows Lovable branding.
+      // Always redirect to the production domain so new users land on Quantivis onboarding.
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: "https://www.quantivis.io/auth/callback?next=" + encodeURIComponent(finishPath),
+          queryParams: { access_type: "offline", prompt: "select_account" },
+        },
       });
       if (completed) return;
-      if (result.error) throw result.error;
-      if (!result.redirected && !(await finishIfSessionExists())) {
-        navigate(finishPath, { replace: true });
-      }
+      if (error) throw error;
     } catch (err: unknown) {
       if (completed) return;
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -181,15 +183,17 @@ const Register = forwardRef<HTMLDivElement>((_, ref) => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1.5">Password</label>
+            <label htmlFor="register-password" className="block text-sm font-medium mb-1.5">Password</label>
             <input
+              id="register-password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              minLength={12}
               autoComplete="new-password"
               className="w-full px-4 py-3 rounded-lg bg-secondary border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
-              placeholder="••••••••"
+              placeholder="Min 12 characters"
             />
             {password.length > 0 && (
               <div className="mt-3 space-y-2">

@@ -1425,6 +1425,33 @@ export type Database = {
           },
         ]
       }
+      auth_rate_limits: {
+        Row: {
+          attempts: number
+          created_at: string
+          key: string
+          updated_at: string
+          window_seconds: number
+          window_start: number
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          key: string
+          updated_at?: string
+          window_seconds?: number
+          window_start: number
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          key?: string
+          updated_at?: string
+          window_seconds?: number
+          window_start?: number
+        }
+        Relationships: []
+      }
       bandit_experiments: {
         Row: {
           arms: Json
@@ -3231,7 +3258,9 @@ export type Database = {
           consecutive_failures: number
           created_at: string
           created_by: string
+          credential_vault_keys: Json | null
           cursor_field: string | null
+          data_source_id: string | null
           dataset_id: string | null
           description: string | null
           health: Database["public"]["Enums"]["connector_health"]
@@ -3239,6 +3268,7 @@ export type Database = {
           last_error_at: string | null
           last_error_message: string | null
           last_success_at: string | null
+          last_synced_at: string | null
           name: string
           organization_id: string
           retry_policy: Json
@@ -3255,7 +3285,9 @@ export type Database = {
           consecutive_failures?: number
           created_at?: string
           created_by: string
+          credential_vault_keys?: Json | null
           cursor_field?: string | null
+          data_source_id?: string | null
           dataset_id?: string | null
           description?: string | null
           health?: Database["public"]["Enums"]["connector_health"]
@@ -3263,6 +3295,7 @@ export type Database = {
           last_error_at?: string | null
           last_error_message?: string | null
           last_success_at?: string | null
+          last_synced_at?: string | null
           name: string
           organization_id: string
           retry_policy?: Json
@@ -3279,7 +3312,9 @@ export type Database = {
           consecutive_failures?: number
           created_at?: string
           created_by?: string
+          credential_vault_keys?: Json | null
           cursor_field?: string | null
+          data_source_id?: string | null
           dataset_id?: string | null
           description?: string | null
           health?: Database["public"]["Enums"]["connector_health"]
@@ -3287,6 +3322,7 @@ export type Database = {
           last_error_at?: string | null
           last_error_message?: string | null
           last_success_at?: string | null
+          last_synced_at?: string | null
           name?: string
           organization_id?: string
           retry_policy?: Json
@@ -3298,6 +3334,13 @@ export type Database = {
           workspace_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "data_connectors_data_source_id_fkey"
+            columns: ["data_source_id"]
+            isOneToOne: false
+            referencedRelation: "data_sources"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "data_connectors_dataset_id_fkey"
             columns: ["dataset_id"]
@@ -9591,10 +9634,15 @@ export type Database = {
           data_retention_days: number
           id: string
           industry: string | null
+          ip_allowlist: string[]
+          min_password_length: number
           name: string
           onboarding_completed: boolean
+          require_mfa: boolean
           revenue_band: string | null
+          session_timeout_minutes: number
           size_band: string | null
+          sso_enforced: boolean
         }
         Insert: {
           ai_raw_text_enabled?: boolean
@@ -9603,10 +9651,15 @@ export type Database = {
           data_retention_days?: number
           id?: string
           industry?: string | null
+          ip_allowlist?: string[]
+          min_password_length?: number
           name: string
           onboarding_completed?: boolean
+          require_mfa?: boolean
           revenue_band?: string | null
+          session_timeout_minutes?: number
           size_band?: string | null
+          sso_enforced?: boolean
         }
         Update: {
           ai_raw_text_enabled?: boolean
@@ -9615,10 +9668,15 @@ export type Database = {
           data_retention_days?: number
           id?: string
           industry?: string | null
+          ip_allowlist?: string[]
+          min_password_length?: number
           name?: string
           onboarding_completed?: boolean
+          require_mfa?: boolean
           revenue_band?: string | null
+          session_timeout_minutes?: number
           size_band?: string | null
+          sso_enforced?: boolean
         }
         Relationships: []
       }
@@ -11026,6 +11084,24 @@ export type Database = {
         }
         Relationships: []
       }
+      stripe_processed_events: {
+        Row: {
+          event_id: string
+          event_type: string
+          processed_at: string
+        }
+        Insert: {
+          event_id: string
+          event_type: string
+          processed_at?: string
+        }
+        Update: {
+          event_id?: string
+          event_type?: string
+          processed_at?: string
+        }
+        Relationships: []
+      }
       subprocessor_registry: {
         Row: {
           active: boolean
@@ -11933,6 +12009,16 @@ export type Database = {
           trend: string
         }[]
       }
+      get_my_org_security_settings: {
+        Args: never
+        Returns: {
+          ip_allowlist: string[]
+          min_password_length: number
+          require_mfa: boolean
+          session_timeout_minutes: number
+          sso_enforced: boolean
+        }[]
+      }
       get_procurement_readiness: {
         Args: never
         Returns: {
@@ -11976,6 +12062,10 @@ export type Database = {
         Returns: undefined
       }
       increment_copilot_usage: { Args: { _org_id: string }; Returns: undefined }
+      increment_rate_limit: {
+        Args: { _key: string; _window_seconds?: number }
+        Returns: number
+      }
       increment_simulation_usage: {
         Args: { _org_id: string }
         Returns: undefined
@@ -12102,6 +12192,17 @@ export type Database = {
         | "bigquery"
         | "webhook"
         | "sap_odata"
+        | "salesforce"
+        | "hubspot"
+        | "dynamics"
+        | "netsuite"
+        | "xero"
+        | "stripe"
+        | "google_analytics"
+        | "google_sheets"
+        | "sqlserver"
+        | "s3"
+        | "powerbi"
       data_origin_type: "client" | "internal" | "external"
       intelligence_advisory_kind:
         | "operational"
@@ -12301,6 +12402,17 @@ export const Constants = {
         "bigquery",
         "webhook",
         "sap_odata",
+        "salesforce",
+        "hubspot",
+        "dynamics",
+        "netsuite",
+        "xero",
+        "stripe",
+        "google_analytics",
+        "google_sheets",
+        "sqlserver",
+        "s3",
+        "powerbi",
       ],
       data_origin_type: ["client", "internal", "external"],
       intelligence_advisory_kind: [

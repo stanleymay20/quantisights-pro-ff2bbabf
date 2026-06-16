@@ -1,6 +1,8 @@
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useOrganization } from "@/hooks/useOrganization";
 import { supabase } from "@/integrations/supabase/client";
@@ -159,44 +161,67 @@ const GovernanceKPIs = () => {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-3">
-          {kpis.map((kpi, i) => {
-            const StatusIcon = statusColors[kpi.status].icon;
-            return (
-              <motion.div
-                key={kpi.label}
-                initial={{ opacity: 0, x: -8 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.05 }}
-                className="flex items-center gap-3 p-3 rounded-xl border border-border/40 bg-muted/20"
-              >
-                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                  <kpi.icon className="w-4 h-4 text-primary" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="flex items-center gap-1.5">
-                      <p className="text-xs font-semibold text-foreground">{kpi.label}</p>
-                      <HelpTooltip
-                        content={`${kpi.help.what}\n\nCalculation: ${kpi.help.how}\n\nWhy it matters: ${kpi.help.why}`}
-                        side="top"
-                      />
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold">{kpi.value}</span>
-                      <Badge className={`${statusColors[kpi.status].badge} text-[9px] border`}>
-                        <StatusIcon className="w-2.5 h-2.5 mr-0.5" />
-                        {kpi.status}
-                      </Badge>
-                    </div>
+        {!(stats && (
+          (stats.avgQuality > 0) ||
+          (stats.outcomeRate > 0) ||
+          (stats.stewardCount > 0) ||
+          (stats.datasetCount > 0) ||
+          (stats.policyCount > 0)
+        )) ? (
+          <div className="flex flex-col items-center text-center py-8 gap-3">
+            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+              <Shield className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold">Governance setup not started</p>
+              <p className="text-xs text-muted-foreground mt-1 max-w-xs">
+                Complete your first governance assessment to populate these KPIs.
+              </p>
+            </div>
+            <Button asChild size="sm">
+              <Link to="/governance-maturity">Start assessment</Link>
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {kpis.map((kpi, i) => {
+              const StatusIcon = statusColors[kpi.status].icon;
+              return (
+                <motion.div
+                  key={kpi.label}
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.05 }}
+                  className="flex items-center gap-3 p-3 rounded-xl border border-border/40 bg-muted/20"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                    <kpi.icon className="w-4 h-4 text-primary" />
                   </div>
-                  <Progress value={kpi.progress} className="h-1.5" />
-                  <p className="text-[10px] text-muted-foreground/60 mt-1">Target: {kpi.target}</p>
-                </div>
-              </motion.div>
-            );
-          })}
-        </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-xs font-semibold text-foreground">{kpi.label}</p>
+                        <HelpTooltip
+                          content={`${kpi.help.what}\n\nCalculation: ${kpi.help.how}\n\nWhy it matters: ${kpi.help.why}`}
+                          side="top"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold">{kpi.value}</span>
+                        <Badge className={`${statusColors[kpi.status].badge} text-[9px] border`}>
+                          <StatusIcon className="w-2.5 h-2.5 mr-0.5" />
+                          {kpi.status}
+                        </Badge>
+                      </div>
+                    </div>
+                    <Progress value={kpi.progress} className="h-1.5" />
+                    <p className="text-[10px] text-muted-foreground/60 mt-1">Target: {kpi.target}</p>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

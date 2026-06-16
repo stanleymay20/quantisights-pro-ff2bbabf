@@ -213,6 +213,20 @@ export const useExecutiveIntelligence = () => {
     }
   }, [orgId, refresh]);
 
+  // Auto-regenerate if brief is stale (>6 hours) — declared AFTER regenerate to avoid TDZ
+  useEffect(() => {
+    if (!brief || generating || !orgId) return;
+    const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
+    const generatedAt = new Date(brief.generated_at).getTime();
+    if (Date.now() - generatedAt > SIX_HOURS_MS) {
+      const cacheKey = `brief_stale_refresh_${orgId}_${new Date().toISOString().slice(0, 13)}`;
+      if (!sessionStorage.getItem(cacheKey)) {
+        sessionStorage.setItem(cacheKey, "1");
+        regenerate();
+      }
+    }
+  }, [brief, generating, orgId, regenerate]);
+
   const updateIntervention = useCallback(async (
     id: string,
     patch: { status?: string; owner_id?: string | null; resolved?: boolean; acknowledged?: boolean }

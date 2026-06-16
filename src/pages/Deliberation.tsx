@@ -17,6 +17,9 @@ import { Button } from "@/components/ui/button";
 import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 import { usePendingDeliberations, useDeliberation, type DeliberationApprovalRow } from "@/hooks/useDeliberation";
 import type { PerspectiveStance } from "@/lib/deliberation/perspectives";
+import TrustStrip from "@/components/trust/TrustStrip";
+import { trustFromBoardroomItem } from "@/components/trust/trust-adapter";
+import { useOrganization } from "@/hooks/useOrganization";
 import {
   Scale,
   Users,
@@ -140,6 +143,7 @@ function approverLabel(approval: DeliberationApprovalRow) {
 function DeliberationDetail({ decisionId, onBack }: { decisionId: string; onBack: () => void }) {
   const { data, loading } = useDeliberation(decisionId);
   const navigate = useNavigate();
+  const { currentOrgId } = useOrganization();
 
   const derived = useMemo(() => {
     const decision = (data?.decision ?? {}) as unknown as Record<string, unknown>;
@@ -210,6 +214,11 @@ function DeliberationDetail({ decisionId, onBack }: { decisionId: string; onBack
           </div>
         </div>
       </Card>
+
+      <TrustStrip
+        record={trustFromBoardroomItem(decision, currentOrgId)}
+        variant="compact"
+      />
 
       <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
         <Card className="p-5">
@@ -405,12 +414,12 @@ type DeliberationVariant = "deliberation" | "boardroom";
 
 const variantCopy: Record<DeliberationVariant, { eyebrow: string; title: string; description: string }> = {
   deliberation: {
-    eyebrow: "Decision OS",
-    title: "Deterministic Boardroom",
+    eyebrow: "Decisions",
+    title: "Deliberation",
     description: "Enterprise-grade deliberation for pending decisions. It computes Financial, Risk, Execution, Outcome, and Contrarian perspectives from real evidence — never from LLM personas, synthetic votes, or fabricated consensus scores.",
   },
   boardroom: {
-    eyebrow: "Decision OS · AI Boardroom",
+    eyebrow: "Decisions · AI Boardroom",
     title: "AI Boardroom",
     description: "Executive deliberation chamber. Select a pending decision to review evidence, perspective stances, cost of inaction, and human approval status — all computed deterministically from your governed signals.",
   },
@@ -419,6 +428,7 @@ const variantCopy: Record<DeliberationVariant, { eyebrow: string; title: string;
 export default function Deliberation({ variant = "deliberation" }: { variant?: DeliberationVariant } = {}) {
   const { rows, loading } = usePendingDeliberations();
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const selectedId = searchParams.get("decision");
   const setSelectedId = (id: string | null) => {
     const next = new URLSearchParams(searchParams);
@@ -453,7 +463,21 @@ export default function Deliberation({ variant = "deliberation" }: { variant?: D
         {loading ? (
           <div className="p-6 text-sm text-muted-foreground">Loading queue…</div>
         ) : rows.length === 0 ? (
-          <div className="p-6 text-sm text-muted-foreground">No pending decisions to deliberate.</div>
+          <div className="p-8 flex flex-col items-center text-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+              <Scale className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <p className="font-semibold text-sm">No decisions pending deliberation</p>
+              <p className="text-xs text-muted-foreground mt-1 max-w-xs">
+                Log a decision in the Decision Ledger to trigger the deliberation pipeline —
+                evidence stances, cost of inaction, and approval chain are computed automatically.
+              </p>
+            </div>
+            <Button size="sm" variant="outline" onClick={() => navigate("/decisions")}>
+              <ArrowRight className="w-3.5 h-3.5 mr-1.5" /> Go to Decision Ledger
+            </Button>
+          </div>
         ) : (
           <ul className="divide-y">
             {rows.map((d) => (

@@ -19,7 +19,11 @@ interface ReadinessItem {
 const statusBadge = (status: string) => {
   if (status === "met") return <Badge variant="outline" className="text-[10px] border-green-500/30 text-green-500"><CheckCircle2 className="w-3 h-3 mr-1" />Met</Badge>;
   if (status === "partial") return <Badge variant="outline" className="text-[10px] border-yellow-500/30 text-yellow-500"><AlertTriangle className="w-3 h-3 mr-1" />Partial</Badge>;
-  if (status === "missing") return <Badge variant="outline" className="text-[10px] border-red-500/30 text-red-500"><XCircle className="w-3 h-3 mr-1" />Missing</Badge>;
+  if (status === "missing") return (
+    <Badge variant="outline" className="text-[10px] border-amber-500/30 text-amber-600" title="This control has not been configured yet. It does not indicate a security failure — complete the setup steps to mark it as met.">
+      <AlertTriangle className="w-3 h-3 mr-1" />Not set up
+    </Badge>
+  );
   return <Badge variant="outline" className="text-[10px] text-muted-foreground">Unknown</Badge>;
 };
 

@@ -14,13 +14,14 @@ import { invokeWithRetry } from "@/lib/edge-function-retry";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { DashboardEmptyState } from "@/components/dashboard/DashboardEmptyState";
 import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
-import SimpleHome from "@/components/dashboard/SimpleHome";
+import CopilotHome from "@/components/dashboard/CopilotHome";
+import ExecutiveDailyDriver from "@/components/dashboard/ExecutiveDailyDriver";
 import WelcomeFlow from "@/components/dashboard/WelcomeFlow";
 import DemoBanner from "@/components/dashboard/DemoBanner";
 import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 
 const Dashboard = () => {
-  const { user, signOut } = useAuth();
+  const { user, profile, signOut } = useAuth();
   const { organizations, currentOrgId, currentOrg, switchOrganization, loading: orgLoading } = useOrganization();
   const { currentWorkspaceId, loading: workspaceLoading } = useWorkspace();
   const { activeDatasetId, loading: projectLoading } = useProject();
@@ -33,7 +34,15 @@ const Dashboard = () => {
   const { insights, loading: insightsLoading } = useInsights(currentOrgId, activeDatasetId);
   const navigate = useNavigate();
 
-  const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "User";
+  const rawEmailPrefix = user?.email?.split("@")[0] ?? "";
+  // Capitalise the email prefix as a last-resort fallback
+  const formattedEmailName = rawEmailPrefix
+    .split(/[._-]/)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+  // Prefer the user's actual full_name from the profiles table over auth metadata,
+  // which can contain the org/account name instead of the user's real name.
+  const displayName = profile?.full_name || formattedEmailName || "User";
   const isDemoUser = Boolean(user?.user_metadata?.is_demo);
 
   const [pendingDecisions, setPendingDecisions] = useState(0);
@@ -140,23 +149,24 @@ const Dashboard = () => {
 
       {isDemoUser && hasData && <DemoBanner />}
 
-      <main id="main-content" className="flex-1 p-4 sm:p-6 md:p-8 overflow-auto">
+      <main id="main-content" className="flex-1 overflow-auto">
+        <div className="p-4 sm:p-6 md:p-8">
         {(isLoading || isDemoHydrating) && !hasData ? (
           <DashboardSkeleton />
         ) : showEmptyState ? (
           <DashboardEmptyState />
         ) : (
           <SectionErrorBoundary sectionName="Dashboard">
-            <SimpleHome
+            <ExecutiveDailyDriver
               displayName={displayName}
+              orgId={currentOrgId ?? null}
               insights={insights}
+              topMetrics={topMetrics ?? []}
               pendingDecisions={pendingDecisions}
-              calibrationScore={calibrationScore}
-              topMetrics={topMetrics}
-              organizationId={currentOrgId!}
             />
           </SectionErrorBoundary>
         )}
+        </div>
       </main>
     </>
   );

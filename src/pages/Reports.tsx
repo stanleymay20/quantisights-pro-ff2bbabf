@@ -117,7 +117,7 @@ const Reports = () => {
   const getTypeConfig = (type: string) => REPORT_TYPES.find(t => t.value === type) || REPORT_TYPES[0];
 
   return (
-    <DatasetRequired moduleName="Reports">
+    <DatasetRequired moduleName="Reports" moduleDescription="Generate board-ready executive reports, KPI summaries, and governance packs from your live decision data.">
     <>
         <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
           <div className="flex items-center gap-3">

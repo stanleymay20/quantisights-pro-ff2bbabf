@@ -195,9 +195,9 @@ const GlobalContextBar = () => {
 
   return (
     <div className="h-7 border-b border-border/20 bg-muted/20 hidden md:flex items-center px-3 md:px-8 gap-1 shrink-0 overflow-x-auto scrollbar-hide">
-      <ContextChip icon={Building2} label={currentOrg?.name ?? null} fallback="No org" onClick={() => navigate("/settings")} />
+      <ContextChip icon={Building2} label={currentOrg?.name?.replace(/\s+'/g, "'").replace(/'\s+/g, "'").trim() ?? null} fallback="No org" onClick={() => navigate("/settings")} />
       <Separator />
-      <ContextChip icon={Layers} label={currentWorkspace?.name ?? null} fallback="No workspace" onClick={() => navigate("/settings")} />
+      <ContextChip icon={Layers} label={currentWorkspace?.name ?? null} fallback={currentOrg ? "Set up workspace" : "No workspace"} onClick={() => navigate("/settings")} />
       <Separator />
       <ContextChip icon={FolderKanban} label={currentProject?.name ?? null} fallback="No project" onClick={() => navigate("/settings")} />
       <Separator />

@@ -36,17 +36,22 @@ const clearTenantSession = () => {
 };
 
 const clearSupabaseAuthStorage = () => {
+  // Clear Supabase JWT tokens from localStorage
   const keysToRemove: string[] = [];
-
   for (let i = 0; i < localStorage.length; i += 1) {
     const key = localStorage.key(i);
-    if (key && (key.startsWith("sb-") || key.includes("supabase.auth.token"))) {
+    if (key && (key.startsWith("sb-") || key.includes("supabase.auth.token") || key.includes("supabase.auth"))) {
       keysToRemove.push(key);
     }
   }
-
   keysToRemove.forEach((key) => localStorage.removeItem(key));
+
+  // Clear any auth-related sessionStorage (rate limiter state, tenant session)
   clearTenantSession();
+  sessionStorage.removeItem("quantivis_auth_throttle");
+
+  // Clear PKCE code verifier if present (OAuth PKCE flow)
+  sessionStorage.removeItem("supabase-oauth-code-verifier");
 };
 
 const isBadJwtError = (error: unknown) => {

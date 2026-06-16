@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useIntelligenceInbox } from "@/hooks/useIntelligenceInbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import IntelligenceDisclaimer from "@/components/IntelligenceDisclaimer";
+import TrustStrip from "@/components/trust/TrustStrip";
+import { trustFromExecutiveBrief, trustFromAdvisory } from "@/components/trust/trust-adapter";
 import { AlertTriangle, Globe, ShieldAlert, Inbox, ArrowRight, ThumbsUp, ThumbsDown, RefreshCw, Loader2, Database } from "lucide-react";
 
 const SEVERITY_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
@@ -24,6 +27,7 @@ const STATUS_LABEL: Record<string, string> = {
 
 export default function IntelligenceInbox() {
   const { items, briefs, observability, loading, timedOut, error, orgId, refresh, routeItem, sendFeedback } = useIntelligenceInbox();
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [severityFilter, setSeverityFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -145,9 +149,25 @@ export default function IntelligenceInbox() {
             <TabsContent value="items" className="space-y-3 mt-4">
               {loading && (items.length > 0 || briefs.length > 0) && <p className="text-sm text-muted-foreground flex items-center gap-2"><Loader2 className="h-3.5 w-3.5 animate-spin" />Refreshing…</p>}
               {!loading && filtered.length === 0 && !error && (
-                <Card><CardContent className="p-8 text-center">
-                  <p className="text-muted-foreground font-medium mb-1">No intelligence signals yet</p>
-                  <p className="text-xs text-muted-foreground max-w-sm mx-auto">Intelligence signals are generated automatically as your data is analysed. Upload a dataset or connect a data source to activate the AICIS engine.</p>
+                <Card className="border-dashed"><CardContent className="p-10 flex flex-col items-center text-center gap-4">
+                  <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
+                    <Inbox className="w-7 h-7 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-base mb-1">No intelligence signals yet</p>
+                    <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+                      Signals are generated automatically as your data is analysed by the AICIS engine —
+                      ranked by decision pressure and ready to route to the Decision Ledger.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Button size="sm" onClick={() => navigate("/data-upload")}>
+                      <Database className="w-4 h-4 mr-2" /> Upload Data
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => navigate("/data-connectors")}>
+                      Connect a Source
+                    </Button>
+                  </div>
                 </CardContent></Card>
               )}
               {sortedByPressure.map((it) => {
@@ -195,6 +215,11 @@ export default function IntelligenceInbox() {
                         <Button size="sm" variant="ghost" onClick={() => sendFeedback(it.id, "useful")}><ThumbsUp className="h-3 w-3" /></Button>
                         <Button size="sm" variant="ghost" onClick={() => sendFeedback(it.id, "false_positive")}><ThumbsDown className="h-3 w-3" /></Button>
                       </div>
+                      <TrustStrip
+                        record={trustFromAdvisory(it, orgId)}
+                        variant="compact"
+                        className="mt-2"
+                      />
                     </CardContent>
                   </Card>
                 );
@@ -224,6 +249,11 @@ export default function IntelligenceInbox() {
                     <div className="flex gap-2 pt-1">
                       <Button size="sm" onClick={() => routeItem({ brief_id: b.id, route_type: "decision", reason: "Routed from brief" })}>Route brief → decision</Button>
                     </div>
+                    <TrustStrip
+                      record={trustFromExecutiveBrief(b, orgId)}
+                      variant="compact"
+                      className="mt-2"
+                    />
                   </CardContent>
                 </Card>
               ))}

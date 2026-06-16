@@ -67,18 +67,18 @@ const SystemHealthDashboard = ({ orgId }: Props) => {
     ? "healthy"
     : health.closedLoopRate >= 20
     ? "developing"
-    : "nascent";
+    : "initializing";
 
   const statusColor = {
     healthy: "text-green-500",
     developing: "text-amber-500",
-    nascent: "text-red-400",
+    initializing: "text-red-400",
   }[loopStatus];
 
   const statusBg = {
     healthy: "bg-green-500/10 border-green-500/20",
     developing: "bg-amber-500/10 border-amber-500/20",
-    nascent: "bg-red-400/10 border-red-400/20",
+    initializing: "bg-red-400/10 border-red-400/20",
   }[loopStatus];
 
   return (

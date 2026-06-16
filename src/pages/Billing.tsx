@@ -29,9 +29,9 @@ interface UsageData {
 }
 
 const TIER_LIMITS: Record<string, { simulations: number; convergence: number; copilot: number; seats: number }> = {
-  starter: { simulations: 5, convergence: 3, copilot: 10, seats: 2 },
-  growth: { simulations: 50, convergence: 30, copilot: 100, seats: 5 },
-  enterprise: { simulations: -1, convergence: -1, copilot: -1, seats: -1 },
+  starter:    { simulations: 5,  convergence: 3,  copilot: 20,  seats: 5  },
+  growth:     { simulations: 50, convergence: 30, copilot: -1,  seats: 15 },  // -1 = unlimited
+  enterprise: { simulations: -1, convergence: -1, copilot: -1,  seats: -1 },
 };
 
 const Billing = () => {
@@ -132,11 +132,15 @@ const Billing = () => {
                         <div className="flex items-center gap-2">
                           <h2 className="text-2xl font-bold font-display">{tierConfig.name}</h2>
                           <Badge className="bg-primary/10 text-primary border-none">
-                            {subscribed ? "Active" : "Free Trial"}
+                            {subscribed ? "Active" : "Trial"}
                           </Badge>
                         </div>
                         <p className="text-muted-foreground text-sm">
-                          {tierConfig.price !== null ? `${tierConfig.currency}${tierConfig.price}/${tierConfig.interval}` : "Custom pricing"}
+                          {tierConfig.price !== null
+                            ? subscribed
+                              ? `${tierConfig.currency}${tierConfig.price}/${tierConfig.interval}`
+                              : `${tierConfig.currency}${tierConfig.price}/${tierConfig.interval} after trial`
+                            : "Custom pricing"}
                         </p>
                       </div>
                     </div>
@@ -244,8 +248,8 @@ const Billing = () => {
                     </h3>
                     <p className="text-sm text-muted-foreground max-w-md">
                       {activeTier === "starter"
-                        ? "Upgrade to Growth for AI Prescriptive Advisory, Causal Inference, Predictive Forecasting, Monte Carlo Simulations, and Board Governance Reports."
-                        : "Upgrade to Enterprise for Cognitive Bias Detection, Counterfactual Explanations, Executive Convergence Index, unlimited simulations, and dedicated support."}
+                        ? "Upgrade to Governance for AI Prescriptive Advisory, Causal Inference, Predictive Forecasting, Monte Carlo Simulations, Board Governance Reports, AICIS geopolitical signals, and unlimited Copilot."
+                        : "Upgrade to Enterprise for Cognitive Bias Detection, Counterfactual Explanations, Executive Convergence Index, unlimited simulations, multi-org management, and dedicated support."}
                     </p>
                     <div className="flex flex-wrap gap-2 pt-1">
                       {(activeTier === "starter" ? TIERS.growth : TIERS.enterprise).features.slice(0, 3).map((f) => (
@@ -258,7 +262,7 @@ const Billing = () => {
                   {activeTier === "starter" ? (
                     <Button onClick={() => navigate("/pricing")} size="lg" className="gap-2 shadow-lg shadow-primary/20">
                       <Zap className="w-4 h-4" />
-                      Upgrade to Growth — €{TIERS.growth.price}/mo
+                      Upgrade to Governance — €{TIERS.growth.price}/mo
                     </Button>
                   ) : (
                     <Button asChild size="lg" className="gap-2 shadow-lg shadow-primary/20">

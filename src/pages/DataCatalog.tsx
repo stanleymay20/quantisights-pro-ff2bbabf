@@ -171,11 +171,13 @@ export default function DataCatalog() {
               <p className="text-xs text-muted-foreground">Total Rows</p>
             </CardContent>
           </Card>
-          <Card>
+          <Card title={staleCount > 0 ? "Datasets that have not been refreshed within their freshness policy window. This does not indicate data loss." : undefined}>
             <CardContent className="pt-6 text-center">
-              <Activity className="h-6 w-6 mx-auto mb-2" style={{ color: staleCount > 0 ? "hsl(var(--destructive))" : "hsl(var(--primary))" }} />
+              <Activity className="h-6 w-6 mx-auto mb-2" style={{ color: staleCount > 0 ? "hsl(var(--warning))" : "hsl(var(--primary))" }} />
               <p className="text-2xl font-bold">{staleCount}</p>
-              <p className="text-xs text-muted-foreground">Stale Datasets</p>
+              <p className="text-xs text-muted-foreground">
+                {staleCount > 0 ? "Need refresh" : "All fresh"}
+              </p>
             </CardContent>
           </Card>
           <Card>
@@ -235,9 +237,11 @@ export default function DataCatalog() {
                       <TableCell>v{ds.current_version || 1}</TableCell>
                       <TableCell>
                         {ds.is_stale ? (
-                          <Badge variant="destructive">Stale</Badge>
+                          <span title="Dataset has not been refreshed within its freshness policy window. This does not indicate data loss — upload a new version or adjust the freshness policy in settings.">
+                            <Badge variant="outline" className="text-amber-600 border-amber-500/40 cursor-help">Needs refresh</Badge>
+                          </span>
                         ) : (
-                          <Badge variant="outline">Fresh</Badge>
+                          <Badge variant="outline" className="text-emerald-600 border-emerald-500/40">Fresh</Badge>
                         )}
                       </TableCell>
                       <TableCell>

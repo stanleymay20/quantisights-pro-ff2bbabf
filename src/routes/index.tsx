@@ -24,6 +24,8 @@ const ResetPassword = lazy(() => import("@/pages/ResetPassword"));
 
 // ── Intelligence Core ──
 const Dashboard = lazy(() => import("@/pages/Dashboard"));
+const Copilot = lazy(() => import("@/pages/Copilot"));
+const CopilotAnalytics = lazy(() => import("@/pages/CopilotAnalytics"));
 const KPIs = lazy(() => import("@/pages/KPIs"));
 const Diagnostics = lazy(() => import("@/pages/Diagnostics"));
 const Advisory = lazy(() => import("@/pages/Advisory"));
@@ -53,7 +55,7 @@ const Scenarios = lazy(() => import("@/pages/Scenarios"));
 const Simulations = lazy(() => import("@/pages/Simulations"));
 const ScenarioBranching = lazy(() => import("@/pages/ScenarioBranching"));
 
-// ── Data Platform ──
+// ── Data ──
 const DataUpload = lazy(() => import("@/pages/DataUpload"));
 const DataConnectors = lazy(() => import("@/pages/DataConnectors"));
 const DataSources = lazy(() => import("@/pages/DataSources"));
@@ -254,6 +256,8 @@ export const routes: RouteEntry[] = [
 
   // ══════ Intelligence Core ══════
   { path: "/dashboard", element: <Dashboard />, layout: "full" },
+  { path: "/copilot", element: <Copilot />, layout: "full" },
+  { path: "/copilot/analytics", element: <CopilotAnalytics />, layout: "full" },
   { path: "/kpis", element: <KPIs />, layout: "full" },
   { path: "/diagnostics", element: <Diagnostics />, layout: "full" },
   { path: "/advisory", element: <Advisory />, layout: "full" },
@@ -288,7 +292,7 @@ export const routes: RouteEntry[] = [
   { path: "/simulations", element: <Simulations />, layout: "full" },
   { path: "/branching", element: <ScenarioBranching />, layout: "full" },
 
-  // ══════ Data Platform ══════
+  // ══════ Data ══════
   { path: "/data-upload", element: <DataUpload />, layout: "full" },
   { path: "/data-sources", element: <DataSources />, layout: "full" },
   { path: "/data-connectors", element: <DataConnectors />, layout: "full" },

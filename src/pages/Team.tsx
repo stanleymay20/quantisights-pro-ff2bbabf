@@ -288,7 +288,7 @@ const Team = () => {
                                 value={member.role}
                                 onValueChange={(val) => updateMemberRole(member.id, val as "admin" | "analyst" | "executive" | "viewer")}
                               >
-                                <SelectTrigger className="w-32 h-8 text-xs">
+                                <SelectTrigger className="w-32 h-8 text-xs" aria-label={`Change role for ${member.profile?.full_name ?? "member"}`}>
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>

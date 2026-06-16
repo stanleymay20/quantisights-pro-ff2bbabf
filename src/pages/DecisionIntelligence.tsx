@@ -102,6 +102,22 @@ const DecisionFatiguePanel = ({ decisions }: { decisions: Array<any> }) => {
     return daysSince > 7;
   });
 
+  // Guard: don't show fatigue index on accounts with no meaningful history
+  if (decisions.length < 3) {
+    return (
+      <div className="glass-card p-6 rounded-xl">
+        <div className="flex items-center gap-2 mb-4">
+          <Gauge className="w-4 h-4 text-primary" />
+          <h3 className="text-sm font-semibold">Decision Fatigue Index</h3>
+        </div>
+        <div className="text-center py-8 text-xs text-muted-foreground">
+          Fatigue index activates after 3 decisions are logged.
+        </div>
+      </div>
+    );
+  }
+
+
   const fatigueScore = Math.min(100, pending.length * 15 + stale.length * 25 + inProgress.length * 10);
   const fatigueLevel = fatigueScore >= 70 ? "critical" : fatigueScore >= 40 ? "elevated" : "healthy";
   const fatigueColor = fatigueScore >= 70 ? "text-destructive" : fatigueScore >= 40 ? "text-warning" : "text-success";
@@ -283,7 +299,7 @@ const DecisionIntelligence = () => {
   const { performance: performanceData, loading: perfLoading } = useDecisionPerformance(currentOrgId);
 
   useEffect(() => {
-    if (!currentOrgId) return;
+    if (!currentOrgId) { setLoading(false); return; }
     const fetch = async () => {
       setLoading(true);
       const [decRes, simRes] = await Promise.all([

@@ -1,17 +1,17 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { SidebarMobileToggle } from "@/components/layout/ProtectedShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useActiveDataContext } from "@/hooks/useActiveDataContext";
-import DatasetRequired from "@/components/layout/DatasetRequired";
 import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 import { supabase } from "@/integrations/supabase/client";
 import { invokeWithRetry } from "@/lib/edge-function-retry";
 import { useToast } from "@/hooks/use-toast";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, ComposedChart } from "recharts";
-import { TrendingUp, TrendingDown, Minus, Loader2, Sparkles, BarChart3, Activity } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Loader2, Sparkles, BarChart3, Activity, Database, Upload } from "lucide-react";
 
 const HORIZONS = [3, 6, 12];
 
@@ -88,9 +88,10 @@ const Forecasting = () => {
   const trendColor = data?.trend_direction === "growing" ? "text-success"
     : data?.trend_direction === "declining" ? "text-destructive" : "text-muted-foreground";
 
+  const noContext = !orgId || !datasetId;
+
   return (
-    <DatasetRequired moduleName="Forecasting">
-      <SectionErrorBoundary sectionName="Forecasting">
+    <SectionErrorBoundary sectionName="Forecasting">
       <>
         <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
           <div className="flex items-center gap-3">
@@ -104,8 +105,8 @@ const Forecasting = () => {
           <Card>
             <CardContent className="p-6">
               <div className="flex flex-col md:flex-row gap-4">
-                <Select value={metricType} onValueChange={setMetricType}>
-                  <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+                <Select value={metricType} onValueChange={setMetricType} disabled={noContext || availableMetrics.length === 0}>
+                  <SelectTrigger className="w-48"><SelectValue placeholder="Select metric" /></SelectTrigger>
                   <SelectContent>
                     {availableMetrics.map(m => <SelectItem key={m} value={m} className="capitalize">{m.replace(/_/g, " ")}</SelectItem>)}
                   </SelectContent>
@@ -116,13 +117,38 @@ const Forecasting = () => {
                     {HORIZONS.map(h => <SelectItem key={h} value={String(h)}>{h} months</SelectItem>)}
                   </SelectContent>
                 </Select>
-                <Button onClick={runForecast} disabled={loading} className="gap-2">
+                <Button onClick={runForecast} disabled={loading || noContext || !metricType} className="gap-2">
                   {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                   Generate Forecast
                 </Button>
               </div>
             </CardContent>
           </Card>
+
+          {noContext && (
+            <Card className="border-dashed">
+              <CardContent className="p-12 flex flex-col items-center text-center gap-5">
+                <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
+                  <Database className="w-7 h-7 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-base font-semibold">Connect your data to run forecasts</h2>
+                  <p className="text-sm text-muted-foreground mt-1 max-w-md">
+                    Quantivis builds probabilistic forecasts from your operational metrics — revenue,
+                    costs, pipeline, or any time-series. Upload a CSV to get started in seconds.
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Button asChild className="gap-2">
+                    <Link to="/data-upload"><Upload className="w-4 h-4" />Upload Data</Link>
+                  </Button>
+                  <Button asChild variant="outline" className="gap-2">
+                    <Link to="/demo"><Sparkles className="w-4 h-4" />Try Sample Data</Link>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {data && (
             <>
@@ -196,8 +222,7 @@ const Forecasting = () => {
           )}
         </main>
       </>
-      </SectionErrorBoundary>
-    </DatasetRequired>
+    </SectionErrorBoundary>
   );
 };
 

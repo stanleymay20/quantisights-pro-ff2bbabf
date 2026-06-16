@@ -8,9 +8,12 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import IntelligenceDisclaimer from "@/components/IntelligenceDisclaimer";
 import SectionErrorBoundary from "@/components/SectionErrorBoundary";
+import TrustStrip from "@/components/trust/TrustStrip";
+import { trustFromExecutiveBrief } from "@/components/trust/trust-adapter";
+import { useActiveDataContext } from "@/hooks/useActiveDataContext";
 import {
   AlertTriangle, ShieldAlert, Activity, Compass, Sparkles,
-  Globe, GitBranch, Zap, CheckCircle2, ArrowUpRight, Clock, Layers,
+  Globe, GitBranch, Zap, CheckCircle2, ArrowUpRight, Clock, Layers, FileSearch,
 } from "lucide-react";
 import { NarrativeFusionPanel } from "@/components/executive/NarrativeFusionPanel";
 
@@ -22,10 +25,11 @@ const TIER_LABEL: Record<string, string> = {
   informational: "Info", low: "Low", elevated: "Elevated", high: "High", critical: "Critical",
 };
 
-function ExecutiveBriefCard({ brief, onRegenerate, generating }: {
+function ExecutiveBriefCard({ brief, onRegenerate, generating, orgId }: {
   brief: ReturnType<typeof useExecutiveIntelligence>["brief"];
   onRegenerate: () => void;
   generating: boolean;
+  orgId: string | null;
 }) {
   if (!brief) {
     return (
@@ -55,6 +59,10 @@ function ExecutiveBriefCard({ brief, onRegenerate, generating }: {
         </Button>
       </CardHeader>
       <CardContent className="space-y-4">
+        <TrustStrip
+          record={trustFromExecutiveBrief(brief, orgId)}
+          variant="compact"
+        />
         <div>
           <h3 className="text-lg font-semibold">{s.headline}</h3>
           {s.escalation_recommended && (
@@ -125,6 +133,7 @@ function InterventionRow({ iv, onUpdate }: { iv: Intervention; onUpdate: (id: st
 
 export default function ExecutiveIntelligence() {
   const { orgRole, isLoading: roleLoading } = usePermissions();
+  const { orgId } = useActiveDataContext();
   const {
     brief, interventions, topByPressure, narratives, exposure, observability, snapshot,
     loading, generating, regenerate, updateIntervention,
@@ -208,28 +217,43 @@ export default function ExecutiveIntelligence() {
       <IntelligenceDisclaimer />
 
       <SectionErrorBoundary sectionName="Executive Brief">
-        <ExecutiveBriefCard brief={brief} onRegenerate={regenerate} generating={generating} />
+        <ExecutiveBriefCard brief={brief} onRegenerate={regenerate} generating={generating} orgId={orgId} />
       </SectionErrorBoundary>
 
       {!snapshot && !brief && !loading && interventions.length === 0 && (
-        <Card>
-          <CardContent className="p-8 text-center text-muted-foreground">
-            Awaiting intelligence activity. Generate a briefing to populate executive view.
+        <Card className="border-dashed">
+          <CardContent className="p-10 flex flex-col items-center text-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
+              <FileSearch className="w-7 h-7 text-primary" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-base mb-1">No intelligence generated yet</h3>
+              <p className="text-sm text-muted-foreground max-w-sm">
+                Generate a briefing to get an AI-synthesised snapshot of your organisation's
+                strategic risk, pending decisions, and recommended interventions.
+              </p>
+            </div>
+            <Button size="sm" onClick={regenerate} disabled={generating}>
+              <Sparkles className="w-4 h-4 mr-2" />
+              {generating ? "Generating…" : "Generate First Brief"}
+            </Button>
           </CardContent>
         </Card>
       )}
 
       <Tabs defaultValue="briefing">
-        <TabsList className="flex-wrap h-auto">
-          <TabsTrigger value="briefing"><Sparkles className="h-4 w-4 mr-1.5" /> Briefing</TabsTrigger>
-          <TabsTrigger value="pressure"><Zap className="h-4 w-4 mr-1.5" /> Pressure Queue</TabsTrigger>
-          <TabsTrigger value="threats"><AlertTriangle className="h-4 w-4 mr-1.5" /> Emerging Threats</TabsTrigger>
-          <TabsTrigger value="interventions"><Activity className="h-4 w-4 mr-1.5" /> Interventions</TabsTrigger>
-          <TabsTrigger value="narratives"><GitBranch className="h-4 w-4 mr-1.5" /> Cross-Domain</TabsTrigger>
-          <TabsTrigger value="exposure"><Globe className="h-4 w-4 mr-1.5" /> Exposure</TabsTrigger>
-          <TabsTrigger value="forecasts"><Compass className="h-4 w-4 mr-1.5" /> Forecasts</TabsTrigger>
-          <TabsTrigger value="fusion"><Layers className="h-4 w-4 mr-1.5" /> Narrative Fusion</TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto scrollbar-hide">
+          <TabsList className="flex-nowrap h-auto gap-0.5 w-max min-w-full">
+            <TabsTrigger value="briefing"><Sparkles className="h-4 w-4 mr-1.5" /> Briefing</TabsTrigger>
+            <TabsTrigger value="pressure"><Zap className="h-4 w-4 mr-1.5" /> Pressure Queue</TabsTrigger>
+            <TabsTrigger value="threats"><AlertTriangle className="h-4 w-4 mr-1.5" /> Emerging Threats</TabsTrigger>
+            <TabsTrigger value="interventions"><Activity className="h-4 w-4 mr-1.5" /> Interventions</TabsTrigger>
+            <TabsTrigger value="narratives"><GitBranch className="h-4 w-4 mr-1.5" /> Cross-Domain</TabsTrigger>
+            <TabsTrigger value="exposure"><Globe className="h-4 w-4 mr-1.5" /> Exposure</TabsTrigger>
+            <TabsTrigger value="forecasts"><Compass className="h-4 w-4 mr-1.5" /> Forecasts</TabsTrigger>
+            <TabsTrigger value="fusion"><Layers className="h-4 w-4 mr-1.5" /> Narrative Fusion</TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="briefing" className="mt-4 space-y-4">
           <SectionErrorBoundary sectionName="Top Critical Interventions">
@@ -345,7 +369,14 @@ export default function ExecutiveIntelligence() {
               <CardHeader><CardTitle>Emerging Threats Timeline</CardTitle></CardHeader>
               <CardContent>
                 {emergingThreats.length === 0 ? (
-                  <p className="text-muted-foreground">No emerging threats above high tier.</p>
+                  <div className="text-center py-8 space-y-3">
+                    <AlertTriangle className="w-8 h-8 text-muted-foreground/40 mx-auto" />
+                    <p className="text-sm font-medium text-muted-foreground">No emerging threats above high tier</p>
+                    <p className="text-xs text-muted-foreground/60">Generate a briefing to scan for escalating risk signals across your data.</p>
+                    <Button size="sm" variant="outline" onClick={regenerate} disabled={generating}>
+                      <Sparkles className="w-3.5 h-3.5 mr-1.5" />{generating ? "Generating…" : "Generate Brief"}
+                    </Button>
+                  </div>
                 ) : (
                   <ol className="border-l-2 border-border ml-2 space-y-4">
                     {emergingThreats.map((iv) => (
@@ -372,7 +403,14 @@ export default function ExecutiveIntelligence() {
               <CardHeader><CardTitle>Recommended Interventions ({interventions.length})</CardTitle></CardHeader>
               <CardContent className="space-y-3">
                 {interventions.length === 0 ? (
-                  <p className="text-muted-foreground">No interventions yet.</p>
+                  <div className="text-center py-8 space-y-3">
+                    <Activity className="w-8 h-8 text-muted-foreground/40 mx-auto" />
+                    <p className="text-sm font-medium text-muted-foreground">No recommended interventions yet</p>
+                    <p className="text-xs text-muted-foreground/60">Interventions are computed from your signals and decision data during a briefing.</p>
+                    <Button size="sm" variant="outline" onClick={regenerate} disabled={generating}>
+                      <Sparkles className="w-3.5 h-3.5 mr-1.5" />{generating ? "Generating…" : "Generate Brief"}
+                    </Button>
+                  </div>
                 ) : (
                   interventions.map((iv) => <InterventionRow key={iv.id} iv={iv} onUpdate={updateIntervention} />)
                 )}
@@ -387,7 +425,14 @@ export default function ExecutiveIntelligence() {
               <CardHeader><CardTitle>Cross-Domain Risk Narratives</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 {narratives.length === 0 ? (
-                  <p className="text-muted-foreground">No multi-domain pressure detected.</p>
+                  <div className="text-center py-8 space-y-3">
+                    <Globe className="w-8 h-8 text-muted-foreground/40 mx-auto" />
+                    <p className="text-sm font-medium text-muted-foreground">No cross-domain pressure detected</p>
+                    <p className="text-xs text-muted-foreground/60">Cross-domain risk narratives surface when ≥2 signal domains converge on the same pressure vector.</p>
+                    <Button size="sm" variant="outline" onClick={regenerate} disabled={generating}>
+                      <Sparkles className="w-3.5 h-3.5 mr-1.5" />{generating ? "Generating…" : "Generate Brief"}
+                    </Button>
+                  </div>
                 ) : (
                   narratives.map((n) => (
                     <div key={n.id} className="border rounded-lg p-3 space-y-2">
@@ -413,7 +458,14 @@ export default function ExecutiveIntelligence() {
               <CardHeader><CardTitle>Organization Exposure</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 {!exposure ? (
-                  <p className="text-muted-foreground">No exposure snapshot yet.</p>
+                  <div className="text-center py-8 space-y-3">
+                    <ShieldAlert className="w-8 h-8 text-muted-foreground/40 mx-auto" />
+                    <p className="text-sm font-medium text-muted-foreground">No exposure snapshot yet</p>
+                    <p className="text-xs text-muted-foreground/60">Your organisation's aggregate risk exposure across signal categories is computed during a briefing.</p>
+                    <Button size="sm" variant="outline" onClick={regenerate} disabled={generating}>
+                      <Sparkles className="w-3.5 h-3.5 mr-1.5" />{generating ? "Generating…" : "Generate Brief"}
+                    </Button>
+                  </div>
                 ) : (
                   <>
                     <div className="space-y-2">

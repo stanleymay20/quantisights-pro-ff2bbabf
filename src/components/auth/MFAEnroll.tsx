@@ -34,9 +34,10 @@ const MFAEnroll = ({ onStatusChange }: MFAEnrollProps) => {
         const verified = data?.totp?.filter((f) => f.status === "verified") || [];
         setMfaEnabled(verified.length > 0);
       } catch (e: unknown) {
-        // MFA check failure — assume not enabled to avoid blocking user
+        // On error, leave mfaEnabled as null (unknown) — the UI shows a "retry" state
+        // rather than assuming MFA is disabled, which could mask an active MFA enrollment
         console.error("[MFAEnroll] Factor check failed:", e instanceof Error ? e.message : e);
-        setMfaEnabled(false);
+        setMfaEnabled(null); // null = unknown/error state, not false = not enrolled
       } finally {
         setChecking(false);
       }

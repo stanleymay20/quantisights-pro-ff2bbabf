@@ -6,12 +6,13 @@ interface Organization {
   id: string;
   name: string;
   role: string;
+  industry: string | null;
 }
 
 interface OrgMemberRow {
   organization_id: string;
   role: string;
-  organizations: { id: string; name: string } | null;
+  organizations: { id: string; name: string; industry: string | null } | null;
 }
 
 const ORG_STORAGE_KEY = "quantivis_org_id";
@@ -30,7 +31,7 @@ export const useOrganization = () => {
 
     const { data, error } = await supabase
       .from("organization_members")
-      .select("organization_id, role, organizations(id, name)")
+      .select("organization_id, role, organizations(id, name, industry)")
       .eq("user_id", user.id);
 
     if (error) throw error;
@@ -40,6 +41,7 @@ export const useOrganization = () => {
       .map((m) => ({
         id: m.organizations!.id,
         name: m.organizations!.name,
+        industry: m.organizations!.industry ?? null,
         role: m.role,
       }));
   }, [user]);
@@ -47,10 +49,11 @@ export const useOrganization = () => {
   const ensurePersonalTenant = useCallback(async (): Promise<Organization | null> => {
     if (!user) return null;
 
-    const displayName =
+    const displayName = (
       user.user_metadata?.full_name ||
       user.email?.split("@")[0] ||
-      "My";
+      "My"
+    ).trim();
     const orgName = `${displayName}'s Organization`.slice(0, 200);
 
     const { data: org, error: orgError } = await supabase
@@ -101,7 +104,7 @@ export const useOrganization = () => {
 
     await refreshProfile();
 
-    return { id: org.id, name: org.name, role: "owner" };
+    return { id: org.id, name: org.name, role: "owner", industry: null };
   }, [refreshProfile, user]);
 
   useEffect(() => {

@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuthThrottle } from "@/hooks/useAuthThrottle";
 import { useAuthEvents } from "@/hooks/useAuthEvents";
 import { supabase } from "@/integrations/supabase/client";
+import { trackLogin, identifyUser } from "@/lib/analytics";
 import MFAChallenge from "@/components/auth/MFAChallenge";
 import logo from "@/assets/quantivis-logo.png";
 import { Shield, Loader2 } from "lucide-react";
@@ -78,6 +79,15 @@ const Login = forwardRef<HTMLDivElement>((_, ref) => {
     setIsLoading(true);
     try {
       await signIn(email, password);
+      throttle.recordSuccess();
+      trackLogin("password");
+      // Identify user for PostHog cohort analysis (no PII — only anonymous ID)
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        import("@/lib/analytics").then(({ identifyUser }) =>
+          identifyUser(session.user.id, "", "")
+        );
+      }
 
       const { data: factorsData } = await supabase.auth.mfa.listFactors();
       const verifiedFactors = factorsData?.totp?.filter((f) => f.status === "verified") || [];
@@ -114,6 +124,7 @@ const Login = forwardRef<HTMLDivElement>((_, ref) => {
       navigate(redirectTo);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Unknown error";
+      throttle.recordFailure(); // increment failed-attempt counter
       logAuthEvent({ eventType: "failed_login", metadata: { email, reason: msg } });
       toast({ title: "Login failed", description: msg, variant: "destructive" });
     } finally {
@@ -166,18 +177,20 @@ const Login = forwardRef<HTMLDivElement>((_, ref) => {
     }, 15_000);
 
     try {
-      const { lovable } = await import("@/integrations/lovable");
       const existingSession = await finishIfSessionExists();
       if (existingSession) return;
-      const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
+      // Use Supabase native OAuth — bypasses Lovable's auth layer which shows Lovable branding.
+      // Always redirect to the production domain so users land on Quantivis, not Lovable.
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: "https://www.quantivis.io/auth/callback?next=" + encodeURIComponent(redirectTo),
+          queryParams: { access_type: "offline", prompt: "select_account" },
+        },
       });
       if (completed) return;
-      if (result.error) throw result.error;
+      if (error) throw error;
       logAuthEvent({ eventType: "login", metadata: { method: "google_redirect_started" } });
-      if (!result.redirected && !(await finishIfSessionExists())) {
-        navigate(redirectTo, { replace: true });
-      }
     } catch (err: unknown) {
       if (completed) return;
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -276,10 +289,12 @@ const Login = forwardRef<HTMLDivElement>((_, ref) => {
                   </div>
                   <button
                     type="submit"
-                    disabled={isLoading || ssoChecking}
+                    disabled={isLoading || ssoChecking || throttle.secondsRemaining > 0}
                     className="w-full py-3 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:brightness-110 transition-all disabled:opacity-50"
                   >
-                    {isLoading ? "Signing in..." : "Sign In"}
+                    {throttle.secondsRemaining > 0
+                      ? `Too many attempts — wait ${throttle.secondsRemaining}s`
+                      : isLoading ? "Signing in..." : "Sign In"}
                   </button>
                 </>
               )}

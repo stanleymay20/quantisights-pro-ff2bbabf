@@ -22,6 +22,7 @@ import RetentionPolicySettings from "@/components/settings/RetentionPolicySettin
 import GovernanceKPIs from "@/components/dashboard/GovernanceKPIs";
 import MFAEnroll from "@/components/auth/MFAEnroll";
 import SecurityPosture from "@/components/security/SecurityPosture";
+import { OrgSecuritySettings } from "@/components/security/OrgSecuritySettings";
 import SessionManagement from "@/components/auth/SessionManagement";
 import AuthEventLog from "@/components/auth/AuthEventLog";
 import PasskeyManagement from "@/components/auth/PasskeyManagement";
@@ -50,6 +51,7 @@ const Settings = () => {
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
   const [deletingAccount, setDeletingAccount] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState("");
   const [seedingDemo, setSeedingDemo] = useState(false);
 
   // Profile
@@ -295,18 +297,58 @@ const Settings = () => {
                     </CardContent>
                   </Card>
 
-                  {/* Account Deletion */}
-                  <Card className="border-destructive/30 mt-6">
+                  {/* Current Role — read-only display */}
+                  <Card className="mt-6">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        <Shield className="w-5 h-5 text-primary" /> Your Role
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm font-medium capitalize bg-primary/10 text-primary px-3 py-1 rounded-full">
+                          {orgRole ?? "member"}
+                        </span>
+                        <p className="text-xs text-muted-foreground">
+                          Your role controls which sections appear in your sidebar.
+                        </p>
+                      </div>
+                      <div className="text-xs text-muted-foreground space-y-1 bg-muted/30 rounded-lg p-3">
+                        {orgRole === "owner" || orgRole === "admin" ? (
+                          <p>Full access — all 9 sidebar sections visible.</p>
+                        ) : orgRole === "executive" ? (
+                          <p>Executive access — Home, Copilot, Decisions, Monitor, Reports, Governance, Team, Settings.</p>
+                        ) : orgRole === "analyst" ? (
+                          <p>Analyst access — Home, Copilot, Decisions, Reports, Data, Monitor, Settings.</p>
+                        ) : orgRole === "steward" ? (
+                          <p>Steward access — Home, Copilot, Decisions, Data, Governance, Settings.</p>
+                        ) : (
+                          <p>Viewer access — Home, Copilot, Decisions, Reports, Settings.</p>
+                        )}
+                        <p className="text-[10px] mt-1 opacity-70">To change your role, contact your organization owner.</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Account Deletion — scroll-mt pushes this below the fold on page load */}
+                  <Card className="border-destructive/30 mt-6 scroll-mt-8" id="danger-zone">
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2 text-destructive"><AlertTriangle className="w-5 h-5" /> Danger Zone</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-sm text-muted-foreground mb-4">
+                      <p className="text-sm text-muted-foreground mb-2">
                         Permanently delete your account and all associated data. This action cannot be undone. Your data will be purged per our <a href="/data-retention" className="text-primary hover:underline">Data Retention Policy</a>.
                       </p>
+                      <p className="text-xs text-muted-foreground mb-4">Type <strong>delete</strong> below to enable the button.</p>
+                      <Input
+                        value={deleteConfirm}
+                        onChange={(e) => setDeleteConfirm(e.target.value)}
+                        placeholder="Type delete to confirm"
+                        className="mb-3 max-w-xs"
+                      />
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button variant="destructive" className="gap-2"><Trash2 className="w-4 h-4" /> Delete Account</Button>
+                          <Button variant="destructive" className="gap-2" disabled={deleteConfirm !== "delete"}><Trash2 className="w-4 h-4" /> Delete Account</Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
@@ -384,6 +426,7 @@ const Settings = () => {
               <TabsContent value="security">
                 <SectionErrorBoundary sectionName="Security settings">
                 <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+                  <OrgSecuritySettings />
                   <SecurityPosture />
                   <MFAEnroll />
                   <PasskeyManagement />
@@ -443,16 +486,23 @@ const Settings = () => {
                           className="gap-2"
                           onClick={async () => {
                             setSeedingDemo(true);
+                            toast({ title: "Seeding demo data…", description: "Loading 15 months of Acme Corp sample data." });
                             try {
                               const { data, error } = await supabase.functions.invoke("seed-demo-data");
                               if (error) throw error;
-                              if (data?.error) throw new Error(data.error);
+                              if (data?.error) throw new Error(String(data.error));
+                              const summary = data?.summary;
                               toast({
                                 title: "Demo data loaded",
-                                description: `${data.summary.metrics} metrics, ${data.summary.decisions} decisions, ${data.summary.advisories} advisories seeded.`,
+                                description: summary
+                                  ? `${summary.metrics ?? 0} metrics, ${summary.decisions ?? 0} decisions, ${summary.advisories ?? 0} advisories seeded.`
+                                  : "Sample data loaded. Refresh the dashboard to see it.",
                               });
+                              // Soft reload to reflect new data
+                              setTimeout(() => window.location.reload(), 1500);
                             } catch (err: unknown) {
-                              toast({ title: "Error", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
+                              const msg = err instanceof Error ? err.message : "The demo seed function could not be reached. Please try again.";
+                              toast({ title: "Demo seed failed", description: msg, variant: "destructive" });
                             } finally {
                               setSeedingDemo(false);
                             }
@@ -503,7 +553,7 @@ const Settings = () => {
                             maxLength={255}
                             onKeyDown={e => e.key === "Enter" && (e.preventDefault(), addRecipient())}
                           />
-                          <Button variant="outline" size="sm" onClick={addRecipient}><Mail className="w-4 h-4" /></Button>
+                          <Button variant="outline" size="sm" aria-label="Add email recipient" onClick={addRecipient}><Mail className="w-4 h-4" /></Button>
                         </div>
                         <div className="flex flex-wrap gap-2 mt-2">
                           {emailRecipients.map(email => (

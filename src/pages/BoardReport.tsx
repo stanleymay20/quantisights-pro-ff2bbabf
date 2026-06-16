@@ -45,12 +45,20 @@ const BoardReport = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    import("@/lib/analytics").then(({ trackBoardReport }) => trackBoardReport());
+  }, []);
+
+  useEffect(() => {
     const fetchReport = async () => {
-      if (!currentOrgId || !activeDatasetId) return;
+      if (!currentOrgId || !activeDatasetId) {
+        setError("No active dataset selected. Please select a project and dataset first.");
+        setLoading(false);
+        return;
+      }
       try {
         const { data, error: fnError } = await invokeWithRetry<ReportData & { error?: string }>("generate-board-report", {
           body: { organization_id: currentOrgId, dataset_id: activeDatasetId },
-        });
+        }, { maxAttempts: 1, timeoutMs: 20_000 });
         if (fnError) throw fnError;
         if (data?.error) throw new Error(data.error);
         if (data) setReport(data);
@@ -119,7 +127,7 @@ const BoardReport = () => {
         <ReportHeader
           organizationName={report.organization_name}
           generatedAt={report.generated_at}
-          generatedBy={report.generated_by}
+          generatedBy={user?.user_metadata?.full_name || user?.email?.split("@")[0] || report.generated_by}
           tier={report.tier}
         />
 

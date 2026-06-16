@@ -1,11 +1,12 @@
 import { useState, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { SidebarMobileToggle } from "@/components/layout/ProtectedShell";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrganization } from "@/hooks/useOrganization";
 import { useProject } from "@/contexts/ProjectContext";
 import {
   Database, Table2, Columns3, BarChart3, RefreshCw, ChevronRight,
-  Hash, Calendar, Type, ArrowUpDown, Layers, Eye
+  Hash, Calendar, Type, ArrowUpDown, Layers, Eye, Upload,
 } from "lucide-react";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -41,6 +42,7 @@ interface ColumnStat {
 
 const DatasetExplorer = () => {
   const { currentOrgId } = useOrganization();
+  const navigate = useNavigate();
   const { activeDatasetId } = useProject();
   const [datasets, setDatasets] = useState<DatasetRecord[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -50,7 +52,7 @@ const DatasetExplorer = () => {
   const [view, setView] = useState<"schema" | "sample" | "stats">("schema");
 
   useEffect(() => {
-    if (!currentOrgId) return;
+    if (!currentOrgId) { setLoading(false); return; }
     const fetch = async () => {
       setLoading(true);
       const { data } = await supabase
@@ -162,9 +164,17 @@ const DatasetExplorer = () => {
           {loading ? (
             <div className="p-6 flex justify-center"><RefreshCw className="w-5 h-5 animate-spin text-muted-foreground" /></div>
           ) : datasets.length === 0 ? (
-            <div className="p-6 text-center">
-              <Database className="w-8 h-8 text-muted-foreground/40 mx-auto mb-2" />
-              <p className="text-xs text-muted-foreground">No datasets found. Upload data or connect a source.</p>
+            <div className="p-6 text-center space-y-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mx-auto">
+                <Database className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-xs font-medium text-foreground">No datasets yet</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">Upload a CSV or connect a data source to start exploring.</p>
+              </div>
+              <Button size="sm" variant="outline" className="w-full text-xs h-7" onClick={() => navigate("/data-upload")}>
+                <Upload className="w-3 h-3 mr-1.5" /> Upload Data
+              </Button>
             </div>
           ) : (
             <div className="space-y-0.5 p-1">
@@ -202,7 +212,15 @@ const DatasetExplorer = () => {
         <div className="flex-1 overflow-auto p-6">
           {!selected ? (
             <div className="flex items-center justify-center h-full">
-              <p className="text-muted-foreground text-sm">Select a dataset to explore</p>
+              <div className="text-center space-y-3 max-w-xs">
+                <div className="w-12 h-12 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto">
+                  <Layers className="w-6 h-6 text-muted-foreground" />
+                </div>
+                <p className="text-sm font-medium">Select a dataset</p>
+                <p className="text-xs text-muted-foreground">
+                  Choose a dataset from the left panel to explore its schema, metrics, and quality score.
+                </p>
+              </div>
             </div>
           ) : (
             <div className="max-w-[1200px] space-y-6">
