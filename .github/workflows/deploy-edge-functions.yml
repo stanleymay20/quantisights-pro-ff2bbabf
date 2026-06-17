@@ -84,8 +84,7 @@ jobs:
 
             echo "::group::Deploying $name"
             if supabase functions deploy "$name" \
-                 --project-ref "$SUPABASE_PROJECT_REF" \
-                 --no-verify-jwt; then
+                 --project-ref "$SUPABASE_PROJECT_REF"; then
               deployed=$((deployed + 1))
               echo "::endgroup::"
             else
