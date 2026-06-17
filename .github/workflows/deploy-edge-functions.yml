@@ -22,8 +22,10 @@ name: Deploy Supabase Edge Functions
 #     (~1-2 minutes for ~120 functions). If you later want changed-only
 #     deploys, replace the loop with a `git diff --name-only` filter.
 #   - `_shared` is skipped (it's a shared lib, not a deployable function).
-#   - `--no-verify-jwt` matches Lovable's default; per-function overrides
-#     are still honored from supabase/config.toml.
+#   - No `--no-verify-jwt` flag is passed. Each function's verify_jwt setting
+#     is taken from supabase/config.toml when present, or the platform default
+#     (verify_jwt = true) when absent. Passing the CLI flag would override
+#     config.toml at deploy time and silently flip protected functions.
 
 on:
   push:
