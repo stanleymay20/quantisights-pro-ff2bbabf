@@ -427,53 +427,77 @@ const DecisionLedgerPage = () => {
         <main className="flex-1 p-8 overflow-auto space-y-6">
           <SectionErrorBoundary sectionName="Decision Ledger">
           {/* Summary cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3">
             <Card>
               <CardContent className="p-4">
-                <p className="text-xs text-muted-foreground">Total</p>
-                <p className="text-2xl font-bold mt-1">{decisions.length}</p>
+                <p className="text-[11px] text-muted-foreground uppercase tracking-wide">Decisions logged</p>
+                <p className="text-2xl font-bold font-mono mt-1">{decisions.length}</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4">
-                <p className="text-xs text-muted-foreground">Active</p>
-                <p className="text-2xl font-bold mt-1 text-primary">{activeDecisions.length}</p>
+                <p className="text-[11px] text-muted-foreground uppercase tracking-wide">In flight</p>
+                <p className="text-2xl font-bold font-mono mt-1 text-primary">{activeDecisions.length}</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4">
-                <p className="text-xs text-muted-foreground">Completed</p>
-                <p className="text-2xl font-bold mt-1 text-success">{completedDecisions.length}</p>
+                <p className="text-[11px] text-muted-foreground uppercase tracking-wide">Outcomes recorded</p>
+                <p className="text-2xl font-bold font-mono mt-1 text-success">{completedDecisions.length}</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4">
-                <p className="text-xs text-muted-foreground flex items-center gap-1"><TrendingUp className="w-3 h-3" /> Avg Outcome</p>
-                <p className={`text-2xl font-bold mt-1 ${avgOutcomeDelta !== null && avgOutcomeDelta > 0 ? "text-success" : avgOutcomeDelta !== null && avgOutcomeDelta < 0 ? "text-destructive" : ""}`}>
+                <p className="text-[11px] text-muted-foreground uppercase tracking-wide flex items-center gap-1"><TrendingUp className="w-3 h-3" /> Avg. outcome Δ</p>
+                <p className={`text-2xl font-bold font-mono mt-1 ${avgOutcomeDelta !== null && avgOutcomeDelta > 0 ? "text-success" : avgOutcomeDelta !== null && avgOutcomeDelta < 0 ? "text-destructive" : ""}`}>
                   {avgOutcomeDelta !== null ? `${avgOutcomeDelta > 0 ? "+" : ""}${formatCompact(avgOutcomeDelta)}` : "—"}
                 </p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4">
-                <p className="text-xs text-muted-foreground flex items-center gap-1"><Activity className="w-3 h-3" /> Cal. Error</p>
-                <p className={`text-2xl font-bold mt-1 ${avgCalibrationError !== null && avgCalibrationError < 30 ? "text-success" : avgCalibrationError !== null && avgCalibrationError > 50 ? "text-destructive" : "text-warning"}`}>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <p className="text-[11px] text-muted-foreground uppercase tracking-wide flex items-center gap-1 cursor-help"><Activity className="w-3 h-3" /> Calibration error</p>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs text-xs">Average gap between predicted and observed outcomes. Lower is better — under 30 indicates well-calibrated forecasts.</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <p className={`text-2xl font-bold font-mono mt-1 ${avgCalibrationError !== null && avgCalibrationError < 30 ? "text-success" : avgCalibrationError !== null && avgCalibrationError > 50 ? "text-destructive" : "text-warning"}`}>
                   {avgCalibrationError !== null ? `${avgCalibrationError.toFixed(0)}` : "—"}
                 </p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4">
-                <p className="text-xs text-muted-foreground flex items-center gap-1"><ShieldCheck className="w-3 h-3" /> Success Rate</p>
-                <p className={`text-2xl font-bold mt-1 ${decisionSuccessRate !== null && decisionSuccessRate > 60 ? "text-success" : decisionSuccessRate !== null && decisionSuccessRate < 40 ? "text-destructive" : "text-warning"}`}>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <p className="text-[11px] text-muted-foreground uppercase tracking-wide flex items-center gap-1 cursor-help"><ShieldCheck className="w-3 h-3" /> Hit rate</p>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs text-xs">Share of completed decisions with positive outcome delta. Requires {MIN_DECISIONS_FOR_RATE}+ outcomes for statistical reliability.</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <p className={`text-2xl font-bold font-mono mt-1 ${decisionSuccessRate !== null && decisionSuccessRate > 60 ? "text-success" : decisionSuccessRate !== null && decisionSuccessRate < 40 ? "text-destructive" : "text-warning"}`}>
                   {decisionSuccessRate !== null ? `${decisionSuccessRate.toFixed(0)}%` : "—"}
                 </p>
+                {decisionSuccessRate === null && completedDecisions.length > 0 && (
+                  <p className="text-[10px] text-muted-foreground mt-0.5">{completedDecisions.length}/{MIN_DECISIONS_FOR_RATE} to qualify</p>
+                )}
               </CardContent>
             </Card>
             <Card className={learningStats.totalCalibrated >= 5 ? "border-primary/30" : ""}>
               <CardContent className="p-4">
-                <p className="text-xs text-muted-foreground flex items-center gap-1"><Zap className="w-3 h-3" /> Learning</p>
-                <p className="text-2xl font-bold mt-1">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <p className="text-[11px] text-muted-foreground uppercase tracking-wide flex items-center gap-1 cursor-help"><Zap className="w-3 h-3" /> Self-calibration</p>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs text-xs">Confidence adjustment learned from your historical calibration error. Activates after 5 calibrated decisions.</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <p className="text-2xl font-bold font-mono mt-1">
                   {learningStats.totalCalibrated >= 5 ? (
                     <span className="text-primary">{learningStats.confidenceAdjustment > 0 ? "+" : ""}{learningStats.confidenceAdjustment.toFixed(1)}</span>
                   ) : (
@@ -481,7 +505,7 @@ const DecisionLedgerPage = () => {
                   )}
                 </p>
                 <p className="text-[10px] text-muted-foreground mt-0.5">
-                  {learningStats.totalCalibrated >= 5 ? "Confidence adj." : "Decisions to learn"}
+                  {learningStats.totalCalibrated >= 5 ? "applied to new forecasts" : "decisions to learn"}
                 </p>
               </CardContent>
             </Card>
