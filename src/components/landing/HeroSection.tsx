@@ -20,7 +20,8 @@ const HeroSection = forwardRef<HTMLElement>((_, ref) => {
           width={1600}
           height={1024}
           className="absolute inset-0 w-full h-full object-cover opacity-30"
-          fetchPriority="high"
+          loading="eager"
+          decoding="async"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-background/70 via-background/85 to-background" />
         <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-primary/[0.08] rounded-full blur-[180px]" />
