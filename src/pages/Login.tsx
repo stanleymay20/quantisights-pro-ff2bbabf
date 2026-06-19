@@ -7,8 +7,9 @@ import { useAuthEvents } from "@/hooks/useAuthEvents";
 import { supabase } from "@/integrations/supabase/client";
 import { trackLogin, identifyUser } from "@/lib/analytics";
 import MFAChallenge from "@/components/auth/MFAChallenge";
-import logo from "@/assets/quantivis-logo.png";
-import { Shield, Loader2 } from "lucide-react";
+import AuthLayout from "@/components/auth/AuthLayout";
+import GoogleButton from "@/components/auth/GoogleButton";
+import { Shield } from "lucide-react";
 
 const Login = forwardRef<HTMLDivElement>((_, ref) => {
   const [email, setEmail] = useState("");
