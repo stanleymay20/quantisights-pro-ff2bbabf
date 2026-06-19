@@ -403,13 +403,21 @@ const DecisionLedgerPage = () => {
 
   return (
     <>
-        <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
-          <div className="flex items-center gap-3">
+        <header className="border-b border-border/30 flex items-center justify-between px-6 md:px-8 py-3 shrink-0 bg-background/60 backdrop-blur-sm">
+          <div className="flex items-center gap-3 min-w-0">
             <SidebarMobileToggle />
-            <h1 className="text-xl font-semibold font-display">Decision Ledger</h1>
-            <p className="text-xs text-muted-foreground">Track decisions, simulate impact, calibrate predictions</p>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <BookOpen className="w-4 h-4 text-primary shrink-0" />
+                <h1 className="text-xl font-semibold font-display truncate">Decision Ledger</h1>
+                <Badge variant="outline" className="text-[10px] uppercase tracking-wide hidden sm:inline-flex">Governed</Badge>
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                Recommendation → Decision → Outcome → Governance. Every decision auditable, every outcome measured.
+              </p>
+            </div>
           </div>
-          <Button onClick={() => setShowCreate(!showCreate)} size="sm" className="gap-2">
+          <Button onClick={() => setShowCreate(!showCreate)} size="sm" className="gap-2 shrink-0">
             <Plus className="w-4 h-4" /> Log Decision
           </Button>
         </header>
