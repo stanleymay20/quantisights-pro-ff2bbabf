@@ -403,13 +403,21 @@ const DecisionLedgerPage = () => {
 
   return (
     <>
-        <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
-          <div className="flex items-center gap-3">
+        <header className="border-b border-border/30 flex items-center justify-between px-6 md:px-8 py-3 shrink-0 bg-background/60 backdrop-blur-sm">
+          <div className="flex items-center gap-3 min-w-0">
             <SidebarMobileToggle />
-            <h1 className="text-xl font-semibold font-display">Decision Ledger</h1>
-            <p className="text-xs text-muted-foreground">Track decisions, simulate impact, calibrate predictions</p>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <BookOpen className="w-4 h-4 text-primary shrink-0" />
+                <h1 className="text-xl font-semibold font-display truncate">Decision Ledger</h1>
+                <Badge variant="outline" className="text-[10px] uppercase tracking-wide hidden sm:inline-flex">Governed</Badge>
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                Recommendation → Decision → Outcome → Governance. Every decision auditable, every outcome measured.
+              </p>
+            </div>
           </div>
-          <Button onClick={() => setShowCreate(!showCreate)} size="sm" className="gap-2">
+          <Button onClick={() => setShowCreate(!showCreate)} size="sm" className="gap-2 shrink-0">
             <Plus className="w-4 h-4" /> Log Decision
           </Button>
         </header>
@@ -419,53 +427,77 @@ const DecisionLedgerPage = () => {
         <main className="flex-1 p-8 overflow-auto space-y-6">
           <SectionErrorBoundary sectionName="Decision Ledger">
           {/* Summary cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3">
             <Card>
               <CardContent className="p-4">
-                <p className="text-xs text-muted-foreground">Total</p>
-                <p className="text-2xl font-bold mt-1">{decisions.length}</p>
+                <p className="text-[11px] text-muted-foreground uppercase tracking-wide">Decisions logged</p>
+                <p className="text-2xl font-bold font-mono mt-1">{decisions.length}</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4">
-                <p className="text-xs text-muted-foreground">Active</p>
-                <p className="text-2xl font-bold mt-1 text-primary">{activeDecisions.length}</p>
+                <p className="text-[11px] text-muted-foreground uppercase tracking-wide">In flight</p>
+                <p className="text-2xl font-bold font-mono mt-1 text-primary">{activeDecisions.length}</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4">
-                <p className="text-xs text-muted-foreground">Completed</p>
-                <p className="text-2xl font-bold mt-1 text-success">{completedDecisions.length}</p>
+                <p className="text-[11px] text-muted-foreground uppercase tracking-wide">Outcomes recorded</p>
+                <p className="text-2xl font-bold font-mono mt-1 text-success">{completedDecisions.length}</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4">
-                <p className="text-xs text-muted-foreground flex items-center gap-1"><TrendingUp className="w-3 h-3" /> Avg Outcome</p>
-                <p className={`text-2xl font-bold mt-1 ${avgOutcomeDelta !== null && avgOutcomeDelta > 0 ? "text-success" : avgOutcomeDelta !== null && avgOutcomeDelta < 0 ? "text-destructive" : ""}`}>
+                <p className="text-[11px] text-muted-foreground uppercase tracking-wide flex items-center gap-1"><TrendingUp className="w-3 h-3" /> Avg. outcome Δ</p>
+                <p className={`text-2xl font-bold font-mono mt-1 ${avgOutcomeDelta !== null && avgOutcomeDelta > 0 ? "text-success" : avgOutcomeDelta !== null && avgOutcomeDelta < 0 ? "text-destructive" : ""}`}>
                   {avgOutcomeDelta !== null ? `${avgOutcomeDelta > 0 ? "+" : ""}${formatCompact(avgOutcomeDelta)}` : "—"}
                 </p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4">
-                <p className="text-xs text-muted-foreground flex items-center gap-1"><Activity className="w-3 h-3" /> Cal. Error</p>
-                <p className={`text-2xl font-bold mt-1 ${avgCalibrationError !== null && avgCalibrationError < 30 ? "text-success" : avgCalibrationError !== null && avgCalibrationError > 50 ? "text-destructive" : "text-warning"}`}>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <p className="text-[11px] text-muted-foreground uppercase tracking-wide flex items-center gap-1 cursor-help"><Activity className="w-3 h-3" /> Calibration error</p>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs text-xs">Average gap between predicted and observed outcomes. Lower is better — under 30 indicates well-calibrated forecasts.</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <p className={`text-2xl font-bold font-mono mt-1 ${avgCalibrationError !== null && avgCalibrationError < 30 ? "text-success" : avgCalibrationError !== null && avgCalibrationError > 50 ? "text-destructive" : "text-warning"}`}>
                   {avgCalibrationError !== null ? `${avgCalibrationError.toFixed(0)}` : "—"}
                 </p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4">
-                <p className="text-xs text-muted-foreground flex items-center gap-1"><ShieldCheck className="w-3 h-3" /> Success Rate</p>
-                <p className={`text-2xl font-bold mt-1 ${decisionSuccessRate !== null && decisionSuccessRate > 60 ? "text-success" : decisionSuccessRate !== null && decisionSuccessRate < 40 ? "text-destructive" : "text-warning"}`}>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <p className="text-[11px] text-muted-foreground uppercase tracking-wide flex items-center gap-1 cursor-help"><ShieldCheck className="w-3 h-3" /> Hit rate</p>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs text-xs">Share of completed decisions with positive outcome delta. Requires {MIN_DECISIONS_FOR_RATE}+ outcomes for statistical reliability.</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <p className={`text-2xl font-bold font-mono mt-1 ${decisionSuccessRate !== null && decisionSuccessRate > 60 ? "text-success" : decisionSuccessRate !== null && decisionSuccessRate < 40 ? "text-destructive" : "text-warning"}`}>
                   {decisionSuccessRate !== null ? `${decisionSuccessRate.toFixed(0)}%` : "—"}
                 </p>
+                {decisionSuccessRate === null && completedDecisions.length > 0 && (
+                  <p className="text-[10px] text-muted-foreground mt-0.5">{completedDecisions.length}/{MIN_DECISIONS_FOR_RATE} to qualify</p>
+                )}
               </CardContent>
             </Card>
             <Card className={learningStats.totalCalibrated >= 5 ? "border-primary/30" : ""}>
               <CardContent className="p-4">
-                <p className="text-xs text-muted-foreground flex items-center gap-1"><Zap className="w-3 h-3" /> Learning</p>
-                <p className="text-2xl font-bold mt-1">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <p className="text-[11px] text-muted-foreground uppercase tracking-wide flex items-center gap-1 cursor-help"><Zap className="w-3 h-3" /> Self-calibration</p>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs text-xs">Confidence adjustment learned from your historical calibration error. Activates after 5 calibrated decisions.</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <p className="text-2xl font-bold font-mono mt-1">
                   {learningStats.totalCalibrated >= 5 ? (
                     <span className="text-primary">{learningStats.confidenceAdjustment > 0 ? "+" : ""}{learningStats.confidenceAdjustment.toFixed(1)}</span>
                   ) : (
@@ -473,7 +505,7 @@ const DecisionLedgerPage = () => {
                   )}
                 </p>
                 <p className="text-[10px] text-muted-foreground mt-0.5">
-                  {learningStats.totalCalibrated >= 5 ? "Confidence adj." : "Decisions to learn"}
+                  {learningStats.totalCalibrated >= 5 ? "applied to new forecasts" : "decisions to learn"}
                 </p>
               </CardContent>
             </Card>
@@ -662,9 +694,16 @@ const DecisionLedgerPage = () => {
 
             <TabsContent value="aicis" className="space-y-3">
               {aicisQueue.length === 0 ? (
-                <Card className="border-dashed"><CardContent className="py-16 flex flex-col items-center gap-3">
-                  <Zap className="w-10 h-10 text-muted-foreground" />
-                  <p className="text-muted-foreground text-sm">No AICIS-generated decisions pending. The auto-pipeline runs every 15 minutes.</p>
+                <Card className="border-dashed"><CardContent className="py-16 flex flex-col items-center gap-4 text-center">
+                  <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
+                    <Zap className="w-7 h-7 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-base">AICIS queue is clear</p>
+                    <p className="text-sm text-muted-foreground mt-1 max-w-md">
+                      No external risk predictions or recommendations are awaiting governance review. The intelligence pipeline runs every 15 minutes and surfaces high-impact signals here.
+                    </p>
+                  </div>
                 </CardContent></Card>
               ) : aicisQueue.map(d => {
                 const isPrediction = !!d.linked_aicis_prediction_id;
@@ -717,9 +756,30 @@ const DecisionLedgerPage = () => {
               {loading ? (
                 <Card><CardContent className="py-12 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></CardContent></Card>
               ) : activeDecisions.length === 0 ? (
-                <Card className="border-dashed"><CardContent className="py-16 flex flex-col items-center gap-3">
-                  <BookOpen className="w-10 h-10 text-muted-foreground" />
-                  <p className="text-muted-foreground text-sm">No active decisions. Log a decision to start tracking.</p>
+                <Card className="border-dashed"><CardContent className="py-20 flex flex-col items-center gap-4 text-center">
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center ring-1 ring-primary/20">
+                    <BookOpen className="w-8 h-8 text-primary" />
+                  </div>
+                  <div className="max-w-md">
+                    <p className="font-semibold text-lg font-display">No governed decisions yet</p>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Create your first decision from an insight, forecast, or manual entry.
+                      Every decision is captured with evidence, confidence, approval trail, and outcome — fully auditable from recommendation to result.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Button size="sm" onClick={() => setShowCreate(true)} className="gap-2">
+                      <Plus className="w-4 h-4" /> Log first decision
+                    </Button>
+                    <Button size="sm" variant="ghost" asChild>
+                      <a href="/executive">Browse insights →</a>
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3 mt-4 text-[11px] text-muted-foreground max-w-md w-full">
+                    <div className="flex flex-col items-center gap-1"><ShieldCheck className="w-4 h-4 text-primary/60" /><span>Evidence-backed</span></div>
+                    <div className="flex flex-col items-center gap-1"><Activity className="w-4 h-4 text-primary/60" /><span>Approval trail</span></div>
+                    <div className="flex flex-col items-center gap-1"><Target className="w-4 h-4 text-primary/60" /><span>Outcome tracked</span></div>
+                  </div>
                 </CardContent></Card>
               ) : activeDecisions.map(d => {
                 const sCfg = STATUS_COLORS[d.decision_status] || STATUS_COLORS.pending;
