@@ -188,146 +188,152 @@ const Login = forwardRef<HTMLDivElement>((_, ref) => {
   };
 
   return (
-    <div ref={ref} className="min-h-dvh flex flex-col bg-background safe-area-bottom safe-area-top">
-      {/* Top nav bar with back link */}
-      <div className="w-full flex items-center justify-between px-6 py-4 border-b border-border/30">
-        <Link to="/" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-          Back to home
-        </Link>
-        <Link to="/"><img src={logo} alt="Quantivis Global" className="h-8" /></Link>
-        <Link to="/register" className="text-sm text-primary hover:underline">Sign up</Link>
-      </div>
-
-      <div className="flex-1 flex items-center justify-center px-4 py-10">
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/3 left-1/3 w-96 h-96 bg-primary/5 rounded-full blur-[120px]" />
-      </div>
-      <div className="glass-card p-8 w-full max-w-md relative z-10">
-        <div className="flex justify-center mb-8">
-          <Link to="/"><img src={logo} alt="Quantivis Global" className="h-10" /></Link>
-        </div>
-
-        {showMFA ? (
-          <MFAChallenge onVerified={handleMFAVerified} />
-        ) : (
-          <>
-            <h1 className="text-2xl font-bold font-display text-center mb-2">Welcome Back</h1>
-            <p className="text-muted-foreground text-center mb-8 text-sm">Sign in to your account</p>
-
-            <form onSubmit={handleSubmit} className="space-y-4" autoComplete="on">
-              <div>
-                <label className="block text-sm font-medium mb-1.5">Email</label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                    checkSSODomain(e.target.value);
-                  }}
-                  required
-                  autoComplete="email"
-                  className="w-full px-4 py-3 rounded-lg bg-secondary border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
-                  placeholder="you@company.com"
-                />
-              </div>
-
-              {ssoChecking && (
-                <p className="text-xs text-muted-foreground">Checking organization sign-in options…</p>
-              )}
-
-              {/* SSO Detection Banner */}
-              {ssoRedirect && (
-                <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 space-y-2">
-                  <div className="flex items-center gap-2 text-sm font-medium text-primary">
-                    <Shield className="w-4 h-4" />
-                    SSO detected for your domain
-                  </div>
-                  {ssoEnforced && (
-                    <p className="text-xs text-muted-foreground">
-                      Your organization requires SSO login. Password authentication is disabled.
-                    </p>
-                  )}
-                  <button
-                    type="button"
-                    onClick={handleSSOLogin}
-                    disabled={ssoChecking}
-                    className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:brightness-110 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-                  >
-                    <Shield className="w-4 h-4" />
-                    {ssoChecking ? "Checking…" : "Sign in with SSO"}
-                  </button>
-                </div>
-              )}
-
-              {!ssoEnforced && (
-                <>
-                  <div>
-                    <label className="block text-sm font-medium mb-1.5">Password</label>
-                    <input
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required={!ssoRedirect}
-                      autoComplete="current-password"
-                      className="w-full px-4 py-3 rounded-lg bg-secondary border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
-                      placeholder="••••••••"
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    disabled={isLoading || ssoChecking || throttle.secondsRemaining > 0}
-                    className="w-full py-3 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:brightness-110 transition-all disabled:opacity-50"
-                  >
-                    {throttle.secondsRemaining > 0
-                      ? `Too many attempts — wait ${throttle.secondsRemaining}s`
-                      : isLoading ? "Signing in..." : "Sign In"}
-                  </button>
-                </>
-              )}
-            </form>
-
-            {/* Divider */}
-            {!ssoEnforced && (
-              <div className="relative my-6">
-                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div>
-                <div className="relative flex justify-center text-xs"><span className="bg-card px-3 text-muted-foreground">or continue with</span></div>
-              </div>
-            )}
-
-            {/* Google Sign In */}
-            {!ssoEnforced && (
-              <button
-                type="button"
-                disabled={googleLoading || isLoading}
-                onClick={handleGoogleSignIn}
-                className="w-full py-3 rounded-lg bg-secondary border border-border text-foreground font-medium text-sm hover:bg-accent transition-all disabled:opacity-50 flex items-center justify-center gap-3"
+    <AuthLayout
+      title={showMFA ? "Two-factor authentication" : "Welcome back"}
+      subtitle={
+        showMFA
+          ? "Enter the 6-digit code from your authenticator app to continue."
+          : "Sign in to your Quantivis workspace."
+      }
+      footer={
+        showMFA ? null : (
+          <div className="space-y-2">
+            <p>
+              Don't have an account?{" "}
+              <Link to="/register" className="text-primary hover:underline font-medium">
+                Sign up
+              </Link>
+            </p>
+            <p className="text-xs">
+              <Link
+                to="/forgot-password"
+                className="text-muted-foreground hover:text-foreground hover:underline transition-colors"
               >
-                {googleLoading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <svg className="w-4 h-4" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
-                )}
-                Continue with Google
-              </button>
+                Forgot your password?
+              </Link>
+            </p>
+          </div>
+        )
+      }
+    >
+      {showMFA ? (
+        <MFAChallenge onVerified={handleMFAVerified} />
+      ) : (
+        <>
+          <form onSubmit={handleSubmit} className="space-y-4" autoComplete="on">
+            <div>
+              <label htmlFor="login-email" className="block text-xs font-medium text-muted-foreground mb-1.5 uppercase tracking-wider">
+                Work email
+              </label>
+              <input
+                id="login-email"
+                type="email"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  checkSSODomain(e.target.value);
+                }}
+                required
+                autoComplete="email"
+                className="w-full h-11 px-4 rounded-lg bg-secondary/60 border border-border text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 text-sm transition-all"
+                placeholder="you@company.com"
+              />
+            </div>
+
+            {ssoChecking && (
+              <p className="text-xs text-muted-foreground flex items-center gap-2">
+                <span className="w-1 h-1 rounded-full bg-primary animate-pulse" />
+                Checking organization sign-in options…
+              </p>
             )}
 
-            <div className="text-center mt-6 space-y-2">
-              <p className="text-sm text-muted-foreground">
-                Don't have an account?{" "}
-                <Link to="/register" className="text-primary hover:underline">Sign up</Link>
-              </p>
-              <p className="text-xs text-muted-foreground">
-                <Link to="/forgot-password" className="text-primary/70 hover:text-primary hover:underline transition-colors">
-                  Forgot your password?
-                </Link>
-              </p>
-            </div>
-          </>
-        )}
-      </div>
-      </div>
-    </div>
+            {/* SSO detection */}
+            {ssoRedirect && (
+              <div className="rounded-lg border border-primary/30 bg-primary/5 p-3.5 space-y-2.5">
+                <div className="flex items-center gap-2 text-sm font-medium text-primary">
+                  <Shield className="w-4 h-4" />
+                  Enterprise SSO detected
+                </div>
+                {ssoEnforced && (
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Your organization requires SSO sign-in. Password authentication is disabled.
+                  </p>
+                )}
+                <button
+                  type="button"
+                  onClick={handleSSOLogin}
+                  disabled={ssoChecking}
+                  className="w-full h-10 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:brightness-110 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  <Shield className="w-4 h-4" />
+                  {ssoChecking ? "Checking…" : "Sign in with SSO"}
+                </button>
+              </div>
+            )}
+
+            {!ssoEnforced && (
+              <>
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label htmlFor="login-password" className="block text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Password
+                    </label>
+                    <Link
+                      to="/forgot-password"
+                      className="text-[11px] text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      Forgot?
+                    </Link>
+                  </div>
+                  <input
+                    id="login-password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required={!ssoRedirect}
+                    autoComplete="current-password"
+                    className="w-full h-11 px-4 rounded-lg bg-secondary/60 border border-border text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 text-sm transition-all"
+                    placeholder="••••••••"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={isLoading || ssoChecking || throttle.secondsRemaining > 0}
+                  className="w-full h-11 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:brightness-110 transition-all disabled:opacity-50 shadow-[0_8px_24px_-8px_hsl(var(--primary)/0.5)]"
+                >
+                  {throttle.secondsRemaining > 0
+                    ? `Too many attempts — wait ${throttle.secondsRemaining}s`
+                    : isLoading
+                    ? "Signing in…"
+                    : "Sign in securely"}
+                </button>
+              </>
+            )}
+          </form>
+
+          {!ssoEnforced && (
+            <>
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-border/60" />
+                </div>
+                <div className="relative flex justify-center">
+                  <span className="bg-card px-3 text-[10px] uppercase tracking-[0.18em] text-muted-foreground/70">
+                    or continue with
+                  </span>
+                </div>
+              </div>
+
+              <GoogleButton
+                loading={googleLoading}
+                disabled={isLoading}
+                onClick={handleGoogleSignIn}
+              />
+            </>
+          )}
+        </>
+      )}
+    </AuthLayout>
   );
 });
 
