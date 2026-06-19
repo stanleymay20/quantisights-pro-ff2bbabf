@@ -756,9 +756,30 @@ const DecisionLedgerPage = () => {
               {loading ? (
                 <Card><CardContent className="py-12 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></CardContent></Card>
               ) : activeDecisions.length === 0 ? (
-                <Card className="border-dashed"><CardContent className="py-16 flex flex-col items-center gap-3">
-                  <BookOpen className="w-10 h-10 text-muted-foreground" />
-                  <p className="text-muted-foreground text-sm">No active decisions. Log a decision to start tracking.</p>
+                <Card className="border-dashed"><CardContent className="py-20 flex flex-col items-center gap-4 text-center">
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center ring-1 ring-primary/20">
+                    <BookOpen className="w-8 h-8 text-primary" />
+                  </div>
+                  <div className="max-w-md">
+                    <p className="font-semibold text-lg font-display">No governed decisions yet</p>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Create your first decision from an insight, forecast, or manual entry.
+                      Every decision is captured with evidence, confidence, approval trail, and outcome — fully auditable from recommendation to result.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Button size="sm" onClick={() => setShowCreate(true)} className="gap-2">
+                      <Plus className="w-4 h-4" /> Log first decision
+                    </Button>
+                    <Button size="sm" variant="ghost" asChild>
+                      <a href="/executive">Browse insights →</a>
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3 mt-4 text-[11px] text-muted-foreground max-w-md w-full">
+                    <div className="flex flex-col items-center gap-1"><ShieldCheck className="w-4 h-4 text-primary/60" /><span>Evidence-backed</span></div>
+                    <div className="flex flex-col items-center gap-1"><Activity className="w-4 h-4 text-primary/60" /><span>Approval trail</span></div>
+                    <div className="flex flex-col items-center gap-1"><Target className="w-4 h-4 text-primary/60" /><span>Outcome tracked</span></div>
+                  </div>
                 </CardContent></Card>
               ) : activeDecisions.map(d => {
                 const sCfg = STATUS_COLORS[d.decision_status] || STATUS_COLORS.pending;
