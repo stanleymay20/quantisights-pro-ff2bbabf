@@ -160,63 +160,27 @@ const Login = forwardRef<HTMLDivElement>((_, ref) => {
 
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
-    let completed = false;
-    const timeoutRef: { current?: ReturnType<typeof setTimeout> } = {};
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user && !completed) {
-        completed = true;
-        if (timeoutRef.current) clearTimeout(timeoutRef.current);
-        subscription.unsubscribe();
-        logAuthEvent({ eventType: "login", metadata: { method: "google" } });
-        navigate(redirectTo, { replace: true });
-      }
-    });
-
-    const finishIfSessionExists = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (data.session && !completed) {
-        completed = true;
-        if (timeoutRef.current) clearTimeout(timeoutRef.current);
-        subscription.unsubscribe();
-        logAuthEvent({ eventType: "login", metadata: { method: "google" } });
-        navigate(redirectTo, { replace: true });
-        return true;
-      }
-      return Boolean(data.session);
-    };
-
-    timeoutRef.current = setTimeout(() => {
-      finishIfSessionExists().then((hasSession) => {
-        if (!hasSession && !completed) {
-          subscription.unsubscribe();
-          setGoogleLoading(false);
-          toast({ title: "Google sign-in paused", description: "Complete the Google window, then try again if this page does not move forward.", variant: "destructive" });
-        }
-      }).catch(() => {
-        subscription.unsubscribe();
-        setGoogleLoading(false);
-      });
-    }, 15_000);
-
     try {
-      const existingSession = await finishIfSessionExists();
-      if (existingSession) return;
-      // PKCE stores the code_verifier in the originating domain's localStorage,
-      // so the callback MUST land back on the same origin or the session never establishes.
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectTo)}`,
-          queryParams: { access_type: "offline", prompt: "select_account" },
-        },
+      // Lovable Cloud Managed Social Login. The Google OAuth client is registered
+      // against the /~oauth/callback broker URLs, not Supabase's /auth/callback.
+      // Using the legacy supabase.auth.signInWithOAuth flow here would fail because
+      // Google would refuse the redirect URI.
+      const { lovable } = await import("@/integrations/lovable");
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin,
+        extraParams: { prompt: "select_account" },
       });
-      if (completed) return;
-      if (error) throw error;
-      logAuthEvent({ eventType: "login", metadata: { method: "google_redirect_started" } });
+      if (result.error) {
+        throw result.error instanceof Error ? result.error : new Error(String(result.error));
+      }
+      if (result.redirected) {
+        // Browser is redirecting to Google — nothing more to do here.
+        return;
+      }
+      // Tokens were returned synchronously and the session is set.
+      logAuthEvent({ eventType: "login", metadata: { method: "google" } });
+      navigate(redirectTo, { replace: true });
     } catch (err: unknown) {
-      if (completed) return;
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      subscription.unsubscribe();
       toast({ title: "Google sign-in failed", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
       setGoogleLoading(false);
     }
