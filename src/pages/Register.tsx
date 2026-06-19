@@ -1,11 +1,12 @@
-import { useState, useMemo, forwardRef } from "react";
+import { useState, useMemo } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthThrottle } from "@/hooks/useAuthThrottle";
 import { supabase } from "@/integrations/supabase/client";
-import { Check, X, Loader2 } from "lucide-react";
-import logo from "@/assets/quantivis-logo.png";
+import { Check, X } from "lucide-react";
+import AuthLayout from "@/components/auth/AuthLayout";
+import GoogleButton from "@/components/auth/GoogleButton";
 
 const PASSWORD_RULES = [
   { label: "At least 8 characters", test: (p: string) => p.length >= 8 },
@@ -15,7 +16,7 @@ const PASSWORD_RULES = [
   { label: "Special character", test: (p: string) => /[^A-Za-z0-9]/.test(p) },
 ];
 
-const Register = forwardRef<HTMLDivElement>((_, ref) => {
+const Register = () => {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
