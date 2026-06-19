@@ -694,9 +694,16 @@ const DecisionLedgerPage = () => {
 
             <TabsContent value="aicis" className="space-y-3">
               {aicisQueue.length === 0 ? (
-                <Card className="border-dashed"><CardContent className="py-16 flex flex-col items-center gap-3">
-                  <Zap className="w-10 h-10 text-muted-foreground" />
-                  <p className="text-muted-foreground text-sm">No AICIS-generated decisions pending. The auto-pipeline runs every 15 minutes.</p>
+                <Card className="border-dashed"><CardContent className="py-16 flex flex-col items-center gap-4 text-center">
+                  <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
+                    <Zap className="w-7 h-7 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-base">AICIS queue is clear</p>
+                    <p className="text-sm text-muted-foreground mt-1 max-w-md">
+                      No external risk predictions or recommendations are awaiting governance review. The intelligence pipeline runs every 15 minutes and surfaces high-impact signals here.
+                    </p>
+                  </div>
                 </CardContent></Card>
               ) : aicisQueue.map(d => {
                 const isPrediction = !!d.linked_aicis_prediction_id;
