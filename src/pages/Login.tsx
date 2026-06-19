@@ -201,12 +201,12 @@ const Login = forwardRef<HTMLDivElement>((_, ref) => {
     try {
       const existingSession = await finishIfSessionExists();
       if (existingSession) return;
-      // Use Supabase native OAuth — bypasses Lovable's auth layer which shows Lovable branding.
-      // Always redirect to the production domain so users land on Quantivis, not Lovable.
+      // PKCE stores the code_verifier in the originating domain's localStorage,
+      // so the callback MUST land back on the same origin or the session never establishes.
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: "https://www.quantivis.io/auth/callback?next=" + encodeURIComponent(redirectTo),
+          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectTo)}`,
           queryParams: { access_type: "offline", prompt: "select_account" },
         },
       });
