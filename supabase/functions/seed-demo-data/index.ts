@@ -28,7 +28,35 @@ Deno.serve(async (req) => {
     // Admin client for inserting into restricted tables
     const admin = createClient(supabaseUrl, serviceKey);
 
-    // Update org metadata
+    // ─── Guard: demo seeding is only allowed on demo-owned organizations ───
+    // Prevents silent corruption of real customer workspaces (rename, industry,
+    // revenue/size-band overwrite). Real users who want a sandbox should create
+    // a separate demo workspace via the /demo flow.
+    const { data: org, error: orgFetchErr } = await admin
+      .from("organizations")
+      .select("created_by")
+      .eq("id", orgId)
+      .maybeSingle();
+    if (orgFetchErr || !org?.created_by) {
+      return new Response(
+        JSON.stringify({ error: "Organization not found." }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const { data: ownerData, error: ownerErr } = await admin.auth.admin.getUserById(org.created_by);
+    const ownerIsDemo = Boolean(ownerData?.user?.user_metadata?.is_demo);
+    if (ownerErr || !ownerIsDemo) {
+      return new Response(
+        JSON.stringify({
+          error: "Demo seeding is only allowed for demo organizations.",
+          hint: "Create a sandbox via the Try Demo flow to explore sample data without altering your real workspace.",
+        }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Demo-only: refresh org metadata (safe — caller is a demo user)
     await admin.from("organizations").update({
       name: "Meridian Analytics Inc.",
       industry: "SaaS / B2B Software",
