@@ -335,8 +335,6 @@ const Login = () => {
       )}
     </AuthLayout>
   );
-});
-
-Login.displayName = "Login";
+};
 
 export default Login;
