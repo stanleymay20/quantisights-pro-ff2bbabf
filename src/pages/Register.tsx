@@ -67,61 +67,23 @@ const Register = forwardRef<HTMLDivElement>((_, ref) => {
 
   const handleGoogleSignUp = async () => {
     setGoogleLoading(true);
-    const finishPath = "/onboarding";
-    let completed = false;
-    const timeoutRef: { current?: ReturnType<typeof setTimeout> } = {};
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user && !completed) {
-        completed = true;
-        if (timeoutRef.current) clearTimeout(timeoutRef.current);
-        subscription.unsubscribe();
-        navigate(finishPath, { replace: true });
-      }
-    });
-
-    const finishIfSessionExists = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (data.session && !completed) {
-        completed = true;
-        if (timeoutRef.current) clearTimeout(timeoutRef.current);
-        subscription.unsubscribe();
-        navigate(finishPath, { replace: true });
-        return true;
-      }
-      return Boolean(data.session);
-    };
-
-    timeoutRef.current = setTimeout(() => {
-      finishIfSessionExists().then((hasSession) => {
-        if (!hasSession && !completed) {
-          subscription.unsubscribe();
-          setGoogleLoading(false);
-          toast({ title: "Google sign-up paused", description: "Complete the Google window, then try again if this page does not move forward.", variant: "destructive" });
-        }
-      }).catch(() => {
-        subscription.unsubscribe();
-        setGoogleLoading(false);
-      });
-    }, 15_000);
-
     try {
-      const existingSession = await finishIfSessionExists();
-      if (existingSession) return;
-      // PKCE stores the code_verifier in the originating domain's localStorage,
-      // so the callback MUST land back on the same origin or the session never establishes.
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(finishPath)}`,
-          queryParams: { access_type: "offline", prompt: "select_account" },
-        },
+      // Lovable Cloud Managed Social Login. The Google OAuth client is registered
+      // against the /~oauth/callback broker URLs, not Supabase's /auth/callback,
+      // so we must go through the lovable broker, not supabase.auth.signInWithOAuth.
+      const { lovable } = await import("@/integrations/lovable");
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin,
+        extraParams: { prompt: "select_account" },
       });
-      if (completed) return;
-      if (error) throw error;
+      if (result.error) {
+        throw result.error instanceof Error ? result.error : new Error(String(result.error));
+      }
+      if (result.redirected) {
+        return;
+      }
+      navigate("/onboarding", { replace: true });
     } catch (err: unknown) {
-      if (completed) return;
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      subscription.unsubscribe();
       toast({ title: "Google sign-up failed", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
       setGoogleLoading(false);
     }
