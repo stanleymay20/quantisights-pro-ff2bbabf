@@ -1,23 +1,17 @@
 import { useNavigate } from "react-router-dom";
 import { Zap, Upload, ArrowRight, Database } from "lucide-react";
-import { motion } from "framer-motion";
 import QuickConnectStripe from "@/components/dashboard/QuickConnectStripe";
 
 export const DashboardEmptyState = () => {
   const navigate = useNavigate();
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="max-w-lg mx-auto mt-12 px-4"
-    >
+    <div className="max-w-lg mx-auto mt-12 px-4">
       <div className="text-center mb-8">
-        <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-          <Zap className="w-8 h-8 text-primary" />
+        <div className="w-12 h-12 rounded-xl border border-border/40 flex items-center justify-center mx-auto mb-4">
+          <Database className="w-6 h-6 text-muted-foreground/60" />
         </div>
-        <h1 className="text-2xl font-bold mb-2">Connect your data</h1>
+        <h1 className="text-[18px] font-semibold tracking-tight mb-2">Connect your data</h1>
         <p className="text-muted-foreground text-sm max-w-sm mx-auto">
           Your executive dashboard activates the moment your data arrives.
           Revenue, decisions, risks — all live.
@@ -92,6 +86,6 @@ export const DashboardEmptyState = () => {
           <ArrowRight className="w-4 h-4 text-primary shrink-0" />
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 };

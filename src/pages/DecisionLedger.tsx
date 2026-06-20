@@ -677,7 +677,7 @@ const DecisionLedgerPage = () => {
 
           {/* Decisions list */}
           <Tabs defaultValue="active" className="space-y-4">
-            <TabsList>
+            <TabsList className="border-0 bg-transparent p-0 gap-0 border-b border-border/30 rounded-none justify-start h-auto w-full">
               <TabsTrigger value="active" className="gap-2"><PlayCircle className="w-4 h-4" /> Active ({activeDecisions.length})</TabsTrigger>
               <TooltipProvider>
                 <Tooltip>

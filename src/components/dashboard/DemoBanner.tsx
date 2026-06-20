@@ -1,6 +1,5 @@
 import { FlaskConical, Upload, ArrowRight, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 
 const DISMISS_KEY = "quantivis_demo_banner_dismissed_v2";
@@ -25,17 +24,13 @@ const DemoBanner = () => {
     setDismissed(true);
   };
 
+  if (dismissed) return null;
+
   return (
-    <AnimatePresence>
-      {!dismissed && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, height: 0, overflow: "hidden" }}
-          transition={{ duration: 0.25 }}
+    <div
           role="status"
           aria-live="polite"
-          className="w-full border-y-2 border-warning/40 bg-warning/[0.08]"
+          className="w-full border-b border-warning/30 bg-warning/[0.06]"
         >
           <div className="w-full px-4 sm:px-6 md:px-8 py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
@@ -74,9 +69,7 @@ const DemoBanner = () => {
               </button>
             </div>
           </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+      </div>
   );
 };
 

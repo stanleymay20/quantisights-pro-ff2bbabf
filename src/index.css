@@ -16,7 +16,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 220 40% 13%;
 
-    --primary: 199 89% 48%;
+    --primary: 222 89% 55%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 210 20% 93%;
@@ -25,7 +25,7 @@
     --muted: 210 15% 92%;
     --muted-foreground: 215 16% 40%; /* was 47% — darkened to achieve 5.4:1 contrast on white (WCAG AA) */
 
-    --accent: 199 89% 48%;
+    --accent: 222 89% 55%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 72% 51%;
@@ -39,25 +39,25 @@
 
     --border: 214 20% 88%;
     --input: 214 20% 88%;
-    --ring: 199 89% 48%;
+    --ring: 222 89% 55%;
 
     --radius: 0.75rem;
 
     --sidebar-background: 210 20% 96%;
     --sidebar-foreground: 220 30% 35%;
-    --sidebar-primary: 199 89% 48%;
+    --sidebar-primary: 222 89% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 210 20% 92%;
     --sidebar-accent-foreground: 220 40% 13%;
     --sidebar-border: 214 20% 88%;
-    --sidebar-ring: 199 89% 48%;
+    --sidebar-ring: 222 89% 55%;
 
     /* Custom tokens */
     --glass: 0 0% 100% / 0.7;
     --glass-border: 199 89% 48% / 0.15;
-    --glow-primary: 199 89% 48%;
+    --glow-primary: 222 89% 55%;
     --glow-secondary: 217 91% 60%;
-    --gradient-start: 199 89% 48%;
+    --gradient-start: 222 89% 55%;
     --gradient-end: 217 91% 60%;
     --kpi-revenue: 142 71% 45%;
     --kpi-customers: 199 89% 48%;
@@ -86,7 +86,7 @@
     --popover: 220 42% 11%;
     --popover-foreground: 210 30% 90%;
 
-    --primary: 199 89% 48%;
+    --primary: 222 89% 55%;
     --primary-foreground: 220 45% 7%;
 
     --secondary: 220 38% 15%;
@@ -95,7 +95,7 @@
     --muted: 220 32% 14%;
     --muted-foreground: 215 20% 55%;
 
-    --accent: 199 89% 48%;
+    --accent: 222 89% 55%;
     --accent-foreground: 220 45% 7%;
 
     --destructive: 0 72% 51%;
@@ -109,25 +109,25 @@
 
     --border: 220 28% 18%;
     --input: 220 28% 18%;
-    --ring: 199 89% 48%;
+    --ring: 222 89% 55%;
 
     --radius: 0.75rem;
 
     --sidebar-background: 220 48% 5%;
     --sidebar-foreground: 210 20% 70%;
-    --sidebar-primary: 199 89% 48%;
+    --sidebar-primary: 222 89% 55%;
     --sidebar-primary-foreground: 220 45% 7%;
     --sidebar-accent: 220 38% 12%;
     --sidebar-accent-foreground: 210 30% 90%;
     --sidebar-border: 220 28% 14%;
-    --sidebar-ring: 199 89% 48%;
+    --sidebar-ring: 222 89% 55%;
 
     /* Custom tokens */
     --glass: 220 42% 11% / 0.6;
     --glass-border: 199 89% 48% / 0.15;
-    --glow-primary: 199 89% 48%;
+    --glow-primary: 222 89% 55%;
     --glow-secondary: 217 91% 60%;
-    --gradient-start: 199 89% 48%;
+    --gradient-start: 222 89% 55%;
     --gradient-end: 217 91% 60%;
     --kpi-revenue: 142 71% 45%;
     --kpi-customers: 199 89% 48%;
@@ -316,3 +316,8 @@
   from { transform: translateY(100px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
+
+/* Sidebar nav scrollbar — thin and subtle */
+.sidebar-nav::-webkit-scrollbar { width: 3px; }
+.sidebar-nav::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 2px; }
+.sidebar-nav::-webkit-scrollbar-track { background: transparent; }

@@ -277,7 +277,7 @@ const SectionBlock = ({
           className={cn(
             "flex items-center gap-2.5 w-full px-2.5 py-2 rounded-lg text-[13px] font-medium transition-all duration-150",
             hasActiveChild
-              ? "bg-primary/10 text-primary"
+              ? "bg-foreground/[0.06] text-foreground font-semibold"
               : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
           )}
         >
@@ -292,13 +292,13 @@ const SectionBlock = ({
           className={cn(
             "flex items-center gap-2.5 w-full px-2.5 py-2 rounded-lg text-[13px] font-medium transition-all duration-150",
             isTopActive
-              ? "bg-primary/10 text-primary"
+              ? "bg-foreground/[0.06] text-foreground font-semibold"
               : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
           )}
         >
           <section.icon className={cn("w-4 h-4 shrink-0", isTopActive ? "text-primary" : "text-muted-foreground")} />
           <span className="flex-1">{labelOverride ?? section.label}</span>
-          {isTopActive && <span className="w-1.5 h-1.5 rounded-full bg-primary" />}
+          {isTopActive && <span className="w-1.5 h-1.5 rounded-full bg-foreground/60" />}
         </Link>
       )}
 
@@ -314,13 +314,13 @@ const SectionBlock = ({
                 className={cn(
                   "group flex items-center gap-2 px-2 py-1.5 rounded-md text-[12px] font-medium transition-all duration-150",
                   isActive
-                    ? "bg-primary/10 text-primary"
+                    ? "bg-foreground/[0.06] text-foreground font-semibold"
                     : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                 )}
               >
                 <item.icon className={cn("w-3.5 h-3.5 shrink-0", isActive ? "text-primary" : "text-muted-foreground group-hover:text-sidebar-accent-foreground")} />
                 {item.label}
-                {isActive && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-primary" />}
+                {isActive && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-foreground/60" />}
               </Link>
             );
           })}
@@ -364,7 +364,7 @@ const AdvancedDrawer = ({
         onClick={toggle}
         aria-expanded={drawerOpen}
         className={cn(
-          "flex items-center gap-2 w-full px-2.5 py-1.5 rounded-lg text-[11px] font-semibold uppercase tracking-wider transition-colors",
+          "flex items-center gap-2 w-full px-2.5 py-1.5 rounded-lg text-[10px] font-medium tracking-[0.08em] uppercase transition-colors",
           hasActiveAdvanced
             ? "text-primary"
             : "text-muted-foreground/70 hover:text-foreground"
@@ -431,7 +431,7 @@ const AdvancedGroupBlock = ({
                 className={cn(
                   "flex items-center gap-2 px-2 py-1 rounded-md text-[11.5px] font-medium transition-colors",
                   isActive
-                    ? "bg-primary/10 text-primary"
+                    ? "bg-foreground/[0.06] text-foreground font-semibold"
                     : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                 )}
               >
@@ -474,7 +474,7 @@ const DashboardSidebar = () => {
   const sidebarContent = (
     <aside
       aria-label="Main navigation"
-      className={`${collapsed ? "w-16" : "w-56"} h-dvh bg-sidebar border-r border-sidebar-border flex flex-col shrink-0 safe-area-left safe-area-top safe-area-bottom transition-all duration-200`}
+      className={`${collapsed ? "w-16" : "w-56"} h-dvh bg-sidebar border-r border-border/25 flex flex-col shrink-0 safe-area-left safe-area-top safe-area-bottom transition-all duration-200`}
     >
       {/* Logo */}
       <div className="p-4 pb-3 flex items-center justify-between">
@@ -516,7 +516,7 @@ const DashboardSidebar = () => {
       )}
 
       {/* Nav */}
-      <nav aria-label="Dashboard navigation" className={`flex-1 ${collapsed ? "px-1" : "px-2"} overflow-y-auto space-y-0.5`}>
+      <nav aria-label="Dashboard navigation" className={`sidebar-nav flex-1 ${collapsed ? "px-1" : "px-2"} overflow-y-auto space-y-0.5`}>
         {collapsed ? (
           navSections.filter(s => allowedPaths.has(s.path)).map((section) => {
             const isActive = location.pathname === section.path ||
@@ -529,7 +529,7 @@ const DashboardSidebar = () => {
                 title={section.label}
                 className={`flex items-center justify-center w-10 h-10 mx-auto rounded-lg transition-colors ${
                   isActive
-                    ? "bg-primary/10 text-primary"
+                    ? "bg-foreground/[0.06] text-foreground font-semibold"
                     : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                 }`}
               >
@@ -578,7 +578,7 @@ const DashboardSidebar = () => {
             "flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[12px] font-medium transition-colors w-full",
             collapsed && "justify-center px-0",
             location.pathname === "/docs"
-              ? "bg-primary/10 text-primary"
+              ? "bg-foreground/[0.06] text-foreground font-semibold"
               : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
           )}
         >

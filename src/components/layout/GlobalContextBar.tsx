@@ -28,10 +28,10 @@ const ContextChip = ({ icon: Icon, label, fallback, onClick }: Segment) => {
         <TooltipTrigger asChild>
           <button
             onClick={onClick}
-            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium transition-colors max-w-[140px] truncate ${
+            className={`inline-flex items-center gap-1.5 text-[12px] font-normal transition-colors max-w-[140px] truncate cursor-pointer ${
               isMissing
-                ? "text-muted-foreground/50 bg-muted/30"
-                : "text-muted-foreground hover:text-foreground hover:bg-secondary/60"
+                ? "text-muted-foreground/35 italic"
+                : "text-muted-foreground hover:text-foreground hover:underline"
             }`}
           >
             <Icon className="w-3 h-3 shrink-0" />
@@ -46,7 +46,7 @@ const ContextChip = ({ icon: Icon, label, fallback, onClick }: Segment) => {
   );
 };
 
-const Separator = () => <ChevronRight className="w-3 h-3 text-muted-foreground/30 shrink-0" />;
+const Separator = () => <span className="text-muted-foreground/25 text-[13px] select-none px-0.5">/</span>;
 
 function severityClass(severity: string) {
   if (["critical", "high"].includes(severity)) return "text-destructive border-destructive/30 bg-destructive/10";
@@ -194,7 +194,7 @@ const GlobalContextBar = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="h-7 border-b border-border/20 bg-muted/20 hidden md:flex items-center px-3 md:px-8 gap-1 shrink-0 overflow-x-auto scrollbar-hide">
+    <div className="h-10 border-b border-border/30 bg-background hidden md:flex items-center px-4 md:px-6 gap-0.5 shrink-0 overflow-x-auto scrollbar-hide">
       <ContextChip icon={Building2} label={currentOrg?.name?.replace(/\s+'/g, "'").replace(/'\s+/g, "'").trim() ?? null} fallback="No org" onClick={() => navigate("/settings")} />
       <Separator />
       <ContextChip icon={Layers} label={currentWorkspace?.name ?? null} fallback={currentOrg ? "Set up workspace" : "No workspace"} onClick={() => navigate("/settings")} />
