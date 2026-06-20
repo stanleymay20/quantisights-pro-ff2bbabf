@@ -1,6 +1,7 @@
 import { forwardRef, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, CheckCircle, Shield, TrendingUp, AlertCircle, Clock } from "lucide-react";
+import heroVideoAsset from "@/assets/hero-video.mp4.asset.json";
 
 /* ─── Design tokens ───────────────────────────────────────────────── */
 const NAVY   = "#1E2761";
@@ -177,30 +178,65 @@ const LedgerTicker = () => {
 
 /* ─── Hero ────────────────────────────────────────────────────────── */
 const Hero = () => (
-  <section style={{ background: `linear-gradient(180deg, ${DEEP} 0%, ${NAVY} 100%)`, paddingTop: 128, paddingBottom: 96, color: "#fff" }}>
-    <div style={{ maxWidth: 1280, margin: "0 auto", padding: "0 24px" }}>
+  <section style={{ position: "relative", minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "flex-end", color: "#fff", overflow: "hidden" }}>
+
+    {/* Video background — fills entire hero, like Palantir */}
+    <video
+      src={heroVideoAsset.url}
+      autoPlay
+      muted
+      loop
+      playsInline
+      preload="auto"
+      style={{
+        position: "absolute",
+        inset: 0,
+        width: "100%",
+        height: "100%",
+        objectFit: "cover",
+        objectPosition: "center",
+        zIndex: 0,
+      }}
+    />
+
+    {/* Gradient overlay — ensures text legibility over any video frame */}
+    <div style={{
+      position: "absolute",
+      inset: 0,
+      zIndex: 1,
+      background: `linear-gradient(
+        to bottom,
+        rgba(14,22,40,0.55) 0%,
+        rgba(14,22,40,0.45) 40%,
+        rgba(14,22,40,0.75) 70%,
+        rgba(14,22,40,0.96) 100%
+      )`,
+    }} />
+
+    {/* Content — floats above video */}
+    <div style={{ position: "relative", zIndex: 2, maxWidth: 1280, margin: "0 auto", padding: "128px 24px 80px", width: "100%" }}>
       <div style={{ marginBottom: 24 }}>
-        <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(255,255,255,0.45)", padding: "5px 12px", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 2 }}>
+        <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(255,255,255,0.5)", padding: "5px 12px", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 2, backdropFilter: "blur(4px)", background: "rgba(255,255,255,0.04)" }}>
           EU AI Act · Decision Governance · DACH
         </span>
       </div>
-      <h1 style={{ fontFamily: "Georgia, serif", fontSize: "clamp(36px, 5vw, 64px)", lineHeight: 1.1, letterSpacing: "-0.02em", maxWidth: 860, margin: "0 0 28px", fontWeight: 400 }}>
+      <h1 style={{ fontFamily: "Georgia, serif", fontSize: "clamp(36px, 5vw, 64px)", lineHeight: 1.1, letterSpacing: "-0.02em", maxWidth: 860, margin: "0 0 28px", fontWeight: 400, textShadow: "0 2px 20px rgba(0,0,0,0.4)" }}>
         Every AI decision your organisation makes needs an audit trail.{" "}
-        <span style={{ color: "rgba(255,255,255,0.45)" }}>Quantivis creates it automatically.</span>
+        <span style={{ color: "rgba(255,255,255,0.5)" }}>Quantivis creates it automatically.</span>
       </h1>
-      <p style={{ fontSize: 18, lineHeight: 1.7, color: "rgba(255,255,255,0.65)", maxWidth: 580, margin: "0 0 40px" }}>
+      <p style={{ fontSize: 18, lineHeight: 1.7, color: "rgba(255,255,255,0.72)", maxWidth: 580, margin: "0 0 40px", textShadow: "0 1px 8px rgba(0,0,0,0.3)" }}>
         Log decisions. Attach evidence. Track outcomes. Know what worked and why — with a governance score on every recommendation.
       </p>
-      <div style={{ display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap" }}>
-        <a href="#demo" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: ACCENT, color: "#fff", padding: "14px 28px", borderRadius: 4, fontSize: 14, fontWeight: 700, textDecoration: "none", letterSpacing: "0.02em", transition: "opacity 0.15s" }}
+      <div style={{ display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap", marginBottom: 64 }}>
+        <a href="#demo" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: ACCENT, color: "#fff", padding: "14px 28px", borderRadius: 4, fontSize: 14, fontWeight: 700, textDecoration: "none", letterSpacing: "0.02em", transition: "opacity 0.15s", backdropFilter: "blur(2px)" }}
           onMouseOver={e => (e.currentTarget.style.opacity = "0.88")}
           onMouseOut={e => (e.currentTarget.style.opacity = "1")}
         >
           Request a Demo <ArrowRight size={16} />
         </a>
-        <a href="#platform" style={{ fontSize: 14, color: "rgba(255,255,255,0.55)", textDecoration: "none", display: "flex", alignItems: "center", gap: 6, transition: "color 0.15s" }}
+        <a href="#platform" style={{ fontSize: 14, color: "rgba(255,255,255,0.6)", textDecoration: "none", display: "flex", alignItems: "center", gap: 6, transition: "color 0.15s" }}
           onMouseOver={e => (e.currentTarget.style.color = "#fff")}
-          onMouseOut={e => (e.currentTarget.style.color = "rgba(255,255,255,0.55)")}
+          onMouseOut={e => (e.currentTarget.style.color = "rgba(255,255,255,0.6)")}
         >
           See the platform <ArrowRight size={14} />
         </a>
