@@ -58,6 +58,10 @@ const Nav = () => {
               <Link key={label} to={href} style={{ fontSize: 14, color: "rgba(255,255,255,0.65)", textDecoration: "none" }}>{label}</Link>
             )
           ))}
+          <Link to="/login" style={{ fontSize: 14, color: "rgba(255,255,255,0.55)", textDecoration: "none", transition: "color 0.15s" }}
+            onMouseOver={e => (e.currentTarget.style.color = "#fff")}
+            onMouseOut={e => (e.currentTarget.style.color = "rgba(255,255,255,0.55)")}
+          >Sign In</Link>
           <a
             href="#demo"
             style={{ fontSize: 13, fontWeight: 600, color: "#fff", background: ACCENT, padding: "8px 18px", borderRadius: 4, textDecoration: "none", letterSpacing: "0.01em", transition: "opacity 0.15s" }}
@@ -518,41 +522,121 @@ const Pricing = () => {
 };
 
 /* ─── Demo CTA ────────────────────────────────────────────────────── */
-const Demo = () => (
-  <section id="demo" style={{ background: NAVY, color: "#fff" }}>
-    <div style={{ maxWidth: 1280, margin: "0 auto", padding: "96px 24px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 80, alignItems: "center" }}>
-      <div>
-        <h2 style={{ fontFamily: "Georgia, serif", fontSize: "clamp(28px, 4vw, 48px)", lineHeight: 1.15, fontWeight: 400, letterSpacing: "-0.02em", margin: "0 0 24px" }}>
-          See Quantivis running on your data.
-        </h2>
-        <p style={{ fontSize: 16, color: "rgba(255,255,255,0.65)", lineHeight: 1.75, margin: "0 0 40px", maxWidth: 440 }}>
-          We run a live demo using a dataset from your industry. You leave with a working governance record — not a slide deck.
-        </p>
-        <a href="mailto:hello@quantivis.io?subject=Demo%20request" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: ACCENT, color: "#fff", padding: "14px 28px", borderRadius: 4, fontSize: 14, fontWeight: 700, textDecoration: "none", transition: "opacity 0.15s" }}
-          onMouseOver={e => (e.currentTarget.style.opacity = "0.88")}
-          onMouseOut={e => (e.currentTarget.style.opacity = "1")}
-        >
-          Request a Demo <ArrowRight size={16} />
-        </a>
-        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", marginTop: 20 }}>hello@quantivis.io · Germany</p>
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1, background: "rgba(255,255,255,0.06)" }}>
-        {[
-          { label: "Typical onboarding", val: "< 1 week", sub: "From first call to live governance record" },
-          { label: "Decisions auditable", val: "100%", sub: "Every recommendation tracked end-to-end" },
-          { label: "Data connectors", val: "15+", sub: "SAP, Salesforce, BigQuery and more" },
-          { label: "Countries monitored", val: "211", sub: "Via AICIS geopolitical intelligence" },
-        ].map(({ label, val, sub }) => (
-          <div key={label} style={{ padding: "28px 24px", background: "rgba(255,255,255,0.03)" }}>
-            <div style={{ fontFamily: "Georgia, serif", fontSize: 32, color: "#fff", marginBottom: 4, fontWeight: 400 }}>{val}</div>
-            <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.45)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>{label}</div>
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", lineHeight: 1.5 }}>{sub}</div>
+const Demo = () => {
+  const [form, setForm] = useState({ name: "", email: "", company: "", message: "" });
+  const [status, setStatus] = useState<"idle"|"sending"|"sent"|"error">("idle");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.name || !form.email || !form.company) return;
+    setStatus("sending");
+    try {
+      const { supabase } = await import("@/integrations/supabase/client");
+      const { error } = await supabase.from("enterprise_leads").insert({
+        full_name: form.name,
+        work_email: form.email,
+        company: form.company,
+        use_case: form.message || null,
+        source: "homepage_demo_form",
+        status: "new",
+      });
+      if (error) throw error;
+      setStatus("sent");
+    } catch {
+      setStatus("error");
+    }
+  };
+
+  return (
+    <section id="demo" style={{ background: NAVY, color: "#fff" }}>
+      <div style={{ maxWidth: 1280, margin: "0 auto", padding: "96px 24px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 80, alignItems: "start" }}>
+        <div>
+          <h2 style={{ fontFamily: "Georgia, serif", fontSize: "clamp(28px, 4vw, 48px)", lineHeight: 1.15, fontWeight: 400, letterSpacing: "-0.02em", margin: "0 0 20px" }}>
+            See Quantivis running on your data.
+          </h2>
+          <p style={{ fontSize: 16, color: "rgba(255,255,255,0.6)", lineHeight: 1.75, margin: "0 0 40px", maxWidth: 440 }}>
+            We run a live demo using a dataset from your industry. You leave with a working governance record — not a slide deck.
+          </p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1, background: "rgba(255,255,255,0.06)" }}>
+            {[
+              { label: "Typical onboarding", val: "< 1 week", sub: "From first call to live governance record" },
+              { label: "Decisions auditable", val: "100%", sub: "Every recommendation tracked end-to-end" },
+              { label: "Data connectors", val: "15+", sub: "SAP, Salesforce, BigQuery and more" },
+              { label: "Countries monitored", val: "211", sub: "Via AICIS geopolitical intelligence" },
+            ].map(({ label, val, sub }) => (
+              <div key={label} style={{ padding: "24px 20px", background: "rgba(255,255,255,0.03)" }}>
+                <div style={{ fontFamily: "Georgia, serif", fontSize: 28, color: "#fff", marginBottom: 4, fontWeight: 400 }}>{val}</div>
+                <div style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>{label}</div>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", lineHeight: 1.5 }}>{sub}</div>
+              </div>
+            ))}
           </div>
-        ))}
+        </div>
+
+        <div>
+          {status === "sent" ? (
+            <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 6, padding: "48px 36px", textAlign: "center" }}>
+              <div style={{ fontSize: 40, marginBottom: 16 }}>✓</div>
+              <h3 style={{ fontFamily: "Georgia, serif", fontSize: 24, fontWeight: 400, color: "#fff", marginBottom: 12 }}>Request received</h3>
+              <p style={{ fontSize: 14, color: "rgba(255,255,255,0.55)", lineHeight: 1.7 }}>
+                We will be in touch within one business day to schedule your live demo.
+              </p>
+              <p style={{ fontSize: 13, color: "rgba(255,255,255,0.3)", marginTop: 20 }}>hello@quantivis.io · Germany</p>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "36px", display: "flex", flexDirection: "column", gap: 16 }}>
+              <div>
+                <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.45)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>Full name *</label>
+                <input
+                  type="text" required value={form.name} placeholder="Jane Smith"
+                  onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                  style={{ width: "100%", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 4, padding: "11px 14px", fontSize: 14, color: "#fff", outline: "none", boxSizing: "border-box" }}
+                />
+              </div>
+              <div>
+                <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.45)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>Work email *</label>
+                <input
+                  type="email" required value={form.email} placeholder="jane@company.com"
+                  onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+                  style={{ width: "100%", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 4, padding: "11px 14px", fontSize: 14, color: "#fff", outline: "none", boxSizing: "border-box" }}
+                />
+              </div>
+              <div>
+                <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.45)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>Company *</label>
+                <input
+                  type="text" required value={form.company} placeholder="Acme GmbH"
+                  onChange={e => setForm(f => ({ ...f, company: e.target.value }))}
+                  style={{ width: "100%", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 4, padding: "11px 14px", fontSize: 14, color: "#fff", outline: "none", boxSizing: "border-box" }}
+                />
+              </div>
+              <div>
+                <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.45)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>What are you trying to govern? <span style={{ opacity: 0.5 }}>(optional)</span></label>
+                <textarea
+                  rows={3} value={form.message} placeholder="e.g. AI procurement decisions, supply chain risk approvals..."
+                  onChange={e => setForm(f => ({ ...f, message: e.target.value }))}
+                  style={{ width: "100%", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 4, padding: "11px 14px", fontSize: 14, color: "#fff", outline: "none", resize: "vertical", boxSizing: "border-box", fontFamily: "inherit" }}
+                />
+              </div>
+              {status === "error" && (
+                <p style={{ fontSize: 13, color: "#EF4444", margin: 0 }}>Something went wrong. Please email hello@quantivis.io directly.</p>
+              )}
+              <button
+                type="submit"
+                disabled={status === "sending"}
+                style={{ background: status === "sending" ? "rgba(61,90,254,0.6)" : ACCENT, color: "#fff", border: "none", padding: "14px 24px", borderRadius: 4, fontSize: 14, fontWeight: 700, cursor: status === "sending" ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, transition: "opacity 0.15s" }}
+              >
+                {status === "sending" ? "Sending…" : <>Request a Demo <ArrowRight size={16} /></>}
+              </button>
+              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", margin: 0, lineHeight: 1.5 }}>
+                We respond within one business day. No sales pressure — just a working demo.
+              </p>
+            </form>
+          )}
+        </div>
       </div>
-    </div>
-  </section>
-);
+    </section>
+  );
+};
 
 /* ─── Footer ──────────────────────────────────────────────────────── */
 const SiteFooter = () => {
