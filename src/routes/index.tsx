@@ -21,6 +21,8 @@ const Register = lazy(() => import("@/pages/Register"));
 const AuthCallback = lazy(() => import("@/pages/AuthCallback"));
 const ForgotPassword = lazy(() => import("@/pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("@/pages/ResetPassword"));
+const VerifyEmail = lazy(() => import("@/pages/VerifyEmail"));
+
 
 // ── Intelligence Core ──
 const Dashboard = lazy(() => import("@/pages/Dashboard"));
@@ -187,6 +189,7 @@ export const routes: RouteEntry[] = [
   { path: "/auth/callback", element: <AuthCallback />, layout: "public" },
   { path: "/forgot-password", element: <ForgotPassword />, layout: "public" },
   { path: "/reset-password", element: <ResetPassword />, layout: "public" },
+  { path: "/verify-email", element: <VerifyEmail />, layout: "none" },
   { path: "/accept-invite", element: <AcceptInvite />, layout: "public" },
 
   // ══════ Public ══════

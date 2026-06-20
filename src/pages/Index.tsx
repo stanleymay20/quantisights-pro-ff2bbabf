@@ -433,7 +433,7 @@ const EUAIAct = () => (
           <h2 style={{ fontFamily: "Georgia, serif", fontSize: "clamp(28px, 4vw, 52px)", lineHeight: 1.15, fontWeight: 400, letterSpacing: "-0.02em", margin: "0 0 32px" }}>
             The EU AI Act requires documented decision trails. Quantivis provides them.
           </h2>
-          <Link to="/eu-ai-act" style={{ display: "inline-flex", alignItems: "center", gap: 8, border: "1px solid rgba(255,255,255,0.25)", color: "#fff", padding: "12px 22px", fontSize: 13, textDecoration: "none", borderRadius: 3, fontWeight: 500, transition: "background 0.15s" }}
+          <Link to="/ai-governance" style={{ display: "inline-flex", alignItems: "center", gap: 8, border: "1px solid rgba(255,255,255,0.25)", color: "#fff", padding: "12px 22px", fontSize: 13, textDecoration: "none", borderRadius: 3, fontWeight: 500, transition: "background 0.15s" }}
             onMouseOver={e => { (e.currentTarget as HTMLAnchorElement).style.background = "rgba(255,255,255,0.08)"; }}
             onMouseOut={e => { (e.currentTarget as HTMLAnchorElement).style.background = "transparent"; }}
           >
@@ -558,8 +558,8 @@ const Demo = () => (
 const SiteFooter = () => {
   const cols = [
     { title: "Platform", links: [{ label: "Decision Ledger", to: "/decisions" }, { label: "Governance Score", to: "/governance" }, { label: "Outcome Intelligence", to: "/outcomes" }, { label: "AICIS Intelligence", to: "/intelligence-dashboard" }, { label: "Pricing", to: "/#pricing" }] },
-    { title: "Enterprise Trust", links: [{ label: "Trust Center", to: "/trust-center" }, { label: "EU AI Act", to: "/eu-ai-act" }, { label: "Security", to: "/security" }, { label: "DPA", to: "/dpa" }, { label: "Procurement Pack", to: "/procurement-pack" }] },
-    { title: "Legal", links: [{ label: "Impressum", to: "/impressum" }, { label: "Datenschutz", to: "/de/datenschutz" }, { label: "AGB", to: "/de/agb" }, { label: "Cookie Policy", to: "/cookie-policy" }, { label: "Subprocessors", to: "/subprocessors" }] },
+    { title: "Enterprise Trust", links: [{ label: "Trust Center", to: "/trust-center" }, { label: "EU AI Act", to: "/ai-governance" }, { label: "Security", to: "/security" }, { label: "DPA", to: "/dpa" }, { label: "Procurement Pack", to: "/procurement-pack" }] },
+    { title: "Legal", links: [{ label: "Impressum", to: "/impressum" }, { label: "Datenschutz", to: "/de/datenschutz" }, { label: "AGB", to: "/de/agb" }, { label: "Cookie Policy", to: "/cookies" }, { label: "Subprocessors", to: "/subprocessors" }] },
     { title: "Get Started", links: [{ label: "Request Demo", to: "/#demo" }, { label: "Documentation", to: "/api-docs" }, { label: "Contact", to: "mailto:hello@quantivis.io" }, { label: "System Status", to: "/system-status" }] },
   ];
 
