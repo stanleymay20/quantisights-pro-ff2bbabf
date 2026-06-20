@@ -149,7 +149,19 @@ const Login = () => {
       throttle.recordFailure(); // increment failed-attempt counter (client-side UX)
       supabase.functions.invoke("auth-rate-limiter", { body: { email, action: "record_failure" } }).catch(() => {}); // server-side lockout (fire-and-forget)
       logAuthEvent({ eventType: "failed_login", metadata: { email, reason: msg } });
-      toast({ title: "Login failed", description: msg, variant: "destructive" });
+      const lower = msg.toLowerCase();
+      const isCredentialError =
+        lower.includes("invalid") || lower.includes("credential") || lower.includes("password") || lower.includes("not found");
+      const isUnconfirmed = lower.includes("confirm") || lower.includes("not verified");
+      toast({
+        title: "Login failed",
+        description: isUnconfirmed
+          ? "Please verify your email address before signing in. Check your inbox for the confirmation link."
+          : isCredentialError
+          ? "Incorrect email or password. Please try again."
+          : msg,
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
