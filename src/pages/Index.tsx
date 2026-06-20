@@ -207,6 +207,34 @@ const Hero = () => (
   </section>
 );
 
+/* ─── Hero II (video) ─────────────────────────────────────────────── */
+const HeroVideo = () => (
+  <section style={{ background: DEEP, paddingBottom: 96, color: "#fff" }}>
+    <div style={{ maxWidth: 1280, margin: "0 auto", padding: "0 24px" }}>
+      <div style={{ marginBottom: 24 }}>
+        <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(255,255,255,0.45)", padding: "5px 12px", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 2 }}>
+          See it in motion
+        </span>
+      </div>
+      <h2 style={{ fontFamily: "Georgia, serif", fontSize: "clamp(28px, 3.5vw, 44px)", lineHeight: 1.15, letterSpacing: "-0.02em", maxWidth: 760, margin: "0 0 32px", fontWeight: 400 }}>
+        Decisions, evidence, and outcomes — captured in one auditable workflow.
+      </h2>
+      <div style={{ position: "relative", borderRadius: 6, overflow: "hidden", border: "1px solid rgba(255,255,255,0.08)", background: "#000", boxShadow: "0 24px 60px -20px rgba(0,0,0,0.6)" }}>
+        <video
+          src={heroVideoAsset.url}
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="metadata"
+          style={{ display: "block", width: "100%", height: "auto" }}
+        />
+      </div>
+    </div>
+  </section>
+);
+
+
 /* ─── Stats strip ─────────────────────────────────────────────────── */
 const Stats = () => (
   <div style={{ background: MUTED, borderBottom: `1px solid rgba(30,39,97,0.1)` }}>
