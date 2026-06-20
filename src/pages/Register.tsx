@@ -84,7 +84,7 @@ const Register = () => {
       // so we must go through the lovable broker, not supabase.auth.signInWithOAuth.
       const { lovable } = await import("@/integrations/lovable");
       const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
+        redirect_uri: window.location.origin + "/auth/callback?next=/onboarding",
         extraParams: { prompt: "select_account" },
       });
       if (result.error) {

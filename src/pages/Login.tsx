@@ -183,7 +183,7 @@ const Login = () => {
       // Google would refuse the redirect URI.
       const { lovable } = await import("@/integrations/lovable");
       const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
+        redirect_uri: window.location.origin + "/auth/callback?next=/dashboard",
         extraParams: { prompt: "select_account" },
       });
       if (result.error) {

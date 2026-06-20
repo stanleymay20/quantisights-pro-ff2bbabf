@@ -690,7 +690,17 @@ const SiteFooter = () => {
 };
 
 /* ─── Page ────────────────────────────────────────────────────────── */
-const Index = forwardRef<HTMLDivElement>((_, ref) => (
+const Index = forwardRef<HTMLDivElement>((_, ref) => {
+  // Detect OAuth callback on landing page (Google redirects to origin instead of /auth/callback)
+  // Redirect to /auth/callback so the token is properly processed
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash && hash.includes("access_token=")) {
+      window.location.replace("/auth/callback" + (hash.startsWith("#") ? "?" + hash.slice(1) : hash));
+    }
+  }, []);
+
+  return (
   <div ref={ref} style={{ minHeight: "100dvh", background: "#fff", fontFamily: "system-ui, -apple-system, sans-serif" }}>
     <Nav />
     <main id="main-content">
@@ -708,6 +718,8 @@ const Index = forwardRef<HTMLDivElement>((_, ref) => (
     <SiteFooter />
   </div>
 ));
+
+});
 
 Index.displayName = "Index";
 export default Index;
