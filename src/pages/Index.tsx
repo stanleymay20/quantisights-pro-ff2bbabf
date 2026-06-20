@@ -553,6 +553,7 @@ const Index = forwardRef<HTMLDivElement>((_, ref) => (
     <Nav />
     <main id="main-content">
       <Hero />
+      <HeroVideo />
       <Stats />
       <Problem />
       <HowItWorks />
