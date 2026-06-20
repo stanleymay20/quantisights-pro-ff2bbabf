@@ -25,7 +25,10 @@ const Login = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const rawRedirect = searchParams.get("redirect") || "/dashboard";
-  const redirectTo = rawRedirect.startsWith("/") && !rawRedirect.startsWith("//") ? rawRedirect : "/dashboard";
+  // Never redirect back to public/auth pages after login
+  const BLOCKED = ["/", "/login", "/register", "/verify-email", "/forgot-password", "/reset-password"];
+  const isBlocked = BLOCKED.includes(rawRedirect) || !rawRedirect.startsWith("/") || rawRedirect.startsWith("//");
+  const redirectTo = isBlocked ? "/dashboard" : rawRedirect;
   const { toast } = useToast();
   const throttle = useAuthThrottle(5, 60_000);
 

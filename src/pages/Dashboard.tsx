@@ -56,14 +56,26 @@ const Dashboard = () => {
     if (sessionStorage.getItem(cacheKey) === "done") return;
 
     const checkOnboarding = async () => {
-      const { data } = await supabase
-        .from("organizations")
-        .select("onboarding_completed")
-        .eq("id", currentOrgId)
-        .maybeSingle();
-      if (data && !data.onboarding_completed) {
-        navigate("/onboarding", { replace: true });
-      } else {
+      try {
+        const { data, error } = await supabase
+          .from("organizations")
+          .select("onboarding_completed")
+          .eq("id", currentOrgId)
+          .maybeSingle();
+        if (error) {
+          // Non-blocking — default to showing dashboard
+          console.warn("[Dashboard] Onboarding check failed:", error.message);
+          sessionStorage.setItem(cacheKey, "done");
+          return;
+        }
+        if (data && !data.onboarding_completed) {
+          navigate("/onboarding", { replace: true });
+        } else {
+          sessionStorage.setItem(cacheKey, "done");
+        }
+      } catch (e) {
+        // Fail open — show dashboard rather than redirect loop
+        console.warn("[Dashboard] Onboarding check threw:", e);
         sessionStorage.setItem(cacheKey, "done");
       }
     };
