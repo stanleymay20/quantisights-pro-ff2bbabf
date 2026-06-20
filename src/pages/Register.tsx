@@ -54,10 +54,20 @@ const Register = () => {
       navigate(`/verify-email?email=${encodeURIComponent(email)}`);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Unknown error";
+      const lower = message.toLowerCase();
+      const isPasswordIssue =
+        lower.includes("weak") ||
+        lower.includes("pwned") ||
+        lower.includes("leaked") ||
+        lower.includes("password");
+      const isAlreadyRegistered =
+        lower.includes("already registered") || lower.includes("already exists") || lower.includes("user already");
       toast({
         title: "Registration failed",
-        description: message.includes("weak")
-          ? "This password appears in a known weak-password database. Please choose a more unique password."
+        description: isAlreadyRegistered
+          ? "An account with this email already exists. Try signing in instead."
+          : isPasswordIssue
+          ? "Please choose a different password. Try a passphrase or add unusual characters."
           : message,
         variant: "destructive",
       });
