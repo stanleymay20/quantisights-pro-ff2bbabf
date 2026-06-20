@@ -1,6 +1,7 @@
 import { forwardRef, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, CheckCircle, Shield, TrendingUp, AlertCircle, Clock } from "lucide-react";
+import heroVideoAsset from "@/assets/hero-video.mp4.asset.json";
 
 /* ─── Design tokens ───────────────────────────────────────────────── */
 const NAVY   = "#1E2761";
