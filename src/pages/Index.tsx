@@ -1,7 +1,6 @@
 import { forwardRef, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, CheckCircle, Shield, TrendingUp, AlertCircle, Clock } from "lucide-react";
-import heroVideoAsset from "@/assets/hero-video.mp4.asset.json";
 
 /* ─── Design tokens ───────────────────────────────────────────────── */
 const NAVY   = "#1E2761";
@@ -207,28 +206,87 @@ const Hero = () => (
   </section>
 );
 
-/* ─── Hero II (video) ─────────────────────────────────────────────── */
-const HeroVideo = () => (
-  <section style={{ background: DEEP, paddingBottom: 96, color: "#fff" }}>
+/* ─── Decision Brief panel ────────────────────────────────────────── */
+const DecisionBrief = () => (
+  <section style={{ background: DEEP, paddingBottom: 96 }}>
     <div style={{ maxWidth: 1280, margin: "0 auto", padding: "0 24px" }}>
-      <div style={{ marginBottom: 24 }}>
-        <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(255,255,255,0.45)", padding: "5px 12px", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 2 }}>
-          See it in motion
-        </span>
-      </div>
-      <h2 style={{ fontFamily: "Georgia, serif", fontSize: "clamp(28px, 3.5vw, 44px)", lineHeight: 1.15, letterSpacing: "-0.02em", maxWidth: 760, margin: "0 0 32px", fontWeight: 400 }}>
-        Decisions, evidence, and outcomes — captured in one auditable workflow.
-      </h2>
-      <div style={{ position: "relative", borderRadius: 6, overflow: "hidden", border: "1px solid rgba(255,255,255,0.08)", background: "#000", boxShadow: "0 24px 60px -20px rgba(0,0,0,0.6)" }}>
-        <video
-          src={heroVideoAsset.url}
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="metadata"
-          style={{ display: "block", width: "100%", height: "auto" }}
-        />
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 64, alignItems: "center" }}>
+        <div>
+          <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", display: "block", marginBottom: 20 }}>
+            The governance record
+          </span>
+          <h2 style={{ fontFamily: "Georgia, serif", fontSize: "clamp(26px, 3vw, 42px)", lineHeight: 1.15, letterSpacing: "-0.02em", color: "#fff", fontWeight: 400, margin: "0 0 24px" }}>
+            Every decision. Full evidence chain. One auditable record.
+          </h2>
+          <p style={{ fontSize: 15, color: "rgba(255,255,255,0.55)", lineHeight: 1.75, margin: "0 0 32px" }}>
+            The Decision Ledger captures every AI recommendation — who approved it, what evidence supported it, what outcome was predicted, and what actually happened. Board-defensible by design.
+          </p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            {[
+              ["Recommendation → Decision → Outcome → Learning", "The full loop, automatically recorded"],
+              ["Anti-hallucination validation on every output", "AI claims checked against your actual source data"],
+              ["Brier-scored calibration after every outcome", "Predictions get more accurate over time"],
+            ].map(([title, sub]) => (
+              <div key={title} style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
+                <div style={{ width: 20, height: 20, borderRadius: "50%", background: ACCENT, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 2 }}>
+                  <span style={{ color: "#fff", fontSize: 11, fontWeight: 700 }}>✓</span>
+                </div>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "#fff", marginBottom: 2 }}>{title}</div>
+                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>{sub}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 8, overflow: "hidden" }}>
+          <div style={{ background: "rgba(0,0,0,0.4)", padding: "10px 16px", display: "flex", alignItems: "center", gap: 10, borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+            <div style={{ display: "flex", gap: 6 }}>
+              {["#EF4444","#F59E0B","#22C55E"].map(c => <div key={c} style={{ width: 10, height: 10, borderRadius: "50%", background: c }} />)}
+            </div>
+            <div style={{ flex: 1, textAlign: "center", fontSize: 11, color: "rgba(255,255,255,0.28)", letterSpacing: "0.04em" }}>app.quantivis.io/decisions/DL-2847</div>
+          </div>
+          <div style={{ padding: "20px 20px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+            <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
+              <span style={{ fontSize: 9, padding: "3px 8px", borderRadius: 2, background: "#FEF9C3", color: "#854D0E", fontWeight: 600 }}>Risk Mitigation</span>
+              <span style={{ fontSize: 9, padding: "3px 8px", borderRadius: 2, background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.5)" }}>DL-2847</span>
+              <span style={{ fontSize: 9, padding: "3px 8px", borderRadius: 2, background: "#DCFCE7", color: "#15803D", fontWeight: 600 }}>Governance Active</span>
+            </div>
+            <div style={{ fontSize: 13, color: "#fff", fontWeight: 500, lineHeight: 1.4 }}>
+              Address Inventory Turnover and Working Capital Inefficiencies: Immediate investigation required to prevent further exposure
+            </div>
+            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", marginTop: 6 }}>Logged 2 minutes ago · Sample: 1,000 · Source: SAP connector</div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 1, background: "rgba(255,255,255,0.06)" }}>
+            {[["90%", "Confidence", "#22C55E"], ["+€20K", "Est. Impact", ACCENT], ["Strong", "Evidence", "#F59E0B"]].map(([val, label, color]) => (
+              <div key={label} style={{ background: "rgba(255,255,255,0.03)", padding: "12px 16px" }}>
+                <div style={{ fontSize: 18, fontWeight: 700, color, marginBottom: 2 }}>{val}</div>
+                <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.1em" }}>{label}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{ padding: "14px 20px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+            <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 10 }}>Evidence chain</div>
+            {[
+              ["SAP ERP export", "Inventory turnover ratio: 2.1x (industry avg: 4.8x)", "✓ Verified"],
+              ["Causal inference engine", "Root cause: 3 slow-moving SKU categories identified", "✓ Verified"],
+              ["Anti-hallucination layer", "No fabricated metrics detected in recommendation", "✓ Passed"],
+            ].map(([src, desc, status]) => (
+              <div key={src} style={{ display: "flex", gap: 10, marginBottom: 8, alignItems: "flex-start" }}>
+                <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#22C55E", flexShrink: 0, marginTop: 4 }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 10, color: "#fff", fontWeight: 500 }}>{src} <span style={{ color: "#22C55E", fontSize: 9 }}>{status}</span></div>
+                  <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)" }}>{desc}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ padding: "14px 20px", display: "flex", gap: 10 }}>
+            <button style={{ flex: 1, background: "#22C55E", color: "#fff", border: "none", padding: "10px", borderRadius: 4, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Approve</button>
+            <button style={{ flex: 1, background: "transparent", color: "#EF4444", border: "1px solid #EF4444", padding: "10px", borderRadius: 4, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Reject</button>
+            <button style={{ flex: 1, background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.5)", border: "1px solid rgba(255,255,255,0.12)", padding: "10px", borderRadius: 4, fontSize: 12, cursor: "pointer" }}>Simulate</button>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -553,7 +611,7 @@ const Index = forwardRef<HTMLDivElement>((_, ref) => (
     <Nav />
     <main id="main-content">
       <Hero />
-      <HeroVideo />
+      <DecisionBrief />
       <Stats />
       <Problem />
       <HowItWorks />
