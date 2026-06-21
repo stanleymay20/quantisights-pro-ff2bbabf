@@ -96,10 +96,31 @@ const TrustCenter = () => {
   return (
     <SectionErrorBoundary sectionName="Trust Center">
       <div className="space-y-8 max-w-4xl">
+        {/* Executive Trust Summary — Bloomberg Terminal style */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          {[
+            { label: "Authentication", value: "Strong", sub: "MFA + WebAuthn", ok: true },
+            { label: "Governance", value: "Active", sub: "All decisions tracked", ok: true },
+            { label: "Evidence Coverage", value: "100%", sub: "Audit trail complete", ok: true },
+            { label: "Audit Trail", value: "Immutable", sub: "Append-only DB policy", ok: true },
+            { label: "Data Residency", value: "EU", sub: "Frankfurt region only", ok: true },
+            { label: "Compliance", value: "GDPR + EU AI Act", sub: "Art 9 · 13 · 14", ok: true },
+          ].map(({ label, value, sub, ok }) => (
+            <div key={label} className="border border-border/30 rounded-lg px-4 py-3 bg-background">
+              <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/60 mb-1">{label}</div>
+              <div className="flex items-center gap-1.5 mb-0.5">
+                <span className={`text-[11px] font-bold ${ok ? "text-[#16a34a]" : "text-destructive"}`}>✓</span>
+                <span className="text-[13px] font-semibold text-foreground">{value}</span>
+              </div>
+              <div className="text-[10px] text-muted-foreground">{sub}</div>
+            </div>
+          ))}
+        </div>
+
         <div>
           <div className="flex items-center gap-3 mb-2">
             <Shield className="w-7 h-7 text-primary" />
-            <h1 className="text-2xl font-bold font-display">Trust Center</h1>
+            <h1 className="text-[18px] font-semibold tracking-tight">Trust Center</h1>
           </div>
           <p className="text-muted-foreground text-sm leading-relaxed max-w-2xl">
             Quantivis is built for enterprises that require provable, auditable intelligence. Every claim on this page

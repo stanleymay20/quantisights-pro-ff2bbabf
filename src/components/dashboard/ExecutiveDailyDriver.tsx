@@ -294,15 +294,15 @@ const ExecutiveDailyDriver = ({ displayName, orgId, insights, topMetrics, pendin
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
-                <Button className="gap-1.5" onClick={() => handleApprove(topDecision.id)} disabled={!!acting}>
-                  <CheckCircle2 className="h-4 w-4" /> Approve
+                <Button className="h-8 px-4 text-[12px] font-semibold gap-1.5 bg-[#16a34a] hover:bg-[#15803d] text-white border-0" onClick={() => handleApprove(topDecision.id)} disabled={!!acting}>
+                  <CheckCircle2 className="h-3.5 w-3.5" /> Approve
                 </Button>
-                <Button variant="outline" className="gap-1.5 border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => handleReject(topDecision.id)} disabled={!!acting}>
-                  <XCircle className="h-4 w-4" /> Reject
+                <Button variant="outline" className="h-8 px-4 text-[12px] font-semibold gap-1.5 border-[#dc2626]/40 text-[#dc2626] hover:bg-[#dc2626]/5" onClick={() => handleReject(topDecision.id)} disabled={!!acting}>
+                  <XCircle className="h-3.5 w-3.5" /> Reject
                 </Button>
-                <Button variant="ghost" className="gap-1.5" onClick={() => navigate("/decisions")}>
-                  View evidence <ArrowRight className="h-4 w-4" />
-                </Button>
+                <button className="text-[12px] text-muted-foreground hover:text-foreground flex items-center gap-1.5 px-2" onClick={() => navigate("/decisions")}>
+                  View evidence <ArrowRight className="h-3.5 w-3.5" />
+                </button>
               </div>
             </div>
           ) : briefSummary ? (
@@ -338,21 +338,31 @@ const ExecutiveDailyDriver = ({ displayName, orgId, insights, topMetrics, pendin
         </CardContent>
       </Card>
 
+      {/* Stat strip — Bloomberg-style flat horizontal */}
       <div className="flex border border-border/30 rounded-lg overflow-hidden bg-muted/20">
-        <div className="flex-1 px-5 py-3 border-r border-border/30">
+        <div className="flex-1 px-5 py-3 border-r border-border/30 cursor-pointer hover:bg-muted/40 transition-colors" onClick={() => navigate("/decisions")}>
           <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/60 mb-1">Pending decisions</div>
           <div className="text-[22px] font-semibold tabular-nums text-foreground">{pendingDecisions}</div>
           <div className="text-[11px] text-muted-foreground mt-0.5">Need sign-off or review.</div>
         </div>
         <div className="flex-1 px-5 py-3 border-r border-border/30">
+          <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/60 mb-1">Potential impact</div>
+          <div className="text-[22px] font-semibold tabular-nums text-foreground">
+            {decisions.length > 0
+              ? EURO(decisions.reduce((sum, d) => sum + Math.abs(d.predicted_net_impact ?? 0), 0))
+              : "—"}
+          </div>
+          <div className="text-[11px] text-muted-foreground mt-0.5">Across pending decisions.</div>
+        </div>
+        <div className="flex-1 px-5 py-3 border-r border-border/30">
           <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/60 mb-1">Critical alerts</div>
           <div className="text-[22px] font-semibold tabular-nums text-destructive">{criticalInterventions.length}</div>
-          <div className="text-[11px] text-muted-foreground mt-0.5">High-priority risks surfaced today.</div>
+          <div className="text-[11px] text-muted-foreground mt-0.5">High-priority risks today.</div>
         </div>
         <div className="flex-1 px-5 py-3">
           <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/60 mb-1">Governance record</div>
-          <div className="text-[22px] font-semibold text-foreground">Active</div>
-          <div className="text-[11px] text-muted-foreground mt-0.5">Decisions are tracked with evidence.</div>
+          <div className="text-[22px] font-semibold text-[#16a34a]">Active</div>
+          <div className="text-[11px] text-muted-foreground mt-0.5">All decisions tracked with evidence.</div>
         </div>
       </div>
 

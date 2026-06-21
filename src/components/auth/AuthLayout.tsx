@@ -42,9 +42,9 @@ const AuthLayout = ({
   children,
   ribbon,
   footer,
-  eyebrow = "Decision Intelligence OS",
-  brandTitle = "Govern decisions with provable confidence.",
-  brandDescription = "Quantivis turns operational signals, advisories and outcomes into a single, audit-ready ledger trusted by enterprise risk, finance and operations teams.",
+  eyebrow = "Enterprise AI Decision Governance",
+  brandTitle = "Every AI recommendation. Every approval. Every outcome. Governed.",
+  brandDescription = "The enterprise standard for AI decision governance. Board-defensible audit trails, built automatically.",
 }: AuthLayoutProps) => {
   return (
     <div className="relative min-h-dvh w-full bg-background text-foreground overflow-hidden">
