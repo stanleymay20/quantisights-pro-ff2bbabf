@@ -209,7 +209,7 @@ export default function NarrativeCockpit() {
       <div className="container py-6 space-y-6">
         <header className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold">Narrative cockpit</h1>
+            <h1 className="text-[18px] font-semibold tracking-tight">Narrative cockpit</h1>
             <p className="text-sm text-muted-foreground mt-1">
               Compressed operational narratives, deterministic-first. LLMs only render phrasing.
             </p>

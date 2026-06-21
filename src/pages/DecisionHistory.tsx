@@ -76,7 +76,7 @@ const DecisionHistory = () => {
         <div className="flex items-center gap-2">
           <SidebarMobileToggle />
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Decision History</h1>
+            <h1 className="text-[18px] font-semibold tracking-tight tracking-tight">Decision History</h1>
             <p className="text-sm text-muted-foreground mt-0.5">
               Every decision your team has made, and what happened.
             </p>

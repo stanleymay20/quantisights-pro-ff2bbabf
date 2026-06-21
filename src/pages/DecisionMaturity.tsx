@@ -101,7 +101,7 @@ const DecisionMaturity = () => {
     <SectionErrorBoundary sectionName="Decision Maturity">
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold">Decision Intelligence Maturity</h1>
+          <h1 className="text-[18px] font-semibold tracking-tight">Decision Intelligence Maturity</h1>
           <p className="text-muted-foreground text-sm mt-1">
             Ch 15 — Organizational readiness across the SUDAL framework
           </p>

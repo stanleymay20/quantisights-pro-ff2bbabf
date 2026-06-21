@@ -98,7 +98,7 @@ const GovernanceAudit = () => {
         <div>
           <div className="flex items-center gap-3 mb-1">
             <ScrollText className="w-6 h-6 text-primary" />
-            <h1 className="text-2xl font-bold font-display">Governance Audit Explorer</h1>
+            <h1 className="text-[18px] font-semibold tracking-tight">Governance Audit Explorer</h1>
           </div>
           <p className="text-muted-foreground text-sm max-w-3xl">
             Append-only record of which governance configuration influenced every recommendation,

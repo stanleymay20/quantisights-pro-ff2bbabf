@@ -81,7 +81,7 @@ const GovernanceSimulation = () => {
         <div>
           <div className="flex items-center gap-3 mb-1">
             <GitCompareArrows className="w-6 h-6 text-primary" />
-            <h1 className="text-2xl font-bold font-display">Cross-Domain Governance Simulation</h1>
+            <h1 className="text-[18px] font-semibold tracking-tight">Cross-Domain Governance Simulation</h1>
           </div>
           <p className="text-muted-foreground text-sm max-w-3xl">
             Send one synthetic operational signal through the production governance engine for multiple organizations.

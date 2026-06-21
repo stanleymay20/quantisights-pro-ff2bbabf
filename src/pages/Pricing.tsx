@@ -351,7 +351,7 @@ const Pricing = () => {
       {/* Bottom CTA */}
       <section className="py-16 border-t border-border bg-card/20">
         <div className="container mx-auto px-6 text-center max-w-2xl">
-          <h2 className="text-2xl font-bold font-display mb-3">Ready to Start?</h2>
+          <h2 className="text-[18px] font-semibold tracking-tight mb-3">Ready to Start?</h2>
           <p className="text-muted-foreground mb-8">
             14-day free trial · No credit card required · GDPR ready · Enterprise-grade security
           </p>

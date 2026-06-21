@@ -198,7 +198,7 @@ const GovernanceMaturity = () => {
       <div className="flex items-center gap-3">
         <SidebarMobileToggle />
         <div>
-          <h1 className="text-2xl font-bold font-display">Governance Maturity Assessment</h1>
+          <h1 className="text-[18px] font-semibold tracking-tight">Governance Maturity Assessment</h1>
           <p className="text-sm text-muted-foreground">
             Evaluate your organization across 6 dimensions from the Data Governance framework.
           </p>

@@ -149,7 +149,7 @@ const BusinessModel = () => {
                         </div>
                         <p className="text-sm text-muted-foreground text-center lg:text-left">{layer.subtitle}</p>
                         <div className="mt-4 pt-4 border-t border-border/30 w-full">
-                          <p className={`text-2xl font-bold font-display ${layer.color}`}>{layer.pricing}</p>
+                          <p className={`text-[18px] font-semibold tracking-tight ${layer.color}`}>{layer.pricing}</p>
                           <p className="text-xs text-muted-foreground">{layer.pricingNote}</p>
                         </div>
                       </div>
@@ -189,7 +189,7 @@ const BusinessModel = () => {
             viewport={{ once: true }}
             className="max-w-4xl mx-auto mb-20"
           >
-            <h2 className="text-2xl font-bold font-display text-center mb-8">
+            <h2 className="text-[18px] font-semibold tracking-tight text-center mb-8">
               Revenue <span className="gradient-text">Flywheel</span>
             </h2>
             <div className="flex flex-wrap items-center justify-center gap-3">
@@ -212,7 +212,7 @@ const BusinessModel = () => {
             viewport={{ once: true }}
             className="max-w-5xl mx-auto mb-20"
           >
-            <h2 className="text-2xl font-bold font-display text-center mb-3">
+            <h2 className="text-[18px] font-semibold tracking-tight text-center mb-3">
               Who <span className="gradient-text">Pays</span>
             </h2>
             <p className="text-muted-foreground text-center mb-8 text-sm">The most valuable buyers are institutional decision-makers, not random small businesses.</p>
@@ -261,7 +261,7 @@ const BusinessModel = () => {
             viewport={{ once: true }}
             className="max-w-4xl mx-auto mb-20"
           >
-            <h2 className="text-2xl font-bold font-display text-center mb-8">
+            <h2 className="text-[18px] font-semibold tracking-tight text-center mb-8">
               Three Ways to <span className="gradient-text">Describe</span> the Model
             </h2>
             <div className="grid md:grid-cols-3 gap-4">

@@ -130,7 +130,7 @@ const Billing = () => {
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <h2 className="text-2xl font-bold font-display">{tierConfig.name}</h2>
+                          <h2 className="text-[18px] font-semibold tracking-tight">{tierConfig.name}</h2>
                           <Badge className="bg-primary/10 text-primary border-none">
                             {subscribed ? "Active" : "Trial"}
                           </Badge>

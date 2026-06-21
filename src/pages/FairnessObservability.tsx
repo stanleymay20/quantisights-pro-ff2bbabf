@@ -65,7 +65,7 @@ const FairnessObservability = () => {
   return (
     <div className="flex-1 p-4 sm:p-6 md:p-8 overflow-auto space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Fairness & Model Observability</h1>
+        <h1 className="text-[18px] font-semibold tracking-tight tracking-tight">Fairness & Model Observability</h1>
         <p className="text-sm text-muted-foreground mt-1">
           Monitor algorithmic fairness, disparate impact, and model drift across your decision intelligence system.
         </p>

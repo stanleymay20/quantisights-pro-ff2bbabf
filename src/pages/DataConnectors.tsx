@@ -916,7 +916,7 @@ const DataConnectors = () => {
             {step === "select" && (
               <div>
                 <div className="mb-8">
-                  <h2 className="text-2xl font-bold font-display mb-2">Connect Your Data</h2>
+                  <h2 className="text-[18px] font-semibold tracking-tight mb-2">Connect Your Data</h2>
                   <p className="text-muted-foreground">Choose a data source to power your decision intelligence.</p>
                 </div>
 

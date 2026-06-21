@@ -656,7 +656,7 @@ const Security = () => {
       {/* CTA */}
       <section className="container mx-auto px-6 py-16">
         <div className="max-w-2xl mx-auto text-center">
-          <h2 className="text-2xl font-bold font-display mb-3">Ready to see enterprise-grade security in action?</h2>
+          <h2 className="text-[18px] font-semibold tracking-tight mb-3">Ready to see enterprise-grade security in action?</h2>
           <p className="text-muted-foreground mb-6">
             Start your 14-day free trial. No credit card required. Full security from day one.
           </p>

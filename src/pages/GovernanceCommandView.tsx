@@ -139,7 +139,7 @@ const GovernanceCommandView = () => {
         <div className="flex items-center gap-3">
           <SidebarMobileToggle />
           <div>
-            <h1 className="text-2xl font-bold font-display">Governance Command View</h1>
+            <h1 className="text-[18px] font-semibold tracking-tight">Governance Command View</h1>
             <p className="text-sm text-muted-foreground">
               Unified executive view — are we governed, where are we weak, and what to do next.
             </p>

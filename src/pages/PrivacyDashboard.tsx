@@ -107,7 +107,7 @@ const PrivacyDashboard = () => {
       <div className="flex items-center gap-3">
         <SidebarMobileToggle />
         <div>
-          <h1 className="text-2xl font-bold font-display">Privacy Dashboard</h1>
+          <h1 className="text-[18px] font-semibold tracking-tight">Privacy Dashboard</h1>
           <p className="text-sm text-muted-foreground">See what data we store, where it lives, and export or delete it.</p>
         </div>
       </div>

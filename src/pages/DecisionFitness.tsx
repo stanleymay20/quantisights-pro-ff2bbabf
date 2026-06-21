@@ -179,7 +179,7 @@ const DecisionFitness = () => {
           <div className="flex items-center gap-3 mb-8">
             <SidebarMobileToggle />
             <div>
-              <h1 className="text-2xl font-bold font-display">Decision Fitness Results</h1>
+              <h1 className="text-[18px] font-semibold tracking-tight font-display">Decision Fitness Results</h1>
               <p className="text-sm text-muted-foreground">Based on the Decision Fitness Framework</p>
             </div>
           </div>
@@ -287,7 +287,7 @@ const DecisionFitness = () => {
         <div className="flex items-center gap-3 mb-2">
           <SidebarMobileToggle />
           <div>
-            <h1 className="text-2xl font-bold font-display">Decision Fitness Assessment</h1>
+            <h1 className="text-[18px] font-semibold tracking-tight font-display">Decision Fitness Assessment</h1>
             <p className="text-sm text-muted-foreground">
               Diagnose your organization's strategic decision-making capacity across 7 dimensions
             </p>

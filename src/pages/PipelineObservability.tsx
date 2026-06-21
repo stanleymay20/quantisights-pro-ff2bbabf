@@ -126,7 +126,7 @@ export default function PipelineObservability() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Pipeline Observability</h1>
+          <h1 className="text-[18px] font-semibold tracking-tight tracking-tight">Pipeline Observability</h1>
           <p className="text-muted-foreground">Real-time monitoring of data ingestion, sync health, and quality.</p>
         </div>
         <Button onClick={loadData} variant="outline" size="sm">

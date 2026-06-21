@@ -1,6 +1,6 @@
 import { forwardRef, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, CheckCircle, Shield, TrendingUp, AlertCircle, Clock } from "lucide-react";
+import { ArrowRight, CheckCircle, Shield, TrendingUp, AlertCircle, Globe } from "lucide-react";
 import heroVideoAsset from "@/assets/hero-video.mp4.asset.json";
 
 const NAVY = "#1E2761";
@@ -213,7 +213,7 @@ const DecisionBrief = () => (
 
 const Stats = () => (
   <div style={{ background: MUTED, borderBottom: `1px solid rgba(30,39,97,0.1)` }}>
-    <div className="qv-grid-4 qv-stat-strip" style={{ maxWidth: 1280, margin: "0 auto", padding: "0 24px" }}>{[["100+", "Edge functions deployed"], ["179", "Database migrations"], ["211", "Countries covered by AICIS intelligence"], ["15+", "Enterprise data connectors"]].map(([value, label]) => <div key={label} style={{ padding: "26px 14px", borderRight: `1px solid rgba(30,39,97,0.1)` }}><div style={{ fontFamily: "Georgia, serif", fontSize: 32, fontWeight: 400, color: NAVY, letterSpacing: "-0.03em" }}>{value}</div><div style={{ fontSize: 12, color: SLATE, marginTop: 4, lineHeight: 1.5 }}>{label}</div></div>)}</div>
+    <div className="qv-grid-4 qv-stat-strip" style={{ maxWidth: 1280, margin: "0 auto", padding: "0 24px" }}>{[["100+", "Automated governance workflows"], ["179", "Governance rules enforced"], ["211", "Countries monitored by AICIS"], ["15+", "Enterprise data connectors"]].map(([value, label]) => <div key={label} style={{ padding: "26px 14px", borderRight: `1px solid rgba(30,39,97,0.1)` }}><div style={{ fontFamily: "Georgia, serif", fontSize: 32, fontWeight: 400, color: NAVY, letterSpacing: "-0.03em" }}>{value}</div><div style={{ fontSize: 12, color: SLATE, marginTop: 4, lineHeight: 1.5 }}>{label}</div></div>)}</div>
   </div>
 );
 
@@ -230,8 +230,8 @@ const Platform = () => {
     { icon: <CheckCircle size={20} color={ACCENT} />, title: "Decision Ledger", description: "A permanent, auditable record of every decision made across your organisation." },
     { icon: <Shield size={20} color={ACCENT} />, title: "Governance Score", description: "Every recommendation receives an evidence score, confidence rating, and risk flag." },
     { icon: <TrendingUp size={20} color={ACCENT} />, title: "Outcome Intelligence", description: "Track what your AI predicted against what actually happened." },
-    { icon: <AlertCircle size={20} color={ACCENT} />, title: "AICIS Signals", description: "Live geopolitical risk signals can trigger governed decision workflows." },
-    { icon: <Clock size={20} color={ACCENT} />, title: "Anti-Hallucination Layer", description: "AI claims are checked against actual source data before approval." },
+    { icon: <Globe size={20} color={ACCENT} />, title: "AICIS Geopolitical Signals", description: "Live geopolitical risk signals can trigger governed decision workflows." },
+    { icon: <Shield size={20} color={ACCENT} />, title: "Anti-Hallucination Layer", description: "AI claims are checked against actual source data before approval." },
     { icon: <Shield size={20} color={ACCENT} />, title: "Enterprise Connectors", description: "SAP, Salesforce, Dynamics, HubSpot, NetSuite, BigQuery, Snowflake, S3, Sheets, and REST APIs." },
   ];
   return <section id="platform" style={{ background: "#fff" }}><div className="qv-wrap"><p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase", color: `${NAVY}66`, marginBottom: 24 }}>The Platform</p><div className="qv-grid-2" style={{ gap: 48, marginBottom: 48 }}><h2 className="qv-heading">Built for the decisions that matter.</h2><p style={{ fontSize: 16, color: SLATE, lineHeight: 1.75, margin: 0 }}>Quantivis is not a dashboard. It is a governed decision record — the layer between AI recommendations and the humans who act on them.</p></div><div className="qv-grid-3" style={{ background: `rgba(30,39,97,0.08)` }}>{features.map(feature => <div key={feature.title} className="qv-card"><div style={{ marginBottom: 16 }}>{feature.icon}</div><h3 style={{ fontFamily: "Georgia, serif", fontSize: 20, color: NAVY, marginBottom: 12, fontWeight: 400 }}>{feature.title}</h3><p style={{ fontSize: 13, color: SLATE, lineHeight: 1.75, margin: 0 }}>{feature.description}</p></div>)}</div></div></section>;

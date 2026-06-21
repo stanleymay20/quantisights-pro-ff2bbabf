@@ -48,7 +48,7 @@ const LocalizationAudit = () => {
         <div>
           <div className="flex items-center gap-3 mb-1">
             <Languages className="w-6 h-6 text-primary" />
-            <h1 className="text-2xl font-bold font-display">Localization Readiness Audit</h1>
+            <h1 className="text-[18px] font-semibold tracking-tight">Localization Readiness Audit</h1>
           </div>
           <p className="text-muted-foreground text-sm max-w-2xl">
             Procurement-grade snapshot of what is localized for the German market and what remains English-only.

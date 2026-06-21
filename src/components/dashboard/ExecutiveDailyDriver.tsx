@@ -109,7 +109,7 @@ function DecisionRow({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: -20 }}
-      className="rounded-xl border border-border/50 bg-card p-4"
+      className="border-b border-border/30 py-3 px-1 last:border-0"
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0 space-y-1">
@@ -131,7 +131,7 @@ function DecisionRow({
           <Button
             size="sm"
             variant="outline"
-            className="h-8 gap-1.5 border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
+            className="h-7 px-3 text-[11px] font-semibold gap-1 border-[#dc2626]/40 text-[#dc2626] hover:bg-[#dc2626]/5"
             onClick={() => onReject(decision.id)}
             disabled={!!acting}
           >
@@ -405,8 +405,7 @@ const ExecutiveDailyDriver = ({ displayName, orgId, insights, topMetrics, pendin
         </div>
       )}
 
-      <Card>
-        <CardContent className="p-4 space-y-3">
+      <div className="border border-border/30 rounded-lg p-4 space-y-3 bg-muted/20">
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
             <MessageSquareText className="h-3.5 w-3.5" /> Ask about this decision
           </p>
@@ -458,8 +457,7 @@ const ExecutiveDailyDriver = ({ displayName, orgId, insights, topMetrics, pendin
               {answering ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ArrowRight className="h-3.5 w-3.5" />}
             </Button>
           </div>
-        </CardContent>
-      </Card>
+      </div>
 
       <div className="grid grid-cols-3 gap-2 border-t border-border/20 pt-2">
         {[

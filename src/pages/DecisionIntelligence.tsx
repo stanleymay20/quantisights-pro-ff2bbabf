@@ -264,13 +264,13 @@ const CalibrationPanel = ({ decisions }: { decisions: Array<any> }) => {
       <div className="grid grid-cols-2 gap-3 mb-4">
         <div className="text-center bg-muted/20 rounded-lg p-3">
           <p className="text-[10px] text-muted-foreground uppercase">Avg Accuracy</p>
-          <p className={`text-2xl font-bold font-display ${avgAccuracy >= 70 ? "text-success" : "text-warning"}`}>
+          <p className={`text-[18px] font-semibold tracking-tight ${avgAccuracy >= 70 ? "text-success" : "text-warning"}`}>
             {avgAccuracy.toFixed(0)}%
           </p>
         </div>
         <div className="text-center bg-muted/20 rounded-lg p-3">
           <p className="text-[10px] text-muted-foreground uppercase">Calibration Error</p>
-          <p className="text-2xl font-bold font-display">{avgCalibrationError.toFixed(1)}%</p>
+          <p className="text-[18px] font-semibold tracking-tight">{avgCalibrationError.toFixed(1)}%</p>
         </div>
       </div>
       <div className="space-y-2">

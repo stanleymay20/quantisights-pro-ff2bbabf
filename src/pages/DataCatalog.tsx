@@ -146,7 +146,7 @@ export default function DataCatalog() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Data Catalog</h1>
+          <h1 className="text-[18px] font-semibold tracking-tight tracking-tight">Data Catalog</h1>
           <p className="text-muted-foreground">Searchable registry of all datasets with profiling, metadata, and lineage.</p>
         </div>
         <Button onClick={loadCatalog} variant="outline" size="sm">

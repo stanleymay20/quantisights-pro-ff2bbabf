@@ -448,7 +448,7 @@ const AdvancedGroupBlock = ({
 
 // ─── Main sidebar ─────────────────────────────────────────────────────────────
 const DashboardSidebar = () => {
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
   const { currentOrg } = useOrganization();
   const { orgRole } = usePermissions();
   const allowedPaths = useRoleNav(orgRole as any);
@@ -561,8 +561,28 @@ const DashboardSidebar = () => {
         )}
       </nav>
 
-      {/* Footer */}
+      {/* Footer — user identity */}
       <div className="p-2 border-t border-sidebar-border space-y-0.5">
+        {user && (
+          <div className={cn(
+            "flex items-center gap-2.5 px-2.5 py-2 mb-1",
+            collapsed && "justify-center px-0"
+          )}>
+            <div className="w-7 h-7 rounded-full bg-foreground/10 flex items-center justify-center shrink-0 text-[11px] font-semibold text-foreground">
+              {(user.user_metadata?.full_name || user.email || "?").charAt(0).toUpperCase()}
+            </div>
+            {!collapsed && (
+              <div className="min-w-0">
+                <p className="text-[12px] font-medium text-foreground truncate">
+                  {user.user_metadata?.full_name || user.email?.split("@")[0] || "Account"}
+                </p>
+                <p className="text-[10px] text-muted-foreground/60 truncate">
+                  {currentOrg?.name || "Workspace"}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
         {orgRole && orgRole !== "owner" && orgRole !== "admin" && (
           <div className="px-2.5 py-1 mb-1">
             <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60 bg-muted/40 px-2 py-0.5 rounded-full capitalize">

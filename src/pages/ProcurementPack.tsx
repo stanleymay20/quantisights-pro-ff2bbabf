@@ -19,7 +19,7 @@ const REVIEWED = "May 26, 2026";
 
 const Section = ({ id, title, children }: { id: string; title: string; children: React.ReactNode }) => (
   <section id={id} className="print:break-before-page space-y-3">
-    <h2 className="text-2xl font-bold font-display border-b border-border/40 pb-2">{title}</h2>
+    <h2 className="text-[18px] font-semibold tracking-tight border-b border-border/40 pb-2">{title}</h2>
     <div className="text-sm text-foreground/90 leading-relaxed space-y-3">{children}</div>
   </section>
 );

@@ -667,8 +667,7 @@ const DecisionLedgerPage = () => {
                           </Tooltip>
                           <span>Data sufficiency: <span className="capitalize font-medium text-foreground">{simResult.data_sufficiency}</span></span>
                         </div>
-                      </CardContent>
-                    </Card>
+                    </div>
                   </motion.div>
                 )}
               </CardContent>
@@ -785,9 +784,8 @@ const DecisionLedgerPage = () => {
                 const sCfg = STATUS_COLORS[d.decision_status] || STATUS_COLORS.pending;
                 const eCfg = EXEC_STATUS[d.execution_status] || EXEC_STATUS.not_started;
                 return (
-                  <motion.div key={d.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-                    <Card>
-                      <CardContent className="p-5">
+                  <motion.div key={d.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}>
+                    <div className="border-b border-border/30 py-4 px-1 last:border-0">
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-2 flex-wrap">
@@ -924,8 +922,7 @@ const DecisionLedgerPage = () => {
                             </div>
                           </div>
                         )}
-                      </CardContent>
-                    </Card>
+                    </div>
                   </motion.div>
                 );
               })}

@@ -9,7 +9,7 @@ const SystemHealth = () => {
     <SectionErrorBoundary sectionName="System Health">
     <div className="space-y-6 p-4 sm:p-6 lg:p-8">
       <header>
-        <h1 className="text-2xl font-bold">System Health</h1>
+        <h1 className="text-[18px] font-semibold tracking-tight">System Health</h1>
         <p className="text-muted-foreground text-sm mt-1">
           Monitor platform health, pipeline status, and infrastructure metrics.
         </p>
