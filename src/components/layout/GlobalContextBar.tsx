@@ -186,8 +186,6 @@ const GlobalNotificationBell = ({ orgId, datasetId }: { orgId: string | null; da
   );
 };
 
-};
-
 const GlobalContextBar = () => {
   const location = useLocation();
   // Dashboard page has its own notification bell in DashboardHeader — hide here to avoid duplicate
