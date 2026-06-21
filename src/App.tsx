@@ -19,6 +19,7 @@ import CookieConsent from "@/components/CookieConsent";
 import SessionTimeout from "@/components/auth/SessionTimeout";
 import UpgradeModalProvider from "@/components/UpgradeModalProvider";
 import { routes, RouteLayout } from "@/routes";
+import PublicPageNav from "@/components/layout/PublicPageNav";
 
 // ═══════════════════════════════════════════════════════
 // QUERY CLIENT — production-hardened defaults
