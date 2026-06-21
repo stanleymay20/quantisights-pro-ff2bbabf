@@ -337,7 +337,7 @@ const CopilotHome = ({
                       <p className="text-sm font-semibold leading-snug">
                         {brief.issue.split(" ").slice(0, 7).join(" ")}{brief.issue.split(" ").length > 7 ? "…" : ""}
                       </p>
-                      <Badge variant="secondary" className="text-[10px]">{brief.confidence}% confidence</Badge>
+                      <Badge variant="secondary" className="text-[10px]">{Number(brief.confidence ?? 0).toFixed(1)}% confidence</Badge>
                       <Badge variant="outline" className={`text-[10px] ${riskColor(brief.risk)}`}>{brief.risk} risk</Badge>
                       <Badge variant="secondary" className="text-[10px]">{formatEuro(brief.expectedFinancialImpact)} impact</Badge>
                     </div>

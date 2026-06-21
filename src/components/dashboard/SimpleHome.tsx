@@ -399,7 +399,7 @@ const SimpleHome = ({
                 <div className="flex-1">
                   <div className="flex items-center justify-between text-xs mb-1">
                     <span className="text-muted-foreground">Decision confidence</span>
-                    <span className="font-semibold">{topDecision.confidence}%</span>
+                    <span className="font-semibold">{Number(topDecision.confidence ?? 0).toFixed(1)}%</span>
                   </div>
                   <Progress value={topDecision.confidence} className="h-2" />
                 </div>
@@ -459,7 +459,7 @@ const SimpleHome = ({
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-sm font-semibold leading-snug">{brief.issue}</p>
-                        <Badge variant="secondary" className="text-[10px]">{brief.confidence}% confidence</Badge>
+                        <Badge variant="secondary" className="text-[10px]">{Number(brief.confidence ?? 0).toFixed(1)}% confidence</Badge>
                         <Badge variant="outline" className={`text-[10px] ${riskClass(brief.risk)}`}>{brief.risk} risk</Badge>
                         <Badge variant="secondary" className="text-[10px]">{formatEuro(brief.expectedFinancialImpact)} impact</Badge>
                       </div>

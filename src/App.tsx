@@ -89,7 +89,12 @@ const PMinimal = ({ children }: { children: React.ReactNode }) => (
 /** Layout wrapper factory */
 const wrapLayout: Record<RouteLayout, (el: React.ReactNode) => React.ReactNode> = {
   none: (el) => el,
-  public: (el) => <SafeRoute>{el}</SafeRoute>,
+  public: (el) => (
+    <SafeRoute>
+      <PublicPageNav />
+      {el}
+    </SafeRoute>
+  ),
   full: (el) => <P>{el}</P>,
   minimal: (el) => <PMinimal>{el}</PMinimal>,
 };

@@ -656,11 +656,11 @@ const DecisionLedgerPage = () => {
                           <Tooltip>
                             <TooltipTrigger>
                               <Badge variant={simResult.data_sufficiency === "robust" ? "default" : "secondary"} className="text-xs">
-                                Conf: {simResult.capped_confidence}%
+                                Conf: {Number(simResult.capped_confidence).toFixed(1)}%
                               </Badge>
                             </TooltipTrigger>
                             <TooltipContent className="max-w-xs text-xs">
-                              <p>Raw: {simResult.raw_confidence}% → Capped: {simResult.capped_confidence}%</p>
+                              <p>Raw: {Number(simResult.raw_confidence).toFixed(1)}% → Capped: {Number(simResult.capped_confidence).toFixed(1)}%</p>
                               <p>{simResult.confidence_cap_reason}</p>
                               <p>Sample: {simResult.sample_size} | Variance: {simResult.variance_score}%</p>
                             </TooltipContent>
@@ -796,7 +796,7 @@ const DecisionLedgerPage = () => {
                               <Badge className={`${eCfg.bg} ${eCfg.text} border-none text-xs`}>{eCfg.label}</Badge>
                               {d.capped_confidence !== null && (
                                 <span className="text-xs text-muted-foreground flex items-center gap-1" title={d.confidence_cap_reason || undefined}>
-                                  <BarChart3 className="w-3 h-3" /> {d.capped_confidence}% conf.
+                                  <BarChart3 className="w-3 h-3" /> {Number(d.capped_confidence).toFixed(1)}% conf.
                                 </span>
                               )}
                               {d.predicted_roi_probability !== null && (

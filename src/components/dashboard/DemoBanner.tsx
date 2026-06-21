@@ -47,7 +47,7 @@ const DemoBanner = () => {
                   </p>
                 </div>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Connect your data to generate real recommendations. Demo: Acme Corp · B2B SaaS · €4.2M ARR.
+                  Connect your data to generate real recommendations. Currently showing sample data: Acme Corp · B2B SaaS.
                 </p>
               </div>
             </div>

@@ -138,7 +138,7 @@ function DecisionRow({
             {isActing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <XCircle className="h-3.5 w-3.5" />}
             Reject
           </Button>
-          <Button size="sm" className="h-8 gap-1.5" onClick={() => onApprove(decision.id)} disabled={!!acting}>
+          <Button size="sm" className="h-7 px-3 text-[11px] font-semibold bg-[#16a34a] hover:bg-[#15803d] text-white rounded-md" onClick={() => onApprove(decision.id)} disabled={!!acting}>
             {isActing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
             Approve
           </Button>
@@ -338,28 +338,22 @@ const ExecutiveDailyDriver = ({ displayName, orgId, insights, topMetrics, pendin
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-sm font-medium"><Clock className="h-4 w-4 text-primary" /> Pending decisions</div>
-            <p className="mt-2 text-2xl font-semibold">{pendingDecisions}</p>
-            <p className="mt-1 text-xs text-muted-foreground">Need sign-off or review.</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-sm font-medium"><AlertTriangle className="h-4 w-4 text-destructive" /> Critical alerts</div>
-            <p className="mt-2 text-2xl font-semibold">{criticalInterventions.length}</p>
-            <p className="mt-1 text-xs text-muted-foreground">High-priority risks surfaced today.</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-sm font-medium"><ShieldCheck className="h-4 w-4 text-primary" /> Governance record</div>
-            <p className="mt-2 text-2xl font-semibold">Active</p>
-            <p className="mt-1 text-xs text-muted-foreground">Decisions are tracked with evidence.</p>
-          </CardContent>
-        </Card>
+      <div className="flex border border-border/30 rounded-lg overflow-hidden bg-muted/20">
+        <div className="flex-1 px-5 py-3 border-r border-border/30">
+          <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/60 mb-1">Pending decisions</div>
+          <div className="text-[22px] font-semibold tabular-nums text-foreground">{pendingDecisions}</div>
+          <div className="text-[11px] text-muted-foreground mt-0.5">Need sign-off or review.</div>
+        </div>
+        <div className="flex-1 px-5 py-3 border-r border-border/30">
+          <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/60 mb-1">Critical alerts</div>
+          <div className="text-[22px] font-semibold tabular-nums text-destructive">{criticalInterventions.length}</div>
+          <div className="text-[11px] text-muted-foreground mt-0.5">High-priority risks surfaced today.</div>
+        </div>
+        <div className="flex-1 px-5 py-3">
+          <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/60 mb-1">Governance record</div>
+          <div className="text-[22px] font-semibold text-foreground">Active</div>
+          <div className="text-[11px] text-muted-foreground mt-0.5">Decisions are tracked with evidence.</div>
+        </div>
       </div>
 
       {criticalInterventions.length > 0 && (

@@ -169,7 +169,7 @@ const Outcomes = () => {
                             </Badge>
                           )}
                           <span className="text-[11px] text-muted-foreground">
-                            Predicted: {r.confidence_at_decision ?? "—"}% confidence
+                            Predicted: {r.confidence_at_decision != null ? Number(r.confidence_at_decision).toFixed(1) : "—"}% confidence
                           </span>
                         </div>
                       </div>
@@ -197,7 +197,7 @@ const Outcomes = () => {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{r.recommended_action}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      Logged with {r.confidence_at_decision ?? "—"}% confidence · Outcome not yet recorded
+                      Logged with {r.confidence_at_decision != null ? Number(r.confidence_at_decision).toFixed(1) : "—"}% confidence · Outcome not yet recorded
                     </p>
                   </div>
                   <span className="text-xs text-primary font-medium shrink-0 cursor-pointer hover:underline">

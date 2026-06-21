@@ -117,7 +117,7 @@ function TrustStrip({ data }: { data: TrustCardData }) {
     <div className="flex items-center gap-2 flex-wrap text-[11px]">
       {data.confidence != null && (
         <span className={cn("font-semibold", confidenceColor(data.confidence))}>
-          {data.confidence}% confidence
+          {Number(data.confidence).toFixed(1)}% confidence
         </span>
       )}
       {evidenceCount > 0 && (
@@ -171,7 +171,7 @@ export default function TrustCard({ data, className, compact = false }: TrustCar
           {/* Quick summary chips */}
           {data.confidence != null && (
             <span className={cn("text-[11px] font-semibold", confidenceColor(data.confidence))}>
-              {data.confidence}% · {confidenceLabel(data.confidence)}
+              {Number(data.confidence).toFixed(1)}% · {confidenceLabel(data.confidence)}
             </span>
           )}
           {sources.length > 0 && (
@@ -203,7 +203,7 @@ export default function TrustCard({ data, className, compact = false }: TrustCar
                 <>
                   <div className="flex items-baseline gap-1.5">
                     <span className={cn("text-xl font-bold font-display", confidenceColor(data.confidence))}>
-                      {data.confidence}%
+                      {Number(data.confidence).toFixed(1)}%
                     </span>
                     <span className={cn("text-xs font-medium", confidenceColor(data.confidence))}>
                       {confidenceLabel(data.confidence)}
