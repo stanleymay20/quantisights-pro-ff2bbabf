@@ -447,7 +447,7 @@ export default function Deliberation({ variant = "deliberation" }: { variant?: D
     <div className="container max-w-6xl mx-auto py-8 px-6 space-y-6">
       <header>
         <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">{copy.eyebrow}</div>
-        <h1 className="text-2xl font-semibold tracking-tight">{copy.title}</h1>
+        <h1 className="text-[18px] font-semibold tracking-tight tracking-tight">{copy.title}</h1>
         <p className="text-sm text-muted-foreground mt-1 max-w-3xl">{copy.description}</p>
       </header>
 

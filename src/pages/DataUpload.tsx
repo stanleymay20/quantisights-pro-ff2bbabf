@@ -959,7 +959,7 @@ const DataUpload = () => {
         <header className="h-14 border-b border-border/30 flex items-center px-8 shrink-0 bg-background/60 backdrop-blur-sm">
           <div className="flex items-center gap-3">
             <SidebarMobileToggle />
-            <h1 className="text-xl font-semibold font-display">Data Import</h1>
+            <h1 className="text-xl font-semibold tracking-tight">Data Import</h1>
           </div>
         </header>
 
@@ -1009,7 +1009,7 @@ const DataUpload = () => {
                 onClick={() => document.getElementById("csv-input")?.click()}
               >
                 <Upload className="w-16 h-16 text-muted-foreground mb-4" />
-                <h2 className="text-xl font-semibold font-display mb-2">Upload Dataset</h2>
+                <h2 className="text-xl font-semibold tracking-tight mb-2">Upload Dataset</h2>
                 <p className="text-muted-foreground text-sm mb-4">Drag & drop or click to browse</p>
                 <p className="text-xs text-muted-foreground">CSV, XLSX, XLS, XLSM, ODS · up to 20MB · up to 50,000 rows in-browser · larger routes to server pipeline</p>
                 <input id="csv-input" type="file" accept=".csv,.xlsx,.xls,.xlsm,.ods" className="hidden" onChange={handleFileSelect} />
@@ -1031,7 +1031,7 @@ const DataUpload = () => {
                         <Sparkles className="w-4 h-4 text-primary" />
                       </div>
                       <div>
-                        <h2 className="text-lg font-semibold font-display">Dataset Structure Detected</h2>
+                        <h2 className="text-lg font-semibold tracking-tight">Dataset Structure Detected</h2>
                         <p className="text-xs text-muted-foreground">
                           {file?.name} · {allRows.length.toLocaleString()} rows · {headers.length} columns
                         </p>
@@ -1165,7 +1165,7 @@ const DataUpload = () => {
 
                 <Card>
                   <CardContent className="p-6">
-                    <h2 className="text-lg font-semibold font-display mb-1">Column Mapping</h2>
+                    <h2 className="text-lg font-semibold tracking-tight mb-1">Column Mapping</h2>
                     <p className="text-xs text-muted-foreground mb-4">Detected field types and confidence per column.</p>
                     {/* Column header strip */}
                     <div className="hidden md:grid grid-cols-[1.6fr_1.4fr_1.6fr_1fr_1.1fr] gap-3 px-3 pb-2 mb-1 border-b border-border/50 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
@@ -1391,7 +1391,7 @@ const DataUpload = () => {
                   <div className={ingestionIntel ? "xl:col-span-3 space-y-6" : "xl:col-span-5 space-y-6"}>
                 <Card>
                   <CardContent className="p-6">
-                    <h2 className="text-lg font-semibold font-display mb-1">Adjust Column Mapping</h2>
+                    <h2 className="text-lg font-semibold tracking-tight mb-1">Adjust Column Mapping</h2>
                     <p className="text-xs text-muted-foreground mb-4">Fine-tune the auto-detected mapping. At least one Value column is required. Date is optional.</p>
 
                     {/* Date column warning with auto-fix */}
@@ -1592,7 +1592,7 @@ const DataUpload = () => {
                     <div className="flex items-center gap-3 mb-6">
                       <AlertTriangle className="w-6 h-6 text-warning" />
                       <div>
-                        <h2 className="text-lg font-semibold font-display">Data Issues Found</h2>
+                        <h2 className="text-lg font-semibold tracking-tight">Data Issues Found</h2>
                         <p className="text-xs text-muted-foreground">
                           {validation.validRows} of {validation.totalRows} rows valid · {validation.validPoints.toLocaleString()} of {validation.totalPoints.toLocaleString()} data points valid · {validation.errors.length} issue{validation.errors.length !== 1 ? "s" : ""}
                         </p>
@@ -1674,7 +1674,7 @@ const DataUpload = () => {
                         </div>
                         <div className="flex-1">
                           <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Detected Domain</p>
-                          <p className="text-lg font-semibold font-display text-foreground">
+                          <p className="text-lg font-semibold tracking-tight text-foreground">
                             {classification.type}
                             {classification.subType && <span className="text-sm text-muted-foreground font-normal ml-2">· {classification.subType}</span>}
                           </p>
@@ -1702,7 +1702,7 @@ const DataUpload = () => {
                         <Sparkles className="w-4 h-4 text-primary" />
                       </div>
                       <div>
-                        <h2 className="text-lg font-semibold font-display">Dataset Intelligence</h2>
+                        <h2 className="text-lg font-semibold tracking-tight">Dataset Intelligence</h2>
                         <p className="text-xs text-muted-foreground">{datasetName}</p>
                       </div>
                     </div>
@@ -1804,7 +1804,7 @@ const DataUpload = () => {
                     <CardContent className="p-6">
                       <div className="flex items-center gap-3 mb-4">
                         <Activity className="w-5 h-5 text-primary" />
-                        <h3 className="text-base font-semibold font-display">Data Diagnostics</h3>
+                        <h3 className="text-base font-semibold tracking-tight">Data Diagnostics</h3>
                       </div>
                       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                         <div className="p-3 rounded-lg bg-muted/30 border border-border/40">
@@ -1876,7 +1876,7 @@ const DataUpload = () => {
                 className="bg-card border border-border p-12 rounded-xl flex flex-col items-center justify-center min-h-[400px]"
               >
                 <div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin mb-4" />
-                <p className="text-lg font-semibold font-display">Importing data...</p>
+                <p className="text-lg font-semibold tracking-tight">Importing data...</p>
                 <p className="text-sm text-muted-foreground mt-1">
                   {importMode === "multi" ? "Normalizing multi-metric dataset and generating intelligence signals" : "Processing and generating intelligence signals"}
                 </p>
@@ -1894,7 +1894,7 @@ const DataUpload = () => {
                   <div className="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center mb-4">
                     <Check className="w-8 h-8 text-success" />
                   </div>
-                  <h2 className="text-xl font-semibold font-display mb-2">Import Complete</h2>
+                  <h2 className="text-xl font-semibold tracking-tight mb-2">Import Complete</h2>
                   <p className="text-muted-foreground text-sm mb-6">
                     {importCount.toLocaleString()} data points imported
                     {importMode === "multi" ? " (multi-metric normalized)" : ""}

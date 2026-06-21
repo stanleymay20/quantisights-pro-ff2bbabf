@@ -137,7 +137,7 @@ const ExecutionDashboard = () => {
       <>
         <header className="h-14 border-b border-border/30 flex items-center px-8 shrink-0 bg-background/60 backdrop-blur-sm">
           <SidebarMobileToggle />
-          <h1 className="text-xl font-semibold font-display ml-3">Execution Dashboard</h1>
+          <h1 className="text-xl font-semibold tracking-tight ml-3">Execution Dashboard</h1>
           <p className="text-xs text-muted-foreground ml-3">Decision → Action → Outcome</p>
         </header>
 

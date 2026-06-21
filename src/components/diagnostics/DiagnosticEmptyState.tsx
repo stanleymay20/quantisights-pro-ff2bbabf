@@ -27,7 +27,7 @@ const DiagnosticEmptyState = ({ variant, onRun }: DiagnosticEmptyStateProps) => 
           <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
             <Activity className="w-7 h-7 text-primary" />
           </div>
-          <h2 className="text-lg font-semibold font-display">Run Diagnostic Analysis</h2>
+          <h2 className="text-lg font-semibold tracking-tight">Run Diagnostic Analysis</h2>
           <p className="text-muted-foreground text-sm text-center max-w-sm leading-relaxed">
             Scan your dataset for anomalies, root causes, and causal patterns. Analysis takes 10–20 seconds.
           </p>
@@ -47,7 +47,7 @@ const DiagnosticEmptyState = ({ variant, onRun }: DiagnosticEmptyStateProps) => 
         <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
           <Search className="w-7 h-7 text-primary" />
         </div>
-        <h2 className="text-lg font-semibold font-display">No Anomalies Detected</h2>
+        <h2 className="text-lg font-semibold tracking-tight">No Anomalies Detected</h2>
         <p className="text-muted-foreground text-sm text-center max-w-sm leading-relaxed">
           All metrics are within expected ranges. Re-analyze after new data arrives.
         </p>

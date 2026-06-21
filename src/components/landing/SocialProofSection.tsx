@@ -46,7 +46,7 @@ const SocialProofSection = forwardRef<HTMLDivElement>((_, ref) => {
             className="text-center mb-14"
           >
             <p className="text-xs uppercase tracking-widest text-primary font-semibold mb-3">Measurable Impact</p>
-            <h2 className="text-2xl sm:text-4xl font-bold font-display mb-4">
+            <h2 className="text-2xl sm:text-4xl font-bold tracking-tight mb-4">
               The ROI of <span className="gradient-text">Better Decisions</span>
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
@@ -65,7 +65,7 @@ const SocialProofSection = forwardRef<HTMLDivElement>((_, ref) => {
                 className="glass-card p-7 text-center"
               >
                 <metric.icon className="w-7 h-7 text-primary mx-auto mb-4" />
-                <p className="text-3xl font-bold font-display gradient-text mb-1">{metric.value}</p>
+                <p className="text-3xl font-bold tracking-tight gradient-text mb-1">{metric.value}</p>
                 <p className="text-sm font-semibold mb-1">{metric.label}</p>
                 <p className="text-xs text-muted-foreground">{metric.detail}</p>
               </motion.div>
@@ -83,7 +83,7 @@ const SocialProofSection = forwardRef<HTMLDivElement>((_, ref) => {
             className="text-center mb-14"
           >
             <p className="text-xs uppercase tracking-widest text-primary font-semibold mb-3">Representative Scenarios</p>
-            <h2 className="text-2xl sm:text-4xl font-bold font-display mb-4">
+            <h2 className="text-2xl sm:text-4xl font-bold tracking-tight mb-4">
               How Leaders <span className="gradient-text">Protect Their Decisions</span>
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">

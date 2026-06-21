@@ -36,7 +36,7 @@ const DPIA = () => (
     <main className="flex-1 container mx-auto px-6 py-12 max-w-4xl">
       <div className="flex items-center gap-3 mb-2">
         <ShieldCheck className="w-7 h-7 text-primary" />
-        <h1 className="text-3xl font-bold font-display">Data Protection Impact Assessment (DPIA)</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Data Protection Impact Assessment (DPIA)</h1>
       </div>
       <p className="text-muted-foreground text-sm mb-2 max-w-2xl">
         Summary DPIA per GDPR Art. 35 covering Quantivis's operational reasoning platform. This page is a

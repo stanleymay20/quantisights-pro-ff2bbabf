@@ -153,7 +153,7 @@ const SystemStatus = () => {
           <CardContent className="py-6 flex items-center gap-4">
             <OverallIcon className={`w-8 h-8 ${overall.color}`} />
             <div>
-              <h1 className={`text-xl font-bold ${overall.color}`}>{overall.label}</h1>
+              <h1 className={`text-[16px] font-semibold tracking-tight ${overall.color}`}>{overall.label}</h1>
               <p className="text-sm text-muted-foreground">
                 Last checked {formatDistanceToNow(lastRefresh, { addSuffix: true })} · Auto-refreshes every 60s
               </p>

@@ -215,7 +215,7 @@ const WelcomeFlow = ({ hasData, displayName }: WelcomeFlowProps) => {
               </div>
 
               <p className="text-xs text-primary/80 font-medium mb-1">{current.subtitle}</p>
-              <h2 id="welcome-dialog-title" className="text-xl font-bold font-display mb-2">{current.title}</h2>
+              <h2 id="welcome-dialog-title" className="text-[16px] font-semibold tracking-tight tracking-tight mb-2">{current.title}</h2>
               <p className="text-sm text-muted-foreground leading-relaxed mb-4">
                 {current.description}
               </p>

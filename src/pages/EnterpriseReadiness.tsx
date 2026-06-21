@@ -109,7 +109,7 @@ const EnterpriseReadiness = () => (
     <main className="flex-1 container mx-auto px-6 py-12 max-w-5xl">
       <div className="mb-10">
         <Badge variant="outline" className="text-[10px] mb-3">For procurement teams</Badge>
-        <h1 className="text-4xl font-bold font-display mb-3">Enterprise Readiness</h1>
+        <h1 className="text-4xl font-bold tracking-tight mb-3">Enterprise Readiness</h1>
         <p className="text-muted-foreground text-base max-w-2xl leading-relaxed">
           Everything a security, legal, or procurement reviewer needs to evaluate Quantivis — in one place.
           Each pillar links to live evidence pages, signed policies, and downloadable artifacts.

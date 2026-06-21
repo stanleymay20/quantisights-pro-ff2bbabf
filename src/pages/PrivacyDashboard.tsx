@@ -163,7 +163,7 @@ const PrivacyDashboard = () => {
                       <Icon className="w-3.5 h-3.5 text-muted-foreground" />
                       <span className="text-xs font-medium text-foreground">{label}</span>
                     </div>
-                    <p className="text-xl font-bold font-display text-foreground">{count.toLocaleString()}</p>
+                    <p className="text-xl font-bold tracking-tight text-foreground">{count.toLocaleString()}</p>
                     <p className="text-[10px] text-muted-foreground/60 mt-1 flex items-center gap-1">
                       <Clock className="w-2.5 h-2.5" /> {retention}
                     </p>

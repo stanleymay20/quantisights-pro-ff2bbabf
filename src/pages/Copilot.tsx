@@ -181,17 +181,14 @@ const Copilot = () => {
         <header className="h-14 border-b border-border/30 flex items-center gap-3 px-6 shrink-0 bg-background/60 backdrop-blur-sm">
           <SidebarMobileToggle />
           <MessageSquareText className="w-5 h-5 text-primary" />
-          <h1 className="text-xl font-semibold font-display">Decision Copilot</h1>
+          <h1 className="text-xl font-semibold tracking-tight">Decision Copilot</h1>
         </header>
 
         <main className="flex-1 overflow-auto">
           <div className="max-w-2xl mx-auto px-6 pt-16 pb-12">
-            <div className="text-center mb-10">
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                <MessageSquareText className="w-6 h-6 text-primary" />
-              </div>
-              <h2 className="text-2xl font-semibold font-display mb-2">Good to see you, {firstName}</h2>
-              <p className="text-muted-foreground text-sm">Quantivis turns your data into decisions, tracks outcomes, and learns what works.</p>
+            <div className="mb-10">
+              <h2 className="text-[18px] font-semibold tracking-tight mb-1">Ask Quantivis</h2>
+              <p className="text-[13px] text-muted-foreground">Query your decision data in plain language. Every answer links to source evidence.</p>
               {orgRole && orgRole !== "owner" && orgRole !== "admin" && (
                 <span className="inline-block mt-2 text-[11px] text-muted-foreground/60 bg-muted/40 px-2.5 py-1 rounded-full capitalize">{orgRole} view</span>
               )}
@@ -224,7 +221,7 @@ const Copilot = () => {
                         </Badge>
                         {brief.confidence != null && <Badge variant="outline" className="text-[10px]">{brief.confidence}% confidence</Badge>}
                       </div>
-                      <h3 className="text-lg font-semibold font-display">{brief.title}</h3>
+                      <h3 className="text-lg font-semibold tracking-tight">{brief.title}</h3>
                       <p className="text-xs text-muted-foreground mt-1">Asked: {brief.query}</p>
                     </div>
                   </div>

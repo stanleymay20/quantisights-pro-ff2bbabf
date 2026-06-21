@@ -107,7 +107,7 @@ const DataQualityScorecard = () => {
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-6">
-            <div className={`text-4xl font-bold font-display ${getScoreColor(compositeScore)}`}>
+            <div className={`text-4xl font-bold tracking-tight ${getScoreColor(compositeScore)}`}>
               {compositeScore != null ? compositeScore : "—"}
             </div>
             <div className="flex-1 space-y-2">

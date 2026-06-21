@@ -249,7 +249,7 @@ const DataSources = () => {
         <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
           <div className="flex items-center gap-3">
             <SidebarMobileToggle />
-            <h1 className="text-xl font-semibold font-display">Data Sources</h1>
+            <h1 className="text-xl font-semibold tracking-tight">Data Sources</h1>
           </div>
           <button onClick={() => setShowCreate(true)} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:brightness-110 transition-all">
             <Plus className="w-4 h-4" /> Add Source
@@ -279,7 +279,7 @@ const DataSources = () => {
           {/* Create modal */}
           {showCreate && (
             <div className="glass-card p-6 rounded-xl mb-6 border border-primary/20">
-              <h2 className="text-lg font-semibold font-display mb-4">New Data Source</h2>
+              <h2 className="text-lg font-semibold tracking-tight mb-4">New Data Source</h2>
               <div className="grid md:grid-cols-2 gap-4 mb-4">
                 {SOURCE_TYPES.map((st) => {
                   const Icon = st.icon;
@@ -353,7 +353,7 @@ const DataSources = () => {
           ) : sources.length === 0 ? (
             <div className="glass-card p-12 rounded-xl flex flex-col items-center justify-center">
               <Database className="w-12 h-12 text-muted-foreground mb-4" />
-              <h2 className="text-lg font-semibold font-display mb-2">No data sources</h2>
+              <h2 className="text-lg font-semibold tracking-tight mb-2">No data sources</h2>
               <p className="text-sm text-muted-foreground mb-4">Create a webhook endpoint or connector to start ingesting data.</p>
               <button onClick={() => setShowCreate(true)} className="px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:brightness-110 transition-all">
                 Add Your First Source
@@ -430,7 +430,7 @@ const DataSources = () => {
               {/* Sync jobs panel */}
               <div className="space-y-4">
                 <div className="glass-card p-5 rounded-xl">
-                  <h3 className="text-sm font-semibold font-display mb-3">{selectedSource ? "Sync History" : "Select a source"}</h3>
+                  <h3 className="text-sm font-semibold tracking-tight mb-3">{selectedSource ? "Sync History" : "Select a source"}</h3>
                   {selectedSource && (syncJobs[selectedSource] || []).length === 0 && (
                     <p className="text-xs text-muted-foreground">No sync jobs yet</p>
                   )}
@@ -453,7 +453,7 @@ const DataSources = () => {
                 </div>
 
                 <div className="glass-card p-5 rounded-xl">
-                  <h3 className="text-sm font-semibold font-display mb-2">Webhook Quick Start</h3>
+                  <h3 className="text-sm font-semibold tracking-tight mb-2">Webhook Quick Start</h3>
                   <div className="text-xs text-muted-foreground space-y-2">
                     <p>1. Create a webhook source above</p>
                     <p>2. Copy the URL and API key (shown once)</p>

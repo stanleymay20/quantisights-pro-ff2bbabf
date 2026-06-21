@@ -53,7 +53,7 @@ const FairnessObservability = () => {
       <div className="flex-1 p-6">
         <div className="max-w-lg mx-auto mt-16 text-center">
           <Shield className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <h1 className="text-xl font-bold mb-2">Fairness & Observability</h1>
+          <h1 className="text-[16px] font-semibold tracking-tight mb-2">Fairness & Observability</h1>
           <p className="text-muted-foreground text-sm">
             This feature requires an Enterprise plan. Upgrade to access fairness assessments and model drift monitoring.
           </p>

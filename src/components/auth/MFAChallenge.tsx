@@ -81,7 +81,7 @@ const MFAChallenge = ({ onVerified }: MFAChallengeProps) => {
         <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
           <ShieldCheck className="w-6 h-6 text-primary" />
         </div>
-        <h2 className="text-xl font-bold font-display">Two-Factor Authentication</h2>
+        <h2 className="text-[16px] font-semibold tracking-tight tracking-tight">Two-Factor Authentication</h2>
         <p className="text-sm text-muted-foreground text-center">
           {noFactor
             ? "We couldn't find an authenticator app linked to your account."

@@ -203,7 +203,7 @@ const PilotAudit = () => {
               <ShieldCheck className="w-5 h-5 text-primary" />
             </div>
             <div>
-              <h1 className="text-xl font-bold">Pilot Audit</h1>
+              <h1 className="text-[16px] font-semibold tracking-tight">Pilot Audit</h1>
               <p className="text-xs text-muted-foreground">
                 Active Data Contract verification — {results.length} checks
               </p>

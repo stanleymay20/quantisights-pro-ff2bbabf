@@ -215,7 +215,7 @@ const GovernanceMaturity = () => {
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-2">
-                  <span className="text-4xl font-bold font-display">{overall}</span>
+                  <span className="text-4xl font-bold tracking-tight">{overall}</span>
                   <span className="text-muted-foreground text-sm">/100</span>
                   <Badge className={`${level.bg} ${level.color} border-0 text-xs`}>
                     {level.label}

@@ -23,7 +23,7 @@ const IntegrationsSection = forwardRef<HTMLElement>((_, ref) => (
         className="text-center mb-14"
       >
         <p className="text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-3">Integrations</p>
-        <h2 className="text-2xl sm:text-4xl font-bold font-display mb-4">
+        <h2 className="text-2xl sm:text-4xl font-bold tracking-tight mb-4">
           Connect Your <span className="gradient-text">Source of Truth</span>
         </h2>
         <p className="text-muted-foreground text-lg max-w-2xl mx-auto">

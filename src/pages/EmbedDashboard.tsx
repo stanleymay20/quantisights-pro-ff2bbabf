@@ -78,7 +78,7 @@ const EmbedDashboard = () => {
       <div className="min-h-dvh bg-[#0F172A] flex items-center justify-center text-center p-8">
         <div>
           <ShieldAlert className="w-12 h-12 text-destructive mx-auto mb-4" />
-          <h1 className="text-xl font-bold text-white mb-2">Access Denied</h1>
+          <h1 className="text-[16px] font-semibold tracking-tight text-white mb-2">Access Denied</h1>
           <p className="text-muted-foreground">{error}</p>
         </div>
       </div>

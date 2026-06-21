@@ -16,7 +16,7 @@ const AIInsights = ({ insights }: AIInsightsProps) => {
   return (
     <div className="glass-card p-6 rounded-xl">
       <div className="flex items-center justify-between mb-1">
-        <h3 className="text-sm font-semibold font-display uppercase tracking-wide text-muted-foreground">Insights</h3>
+        <h3 className="text-sm font-semibold tracking-tight uppercase tracking-wide text-muted-foreground">Insights</h3>
         {infoInsights.length > 0 && (
           <Link to="/advisory" className="text-[11px] font-semibold text-primary hover:underline flex items-center gap-0.5">
             View all <ArrowRight className="w-3 h-3" />

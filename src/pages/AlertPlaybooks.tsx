@@ -148,7 +148,7 @@ const AlertPlaybooks = () => {
           <div className="flex items-center gap-3">
             <SidebarMobileToggle />
             <Bell className="w-5 h-5 text-primary" />
-            <h1 className="text-xl font-semibold font-display">Alert Playbooks</h1>
+            <h1 className="text-xl font-semibold tracking-tight">Alert Playbooks</h1>
           </div>
           <Dialog open={addOpen} onOpenChange={setAddOpen}>
             <DialogTrigger asChild>

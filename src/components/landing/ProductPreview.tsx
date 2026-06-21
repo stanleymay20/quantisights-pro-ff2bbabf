@@ -69,7 +69,7 @@ const ProductPreview = forwardRef<HTMLElement>((_, ref) => {
           className="text-center mb-14"
         >
           <p className="text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-3">See It In Action</p>
-          <h2 className="text-2xl sm:text-4xl font-bold font-display mb-4">
+          <h2 className="text-2xl sm:text-4xl font-bold tracking-tight mb-4">
             Revenue Leakage Detection, <span className="gradient-text">Live</span>
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
@@ -130,7 +130,7 @@ const ProductPreview = forwardRef<HTMLElement>((_, ref) => {
                   className="bg-background p-5 text-center"
                 >
                   <p className="text-[10px] uppercase tracking-widest text-muted-foreground/60 font-semibold mb-1">{kpi.label}</p>
-                  <p className="text-2xl font-bold font-display">{kpi.value}</p>
+                  <p className="text-2xl font-bold tracking-tight">{kpi.value}</p>
                   <p className={`text-xs font-semibold mt-1 ${kpi.positive ? "text-success" : "text-destructive"}`}>
                     {kpi.change}
                   </p>

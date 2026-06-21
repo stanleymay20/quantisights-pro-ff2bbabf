@@ -409,7 +409,7 @@ const DecisionLedgerPage = () => {
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <BookOpen className="w-4 h-4 text-primary shrink-0" />
-                <h1 className="text-xl font-semibold font-display truncate">Decision Ledger</h1>
+                <h1 className="text-xl font-semibold tracking-tight truncate">Decision Ledger</h1>
                 <Badge variant="outline" className="text-[10px] uppercase tracking-wide hidden sm:inline-flex">Governed</Badge>
               </div>
               <p className="text-xs text-muted-foreground mt-0.5 truncate">
@@ -761,7 +761,7 @@ const DecisionLedgerPage = () => {
                     <BookOpen className="w-8 h-8 text-primary" />
                   </div>
                   <div className="max-w-md">
-                    <p className="font-semibold text-lg font-display">No governed decisions yet</p>
+                    <p className="font-semibold text-lg tracking-tight">No governed decisions yet</p>
                     <p className="text-sm text-muted-foreground mt-2">
                       Create your first decision from an insight, forecast, or manual entry.
                       Every decision is captured with evidence, confidence, approval trail, and outcome — fully auditable from recommendation to result.

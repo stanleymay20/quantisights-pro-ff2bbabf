@@ -46,7 +46,7 @@ const HeroSection = forwardRef<HTMLElement>((_, ref) => {
             </motion.div>
 
             {/* Single bold headline — InVideo style */}
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold font-display leading-[1.1] mb-4 sm:mb-5">
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1] mb-4 sm:mb-5">
               Make <span className="gradient-text">Better Decisions</span>,{" "}
               <br className="hidden sm:block" />
               Track Every Outcome.

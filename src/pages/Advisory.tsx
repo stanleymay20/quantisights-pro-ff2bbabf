@@ -276,7 +276,7 @@ const AdvisoryPage = () => {
         <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
           <div className="flex items-center gap-3">
             <SidebarMobileToggle />
-            <h1 className="text-xl font-semibold font-display">Prescriptive Advisory</h1>
+            <h1 className="text-xl font-semibold tracking-tight">Prescriptive Advisory</h1>
             <p className="text-xs text-muted-foreground">AI-powered strategic recommendations with lifecycle tracking</p>
           </div>
           <Button onClick={() => { fetchAdvisories(); fetchInstances(); }} disabled={loading} variant="outline" size="sm" className="gap-2">
@@ -333,7 +333,7 @@ const AdvisoryPage = () => {
                       <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
                         <CheckCircle2 className="w-7 h-7 text-primary" />
                       </div>
-                      <h2 className="text-lg font-semibold font-display">All Clear — No Actions Required</h2>
+                      <h2 className="text-lg font-semibold tracking-tight">All Clear — No Actions Required</h2>
                       <p className="text-muted-foreground text-sm text-center max-w-md leading-relaxed">
                         Your dataset has been analyzed ({sampleSize} records, data sufficiency: {dataSufficiency || "—"}).
                         All metrics are within healthy thresholds. No strategic interventions are recommended at this time.
@@ -349,7 +349,7 @@ const AdvisoryPage = () => {
                     <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
                       <Lightbulb className="w-7 h-7 text-primary" />
                     </div>
-                    <h2 className="text-lg font-semibold font-display">Run Live Analysis</h2>
+                    <h2 className="text-lg font-semibold tracking-tight">Run Live Analysis</h2>
                     <p className="text-muted-foreground text-sm text-center max-w-md leading-relaxed">
                       Generate AI-powered strategic recommendations calibrated to your dataset. Analysis typically takes 10–20 seconds.
                     </p>

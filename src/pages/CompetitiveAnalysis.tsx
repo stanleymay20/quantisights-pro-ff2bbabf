@@ -109,7 +109,7 @@ const CompetitiveAnalysis = forwardRef<HTMLDivElement>((_, ref) => {
               <Trophy className="w-3.5 h-3.5" />
               Competitive Gap Analysis
             </div>
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold font-display mb-4">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight mb-4">
               Where <span className="gradient-text">Quantivis</span> wins — and where the rest fall short
             </h1>
             <p className="text-base sm:text-lg text-muted-foreground">
@@ -234,7 +234,7 @@ const CompetitiveAnalysis = forwardRef<HTMLDivElement>((_, ref) => {
             transition={{ delay: 0.6 }}
             className="max-w-xl mx-auto text-center mt-12 sm:mt-16"
           >
-            <h3 className="text-xl sm:text-2xl font-bold mb-3">See the matrix in action</h3>
+            <h3 className="text-xl sm:text-[18px] font-semibold tracking-tight mb-3">See the matrix in action</h3>
             <p className="text-sm text-muted-foreground mb-5">
               Stand up a closed-loop decision OS in minutes — no IT lift, no consulting engagement.
             </p>

@@ -88,7 +88,7 @@ export default function BridgeHealth() {
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold flex items-center gap-2">
+          <h1 className="text-[18px] font-semibold tracking-tight flex items-center gap-2">
             <CircuitBoard className="h-6 w-6" /> AICIS Bridge Health
           </h1>
           <p className="text-sm text-muted-foreground mt-1">

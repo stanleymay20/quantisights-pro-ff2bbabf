@@ -195,7 +195,7 @@ const BenchmarkingPage = () => {
         <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
           <div className="flex items-center gap-3">
             <SidebarMobileToggle />
-            <h1 className="text-xl font-semibold font-display">Industry Benchmarking</h1>
+            <h1 className="text-xl font-semibold tracking-tight">Industry Benchmarking</h1>
             <p className="text-xs text-muted-foreground">
               Peer comparison & percentile ranking
               {orgIndustry && <span> — {orgIndustry}</span>}
@@ -258,7 +258,7 @@ const BenchmarkingPage = () => {
                 <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
                   <Target className="w-7 h-7 text-primary" />
                 </div>
-                <h2 className="text-lg font-semibold font-display">No Benchmark Data Yet</h2>
+                <h2 className="text-lg font-semibold tracking-tight">No Benchmark Data Yet</h2>
                 <p className="text-muted-foreground text-sm text-center max-w-md leading-relaxed">
                   Industry benchmarks will be computed as your data volume grows and industry classification is configured. 
                   Ensure your organization's industry is set in Settings.

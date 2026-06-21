@@ -107,7 +107,7 @@ const FeaturesSection = forwardRef<HTMLElement>((_, ref) => {
             className="text-center mb-14"
           >
             <p className="text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-3">How It Works</p>
-            <h2 className="text-3xl sm:text-4xl font-bold font-display mb-4">
+            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-4">
               Decide. Measure. <span className="gradient-text">Improve.</span>
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto mb-2">
@@ -129,8 +129,8 @@ const FeaturesSection = forwardRef<HTMLElement>((_, ref) => {
                 className="relative"
               >
                 <div className="glass-card p-7 h-full">
-                  <span className="text-3xl font-bold font-display text-primary/20">{item.step}</span>
-                  <h3 className="text-lg font-semibold font-display mt-2 mb-2">{item.title}</h3>
+                  <span className="text-3xl font-bold tracking-tight text-primary/20">{item.step}</span>
+                  <h3 className="text-lg font-semibold tracking-tight mt-2 mb-2">{item.title}</h3>
                   <p className="text-sm text-muted-foreground leading-relaxed">{item.desc}</p>
                 </div>
                 {i < HOW_IT_WORKS.length - 1 && (
@@ -154,7 +154,7 @@ const FeaturesSection = forwardRef<HTMLElement>((_, ref) => {
             className="glass-card-elevated p-5 sm:p-10 md:p-14 text-center"
           >
             <p className="text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-3">Why This Is Different</p>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold font-display mb-4">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-4">
 
               Three Capabilities That <span className="gradient-text">Set Us Apart</span>
             </h2>
@@ -181,7 +181,7 @@ const FeaturesSection = forwardRef<HTMLElement>((_, ref) => {
                       </span>
                     )}
                   </div>
-                  <h3 className="text-lg font-semibold font-display mb-2">{d.title}</h3>
+                  <h3 className="text-lg font-semibold tracking-tight mb-2">{d.title}</h3>
                   <p className="text-sm text-muted-foreground leading-relaxed">{d.description}</p>
                 </motion.div>
               ))}
@@ -200,7 +200,7 @@ const FeaturesSection = forwardRef<HTMLElement>((_, ref) => {
             className="text-center mb-14"
           >
             <p className="text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-3">Full Platform</p>
-            <h2 className="text-3xl sm:text-4xl font-bold font-display mb-4">
+            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-4">
               Everything You Need to <span className="gradient-text">Decide with Confidence</span>
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
@@ -224,7 +224,7 @@ const FeaturesSection = forwardRef<HTMLElement>((_, ref) => {
                   </div>
                   <span className="text-[10px] uppercase tracking-widest text-muted-foreground/60 font-semibold">{feature.category}</span>
                 </div>
-                <h3 className="text-lg font-semibold font-display mb-2">{feature.title}</h3>
+                <h3 className="text-lg font-semibold tracking-tight mb-2">{feature.title}</h3>
                 <p className="text-muted-foreground leading-relaxed text-sm">{feature.description}</p>
               </motion.div>
             ))}

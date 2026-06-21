@@ -52,7 +52,7 @@ const PitchDeck = () => {
       <main className="flex-1 pt-24 pb-16">
         <div className="container mx-auto px-6 text-center mb-12">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            <h1 className="text-3xl sm:text-4xl font-bold font-display mb-3">Berkeley 2-Minute Pitch</h1>
+            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-3">Berkeley 2-Minute Pitch</h1>
             <p className="text-muted-foreground mb-1">Quantivis · Governed Operational Reasoning Infrastructure</p>
             <p className="text-xs text-muted-foreground mb-6">Stanley Osei-Wusu (Founder) · Souley Kassoum (Co-Founder)</p>
             <Button onClick={handleDownload} disabled={downloading} size="lg" className="gap-2">

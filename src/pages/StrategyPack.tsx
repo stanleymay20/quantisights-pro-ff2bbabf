@@ -201,7 +201,7 @@ const StrategyPack = () => {
           <section className="print:break-after-page">
             <div className="flex items-center gap-2 mb-4 print:mb-2">
               <Badge variant="outline" className="text-xs font-mono">01</Badge>
-              <h2 className="text-xl font-bold">Executive Posture</h2>
+              <h2 className="text-[16px] font-semibold tracking-tight">Executive Posture</h2>
             </div>
             <Card className={`${posture.bg} border-none`}>
               <CardContent className="p-6 flex items-center justify-between">
@@ -231,7 +231,7 @@ const StrategyPack = () => {
           <section className="print:break-after-page">
             <div className="flex items-center gap-2 mb-4">
               <Badge variant="outline" className="text-xs font-mono">02</Badge>
-              <h2 className="text-xl font-bold">Risk Heatmap</h2>
+              <h2 className="text-[16px] font-semibold tracking-tight">Risk Heatmap</h2>
             </div>
             <Card>
               <CardContent className="p-0">
@@ -292,7 +292,7 @@ const StrategyPack = () => {
           <section className="print:break-after-page">
             <div className="flex items-center gap-2 mb-4">
               <Badge variant="outline" className="text-xs font-mono">03</Badge>
-              <h2 className="text-xl font-bold">Probabilistic Outlook</h2>
+              <h2 className="text-[16px] font-semibold tracking-tight">Probabilistic Outlook</h2>
             </div>
             {simulations.length === 0 ? (
               <Card><CardContent className="p-8 text-center text-muted-foreground">No simulations available. Run Monte Carlo from the Simulations module.</CardContent></Card>
@@ -343,7 +343,7 @@ const StrategyPack = () => {
           <section className="print:break-after-page">
             <div className="flex items-center gap-2 mb-4">
               <Badge variant="outline" className="text-xs font-mono">04</Badge>
-              <h2 className="text-xl font-bold">Decision Comparison</h2>
+              <h2 className="text-[16px] font-semibold tracking-tight">Decision Comparison</h2>
               <span className="text-xs text-muted-foreground ml-2">Select up to 4 decisions to compare</span>
             </div>
 
@@ -408,7 +408,7 @@ const StrategyPack = () => {
           <section className="print:break-after-page">
             <div className="flex items-center gap-2 mb-4">
               <Badge variant="outline" className="text-xs font-mono">05</Badge>
-              <h2 className="text-xl font-bold">Strategic Recommendations</h2>
+              <h2 className="text-[16px] font-semibold tracking-tight">Strategic Recommendations</h2>
             </div>
             {advisories.length === 0 ? (
               <Card><CardContent className="p-8 text-center text-muted-foreground">No active advisories.</CardContent></Card>

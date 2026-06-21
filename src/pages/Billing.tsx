@@ -112,7 +112,7 @@ const Billing = () => {
         <header className="h-14 border-b border-border/30 flex items-center px-8 shrink-0 bg-background/60 backdrop-blur-sm">
           <div className="flex items-center gap-3">
             <SidebarMobileToggle />
-            <h1 className="text-xl font-semibold font-display">Billing & Subscription</h1>
+            <h1 className="text-xl font-semibold tracking-tight">Billing & Subscription</h1>
           </div>
         </header>
 
@@ -243,7 +243,7 @@ const Billing = () => {
               <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
                 <CardContent className="p-8 flex items-center justify-between flex-wrap gap-6">
                   <div className="space-y-2">
-                    <h3 className="text-lg font-bold font-display">
+                    <h3 className="text-lg font-bold tracking-tight">
                       {activeTier === "starter" ? "Unlock AI Decision Intelligence" : "Go Enterprise"}
                     </h3>
                     <p className="text-sm text-muted-foreground max-w-md">
@@ -286,7 +286,7 @@ const Billing = () => {
                     <CreditCard className="w-5 h-5 text-warning" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold font-display">Implementation & Strategic Services</h3>
+                    <h3 className="text-lg font-bold tracking-tight">Implementation & Strategic Services</h3>
                     <p className="text-sm text-muted-foreground">Premium services layered on top of your subscription for enterprise-grade outcomes.</p>
                   </div>
                 </div>

@@ -173,7 +173,7 @@ const AdaptiveCalibrationEngine = ({ orgId, decisions }: Props) => {
                 Calibration Score
               </p>
               <p
-                className={`text-2xl font-bold font-display ${
+                className={`text-2xl font-bold tracking-tight ${
                   model.overall_calibration_score >= 80
                     ? "text-emerald-400"
                     : model.overall_calibration_score >= 60
@@ -199,7 +199,7 @@ const AdaptiveCalibrationEngine = ({ orgId, decisions }: Props) => {
               <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
                 Mean Abs Error
               </p>
-              <p className="text-2xl font-bold font-display font-mono">
+              <p className="text-2xl font-bold tracking-tight font-mono">
                 {model.mean_absolute_error}%
               </p>
             </div>
@@ -207,7 +207,7 @@ const AdaptiveCalibrationEngine = ({ orgId, decisions }: Props) => {
               <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
                 Decisions Learned
               </p>
-              <p className="text-2xl font-bold font-display">
+              <p className="text-2xl font-bold tracking-tight">
                 {model.total_decisions_analyzed}
               </p>
             </div>

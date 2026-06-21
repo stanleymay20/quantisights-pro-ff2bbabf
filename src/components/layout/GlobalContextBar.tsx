@@ -19,7 +19,7 @@ interface Segment {
 }
 
 const ContextChip = ({ icon: Icon, label, fallback, onClick }: Segment) => {
-  const text = label || fallback;
+  const text = label || fallback || "";
   const isMissing = !label;
 
   return (
@@ -203,15 +203,14 @@ const GlobalContextBar = () => {
       <ContextChip icon={Building2} label={currentOrg?.name?.replace(/\s+'/g, "'").replace(/'\s+/g, "'").trim() ?? null} fallback="No org" onClick={() => navigate("/settings")} />
       <Separator />
       <ContextChip icon={Layers} label={currentWorkspace?.name ?? null} fallback={currentOrg ? "Set up workspace" : "No workspace"} onClick={() => navigate("/settings")} />
-      <Separator />
-      <ContextChip icon={FolderKanban} label={currentProject?.name ?? null} fallback="No project" onClick={() => navigate("/settings")} />
-      <Separator />
-      <ContextChip icon={Database} label={activeDataset?.name ?? null} fallback="No dataset" onClick={() => navigate("/data-upload")} />
-      {!isDashboard && (
-        <div className="ml-auto flex items-center gap-2 shrink-0">
-          <GlobalNotificationBell orgId={currentOrg?.id ?? null} datasetId={activeDatasetId ?? null} />
-        </div>
+      {currentProject?.name && <><Separator /><ContextChip icon={FolderKanban} label={currentProject.name} fallback={null} onClick={() => navigate("/settings")} /></>}
+      {activeDataset?.name && <><Separator /><ContextChip icon={Database} label={activeDataset.name} fallback={null} onClick={() => navigate("/data-upload")} /></>}
+      {!currentProject?.name && !activeDataset?.name && (
+        <><Separator /><span className="text-[11px] text-muted-foreground/40 italic px-1">No dataset connected</span></>
       )}
+      <div className="ml-auto flex items-center gap-2 shrink-0">
+        <GlobalNotificationBell orgId={currentOrg?.id ?? null} datasetId={activeDatasetId ?? null} />
+      </div>
     </div>
   );
 };

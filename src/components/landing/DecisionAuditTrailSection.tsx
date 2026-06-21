@@ -13,7 +13,7 @@ const DecisionAuditTrailSection = forwardRef<HTMLElement>((_, ref) => {
           className="max-w-3xl mx-auto text-center mb-12 sm:mb-16"
         >
           <p className="text-xs uppercase tracking-widest text-primary font-semibold mb-4">The credibility layer</p>
-          <h2 className="text-2xl sm:text-4xl font-bold font-display mb-5">
+          <h2 className="text-2xl sm:text-4xl font-bold tracking-tight mb-5">
             Every Decision Becomes Board-Defensible
           </h2>
           <p className="text-muted-foreground text-base sm:text-lg leading-relaxed max-w-2xl mx-auto">

@@ -60,7 +60,7 @@ const ProcurementPack = () => {
         {/* Cover */}
         <section className="text-center space-y-4 print:min-h-[80vh] print:flex print:flex-col print:justify-center">
           <img src={logo} alt="Quantivis" className="h-12 mx-auto" />
-          <h1 className="text-4xl font-bold font-display">Enterprise Procurement Pack</h1>
+          <h1 className="text-4xl font-bold tracking-tight">Enterprise Procurement Pack</h1>
           <p className="text-muted-foreground max-w-xl mx-auto">
             Consolidated trust, governance, and compliance documentation for{" "}
             {CONTACT.companyLegal}.

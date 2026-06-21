@@ -97,7 +97,7 @@ const AuthLayout = ({
             <p className="text-[11px] uppercase tracking-[0.22em] text-primary/80 font-medium">
               {eyebrow}
             </p>
-            <h2 className="font-display text-4xl xl:text-5xl leading-[1.05] tracking-tight">
+            <h2 className="tracking-tight text-4xl xl:text-5xl leading-[1.05] tracking-tight">
               {brandTitle}
             </h2>
             <p className="text-sm xl:text-base text-muted-foreground leading-relaxed max-w-lg">
@@ -149,7 +149,7 @@ const AuthLayout = ({
             <div className="glass-card p-7 sm:p-9 shadow-[0_30px_80px_-30px_hsl(var(--primary)/0.25)]">
               {ribbon}
               <div className="mb-7">
-                <h1 className="font-display text-2xl sm:text-[28px] leading-tight tracking-tight">
+                <h1 className="tracking-tight text-2xl sm:text-[28px] leading-tight tracking-tight">
                   {title}
                 </h1>
                 {subtitle && (

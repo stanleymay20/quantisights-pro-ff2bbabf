@@ -129,7 +129,7 @@ const DecisionFatiguePanel = ({ decisions }: { decisions: Array<any> }) => {
         <h3 className="text-sm font-semibold">Decision Fatigue Index</h3>
       </div>
       <div className="text-center py-4">
-        <p className={`text-4xl font-bold font-display ${fatigueColor}`}>{fatigueScore}</p>
+        <p className={`text-4xl font-bold tracking-tight ${fatigueColor}`}>{fatigueScore}</p>
         <p className={`text-xs font-semibold uppercase tracking-wider mt-1 ${fatigueColor}`}>{fatigueLevel}</p>
       </div>
       <div className="grid grid-cols-3 gap-2 mt-4 text-center">
@@ -198,13 +198,13 @@ const PortfolioSimulation = ({ simulations }: { simulations: Array<any> }) => {
       <div className="grid grid-cols-2 gap-3 mb-4">
         <div className="bg-muted/20 rounded-lg p-3 text-center">
           <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Expected Net</p>
-          <p className="text-xl font-bold font-display text-primary">
+          <p className="text-xl font-bold tracking-tight text-primary">
             €{portfolio.totalExpected >= 1000 ? `${(portfolio.totalExpected / 1000).toFixed(0)}K` : portfolio.totalExpected.toLocaleString()}
           </p>
         </div>
         <div className="bg-muted/20 rounded-lg p-3 text-center">
           <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Portfolio ROI</p>
-          <p className="text-xl font-bold font-display">{portfolio.portfolioROI}%</p>
+          <p className="text-xl font-bold tracking-tight">{portfolio.portfolioROI}%</p>
         </div>
       </div>
       <div className="space-y-2">
@@ -320,7 +320,7 @@ const DecisionIntelligence = () => {
           <div className="flex items-center gap-2">
             <SidebarMobileToggle />
             <Brain className="w-5 h-5 text-primary" />
-            <h1 className="text-xl font-semibold font-display">Decision Intelligence</h1>
+            <h1 className="text-xl font-semibold tracking-tight">Decision Intelligence</h1>
           </div>
         </header>
 

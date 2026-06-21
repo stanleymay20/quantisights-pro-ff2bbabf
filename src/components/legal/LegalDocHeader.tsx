@@ -30,7 +30,7 @@ const LegalDocHeader = ({
     </Link>
     <div className="flex items-start justify-between flex-wrap gap-3">
       <div>
-        <h1 className="text-3xl font-bold font-display mb-1.5">{title}</h1>
+        <h1 className="text-3xl font-bold tracking-tight mb-1.5">{title}</h1>
         {subtitle && <p className="text-muted-foreground text-sm">{subtitle}</p>}
       </div>
       {counterpartHref && (

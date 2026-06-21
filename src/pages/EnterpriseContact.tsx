@@ -76,7 +76,7 @@ const EnterpriseContact = () => {
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold mb-4">
               <Building2 className="w-3.5 h-3.5" /> Enterprise Sales
             </div>
-            <h1 className="text-3xl sm:text-4xl font-bold font-display mb-3">
+            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-3">
               Talk to <span className="gradient-text">Enterprise</span>
             </h1>
             <p className="text-muted-foreground">
@@ -97,7 +97,7 @@ const EnterpriseContact = () => {
               <div className="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-4">
                 <CheckCircle2 className="w-8 h-8 text-success" />
               </div>
-              <h2 className="text-2xl font-bold mb-2">Request received</h2>
+              <h2 className="text-[18px] font-semibold tracking-tight mb-2">Request received</h2>
               <p className="text-muted-foreground mb-6">
                 Our enterprise team will reach out within 1 business day at{" "}
                 <span className="font-semibold text-foreground">{form.work_email}</span>.

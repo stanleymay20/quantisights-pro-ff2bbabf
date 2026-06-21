@@ -294,7 +294,7 @@ const IngestionObservability = () => {
         className="mb-8 flex items-start justify-between gap-4"
       >
         <div>
-          <h1 className="text-3xl font-bold font-display mb-2 flex items-center gap-3">
+          <h1 className="text-3xl font-bold tracking-tight mb-2 flex items-center gap-3">
             <Activity className="w-7 h-7 text-primary" />
             Ingestion Observability
           </h1>

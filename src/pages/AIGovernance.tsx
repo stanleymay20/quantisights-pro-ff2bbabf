@@ -101,7 +101,7 @@ const AIGovernance = () => {
         <div>
           <div className="flex items-center gap-3 mb-2">
             <Brain className="w-7 h-7 text-primary" />
-            <h1 className="text-3xl font-bold font-display">AI Governance</h1>
+            <h1 className="text-3xl font-bold tracking-tight">AI Governance</h1>
           </div>
           <p className="text-muted-foreground leading-relaxed max-w-3xl">
             How Quantivis aligns with the EU AI Act, GDPR Art. 22 (automated decision-making),

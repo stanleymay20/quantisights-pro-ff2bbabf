@@ -171,7 +171,7 @@ const InternalData = () => {
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
         <div className="flex items-center gap-3 mb-2">
           <Shield className="w-6 h-6 text-primary" />
-          <h1 className="text-3xl font-bold font-display">Internal Data Hub</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Internal Data Hub</h1>
         </div>
         <p className="text-muted-foreground max-w-2xl">
           Curate organization-specific reference signals — industry benchmarks, regulatory thresholds,
@@ -298,7 +298,7 @@ Content-Type: application/json
       </Tabs>
 
       <div className="mt-10">
-        <h2 className="text-xl font-bold mb-4">Curated reference signals ({rows.length})</h2>
+        <h2 className="text-[16px] font-semibold tracking-tight mb-4">Curated reference signals ({rows.length})</h2>
         {loading ? (
           <div className="glass-card p-10 text-center"><Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" /></div>
         ) : rows.length === 0 ? (

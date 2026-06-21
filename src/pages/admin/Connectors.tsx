@@ -256,7 +256,7 @@ const Connectors = () => {
       <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
         <div className="flex items-center gap-3">
           <SidebarMobileToggle />
-          <h1 className="text-xl font-semibold font-display">Connectors</h1>
+          <h1 className="text-xl font-semibold tracking-tight">Connectors</h1>
           <span className="text-xs text-muted-foreground">Enterprise Ingestion</span>
         </div>
         <button
@@ -332,7 +332,7 @@ const Connectors = () => {
                   <div className="flex items-start justify-between gap-4 mb-3">
                     <div>
                       <div className="flex items-center gap-2 mb-1">
-                        <h2 className="text-lg font-semibold font-display">{selected.name}</h2>
+                        <h2 className="text-lg font-semibold tracking-tight">{selected.name}</h2>
                         <StatusBadge status={selected.status} health={selected.health} />
                       </div>
                       <p className="text-xs text-muted-foreground">
@@ -451,7 +451,7 @@ const Connectors = () => {
 
                 {detailTab === "schedule" && (
                   <div className="glass-card p-5 rounded-xl space-y-4">
-                    <h3 className="text-sm font-semibold font-display">Sync Schedule</h3>
+                    <h3 className="text-sm font-semibold tracking-tight">Sync Schedule</h3>
                     <p className="text-xs text-muted-foreground">
                       Scheduled runs are dispatched by the cron orchestrator every 5 minutes. Concurrent
                       runs for the same connector are blocked by an advisory lock.
@@ -564,7 +564,7 @@ function MappingEditor({
   return (
     <div className="glass-card p-5 rounded-xl space-y-4">
       <div>
-        <h3 className="text-sm font-semibold font-display mb-1">Field Mapping</h3>
+        <h3 className="text-sm font-semibold tracking-tight mb-1">Field Mapping</h3>
         <p className="text-xs text-muted-foreground">
           Map source fields to canonical analytical fields. The pipeline rejects rows where required
           mappings (metric_type, value, date) cannot be resolved.
@@ -758,7 +758,7 @@ function CreateWizard({
     <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="bg-card border border-border rounded-xl max-w-2xl w-full max-h-[90vh] overflow-auto">
         <div className="p-5 border-b border-border flex items-center justify-between">
-          <h2 className="text-lg font-semibold font-display">New Connector</h2>
+          <h2 className="text-lg font-semibold tracking-tight">New Connector</h2>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
             <XCircle className="w-5 h-5" />
           </button>

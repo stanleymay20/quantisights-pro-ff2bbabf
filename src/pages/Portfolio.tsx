@@ -28,7 +28,7 @@ const Portfolio = () => {
                   <Briefcase className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold">Portfolio Overview</h1>
+                  <h1 className="text-[16px] font-semibold tracking-tight">Portfolio Overview</h1>
                   <p className="text-xs text-muted-foreground">Multi-company risk monitoring & performance tracking</p>
                 </div>
               </div>

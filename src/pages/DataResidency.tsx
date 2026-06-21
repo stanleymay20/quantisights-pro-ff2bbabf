@@ -40,7 +40,7 @@ const DataResidency = () => (
     <main className="container mx-auto px-6 py-12 max-w-4xl">
       <div className="flex items-center gap-3 mb-2">
         <Globe className="w-7 h-7 text-primary" />
-        <h1 className="text-3xl font-bold font-display">Data Residency &amp; International Transfers</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Data Residency &amp; International Transfers</h1>
       </div>
       <p className="text-muted-foreground text-sm mb-8 max-w-2xl">
         Where customer data is hosted, which sub-processors may touch it, and the legal mechanisms governing any

@@ -202,7 +202,7 @@ export default function TrustCard({ data, className, compact = false }: TrustCar
               {data.confidence != null ? (
                 <>
                   <div className="flex items-baseline gap-1.5">
-                    <span className={cn("text-xl font-bold font-display", confidenceColor(data.confidence))}>
+                    <span className={cn("text-xl font-bold tracking-tight", confidenceColor(data.confidence))}>
                       {Number(data.confidence).toFixed(1)}%
                     </span>
                     <span className={cn("text-xs font-medium", confidenceColor(data.confidence))}>
@@ -230,7 +230,7 @@ export default function TrustCard({ data, className, compact = false }: TrustCar
               {data.dataQualityScore != null ? (
                 <>
                   <div className="flex items-baseline gap-1.5">
-                    <span className={cn("text-xl font-bold font-display", qualityColor(data.dataQualityScore))}>
+                    <span className={cn("text-xl font-bold tracking-tight", qualityColor(data.dataQualityScore))}>
                       {data.dataQualityScore}%
                     </span>
                   </div>

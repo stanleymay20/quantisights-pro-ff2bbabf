@@ -75,7 +75,7 @@ const CognitiveBiasDetection = () => {
           <div className="flex items-center gap-3">
             <SidebarMobileToggle />
             <BrainCircuit className="w-5 h-5 text-primary" />
-            <h1 className="text-xl font-semibold font-display">Cognitive Bias Detection</h1>
+            <h1 className="text-xl font-semibold tracking-tight">Cognitive Bias Detection</h1>
             <Badge variant="outline" className="text-xs">Behavioral Analysis</Badge>
           </div>
           <Button onClick={runScan} disabled={loading} className="gap-2">

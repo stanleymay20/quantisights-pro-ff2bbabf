@@ -78,7 +78,7 @@ const Pricing = () => {
             className="text-center mb-16"
           >
             <p className="text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-3">Pricing</p>
-            <h1 className="text-3xl sm:text-5xl font-bold font-display mb-4">
+            <h1 className="text-3xl sm:text-5xl font-bold tracking-tight mb-4">
               Priced Against the <span className="gradient-text">Alternative</span>
             </h1>
             <p className="text-muted-foreground text-lg max-w-xl mx-auto mb-3">
@@ -138,14 +138,14 @@ const Pricing = () => {
                       </div>
                     )}
 
-                    <h3 className="text-xl font-semibold font-display mb-1">{tier.name}</h3>
+                    <h3 className="text-xl font-semibold tracking-tight mb-1">{tier.name}</h3>
                     {"tagline" in tier && (
                       <p className="text-xs text-muted-foreground mb-4">{tier.tagline}</p>
                     )}
                     <div className="mb-6">
                       {displayPrice !== null ? (
                         <>
-                          <span className="text-4xl font-bold font-display">{tier.currency}{displayPrice}</span>
+                          <span className="text-4xl font-bold tracking-tight">{tier.currency}{displayPrice}</span>
                           <span className="text-muted-foreground text-sm">/{displayInterval}</span>
                           {annual && tier.price !== null && (
                             <div className="text-[11px] text-success font-semibold mt-1">
@@ -154,7 +154,7 @@ const Pricing = () => {
                           )}
                         </>
                       ) : (
-                        <span className="text-3xl font-bold font-display">Custom</span>
+                        <span className="text-3xl font-bold tracking-tight">Custom</span>
                       )}
                     </div>
 
@@ -243,7 +243,7 @@ const Pricing = () => {
             className="max-w-5xl mx-auto mt-16"
           >
             <div className="text-center mb-10">
-              <h2 className="text-2xl sm:text-3xl font-bold font-display mb-3">
+              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-3">
                 Complete <span className="gradient-text">Feature Comparison</span>
               </h2>
               <p className="text-muted-foreground">Every capability across every tier — no hidden features.</p>
@@ -296,7 +296,7 @@ const Pricing = () => {
         <div className="container mx-auto px-6 max-w-3xl">
           <div className="text-center mb-12">
             <p className="text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-3">FAQ</p>
-            <h2 className="text-2xl sm:text-3xl font-bold font-display">
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
               Common <span className="gradient-text">Questions</span>
             </h2>
           </div>

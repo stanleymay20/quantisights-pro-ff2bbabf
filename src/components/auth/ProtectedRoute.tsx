@@ -98,7 +98,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       <div className="flex min-h-dvh items-center justify-center bg-background">
         <div className="w-full max-w-lg p-8 space-y-4">
           <div className="text-center space-y-2">
-            <h2 className="text-xl font-bold">Multi-Factor Authentication Required</h2>
+            <h2 className="text-[16px] font-semibold tracking-tight">Multi-Factor Authentication Required</h2>
             <p className="text-sm text-muted-foreground">
               Your organisation requires MFA for all members.
               Set up an authenticator app to continue.

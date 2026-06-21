@@ -166,7 +166,7 @@ const Demo = () => {
           </motion.div>
         ) : (
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-            <h2 className="text-xl font-bold font-display mb-1 tracking-tight">
+            <h2 className="text-[16px] font-semibold tracking-tight tracking-tight mb-1 tracking-tight">
               {autoRetrying ? "Reconnecting…" : "Provisioning Your Environment"}
             </h2>
             <p className="text-xs text-muted-foreground mb-8">

@@ -123,7 +123,7 @@ const SecurityQuestionnaire = () => (
           <Shield className="w-3.5 h-3.5" />
           Enterprise Security Questionnaire
         </div>
-        <h1 className="text-3xl md:text-4xl font-bold font-display mb-3 tracking-tight">
+        <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-3 tracking-tight">
           Security Questionnaire Responses
         </h1>
         <p className="text-muted-foreground leading-relaxed max-w-2xl">
@@ -222,7 +222,7 @@ const SecurityQuestionnaire = () => (
               <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                 <section.icon className="w-4.5 h-4.5 text-primary" />
               </div>
-              <h2 className="text-xl font-bold font-display">{section.title}</h2>
+              <h2 className="text-[16px] font-semibold tracking-tight tracking-tight">{section.title}</h2>
             </div>
 
             <div className="space-y-4">
@@ -246,7 +246,7 @@ const SecurityQuestionnaire = () => (
 
       {/* Related Documents */}
       <div className="mt-16 rounded-xl border border-primary/20 bg-primary/5 p-8">
-        <h2 className="text-lg font-bold font-display mb-2">Supporting Documentation</h2>
+        <h2 className="text-lg font-bold tracking-tight mb-2">Supporting Documentation</h2>
         <p className="text-sm text-muted-foreground mb-6">
           The following documents are publicly available and supplement this questionnaire.
         </p>

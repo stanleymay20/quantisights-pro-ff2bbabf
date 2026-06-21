@@ -98,7 +98,7 @@ const GDPRRights = () => {
       <main className="flex-1 container mx-auto px-6 py-12 max-w-3xl">
         <div className="flex items-center gap-3 mb-2">
           <Scale className="w-7 h-7 text-primary" />
-          <h1 className="text-3xl font-bold font-display">Your GDPR Rights</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Your GDPR Rights</h1>
         </div>
         <p className="text-muted-foreground text-sm mb-8 max-w-2xl">
           Exercise any of the eight rights below at any time. Quantivis responds within 30 days as

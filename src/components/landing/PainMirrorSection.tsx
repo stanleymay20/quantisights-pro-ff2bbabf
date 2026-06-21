@@ -26,7 +26,7 @@ const PainMirrorSection = forwardRef<HTMLElement>((_, ref) => {
           className="max-w-3xl mx-auto text-center mb-12 sm:mb-16"
         >
           <p className="text-xs uppercase tracking-widest text-primary font-semibold mb-4">The Analytics-Action Gap</p>
-          <h2 className="text-2xl sm:text-4xl font-bold font-display mb-5">
+          <h2 className="text-2xl sm:text-4xl font-bold tracking-tight mb-5">
             An Estimated $3 Trillion+ Lost Annually to the{" "}
             <span className="gradient-text">Decision Quality Gap</span>
           </h2>

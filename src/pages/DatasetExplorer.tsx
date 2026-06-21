@@ -148,7 +148,7 @@ const DatasetExplorer = () => {
         <div className="flex items-center gap-3">
           <SidebarMobileToggle />
           <Database className="w-5 h-5 text-primary" />
-          <h1 className="text-xl font-semibold font-display">Dataset Explorer</h1>
+          <h1 className="text-xl font-semibold tracking-tight">Dataset Explorer</h1>
         </div>
         <Badge variant="outline" className="text-xs">
           {datasets.length} dataset{datasets.length !== 1 ? "s" : ""}
@@ -227,7 +227,7 @@ const DatasetExplorer = () => {
               {/* Dataset header */}
               <div className="flex items-center justify-between">
                 <div className="space-y-1.5">
-                  <h2 className="text-xl font-bold font-display">{selected.name}</h2>
+                  <h2 className="text-[16px] font-semibold tracking-tight tracking-tight">{selected.name}</h2>
                   <p className="text-xs text-muted-foreground">
                     Created {new Date(selected.created_at).toLocaleDateString()} · {selected.row_count?.toLocaleString() ?? "—"} rows
                     {selected.is_stale && <span className="text-yellow-500 ml-2">⚠ Stale</span>}

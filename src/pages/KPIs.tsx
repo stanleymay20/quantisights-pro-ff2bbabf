@@ -321,7 +321,7 @@ const KPIs = () => {
           <div className="flex items-center gap-4">
             <SidebarMobileToggle />
             <BarChart3 className="w-5 h-5 text-primary" />
-            <h1 className="text-xl font-semibold font-display">KPI Builder</h1>
+            <h1 className="text-xl font-semibold tracking-tight">KPI Builder</h1>
             <Badge variant="outline" className="text-xs">
               {kpis.length}/{kpiLimit === 999999 ? "∞" : kpiLimit} KPIs
             </Badge>
@@ -344,7 +344,7 @@ const KPIs = () => {
               </DialogTrigger>
               <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
-                  <DialogTitle className="font-display">Create KPI</DialogTitle>
+                  <DialogTitle className="tracking-tight">Create KPI</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4 mt-2">
                   <div>
@@ -485,7 +485,7 @@ const KPIs = () => {
                   <div className="glass-card p-6 rounded-xl">
                     <div className="flex items-center justify-between mb-4">
                       <div>
-                        <h2 className="text-lg font-semibold font-display">{selectedKpiObj.name}</h2>
+                        <h2 className="text-lg font-semibold tracking-tight">{selectedKpiObj.name}</h2>
                         {selectedKpiObj.description && (
                           <p className="text-sm text-muted-foreground mt-1">{selectedKpiObj.description}</p>
                         )}
@@ -654,7 +654,7 @@ const KPIs = () => {
               ) : (
                 <div className="glass-card p-12 rounded-xl flex flex-col items-center justify-center min-h-[400px]">
                   <BarChart3 className="w-16 h-16 text-muted-foreground mb-4" />
-                  <h2 className="text-xl font-semibold font-display mb-2">Select or Create a KPI</h2>
+                  <h2 className="text-xl font-semibold tracking-tight mb-2">Select or Create a KPI</h2>
                   <p className="text-muted-foreground text-sm text-center max-w-md">
                     Define strategic KPIs from your metrics data. Compute values, set targets, and get AI-powered executive insights.
                   </p>

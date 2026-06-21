@@ -137,7 +137,7 @@ export default function PostUploadSummary({
       <div className="bg-gradient-to-r from-primary/5 to-primary/0 p-5 border-b border-border/30 flex items-center gap-3">
         <Sparkles className="w-5 h-5 text-primary" />
         <div className="flex-1">
-          <h3 className="font-semibold font-display">Post-Upload Summary</h3>
+          <h3 className="font-semibold tracking-tight">Post-Upload Summary</h3>
           <p className="text-xs text-muted-foreground">
             Snapshot recorded in dataset registry, schema log, lineage, and audit trail.
           </p>

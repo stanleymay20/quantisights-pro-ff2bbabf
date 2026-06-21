@@ -78,7 +78,7 @@ const Pitch = () => {
                 <Award className="w-3.5 h-3.5" />
                 Investor One-Pager · {CATEGORY}
               </div>
-              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold font-display leading-tight mb-6">
+              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-tight mb-6">
                 Decision Governance{" "}
                 <span className="gradient-text">Infrastructure</span>
               </h1>
@@ -131,7 +131,7 @@ const Pitch = () => {
         {/* Problem */}
         <section className="py-16 sm:py-20">
           <div className="container mx-auto px-6 max-w-3xl">
-            <h2 className="text-2xl sm:text-3xl font-bold font-display mb-6 text-center">The Problem</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-6 text-center">The Problem</h2>
             <div className="space-y-4 text-muted-foreground">
               <p className="text-base sm:text-lg leading-relaxed">
                 <strong className="text-foreground">73% of executives are systematically overconfident</strong> in their strategic forecasts (HBR, 2023). Yet no enterprise tool tracks whether past predictions were accurate, or adjusts future confidence accordingly.
@@ -160,7 +160,7 @@ const Pitch = () => {
         {/* Solution */}
         <section className="py-16 sm:py-20 bg-muted/10">
           <div className="container mx-auto px-6">
-            <h2 className="text-2xl sm:text-3xl font-bold font-display mb-4 text-center">The Solution</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-4 text-center">The Solution</h2>
             <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
               A 90-day path from tracking decisions to measurably better strategic judgment.
             </p>
@@ -190,7 +190,7 @@ const Pitch = () => {
         {/* Market Opportunity */}
         <section className="py-16 sm:py-20">
           <div className="container mx-auto px-6">
-            <h2 className="text-2xl sm:text-3xl font-bold font-display mb-8 text-center">Market Opportunity</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-8 text-center">Market Opportunity</h2>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 max-w-4xl mx-auto">
               {MARKET_DATA.map((m, i) => (
                 <motion.div
@@ -213,7 +213,7 @@ const Pitch = () => {
         {/* Capabilities */}
         <section className="py-16 sm:py-20 bg-muted/10">
           <div className="container mx-auto px-6">
-            <h2 className="text-2xl sm:text-3xl font-bold font-display mb-12 text-center">Platform Capabilities</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-12 text-center">Platform Capabilities</h2>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
               {CAPABILITIES.map((cap, i) => (
                 <motion.div
@@ -236,7 +236,7 @@ const Pitch = () => {
         {/* Differentiators */}
         <section className="py-16 sm:py-20">
           <div className="container mx-auto px-6 max-w-3xl">
-            <h2 className="text-2xl sm:text-3xl font-bold font-display mb-8 text-center">What Makes Us Different</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-8 text-center">What Makes Us Different</h2>
             <div className="space-y-4">
               {DIFFERENTIATORS.map((d, i) => (
                 <motion.div
@@ -258,7 +258,7 @@ const Pitch = () => {
         {/* Technical Traction */}
         <section className="py-16 sm:py-20 bg-muted/10">
           <div className="container mx-auto px-6">
-            <h2 className="text-2xl sm:text-3xl font-bold font-display mb-8 text-center">Traction & Readiness</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-8 text-center">Traction & Readiness</h2>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 max-w-3xl mx-auto">
               {TRACTION.map((t, i) => (
                 <motion.div
@@ -288,7 +288,7 @@ const Pitch = () => {
               className="border border-border rounded-2xl bg-card/80 backdrop-blur-sm p-8 sm:p-16 text-center max-w-2xl mx-auto"
             >
               <Globe className="w-10 h-10 text-primary mx-auto mb-4" />
-              <h2 className="text-2xl sm:text-3xl font-bold font-display mb-4">See It In Action</h2>
+              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-4">See It In Action</h2>
               <p className="text-muted-foreground mb-8">
                 Try the full platform with 15 months of seeded intelligence data — no signup required.
               </p>

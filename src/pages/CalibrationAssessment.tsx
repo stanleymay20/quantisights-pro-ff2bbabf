@@ -416,7 +416,7 @@ const CalibrationAssessment = () => {
                 <Card>
                   <CardContent className="p-6 lg:p-8 space-y-8">
                     <div className="space-y-4">
-                      <h2 className="text-lg lg:text-xl font-bold text-foreground leading-snug">
+                      <h2 className="text-lg lg:text-[16px] font-semibold tracking-tight text-foreground leading-snug">
                         {scenario.question}
                       </h2>
                       <p className="text-sm text-muted-foreground leading-relaxed bg-muted/50 p-4 rounded-lg border">

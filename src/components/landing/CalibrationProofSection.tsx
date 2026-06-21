@@ -26,7 +26,7 @@ const CalibrationProofSection = forwardRef<HTMLElement>((_, ref) => {
           className="max-w-3xl mx-auto text-center mb-12 sm:mb-16"
         >
           <p className="text-xs uppercase tracking-widest text-primary font-semibold mb-4">The calibration engine</p>
-          <h2 className="text-2xl sm:text-4xl font-bold font-display mb-5">
+          <h2 className="text-2xl sm:text-4xl font-bold tracking-tight mb-5">
             Most Leadership Teams Overestimate Strategic Outcomes
           </h2>
           <p className="text-muted-foreground text-base sm:text-lg leading-relaxed max-w-2xl mx-auto">

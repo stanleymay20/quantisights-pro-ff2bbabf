@@ -63,7 +63,7 @@ const KeyboardShortcutsModal = () => {
               <div className="flex items-center justify-between p-5 pb-3 border-b border-border/30">
                 <div className="flex items-center gap-2.5">
                   <Keyboard className="w-5 h-5 text-primary" />
-                  <h2 id="shortcuts-dialog-title" className="text-base font-bold font-display">Keyboard Shortcuts</h2>
+                  <h2 id="shortcuts-dialog-title" className="text-base font-bold tracking-tight">Keyboard Shortcuts</h2>
                 </div>
                 <button
                   onClick={() => setOpen(false)}

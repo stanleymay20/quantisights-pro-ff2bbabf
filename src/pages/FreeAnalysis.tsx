@@ -138,7 +138,7 @@ const FreeAnalysis = () => {
               <Sparkles className="w-3.5 h-3.5" />
               Free AI-Powered Business Diagnosis
             </div>
-            <h1 className="text-3xl sm:text-5xl font-bold font-display mb-4">
+            <h1 className="text-3xl sm:text-5xl font-bold tracking-tight mb-4">
               Discover What Your Business Is{" "}
               <span className="gradient-text">Really Telling You</span>
             </h1>
@@ -268,7 +268,7 @@ const FreeAnalysis = () => {
                     transition={{ delay: 0.5 }}
                     className="border border-primary/20 rounded-xl bg-primary/5 p-8 text-center"
                   >
-                    <h3 className="text-xl font-bold mb-2">
+                    <h3 className="text-[16px] font-semibold tracking-tight mb-2">
                       Want deeper insights? Continuous monitoring?
                     </h3>
                     <p className="text-muted-foreground mb-6 max-w-lg mx-auto">

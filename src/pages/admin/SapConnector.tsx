@@ -139,7 +139,7 @@ function SapConnectorInner() {
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">SAP OData Control Plane</h1>
+          <h1 className="text-[18px] font-semibold tracking-tight tracking-tight">SAP OData Control Plane</h1>
           <p className="text-sm text-muted-foreground">Metadata, drift, sync state, and data quality for SAP services.</p>
         </div>
         <div className="flex items-center gap-2">

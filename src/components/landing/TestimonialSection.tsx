@@ -45,7 +45,7 @@ const TestimonialSection = forwardRef<HTMLElement>((_, ref) => {
           className="text-center mb-14"
         >
           <p className="text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-3">Platform in Action</p>
-          <h2 className="text-3xl sm:text-4xl font-bold font-display mb-4">
+          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-4">
             How Leaders Use <span className="gradient-text">Quantivis</span>
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
@@ -61,7 +61,7 @@ const TestimonialSection = forwardRef<HTMLElement>((_, ref) => {
         >
           {PLATFORM_FACTS.map((m) => (
             <div key={m.label} className="glass-card p-5 text-center">
-              <p className="text-2xl lg:text-3xl font-bold font-display gradient-text">{m.value}</p>
+              <p className="text-2xl lg:text-3xl font-bold tracking-tight gradient-text">{m.value}</p>
               <p className="text-xs text-muted-foreground mt-1">{m.label}</p>
             </div>
           ))}

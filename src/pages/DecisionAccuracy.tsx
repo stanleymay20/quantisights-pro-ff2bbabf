@@ -106,7 +106,7 @@ const DecisionAccuracy = () => {
         <div className="flex items-center gap-3">
           <SidebarMobileToggle />
           <div>
-            <h1 className="text-xl font-bold font-display tracking-tight">Decision Accuracy</h1>
+            <h1 className="text-[16px] font-semibold tracking-tight tracking-tight tracking-tight">Decision Accuracy</h1>
             <p className="text-xs text-muted-foreground">Confidence vs Reality — proving the system learns</p>
           </div>
         </div>

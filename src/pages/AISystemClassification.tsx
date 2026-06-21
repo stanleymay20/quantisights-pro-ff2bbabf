@@ -93,7 +93,7 @@ const AISystemClassification = () => (
     </header>
     <main className="flex-1 container mx-auto px-6 py-12 max-w-5xl space-y-6">
       <div>
-        <h1 className="text-3xl font-bold font-display mb-2">EU AI Act — System Classification Matrix</h1>
+        <h1 className="text-3xl font-bold tracking-tight mb-2">EU AI Act — System Classification Matrix</h1>
         <p className="text-muted-foreground text-sm leading-relaxed max-w-2xl">
           Per-capability mapping of Quantivis against EU AI Act risk categories with the corresponding governance,
           oversight, explainability, logging, and data-governance controls.

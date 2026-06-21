@@ -231,7 +231,7 @@ export default function ConnectorHealth() {
       <div className="p-6 space-y-6 max-w-7xl mx-auto">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight flex items-center gap-2">
+            <h1 className="text-[18px] font-semibold tracking-tight tracking-tight flex items-center gap-2">
               <Activity className="h-6 w-6 text-primary" /> Connector Health & Canonical Coverage
             </h1>
             <p className="text-sm text-muted-foreground mt-1">

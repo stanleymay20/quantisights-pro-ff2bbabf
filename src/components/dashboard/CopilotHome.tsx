@@ -181,7 +181,7 @@ const CopilotHome = ({
       {/* ── Copilot input ─────────────────────────────────────────────────── */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
         <div className="text-center mb-5">
-          <h1 className="text-2xl font-bold tracking-tight">
+          <h1 className="text-[18px] font-semibold tracking-tight tracking-tight">
             {greeting()}, {firstName}
           </h1>
           <p className="text-muted-foreground text-sm mt-1">

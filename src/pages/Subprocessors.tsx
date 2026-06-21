@@ -64,7 +64,7 @@ const Subprocessors = () => {
         </div>
       </header>
       <main className="flex-1 container mx-auto px-6 py-12 max-w-5xl">
-        <h1 className="text-3xl font-bold font-display mb-2">Sub-processor Registry</h1>
+        <h1 className="text-3xl font-bold tracking-tight mb-2">Sub-processor Registry</h1>
         <p className="text-muted-foreground text-sm mb-1">
           Live registry · {rows.length} active vendors · 30-day advance change notice
         </p>

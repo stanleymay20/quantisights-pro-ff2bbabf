@@ -89,7 +89,7 @@ const Compare = forwardRef<HTMLDivElement>((_, ref) => {
             animate={{ opacity: 1, y: 0 }}
             className="max-w-2xl mx-auto text-center mb-12 sm:mb-16"
           >
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold font-display mb-4">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight mb-4">
               Why Teams Switch to{" "}
               <span className="gradient-text">Quantivis</span>
             </h1>
@@ -109,7 +109,7 @@ const Compare = forwardRef<HTMLDivElement>((_, ref) => {
                 className="border border-border/60 rounded-2xl overflow-hidden bg-card/40"
               >
                 <div className="p-5 sm:p-8 border-b border-border/40">
-                  <h2 className="text-xl sm:text-2xl font-bold mb-2">
+                  <h2 className="text-xl sm:text-[18px] font-semibold tracking-tight mb-2">
                     Quantivis vs. {comp.name}
                   </h2>
                   <p className="text-sm text-primary font-semibold mb-1">{comp.tagline}</p>
@@ -164,7 +164,7 @@ const Compare = forwardRef<HTMLDivElement>((_, ref) => {
             transition={{ delay: 0.4 }}
             className="max-w-lg mx-auto text-center mt-12 sm:mt-16"
           >
-            <h3 className="text-xl sm:text-2xl font-bold mb-4">Ready to upgrade your decision stack?</h3>
+            <h3 className="text-xl sm:text-[18px] font-semibold tracking-tight mb-4">Ready to upgrade your decision stack?</h3>
             <Link
               to="/register"
               className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl bg-primary text-primary-foreground font-semibold hover:brightness-110 transition-all shadow-lg shadow-primary/20"

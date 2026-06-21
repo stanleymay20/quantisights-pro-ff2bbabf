@@ -138,7 +138,7 @@ export default function Boardroom() {
         <div className="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between gap-4 flex-wrap">
           <div>
             <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Boardroom</div>
-            <h1 className="text-2xl font-semibold tracking-tight">Governed Executive Reasoning</h1>
+            <h1 className="text-[18px] font-semibold tracking-tight tracking-tight">Governed Executive Reasoning</h1>
             <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
               A calm, deterministic walkthrough of the operational topology your leadership team is responsible for —
               with evidence, confidence, and governance integrity visible at every step.

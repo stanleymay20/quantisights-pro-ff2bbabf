@@ -870,7 +870,7 @@ const DataConnectors = () => {
         <div className="flex items-center gap-3">
           <SidebarMobileToggle />
           <Cable className="w-5 h-5 text-primary" />
-          <h1 className="text-xl font-semibold font-display">Data Connectors</h1>
+          <h1 className="text-xl font-semibold tracking-tight">Data Connectors</h1>
         </div>
         {step !== "select" && (
           <Button variant="outline" size="sm" onClick={resetWizard}>
@@ -1024,7 +1024,7 @@ const DataConnectors = () => {
             {/* ═══ STEP: Credentials ═══ */}
             {step === "credentials" && (
               <div className="max-w-2xl">
-                <h2 className="text-xl font-bold font-display mb-1">
+                <h2 className="text-[16px] font-semibold tracking-tight tracking-tight mb-1">
                   {CONNECTORS.find(c => c.type === selectedType)?.label} Connection
                 </h2>
                 <p className="text-sm text-muted-foreground mb-6">
@@ -1070,7 +1070,7 @@ const DataConnectors = () => {
                 <div className="p-6 rounded-xl border border-primary/30 bg-primary/5 mb-6">
                   <div className="flex items-center gap-3 mb-2">
                     <CheckCircle2 className="w-6 h-6 text-primary" />
-                    <h2 className="text-xl font-bold font-display">Connection Successful</h2>
+                    <h2 className="text-[16px] font-semibold tracking-tight tracking-tight">Connection Successful</h2>
                   </div>
                   <p className="text-sm text-muted-foreground">{testResult?.version || testResult?.message}</p>
                 </div>
@@ -1090,7 +1090,7 @@ const DataConnectors = () => {
             {/* ═══ STEP: Schema Discovery ═══ */}
             {step === "schema" && (
               <div>
-                <h2 className="text-xl font-bold font-display mb-1">Database Schema</h2>
+                <h2 className="text-[16px] font-semibold tracking-tight tracking-tight mb-1">Database Schema</h2>
                 <p className="text-sm text-muted-foreground mb-6">
                   Found {tables.length} tables. Select the tables you want to sync.
                 </p>
@@ -1189,7 +1189,7 @@ const DataConnectors = () => {
             {/* ═══ STEP: Metric Mapping ═══ */}
             {step === "mapping" && (
               <div>
-                <h2 className="text-xl font-bold font-display mb-1">Map Metrics</h2>
+                <h2 className="text-[16px] font-semibold tracking-tight tracking-tight mb-1">Map Metrics</h2>
                 <p className="text-sm text-muted-foreground mb-6">
                   Define how columns map to standardized metrics for decision intelligence.
                 </p>
@@ -1267,7 +1267,7 @@ const DataConnectors = () => {
             {/* ═══ STEP: Schedule ═══ */}
             {step === "schedule" && (
               <div className="max-w-2xl">
-                <h2 className="text-xl font-bold font-display mb-1">Sync Schedule</h2>
+                <h2 className="text-[16px] font-semibold tracking-tight tracking-tight mb-1">Sync Schedule</h2>
                 <p className="text-sm text-muted-foreground mb-6">Choose how often to pull new data.</p>
 
                 <div className="grid grid-cols-3 gap-4 mb-8">
@@ -1338,7 +1338,7 @@ const DataConnectors = () => {
             {step === "syncing" && (
               <div className="max-w-lg mx-auto text-center py-12">
                 <Loader2 className="w-12 h-12 text-primary mx-auto mb-4 animate-spin" />
-                <h2 className="text-xl font-bold font-display mb-2">Syncing Your Data</h2>
+                <h2 className="text-[16px] font-semibold tracking-tight tracking-tight mb-2">Syncing Your Data</h2>
                 <p className="text-sm text-muted-foreground">Connecting to {CONNECTORS.find(c => c.type === selectedType)?.label}, pulling data, and creating metrics...</p>
               </div>
             )}
@@ -1349,7 +1349,7 @@ const DataConnectors = () => {
                 {syncResult && syncResult.records > 0 ? (
                   <>
                     <CheckCircle2 className="w-12 h-12 text-primary mx-auto mb-4" />
-                    <h2 className="text-xl font-bold font-display mb-2">Data Connected!</h2>
+                    <h2 className="text-[16px] font-semibold tracking-tight tracking-tight mb-2">Data Connected!</h2>
                     <p className="text-sm text-muted-foreground mb-2">
                       Successfully synced <span className="font-semibold text-foreground">{syncResult.records}</span> metric data points.
                     </p>
@@ -1360,7 +1360,7 @@ const DataConnectors = () => {
                 ) : (
                   <>
                     <AlertCircle className="w-12 h-12 text-destructive mx-auto mb-4" />
-                    <h2 className="text-xl font-bold font-display mb-2">Sync Issue</h2>
+                    <h2 className="text-[16px] font-semibold tracking-tight tracking-tight mb-2">Sync Issue</h2>
                     <p className="text-sm text-destructive mb-4">
                       {syncResult?.errors?.[0] || "No data could be synced. Check your metric mappings."}
                     </p>

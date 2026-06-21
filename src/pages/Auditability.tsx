@@ -84,7 +84,7 @@ const Auditability = () => {
         <div>
           <div className="flex items-center gap-3 mb-2">
             <FileSearch className="w-7 h-7 text-primary" />
-            <h1 className="text-3xl font-bold font-display">Auditability</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Auditability</h1>
           </div>
           <p className="text-muted-foreground leading-relaxed max-w-3xl">
             Quantivis is built so that every number, every recommendation, and every

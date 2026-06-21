@@ -102,7 +102,7 @@ const SimilarDecisionsPanel = memo(({ organizationId, queryText, onConfidenceAdj
           </div>
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <h4 className="text-xs font-semibold font-display text-muted-foreground">Novel Decision</h4>
+              <h4 className="text-xs font-semibold tracking-tight text-muted-foreground">Novel Decision</h4>
               {neuralFallbackUsed && (
                 <Badge variant="outline" className="text-[8px] px-1 py-0 h-4 border-primary/20 text-primary">
                   <Zap className="w-2.5 h-2.5 mr-0.5" />AI searched
@@ -129,7 +129,7 @@ const SimilarDecisionsPanel = memo(({ organizationId, queryText, onConfidenceAdj
         <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center">
           <History className="w-3.5 h-3.5 text-primary" />
         </div>
-        <h4 className="text-xs font-semibold font-display">Institutional Memory</h4>
+        <h4 className="text-xs font-semibold tracking-tight">Institutional Memory</h4>
         <Tooltip>
           <TooltipTrigger asChild>
             <div className={`flex items-center gap-1 ml-auto px-1.5 py-0.5 rounded-full ${config.bg}`}>

@@ -107,7 +107,7 @@ const DataVendors = () => {
   return (
     <div className="container mx-auto px-6 py-8 max-w-6xl">
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-        <h1 className="text-3xl font-bold font-display mb-2">External Data Vendors</h1>
+        <h1 className="text-3xl font-bold tracking-tight mb-2">External Data Vendors</h1>
         <p className="text-muted-foreground">
           Macro and industry signals automatically blended into Layer B context for advisory generation.
         </p>

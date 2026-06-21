@@ -258,7 +258,7 @@ const Settings = () => {
         <header className="h-14 border-b border-border/30 flex items-center px-8 shrink-0 bg-background/60 backdrop-blur-sm">
           <div className="flex items-center gap-3">
             <SidebarMobileToggle />
-            <h1 className="text-xl font-semibold font-display">Settings</h1>
+            <h1 className="text-[18px] font-semibold tracking-tight">Settings</h1>
           </div>
         </header>
 
@@ -280,7 +280,7 @@ const Settings = () => {
                 <SectionErrorBoundary sectionName="Profile settings">
                 <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
                   <Card>
-                    <CardHeader><CardTitle className="flex items-center gap-2"><User className="w-5 h-5 text-primary" /> Profile Settings</CardTitle></CardHeader>
+                    <CardHeader><CardTitle className="text-[14px] font-semibold text-foreground">Profile Settings</CardTitle></CardHeader>
                     <CardContent className="space-y-6">
                       <div className="space-y-2">
                         <Label>Email</Label>
@@ -301,7 +301,7 @@ const Settings = () => {
                   <Card className="mt-6">
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2 text-base">
-                        <Shield className="w-5 h-5 text-primary" /> Your Role
+                        Your Role
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">

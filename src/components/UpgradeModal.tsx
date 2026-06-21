@@ -59,7 +59,7 @@ const UpgradeModal = ({ open, onOpenChange, feature, requiredTier = "growth" }: 
         </DialogHeader>
 
         <div className="py-3 space-y-3">
-          <div className="text-2xl font-bold font-display">{copy.price}</div>
+          <div className="text-2xl font-bold tracking-tight">{copy.price}</div>
           <ul className="space-y-2">
             {copy.bullets.map((b) => (
               <li key={b} className="flex items-start gap-2 text-sm">

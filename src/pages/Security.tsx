@@ -345,7 +345,7 @@ const Security = () => {
               <Shield className="w-3.5 h-3.5" />
               Trust Center
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold font-display mb-4 tracking-tight">
+            <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4 tracking-tight">
               Security Built for<br />
               <span className="text-primary">Decision Governance</span>
             </h1>
@@ -380,7 +380,7 @@ const Security = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto">
             {HERO_STATS.map((stat) => (
               <div key={stat.label} className="rounded-xl border border-border/50 bg-card/50 backdrop-blur-sm p-4 text-center">
-                <div className="text-xl font-bold font-display text-primary mb-1">{stat.value}</div>
+                <div className="text-xl font-bold tracking-tight text-primary mb-1">{stat.value}</div>
                 <div className="text-xs text-muted-foreground">{stat.label}</div>
               </div>
             ))}
@@ -410,7 +410,7 @@ const Security = () => {
       {/* Security Pillars */}
       <section className="container mx-auto px-6 py-20">
         <div className="text-center mb-16">
-          <h2 className="text-2xl md:text-3xl font-bold font-display mb-3">Six Pillars of Enterprise Security</h2>
+          <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-3">Six Pillars of Enterprise Security</h2>
           <p className="text-muted-foreground max-w-xl mx-auto">
             Security is not a feature — it's the architecture. Every layer is designed to protect
             strategic intelligence from unauthorized access.
@@ -442,7 +442,7 @@ const Security = () => {
       <section className="border-y border-border/30 bg-card/20">
         <div className="container mx-auto px-6 py-20">
           <div className="text-center mb-12">
-            <h2 className="text-2xl md:text-3xl font-bold font-display mb-3">Role-Based Access Matrix</h2>
+            <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-3">Role-Based Access Matrix</h2>
             <p className="text-muted-foreground max-w-xl mx-auto">
               Least-privilege enforcement ensures each role only accesses what's necessary.
               Strategic intelligence is restricted to leadership by default.
@@ -486,7 +486,7 @@ const Security = () => {
       <section className="container mx-auto px-6 py-20">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-2xl md:text-3xl font-bold font-display mb-3">Our Data Commitment</h2>
+            <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-3">Our Data Commitment</h2>
             <p className="text-muted-foreground">
               Clear, unambiguous commitments to how we handle your data.
             </p>
@@ -519,7 +519,7 @@ const Security = () => {
       <section className="border-t border-border/30 bg-card/20">
         <div className="container mx-auto px-6 py-16">
           <div className="max-w-2xl mx-auto text-center">
-            <h2 className="text-xl font-bold font-display mb-3">Responsible Disclosure</h2>
+            <h2 className="text-[16px] font-semibold tracking-tight tracking-tight mb-3">Responsible Disclosure</h2>
             <p className="text-sm text-muted-foreground mb-6">
               We maintain a public <code className="bg-muted px-1.5 py-0.5 rounded text-xs">security.txt</code> policy
               for responsible vulnerability reporting. If you discover a security issue, please report it to{" "}
@@ -552,7 +552,7 @@ const Security = () => {
       {/* Architecture Proof */}
       <section className="container mx-auto px-6 py-20">
         <div className="text-center mb-12">
-          <h2 className="text-2xl md:text-3xl font-bold font-display mb-3">Verifiable Security Controls</h2>
+          <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-3">Verifiable Security Controls</h2>
           <p className="text-muted-foreground max-w-xl mx-auto">
             Not marketing claims — architecture facts. Every statement below is enforced
             by database policies, not application code.
@@ -579,7 +579,7 @@ const Security = () => {
       <section className="border-y border-border/30 bg-card/20">
         <div className="container mx-auto px-6 py-20">
           <div className="text-center mb-12">
-            <h2 className="text-2xl md:text-3xl font-bold font-display mb-3">Security FAQ</h2>
+            <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-3">Security FAQ</h2>
             <p className="text-muted-foreground max-w-xl mx-auto">
               Common questions from security reviewers and procurement teams.
             </p>
@@ -609,7 +609,7 @@ const Security = () => {
       <section className="container mx-auto px-6 py-16">
         <div className="max-w-2xl mx-auto">
           <div className="rounded-xl border border-primary/20 bg-primary/5 p-8">
-            <h2 className="text-xl font-bold font-display mb-2">Enterprise Security Pack</h2>
+            <h2 className="text-[16px] font-semibold tracking-tight tracking-tight mb-2">Enterprise Security Pack</h2>
             <p className="text-sm text-muted-foreground mb-6">Available on request for procurement and security review teams.</p>
             <div className="grid sm:grid-cols-2 gap-3">
               {[

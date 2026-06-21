@@ -10,7 +10,7 @@ const CookiePolicy = () => (
       </div>
     </header>
     <main className="flex-1 container mx-auto px-6 py-16 max-w-3xl">
-      <h1 className="text-3xl font-bold font-display mb-2">Cookie Policy</h1>
+      <h1 className="text-3xl font-bold tracking-tight mb-2">Cookie Policy</h1>
       <p className="text-muted-foreground text-sm mb-10">Last updated: February 25, 2026</p>
 
       <div className="prose prose-sm prose-invert max-w-none space-y-6 text-foreground/90 text-sm leading-relaxed">

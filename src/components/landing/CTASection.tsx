@@ -24,7 +24,7 @@ const CTASection = forwardRef<HTMLElement>((_, ref) => {
           className="border border-border rounded-2xl bg-card/80 backdrop-blur-sm p-6 sm:p-12 md:p-16 text-center max-w-3xl mx-auto shadow-lg"
         >
           <p className="text-xs uppercase tracking-widest text-primary font-semibold mb-4">Start building institutional memory</p>
-          <h2 className="text-2xl sm:text-4xl font-bold font-display mb-4">
+          <h2 className="text-2xl sm:text-4xl font-bold tracking-tight mb-4">
             Start Building Your Decision Ledger
           </h2>
           <p className="text-muted-foreground text-base sm:text-lg mb-8 max-w-xl mx-auto">

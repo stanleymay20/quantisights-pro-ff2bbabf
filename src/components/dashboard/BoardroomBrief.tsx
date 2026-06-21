@@ -90,7 +90,7 @@ const BoardroomBrief = memo(({ insights, pendingDecisions, calibrationScore, top
             <Crosshair className="w-4 h-4" />
           </div>
           <div>
-            <h2 className="text-sm font-semibold font-display">Boardroom Brief</h2>
+            <h2 className="text-sm font-semibold tracking-tight">Boardroom Brief</h2>
             <p className="text-[10px] text-muted-foreground">Closed-Loop Decision Operating System</p>
           </div>
         </div>

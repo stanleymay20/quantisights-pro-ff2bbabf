@@ -158,7 +158,7 @@ const GovernanceCommandView = () => {
                 <span className="text-xs font-semibold text-muted-foreground">Maturity Score</span>
               </div>
               <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-bold font-display">{latestScore !== null ? latestScore : "—"}</span>
+                <span className="text-3xl font-bold tracking-tight">{latestScore !== null ? latestScore : "—"}</span>
                 <span className="text-sm text-muted-foreground">/100</span>
                 {latestScore !== null && (
                   <Badge className={`${latestLevel.bg} ${latestLevel.color} border-0 text-[10px] ml-1`}>
@@ -190,7 +190,7 @@ const GovernanceCommandView = () => {
                 <Users className="w-4 h-4 text-primary" />
                 <span className="text-xs font-semibold text-muted-foreground">Data Stewards</span>
               </div>
-              <span className="text-3xl font-bold font-display">{stewardCount ?? 0}</span>
+              <span className="text-3xl font-bold tracking-tight">{stewardCount ?? 0}</span>
               <p className="text-[10px] text-muted-foreground/60 mt-2">
                 {(stewardCount ?? 0) >= 2 ? "Good coverage" : (stewardCount ?? 0) >= 1 ? "Minimum viable" : "None assigned — high risk"}
               </p>
@@ -206,7 +206,7 @@ const GovernanceCommandView = () => {
                 <span className="text-xs font-semibold text-muted-foreground">Retention Coverage</span>
               </div>
               <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-bold font-display">{retentionCount}</span>
+                <span className="text-3xl font-bold tracking-tight">{retentionCount}</span>
                 <span className="text-sm text-muted-foreground">/6 categories</span>
               </div>
               <Progress value={retentionCoverage} className="h-1.5 mt-2" />

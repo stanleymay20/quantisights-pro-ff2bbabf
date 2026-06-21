@@ -24,7 +24,7 @@ export const SLIDES: Slide[] = [
     icon: Rocket,
     content: (
       <div className="text-center">
-        <h3 className="text-2xl sm:text-3xl font-bold font-display mb-2">Quantivis</h3>
+        <h3 className="text-2xl sm:text-3xl font-bold tracking-tight mb-2">Quantivis</h3>
         <p className="text-primary font-semibold text-lg mb-3">Governed Operational Reasoning Infrastructure</p>
         <p className="text-sm text-muted-foreground max-w-md mx-auto">
           A 2-minute pitch for the Berkeley Entrepreneurship Bootcamp final round.

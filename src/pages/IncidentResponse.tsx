@@ -83,7 +83,7 @@ const IncidentResponse = () => {
         <div>
           <div className="flex items-center gap-3 mb-2">
             <AlertTriangle className="w-7 h-7 text-primary" />
-            <h1 className="text-3xl font-bold font-display">Incident Response</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Incident Response</h1>
           </div>
           <p className="text-muted-foreground leading-relaxed max-w-3xl">
             How {CONTACT.companyLegal} detects, contains, and communicates security and
