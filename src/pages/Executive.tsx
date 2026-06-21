@@ -572,7 +572,11 @@ const Executive = () => {
                         {briefHistory.map((b) => (
                           <div key={b.id} className="flex items-center justify-between p-2.5 rounded-lg bg-muted/30">
                             <div>
-                              <p className="text-xs font-semibold capitalize">{b.generated_by}</p>
+                              <p className="text-xs font-semibold">
+                                {b.generated_by === "Ai" || b.generated_by === "ai" ? "AI Brief" :
+                                 b.generated_by === "manual" ? "Manual" :
+                                 b.generated_by ? b.generated_by.charAt(0).toUpperCase() + b.generated_by.slice(1) : "Brief"}
+                              </p>
                               <p className="text-xs text-muted-foreground">
                                 {new Date(b.generated_at).toLocaleDateString()} {new Date(b.generated_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                               </p>
