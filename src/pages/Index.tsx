@@ -182,7 +182,7 @@ const Hero = () => (
     <div className="qv-hero-content">
       <span className="qv-badge" style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(255,255,255,0.6)", padding: "5px 12px", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 2, background: "rgba(255,255,255,0.04)" }}>EU AI Act · Article 13 Evidence Packs · DACH</span>
       <h1>Every AI decision your organisation makes needs an audit trail. <span style={{ color: "rgba(255,255,255,0.56)" }}>Quantivis creates it automatically.</span></h1>
-      <p className="qv-hero-copy">Log decisions. Attach evidence. Track outcomes. Know what worked and why — with a governance score on every recommendation.</p>
+      <p className="qv-hero-copy">The EU AI Act (Articles 9, 13, 14) requires documented evidence for every AI-assisted decision. Quantivis creates that record automatically — approval trail, evidence chain, outcome log — ready for your compliance officer and your board.</p>
       <div className="qv-cta-row">
         <a href="#demo" className="qv-primary-cta">Request a Demo <ArrowRight size={16} /></a>
         <a href="#platform" className="qv-secondary-cta">See the platform <ArrowRight size={14} /></a>

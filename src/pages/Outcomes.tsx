@@ -90,7 +90,7 @@ const Outcomes = () => {
           <Card>
             <CardContent className="p-4 text-center">
               <Target className="w-5 h-5 text-primary mx-auto mb-1" />
-              <p className="text-2xl font-bold">{evaluated.length}</p>
+              <p className="text-[18px] font-semibold tracking-tight">{evaluated.length}</p>
               <p className="text-xs text-muted-foreground">Measured</p>
             </CardContent>
           </Card>
@@ -98,7 +98,7 @@ const Outcomes = () => {
             <CardContent className="p-4 text-center">
               <BarChart3 className="w-5 h-5 text-muted-foreground mx-auto mb-1" />
               <p
-                className="text-2xl font-bold"
+                className="text-[18px] font-semibold tracking-tight"
                 title={avgAccuracy == null ? "No outcomes measured yet. Record an outcome on a decision to activate accuracy tracking." : undefined}
               >
                 {avgAccuracy != null ? `${avgAccuracy}%` : "—"}
@@ -111,14 +111,14 @@ const Outcomes = () => {
           <Card>
             <CardContent className="p-4 text-center">
               <TrendingUp className="w-5 h-5 text-success mx-auto mb-1" />
-              <p className="text-2xl font-bold text-success">{positiveOutcomes}</p>
+              <p className="text-[18px] font-semibold tracking-tight text-success">{positiveOutcomes}</p>
               <p className="text-xs text-muted-foreground">Worked</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4 text-center">
               <TrendingDown className="w-5 h-5 text-destructive mx-auto mb-1" />
-              <p className="text-2xl font-bold text-destructive">{negativeOutcomes}</p>
+              <p className="text-[18px] font-semibold tracking-tight text-destructive">{negativeOutcomes}</p>
               <p className="text-xs text-muted-foreground">Missed</p>
             </CardContent>
           </Card>

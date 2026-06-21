@@ -358,7 +358,7 @@ const Compliance = () => {
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
                 <div className="w-20 h-20 rounded-full border-4 border-primary flex items-center justify-center">
-                  <span className="text-2xl font-bold">{score}%</span>
+                  <span className="text-[18px] font-semibold tracking-tight">{score}%</span>
                 </div>
                 <div>
                   <p className="text-lg font-semibold">Implementation Score</p>

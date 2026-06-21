@@ -221,7 +221,7 @@ const BenchmarkingPage = () => {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Avg Percentile</p>
-                  <p className="text-2xl font-bold">{avgPercentile !== null ? `P${avgPercentile}` : "—"}</p>
+                  <p className="text-[18px] font-semibold tracking-tight">{avgPercentile !== null ? `P${avgPercentile}` : "—"}</p>
                 </div>
               </CardContent>
             </Card>
@@ -232,7 +232,7 @@ const BenchmarkingPage = () => {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Top Quartile KPIs</p>
-                  <p className="text-2xl font-bold">{topQuartileCount} / {scores.length}</p>
+                  <p className="text-[18px] font-semibold tracking-tight">{topQuartileCount} / {scores.length}</p>
                 </div>
               </CardContent>
             </Card>
@@ -285,7 +285,7 @@ const BenchmarkingPage = () => {
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className="text-2xl font-bold">P{Math.round(sc.percentile_rank)}</p>
+                            <p className="text-[18px] font-semibold tracking-tight">P{Math.round(sc.percentile_rank)}</p>
                             <p className="text-xs text-muted-foreground">percentile</p>
                           </div>
                         </div>

@@ -101,7 +101,7 @@ function DecisionRow({
   const isActing = acting === decision.id;
   const conf = decision.capped_confidence;
   const impact = decision.predicted_net_impact;
-  const title = truncateWords(decision.recommended_action, 14);
+  const title = truncateWords(decision.recommended_action, 10);
 
   return (
     <motion.div
@@ -122,7 +122,7 @@ function DecisionRow({
               </span>
             )}
           </div>
-          <p className="text-sm font-medium text-foreground">{title}</p>
+          <p className="text-sm font-medium text-foreground line-clamp-1">{title}</p>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
@@ -241,7 +241,7 @@ const ExecutiveDailyDriver = ({ displayName, orgId, insights, topMetrics, pendin
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-sm text-muted-foreground">Good {timeOfDay()}, {displayName.split(" ")[0] || displayName}</p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight">Today&apos;s decision brief</h1>
+          <h1 className="mt-1 text-[18px] font-semibold tracking-tight">Today's decision brief</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}
           </p>

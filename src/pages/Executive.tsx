@@ -697,7 +697,7 @@ const Executive = () => {
                                     <span className="text-xs text-muted-foreground">{status.label}</span>
                                   </div>
                                 </div>
-                                <p className="text-2xl font-bold">{snap.value}</p>
+                                <p className="text-[18px] font-semibold tracking-tight">{snap.value}</p>
                                 <div className="flex items-center gap-1 mt-1">
                                   {trendUp ? (
                                     <TrendingUp className="w-4 h-4 text-success" />
