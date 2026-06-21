@@ -321,3 +321,9 @@
 .sidebar-nav::-webkit-scrollbar { width: 3px; }
 .sidebar-nav::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 2px; }
 .sidebar-nav::-webkit-scrollbar-track { background: transparent; }
+
+/* Hide duplicate notification bell in DashboardHeader — kept only in GlobalContextBar */
+header.h-12 button[aria-label*="notification"],
+header.h-12 button[aria-label*="unread"] {
+  display: none !important;
+}
