@@ -667,7 +667,8 @@ const DecisionLedgerPage = () => {
                           </Tooltip>
                           <span>Data sufficiency: <span className="capitalize font-medium text-foreground">{simResult.data_sufficiency}</span></span>
                         </div>
-                    </div>
+                      </CardContent>
+                    </Card>
                   </motion.div>
                 )}
               </CardContent>
