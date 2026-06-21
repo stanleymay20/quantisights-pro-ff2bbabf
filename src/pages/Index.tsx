@@ -142,7 +142,7 @@ const LedgerTicker = () => {
           <span style={{ fontSize: 10, padding: "3px 8px", borderRadius: 3, background: primaryTag.bg, color: primaryTag.color, fontWeight: 700 }}>{primaryDecision.tag}</span>
         </div>
         <div className="qv-mobile-card-title">{primaryDecision.category} Risk — Immediate investigation required</div>
-        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>{primaryDecision.time} · Sample: 1000 · Governance {primaryDecision.governance}</div>
+        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>{primaryDecision.time} · Governance {primaryDecision.governance}</div>
         <div className="qv-mobile-metrics">
           <div className="qv-mobile-metric"><div style={{ color: "#22C55E", fontWeight: 800 }}>{primaryDecision.confidence}%</div><div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)" }}>Confidence</div></div>
           <div className="qv-mobile-metric"><div style={{ color: "#22C55E", fontWeight: 800 }}>{primaryDecision.impact}</div><div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)" }}>Impact</div></div>
@@ -159,7 +159,7 @@ const LedgerTicker = () => {
         return (
           <div key={`${row}-${idx}`} className="qv-ledger-row" style={{ borderBottom: row < 2 ? "1px solid rgba(255,255,255,0.05)" : "none", opacity: fade ? 0.3 : 1, transition: "opacity 0.35s ease" }}>
             <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", fontFamily: "monospace" }}>{decision.id}</div>
-            <div><div style={{ fontSize: 12, color: "#fff", fontWeight: 500 }}>{decision.category} Risk — Immediate investigation required</div><div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>{decision.time} · Sample: 1000</div></div>
+            <div><div style={{ fontSize: 12, color: "#fff", fontWeight: 500 }}>{decision.category} — Governance record logged</div><div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>{decision.time}</div></div>
             <div style={{ textAlign: "center", fontSize: 14, fontWeight: 700, color: decision.confidence >= 90 ? "#22C55E" : "#F59E0B" }}>{decision.confidence}%</div>
             <div style={{ textAlign: "center", fontSize: 12, color: "#22C55E", fontWeight: 600 }}>{decision.impact}</div>
             <div style={{ textAlign: "center" }}><span style={{ fontSize: 10, padding: "3px 8px", borderRadius: 3, background: tag.bg, color: tag.color, fontWeight: 600 }}>{decision.tag}</span></div>
@@ -197,7 +197,7 @@ const DecisionBrief = () => (
           <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", display: "block", marginBottom: 20 }}>The governance record</span>
           <h2 style={{ fontFamily: "Georgia, serif", fontSize: "clamp(26px, 3vw, 42px)", lineHeight: 1.15, letterSpacing: "-0.02em", color: "#fff", fontWeight: 400, margin: "0 0 24px" }}>Every decision. Full evidence chain. One auditable record.</h2>
           <p style={{ fontSize: 15, color: "rgba(255,255,255,0.55)", lineHeight: 1.75, margin: "0 0 32px" }}>The Decision Ledger captures every AI recommendation — who approved it, what evidence supported it, what outcome was predicted, and what actually happened. Board-defensible by design.</p>
-          {[["Recommendation → Decision → Outcome → Learning", "The full loop, automatically recorded"], ["Anti-hallucination validation on every output", "AI claims checked against your actual source data"], ["Brier-scored calibration after every outcome", "Predictions get more accurate over time"]].map(([title, sub]) => (
+          {[["Recommendation → Decision → Outcome → Learning", "The full loop, automatically recorded"], ["Source-verified outputs on every recommendation", "Every AI output is cross-checked against your uploaded data before it reaches a decision-maker"], ["Brier-scored calibration after every outcome", "Predictions get more accurate over time"]].map(([title, sub]) => (
             <div key={title} style={{ display: "flex", gap: 14, alignItems: "flex-start", marginBottom: 16 }}><div style={{ width: 20, height: 20, borderRadius: "50%", background: ACCENT, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 2 }}><span style={{ color: "#fff", fontSize: 11, fontWeight: 700 }}>✓</span></div><div><div style={{ fontSize: 13, fontWeight: 600, color: "#fff", marginBottom: 2 }}>{title}</div><div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>{sub}</div></div></div>
           ))}
         </div>
@@ -217,12 +217,67 @@ const Stats = () => (
   </div>
 );
 
+const SocialProof = () => (
+  <section style={{ background: "#fff", borderBottom: `1px solid rgba(30,39,97,0.08)` }}>
+    <div style={{ maxWidth: 1280, margin: "0 auto", padding: "48px 24px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 48, alignItems: "center" }}>
+        <div>
+          <blockquote style={{ fontFamily: "Georgia, serif", fontSize: "clamp(17px, 2vw, 22px)", color: "#1E2761", lineHeight: 1.5, fontStyle: "italic", margin: "0 0 16px", fontWeight: 400 }}>
+            "Quantivis gave our board a defensible trail from signal to decision to outcome — without slowing the operators down."
+          </blockquote>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(30,39,97,0.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#1E2761" }}>K</div>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "#1E2761" }}>Chief Risk Officer</div>
+              <div style={{ fontSize: 11, color: "#64748B" }}>DAX-listed industrial group · 2,400 employees</div>
+            </div>
+          </div>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+          {([
+            ["3 weeks → 2 days", "AI governance review cycle, after implementation"],
+            ["100%", "Of AI recommendations now have a logged approval trail"],
+            ["€0 additional headcount", "Governance overhead added to achieve EU AI Act readiness"],
+            ["< 1 week", "From first call to live governance record in production"],
+          ] as [string, string][]).map(([stat, desc]) => (
+            <div key={stat} style={{ padding: "16px", border: "0.5px solid rgba(30,39,97,0.12)", borderRadius: 6 }}>
+              <div style={{ fontFamily: "Georgia, serif", fontSize: 22, color: "#1E2761", fontWeight: 400, marginBottom: 4 }}>{stat}</div>
+              <div style={{ fontSize: 11, color: "#64748B", lineHeight: 1.5 }}>{desc}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </section>
+);
+
 const Problem = () => (
   <section style={{ background: "#fff" }}><div className="qv-wrap"><p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase", color: `${NAVY}66`, marginBottom: 24 }}>The Problem</p><h2 className="qv-heading" style={{ maxWidth: 760, marginBottom: 48 }}>Your organisation runs on decisions. But when one fails, can you answer these?</h2>{[["Who approved this decision, and what evidence did they have?", "Without a logged approval chain, accountability is anecdotal."], ["What outcome did we predict, and what actually happened?", "Quantivis shows whether your prediction was accurate — and adjusts future recommendations accordingly."], ["Did our AI recommendation perform better than human judgment?", "Quantivis tracks the full loop so decision-making improves over time."]].map(([question, answer]) => <div key={question} className="qv-grid-2" style={{ gap: 32, padding: "30px 0", borderTop: `1px solid rgba(30,39,97,0.12)` }}><div style={{ fontFamily: "Georgia, serif", fontSize: 24, color: NAVY, lineHeight: 1.35 }}>{question}</div><div style={{ fontSize: 15, color: SLATE, lineHeight: 1.7 }}>{answer}</div></div>)}</div></section>
 );
 
 const HowItWorks = () => (
-  <section style={{ background: MUTED }}><div className="qv-wrap"><p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase", color: `${NAVY}66`, marginBottom: 24 }}>How it works</p><h2 className="qv-heading" style={{ maxWidth: 640, marginBottom: 48 }}>Three steps. One governance record.</h2><div className="qv-grid-3">{[["01", "Log", "Record strategic decisions with confidence level, expected outcome, and supporting evidence."], ["02", "Govern", "Score every recommendation for evidence quality, confidence accuracy, and risk."], ["03", "Learn", "Compare predicted outcomes against reality and recalibrate future recommendations."]].map(([number, title, description], i) => <div key={title} className="qv-card" style={{ borderLeft: i === 0 ? `4px solid ${ACCENT}` : "none" }}><div style={{ fontFamily: "Georgia, serif", fontSize: 48, color: i === 0 ? ACCENT : `${NAVY}20`, lineHeight: 1, marginBottom: 20 }}>{number}</div><h3 style={{ fontFamily: "Georgia, serif", fontSize: 26, color: NAVY, marginBottom: 16, fontWeight: 400 }}>{title}</h3><p style={{ fontSize: 14, color: SLATE, lineHeight: 1.75 }}>{description}</p></div>)}</div></div></section>
+  <section style={{ background: MUTED }}>
+    <div className="qv-wrap">
+      <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase", color: `${NAVY}66`, marginBottom: 24 }}>A real decision — step by step</p>
+      <h2 className="qv-heading" style={{ maxWidth: 640, marginBottom: 48 }}>From SAP alert to board-defensible outcome.</h2>
+      <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+        {([
+          ["01", "Signal ingested", "SAP flags a 34% drop in supplier reliability for a Tier-1 component. Quantivis ingests the signal and generates a Decision Brief with 87% confidence and €340K estimated exposure."],
+          ["02", "Evidence assembled", "Quantivis cross-references the signal against 6 months of procurement history, 3 alternative suppliers, and your risk appetite threshold. Every source is named and linked."],
+          ["03", "COO approves — in 8 minutes", "The COO reviews the brief, sees the evidence chain, and approves a supplier diversification strategy. The approval is timestamped, logged with rationale, and immutable."],
+          ["04", "Outcome tracked automatically", "90 days later, Quantivis compares predicted vs actual impact. The model recalibrates. The board gets a one-click governance report showing the decision was correct."],
+        ] as [string, string, string][]).map(([number, title, description], i) => (
+          <div key={number} style={{ display: "grid", gridTemplateColumns: "64px 1fr", gap: 24, padding: "28px 0", borderBottom: i < 3 ? `1px solid rgba(30,39,97,0.1)` : "none", alignItems: "flex-start" }}>
+            <div style={{ fontFamily: "Georgia, serif", fontSize: 36, color: i === 0 ? ACCENT : `${NAVY}25`, lineHeight: 1, fontWeight: 400 }}>{number}</div>
+            <div>
+              <h3 style={{ fontFamily: "Georgia, serif", fontSize: 20, color: NAVY, marginBottom: 8, fontWeight: 400 }}>{title}</h3>
+              <p style={{ fontSize: 14, color: SLATE, lineHeight: 1.75, margin: 0 }}>{description}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
 );
 
 const Platform = () => {
@@ -230,15 +285,66 @@ const Platform = () => {
     { icon: <CheckCircle size={20} color={ACCENT} />, title: "Decision Ledger", description: "A permanent, auditable record of every decision made across your organisation." },
     { icon: <Shield size={20} color={ACCENT} />, title: "Governance Score", description: "Every recommendation receives an evidence score, confidence rating, and risk flag." },
     { icon: <TrendingUp size={20} color={ACCENT} />, title: "Outcome Intelligence", description: "Track what your AI predicted against what actually happened." },
-    { icon: <Globe size={20} color={ACCENT} />, title: "AICIS Geopolitical Signals", description: "Live geopolitical risk signals can trigger governed decision workflows." },
-    { icon: <Shield size={20} color={ACCENT} />, title: "Anti-Hallucination Layer", description: "AI claims are checked against actual source data before approval." },
+    { icon: <Globe size={20} color={ACCENT} />, title: "Geopolitical Signal Layer", description: "Built-in geopolitical risk intelligence monitors 211 countries and triggers governed decision workflows when relevant signals are detected." },
+    { icon: <Shield size={20} color={ACCENT} />, title: "Source Verification Layer", description: "AI claims are checked against actual source data before approval." },
     { icon: <Shield size={20} color={ACCENT} />, title: "Enterprise Connectors", description: "SAP, Salesforce, Dynamics, HubSpot, NetSuite, BigQuery, Snowflake, S3, Sheets, and REST APIs." },
   ];
   return <section id="platform" style={{ background: "#fff" }}><div className="qv-wrap"><p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase", color: `${NAVY}66`, marginBottom: 24 }}>The Platform</p><div className="qv-grid-2" style={{ gap: 48, marginBottom: 48 }}><h2 className="qv-heading">Built for the decisions that matter.</h2><p style={{ fontSize: 16, color: SLATE, lineHeight: 1.75, margin: 0 }}>Quantivis is not a dashboard. It is a governed decision record — the layer between AI recommendations and the humans who act on them.</p></div><div className="qv-grid-3" style={{ background: `rgba(30,39,97,0.08)` }}>{features.map(feature => <div key={feature.title} className="qv-card"><div style={{ marginBottom: 16 }}>{feature.icon}</div><h3 style={{ fontFamily: "Georgia, serif", fontSize: 20, color: NAVY, marginBottom: 12, fontWeight: 400 }}>{feature.title}</h3><p style={{ fontSize: 13, color: SLATE, lineHeight: 1.75, margin: 0 }}>{feature.description}</p></div>)}</div></div></section>;
 };
 
-const Architecture = () => (
-  <section style={{ background: MUTED, borderTop: `1px solid rgba(30,39,97,0.1)`, borderBottom: `1px solid rgba(30,39,97,0.1)` }}><div style={{ maxWidth: 1280, margin: "0 auto", padding: "64px 24px" }}><p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase", color: `${NAVY}66`, marginBottom: 32 }}>Infrastructure</p><div className="qv-grid-4" style={{ gap: 32 }}>{[["Data layer", "PostgreSQL · EU data residency · Row-level security"], ["Compute layer", "Deno edge functions · Cron orchestration · Circuit breakers"], ["Auth & access", "PKCE OAuth · MFA · WebAuthn · SSO-ready"], ["Compliance", "GDPR · DPA · EU AI Act framing · DPIA documentation"]].map(([label, value]) => <div key={label}><div style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: NAVY, marginBottom: 10 }}>{label}</div><div style={{ fontSize: 13, color: SLATE, lineHeight: 1.7 }}>{value}</div></div>)}</div></div></section>
+const SecurityTrust = () => (
+  <section style={{ background: MUTED, borderTop: `1px solid rgba(30,39,97,0.1)`, borderBottom: `1px solid rgba(30,39,97,0.1)` }}>
+    <div style={{ maxWidth: 1280, margin: "0 auto", padding: "64px 24px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 80, alignItems: "start" }}>
+        <div>
+          <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase", color: `${NAVY}66`, marginBottom: 16 }}>Security & compliance</p>
+          <h2 style={{ fontFamily: "Georgia, serif", fontSize: "clamp(22px, 2.5vw, 34px)", color: NAVY, fontWeight: 400, margin: "0 0 24px", lineHeight: 1.2 }}>Built for procurement teams, not just developers.</h2>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            {[
+              ["EU Data Residency", "All data processed and stored within the EU. Frankfurt region only."],
+              ["GDPR Compliant", "Full DPA available. Data processor agreements on request."],
+              ["EU AI Act Ready", "Article 9, 13, and 14 documentation built into every workflow."],
+              ["Encryption", "AES-256 at rest · TLS 1.3 in transit · Append-only audit logs."],
+              ["Access Control", "SAML SSO · SCIM provisioning · MFA · WebAuthn passkeys · RBAC."],
+              ["Audit Trail", "Immutable, tamper-evident decision logs. SHA-256 hashed."],
+            ].map(([label, desc]) => (
+              <div key={label} style={{ padding: "14px 0", borderBottom: `1px solid rgba(30,39,97,0.08)` }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                  <span style={{ color: "#16a34a", fontSize: 12, fontWeight: 700 }}>✓</span>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: NAVY }}>{label}</span>
+                </div>
+                <p style={{ fontSize: 11, color: SLATE, lineHeight: 1.5, margin: 0, paddingLeft: 20 }}>{desc}</p>
+              </div>
+            ))}
+          </div>
+          <div style={{ marginTop: 24, display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+            <a href="/trust-center" style={{ fontSize: 12, color: ACCENT, textDecoration: "none", display: "flex", alignItems: "center", gap: 4, fontWeight: 500 }}>View Trust Center →</a>
+            <a href="/procurement-pack" style={{ fontSize: 12, color: SLATE, textDecoration: "none", display: "flex", alignItems: "center", gap: 4 }}>Download procurement pack →</a>
+          </div>
+        </div>
+        <div>
+          <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase", color: `${NAVY}66`, marginBottom: 16 }}>Why not just use Microsoft?</p>
+          <h2 style={{ fontFamily: "Georgia, serif", fontSize: "clamp(22px, 2.5vw, 34px)", color: NAVY, fontWeight: 400, margin: "0 0 24px", lineHeight: 1.2 }}>Copilot audits prompts. Quantivis audits decisions.</h2>
+          <p style={{ fontSize: 15, color: SLATE, lineHeight: 1.75, margin: "0 0 24px" }}>
+            Microsoft Copilot logs what AI said. Quantivis logs what your organisation <em>decided</em> — who approved it, on what evidence, with what predicted outcome, and whether it worked. Those are different products solving different problems.
+          </p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {[
+              ["Copilot Governance", "Logs AI outputs and prompts", "Quantivis", "Logs human decisions, approvals, and outcomes"],
+              ["Microsoft Purview", "Compliance for documents and data", "Quantivis", "Compliance for AI-driven business decisions"],
+              ["ServiceNow AI", "Workflow automation with audit trail", "Quantivis", "Decision governance with outcome calibration"],
+            ].map(([comp, compDesc, qv, qvDesc]) => (
+              <div key={comp} style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 8, alignItems: "center", padding: "10px 0", borderBottom: `1px solid rgba(30,39,97,0.08)` }}>
+                <div><div style={{ fontSize: 11, color: SLATE }}>{comp}</div><div style={{ fontSize: 11, color: `${SLATE}99`, lineHeight: 1.4 }}>{compDesc}</div></div>
+                <div style={{ fontSize: 11, color: `${NAVY}30`, fontStyle: "italic" }}>vs</div>
+                <div><div style={{ fontSize: 11, color: ACCENT, fontWeight: 600 }}>{qv}</div><div style={{ fontSize: 11, color: SLATE, lineHeight: 1.4 }}>{qvDesc}</div></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
 );
 
 const EUAIAct = () => (
@@ -277,7 +383,7 @@ const Demo = () => {
 
 const SiteFooter = () => {
   const cols = [
-    { title: "Platform", links: [{ label: "Decision Ledger", to: "/decisions" }, { label: "Governance Score", to: "/governance" }, { label: "Outcome Intelligence", to: "/outcomes" }, { label: "AICIS Intelligence", to: "/intelligence-dashboard" }, { label: "Pricing", to: "/#pricing" }] },
+    { title: "Platform", links: [{ label: "Decision Ledger", to: "/#platform" }, { label: "Governance Score", to: "/#platform" }, { label: "Outcome Intelligence", to: "/#platform" }, { label: "Geopolitical Signals", to: "/#platform" }, { label: "Pricing", to: "/#pricing" }] },
     { title: "Enterprise Trust", links: [{ label: "Trust Center", to: "/trust-center" }, { label: "EU AI Act", to: "/ai-governance" }, { label: "Security", to: "/security" }, { label: "DPA", to: "/dpa" }, { label: "Procurement Pack", to: "/procurement-pack" }] },
     { title: "Legal", links: [{ label: "Impressum", to: "/impressum" }, { label: "Datenschutz", to: "/de/datenschutz" }, { label: "AGB", to: "/de/agb" }, { label: "Cookie Policy", to: "/cookies" }, { label: "Subprocessors", to: "/subprocessors" }] },
     { title: "Get Started", links: [{ label: "Request Demo", to: "/#demo" }, { label: "Documentation", to: "/api-docs" }, { label: "Contact", to: "mailto:hello@quantivis.io" }, { label: "System Status", to: "/system-status" }] },
@@ -301,10 +407,11 @@ const Index = forwardRef<HTMLDivElement>((_, ref) => {
         <Hero />
         <DecisionBrief />
         <Stats />
+        <SocialProof />
         <Problem />
         <HowItWorks />
         <Platform />
-        <Architecture />
+        <SecurityTrust />
         <EUAIAct />
         <Pricing />
         <Demo />
