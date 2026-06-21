@@ -17,7 +17,7 @@ const COLORS = [
 ];
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const CustomNode = (props: any) => {
+const CustomNode = (props: Record<string, unknown>) => {
   const { x, y, width, height, index, payload } = props;
   return (
     <Layer key={`node-${index}`}>

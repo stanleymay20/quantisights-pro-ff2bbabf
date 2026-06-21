@@ -36,7 +36,7 @@ const DownloadProcurementPack = () => {
       URL.revokeObjectURL(url);
       setLastBundle({ id: integrityId, version });
       toast({ title: "Pack downloaded", description: `Version ${version} · integrity ${integrityId.slice(0, 20)}…` });
-    } catch (e: any) {
+    } catch (e: unknown) {
       toast({ title: "Download failed", description: e?.message ?? String(e), variant: "destructive" });
     } finally {
       setBusy(false);

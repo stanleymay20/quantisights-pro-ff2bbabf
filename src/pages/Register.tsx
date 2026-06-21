@@ -67,7 +67,7 @@ const Register = () => {
         description: isAlreadyRegistered
           ? "An account with this email already exists. Try signing in instead."
           : isPasswordIssue
-          ? "Please choose a different password. Try a passphrase or add unusual characters."
+          ? "This password has appeared in a known data breach. Use a longer passphrase — e.g. 'Blue-Harbour-Tide-2026!' — to pass the check instantly."
           : message,
         variant: "destructive",
       });
@@ -211,7 +211,7 @@ const Register = () => {
               </div>
               {allPassed && (
                 <p className="text-[11px] text-muted-foreground">
-                  Server-side leaked-password screening runs on submit.
+                  Passwords are checked against known breaches. Use a unique passphrase.
                 </p>
               )}
             </div>

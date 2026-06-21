@@ -335,7 +335,7 @@ export default function TrustCard({ data, className, compact = false }: TrustCar
  * Build a TrustCardData object from a raw decision_ledger row.
  * Handles the JSON evidence_sources field safely.
  */
-export function trustCardFromDecision(d: any, dataQualityScore?: number | null): TrustCardData {
+export function trustCardFromDecision(d: Record<string, unknown>, dataQualityScore?: number | null): TrustCardData {
   let sources: TrustCardData["evidenceSources"] = null;
   try {
     const raw = d?.evidence_sources;

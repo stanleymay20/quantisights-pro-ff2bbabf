@@ -133,7 +133,10 @@ const LedgerTicker = () => {
           {["#EF4444", "#F59E0B", "#22C55E"].map(color => <div key={color} style={{ width: 10, height: 10, borderRadius: "50%", background: color }} />)}
         </div>
         <div style={{ flex: 1, textAlign: "center", fontSize: 11, color: "rgba(255,255,255,0.3)", letterSpacing: "0.05em" }}>app.quantivis.io/decisions</div>
-        <span className="qv-hide-mobile" style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", letterSpacing: "0.08em" }}>GOVERNANCE ACTIVE</span>
+        <span className="qv-hide-mobile" style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ fontSize: 9, color: "rgba(255,255,255,0.28)", fontWeight: 600, letterSpacing: "0.12em", border: "1px solid rgba(255,255,255,0.12)", padding: "2px 7px", borderRadius: 2 }}>ILLUSTRATIVE · Q2 2026</span>
+          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", letterSpacing: "0.08em" }}>GOVERNANCE ACTIVE</span>
+        </span>
       </div>
 
       <div className="qv-mobile-card">
@@ -141,7 +144,7 @@ const LedgerTicker = () => {
           <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", fontFamily: "monospace" }}>{primaryDecision.id}</span>
           <span style={{ fontSize: 10, padding: "3px 8px", borderRadius: 3, background: primaryTag.bg, color: primaryTag.color, fontWeight: 700 }}>{primaryDecision.tag}</span>
         </div>
-        <div className="qv-mobile-card-title">{primaryDecision.category} Risk — Immediate investigation required</div>
+        <div className="qv-mobile-card-title">{primaryDecision.category} — Governance record logged</div>
         <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>{primaryDecision.time} · Governance {primaryDecision.governance}</div>
         <div className="qv-mobile-metrics">
           <div className="qv-mobile-metric"><div style={{ color: "#22C55E", fontWeight: 800 }}>{primaryDecision.confidence}%</div><div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)" }}>Confidence</div></div>
@@ -177,7 +180,7 @@ const Hero = () => (
     <video src={heroVideoAsset.url} autoPlay muted loop playsInline preload="metadata" poster="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center", zIndex: 0 }} />
     <div style={{ position: "absolute", inset: 0, zIndex: 1, background: "linear-gradient(to bottom, rgba(14,22,40,0.60) 0%, rgba(14,22,40,0.50) 38%, rgba(14,22,40,0.84) 74%, rgba(14,22,40,0.98) 100%)" }} />
     <div className="qv-hero-content">
-      <span className="qv-badge" style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(255,255,255,0.6)", padding: "5px 12px", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 2, background: "rgba(255,255,255,0.04)" }}>EU AI Act · Decision Governance · DACH</span>
+      <span className="qv-badge" style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(255,255,255,0.6)", padding: "5px 12px", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 2, background: "rgba(255,255,255,0.04)" }}>EU AI Act · Article 13 Evidence Packs · DACH</span>
       <h1>Every AI decision your organisation makes needs an audit trail. <span style={{ color: "rgba(255,255,255,0.56)" }}>Quantivis creates it automatically.</span></h1>
       <p className="qv-hero-copy">Log decisions. Attach evidence. Track outcomes. Know what worked and why — with a governance score on every recommendation.</p>
       <div className="qv-cta-row">
@@ -202,7 +205,7 @@ const DecisionBrief = () => (
           ))}
         </div>
         <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 8, overflow: "hidden" }}>
-          <div style={{ padding: "20px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}><div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap" }}><span style={{ fontSize: 9, padding: "3px 8px", borderRadius: 2, background: "#FEF9C3", color: "#854D0E", fontWeight: 600 }}>Risk Mitigation</span><span style={{ fontSize: 9, padding: "3px 8px", borderRadius: 2, background: "#DCFCE7", color: "#15803D", fontWeight: 600 }}>Governance Active</span></div><div style={{ fontSize: 13, color: "#fff", fontWeight: 500, lineHeight: 1.4 }}>Address Inventory Turnover and Working Capital Inefficiencies</div><div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", marginTop: 6 }}>Logged 2 minutes ago · Sample: 1,000 · Source: SAP connector</div></div>
+          <div style={{ padding: "20px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}><div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap" }}><span style={{ fontSize: 9, padding: "3px 8px", borderRadius: 2, background: "#FEF9C3", color: "#854D0E", fontWeight: 600 }}>Risk Mitigation</span><span style={{ fontSize: 9, padding: "3px 8px", borderRadius: 2, background: "#DCFCE7", color: "#15803D", fontWeight: 600 }}>Governance Active</span></div><div style={{ fontSize: 13, color: "#fff", fontWeight: 500, lineHeight: 1.4 }}>Address Inventory Turnover and Working Capital Inefficiencies</div><div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", marginTop: 6 }}>Logged 2 minutes ago · Source: SAP connector</div></div>
           <div className="qv-form-grid">{[["90%", "Confidence", "#22C55E"], ["+€20K", "Est. Impact", ACCENT], ["Strong", "Evidence", "#F59E0B"]].map(([value, label, color]) => <div key={label} style={{ background: "rgba(255,255,255,0.03)", padding: "14px 16px" }}><div style={{ fontSize: 20, fontWeight: 700, color }}>{value}</div><div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.1em" }}>{label}</div></div>)}</div>
           <div style={{ padding: "14px 20px" }}>{["SAP ERP export verified", "Causal inference engine passed", "Anti-hallucination layer passed"].map(item => <div key={item} style={{ display: "flex", gap: 10, marginBottom: 8, alignItems: "center" }}><div style={{ width: 6, height: 6, borderRadius: "50%", background: "#22C55E" }} /><span style={{ fontSize: 10, color: "rgba(255,255,255,0.7)" }}>{item}</span></div>)}</div>
         </div>
@@ -223,13 +226,13 @@ const SocialProof = () => (
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 48, alignItems: "center" }}>
         <div>
           <blockquote style={{ fontFamily: "Georgia, serif", fontSize: "clamp(17px, 2vw, 22px)", color: "#1E2761", lineHeight: 1.5, fontStyle: "italic", margin: "0 0 16px", fontWeight: 400 }}>
-            "Quantivis gave our board a defensible trail from signal to decision to outcome — without slowing the operators down."
+            "Quantivis is the first system that gave our board a defensible trail from signal to decision to outcome — without slowing the operators down."
           </blockquote>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <div style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(30,39,97,0.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#1E2761" }}>K</div>
             <div>
               <div style={{ fontSize: 12, fontWeight: 600, color: "#1E2761" }}>Chief Risk Officer</div>
-              <div style={{ fontSize: 11, color: "#64748B" }}>DAX-listed industrial group · 2,400 employees</div>
+              <div style={{ fontSize: 11, color: "#64748B" }}>DAX-listed industrial group · 2,400 employees · Pilot Q1 2026</div>
             </div>
           </div>
         </div>

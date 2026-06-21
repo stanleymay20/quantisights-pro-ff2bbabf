@@ -96,6 +96,33 @@ const TrustCenter = () => {
   return (
     <SectionErrorBoundary sectionName="Trust Center">
       <div className="space-y-8 max-w-4xl">
+        {/* Certification roadmap — transparency over marketing */}
+        <div className="border border-border/30 rounded-lg p-5 bg-muted/20">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/60 mb-1">Certification roadmap</p>
+              <h2 className="text-[15px] font-semibold tracking-tight">Third-party attestation — in progress</h2>
+            </div>
+            <span className="text-[11px] text-muted-foreground/50 italic">Updated June 2026</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {[
+              { cert: "SOC 2 Type II", status: "In progress", detail: "Audit firm engaged Q3 2026. Controls assessment underway.", color: "#EF9F27" },
+              { cert: "ISO 27001", status: "Scoping", detail: "Gap analysis completed. Implementation plan Q4 2026.", color: "#EF9F27" },
+              { cert: "BSI C5", status: "Planned", detail: "Targeted for H1 2027 alongside ISO 27001 controls.", color: "#94a3b8" },
+            ].map(({ cert, status, detail, color }) => (
+              <div key={cert} className="border border-border/30 rounded-md p-4 bg-background">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[13px] font-semibold text-foreground">{cert}</span>
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: color + "20", color }}>{status}</span>
+                </div>
+                <p className="text-[11px] text-muted-foreground leading-relaxed">{detail}</p>
+              </div>
+            ))}
+          </div>
+          <p className="text-[10px] text-muted-foreground/50 mt-3">We publish our certification status transparently rather than claiming certifications we do not yet hold. Procurement packs include our current controls evidence and data processing agreements.</p>
+        </div>
+
         {/* Executive Trust Summary — Bloomberg Terminal style */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           {[

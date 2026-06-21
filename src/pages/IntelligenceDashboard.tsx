@@ -293,7 +293,7 @@ export default function IntelligenceDashboard() {
         setRecommendations((recRes.data ?? []) as Recommendation[]);
         setEdges((edgeRes.data ?? []) as InfluenceEdge[]);
         setAutoDecisions((decRes.data ?? []) as AutoDecision[]);
-      } catch (e: any) {
+      } catch (e: unknown) {
         if (!cancelled) setError(e?.message ?? "Failed to load AICIS intelligence");
       } finally {
         if (!cancelled) setLoading(false);

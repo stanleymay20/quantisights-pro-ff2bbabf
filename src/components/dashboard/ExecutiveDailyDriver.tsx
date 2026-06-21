@@ -105,10 +105,8 @@ function DecisionRow({
 
   return (
     <motion.div
-      layout
-      initial={{ opacity: 0, y: 8 }}
+      initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, x: -20 }}
       className="border-b border-border/30 py-3 px-1 last:border-0"
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

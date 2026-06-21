@@ -174,17 +174,13 @@ const advancedGroups: AdvancedGroup[] = [
   },
   {
     icon: Brain,
-    label: "Deep Intelligence",
+    label: "Labs",
     items: [
-      { icon: Layers,    label: "Narratives",          path: "/narratives" },
-      { icon: Network,   label: "Operational Graph",   path: "/operational-graph" },
-      { icon: TrendingUp,label: "Market Intelligence", path: "/market-intelligence" },
       { icon: GitBranch, label: "Causal Inference",    path: "/causal-inference" },
       { icon: Brain,     label: "Counterfactual",      path: "/counterfactual" },
       { icon: ShieldAlert,label:"Bias Detection",      path: "/cognitive-bias" },
-      { icon: ShieldAlert,label:"Missed Signals",      path: "/misses" },
+      { icon: Network,   label: "Operational Graph",   path: "/operational-graph" },
       { icon: BarChart3, label: "Diagnostics",         path: "/diagnostics" },
-      { icon: BarChart3, label: "KPIs",                path: "/kpis" },
     ],
   },
   {
