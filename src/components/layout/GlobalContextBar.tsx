@@ -70,20 +70,6 @@ function notificationTitle(item: NotificationItem) {
   return item.category?.replace(/_/g, " ") || `${item.severity || "Alert"} notification`;
 }
 
-const GlobalNotificationBell = ({ orgId, datasetId }: { orgId: string | null; datasetId: string | null }) => {
-  const navigate = useNavigate();
-  const {
-    notifications,
-    unreadCount,
-    criticalUnreadCount,
-    isLoading,
-    isError,
-    isRealtimeConnected,
-    markRead,
-    markAllRead,
-    refetch,
-  } = useNotifications(orgId, datasetId);
-
   const hasUnread = unreadCount > 0;
 
   const openNotification = async (item: NotificationItem) => {
@@ -202,9 +188,7 @@ const GlobalContextBar = () => {
       <ContextChip icon={FolderKanban} label={currentProject?.name ?? null} fallback="No project" onClick={() => navigate("/settings")} />
       <Separator />
       <ContextChip icon={Database} label={activeDataset?.name ?? null} fallback="No dataset" onClick={() => navigate("/data-upload")} />
-      <div className="ml-auto flex items-center gap-2 shrink-0">
-        <GlobalNotificationBell orgId={currentOrg?.id ?? null} datasetId={activeDatasetId ?? null} />
-      </div>
+
     </div>
   );
 };
