@@ -1,5 +1,5 @@
 import { ChevronRight, Building2, FolderKanban, Database, Layers, Bell, BellRing, Check, ShieldCheck } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 import { useOrganization } from "@/hooks/useOrganization";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
@@ -69,6 +69,20 @@ function formatRelativeTime(value: string) {
 function notificationTitle(item: NotificationItem) {
   return item.category?.replace(/_/g, " ") || `${item.severity || "Alert"} notification`;
 }
+
+const GlobalNotificationBell = ({ orgId, datasetId }: { orgId: string | null; datasetId: string | null }) => {
+  const navigate = useNavigate();
+  const {
+    notifications,
+    unreadCount,
+    criticalUnreadCount,
+    isLoading,
+    isError,
+    isRealtimeConnected,
+    markRead,
+    markAllRead,
+    refetch,
+  } = useNotifications(orgId, datasetId);
 
   const hasUnread = unreadCount > 0;
 
@@ -172,7 +186,12 @@ function notificationTitle(item: NotificationItem) {
   );
 };
 
+};
+
 const GlobalContextBar = () => {
+  const location = useLocation();
+  // Dashboard page has its own notification bell in DashboardHeader — hide here to avoid duplicate
+  const isDashboard = location.pathname === "/dashboard";
   const { currentOrg } = useOrganization();
   const { currentWorkspace } = useWorkspace();
   const { currentProject, activeDatasetId } = useProject();
@@ -188,7 +207,11 @@ const GlobalContextBar = () => {
       <ContextChip icon={FolderKanban} label={currentProject?.name ?? null} fallback="No project" onClick={() => navigate("/settings")} />
       <Separator />
       <ContextChip icon={Database} label={activeDataset?.name ?? null} fallback="No dataset" onClick={() => navigate("/data-upload")} />
-
+      {!isDashboard && (
+        <div className="ml-auto flex items-center gap-2 shrink-0">
+          <GlobalNotificationBell orgId={currentOrg?.id ?? null} datasetId={activeDatasetId ?? null} />
+        </div>
+      )}
     </div>
   );
 };
