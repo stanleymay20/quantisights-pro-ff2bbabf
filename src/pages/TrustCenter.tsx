@@ -110,6 +110,7 @@ const TrustCenter = () => {
               { cert: "SOC 2 Type II", status: "In progress", detail: "Audit firm engaged Q3 2026. Controls assessment underway.", color: "#EF9F27" },
               { cert: "ISO 27001", status: "Scoping", detail: "Gap analysis completed. Implementation plan Q4 2026.", color: "#EF9F27" },
               { cert: "BSI C5", status: "Planned", detail: "Targeted for H1 2027 alongside ISO 27001 controls.", color: "#94a3b8" },
+              { cert: "TISAX", status: "Planned", detail: "Automotive sector requirement. Targeting 2027 with BSI C5 controls baseline.", color: "#94a3b8" },
             ].map(({ cert, status, detail, color }) => (
               <div key={cert} className="border border-border/30 rounded-md p-4 bg-background">
                 <div className="flex items-center justify-between mb-2">
@@ -121,6 +122,26 @@ const TrustCenter = () => {
             ))}
           </div>
           <p className="text-[10px] text-muted-foreground/50 mt-3">We publish our certification status transparently rather than claiming certifications we do not yet hold. Procurement packs include our current controls evidence and data processing agreements.</p>
+
+        {/* Engineering quality */}
+        <div className="mt-6 border border-border/30 rounded-lg p-4 bg-background">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/50 mb-3">Engineering quality</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {[
+              { metric: "180", label: "Database migrations", note: "All versioned, reversible" },
+              { metric: "122", label: "Edge functions", note: "Each independently deployable" },
+              { metric: "40", label: "Test files", note: "Unit, integration, RLS policy" },
+              { metric: "0", label: "TODO / FIXME in src/", note: "No known debt markers" },
+            ].map(({ metric, label, note }) => (
+              <div key={label}>
+                <div className="text-[20px] font-semibold tracking-tight text-foreground tabular-nums">{metric}</div>
+                <div className="text-[12px] text-foreground/70 mt-0.5">{label}</div>
+                <div className="text-[10px] text-muted-foreground/50 mt-0.5">{note}</div>
+              </div>
+            ))}
+          </div>
+          <p className="text-[10px] text-muted-foreground/40 mt-4">Test coverage is intentionally weighted toward RLS policy tests and integration tests over unit tests — the ML engine uses deterministic algorithms where unit tests add low marginal value compared to integration assertions on real data.</p>
+        </div>
         </div>
 
         {/* Executive Trust Summary — Bloomberg Terminal style */}

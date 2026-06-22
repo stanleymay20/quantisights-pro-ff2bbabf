@@ -302,6 +302,19 @@ const SecurityTrust = () => (
         <div>
           <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase", color: `${NAVY}66`, marginBottom: 16 }}>Security & compliance</p>
           <h2 style={{ fontFamily: "Georgia, serif", fontSize: "clamp(22px, 2.5vw, 34px)", color: NAVY, fontWeight: 400, margin: "0 0 24px", lineHeight: 1.2 }}>Built for procurement teams, not just developers.</h2>
+          <div style={{ display: "flex", gap: 8, marginBottom: 24, flexWrap: "wrap" }}>
+            {[
+              { label: "SOC 2 Type II", status: "In progress — Q3 2026" },
+              { label: "ISO 27001", status: "Scoping Q4 2026" },
+              { label: "TISAX", status: "Planned 2027" },
+              { label: "BSI C5", status: "Planned 2027" },
+            ].map(({ label, status }) => (
+              <div key={label} style={{ border: "1px solid rgba(30,39,97,0.15)", borderRadius: 4, padding: "6px 10px" }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: NAVY }}>{label}</div>
+                <div style={{ fontSize: 9, color: `${SLATE}`, marginTop: 1 }}>{status}</div>
+              </div>
+            ))}
+          </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             {[
               ["EU Data Residency", "All data processed and stored within the EU. Frankfurt region only."],
