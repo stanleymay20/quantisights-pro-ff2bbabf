@@ -1,5 +1,5 @@
 // @ts-nocheck — suppresses TS2589/TS2769 from large generated schema; remove when schema stabilises
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { SidebarMobileToggle } from "@/components/layout/ProtectedShell";
@@ -92,6 +92,8 @@ const Copilot = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [query, setQuery] = useState("");
+  const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [brief, setBrief] = useState<InlineBrief | null>(null);
   const [answering, setAnswering] = useState(false);
   const [decisions, setDecisions] = useState<DecisionSummary[]>([]);
@@ -194,24 +196,79 @@ const Copilot = () => {
               )}
             </div>
 
-            <div className="relative mb-8">
-              <Textarea
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Ask anything - e.g. 'Why are sales slowing?' or 'Show me pending approvals'"
-                className="min-h-[80px] text-sm resize-none pr-20 rounded-xl border-border/50 focus:border-primary/50"
-                rows={3}
-                aria-label="Ask the Decision Copilot"
-              />
-              <Button size="sm" onClick={handleSubmit} disabled={!query.trim() || answering} className="absolute bottom-3 right-3 gap-1.5">
-                {answering ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <>Ask <ArrowRight className="w-3.5 h-3.5" /></>}
-              </Button>
-              <p className="text-[11px] text-muted-foreground mt-1.5 ml-1">Command+Enter to send</p>
+            {/* Input area */}
+            <div className="mb-8">
+              <div className="border border-border/50 rounded-lg bg-background focus-within:border-primary/50 transition-colors">
+                <Textarea
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Ask anything — e.g. 'Why are sales slowing?' or 'Show me pending approvals'"
+                  className="min-h-[72px] text-[13px] resize-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0 rounded-t-lg rounded-b-none bg-transparent"
+                  rows={3}
+                  aria-label="Ask the Decision Copilot"
+                />
+                {/* Attached files */}
+                {attachedFiles.length > 0 && (
+                  <div className="px-3 py-1.5 border-t border-border/30 flex flex-wrap gap-1.5">
+                    {attachedFiles.map((f, i) => (
+                      <div key={i} className="flex items-center gap-1 text-[11px] bg-muted/60 border border-border/40 rounded px-2 py-0.5 text-muted-foreground">
+                        <Paperclip className="w-2.5 h-2.5 shrink-0" />
+                        <span className="truncate max-w-[120px]">{f.name}</span>
+                        <span className="text-muted-foreground/50">({(f.size/1024).toFixed(0)}KB)</span>
+                        <button onClick={() => setAttachedFiles(fs => fs.filter((_,j)=>j!==i))} className="hover:text-foreground ml-0.5">
+                          <XIcon className="w-2.5 h-2.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {/* Toolbar */}
+                <div className="flex items-center justify-between px-3 py-2 border-t border-border/30">
+                  <div className="flex items-center gap-2">
+                    {/* File upload */}
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      className="hidden"
+                      accept=".csv,.xlsx,.pdf,.txt,.json,.docx"
+                      multiple
+                      onChange={(e) => {
+                        const files = Array.from(e.target.files ?? []);
+                        setAttachedFiles(prev => [...prev, ...files].slice(0, 5));
+                        e.target.value = "";
+                      }}
+                    />
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors px-1.5 py-1 rounded hover:bg-muted/50"
+                      title="Attach file — CSV, Excel, PDF, TXT (max 5)"
+                    >
+                      <Paperclip className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">Attach file</span>
+                    </button>
+                    <span className="text-[10px] text-muted-foreground/40">CSV · Excel · PDF · TXT</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-muted-foreground/40 hidden sm:inline">⌘↵ to send</span>
+                    <Button
+                      onClick={handleSubmit}
+                      disabled={!query.trim() || answering}
+                      size="sm"
+                      className="h-7 px-3 text-[12px] font-medium gap-1.5"
+                    >
+                      {answering
+                        ? <Loader2 className="w-3 h-3 animate-spin" />
+                        : <><span>Ask</span><ArrowRight className="w-3 h-3" /></>
+                      }
+                    </Button>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {brief && (
-              <Card className="mb-8 border-primary/30 bg-card/80">
+              <Card className="mb-8 border-border/40 bg-card">
                 <CardContent className="p-5 space-y-4">
                   <div className="flex items-start justify-between gap-3">
                     <div>
@@ -254,7 +311,7 @@ const Copilot = () => {
                   }))
                 : SUGGESTED_PROMPTS
               ).map((prompt) => (
-                <Card key={`${prompt.path}-${prompt.label}`} className="border-border/40 hover:border-primary/40 cursor-pointer transition-all hover:bg-muted/30" onClick={() => answerQuestion(prompt.label)}>
+                <Card key={`${prompt.path}-${prompt.label}`} className="border-0 border-b border-border/20 last:border-0 rounded-none hover:bg-muted/30 cursor-pointer transition-colors shadow-none" onClick={() => answerQuestion(prompt.label)}>
                   <CardContent className="p-3 flex items-center gap-3">
 
                     <div className="flex-1 min-w-0">
