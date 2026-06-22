@@ -159,8 +159,8 @@ const Copilot = () => {
 
   const answerQuestion = async (text: string) => {
     const trimmed = text.trim();
-    if (!trimmed) return;
-    logQuery(trimmed);
+    if (!trimmed && attachedFiles.length === 0) return;
+    logQuery(trimmed || "[file upload]");
     setAnswering(true);
 
     // Always seed routing/destination metadata from the local engine so the
@@ -192,7 +192,9 @@ const Copilot = () => {
           Authorization: `Bearer ${auth.token}`,
         },
         body: JSON.stringify({
-          message: trimmed,
+          message: attachedFiles.length > 0
+            ? `${trimmed}\n\n[Attached: ${attachedFiles.map(f => f.name).join(", ")}]`
+            : trimmed,
           session_id: null,
           role_type: orgRole || "owner",
           organization_id: currentOrgId,
@@ -293,19 +295,19 @@ const Copilot = () => {
                 {attachedFiles.length > 0 && (
                   <div className="px-3 py-1.5 border-t border-border/30 flex flex-wrap gap-1.5">
                     {attachedFiles.map((f, i) => (
-                      <div key={i} className="flex items-center gap-1 text-[11px] bg-muted/60 border border-border/40 rounded px-2 py-0.5 text-muted-foreground">
-                        <Paperclip className="w-2.5 h-2.5 shrink-0" />
-                        <span className="truncate max-w-[120px]">{f.name}</span>
-                        <span className="text-muted-foreground/50">({(f.size/1024).toFixed(0)}KB)</span>
-                        <button onClick={() => setAttachedFiles(fs => fs.filter((_,j)=>j!==i))} className="hover:text-foreground ml-0.5">
-                          <XIcon className="w-2.5 h-2.5" />
+                      <div key={i} className="flex items-center gap-1.5 text-[11px] bg-muted/50 border border-border/30 rounded px-2 py-1 text-muted-foreground">
+                        <Paperclip className="w-3 h-3 shrink-0" />
+                        <span className="truncate max-w-[140px] font-medium text-foreground/70">{f.name}</span>
+                        <span className="text-muted-foreground/40">{(f.size/1024).toFixed(0)}KB</span>
+                        <button onClick={() => setAttachedFiles(fs => fs.filter((_,j)=>j!==i))} className="hover:text-foreground ml-0.5" aria-label="Remove file">
+                          <XIcon className="w-3 h-3" />
                         </button>
                       </div>
                     ))}
                   </div>
                 )}
                 {/* Toolbar */}
-                <div className="flex items-center justify-between px-3 py-2 border-t border-border/30">
+                <div className="flex items-center justify-between px-3 py-2.5 border-t border-border/30 bg-muted/20">
                   <div className="flex items-center gap-2">
                     {/* File upload */}
                     <input
@@ -322,11 +324,11 @@ const Copilot = () => {
                     />
                     <button
                       onClick={() => fileInputRef.current?.click()}
-                      className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors px-1.5 py-1 rounded hover:bg-muted/50"
-                      title="Attach file — CSV, Excel, PDF, TXT (max 5)"
+                      className="inline-flex items-center gap-1.5 text-[12px] text-muted-foreground hover:text-foreground hover:bg-background transition-colors px-2 py-1.5 rounded-md"
+                      title="Attach file — CSV, Excel, PDF, TXT (max 5 files)"
                     >
                       <Paperclip className="w-3.5 h-3.5" />
-                      <span className="hidden sm:inline">Attach file</span>
+                      <span>Attach</span>
                     </button>
                     <span className="text-[10px] text-muted-foreground/40">CSV · Excel · PDF · TXT</span>
                   </div>
@@ -334,9 +336,8 @@ const Copilot = () => {
                     <span className="text-[10px] text-muted-foreground/40 hidden sm:inline">⌘↵ to send</span>
                     <Button
                       onClick={handleSubmit}
-                      disabled={!query.trim() || answering}
-                      size="sm"
-                      className="h-7 px-3 text-[12px] font-medium gap-1.5"
+                      disabled={(!query.trim() && attachedFiles.length === 0) || answering}
+                      className="h-8 px-4 text-[13px] font-medium gap-1.5 rounded-md"
                     >
                       {answering
                         ? <Loader2 className="w-3 h-3 animate-spin" />
@@ -346,6 +347,12 @@ const Copilot = () => {
                   </div>
                 </div>
               </div>
+            </div>
+              {attachedFiles.length > 0 && (
+                <p className="text-[11px] text-muted-foreground/50 mt-1.5 px-1">
+                  {attachedFiles.length} file{attachedFiles.length > 1 ? "s" : ""} attached — content will be used as context
+                </p>
+              )}
             </div>
 
             {brief && (
@@ -382,7 +389,7 @@ const Copilot = () => {
             )}
 
             <div className="space-y-2">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Try asking</p>
+              <p className="text-[11px] text-muted-foreground/50 uppercase tracking-[0.1em] mb-3">Suggested queries</p>
               {(lang.copilotPrompts.length > 0
                 ? lang.copilotPrompts.map((label, i) => ({
                     label,
