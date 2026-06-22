@@ -30,7 +30,6 @@ const UploadTrustBadges = () => (
         key={label}
         className="flex items-start gap-3 p-3.5 rounded-xl border border-border/40 bg-card/60 backdrop-blur-sm"
       >
-        <div className="text-muted-foreground/50">
         <div className="min-w-0">
           <p className="text-xs font-semibold text-foreground leading-tight">{label}</p>
           <p className="text-[10px] text-muted-foreground leading-snug mt-0.5">{detail}</p>

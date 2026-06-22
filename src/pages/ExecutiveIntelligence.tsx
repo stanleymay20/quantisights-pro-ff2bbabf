@@ -154,7 +154,6 @@ export default function ExecutiveIntelligence() {
         <Card className="max-w-md w-full">
           <CardHeader>
             <div className="flex items-center gap-3 mb-1">
-              <div className="text-muted-foreground/50">
               <CardTitle>Executive Access Required</CardTitle>
             </div>
           </CardHeader>

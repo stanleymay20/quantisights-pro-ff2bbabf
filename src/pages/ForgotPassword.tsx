@@ -55,7 +55,6 @@ const ForgotPassword = () => {
         }
       >
         <div className="text-center space-y-4 py-2">
-          <div className="text-muted-foreground/50">
           <p className="text-sm text-muted-foreground leading-relaxed">
             Sent to{" "}
             <span className="text-foreground font-medium">{email}</span>. The link

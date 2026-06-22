@@ -218,7 +218,6 @@ const CopilotHome = ({
             onClick={() => navigate("/decisions")}
           >
             <CardContent className="p-4 flex items-center gap-3">
-              <div className="text-muted-foreground/50">
               <div>
                 <p className="text-[11px] text-muted-foreground uppercase font-semibold">Pending</p>
                 <p className="text-xl font-bold">{pendingDecisions}</p>

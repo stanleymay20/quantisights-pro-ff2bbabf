@@ -1027,7 +1027,6 @@ const DataUpload = () => {
                 <Card>
                   <CardContent className="p-6">
                     <div className="flex items-center gap-3 mb-1">
-                      <div className="text-muted-foreground/50">
                       <div>
                         <h2 className="text-lg font-semibold tracking-tight">Dataset Structure Detected</h2>
                         <p className="text-xs text-muted-foreground">
@@ -1667,7 +1666,6 @@ const DataUpload = () => {
                   <Card className="overflow-hidden border-primary/20">
                     <CardContent className="p-4">
                       <div className="flex items-center gap-4">
-                        <div className="text-muted-foreground/50">
                         <div className="flex-1">
                           <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Detected Domain</p>
                           <p className="text-lg font-semibold tracking-tight text-foreground">
@@ -1694,7 +1692,6 @@ const DataUpload = () => {
                 <Card className="overflow-hidden">
                   <div className="bg-gradient-to-r from-primary/5 to-primary/0 p-6 border-b border-border/30">
                     <div className="flex items-center gap-3 mb-1">
-                      <div className="text-muted-foreground/50">
                       <div>
                         <h2 className="text-lg font-semibold tracking-tight">Dataset Intelligence</h2>
                         <p className="text-xs text-muted-foreground">{datasetName}</p>

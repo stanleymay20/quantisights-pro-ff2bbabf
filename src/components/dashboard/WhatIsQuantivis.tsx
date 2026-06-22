@@ -52,7 +52,6 @@ const WhatIsQuantivis = () => {
           </button>
 
           <div className="flex items-start gap-3 mb-4 pr-8">
-            <div className="text-muted-foreground/50">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-primary mb-1">
                 What is Quantivis?
