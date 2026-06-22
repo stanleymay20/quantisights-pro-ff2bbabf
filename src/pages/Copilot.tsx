@@ -21,6 +21,7 @@ import { useCopilotTelemetry } from "@/hooks/useCopilotTelemetry";
 import { useInsights } from "@/hooks/useInsights";
 import { useMetricsSummary } from "@/hooks/useMetricsSummary";
 import { supabase } from "@/integrations/supabase/client";
+import { getVerifiedAuth } from "@/lib/auth-helpers";
 import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 import { generateAnswer } from "@/lib/copilot-answer-engine";
 import type { DecisionSummary } from "@/lib/copilot-answer-engine";
@@ -127,39 +128,118 @@ const Copilot = () => {
 
   const firstName = profile?.full_name?.split(" ")[0] || "there";
 
+  const runLocalEngine = (trimmed: string): InlineBrief => {
+    const generated = generateAnswer(trimmed, {
+      insights,
+      metrics: topMetrics ?? [],
+      pendingDecisions,
+      orgName: currentOrg?.name?.trim() ?? "your organisation",
+      decisions,
+    });
+    return {
+      query: trimmed,
+      destination: generated.destination,
+      status: generated.dataSource === "live" ? "answered" : "needs_data",
+      title: generated.headline,
+      summary:
+        generated.summary +
+        (generated.lines.length > 0
+          ? "\n\n" +
+            generated.lines
+              .map((l) => {
+                const sep = l.label.endsWith("…") ? " : " : ": ";
+                return `${l.label}${sep}${l.value}`;
+              })
+              .join("  ·  ")
+          : ""),
+      action: generated.destinationLabel,
+      confidence: generated.confidence,
+    };
+  };
+
   const answerQuestion = async (text: string) => {
     const trimmed = text.trim();
     if (!trimmed) return;
     logQuery(trimmed);
     setAnswering(true);
-    try {
-      // Generate a data-grounded answer from live org metrics and insights
-      const generated = generateAnswer(trimmed, {
-        insights,
-        metrics: topMetrics ?? [],
-        pendingDecisions,
-        orgName: currentOrg?.name?.trim() ?? "your organisation",
-        decisions,
-      });
-      // Map CopilotAnswer → InlineBrief format
-      setBrief({
-        query: trimmed,
-        destination: generated.destination,
-        status: generated.dataSource === "live" ? "answered" : "needs_data",
-        title: generated.headline,
-        summary: generated.summary + (generated.lines.length > 0
-          ? "\n\n" + generated.lines.map(l => {
-              // l.label may already end in an ellipsis from truncate() — joining
-              // straight into ": value" produced garbled output like "...tota…: high".
-              // A space before the colon keeps it readable in either case.
-              const sep = l.label.endsWith("…") ? " : " : ": ";
-              return `${l.label}${sep}${l.value}`;
-            }).join("  ·  ")
-          : ""),
-        action: generated.destinationLabel,
-        confidence: generated.confidence,
-      });
+
+    // Always seed routing/destination metadata from the local engine so the
+    // brief card retains "Open workspace" + Approve/Simulate/Discuss actions.
+    const local = runLocalEngine(trimmed);
+
+    // If we don't have an org yet (auth still loading), fall back to local.
+    if (!currentOrgId) {
+      setBrief(local);
       setQuery("");
+      setAnswering(false);
+      return;
+    }
+
+    // Stream a real, RAG-grounded answer from the executive-copilot edge
+    // function. Falls back to the local engine on any error.
+    setBrief({ ...local, title: trimmed, summary: "", action: local.action });
+    setQuery("");
+
+    try {
+      const auth = await getVerifiedAuth();
+      if (!auth) throw new Error("Not authenticated");
+
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/executive-copilot`;
+      const resp = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${auth.token}`,
+        },
+        body: JSON.stringify({
+          message: trimmed,
+          session_id: null,
+          role_type: orgRole || "owner",
+          organization_id: currentOrgId,
+          dataset_id: activeDatasetId || null,
+          dataset_name: null,
+        }),
+      });
+
+      if (!resp.ok || !resp.body) {
+        throw new Error(`copilot ${resp.status}`);
+      }
+
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let textBuffer = "";
+      let streamed = "";
+      let done = false;
+      while (!done) {
+        const { value, done: d } = await reader.read();
+        if (d) break;
+        textBuffer += decoder.decode(value, { stream: true });
+        let nl: number;
+        while ((nl = textBuffer.indexOf("\n")) !== -1) {
+          let line = textBuffer.slice(0, nl);
+          textBuffer = textBuffer.slice(nl + 1);
+          if (line.endsWith("\r")) line = line.slice(0, -1);
+          if (!line.startsWith("data: ")) continue;
+          const j = line.slice(6).trim();
+          if (j === "[DONE]") { done = true; break; }
+          try {
+            const parsed = JSON.parse(j);
+            const c = parsed.choices?.[0]?.delta?.content as string | undefined;
+            if (c) {
+              streamed += c;
+              setBrief((b) => (b ? { ...b, summary: streamed, status: "answered" } : b));
+            }
+          } catch { /* partial */ }
+        }
+      }
+
+      if (!streamed.trim()) {
+        // Empty stream — fall back to local engine answer
+        setBrief(local);
+      }
+    } catch (e) {
+      console.warn("Copilot edge call failed, falling back to local engine:", e);
+      setBrief(local);
     } finally {
       setAnswering(false);
     }
@@ -285,7 +365,7 @@ const Copilot = () => {
                   </div>
                   <div>
                     <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Summary</p>
-                    <p className="text-sm text-foreground leading-relaxed">{brief.summary}</p>
+                    <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{brief.summary || (answering ? "Analyzing your data…" : "")}</p>
                   </div>
                   <div>
                     <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Recommended action</p>
