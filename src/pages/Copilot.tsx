@@ -365,7 +365,7 @@ const Copilot = () => {
                   </div>
                   <div>
                     <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Summary</p>
-                    <p className="text-sm text-foreground leading-relaxed">{brief.summary}</p>
+                    <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{brief.summary || (answering ? "Analyzing your data…" : "")}</p>
                   </div>
                   <div>
                     <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Recommended action</p>
