@@ -91,7 +91,7 @@ const Documentation = () => {
         <div className="flex items-center gap-2">
           <SidebarMobileToggle />
           <BookOpen className="w-5 h-5 text-primary" />
-          <h1 className="text-xl font-semibold tracking-tight">Documentation</h1>
+          <h1 className="text-[18px] font-semibold tracking-tight">Documentation</h1>
         </div>
         <button
           onClick={handleDownloadAll}

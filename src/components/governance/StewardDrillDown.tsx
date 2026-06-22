@@ -130,9 +130,7 @@ const StewardDrillDown = () => {
                   transition={{ delay: i * 0.03 }}
                   className="flex items-center gap-3 p-2.5 rounded-lg border border-border/40 bg-muted/20"
                 >
-                  <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Users className="w-3 h-3 text-primary" />
-                  </div>
+                  
                   <span className="text-xs font-medium text-foreground">{s.full_name}</span>
                   <Badge variant="outline" className="text-[9px] ml-auto">steward</Badge>
                 </motion.div>

@@ -98,7 +98,7 @@ export const TraversalPlayback = ({ stages, autoplay = false, stepMs = 2200, cla
       <header className="flex items-center justify-between gap-3 flex-wrap">
         <div className="min-w-0">
           <div className="text-xs uppercase tracking-wide text-muted-foreground">Executive reasoning replay</div>
-          <h3 className="text-base font-semibold truncate">{title}</h3>
+          <h3 className="text-[13px] font-semibold truncate">{title}</h3>
         </div>
         <div className="flex items-center gap-2">
           <GovernanceIntegrityBadge />

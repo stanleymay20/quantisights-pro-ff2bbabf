@@ -237,10 +237,9 @@ const ExecutiveDailyDriver = ({ displayName, orgId, insights, topMetrics, pendin
   const topDecision = decisions[0];
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 space-y-6">
+    <div className="mx-auto max-w-4xl px-4 py-5 sm:px-6 space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="text-sm text-muted-foreground">Good {timeOfDay()}, {displayName.split(" ")[0] || displayName}</p>
           <h1 className="mt-1 text-[18px] font-semibold tracking-tight">Today's decision brief</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}
@@ -273,7 +272,7 @@ const ExecutiveDailyDriver = ({ displayName, orgId, insights, topMetrics, pendin
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="space-y-2">
                   <Badge variant="outline" className="w-fit text-[10px] uppercase tracking-wide">Top decision</Badge>
-                  <h2 className="text-xl font-semibold leading-snug">{topDecision.recommended_action}</h2>
+                  <h2 className="text-[16px] font-semibold leading-snug">{topDecision.recommended_action}</h2>
                   <p className="text-sm text-muted-foreground">
                     Review the evidence, then approve or reject. The decision and outcome will be logged for governance review.
                   </p>
@@ -307,7 +306,7 @@ const ExecutiveDailyDriver = ({ displayName, orgId, insights, topMetrics, pendin
             <div className="space-y-4">
               <div className="space-y-2">
                 <Badge variant="outline" className="w-fit text-[10px] uppercase tracking-wide">Executive summary</Badge>
-                <h2 className="text-xl font-semibold leading-snug">{briefSummary.headline}</h2>
+                <h2 className="text-[16px] font-semibold leading-snug">{briefSummary.headline}</h2>
                 <p className="text-sm text-muted-foreground leading-relaxed">{briefSummary.why_it_matters}</p>
               </div>
               {briefSummary.recommended_executive_actions?.length > 0 && (

@@ -280,7 +280,7 @@ const Settings = () => {
                 <SectionErrorBoundary sectionName="Profile settings">
                 <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
                   <Card>
-                    <CardHeader><CardTitle className="text-[14px] font-semibold text-foreground">Profile Settings</CardTitle></CardHeader>
+                    <CardHeader><CardTitle className="text-[14px] font-semibold text-foreground">Profile</CardTitle></CardHeader>
                     <CardContent className="space-y-6">
                       <div className="space-y-2">
                         <Label>Email</Label>
@@ -301,7 +301,7 @@ const Settings = () => {
                   <Card className="mt-6">
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2 text-base">
-                        Your Role
+                        Role
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">

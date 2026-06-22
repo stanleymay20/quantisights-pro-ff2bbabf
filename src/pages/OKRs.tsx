@@ -158,7 +158,7 @@ const OKRs = () => {
           <div className="flex items-center gap-3">
             <SidebarMobileToggle />
             <Crosshair className="w-5 h-5 text-primary" />
-            <h1 className="text-xl font-semibold tracking-tight">OKR Alignment</h1>
+            <h1 className="text-[18px] font-semibold tracking-tight">OKR Alignment</h1>
           </div>
           <Dialog open={addOpen} onOpenChange={setAddOpen}>
             <DialogTrigger asChild>

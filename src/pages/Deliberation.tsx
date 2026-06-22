@@ -199,7 +199,7 @@ function DeliberationDetail({ decisionId, onBack }: { decisionId: string; onBack
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
           <div className="min-w-0">
             <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Enterprise deterministic boardroom</div>
-            <h2 className="text-xl font-semibold mt-1 leading-snug">{decision.recommended_action}</h2>
+            <h2 className="text-[16px] font-semibold mt-1 leading-snug">{decision.recommended_action}</h2>
             <div className="flex flex-wrap gap-2 mt-3">
               <Badge variant="outline" className="text-[10px]">{decision.decision_type}</Badge>
               <Badge variant="outline" className="text-[10px]">Status: {decision.decision_status}</Badge>

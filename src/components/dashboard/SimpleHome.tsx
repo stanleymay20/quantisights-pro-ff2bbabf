@@ -286,7 +286,6 @@ const SimpleHome = ({
     <div className="max-w-5xl mx-auto space-y-8">
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-          {greeting()}, {firstName}
         </h1>
         <p className="text-muted-foreground text-sm mt-1">
           Here's what needs your attention today.
@@ -344,7 +343,7 @@ const SimpleHome = ({
 
       {topDecision && (
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }} className="grid gap-3 lg:grid-cols-[1.25fr_0.75fr]">
-          <Card className="border-primary/20 bg-gradient-to-br from-primary/[0.06] to-background">
+          <Card className="border-primary/20 bg-background">
             <CardContent className="p-5 space-y-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-2">

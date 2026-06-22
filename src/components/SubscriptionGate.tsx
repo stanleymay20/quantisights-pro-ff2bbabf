@@ -31,7 +31,7 @@ const SubscriptionGate = ({ feature, children, fallbackMessage, requiredTier = "
               <Lock className="w-7 h-7 text-primary" />
             </div>
             <div className="space-y-1">
-              <h3 className="text-lg font-semibold">
+              <h3 className="text-[14px] font-semibold">
                 {fallbackMessage || "This feature requires an upgrade"}
               </h3>
               <p className="text-sm text-muted-foreground max-w-md">

@@ -86,7 +86,7 @@ const SystemHealthDashboard = ({ orgId }: Props) => {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Activity className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-          <h3 className="text-sm sm:text-base font-semibold text-foreground">System Intelligence</h3>
+          <h3 className="text-sm sm:text-[13px] font-semibold text-foreground">System Intelligence</h3>
         </div>
         <div className="flex items-center gap-1">
           <Button

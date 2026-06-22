@@ -288,7 +288,7 @@ const DecisionQueue = memo(({
         <div className="w-14 h-14 rounded-2xl bg-success/10 flex items-center justify-center mx-auto mb-4">
           <CheckCircle2 className="w-7 h-7 text-success" />
         </div>
-        <h3 className="text-lg font-semibold mb-1">All clear</h3>
+        <h3 className="text-[14px] font-semibold mb-1">All clear</h3>
         <p className="text-sm text-muted-foreground max-w-sm mx-auto">
           No decisions require your attention. The system is monitoring continuously.
         </p>

@@ -517,7 +517,7 @@ const Ebook = () => {
             <div className="space-y-10">
               {currentChapter.sections.map((section, idx) => (
                 <section key={idx}>
-                  <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                  <h3 className="text-[14px] font-semibold text-foreground mb-4 flex items-center gap-2">
                     <span className="w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center shrink-0">
                       {idx + 1}
                     </span>

@@ -55,9 +55,7 @@ const ForgotPassword = () => {
         }
       >
         <div className="text-center space-y-4 py-2">
-          <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center">
-            <MailCheck className="w-6 h-6 text-primary" />
-          </div>
+          <div className="text-muted-foreground/50">
           <p className="text-sm text-muted-foreground leading-relaxed">
             Sent to{" "}
             <span className="text-foreground font-medium">{email}</span>. The link

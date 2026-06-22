@@ -249,7 +249,7 @@ const DataSources = () => {
         <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
           <div className="flex items-center gap-3">
             <SidebarMobileToggle />
-            <h1 className="text-xl font-semibold tracking-tight">Data Sources</h1>
+            <h1 className="text-[18px] font-semibold tracking-tight">Data Sources</h1>
           </div>
           <button onClick={() => setShowCreate(true)} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:brightness-110 transition-all">
             <Plus className="w-4 h-4" /> Add Source
@@ -370,9 +370,7 @@ const DataSources = () => {
                       className={`glass-card p-5 rounded-xl cursor-pointer transition-all ${selectedSource === src.id ? "ring-2 ring-primary" : "hover:border-primary/30"}`}>
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                            <Icon className="w-4 h-4 text-primary" />
-                          </div>
+                          <div className="text-muted-foreground/50">
                           <div>
                             <h3 className="text-sm font-semibold">{src.name}</h3>
                             <p className="text-xs text-muted-foreground capitalize">{src.source_type}</p>

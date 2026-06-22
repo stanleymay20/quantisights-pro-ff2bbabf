@@ -320,7 +320,7 @@ const DecisionIntelligence = () => {
           <div className="flex items-center gap-2">
             <SidebarMobileToggle />
             <Brain className="w-5 h-5 text-primary" />
-            <h1 className="text-xl font-semibold tracking-tight">Decision Intelligence</h1>
+            <h1 className="text-[18px] font-semibold tracking-tight">Decision Intelligence</h1>
           </div>
         </header>
 

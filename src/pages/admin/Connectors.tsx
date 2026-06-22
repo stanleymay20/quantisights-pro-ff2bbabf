@@ -256,7 +256,7 @@ const Connectors = () => {
       <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
         <div className="flex items-center gap-3">
           <SidebarMobileToggle />
-          <h1 className="text-xl font-semibold tracking-tight">Connectors</h1>
+          <h1 className="text-[18px] font-semibold tracking-tight">Connectors</h1>
           <span className="text-xs text-muted-foreground">Enterprise Ingestion</span>
         </div>
         <button

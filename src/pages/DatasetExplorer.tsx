@@ -148,7 +148,7 @@ const DatasetExplorer = () => {
         <div className="flex items-center gap-3">
           <SidebarMobileToggle />
           <Database className="w-5 h-5 text-primary" />
-          <h1 className="text-xl font-semibold tracking-tight">Dataset Explorer</h1>
+          <h1 className="text-[18px] font-semibold tracking-tight">Dataset Explorer</h1>
         </div>
         <Badge variant="outline" className="text-xs">
           {datasets.length} dataset{datasets.length !== 1 ? "s" : ""}

@@ -122,7 +122,7 @@ const Reports = () => {
         <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
           <div className="flex items-center gap-3">
             <SidebarMobileToggle />
-            <h1 className="text-xl font-semibold tracking-tight">Reports</h1>
+            <h1 className="text-[18px] font-semibold tracking-tight">Reports</h1>
           </div>
           <button
             onClick={handleGenerate}
@@ -174,7 +174,7 @@ const Reports = () => {
           ) : reports.length === 0 ? (
             <div className="glass-card p-12 rounded-xl flex flex-col items-center justify-center min-h-[300px]">
               <FileText className="w-16 h-16 text-muted-foreground mb-4" />
-              <h2 className="text-xl font-semibold tracking-tight mb-2">No Reports Yet</h2>
+              <h2 className="text-[16px] font-semibold tracking-tight mb-2">No Reports Yet</h2>
               <p className="text-muted-foreground text-sm mb-6">Select a report type and generate your first executive report</p>
               <button
                 onClick={handleGenerate}
@@ -194,9 +194,7 @@ const Reports = () => {
                   return (
                     <div key={report.id} className="glass-card p-5 rounded-xl flex items-center justify-between">
                       <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                          <TypeIcon className="w-5 h-5 text-primary" />
-                        </div>
+                        <div className="text-muted-foreground/50">
                         <div>
                           <p className="text-sm font-medium">{config.label}</p>
                           <p className="text-xs text-muted-foreground">

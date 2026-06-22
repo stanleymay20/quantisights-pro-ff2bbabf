@@ -126,9 +126,7 @@ const SimilarDecisionsPanel = memo(({ organizationId, queryText, onConfidenceAdj
     >
       {/* Header with precedent type */}
       <div className="flex items-center gap-2 mb-3">
-        <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center">
-          <History className="w-3.5 h-3.5 text-primary" />
-        </div>
+        
         <h4 className="text-xs font-semibold tracking-tight">Institutional Memory</h4>
         <Tooltip>
           <TooltipTrigger asChild>

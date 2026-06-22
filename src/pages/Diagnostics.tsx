@@ -97,7 +97,7 @@ const Diagnostics = () => {
         <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
           <div className="flex items-center gap-3">
             <SidebarMobileToggle />
-            <h1 className="text-xl font-semibold tracking-tight">Diagnostic Intelligence</h1>
+            <h1 className="text-[18px] font-semibold tracking-tight">Diagnostic Intelligence</h1>
             <p className="text-xs text-muted-foreground">Root cause analysis & causal pattern detection</p>
           </div>
           <Button onClick={runDiagnostics} disabled={loading} variant="outline" size="sm" className="gap-2">

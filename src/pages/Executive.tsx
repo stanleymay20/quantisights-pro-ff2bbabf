@@ -388,7 +388,7 @@ const Executive = () => {
             <div className="flex items-center gap-3">
               <SidebarMobileToggle />
               <h1 className="text-3xl font-bold tracking-tight">Executive Command</h1>
-              <p className="text-muted-foreground mt-1">Strategic Health Monitoring & AI Intelligence</p>
+              <p className="text-muted-foreground mt-1">Strategic Health Monitoring</p>
             </div>
             <div className="flex items-center gap-3">
               {riskIndex?.escalation_required && (
@@ -446,9 +446,9 @@ const Executive = () => {
             <Card className="border-dashed border-2 border-muted-foreground/20">
               <CardContent className="flex flex-col items-center justify-center py-16 gap-4">
                 <Lock className="w-12 h-12 text-muted-foreground" />
-                <h2 className="text-xl font-semibold">Upgrade to Growth or Enterprise</h2>
+                <h2 className="text-[16px] font-semibold">Upgrade to Growth or Enterprise</h2>
                 <p className="text-muted-foreground text-center max-w-md">
-                  Executive Command Mode provides AI-powered strategic intelligence tailored to each C-suite role.
+                  AI-powered strategic intelligence tailored to each C-suite role.
                 </p>
                 <Button onClick={() => window.location.href = "/pricing"}>View Plans</Button>
               </CardContent>

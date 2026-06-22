@@ -76,9 +76,7 @@ export const DashboardEmptyState = () => {
           onKeyDown={(e) => e.key === "Enter" && navigate("/demo")}
           aria-label="Try with sample data"
         >
-          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-            <Zap className="w-5 h-5 text-primary" />
-          </div>
+          <div className="text-muted-foreground/50">
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-primary">Explore with sample data</p>
             <p className="text-xs text-muted-foreground">See the full experience instantly — no connection needed</p>

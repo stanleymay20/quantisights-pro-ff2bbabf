@@ -181,7 +181,7 @@ const Copilot = () => {
         <header className="h-14 border-b border-border/30 flex items-center gap-3 px-6 shrink-0 bg-background/60 backdrop-blur-sm">
           <SidebarMobileToggle />
           <MessageSquareText className="w-5 h-5 text-primary" />
-          <h1 className="text-xl font-semibold tracking-tight">Decision Copilot</h1>
+          <h1 className="text-[18px] font-semibold tracking-tight">Decision Copilot</h1>
         </header>
 
         <main className="flex-1 overflow-auto">
@@ -221,7 +221,7 @@ const Copilot = () => {
                         </Badge>
                         {brief.confidence != null && <Badge variant="outline" className="text-[10px]">{brief.confidence}% confidence</Badge>}
                       </div>
-                      <h3 className="text-lg font-semibold tracking-tight">{brief.title}</h3>
+                      <h3 className="text-[14px] font-semibold tracking-tight">{brief.title}</h3>
                       <p className="text-xs text-muted-foreground mt-1">Asked: {brief.query}</p>
                     </div>
                   </div>

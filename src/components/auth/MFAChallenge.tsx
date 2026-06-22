@@ -78,9 +78,7 @@ const MFAChallenge = ({ onVerified }: MFAChallengeProps) => {
   return (
     <div className="space-y-6">
       <div className="flex flex-col items-center gap-3">
-        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-          <ShieldCheck className="w-6 h-6 text-primary" />
-        </div>
+        <div className="text-muted-foreground/50">
         <h2 className="text-[16px] font-semibold tracking-tight tracking-tight">Two-Factor Authentication</h2>
         <p className="text-sm text-muted-foreground text-center">
           {noFactor

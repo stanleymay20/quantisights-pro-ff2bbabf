@@ -41,7 +41,7 @@ const WhatIsQuantivis = () => {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, height: 0, marginBottom: 0, overflow: "hidden" }}
           transition={{ duration: 0.25 }}
-          className="relative rounded-xl border border-primary/20 bg-gradient-to-br from-primary/[0.06] to-primary/[0.02] p-5"
+          className="relative rounded-xl border border-border/40 p-5"
         >
           <button
             onClick={handleDismiss}
@@ -52,9 +52,7 @@ const WhatIsQuantivis = () => {
           </button>
 
           <div className="flex items-start gap-3 mb-4 pr-8">
-            <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-              <Sparkles className="w-4 h-4 text-primary" />
-            </div>
+            <div className="text-muted-foreground/50">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-primary mb-1">
                 What is Quantivis?

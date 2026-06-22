@@ -791,7 +791,7 @@ const FounderHandbook = () => {
         );
       } else if (line.startsWith("### ")) {
         elements.push(
-          <h3 key={i} className="text-lg font-semibold mt-6 mb-2 text-foreground">
+          <h3 key={i} className="text-[14px] font-semibold mt-6 mb-2 text-foreground">
             {line.replace("### ", "")}
           </h3>
         );

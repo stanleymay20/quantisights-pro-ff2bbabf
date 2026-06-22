@@ -321,7 +321,7 @@ const KPIs = () => {
           <div className="flex items-center gap-4">
             <SidebarMobileToggle />
             <BarChart3 className="w-5 h-5 text-primary" />
-            <h1 className="text-xl font-semibold tracking-tight">KPI Builder</h1>
+            <h1 className="text-[18px] font-semibold tracking-tight">KPI Builder</h1>
             <Badge variant="outline" className="text-xs">
               {kpis.length}/{kpiLimit === 999999 ? "∞" : kpiLimit} KPIs
             </Badge>
@@ -654,7 +654,7 @@ const KPIs = () => {
               ) : (
                 <div className="glass-card p-12 rounded-xl flex flex-col items-center justify-center min-h-[400px]">
                   <BarChart3 className="w-16 h-16 text-muted-foreground mb-4" />
-                  <h2 className="text-xl font-semibold tracking-tight mb-2">Select or Create a KPI</h2>
+                  <h2 className="text-[16px] font-semibold tracking-tight mb-2">Select or Create a KPI</h2>
                   <p className="text-muted-foreground text-sm text-center max-w-md">
                     Define strategic KPIs from your metrics data. Compute values, set targets, and get AI-powered executive insights.
                   </p>

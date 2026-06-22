@@ -253,7 +253,7 @@ const StrategicSimulation = ({ organizationId, datasetId, roleType, tier }: Prop
             <Card className="border-dashed border-2 border-muted-foreground/20">
               <CardContent className="flex flex-col items-center justify-center py-16 gap-4">
                 <Activity className="w-12 h-12 text-muted-foreground/50" />
-                <h3 className="text-lg font-semibold">Strategic Simulation Engine</h3>
+                <h3 className="text-[14px] font-semibold">Strategic Simulation Engine</h3>
                 <p className="text-sm text-muted-foreground text-center max-w-md">
                   Adjust scenario parameters and run a simulation to see projected risk shifts, KPI impacts, and board-ready strategic assessments.
                 </p>

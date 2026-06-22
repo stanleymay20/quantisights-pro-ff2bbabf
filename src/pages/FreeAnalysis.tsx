@@ -231,7 +231,7 @@ const FreeAnalysis = () => {
                 className="flex flex-col items-center justify-center py-20"
               >
                 <Loader2 className="w-12 h-12 text-primary animate-spin mb-6" />
-                <h2 className="text-xl font-semibold mb-2">Analyzing your business...</h2>
+                <h2 className="text-[16px] font-semibold mb-2">Analyzing your business...</h2>
                 <p className="text-muted-foreground text-sm">
                   Running diagnostic models, detecting anomalies, estimating hidden losses
                 </p>

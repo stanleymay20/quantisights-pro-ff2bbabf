@@ -35,7 +35,7 @@ const DecisionAuditTrailSection = forwardRef<HTMLElement>((_, ref) => {
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <div>
                   <p className="text-[11px] uppercase tracking-widest text-muted-foreground/50 mb-1">Decision Record</p>
-                  <h3 className="text-base sm:text-lg font-semibold">Expand EU Distribution Network</h3>
+                  <h3 className="text-base sm:text-[14px] font-semibold">Expand EU Distribution Network</h3>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <User className="w-3.5 h-3.5" />

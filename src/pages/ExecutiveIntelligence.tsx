@@ -64,7 +64,7 @@ function ExecutiveBriefCard({ brief, onRegenerate, generating, orgId }: {
           variant="compact"
         />
         <div>
-          <h3 className="text-lg font-semibold">{s.headline}</h3>
+          <h3 className="text-[14px] font-semibold">{s.headline}</h3>
           {s.escalation_recommended && (
             <Badge variant="destructive" className="mt-2"><AlertTriangle className="h-3 w-3 mr-1" /> Escalation recommended</Badge>
           )}
@@ -154,9 +154,7 @@ export default function ExecutiveIntelligence() {
         <Card className="max-w-md w-full">
           <CardHeader>
             <div className="flex items-center gap-3 mb-1">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <ShieldAlert className="w-5 h-5 text-primary" />
-              </div>
+              <div className="text-muted-foreground/50">
               <CardTitle>Executive Access Required</CardTitle>
             </div>
           </CardHeader>

@@ -959,7 +959,7 @@ const DataUpload = () => {
         <header className="h-14 border-b border-border/30 flex items-center px-8 shrink-0 bg-background/60 backdrop-blur-sm">
           <div className="flex items-center gap-3">
             <SidebarMobileToggle />
-            <h1 className="text-xl font-semibold tracking-tight">Data Import</h1>
+            <h1 className="text-[18px] font-semibold tracking-tight">Data Import</h1>
           </div>
         </header>
 
@@ -1009,7 +1009,7 @@ const DataUpload = () => {
                 onClick={() => document.getElementById("csv-input")?.click()}
               >
                 <Upload className="w-16 h-16 text-muted-foreground mb-4" />
-                <h2 className="text-xl font-semibold tracking-tight mb-2">Upload Dataset</h2>
+                <h2 className="text-[16px] font-semibold tracking-tight mb-2">Upload Dataset</h2>
                 <p className="text-muted-foreground text-sm mb-4">Drag & drop or click to browse</p>
                 <p className="text-xs text-muted-foreground">CSV, XLSX, XLS, XLSM, ODS · up to 20MB · up to 50,000 rows in-browser · larger routes to server pipeline</p>
                 <input id="csv-input" type="file" accept=".csv,.xlsx,.xls,.xlsm,.ods" className="hidden" onChange={handleFileSelect} />
@@ -1027,9 +1027,7 @@ const DataUpload = () => {
                 <Card>
                   <CardContent className="p-6">
                     <div className="flex items-center gap-3 mb-1">
-                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                        <Sparkles className="w-4 h-4 text-primary" />
-                      </div>
+                      <div className="text-muted-foreground/50">
                       <div>
                         <h2 className="text-lg font-semibold tracking-tight">Dataset Structure Detected</h2>
                         <p className="text-xs text-muted-foreground">
@@ -1669,9 +1667,7 @@ const DataUpload = () => {
                   <Card className="overflow-hidden border-primary/20">
                     <CardContent className="p-4">
                       <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                          <Database className="w-5 h-5 text-primary" />
-                        </div>
+                        <div className="text-muted-foreground/50">
                         <div className="flex-1">
                           <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Detected Domain</p>
                           <p className="text-lg font-semibold tracking-tight text-foreground">
@@ -1698,9 +1694,7 @@ const DataUpload = () => {
                 <Card className="overflow-hidden">
                   <div className="bg-gradient-to-r from-primary/5 to-primary/0 p-6 border-b border-border/30">
                     <div className="flex items-center gap-3 mb-1">
-                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                        <Sparkles className="w-4 h-4 text-primary" />
-                      </div>
+                      <div className="text-muted-foreground/50">
                       <div>
                         <h2 className="text-lg font-semibold tracking-tight">Dataset Intelligence</h2>
                         <p className="text-xs text-muted-foreground">{datasetName}</p>
@@ -1804,7 +1798,7 @@ const DataUpload = () => {
                     <CardContent className="p-6">
                       <div className="flex items-center gap-3 mb-4">
                         <Activity className="w-5 h-5 text-primary" />
-                        <h3 className="text-base font-semibold tracking-tight">Data Diagnostics</h3>
+                        <h3 className="text-[13px] font-semibold tracking-tight">Data Diagnostics</h3>
                       </div>
                       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                         <div className="p-3 rounded-lg bg-muted/30 border border-border/40">
@@ -1894,7 +1888,7 @@ const DataUpload = () => {
                   <div className="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center mb-4">
                     <Check className="w-8 h-8 text-success" />
                   </div>
-                  <h2 className="text-xl font-semibold tracking-tight mb-2">Import Complete</h2>
+                  <h2 className="text-[16px] font-semibold tracking-tight mb-2">Import Complete</h2>
                   <p className="text-muted-foreground text-sm mb-6">
                     {importCount.toLocaleString()} data points imported
                     {importMode === "multi" ? " (multi-metric normalized)" : ""}

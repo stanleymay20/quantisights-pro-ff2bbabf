@@ -134,9 +134,7 @@ const SUDALOperatingLoop = memo(({ organizationId }: SUDALOperatingLoopProps) =>
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Radar className="w-4 h-4 text-primary" />
-            </div>
+            <div className="text-muted-foreground/50">
             <div>
               <h3 className="text-sm font-semibold">Operating Loop</h3>
               <p className="text-[10px] text-muted-foreground">

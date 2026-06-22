@@ -38,7 +38,7 @@ const SLA = () => {
 
         {/* Uptime Guarantee */}
         <section className="space-y-4">
-          <h2 className="text-xl font-semibold flex items-center gap-2">
+          <h2 className="text-[16px] font-semibold flex items-center gap-2">
             <Shield className="w-5 h-5 text-primary" /> Uptime Guarantee
           </h2>
           <Card className="border border-border/50">
@@ -82,7 +82,7 @@ const SLA = () => {
 
         {/* Incident Response */}
         <section className="space-y-4">
-          <h2 className="text-xl font-semibold flex items-center gap-2">
+          <h2 className="text-[16px] font-semibold flex items-center gap-2">
             <AlertTriangle className="w-5 h-5 text-warning" /> Incident Response Plan
           </h2>
 
@@ -178,7 +178,7 @@ const SLA = () => {
 
         {/* Disaster Recovery */}
         <section className="space-y-4">
-          <h2 className="text-xl font-semibold flex items-center gap-2">
+          <h2 className="text-[16px] font-semibold flex items-center gap-2">
             <Clock className="w-5 h-5 text-primary" /> Disaster Recovery & Rollback
           </h2>
           <Card className="border border-border/50">
@@ -225,7 +225,7 @@ const SLA = () => {
 
         {/* Monitoring */}
         <section className="space-y-4">
-          <h2 className="text-xl font-semibold flex items-center gap-2">
+          <h2 className="text-[16px] font-semibold flex items-center gap-2">
             <FileText className="w-5 h-5 text-primary" /> Monitoring & Observability
           </h2>
           <Card className="border border-border/50">
@@ -252,7 +252,7 @@ const SLA = () => {
 
         {/* Contact */}
         <section className="space-y-4">
-          <h2 className="text-xl font-semibold">Incident Reporting</h2>
+          <h2 className="text-[16px] font-semibold">Incident Reporting</h2>
           <Card className="border border-border/50">
             <CardContent className="py-5">
               <p className="text-sm text-muted-foreground mb-4">

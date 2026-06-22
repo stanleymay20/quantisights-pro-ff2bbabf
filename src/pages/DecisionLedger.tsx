@@ -409,7 +409,7 @@ const DecisionLedgerPage = () => {
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <BookOpen className="w-4 h-4 text-primary shrink-0" />
-                <h1 className="text-xl font-semibold tracking-tight truncate">Decision Ledger</h1>
+                <h1 className="text-[18px] font-semibold tracking-tight truncate">Decision Ledger</h1>
                 <Badge variant="outline" className="text-[10px] uppercase tracking-wide hidden sm:inline-flex">Governed</Badge>
               </div>
               <p className="text-xs text-muted-foreground mt-0.5 truncate">
