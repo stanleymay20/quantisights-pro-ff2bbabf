@@ -743,7 +743,7 @@ const DecisionLedgerPage = () => {
                         </div>
                       </div>
                       <TrustCard
-                        data={trustCardFromDecision(d)}
+                        data={trustCardFromDecision(d as unknown as Record<string, unknown>)}
                         className="mt-3"
                       />
                     </CardContent>
