@@ -59,15 +59,15 @@ export default function ConversationsEp1() {
       </nav>
 
       {/* ── HERO ── */}
-      <section style={{ background: `linear-gradient(160deg, ${DEEP} 0%, #0B1D3A 55%, #1A2B5E 100%)`, padding: "80px 0 96px", position: "relative", overflow: "hidden" }}>
+      <section style={{ background: "linear-gradient(160deg, " + DEEP + " 0%, #0B1D3A 55%, #1A2B5E 100%)", padding: "80px 0 96px", position: "relative", overflow: "hidden" }}>
         {/* Subtle grid */}
-        <div style={{ position: "absolute", inset: 0, backgroundImage: `linear-gradient(rgba(61,90,254,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(61,90,254,0.04) 1px, transparent 1px)`, backgroundSize: "48px 48px", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", inset: 0, backgroundImage: "linear-gradient(rgba(61,90,254,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(61,90,254,0.04) 1px, transparent 1px)", backgroundSize: "48px 48px", pointerEvents: "none" }} />
         {/* Gold accent line */}
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(90deg, transparent, ${GOLD}, transparent)` }} />
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg, transparent, " + GOLD + ", transparent)" }} />
 
         <div className="cv-wrap" style={{ position: "relative" }}>
           {/* Series badge */}
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(201,168,76,0.12)", border: `1px solid rgba(201,168,76,0.3)`, borderRadius: 4, padding: "6px 14px", marginBottom: 28 }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(201,168,76,0.12)", border: "1px solid rgba(201,168,76,0.3)", borderRadius: 4, padding: "6px 14px", marginBottom: 28 }}>
             <Mic size={13} color={GOLD} />
             <span style={{ color: GOLD, fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase" }}>Quantivis Conversations · Episode 1</span>
           </div>
@@ -125,7 +125,7 @@ export default function ConversationsEp1() {
               { initials: "TL", name: "Prof. Dr. Tilmann Lindberg", role: "Professor of International Business Management, GISMA", label: "GUEST" },
             ].map(({ initials, name, role, label }) => (
               <div key={name} style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                <div style={{ width: 48, height: 48, borderRadius: "50%", background: "rgba(61,90,254,0.3)", border: `2px solid ${ACCENT}`, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 700, fontSize: 15, flexShrink: 0 }}>
+                <div style={{ width: 48, height: 48, borderRadius: "50%", background: "rgba(61,90,254,0.3)", border: "2px solid " + ACCENT, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 700, fontSize: 15, flexShrink: 0 }}>
                   {initials}
                 </div>
                 <div>
@@ -178,7 +178,7 @@ export default function ConversationsEp1() {
               { icon: <Users size={20} />, title: "Future skills for founders", text: "What capabilities matter most for leaders building companies in the AI decade." },
               { icon: <MessageSquare size={20} />, title: "Audience Q&A", text: "Direct questions answered by Prof. Lindberg and Stanley. No prepared script." },
             ].map(({ icon, title, text }) => (
-              <div key={title} style={{ background: MUTED, border: `1px solid rgba(30,39,97,0.08)`, borderRadius: 8, padding: "24px 20px" }}>
+              <div key={title} style={{ background: MUTED, border: "1px solid rgba(30,39,97,0.08)", borderRadius: 8, padding: "24px 20px" }}>
                 <div style={{ color: ACCENT, marginBottom: 14 }}>{icon}</div>
                 <p style={{ fontWeight: 600, fontSize: 15, color: NAVY, margin: "0 0 8px" }}>{title}</p>
                 <p style={{ fontSize: 13, color: SLATE, lineHeight: 1.6, margin: 0 }}>{text}</p>
@@ -203,7 +203,7 @@ export default function ConversationsEp1() {
             {/* Stanley */}
             <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "32px 28px" }}>
               <div style={{ display: "flex", alignItems: "flex-start", gap: 16, marginBottom: 20 }}>
-                <div style={{ width: 60, height: 60, borderRadius: "50%", background: `linear-gradient(135deg, ${ACCENT}, #1A3FD8)`, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800, fontSize: 20, flexShrink: 0, border: `2px solid rgba(61,90,254,0.4)` }}>
+                <div style={{ width: 60, height: 60, borderRadius: "50%", background: "linear-gradient(135deg, " + ACCENT + ", #1A3FD8)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800, fontSize: 20, flexShrink: 0, border: "2px solid rgba(61,90,254,0.4)" }}>
                   S
                 </div>
                 <div>
@@ -227,7 +227,7 @@ export default function ConversationsEp1() {
             {/* Prof. Lindberg */}
             <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "32px 28px" }}>
               <div style={{ display: "flex", alignItems: "flex-start", gap: 16, marginBottom: 20 }}>
-                <div style={{ width: 60, height: 60, borderRadius: "50%", background: `linear-gradient(135deg, ${GOLD}, #A67C2C)`, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800, fontSize: 20, flexShrink: 0, border: `2px solid rgba(201,168,76,0.4)` }}>
+                <div style={{ width: 60, height: 60, borderRadius: "50%", background: "linear-gradient(135deg, " + GOLD + ", #A67C2C)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800, fontSize: 20, flexShrink: 0, border: "2px solid rgba(201,168,76,0.4)" }}>
                   T
                 </div>
                 <div>
@@ -274,7 +274,7 @@ export default function ConversationsEp1() {
               <div key={time} style={{ display: "flex", gap: 20, position: "relative" }}>
                 {/* Timeline */}
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
-                  <div style={{ width: 40, height: 40, borderRadius: "50%", background: i === 0 ? NAVY : MUTED, border: `2px solid ${i === 0 ? NAVY : "rgba(30,39,97,0.15)"}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <div style={{ width: 40, height: 40, borderRadius: "50%", background: i === 0 ? NAVY : MUTED, border: "2px solid " + (i === 0 ? NAVY : "rgba(30,39,97,0.15)") + "", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                     <span style={{ fontSize: 11, fontWeight: 700, color: i === 0 ? "#fff" : NAVY }}>{time.split(":")[0]}</span>
                   </div>
                   {i < arr.length - 1 && <div style={{ width: 1, flex: 1, minHeight: 24, background: "rgba(30,39,97,0.1)", margin: "4px 0" }} />}
@@ -296,7 +296,7 @@ export default function ConversationsEp1() {
       {/* ── EBOOK ── */}
       <section style={{ background: MUTED, padding: "72px 0" }}>
         <div className="cv-wrap">
-          <div style={{ background: `linear-gradient(135deg, ${NAVY} 0%, #1A3A7A 100%)`, borderRadius: 12, padding: "48px 40px", display: "flex", flexWrap: "wrap", gap: 32, alignItems: "center", justifyContent: "space-between", position: "relative", overflow: "hidden" }}>
+          <div style={{ background: "linear-gradient(135deg, " + NAVY + " 0%, #1A3A7A 100%)", borderRadius: 12, padding: "48px 40px", display: "flex", flexWrap: "wrap", gap: 32, alignItems: "center", justifyContent: "space-between", position: "relative", overflow: "hidden" }}>
             {/* Decorative */}
             <div style={{ position: "absolute", top: -40, right: -40, width: 200, height: 200, borderRadius: "50%", background: "rgba(201,168,76,0.06)", pointerEvents: "none" }} />
             <div style={{ position: "absolute", bottom: -60, right: 80, width: 300, height: 300, borderRadius: "50%", background: "rgba(61,90,254,0.08)", pointerEvents: "none" }} />
@@ -319,7 +319,7 @@ export default function ConversationsEp1() {
                 href={SCROLLLIBRARY_LINK}
                 target="_blank"
                 rel="noopener noreferrer"
-                id="download-scrolllibrary-ebook"
+                id="download-scrolllibrary-ebook-section"
                 style={{ display: "inline-flex", alignItems: "center", gap: 10, background: GOLD, color: DEEP, padding: "14px 28px", borderRadius: 4, fontWeight: 700, fontSize: 14, textDecoration: "none", whiteSpace: "nowrap" }}
               >
                 <BookOpen size={16} />
@@ -333,7 +333,7 @@ export default function ConversationsEp1() {
 
       {/* ── FINAL CTA ── */}
       <section style={{ background: DEEP, padding: "96px 0", textAlign: "center" }}>
-        <div style={{ position: "absolute", left: 0, right: 0, height: 1, background: `linear-gradient(90deg, transparent, ${GOLD}, transparent)`, top: "auto" }} />
+        <div style={{ position: "absolute", left: 0, right: 0, height: 1, background: "linear-gradient(90deg, transparent, " + GOLD + ", transparent)", top: "auto" }} />
         <div className="cv-wrap" style={{ maxWidth: 600 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 20 }}>
             <div style={{ width: 32, height: 2, background: GOLD }} />
