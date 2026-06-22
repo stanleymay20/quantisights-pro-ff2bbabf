@@ -37,7 +37,7 @@ const DownloadProcurementPack = () => {
       setLastBundle({ id: integrityId, version });
       toast({ title: "Pack downloaded", description: `Version ${version} · integrity ${integrityId.slice(0, 20)}…` });
     } catch (e: unknown) {
-      toast({ title: "Download failed", description: e?.message ?? String(e), variant: "destructive" });
+      toast({ title: "Download failed", description: e instanceof Error ? e.message : String(e), variant: "destructive" });
     } finally {
       setBusy(false);
     }
