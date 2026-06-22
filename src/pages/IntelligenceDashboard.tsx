@@ -294,7 +294,7 @@ export default function IntelligenceDashboard() {
         setEdges((edgeRes.data ?? []) as InfluenceEdge[]);
         setAutoDecisions((decRes.data ?? []) as AutoDecision[]);
       } catch (e: unknown) {
-        if (!cancelled) setError(e?.message ?? "Failed to load AICIS intelligence");
+        if (!cancelled) setError(e instanceof Error ? e.message : "Failed to load AICIS intelligence");
       } finally {
         if (!cancelled) setLoading(false);
       }
