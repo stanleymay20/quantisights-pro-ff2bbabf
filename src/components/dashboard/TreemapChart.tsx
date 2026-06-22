@@ -18,7 +18,7 @@ const COLORS = [
 ];
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const CustomContent = (props: Record<string, unknown>) => {
+const CustomContent = (props: any) => {
   const { x, y, width, height, name, value, index } = props;
   if (width < 30 || height < 20) return null;
   return (
