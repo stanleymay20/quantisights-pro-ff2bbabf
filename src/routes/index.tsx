@@ -169,6 +169,7 @@ const GovernanceSimulation = lazy(() => import("@/pages/admin/GovernanceSimulati
 const GovernanceAudit = lazy(() => import("@/pages/admin/GovernanceAudit"));
 
 const NotFound = lazy(() => import("@/pages/NotFound"));
+const ConversationsEp1 = lazy(() => import("@/pages/ConversationsEp1"));
 
 
 export type RouteLayout = "none" | "public" | "full" | "minimal";
@@ -194,6 +195,7 @@ export const routes: RouteEntry[] = [
 
   // ══════ Public ══════
   { path: "/demo", element: <Demo />, layout: "public" },
+  { path: "/conversations/episode-1", element: <ConversationsEp1 />, layout: "none" },
   { path: "/embed", element: <EmbedDashboard />, layout: "public" },
   { path: "/pricing", element: <Pricing />, layout: "public" },
   { path: "/calibration", element: <CalibrationAssessment />, layout: "full" },
