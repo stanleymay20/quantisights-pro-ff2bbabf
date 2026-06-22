@@ -292,7 +292,7 @@ const Settings = () => {
                         <Input value={fullName} onChange={e => setFullName(e.target.value)} maxLength={200} placeholder="Your full name" />
                       </div>
                       <Button onClick={saveProfile} disabled={savingProfile || !profileDirty} className="gap-2">
-                        {savingProfile ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Save Profile
+                        {savingProfile ? <Loader2 className="w-4 h-4 animate-spin" /> : null} Save
                       </Button>
                     </CardContent>
                   </Card>

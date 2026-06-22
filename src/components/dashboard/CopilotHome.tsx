@@ -115,12 +115,6 @@ const CopilotHome = ({
   const [query, setQuery] = useState("");
 
   const firstName = displayName.split(" ")[0];
-  const greeting = () => {
-    const h = new Date().getHours();
-    if (h < 12) return "Good morning";
-    if (h < 17) return "Good afternoon";
-    return "Good evening";
-  };
 
   const criticalInsights = useMemo(() => filterCriticalInsights(insights), [insights]);
   const alertInsights = useMemo(() => {

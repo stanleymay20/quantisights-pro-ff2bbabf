@@ -256,9 +256,7 @@ const Copilot = () => {
               ).map((prompt) => (
                 <Card key={`${prompt.path}-${prompt.label}`} className="border-border/40 hover:border-primary/40 cursor-pointer transition-all hover:bg-muted/30" onClick={() => answerQuestion(prompt.label)}>
                   <CardContent className="p-3 flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                      <prompt.icon className="w-4 h-4 text-primary" />
-                    </div>
+
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-foreground truncate">{prompt.label}</p>
                       <p className="text-[11px] text-muted-foreground">{prompt.description}</p>

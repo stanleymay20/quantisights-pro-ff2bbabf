@@ -387,7 +387,7 @@ const Executive = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <SidebarMobileToggle />
-              <h1 className="text-3xl font-bold tracking-tight">Executive Command</h1>
+              <h1 className="text-[18px] font-bold tracking-tight">Executive Command</h1>
               <p className="text-muted-foreground mt-1">Strategic Health Monitoring</p>
             </div>
             <div className="flex items-center gap-3">

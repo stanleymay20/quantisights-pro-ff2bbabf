@@ -273,13 +273,6 @@ const SimpleHome = ({
 
   const displayMetrics = useMemo(() => (topMetrics ?? []).slice(0, 5), [topMetrics]);
 
-  const greeting = () => {
-    const h = new Date().getHours();
-    if (h < 12) return "Good morning";
-    if (h < 17) return "Good afternoon";
-    return "Good evening";
-  };
-
   const firstName = displayName.split(" ")[0];
 
   return (

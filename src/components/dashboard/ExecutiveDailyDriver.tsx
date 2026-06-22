@@ -53,8 +53,6 @@ interface Props {
 const EURO = (n: number) =>
   new Intl.NumberFormat("en-GB", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
 
-const timeOfDay = () => {
-  const h = new Date().getHours();
   if (h < 12) return "morning";
   if (h < 17) return "afternoon";
   return "evening";
