@@ -341,19 +341,20 @@ export function trustCardFromDecision(d: Record<string, unknown>, dataQualitySco
     const raw = d?.evidence_sources;
     if (Array.isArray(raw)) sources = raw;
     else if (typeof raw === "string") sources = JSON.parse(raw);
-    else if (raw && typeof raw === "object") sources = [raw];
+    else if (raw && typeof raw === "object") sources = [raw as Record<string, unknown>];
   } catch {}
 
+  const rec = d as Record<string, any>;
   return {
-    confidence: d?.capped_confidence ?? d?.confidence ?? null,
-    confidenceCapReason: d?.confidence_cap_reason ?? null,
-    rawConfidence: d?.raw_confidence ?? null,
+    confidence: rec?.capped_confidence ?? rec?.confidence ?? null,
+    confidenceCapReason: rec?.confidence_cap_reason ?? null,
+    rawConfidence: rec?.raw_confidence ?? null,
     evidenceSources: sources,
-    evidenceStatus: sources && sources.length > 0 ? "verified" : d?.evidence_sources ? "partial" : "missing",
-    dataQualityScore: dataQualityScore ?? d?.data_quality_index ?? null,
-    governanceStatus: d?.governance_model_version ? "compliant" : d?.decision_status === "approved" ? "partial" : "not_assessed",
-    governanceModel: d?.governance_model ?? null,
-    predictionAccuracy: d?.prediction_accuracy_score ?? null,
+    evidenceStatus: sources && sources.length > 0 ? "verified" : rec?.evidence_sources ? "partial" : "missing",
+    dataQualityScore: dataQualityScore ?? rec?.data_quality_index ?? null,
+    governanceStatus: rec?.governance_model_version ? "compliant" : rec?.decision_status === "approved" ? "partial" : "not_assessed",
+    governanceModel: rec?.governance_model ?? null,
+    predictionAccuracy: rec?.prediction_accuracy_score ?? null,
     lineagePath: "/lineage",
     sourceKind: "decision",
   };
