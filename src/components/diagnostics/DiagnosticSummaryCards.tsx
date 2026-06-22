@@ -17,7 +17,6 @@ const DiagnosticSummaryCards = ({ analyzedCount, criticalCount, warningCount, to
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
       <Card>
         <CardContent className="p-4 flex items-center gap-3">
-          <div className="text-muted-foreground/50">
           <div>
             {loading ? (
               <Skeleton className="h-7 w-12 mb-1" />

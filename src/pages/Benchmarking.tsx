@@ -216,7 +216,6 @@ const BenchmarkingPage = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card>
               <CardContent className="p-4 flex items-center gap-4">
-                <div className="text-muted-foreground/50">
                 <div>
                   <p className="text-xs text-muted-foreground">Avg Percentile</p>
                   <p className="text-[18px] font-semibold tracking-tight">{avgPercentile !== null ? `P${avgPercentile}` : "—"}</p>

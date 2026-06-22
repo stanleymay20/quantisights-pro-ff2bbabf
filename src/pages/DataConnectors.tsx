@@ -981,7 +981,6 @@ const DataConnectors = () => {
                             >
                               <CardContent className="p-5">
                                 <div className="flex items-center gap-3 mb-3">
-                                  <div className="text-muted-foreground/50">
                                   <div className="flex-1 min-w-0">
                                     <p className="font-semibold text-sm truncate">{conn.label}</p>
                                     <div className="flex gap-1 mt-0.5 flex-wrap">

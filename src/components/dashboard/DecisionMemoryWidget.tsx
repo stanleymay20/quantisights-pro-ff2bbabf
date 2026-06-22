@@ -135,7 +135,6 @@ const DecisionMemoryWidget = memo(({ organizationId }: DecisionMemoryWidgetProps
     >
       <div className="flex items-center justify-between mb-2 sm:mb-4">
         <div className="flex items-center gap-2">
-          <div className="text-muted-foreground/50">
           <h3 className="text-xs sm:text-sm font-semibold tracking-tight">Decision Memory</h3>
         </div>
         <Link to="/decisions" className="text-[10px] sm:text-[11px] font-semibold text-primary hover:underline flex items-center gap-0.5">

@@ -194,7 +194,6 @@ const Reports = () => {
                   return (
                     <div key={report.id} className="glass-card p-5 rounded-xl flex items-center justify-between">
                       <div className="flex items-center gap-4">
-                        <div className="text-muted-foreground/50">
                         <div>
                           <p className="text-sm font-medium">{config.label}</p>
                           <p className="text-xs text-muted-foreground">

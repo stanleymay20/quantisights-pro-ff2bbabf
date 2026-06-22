@@ -370,7 +370,6 @@ const DataSources = () => {
                       className={`glass-card p-5 rounded-xl cursor-pointer transition-all ${selectedSource === src.id ? "ring-2 ring-primary" : "hover:border-primary/30"}`}>
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-3">
-                          <div className="text-muted-foreground/50">
                           <div>
                             <h3 className="text-sm font-semibold">{src.name}</h3>
                             <p className="text-xs text-muted-foreground capitalize">{src.source_type}</p>

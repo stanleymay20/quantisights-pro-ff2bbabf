@@ -169,7 +169,6 @@ const GovernanceKPIs = () => {
           (stats.policyCount > 0)
         )) ? (
           <div className="flex flex-col items-center text-center py-8 gap-3">
-            <div className="text-muted-foreground/50">
             <div>
               <p className="text-sm font-semibold">Governance setup not started</p>
               <p className="text-xs text-muted-foreground mt-1 max-w-xs">

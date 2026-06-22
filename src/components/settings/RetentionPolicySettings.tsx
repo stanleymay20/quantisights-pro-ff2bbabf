@@ -151,7 +151,6 @@ const RetentionPolicySettings = () => {
                   key={policy.data_category}
                   className="flex items-center gap-4 p-3.5 rounded-xl border border-border/40 bg-muted/20"
                 >
-                  <div className="text-muted-foreground/50">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="text-xs font-semibold text-foreground capitalize">

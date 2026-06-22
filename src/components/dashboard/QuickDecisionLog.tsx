@@ -78,7 +78,6 @@ const QuickDecisionLog = ({ organizationId, onLogged }: QuickDecisionLogProps) =
         onClick={() => setExpanded(true)}
         className="w-full flex items-center gap-3 p-4 rounded-xl border border-dashed border-primary/20 bg-primary/[0.02] hover:bg-primary/[0.05] hover:border-primary/30 transition-all group"
       >
-        <div className="text-muted-foreground/50">
         <div className="text-left flex-1 min-w-0">
           <p className="text-sm font-semibold">Log a strategic decision</p>
           <p className="text-xs text-muted-foreground">3 clicks. The system learns from every call you make.</p>
