@@ -21,6 +21,7 @@ import { useCopilotTelemetry } from "@/hooks/useCopilotTelemetry";
 import { useInsights } from "@/hooks/useInsights";
 import { useMetricsSummary } from "@/hooks/useMetricsSummary";
 import { supabase } from "@/integrations/supabase/client";
+import { getVerifiedAuth } from "@/lib/auth-helpers";
 import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 import { generateAnswer } from "@/lib/copilot-answer-engine";
 import type { DecisionSummary } from "@/lib/copilot-answer-engine";
