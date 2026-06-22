@@ -76,10 +76,10 @@ export const GraphReasoningTrace = ({ nodes }: { nodes: GraphNode[] }) => {
             {(result.reasoning_chain ?? []).map((step: Record<string, unknown>, i: number) => (
               <div key={i} className="text-xs border-l-2 border-primary/40 pl-3 py-1">
                 <div className="font-medium">
-                  Step {step.step}: {step.from} → {step.to}
+                  Step {String(step.step ?? "")}: {String(step.from ?? "")} → {String(step.to ?? "")}
                 </div>
                 <div className="text-muted-foreground">
-                  {step.label}: {step.value}
+                  {String(step.label ?? "")}: {String(step.value ?? "")}
                 </div>
               </div>
             ))}
