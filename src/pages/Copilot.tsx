@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   MessageSquareText, ArrowRight, BarChart2, ClipboardList,
   TrendingUp, FileText, ShieldAlert, Sparkles, Loader2,
+  Paperclip, X as XIcon,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOrganization } from "@/hooks/useOrganization";
