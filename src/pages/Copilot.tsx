@@ -347,7 +347,6 @@ const Copilot = () => {
                   </div>
                 </div>
               </div>
-            </div>
               {attachedFiles.length > 0 && (
                 <p className="text-[11px] text-muted-foreground/50 mt-1.5 px-1">
                   {attachedFiles.length} file{attachedFiles.length > 1 ? "s" : ""} attached — content will be used as context
