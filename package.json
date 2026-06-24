@@ -11,6 +11,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "verify:security-config": "node scripts/render-security-config.mjs --check",
     "certify": "vitest run src/lib/certification/certification.test.ts",
     "certify:full": "QV_CERTIFY_FULL=1 vitest run src/lib/certification/certification.test.ts",
     "release-gate": "npm run test && npm run certify:full && npm run build"

@@ -45,24 +45,34 @@ const SECURITY_HEADERS = {
   'Server': 'quantivis',
 };
 
-const CSP = [
+const BASE_CSP = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' https://accounts.google.com",
+  "script-src 'self' 'unsafe-inline' https://accounts.google.com https://eu-assets.i.posthog.com",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' data: https://fonts.gstatic.com",
   "img-src 'self' data: blob: https:",
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.anthropic.com https://ai.gateway.lovable.dev https://api.stripe.com https://sheets.googleapis.com https://oauth2.googleapis.com https://login.microsoftonline.com",
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.anthropic.com https://ai.gateway.lovable.dev https://api.stripe.com https://sheets.googleapis.com https://oauth2.googleapis.com https://login.microsoftonline.com https://eu.posthog.com https://eu.i.posthog.com https://eu-assets.i.posthog.com https://*.ingest.de.sentry.io",
+  "worker-src 'self' blob:",
   "frame-src https://accounts.google.com",
-  "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",
   "upgrade-insecure-requests",
-].join('; ');
+];
+const STANDARD_CSP = [...BASE_CSP, "frame-ancestors 'none'"].join('; ');
+
+const embedFrameAncestors = (env) => {
+  const origins = String(env.EMBED_ALLOWED_ORIGINS ?? "")
+    .split(/[\s,]+/)
+    .filter((origin) => /^https:\/\/[a-z0-9.-]+(?::\d+)?$/i.test(origin));
+  return origins.length > 0 ? origins.join(" ") : "'none'";
+};
 
 export default {
   async fetch(request, env) {
     // Forward request to the Cloudflare Pages asset server
     const response = await env.ASSETS.fetch(request);
+    const { pathname } = new URL(request.url);
+    const isEmbed = pathname === "/embed" || pathname.startsWith("/embed/");
 
     // Clone to make headers mutable
     const newResponse = new Response(response.body, response);
@@ -71,7 +81,13 @@ export default {
     for (const [key, value] of Object.entries(SECURITY_HEADERS)) {
       newResponse.headers.set(key, value);
     }
-    newResponse.headers.set('Content-Security-Policy', CSP);
+    if (isEmbed) {
+      newResponse.headers.delete('X-Frame-Options');
+    }
+    const csp = isEmbed
+      ? [...BASE_CSP, `frame-ancestors ${embedFrameAncestors(env)}`].join('; ')
+      : STANDARD_CSP;
+    newResponse.headers.set('Content-Security-Policy', csp);
 
     return newResponse;
   },
