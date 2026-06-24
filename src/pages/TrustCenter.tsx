@@ -147,12 +147,12 @@ const TrustCenter = () => {
         {/* Executive Trust Summary — Bloomberg Terminal style */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           {[
-            { label: "Authentication", value: "Strong", sub: "MFA + WebAuthn", ok: true },
-            { label: "Governance", value: "Active", sub: "All decisions tracked", ok: true },
-            { label: "Evidence Coverage", value: "100%", sub: "Audit trail complete", ok: true },
-            { label: "Audit Trail", value: "Immutable", sub: "Append-only DB policy", ok: true },
-            { label: "Data Residency", value: "EU", sub: "Frankfurt region only", ok: true },
-            { label: "Compliance", value: "GDPR + EU AI Act", sub: "Art 9 · 13 · 14", ok: true },
+            { label: "Authentication", value: "Configurable", sub: "MFA + WebAuthn when enabled", ok: true },
+            { label: "Governance", value: "Evidence-derived", sub: "See live controls below", ok: true },
+            { label: "Evidence Coverage", value: "Measured", sub: "Current snapshot required", ok: true },
+            { label: "Audit Trail", value: "Append-only", sub: "Database policy control", ok: true },
+            { label: "Data Residency", value: "EU-first", sub: "Verify configured tenant region", ok: true },
+            { label: "Compliance", value: "Controls mapped", sub: "Certification status above", ok: true },
           ].map(({ label, value, sub, ok }) => (
             <div key={label} className="border border-border/30 rounded-lg px-4 py-3 bg-background">
               <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/60 mb-1">{label}</div>

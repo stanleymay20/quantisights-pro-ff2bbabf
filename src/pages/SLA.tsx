@@ -45,11 +45,12 @@ const SLA = () => {
             <CardContent className="py-5 space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Platform Availability Target</span>
-                <Badge className="bg-success/10 text-success border-success/20 text-lg px-3 py-1">99.9%</Badge>
+                <Badge className="bg-success/10 text-success border-success/20 text-lg px-3 py-1">99.9% target</Badge>
               </div>
               <p className="text-sm text-muted-foreground">
-                Quantivis guarantees 99.9% monthly uptime for all core services, measured as the percentage of
-                minutes during the month that the platform API and dashboard are available and responsive.
+                A 99.9% monthly availability target is contractually committed for eligible enterprise customers
+                only when incorporated into the applicable Order Form. Measurement covers the platform API and
+                dashboard under the terms and exclusions below.
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {[

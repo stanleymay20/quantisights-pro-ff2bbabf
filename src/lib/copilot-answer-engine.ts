@@ -336,7 +336,7 @@ function answerMetrics(metrics: MetricTypeSummary[]): CopilotAnswer {
 function answerGovernance(): CopilotAnswer {
   return {
     headline: "Governance: every decision is board-defensible",
-    summary: "Quantivis maintains a tamper-evident audit trail for every decision — who approved it, what evidence supported it, what the outcome was. Compliance coverage includes SOC 2, ISO 27001, EU AI Act, and GDPR.",
+    summary: "Quantivis maintains a tamper-evident audit trail for every decision — who approved it, what evidence supported it, and what the outcome was. Controls are mapped to SOC 2, ISO 27001, EU AI Act, and GDPR requirements; provider certifications and the Quantivis entity audit status are reported separately.",
     lines: [
       { label: "Decision audit trail", value: "sha256-hashed evidence per decision", emphasis: true },
       { label: "EU AI Act", value: "Classified & documented — no prohibited AI use" },

@@ -336,7 +336,7 @@ const Pricing = () => {
               },
               {
                 q: "What data do you store and where?",
-                a: "All data is stored in the EU (Frankfurt region) on Supabase infrastructure. We never use your data to train models. All subprocessors (Supabase, Cloudflare, PostHog EU, Sentry) are SOC 2 Type II certified.",
+                a: "Primary customer data is stored in the configured EU Supabase region. We do not use customer data to train Quantivis models. Subprocessor locations, safeguards, and provider certifications are documented individually in the public subprocessor registry.",
               },
             ].map(({ q, a }) => (
               <div key={q} className="glass-card p-6">

@@ -115,4 +115,33 @@ describe("enterprise readiness foundation", () => {
       }),
     ).toBe("operational");
   });
+
+  it("keeps public certification and authentication claims conditional", () => {
+    const publicClaims = [
+      read("index.html"),
+      read("src/pages/Index.tsx"),
+      read("src/pages/Pricing.tsx"),
+      read("src/pages/SLA.tsx"),
+      read("src/pages/SecurityQuestionnaire.tsx"),
+      read("src/pages/TrustCenter.tsx"),
+      read("src/lib/copilot-answer-engine.ts"),
+    ].join("\n");
+
+    expect(publicClaims).not.toContain("Quantivis guarantees 99.9% monthly uptime");
+    expect(publicClaims).not.toContain('"99.9% SLA"');
+    expect(publicClaims).not.toContain(
+      "MFA is enforced at the route level using AAL2",
+    );
+    expect(publicClaims).not.toContain(
+      "All subprocessors (Supabase, Cloudflare, PostHog EU, Sentry) are SOC 2 Type II certified",
+    );
+    expect(publicClaims).not.toContain(
+      "Compliance coverage includes SOC 2, ISO 27001, EU AI Act, and GDPR",
+    );
+
+    expect(publicClaims).toContain("available when configured");
+    expect(publicClaims).toContain("contractually committed");
+    expect(publicClaims).toContain("Quantivis entity audit");
+  });
+
 });
