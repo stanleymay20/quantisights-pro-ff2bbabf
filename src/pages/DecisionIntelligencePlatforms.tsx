@@ -196,25 +196,66 @@ const DecisionIntelligencePlatforms = () => {
     })),
   };
 
+  useEffect(() => {
+    const prevTitle = document.title;
+    document.title = title;
+
+    const upsertMeta = (selector: string, attrs: Record<string, string>) => {
+      let el = document.head.querySelector<HTMLMetaElement>(selector);
+      if (!el) {
+        el = document.createElement("meta");
+        document.head.appendChild(el);
+      }
+      Object.entries(attrs).forEach(([k, v]) => el!.setAttribute(k, v));
+      return el;
+    };
+    const upsertLink = (rel: string, href: string) => {
+      let el = document.head.querySelector<HTMLLinkElement>(`link[rel="${rel}"]`);
+      if (!el) {
+        el = document.createElement("link");
+        el.rel = rel;
+        document.head.appendChild(el);
+      }
+      el.href = href;
+      return el;
+    };
+
+    const created: HTMLElement[] = [];
+    created.push(upsertMeta('meta[name="description"]', { name: "description", content: description }));
+    created.push(upsertLink("canonical", canonical));
+    created.push(upsertMeta('meta[property="og:title"]', { property: "og:title", content: title }));
+    created.push(upsertMeta('meta[property="og:description"]', { property: "og:description", content: description }));
+    created.push(upsertMeta('meta[property="og:url"]', { property: "og:url", content: canonical }));
+    created.push(upsertMeta('meta[property="og:type"]', { property: "og:type", content: "article" }));
+    created.push(upsertMeta('meta[name="twitter:card"]', { name: "twitter:card", content: "summary_large_image" }));
+    created.push(upsertMeta('meta[name="twitter:title"]', { name: "twitter:title", content: title }));
+    created.push(upsertMeta('meta[name="twitter:description"]', { name: "twitter:description", content: description }));
+
+    const ld1 = document.createElement("script");
+    ld1.type = "application/ld+json";
+    ld1.text = JSON.stringify(articleLd);
+    ld1.dataset.dip = "1";
+    document.head.appendChild(ld1);
+
+    const ld2 = document.createElement("script");
+    ld2.type = "application/ld+json";
+    ld2.text = JSON.stringify(faqLd);
+    ld2.dataset.dip = "1";
+    document.head.appendChild(ld2);
+
+    return () => {
+      document.title = prevTitle;
+      ld1.remove();
+      ld2.remove();
+    };
+  }, [title, description, canonical, articleLd, faqLd]);
+
   return (
     <>
-      <Helmet>
-        <title>{title}</title>
-        <meta name="description" content={description} />
-        <link rel="canonical" href={canonical} />
-        <meta property="og:title" content={title} />
-        <meta property="og:description" content={description} />
-        <meta property="og:url" content={canonical} />
-        <meta property="og:type" content="article" />
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={title} />
-        <meta name="twitter:description" content={description} />
-        <script type="application/ld+json">{JSON.stringify(articleLd)}</script>
-        <script type="application/ld+json">{JSON.stringify(faqLd)}</script>
-      </Helmet>
-
       <div className="min-h-screen bg-background">
         <Navbar />
+
+
 
         <main className="container mx-auto max-w-7xl px-4 py-12 md:py-20">
           {/* ── Hero ─────────────────────────────────────────────────── */}
