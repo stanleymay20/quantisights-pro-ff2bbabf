@@ -52,7 +52,7 @@ Secret Management:
 3. AUTHENTICATION & ACCESS CONTROL
 ───────────────────────────────────
 Authentication:
-  • Multi-factor authentication (MFA) enforced at route level (AAL2)
+  • Multi-factor authentication (MFA) available with route-level AAL2 enforcement when configured
   • TOTP-based authenticator apps supported (Google Authenticator, Authy)
   • JWT-based session management with automatic token refresh
   • Secure password reset flow with expiring, single-use tokens
@@ -198,7 +198,7 @@ const HERO_STATS = [
   { value: "AES-256", label: "Encryption at Rest" },
   { value: "TLS 1.3", label: "Encryption in Transit" },
   { value: "100%", label: "Tables with RLS" },
-  { value: "MFA", label: "Enforced Authentication" },
+  { value: "MFA", label: "Configurable AAL2 Authentication" },
 ];
 
 const PILLARS = [
@@ -218,9 +218,9 @@ const PILLARS = [
   {
     icon: KeyRound,
     title: "Authentication & Access Control",
-    description: "Multi-layered authentication with mandatory MFA and strict role-based access control.",
+    description: "Multi-layered authentication with configurable MFA enforcement and strict role-based access control.",
     items: [
-      "Multi-factor authentication (MFA) enforced at route level (AAL2)",
+      "Multi-factor authentication (MFA) supports route-level AAL2 enforcement",
       "Password strength validation with breach database checking (HaveIBeenPwned)",
       "JWT-based session management with automatic token refresh",
       "Role-based access: Owner, Admin, Executive, Analyst, Viewer",
@@ -293,7 +293,7 @@ const ROLE_MATRIX = [
 const CERTIFICATIONS = [
   { icon: ShieldCheck, title: "SOC 2 Type II", subtitle: "Infrastructure Provider", status: "Audit Planned" },
   { icon: Globe, title: "GDPR", subtitle: "Data Protection", status: "Compliant" },
-  { icon: Fingerprint, title: "MFA (AAL2)", subtitle: "Authentication", status: "Enforced" },
+  { icon: Fingerprint, title: "MFA (AAL2)", subtitle: "Authentication", status: "Available" },
   { icon: Network, title: "RLS", subtitle: "Data Isolation", status: "100% Coverage" },
 ];
 
@@ -313,7 +313,7 @@ const SECURITY_FAQ = [
   { q: "How do you handle a security breach?", a: "We follow GDPR Article 33 requirements: affected customers are notified within 72 hours where required by applicable law. Our incident response process includes containment, forensic investigation, customer communication, and post-incident review." },
   { q: "What happens when I delete my account?", a: "A secure Edge Function performs atomic deletion or anonymization across 25+ tables (metrics, advisories, audit logs, decisions, copilot sessions, etc.) and purges your record from the authentication system." },
   { q: "Do you train AI models on my data?", a: "No. Client data is not used to train, fine-tune, or improve Quantivis models. AI features use third-party inference APIs (e.g. Google Gemini) in stateless, per-request mode — no data is retained by the provider after processing." },
-  { q: "How is MFA enforced?", a: "MFA is enforced at the route level using AAL2 (Authenticator Assurance Level 2). Users must complete a second-factor challenge to access protected pages. TOTP-based authenticator apps are supported." },
+  { q: "How is MFA enforced?", a: "Organizations can require AAL2 (Authenticator Assurance Level 2) for protected routes. When enabled, users complete a second-factor challenge before access. TOTP-based authenticator apps are supported." },
   { q: "Can I get a DPA or subprocessor list?", a: "Yes. Our Data Processing Agreement (DPA), subprocessor list, data retention policy, and privacy policy are all publicly available and linked from this page." },
 ];
 

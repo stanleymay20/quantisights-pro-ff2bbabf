@@ -1,5 +1,6 @@
 import { readFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import { describe, expect, it } from "vitest";
 
 const root = resolve(__dirname, "../..");
@@ -65,5 +66,53 @@ describe("enterprise readiness foundation", () => {
     expect(worker).toContain("frame-ancestors 'none'");
     expect(worker).toContain("EMBED_ALLOWED_ORIGINS");
     expect(worker).toMatch(/pathname.*\/embed/s);
+  });
+
+  it("uses evidence-safe authentication claims", () => {
+    const authLayout = read("src/components/auth/AuthLayout.tsx");
+
+    expect(authLayout).not.toContain("SOC 2 Type II controls");
+    expect(authLayout).not.toContain("Enterprise SSO · SCIM · MFA");
+    expect(authLayout).toContain(
+      "Controls aligned to SOC 2; independent audit in progress",
+    );
+    expect(authLayout).toContain(
+      "Enterprise SSO, SCIM, and MFA available when configured",
+    );
+  });
+
+  it("treats missing operational evidence as unknown", async () => {
+    const statusPath = resolve(root, "src/lib/system-status.ts");
+    const exists = existsSync(statusPath);
+    expect(exists).toBe(true);
+    if (!exists) return;
+
+    const moduleUrl = pathToFileURL(statusPath).href;
+    const { deriveSystemStatus } = await import(/* @vite-ignore */ moduleUrl);
+
+    expect(
+      deriveSystemStatus({
+        queriesSucceeded: true,
+        recordedRuns: 0,
+        criticalFailures: 0,
+        nonCriticalFailures: 0,
+      }),
+    ).toBe("unknown");
+    expect(
+      deriveSystemStatus({
+        queriesSucceeded: false,
+        recordedRuns: 10,
+        criticalFailures: 0,
+        nonCriticalFailures: 0,
+      }),
+    ).toBe("unknown");
+    expect(
+      deriveSystemStatus({
+        queriesSucceeded: true,
+        recordedRuns: 10,
+        criticalFailures: 0,
+        nonCriticalFailures: 0,
+      }),
+    ).toBe("operational");
   });
 });

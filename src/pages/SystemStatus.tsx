@@ -12,6 +12,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
 import logo from "@/assets/quantivis-logo.png";
+import { deriveSystemStatus, type SystemStatus as StatusValue } from "@/lib/system-status";
 
 interface CronJob {
   job_name: string;
@@ -31,7 +32,7 @@ interface SystemMetrics {
   openAdvisories: number;
   totalDatasets: number;
   lastCronJobs: CronJob[];
-  overallStatus: "operational" | "degraded" | "outage";
+  overallStatus: StatusValue;
 }
 
 const MONITORED_JOBS = [
@@ -69,8 +70,19 @@ const SystemStatus = () => {
         MONITORED_JOBS.some(m => m.critical && m.name === j.job_name)
       );
 
-      const overallStatus: "operational" | "degraded" | "outage" =
-        criticalFailures.length > 0 ? "outage" : recentFailures.length > 0 ? "degraded" : "operational";
+      const queriesSucceeded = [
+        decisionsRes,
+        advisoriesRes,
+        datasetsRes,
+        cronRes,
+        calibrationRes,
+      ].every((result) => !result.error);
+      const overallStatus = deriveSystemStatus({
+        queriesSucceeded,
+        recordedRuns: cronJobs.length,
+        criticalFailures: criticalFailures.length,
+        nonCriticalFailures: recentFailures.length - criticalFailures.length,
+      });
 
       setMetrics({
         totalDecisions: decisions.length,
@@ -110,6 +122,7 @@ const SystemStatus = () => {
   };
 
   const statusConfig = {
+    unknown: { color: "text-muted-foreground", bg: "bg-muted/30 border-border", label: "Awaiting Telemetry", icon: Clock },
     operational: { color: "text-success", bg: "bg-success/10 border-success/20", label: "All Systems Operational", icon: CheckCircle2 },
     degraded: { color: "text-warning", bg: "bg-warning/10 border-warning/20", label: "Degraded Performance", icon: AlertTriangle },
     outage: { color: "text-destructive", bg: "bg-destructive/10 border-destructive/20", label: "System Issues Detected", icon: XCircle },
@@ -122,7 +135,7 @@ const SystemStatus = () => {
     never: { color: "text-muted-foreground", bg: "bg-muted/30", icon: Clock, label: "Scheduled" },
   };
 
-  const overall = metrics ? statusConfig[metrics.overallStatus] : statusConfig.operational;
+  const overall = metrics ? statusConfig[metrics.overallStatus] : statusConfig.unknown;
   const OverallIcon = overall.icon;
 
   const closedLoopRate = metrics && metrics.totalDecisions > 0

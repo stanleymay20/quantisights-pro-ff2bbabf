@@ -26,7 +26,7 @@ const pillars = [
   {
     icon: Lock,
     title: "Security",
-    badge: "Enterprise-grade",
+    badge: "Controls documented",
     links: [
       { to: "/security-overview", label: "Security Overview" },
       { to: "/toms", label: "TOMs (EN)" },
@@ -63,7 +63,7 @@ const pillars = [
   {
     icon: FileCheck,
     title: "Compliance",
-    badge: "Procurement-ready",
+    badge: "Procurement evidence",
     links: [
       { to: "/dpa", label: "DPA (EN)" },
       { to: "/de/avv", label: "AVV (DE) — beschaffungsreif" },

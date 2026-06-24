@@ -30,10 +30,10 @@ interface AuthLayoutProps {
  * Mobile collapses to a single column with the form first.
  */
 const TRUST_POINTS = [
-  { icon: ShieldCheck, label: "SOC 2 Type II controls" },
+  { icon: ShieldCheck, label: "Controls aligned to SOC 2; independent audit in progress" },
   { icon: Lock, label: "AES-256 at rest · TLS 1.3 in transit" },
   { icon: Globe2, label: "EU data residency · DSGVO ready" },
-  { icon: Sparkles, label: "Enterprise SSO · SCIM · MFA" },
+  { icon: Sparkles, label: "Enterprise SSO, SCIM, and MFA available when configured" },
 ];
 
 const AuthLayout = ({
@@ -66,10 +66,9 @@ const AuthLayout = ({
           >
             Security
           </a>
-          <span className="hidden md:flex items-center gap-1.5 text-[11px] text-muted-foreground/80">
-            <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
-            All systems operational
-          </span>
+          <Link to="/status" className="hidden md:inline hover:text-foreground transition-colors">
+            View system status
+          </Link>
         </nav>
       </header>
 
