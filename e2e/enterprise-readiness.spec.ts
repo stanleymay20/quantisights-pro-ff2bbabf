@@ -62,4 +62,27 @@ test.describe("Enterprise readiness", () => {
 
     expect(violations).toEqual([]);
   });
+
+  test("production headers allow observability without weakening framing", async ({ request }) => {
+    const response = await request.get("/");
+    const headers = response.headers();
+    const csp = headers["content-security-policy"] ?? "";
+
+    expect(csp).toContain("eu-assets.i.posthog.com");
+    expect(csp).toContain("eu.posthog.com");
+    expect(csp).toContain("ingest.de.sentry.io");
+    expect(csp).toContain("worker-src 'self' blob:");
+    expect(csp).toContain("frame-ancestors 'none'");
+  });
+
+  test("status does not mark missing telemetry as healthy", async ({ page }) => {
+    await page.goto("/status");
+
+    const awaitingFirstRun = page.getByText("Awaiting first run", { exact: false });
+    if ((await awaitingFirstRun.count()) > 0) {
+      await expect(
+        page.getByRole("heading", { name: "All Systems Operational" }),
+      ).toHaveCount(0);
+    }
+  });
 });
