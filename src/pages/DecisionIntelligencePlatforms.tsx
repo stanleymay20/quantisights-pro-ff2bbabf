@@ -1,4 +1,4 @@
-import { Helmet } from "react-helmet-async";
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Check, Minus, ArrowRight, Shield, Brain, GitBranch, Lock } from "lucide-react";
 import Navbar from "@/components/landing/Navbar";
