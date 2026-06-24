@@ -89,7 +89,29 @@ export function classifySemanticColumn(args: {
   const stats = sampleStats(samples);
   const rules: string[] = [];
 
-  if (isIdentifierHeader(column) || IDENTIFIER_HEADER.test(h) || stats.identifierRate >= 0.7) {
+  if (PII_HEADER.test(h)) {
+    rules.push("semantic:sensitive_header");
+    return {
+      column,
+      colIdx,
+      baseType,
+      semanticType: "pii",
+      businessRole: "sensitive_attribute",
+      confidence: 90,
+      reason: "Potential sensitive attribute detected from the column name.",
+      reviewRequired: true,
+      rulesApplied: rules,
+    };
+  }
+
+  if (
+    baseType !== "date" &&
+    (
+      isIdentifierHeader(column) ||
+      LOCATION_HEADER.test(h) ||
+      (baseType !== "value" && (IDENTIFIER_HEADER.test(h) || stats.identifierRate >= 0.7))
+    )
+  ) {
     rules.push("semantic:identifier_guard");
     return {
       column,
@@ -102,21 +124,6 @@ export function classifySemanticColumn(args: {
         ? "Location or postal identifier detected; protected from metric analysis."
         : "Business/entity identifier detected; protected from metric analysis.",
       reviewRequired: false,
-      rulesApplied: rules,
-    };
-  }
-
-  if (PII_HEADER.test(h)) {
-    rules.push("semantic:sensitive_header");
-    return {
-      column,
-      colIdx,
-      baseType,
-      semanticType: "pii",
-      businessRole: "sensitive_attribute",
-      confidence: 90,
-      reason: "Potential sensitive attribute detected from the column name.",
-      reviewRequired: true,
       rulesApplied: rules,
     };
   }
@@ -136,7 +143,7 @@ export function classifySemanticColumn(args: {
     };
   }
 
-  if (baseType === "date" || stats.dateRate >= 0.85) {
+  if (baseType === "date" || (baseType !== "value" && stats.dateRate >= 0.85)) {
     rules.push("semantic:date");
     return {
       column,
@@ -166,7 +173,14 @@ export function classifySemanticColumn(args: {
     };
   }
 
-  if (baseType === "value" && stats.numericRate >= 0.85) {
+  const hasKpiHeader =
+    FINANCIAL_KPI.test(h) ||
+    OPERATIONAL_KPI.test(h) ||
+    CUSTOMER_KPI.test(h) ||
+    WORKFORCE_KPI.test(h) ||
+    RISK_KPI.test(h);
+
+  if (stats.numericRate >= 0.6 && (baseType === "value" || hasKpiHeader)) {
     const semanticType: SemanticColumnType = PERCENT_HEADER.test(h) ? (h.includes("ratio") ? "ratio" : "percentage") : CURRENCY_HEADER.test(h) ? "currency" : "metric";
     const businessRole: BusinessRole = FINANCIAL_KPI.test(h)
       ? "financial_kpi"
@@ -188,7 +202,7 @@ export function classifySemanticColumn(args: {
       businessRole,
       confidence: Math.max(86, baseConfidence),
       reason: `${semanticType} column detected from numeric samples and business header semantics.`,
-      reviewRequired: businessRole === "unknown" || baseConfidence < 85,
+      reviewRequired: businessRole === "unknown" || baseConfidence < 85 || stats.numericRate < 0.85,
       rulesApplied: rules,
     };
   }

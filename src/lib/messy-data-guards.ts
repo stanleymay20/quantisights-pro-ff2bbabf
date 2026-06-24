@@ -87,12 +87,20 @@ export function parseMessyNumber(value: string | undefined | null): number {
   let cleaned = (magnitudeMatch?.[1] ?? raw)
     .replace(/[\s€$£¥₹]/g, '')
     .replace(/^\((.*)\)$/, '-$1')
-    .replace(/%$/, '')
-    .replace(/,/g, '');
+    .replace(/%$/, '');
 
-  // European decimal format: 1.234.567,89 or 1234,56
-  if (/^-?\d{1,3}(\.\d{3})+,\d+$/.test(raw.replace(/[\s€$£¥₹]/g, '')) || /^-?\d+,\d+$/.test(raw.replace(/[\s€$£¥₹]/g, ''))) {
-    cleaned = raw.replace(/[\s€$£¥₹]/g, '').replace(/^\((.*)\)$/, '-$1').replace(/%$/, '').replace(/\./g, '').replace(',', '.');
+  const hasComma = cleaned.includes(',');
+  const hasDot = cleaned.includes('.');
+  if (hasComma && hasDot) {
+    cleaned = cleaned.lastIndexOf(',') > cleaned.lastIndexOf('.')
+      ? cleaned.replace(/\./g, '').replace(',', '.')
+      : cleaned.replace(/,/g, '');
+  } else if (hasComma) {
+    cleaned = /^[+-]?\d{1,3}(,\d{3})+$/.test(cleaned)
+      ? cleaned.replace(/,/g, '')
+      : cleaned.replace(',', '.');
+  } else if (hasDot && /^[+-]?\d{1,3}(\.\d{3})+$/.test(cleaned)) {
+    cleaned = cleaned.replace(/\./g, '');
   }
 
   const parsed = Number(cleaned);
@@ -120,6 +128,10 @@ export function parseMessyDate(value: string | undefined | null): string | null 
   if (/^\d{6}$/.test(v)) return `${v.slice(0, 4)}-${v.slice(4, 6)}-01`;
   if (/^\d{4}-\d{2}$/.test(v)) return `${v}-01`;
   if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+  const ymd = v.match(/^(\d{4})[/.](\d{1,2})[/.](\d{1,2})$/);
+  if (ymd) {
+    return `${ymd[1]}-${ymd[2].padStart(2, '0')}-${ymd[3].padStart(2, '0')}`;
+  }
 
   const q1 = v.match(/^Q([1-4])[-_ ]?(\d{2}|\d{4})$/i);
   if (q1) {
@@ -147,7 +159,7 @@ export function parseMessyDate(value: string | undefined | null): string | null 
     return d.toISOString().slice(0, 10);
   }
 
-  const eu = v.match(/^(\d{1,2})[/.\-](\d{1,2})[/.\-](\d{2}|\d{4})$/);
+  const eu = v.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{2}|\d{4})$/);
   if (eu) {
     const first = Number(eu[1]);
     const second = Number(eu[2]);
@@ -165,6 +177,7 @@ export function parseMessyDate(value: string | undefined | null): string | null 
   if (Number.isFinite(unix) && unix > 1000000000000 && unix < 9999999999999) {
     return new Date(unix).toISOString().slice(0, 10);
   }
+  if (Number.isFinite(parseMessyNumber(v))) return null;
 
   const parsed = Date.parse(v);
   return Number.isNaN(parsed) ? null : new Date(parsed).toISOString().slice(0, 10);

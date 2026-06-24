@@ -168,7 +168,7 @@ export function buildImportRemediationPlan(args: {
     });
   }
 
-  if (issues.length === 0) {
+  if (!issues.some((issue) => issue.severity === "critical")) {
     issues.push({
       id: "no-blocking-issues",
       severity: "info",
