@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProjectProvider } from "@/contexts/ProjectContext";
 import { WorkspaceProvider } from "@/contexts/WorkspaceContext";
@@ -20,6 +20,8 @@ import SessionTimeout from "@/components/auth/SessionTimeout";
 import UpgradeModalProvider from "@/components/UpgradeModalProvider";
 import { routes, RouteLayout } from "@/routes";
 import PublicPageNav from "@/components/layout/PublicPageNav";
+import PageMetadata from "@/components/PageMetadata";
+import { metadataForPath } from "@/lib/page-metadata";
 
 // ═══════════════════════════════════════════════════════
 // QUERY CLIENT — production-hardened defaults
@@ -100,6 +102,12 @@ const wrapLayout: Record<RouteLayout, (el: React.ReactNode) => React.ReactNode> 
   minimal: (el) => <PMinimal>{el}</PMinimal>,
 };
 
+const RouteMetadata = () => {
+  const { pathname } = useLocation();
+  const metadata = metadataForPath(pathname);
+  return metadata ? <PageMetadata key={pathname} metadata={metadata} /> : null;
+};
+
 const App = () => (
   <ErrorBoundary>
     <ThemeProvider>
@@ -108,6 +116,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <RouteMetadata />
           <AuthProvider>
             <CookieConsent />
             <SessionTimeout />

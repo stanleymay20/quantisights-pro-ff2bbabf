@@ -17,7 +17,7 @@ const FOOTER_SECTIONS = [
   {
     title: "Enterprise Trust",
     links: [
-      { label: "Trust Center", to: "/trust-center" },
+      { label: "Trust Center", to: "/trust" },
       { label: "System Status", to: "/status" },
       { label: "SLA & Incident Response", to: "/sla" },
       { label: "Security & Compliance", to: "/security" },

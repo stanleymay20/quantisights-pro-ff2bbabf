@@ -49,7 +49,7 @@ const INTENT_PATTERNS: Array<{ intent: string; keywords: string[]; destination: 
   { intent: "view_outcomes",      keywords: ["outcome","result","did it work","performance","accuracy","track"],                                  destination: "/outcomes" },
   { intent: "view_interventions", keywords: ["intervention","alert","escalat","response","attention","risks"],                                    destination: "/interventions" },
   { intent: "view_lineage",       keywords: ["lineage","source","provenance","trace","where did"],                                                destination: "/lineage" },
-  { intent: "view_trust",         keywords: ["trust","security","certif","procurement"],                                                          destination: "/trust-center" },
+  { intent: "view_trust",         keywords: ["trust","security","certif","procurement"],                                                          destination: "/trust" },
   { intent: "view_execution",     keywords: ["execut","action","stall","overdue","blocked"],                                                      destination: "/execution" },
   { intent: "view_data",          keywords: ["data","dataset","analyse","analyze","analyze data"],                                                destination: "/dataset-explorer" },
 ];

@@ -37,7 +37,7 @@ export const LOCALIZATION_AUDIT: AuditEntry[] = [
   { route: "/enterprise-readiness", label: "Enterprise Readiness", status: "english_only", hardcodedStrings: 60 },
 
   // ── Trust / compliance surfaces ────────────────────────────────────────────
-  { route: "/trust-center", label: "Trust Center", status: "english_only", hardcodedStrings: 90 },
+  { route: "/trust", label: "Trust Center", status: "english_only", hardcodedStrings: 90 },
   { route: "/security", label: "Security", status: "english_only", hardcodedStrings: 70 },
   { route: "/security-overview", label: "Security Overview", status: "english_only", hardcodedStrings: 80 },
   { route: "/security-questionnaire", label: "Security Questionnaire", status: "english_only", hardcodedStrings: 100 },

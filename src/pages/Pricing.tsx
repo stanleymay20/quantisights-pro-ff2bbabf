@@ -320,7 +320,7 @@ const Pricing = () => {
               },
               {
                 q: "Is EU AI Act compliance included in every plan?",
-                a: "Yes. Every plan includes the sha256-hashed audit trail, human-in-the-loop approval documentation, EU AI Act risk classification, and the compliance evidence required for Articles 13 and 14. The Trust Center at quantivis.io/trust-center shows the live compliance state — no login required.",
+                a: "Yes. Every plan includes the sha256-hashed audit trail, human-in-the-loop approval documentation, EU AI Act risk classification, and the compliance evidence required for Articles 13 and 14. The Trust Center at quantivis.io/trust shows the live compliance state — no login required.",
               },
               {
                 q: "What about customers outside the EU — Americas, Asia, Africa?",

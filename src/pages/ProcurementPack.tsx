@@ -44,7 +44,7 @@ const ProcurementPack = () => {
       <header className="border-b border-border/30 bg-background/80 backdrop-blur-sm sticky top-0 z-30 print:hidden">
         <div className="container mx-auto px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link to="/trust-center" className="text-muted-foreground hover:text-foreground">
+            <Link to="/trust" className="text-muted-foreground hover:text-foreground">
               <ArrowLeft className="w-4 h-4" />
             </Link>
             <Link to="/"><img src={logo} alt="Quantivis Global" className="h-8" /></Link>

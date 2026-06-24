@@ -371,7 +371,7 @@ export default function Competitors() {
           </p>
           <div style={{ display:"flex", gap:12, justifyContent:"center", flexWrap:"wrap" }}>
             <a href="/login" style={{ background:ACCENT, color:"#fff", padding:"14px 32px", borderRadius:4, fontSize:15, fontWeight:700, textDecoration:"none" }}>Request Demo</a>
-            <Link to="/trust-center" style={{ background:"transparent", color:"rgba(255,255,255,0.7)", padding:"14px 24px", borderRadius:4, fontSize:15, border:"1px solid rgba(255,255,255,0.18)", textDecoration:"none" }}>Trust Center</Link>
+            <Link to="/trust" style={{ background:"transparent", color:"rgba(255,255,255,0.7)", padding:"14px 24px", borderRadius:4, fontSize:15, border:"1px solid rgba(255,255,255,0.18)", textDecoration:"none" }}>Trust Center</Link>
             <Link to="/pricing" style={{ background:"transparent", color:"rgba(255,255,255,0.7)", padding:"14px 24px", borderRadius:4, fontSize:15, border:"1px solid rgba(255,255,255,0.18)", textDecoration:"none" }}>See Pricing</Link>
           </div>
         </div>

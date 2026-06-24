@@ -87,7 +87,7 @@ const pillars = [
     title: "Trust Center",
     badge: "Evidence-backed",
     links: [
-      { to: "/trust-center", label: "Trust Center (live metrics)" },
+      { to: "/trust", label: "Trust Center (live metrics)" },
       { to: "/procurement-pack", label: "Procurement Pack (ZIP)" },
       { to: "/system-health", label: "System Health" },
       { to: "/status", label: "System Status" },

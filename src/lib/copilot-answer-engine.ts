@@ -343,7 +343,7 @@ function answerGovernance(): CopilotAnswer {
       { label: "GDPR / DSGVO", value: "DPA ready, data retention policies active" },
       { label: "Human-only approval", value: "No synthetic consensus — every approval is human" },
     ],
-    destination: "/trust-center",
+    destination: "/trust",
     destinationLabel: "Open Trust Center",
     confidence: null,
     dataSource: "live",

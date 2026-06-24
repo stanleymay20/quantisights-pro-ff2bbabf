@@ -459,7 +459,7 @@ const ExecutiveDailyDriver = ({ displayName, orgId, insights, topMetrics, pendin
       <div className="grid grid-cols-3 gap-2 border-t border-border/20 pt-2">
         {[
           { label: "Decision Ledger", icon: Target, path: "/decisions", count: pendingDecisions },
-          { label: "Trust Center", icon: ShieldCheck, path: "/trust-center" },
+          { label: "Trust Center", icon: ShieldCheck, path: "/trust" },
           { label: "Board Report", icon: BarChart3, path: "/board-report" },
         ].map(item => (
           <button

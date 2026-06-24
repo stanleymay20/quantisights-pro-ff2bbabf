@@ -167,7 +167,7 @@ const advancedGroups: AdvancedGroup[] = [
       { icon: CheckSquare,  label: "Compliance",         path: "/compliance" },
       { icon: Scale,        label: "Maturity",           path: "/governance-maturity" },
       { icon: Scale,        label: "Fairness Observ.",   path: "/fairness" },
-      { icon: Shield,       label: "Trust Center",       path: "/trust-center" },
+      { icon: Shield,       label: "Trust Center",       path: "/trust" },
       { icon: Shield,       label: "Security Overview",  path: "/security-overview" },
       { icon: FileText,     label: "Procurement Pack",   path: "/procurement-pack" },
     ],

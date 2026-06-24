@@ -220,7 +220,8 @@ export const routes: RouteEntry[] = [
   { path: "/enterprise", element: <Navigate to="/enterprise/contact" replace />, layout: "none" },
   { path: "/enterprise/contact", element: <EnterpriseContact />, layout: "public" },
   { path: "/competitive-analysis", element: <CompetitiveAnalysis />, layout: "full" },
-  { path: "/trust-center", element: <TrustCenter />, layout: "public" },
+  { path: "/trust", element: <TrustCenter />, layout: "public" },
+  { path: "/trust-center", element: <Navigate to="/trust" replace />, layout: "none" },
   { path: "/docs", element: <Documentation />, layout: "public" },
   { path: "/api-docs", element: <APIDocs />, layout: "public" },
 

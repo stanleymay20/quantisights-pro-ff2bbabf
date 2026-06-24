@@ -86,7 +86,7 @@ const SecurityOverview = () => (
         See also: <Link to="/toms" className="text-primary hover:underline">TOMs</Link> ·{" "}
         <Link to="/incident-response" className="text-primary hover:underline">Incident Response</Link> ·{" "}
         <Link to="/auditability" className="text-primary hover:underline">Auditability</Link> ·{" "}
-        <Link to="/trust-center" className="text-primary hover:underline">Trust Center</Link>
+        <Link to="/trust" className="text-primary hover:underline">Trust Center</Link>
       </p>
     </main>
   </div>
