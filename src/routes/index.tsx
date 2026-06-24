@@ -14,6 +14,7 @@ import { Navigate } from "react-router-dom";
 
 // Eager: critical-path landing
 import Index from "@/pages/Index";
+const DecisionIntelligencePlatforms = lazy(() => import("@/pages/DecisionIntelligencePlatforms"));
 
 // ── Auth ──
 const Login = lazy(() => import("@/pages/Login"));
@@ -211,6 +212,7 @@ export const routes: RouteEntry[] = [
   { path: "/security-questionnaire", element: <SecurityQuestionnaire />, layout: "public" },
   { path: "/handbook", element: <FounderHandbook />, layout: "full" },
   { path: "/vs/microsoft", element: <WhyVsMicrosoft />, layout: "public" },
+  { path: "/decision-intelligence-platforms", element: <DecisionIntelligencePlatforms />, layout: "public" },
   { path: "/pitch", element: <Pitch />, layout: "full" },
   { path: "/competitions", element: <Competitions />, layout: "full" },
   { path: "/pitch-deck", element: <PitchDeck />, layout: "full" },
