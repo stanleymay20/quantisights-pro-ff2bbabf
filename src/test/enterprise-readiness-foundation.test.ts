@@ -144,4 +144,22 @@ describe("enterprise readiness foundation", () => {
     expect(publicClaims).toContain("Quantivis entity audit");
   });
 
+  it("exposes diligence-grade procurement evidence fields", () => {
+    const checklist = read(
+      "src/components/security/ProcurementReadinessChecklist.tsx",
+    );
+
+    for (const field of [
+      "source",
+      "method",
+      "scope",
+      "owner",
+      "freshness",
+    ]) {
+      expect(checklist).toContain(field);
+    }
+    expect(checklist).toContain("Evidence unavailable");
+    expect(checklist).toContain("Verification overdue");
+  });
+
 });

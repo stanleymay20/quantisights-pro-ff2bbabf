@@ -12,9 +12,23 @@ interface ReadinessItem {
   control_label: string;
   status: "met" | "partial" | "missing" | "unknown";
   evidence_ref: string | null;
-  evidence_payload: any;
+  evidence_payload: {
+    source?: string;
+    method?: string;
+    scope?: string;
+    owner?: string;
+    freshness?: string;
+  } | null;
   last_verified_at: string | null;
 }
+
+const EVIDENCE_MAX_AGE_DAYS = 30;
+
+const isVerificationOverdue = (verifiedAt: string | null) => {
+  if (!verifiedAt) return false;
+  const ageMs = Date.now() - new Date(verifiedAt).getTime();
+  return ageMs > EVIDENCE_MAX_AGE_DAYS * 24 * 60 * 60 * 1000;
+};
 
 const statusBadge = (status: string) => {
   if (status === "met") return <Badge variant="outline" className="text-[10px] border-green-500/30 text-green-500"><CheckCircle2 className="w-3 h-3 mr-1" />Met</Badge>;
@@ -33,8 +47,13 @@ const ProcurementReadinessChecklist = () => {
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.rpc("get_procurement_readiness");
-      setItems((data as any) ?? []);
+      const { data, error } = await supabase.rpc("get_procurement_readiness");
+      if (error) {
+        setItems([]);
+        setLoading(false);
+        return;
+      }
+      setItems((data as ReadinessItem[] | null) ?? []);
       setLoading(false);
     })();
   }, []);
@@ -47,7 +66,7 @@ const ProcurementReadinessChecklist = () => {
     return (
       <Card className="border-border/50">
         <CardContent className="pt-6 text-center text-xs text-muted-foreground">
-          Readiness items will populate after the first trust-metrics scan runs.
+          Evidence unavailable. Readiness items will populate after a successful trust-metrics scan.
         </CardContent>
       </Card>
     );
@@ -93,8 +112,25 @@ const ProcurementReadinessChecklist = () => {
                       {it.last_verified_at && (
                         <div className="text-[10px] text-muted-foreground mt-0.5">
                           Verified {new Date(it.last_verified_at).toLocaleDateString("en-CA")}
+                          {isVerificationOverdue(it.last_verified_at) && (
+                            <span className="ml-1 text-amber-600">· Verification overdue</span>
+                          )}
                         </div>
                       )}
+                      <dl className="grid sm:grid-cols-2 gap-x-4 gap-y-1 mt-2 text-[10px] text-muted-foreground">
+                        {[
+                          ["Source", it.evidence_payload?.source],
+                          ["Method", it.evidence_payload?.method],
+                          ["Scope", it.evidence_payload?.scope],
+                          ["Owner", it.evidence_payload?.owner],
+                          ["Freshness", it.evidence_payload?.freshness],
+                        ].map(([label, value]) => (
+                          <div key={label} className="flex gap-1">
+                            <dt className="font-medium text-foreground/70">{label}:</dt>
+                            <dd>{value || "Evidence unavailable"}</dd>
+                          </div>
+                        ))}
+                      </dl>
                     </div>
                     {it.evidence_ref && (
                       <Link to={it.evidence_ref} className="text-[10px] text-primary hover:underline flex items-center gap-0.5 shrink-0">
