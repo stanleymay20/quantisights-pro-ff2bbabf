@@ -48,14 +48,18 @@ export const PAGE_METADATA: Record<string, PageMetadataDefinition> = {
     description:
       "Compare governed decision workflows, evidence trails, confidence controls, and enterprise capabilities in Quantivis.",
     canonicalPath: "/compare",
-    robots: "noindex, nofollow",
   },
   "/copilot": {
     title: "Governed Executive Copilot | Quantivis",
     description:
       "Use the Quantivis executive copilot to query governed evidence, decision history, and operational intelligence.",
     canonicalPath: "/copilot",
-    robots: "noindex, nofollow",
+  },
+  "/integrations": {
+    title: "Enterprise Data Integrations | Quantivis",
+    description:
+      "Review supported Quantivis data-source categories, connector activation, security boundaries, and enterprise integration options.",
+    canonicalPath: "/integrations",
   },
   "/embed": {
     title: "Embedded Decision Governance | Quantivis",

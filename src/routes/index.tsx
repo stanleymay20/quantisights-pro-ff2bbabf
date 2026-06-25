@@ -121,6 +121,8 @@ const PilotAudit = lazy(() => import("@/pages/PilotAudit"));
 const SystemStatus = lazy(() => import("@/pages/SystemStatus"));
 const SLA = lazy(() => import("@/pages/SLA"));
 const Compare = lazy(() => import("@/pages/Compare"));
+const CopilotOverview = lazy(() => import("@/pages/CopilotOverview"));
+const Integrations = lazy(() => import("@/pages/Integrations"));
 const EnterpriseContact = lazy(() => import("@/pages/EnterpriseContact"));
 const DataVendors = lazy(() => import("@/pages/admin/DataVendors"));
 const InternalData = lazy(() => import("@/pages/admin/InternalData"));
@@ -168,6 +170,7 @@ const LocalizationAudit = lazy(() => import("@/pages/admin/LocalizationAudit"));
 const ContextPacks = lazy(() => import("@/pages/admin/ContextPacks"));
 const GovernanceSimulation = lazy(() => import("@/pages/admin/GovernanceSimulation"));
 const GovernanceAudit = lazy(() => import("@/pages/admin/GovernanceAudit"));
+const ObservabilityCheck = lazy(() => import("@/pages/admin/ObservabilityCheck"));
 
 const NotFound = lazy(() => import("@/pages/NotFound"));
 const ConversationsEp1 = lazy(() => import("@/pages/ConversationsEp1"));
@@ -206,7 +209,9 @@ export const routes: RouteEntry[] = [
   { path: "/sla", element: <SLA />, layout: "public" },
 
   // ══════ Marketing / Trust / Comparison ══════
-  { path: "/compare", element: <Compare />, layout: "full" },
+  { path: "/compare", element: <Compare />, layout: "public" },
+  { path: "/copilot", element: <CopilotOverview />, layout: "public" },
+  { path: "/integrations", element: <Integrations />, layout: "public" },
   { path: "/business-model", element: <BusinessModel />, layout: "full" },
   { path: "/security", element: <Security />, layout: "public" },
   { path: "/security-questionnaire", element: <SecurityQuestionnaire />, layout: "public" },
@@ -264,7 +269,7 @@ export const routes: RouteEntry[] = [
 
   // ══════ Intelligence Core ══════
   { path: "/dashboard", element: <Dashboard />, layout: "full" },
-  { path: "/copilot", element: <Copilot />, layout: "full" },
+  { path: "/app/copilot", element: <Copilot />, layout: "full" },
   { path: "/copilot/analytics", element: <CopilotAnalytics />, layout: "full" },
   { path: "/kpis", element: <KPIs />, layout: "full" },
   { path: "/diagnostics", element: <Diagnostics />, layout: "full" },
@@ -311,6 +316,7 @@ export const routes: RouteEntry[] = [
   { path: "/data-hub", element: <DataHub />, layout: "full" },
   { path: "/aicis-sync", element: <AicisSync />, layout: "full" },
   { path: "/admin/bridge-health", element: <BridgeHealth />, layout: "full" },
+  { path: "/admin/observability-check", element: <ObservabilityCheck />, layout: "full" },
 
   // ══════ Reporting & Strategy ══════
   { path: "/reports", element: <Reports />, layout: "full" },
