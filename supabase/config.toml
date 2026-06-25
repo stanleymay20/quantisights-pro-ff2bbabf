@@ -111,3 +111,5 @@ project_id = "itpwpnwzzitkelffttyx"
     verify_jwt = false
   [functions.weekly-executive-brief]
     verify_jwt = false
+[functions.public-system-status]
+verify_jwt = false

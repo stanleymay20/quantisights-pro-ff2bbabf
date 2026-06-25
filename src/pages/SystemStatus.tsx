@@ -24,6 +24,11 @@ interface CronJob {
   records_processed: number | null;
 }
 
+interface PublicStatusResponse {
+  jobs: CronJob[];
+  generated_at: string;
+}
+
 interface SystemMetrics {
   totalDecisions: number;
   completedDecisions: number;
@@ -52,11 +57,11 @@ const SystemStatus = () => {
   const fetchStatus = async () => {
     setLoading(true);
     try {
-      const [decisionsRes, advisoriesRes, datasetsRes, cronRes, calibrationRes] = await Promise.all([
+      const [decisionsRes, advisoriesRes, datasetsRes, statusRes, calibrationRes] = await Promise.all([
         supabase.from("decision_ledger").select("decision_status, outcome_measured_at", { count: "exact", head: false }).limit(1000),
         supabase.from("advisory_instances").select("id", { count: "exact", head: true }).eq("status", "open"),
         supabase.from("datasets").select("id", { count: "exact", head: true }),
-        supabase.from("cron_run_log").select("*").order("started_at", { ascending: false }).limit(30),
+        supabase.functions.invoke<PublicStatusResponse>("public-system-status"),
         supabase.from("calibration_models").select("id", { count: "exact", head: true }),
       ]);
 
@@ -64,7 +69,7 @@ const SystemStatus = () => {
       const completed = decisions.filter(d => d.decision_status === "completed" || d.decision_status === "executed").length;
       const evaluated = decisions.filter(d => d.outcome_measured_at).length;
 
-      const cronJobs = (cronRes.data ?? []) as CronJob[];
+      const cronJobs = statusRes.data?.jobs ?? [];
       const recentFailures = cronJobs.filter(j => j.status === "failed" && new Date(j.started_at) > new Date(Date.now() - 24 * 60 * 60 * 1000));
       const criticalFailures = recentFailures.filter(j =>
         MONITORED_JOBS.some(m => m.critical && m.name === j.job_name)
@@ -74,14 +79,20 @@ const SystemStatus = () => {
         decisionsRes,
         advisoriesRes,
         datasetsRes,
-        cronRes,
-        calibrationRes,
+        statusRes,
       ].every((result) => !result.error);
+      const staleCriticalJobs = MONITORED_JOBS.filter((job) => {
+        if (!job.critical) return false;
+        const last = cronJobs.find((run) => run.job_name === job.name);
+        if (!last) return false;
+        return Date.now() - new Date(last.started_at).getTime() > 24 * 60 * 60 * 1000;
+      }).length;
       const overallStatus = deriveSystemStatus({
         queriesSucceeded,
         recordedRuns: cronJobs.length,
         criticalFailures: criticalFailures.length,
         nonCriticalFailures: recentFailures.length - criticalFailures.length,
+        staleCriticalJobs,
       });
 
       setMetrics({
