@@ -124,6 +124,7 @@ const Impressum = () => {
       </div>
     </main>
   </div>
-);
+  );
+};
 
 export default Impressum;

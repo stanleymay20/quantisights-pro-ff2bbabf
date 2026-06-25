@@ -174,6 +174,7 @@ const HowAIIsUsed = () => {
       </p>
     </main>
   </div>
-);
+  );
+};
 
 export default HowAIIsUsed;

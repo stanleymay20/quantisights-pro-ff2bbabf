@@ -157,6 +157,7 @@ const AISystemClassification = () => {
       </p>
     </main>
   </div>
-);
+  );
+};
 
 export default AISystemClassification;
