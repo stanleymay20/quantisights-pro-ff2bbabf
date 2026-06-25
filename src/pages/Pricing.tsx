@@ -13,6 +13,7 @@ import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
 import ComparisonSection from "@/components/landing/ComparisonSection";
 import { CONTACT } from "@/lib/contact-config";
+import { useSeoHead } from "@/lib/useSeoHead";
 
 const renderCellValue = (value: boolean | string) => {
   if (value === true) return <Check className="w-4 h-4 text-primary mx-auto" />;
@@ -21,6 +22,11 @@ const renderCellValue = (value: boolean | string) => {
 };
 
 const Pricing = () => {
+  useSeoHead({
+    title: "Pricing — Quantivis Decision Governance Platform",
+    description: "Transparent pricing for Decision Governance. Starter €99/mo, Growth €499/mo, Enterprise custom. SOC 2 controls, EU AI Act-aligned audit trail, immutable decision ledger.",
+    canonicalPath: "/pricing",
+  });
   const { user } = useAuth();
   const { tier: currentTier, subscribed } = useSubscription();
   const { toast } = useToast();
