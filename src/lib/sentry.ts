@@ -36,6 +36,7 @@ function detectRelease(): string {
 
 const SENTRY_ENV = detectEnvironment();
 const SENTRY_RELEASE = detectRelease();
+let initialized = false;
 
 export function initSentry(): void {
   if (!SENTRY_DSN) {
@@ -86,9 +87,28 @@ export function initSentry(): void {
       }),
     ],
   });
+  initialized = true;
 
   console.info(`[Sentry] env=${SENTRY_ENV} release=${SENTRY_RELEASE}`);
 }
+
+export function recordObservabilityStartup(): void {
+  if (!initialized || typeof window === "undefined") return;
+  const key = "quantivis_sentry_startup_recorded";
+  if (sessionStorage.getItem(key)) return;
+  sessionStorage.setItem(key, "true");
+  Sentry.captureMessage("quantivis_frontend_initialized", {
+    level: "info",
+    tags: { diagnostic: "startup" },
+  });
+}
+
+export const getSentryStatus = () => ({
+  configured: Boolean(SENTRY_DSN),
+  initialized,
+  environment: SENTRY_ENV,
+  release: SENTRY_RELEASE,
+});
 
 /** Set user context after authentication */
 export function setSentryUser(userId: string, email?: string, orgId?: string): void {

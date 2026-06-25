@@ -35,6 +35,7 @@ const POSTHOG_HOST = String(
 );
 
 let initialized = false;
+let loaded = false;
 
 async function init() {
   if (initialized || !POSTHOG_KEY || typeof window === "undefined") return;
@@ -51,6 +52,7 @@ async function init() {
       disable_session_recording: true,
       respect_dnt: true,
       loaded(p: any) {
+        loaded = true;
         const consent = localStorage.getItem("quantivis_cookie_consent");
         if (consent !== "accepted") p.opt_out_capturing();
       },
@@ -60,6 +62,16 @@ async function init() {
     // posthog-js not installed — analytics silently disabled
   }
 }
+
+export const getPostHogStatus = () => ({
+  configured: Boolean(POSTHOG_KEY),
+  initialized,
+  loaded,
+  host: POSTHOG_HOST,
+  consent: typeof localStorage === "undefined"
+    ? "unavailable"
+    : localStorage.getItem("quantivis_cookie_consent") ?? "not-set",
+});
 
 if (POSTHOG_KEY) void init();
 
