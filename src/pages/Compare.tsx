@@ -79,6 +79,11 @@ const CellValue = ({ value }: { value: boolean | string }) => {
 };
 
 const Compare = forwardRef<HTMLDivElement>((_, ref) => {
+  useSeoHead({
+    title: "Compare Quantivis vs BI, Consultants & DI Platforms",
+    description: "Honest, side-by-side comparison of Quantivis against Tableau, Power BI, strategy consultants, and other Decision Intelligence platforms — outcome tracking, calibration, audit trail.",
+    canonicalPath: "/compare",
+  });
   return (
     <div ref={ref} className="min-h-dvh bg-background flex flex-col">
       <Navbar />

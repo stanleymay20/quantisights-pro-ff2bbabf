@@ -102,7 +102,14 @@ const LAYERS: Layer[] = [
   },
 ];
 
-const HowAIIsUsed = () => (
+const HowAIIsUsed = () => {
+  useSeoHead({
+    title: "How AI Is Used — Layered Autonomy & Guarantees | Quantivis",
+    description: "Quantivis uses deterministic, statistical, and human-approved AI layers — never autonomous decisioning. Full transparency on models, oversight, and verifiable guarantees.",
+    canonicalPath: "/how-ai-is-used",
+    ogType: "article",
+  });
+  return (
   <div className="min-h-dvh bg-background flex flex-col">
     <header className="border-b border-border/30 bg-background/80 backdrop-blur-sm sticky top-0 z-30">
       <div className="container mx-auto px-6 h-14 flex items-center">
