@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import logo from "@/assets/quantivis-logo.png";
 import { CONTACT } from "@/lib/contact-config";
+import { useSeoHead } from "@/lib/useSeoHead";
 
 const generateWhitepaperContent = (): string => {
   const date = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
@@ -318,6 +319,11 @@ const SECURITY_FAQ = [
 ];
 
 const Security = () => {
+  useSeoHead({
+    title: "Security & Compliance — SOC 2, ISO 27001, GDPR | Quantivis",
+    description: "Quantivis security architecture: AES-256 at rest, TLS 1.3 in transit, EU data residency, SOC 2 Type II controls, ISO 27001 hosting, GDPR-compliant DPA. Download the security whitepaper.",
+    canonicalPath: "/security",
+  });
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   return (
   <div className="min-h-dvh bg-background flex flex-col">

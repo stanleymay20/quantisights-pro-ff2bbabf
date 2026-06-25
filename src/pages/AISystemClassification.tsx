@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import logo from "@/assets/quantivis-logo.png";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useSeoHead } from "@/lib/useSeoHead";
 
 const CAPABILITIES: Array<{
   capability: string;
@@ -84,7 +85,14 @@ const catColor = (c: string) =>
     : c === "Minimal" ? "border-blue-500/30 text-blue-500"
     : "border-green-500/30 text-green-500";
 
-const AISystemClassification = () => (
+const AISystemClassification = () => {
+  useSeoHead({
+    title: "AI System Classification — EU AI Act Risk Tiers | Quantivis",
+    description: "How Quantivis classifies each platform capability under the EU AI Act: oversight, explainability, logging, and data governance per Article 9/13/14/50.",
+    canonicalPath: "/ai-system-classification",
+    ogType: "article",
+  });
+  return (
   <div className="min-h-dvh bg-background flex flex-col">
     <header className="border-b border-border/30 bg-background/80 backdrop-blur-sm sticky top-0 z-30">
       <div className="container mx-auto px-6 h-14 flex items-center">
@@ -149,6 +157,7 @@ const AISystemClassification = () => (
       </p>
     </main>
   </div>
-);
+  );
+};
 
 export default AISystemClassification;
