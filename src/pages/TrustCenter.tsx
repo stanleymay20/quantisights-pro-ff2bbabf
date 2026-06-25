@@ -9,6 +9,7 @@ import AttestedEvidence from "@/components/security/AttestedEvidence";
 import LiveTrustMetrics from "@/components/security/LiveTrustMetrics";
 import ProcurementReadinessChecklist from "@/components/security/ProcurementReadinessChecklist";
 import DownloadProcurementPack from "@/components/security/DownloadProcurementPack";
+import SecurityHeaderStatus from "@/components/security/SecurityHeaderStatus";
 
 const reasoningPrinciples: { label: string; value: string }[] = [
   { label: "Deterministic reasoning", value: "All scoring, propagation, and classification run through pure-function engines. LLMs never compute numbers." },
@@ -96,6 +97,7 @@ const TrustCenter = () => {
   return (
     <SectionErrorBoundary sectionName="Trust Center">
       <div className="space-y-8 max-w-4xl">
+        <SecurityHeaderStatus />
         {/* Certification roadmap — transparency over marketing */}
         <div className="border border-border/30 rounded-lg p-5 bg-muted/20">
           <div className="flex items-center justify-between mb-4">

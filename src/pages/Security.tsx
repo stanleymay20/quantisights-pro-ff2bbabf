@@ -9,6 +9,7 @@ import {
 import logo from "@/assets/quantivis-logo.png";
 import { CONTACT } from "@/lib/contact-config";
 import { useSeoHead } from "@/lib/useSeoHead";
+import SecurityHeaderStatus from "@/components/security/SecurityHeaderStatus";
 
 const generateWhitepaperContent = (): string => {
   const date = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
@@ -342,6 +343,9 @@ const Security = () => {
     </header>
 
     <main className="flex-1">
+      <div className="container mx-auto px-6 pt-6">
+        <SecurityHeaderStatus />
+      </div>
       {/* Hero */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent" />
