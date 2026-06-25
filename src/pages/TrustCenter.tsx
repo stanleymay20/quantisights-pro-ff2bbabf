@@ -39,7 +39,7 @@ const sections = [
     badge: "Full Lineage",
     content: [
       "Every insight, advisory, and decision is assigned an Evidence Classification: OBSERVED_FACT, STATISTICAL_INFERENCE, HEURISTIC_ESTIMATE, or AI_RECOMMENDATION.",
-      "The Decision Ledger is an immutable audit trail — every approval, dismissal, and modification is timestamped with actor identity and rationale.",
+      "The Decision Ledger uses an append-only audit-log design; approvals, dismissals, and modifications are timestamped with actor identity and rationale.",
       "Data lineage tracks every metric from raw ingestion → transformation → aggregation → insight, viewable in the Lineage Explorer.",
       "The audit_log table is write-once with database-level DENY policies on UPDATE and DELETE — ensuring untamperable records.",
     ],
@@ -60,7 +60,7 @@ const sections = [
     title: "Data Handling & Isolation",
     badge: "DSGVO-compliant",
     content: [
-      "All data is scoped by organization_id — enforced at the database level via Row Level Security (RLS) on 100% of tables.",
+      "Organization-scoped Row Level Security controls are implemented; current control evidence is available to enterprise reviewers under NDA.",
       "Data encryption at rest (AES-256) and in transit (TLS 1.3). No data leaves the EU processing region.",
       "AI redaction is available — sensitive fields can be excluded from LLM context before generation.",
       "Data retention policies are configurable per category with automated cleanup cycles.",
@@ -82,7 +82,7 @@ const sections = [
     title: "Operational Integrity",
     badge: "Autonomous",
     content: [
-      "7 autonomous orchestration jobs maintain system health: outcome evaluation (6h), calibration (12h), staleness checks (4h), retention cleanup (daily), morning briefs (daily), convergence reconciliation (6h), and health probes (5min).",
+      "Six scheduled workflows are represented on the public status page. A workflow is only marked healthy after successful-run telemetry is recorded.",
       "All jobs are protected by advisory locks (pg_advisory_lock) to prevent concurrent execution overlap.",
       "Every job run is logged to cron_run_log with status, duration, error messages, and metadata for full observability.",
       "The System Health dashboard provides real-time visibility into pipeline status, closed-loop rates, and job health.",
@@ -172,7 +172,7 @@ const TrustCenter = () => {
           </div>
           <p className="text-muted-foreground text-sm leading-relaxed max-w-2xl">
             Quantivis is built for enterprises that require provable, auditable intelligence. Every claim on this page
-            is anchored to real operational evidence — daily snapshots, immutable hashes, and per-metric provenance.
+            is intended to be anchored to operational evidence. Where live evidence is unavailable, the page states that verification is pending.
           </p>
         </div>
 
@@ -184,11 +184,11 @@ const TrustCenter = () => {
               <div>
                 <h2 className="text-base font-semibold mb-1">Sovereign AI Governance</h2>
                 <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl">
-                  Quantivis keeps your AI decisions on-premises, auditable, and under your control —
-                  meeting EU AI Act Articles 13 and 14. Your data never leaves the EU (Supabase EU region).
-                  Every decision is logged in a tamper-evident, sha256-hashed audit trail with human-only
-                  approval enforcement. 72% of European enterprises are increasing sovereign AI investment
-                  (Accenture, 2025). Quantivis is built for that mandate.
+                  Quantivis supports governed, auditable decision workflows aligned with the transparency
+                  and human-oversight objectives of EU AI Act Articles 13 and 14. Primary application hosting
+                  is EU-first by default; third-party AI routing and transfer safeguards depend on each customer
+                  configuration and are documented during procurement. Audit records use an append-only design,
+                  and deployment options beyond the hosted service remain part of the enterprise roadmap.
                 </p>
                 <div className="flex flex-wrap gap-2 mt-3">
                   {["EU AI Act Art. 13 — Transparency", "EU AI Act Art. 14 — Human Oversight", "GDPR / DSGVO", "EU Data Residency", "sha256 Audit Trail"].map(tag => (

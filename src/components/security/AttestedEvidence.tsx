@@ -17,8 +17,8 @@ interface EvidenceMetric {
 const METRICS: EvidenceMetric[] = [
   {
     label: "Public-schema tables with RLS",
-    value: "100%",
-    basis: "Enforced by migration policy; verified by Supabase linter on every deploy.",
+    value: "Implemented",
+    basis: "RLS controls are implemented; current table-level evidence is available under NDA.",
   },
   {
     label: "Audit log mutability",
@@ -27,12 +27,12 @@ const METRICS: EvidenceMetric[] = [
   },
   {
     label: "Decisions with named human approver",
-    value: "100%",
+    value: "Control defined",
     basis: "decision_ledger NOT NULL constraint on approver_id at 'approved' state.",
   },
   {
     label: "Insights with evidence_sources",
-    value: "100%",
+    value: "Control defined",
     basis: "Required JSONB column; insights without provenance rejected at write time.",
   },
   {
@@ -47,13 +47,13 @@ const METRICS: EvidenceMetric[] = [
   },
   {
     label: "Autonomous orchestration jobs",
-    value: "7 (locked)",
-    basis: "pg_advisory_lock prevents concurrent runs; all logged to cron_run_log.",
+    value: "6 monitored",
+    basis: "The public status page reports successful-run evidence for six scheduled workflows.",
   },
   {
     label: "Edge functions with CORS + correlation_id",
-    value: "100%",
-    basis: "Enforced by _shared utilities; reviewed in every PR.",
+    value: "Shared controls",
+    basis: "Shared CORS and correlation helpers are implemented; coverage evidence is reviewed separately.",
   },
   {
     label: "PII redaction before LLM",
@@ -66,14 +66,14 @@ const METRICS: EvidenceMetric[] = [
     basis: "AWS EU-West-1 / Supabase EU (Frankfurt) for all primary data.",
   },
   {
-    label: "Sub-processors with signed DPA",
-    value: "100%",
-    basis: "See /subprocessors registry; DPAs filed with Legal.",
+    label: "Sub-processor agreements",
+    value: "Available on request",
+    basis: "Current DPA and transfer documentation is provided during enterprise diligence.",
   },
   {
     label: "Disclaimer coverage (advisory surfaces)",
-    value: "100%",
-    basis: "IntelligenceDisclaimer required on advisory/simulation/executive/report contexts.",
+    value: "Implemented",
+    basis: "Disclaimer controls are implemented on designated advisory surfaces; current coverage can be reviewed.",
   },
 ];
 

@@ -162,4 +162,39 @@ describe("enterprise readiness foundation", () => {
     expect(checklist).toContain("Verification overdue");
   });
 
+  it("exposes buyer-safe public integrations, copilot, and comparison routes", () => {
+    const routes = read("src/routes/index.tsx");
+    expect(routes).toContain('path: "/integrations"');
+    expect(routes).toContain('{ path: "/copilot", element: <CopilotOverview />, layout: "public" }');
+    expect(routes).toContain('{ path: "/compare", element: <Compare />, layout: "public" }');
+  });
+
+  it("initializes both observability clients from the application entrypoint", () => {
+    const main = read("src/main.tsx");
+    expect(main).toContain('import "@/lib/analytics"');
+    expect(main).toContain("recordObservabilityStartup");
+  });
+
+  it("uses sanitized scheduler evidence and degrades stale critical jobs", () => {
+    const statusPage = read("src/pages/SystemStatus.tsx");
+    const statusLogic = read("src/lib/system-status.ts");
+    expect(statusPage).toContain('functions.invoke<PublicStatusResponse>("public-system-status")');
+    expect(statusLogic).toContain("staleCriticalJobs");
+    expect(statusLogic).toContain('return "degraded"');
+  });
+
+  it("removes unsupported absolutes from the public trust surface", () => {
+    const trust = read("src/pages/TrustCenter.tsx");
+    const evidence = read("src/components/security/AttestedEvidence.tsx");
+    for (const unsupported of [
+      "Your data never leaves the EU",
+      "keeps your AI decisions on-premises",
+      "7 autonomous orchestration jobs",
+      'value: "100%"',
+      "Sub-processors with signed DPA",
+    ]) {
+      expect(`${trust}\n${evidence}`).not.toContain(unsupported);
+    }
+  });
+
 });
