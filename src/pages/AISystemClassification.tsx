@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import logo from "@/assets/quantivis-logo.png";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useSeoHead } from "@/lib/useSeoHead";
 
 const CAPABILITIES: Array<{
   capability: string;

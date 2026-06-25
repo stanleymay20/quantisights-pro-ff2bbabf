@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import logo from "@/assets/quantivis-logo.png";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { useSeoHead } from "@/lib/useSeoHead";
 
 type Layer = {
   key: string;

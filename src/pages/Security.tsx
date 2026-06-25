@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import logo from "@/assets/quantivis-logo.png";
 import { CONTACT } from "@/lib/contact-config";
+import { useSeoHead } from "@/lib/useSeoHead";
 
 const generateWhitepaperContent = (): string => {
   const date = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });

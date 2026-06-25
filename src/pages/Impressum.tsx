@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import logo from "@/assets/quantivis-logo.png";
 import { CONTACT } from "@/lib/contact-config";
+import { useSeoHead } from "@/lib/useSeoHead";
 
 /**
  * Impressum — legally required under German TMG §5 / DDG §5

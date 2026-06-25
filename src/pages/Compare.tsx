@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { Check, X, ArrowRight } from "lucide-react";
 import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
+import { useSeoHead } from "@/lib/useSeoHead";
 
 interface CompetitorRow {
   feature: string;
