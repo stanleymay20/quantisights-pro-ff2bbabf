@@ -71,8 +71,8 @@ const sections = [
     title: "Security Posture",
     badge: "Enterprise-grade",
     content: [
-      "Multi-factor authentication (MFA) with TOTP and WebAuthn/Passkey support.",
-      "SSO integration via SAML 2.0 with enforced domain-level SSO policies.",
+      "Multi-factor authentication (MFA) with TOTP and WebAuthn/Passkey support, available when configured.",
+      "SSO integration via SAML 2.0 with domain-level enforcement available when configured.",
       "Session management with configurable timeout, concurrent session limits, and login anomaly detection.",
       "Rate limiting on all API endpoints with automated abuse detection.",
     ],

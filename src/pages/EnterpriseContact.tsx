@@ -236,7 +236,7 @@ const EnterpriseContact = () => {
 
             <div className="glass-card p-6 space-y-3">
               <h3 className="font-semibold text-sm">Enterprise includes</h3>
-              {["SSO / SAML integration","Custom SLA & uptime guarantee","Dedicated onboarding engineer","DPA & AVV (GDPR-ready)","Multi-org command center","Priority support & SLAs","On-premise option available"].map((item) => (
+              {["SSO / SAML integration when configured","Custom SLA commitments in executed agreements","Dedicated onboarding engineer","DPA & AVV (GDPR-ready)","Multi-org command center","Priority support terms","On-premise option available"].map((item) => (
                 <div key={item} className="flex items-center gap-2 text-sm text-muted-foreground">
                   <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
                   {item}
