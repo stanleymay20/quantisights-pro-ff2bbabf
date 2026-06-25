@@ -221,6 +221,7 @@ export const routes: RouteEntry[] = [
   { path: "/enterprise/contact", element: <EnterpriseContact />, layout: "public" },
   { path: "/competitive-analysis", element: <CompetitiveAnalysis />, layout: "full" },
   { path: "/trust-center", element: <TrustCenter />, layout: "public" },
+  { path: "/trust", element: <Navigate to="/trust-center" replace />, layout: "none" },
   { path: "/docs", element: <Documentation />, layout: "public" },
   { path: "/api-docs", element: <APIDocs />, layout: "public" },
 
