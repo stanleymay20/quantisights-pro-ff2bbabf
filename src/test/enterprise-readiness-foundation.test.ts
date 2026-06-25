@@ -197,4 +197,52 @@ describe("enterprise readiness foundation", () => {
     }
   });
 
+  it("reports missing scheduler evidence as telemetry unavailable", () => {
+    const statusPage = read("src/pages/SystemStatus.tsx");
+    expect(statusPage).toContain("Telemetry unavailable");
+    expect(statusPage).toContain("telemetryAvailable");
+    for (const field of [
+      "last_run_at",
+      "next_expected_run_at",
+      "severity",
+      "evidence_source",
+    ]) {
+      expect(statusPage).toContain(field);
+    }
+  });
+
+  it("guards observability test captures to admin or development access", () => {
+    const diagnostics = read("src/pages/admin/ObservabilityCheck.tsx");
+    expect(diagnostics).toContain("orgRole");
+    expect(diagnostics).toContain('orgRole === "owner" || orgRole === "admin"');
+    expect(diagnostics).toContain("import.meta.env.DEV");
+    expect(diagnostics).toContain("Capture attempted");
+    expect(diagnostics).toContain("Provider ingestion not verified");
+  });
+
+  it("surfaces unverified hosting headers on trust and security pages", () => {
+    expect(existsSync(resolve(root, "src/components/security/SecurityHeaderStatus.tsx"))).toBe(true);
+    const diagnostic = read("src/components/security/SecurityHeaderStatus.tsx");
+    expect(diagnostic).toContain("Security headers not verified on current deployment.");
+    expect(read("src/pages/TrustCenter.tsx")).toContain("<SecurityHeaderStatus />");
+    expect(read("src/pages/Security.tsx")).toContain("<SecurityHeaderStatus />");
+  });
+
+  it("documents deployment secrets, hosting headers, and dependency risk", () => {
+    const deployment = read("docs/DEPLOYMENT_SECRETS.md");
+    expect(deployment).toContain("SUPABASE_ACCESS_TOKEN");
+    expect(deployment).toContain("SUPABASE_PROJECT_REF");
+    expect(deployment).toContain("itpwpnwzzitkelffttyx");
+
+    const hosting = read("docs/HOSTING_SECURITY_HEADERS.md");
+    expect(hosting).toContain("Content-Security-Policy");
+    expect(hosting).toContain("X-Frame-Options");
+    expect(hosting).toContain("worker-src 'self' blob:");
+
+    const dependencies = read("docs/DEPENDENCY_RISK.md");
+    expect(dependencies).toContain("src/lib/workbook-parser.ts");
+    expect(dependencies).toContain("xlsx");
+    expect(dependencies).toContain("Vite 8");
+  });
+
 });
