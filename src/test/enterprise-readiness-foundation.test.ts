@@ -245,4 +245,50 @@ describe("enterprise readiness foundation", () => {
     expect(dependencies).toContain("Vite 8");
   });
 
+  it("automates Cloudflare enterprise security headers", () => {
+    const apply = read("scripts/apply-cloudflare-security.mjs");
+    const verify = read("scripts/verify-cloudflare-security.mjs");
+    const workflow = read(".github/workflows/cloudflare-security.yml");
+    const docs = read("docs/CLOUDFLARE_ENTERPRISE_SECURITY.md");
+    const evidence = read("docs/security-controls-evidence.md");
+    const pkg = read("package.json");
+
+    for (const expected of [
+      "CLOUDFLARE_API_TOKEN",
+      "CLOUDFLARE_ZONE_ID",
+      'http.host eq "${HOSTNAME}"',
+      "Permissions-Policy",
+      "Cross-Origin-Opener-Policy",
+      "Cross-Origin-Resource-Policy",
+      "Strict-Transport-Security",
+    ]) {
+      expect(apply).toContain(expected);
+    }
+
+    for (const expected of [
+      "content-security-policy",
+      "x-frame-options",
+      "strict-transport-security",
+      "x-content-type-options",
+      "referrer-policy",
+      "permissions-policy",
+      "cross-origin-opener-policy",
+      "cross-origin-resource-policy",
+    ]) {
+      expect(verify).toContain(expected);
+    }
+
+    expect(workflow).toContain("workflow_dispatch");
+    expect(workflow).toContain("npm ci");
+    expect(workflow).toContain("npm run cloudflare:apply");
+    expect(workflow).toContain("sleep 30");
+    expect(workflow).toContain("npm run cloudflare:verify");
+    expect(pkg).toContain('"cloudflare:apply"');
+    expect(pkg).toContain('"cloudflare:verify"');
+    expect(docs).toContain("Rollback plan");
+    expect(docs).toContain("Least-privilege");
+    expect(evidence).toContain("Cloudflare enterprise response headers");
+    expect(evidence).toContain("npm run cloudflare:verify");
+  });
+
 });

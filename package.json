@@ -14,6 +14,8 @@
     "verify:security-config": "node scripts/render-security-config.mjs --check",
     "headers:apply": "node scripts/apply-cloudflare-security-headers.mjs",
     "headers:verify": "node scripts/verify-security-headers.mjs",
+    "cloudflare:apply": "node scripts/apply-cloudflare-security.mjs",
+    "cloudflare:verify": "node scripts/verify-cloudflare-security.mjs",
     "certify": "vitest run src/lib/certification/certification.test.ts",
     "certify:full": "QV_CERTIFY_FULL=1 vitest run src/lib/certification/certification.test.ts",
     "release-gate": "npm run test && npm run certify:full && npm run build"

@@ -160,7 +160,8 @@ Lovable Cloud CDN (Edge)
 |-------|---------|------|-------------|
 | Network | TLS 1.3 | Preventive | Infrastructure-inherited |
 | Network | CORS allowlist | Preventive | `cors.ts` — origin validation |
-| Network | CSP headers | Preventive | `_headers` file |
+| Network | Cloudflare enterprise response headers | Preventive | `npm run cloudflare:verify`; checks CSP, X-Frame-Options, HSTS, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, COOP, CORP |
+| Network | CSP headers | Preventive | Cloudflare response header transform rule; local config mirrored in `_headers`, `_worker.js`, and `vercel.json` |
 | Auth | JWT validation | Preventive | `auth-guard.ts` — `getUser()` |
 | Auth | Org membership | Preventive | `is_org_member` RPC |
 | Auth | Step-up auth | Preventive | `exec_verify_step_up_auth` (5-min window) |
