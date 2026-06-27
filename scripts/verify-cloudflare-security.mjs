@@ -1,4 +1,6 @@
-const TARGET_URL = process.env.CLOUDFLARE_VERIFY_URL ?? "https://www.quantivis.io/";
+const DEFAULT_TARGET_URL = "https://www.quantivis.io/";
+const TARGET_URL = process.env.CLOUDFLARE_VERIFY_URL ?? DEFAULT_TARGET_URL;
+const CACHE_BUST = process.env.CLOUDFLARE_VERIFY_CACHE_BUST !== "0";
 
 const requiredHeaders = [
   {
@@ -50,7 +52,12 @@ const requiredHeaders = [
 ];
 
 async function fetchHeaders() {
-  const response = await fetch(TARGET_URL, {
+  const url = new URL(TARGET_URL);
+  if (CACHE_BUST) {
+    url.searchParams.set("cf_header_probe", String(Date.now()));
+  }
+
+  const response = await fetch(url, {
     method: "HEAD",
     redirect: "follow",
   });

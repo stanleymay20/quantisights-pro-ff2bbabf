@@ -3,6 +3,7 @@ const HOSTNAME = "www.quantivis.io";
 const APEX_HOSTNAME = "quantivis.io";
 const PHASE = "http_response_headers_transform";
 const RULE_REF = "quantivis_enterprise_security_headers";
+const WORKER_NAME = "quantivis-enterprise-security-headers";
 
 function readCloudflareEnvironment(env = process.env) {
   const { CLOUDFLARE_API_TOKEN, CLOUDFLARE_ZONE_ID } = env;
@@ -63,6 +64,10 @@ function summarizeRule(rule) {
   };
 }
 
+function routeLooksRelevant(route) {
+  return String(route.pattern ?? "").includes(HOSTNAME) || route.script === WORKER_NAME;
+}
+
 async function diagnoseCloudflareSecurityRouting(env = readCloudflareEnvironment()) {
   console.log(`Cloudflare security routing diagnosis for ${HOSTNAME}`);
 
@@ -121,6 +126,29 @@ async function diagnoseCloudflareSecurityRouting(env = readCloudflareEnvironment
 
   if (responseHeaderRulesets.length === 0) {
     console.log("No zone-level response header transform ruleset exists in this zone.");
+  }
+
+  const workerRoutes = await cloudflareRequest(
+    `/zones/${env.CLOUDFLARE_ZONE_ID}/workers/routes?per_page=100`,
+    env,
+  );
+  const relevantWorkerRoutes = workerRoutes.filter(routeLooksRelevant);
+
+  console.log(`Worker routes in zone: ${workerRoutes.length}`);
+  console.log(`Relevant Worker routes for ${HOSTNAME}: ${relevantWorkerRoutes.length}`);
+
+  for (const route of relevantWorkerRoutes) {
+    console.log(`Worker route: ${route.pattern}`);
+    console.log(`- id: ${route.id ?? "<unknown>"}`);
+    console.log(`- script: ${route.script ?? "<none>"}`);
+    console.log(`- relevant: ${String(routeLooksRelevant(route))}`);
+  }
+
+  const disabledRelevantRoutes = relevantWorkerRoutes.filter((route) => !route.script);
+  if (disabledRelevantRoutes.length > 0) {
+    console.log(
+      `Warning: ${disabledRelevantRoutes.length} relevant Worker route(s) have no script and may disable Worker execution.`,
+    );
   }
 }
 
