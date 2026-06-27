@@ -313,6 +313,15 @@ describe("enterprise readiness foundation", () => {
     expect(payload).not.toHaveProperty("kind");
     expect(payload).toHaveProperty("phase");
     expect(payload.rules).toEqual([rule]);
+
+    const sanitizedPayload = buildEntrypointRulesetPayload(
+      { name: "default", description: "Existing ruleset", kind: "zone" },
+      [{ ...rule, kind: "zone", version: "1", last_updated: "2026-06-27T00:00:00Z" }],
+    );
+
+    expect(JSON.stringify(sanitizedPayload)).not.toContain('"kind"');
+    expect(JSON.stringify(sanitizedPayload)).not.toContain('"version"');
+    expect(JSON.stringify(sanitizedPayload)).not.toContain('"last_updated"');
   });
 
 });

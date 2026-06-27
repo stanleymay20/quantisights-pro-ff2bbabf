@@ -5,6 +5,7 @@ const HOSTNAME = "www.quantivis.io";
 const RULE_REF = "quantivis_enterprise_security_headers";
 const RULE_DESCRIPTION = "Quantivis enterprise security headers for www.quantivis.io";
 const PHASE = "http_response_headers_transform";
+const UNSUPPORTED_RULESET_PUT_FIELDS = new Set(["kind", "version", "last_updated"]);
 
 export const contentSecurityPolicy = [
   "default-src 'self'",
@@ -127,6 +128,22 @@ function upsertManagedRule(existingRules = []) {
   return { rules, replaced };
 }
 
+export function stripUnsupportedRulesetPutFields(value) {
+  if (Array.isArray(value)) {
+    return value.map((item) => stripUnsupportedRulesetPutFields(item));
+  }
+
+  if (!value || typeof value !== "object") {
+    return value;
+  }
+
+  return Object.fromEntries(
+    Object.entries(value)
+      .filter(([key]) => !UNSUPPORTED_RULESET_PUT_FIELDS.has(key))
+      .map(([key, fieldValue]) => [key, stripUnsupportedRulesetPutFields(fieldValue)]),
+  );
+}
+
 export function buildEntrypointRulesetPayload(existingRuleset, rules) {
   return {
     name: existingRuleset?.name ?? "default",
@@ -134,7 +151,7 @@ export function buildEntrypointRulesetPayload(existingRuleset, rules) {
       existingRuleset?.description ??
       "Zone-level HTTP response header transform rules managed by automation.",
     phase: PHASE,
-    rules,
+    rules: stripUnsupportedRulesetPutFields(rules),
   };
 }
 
