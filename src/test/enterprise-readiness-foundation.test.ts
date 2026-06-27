@@ -311,15 +311,24 @@ describe("enterprise readiness foundation", () => {
       value: "DENY",
     });
     expect(payload).not.toHaveProperty("kind");
-    expect(payload).toHaveProperty("phase");
+    expect(payload).not.toHaveProperty("phase");
     expect(payload.rules).toEqual([rule]);
 
     const sanitizedPayload = buildEntrypointRulesetPayload(
-      { name: "default", description: "Existing ruleset", kind: "zone" },
-      [{ ...rule, kind: "zone", version: "1", last_updated: "2026-06-27T00:00:00Z" }],
+      { name: "default", description: "Existing ruleset", kind: "zone", phase: "http_response_headers_transform" },
+      [
+        {
+          ...rule,
+          kind: "zone",
+          phase: "http_response_headers_transform",
+          version: "1",
+          last_updated: "2026-06-27T00:00:00Z",
+        },
+      ],
     );
 
     expect(JSON.stringify(sanitizedPayload)).not.toContain('"kind"');
+    expect(JSON.stringify(sanitizedPayload)).not.toContain('"phase"');
     expect(JSON.stringify(sanitizedPayload)).not.toContain('"version"');
     expect(JSON.stringify(sanitizedPayload)).not.toContain('"last_updated"');
   });

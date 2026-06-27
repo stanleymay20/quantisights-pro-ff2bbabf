@@ -5,7 +5,7 @@ const HOSTNAME = "www.quantivis.io";
 const RULE_REF = "quantivis_enterprise_security_headers";
 const RULE_DESCRIPTION = "Quantivis enterprise security headers for www.quantivis.io";
 const PHASE = "http_response_headers_transform";
-const UNSUPPORTED_RULESET_PUT_FIELDS = new Set(["kind", "version", "last_updated"]);
+const UNSUPPORTED_RULESET_PUT_FIELDS = new Set(["kind", "phase", "version", "last_updated"]);
 
 export const contentSecurityPolicy = [
   "default-src 'self'",
@@ -150,7 +150,6 @@ export function buildEntrypointRulesetPayload(existingRuleset, rules) {
     description:
       existingRuleset?.description ??
       "Zone-level HTTP response header transform rules managed by automation.",
-    phase: PHASE,
     rules: stripUnsupportedRulesetPutFields(rules),
   };
 }
