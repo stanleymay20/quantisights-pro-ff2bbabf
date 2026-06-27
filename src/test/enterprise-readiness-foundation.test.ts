@@ -298,6 +298,8 @@ describe("enterprise readiness foundation", () => {
     expect(worker).toContain("workers/scripts");
     expect(worker).toContain("workers/routes");
     expect(worker).toContain("Content-Security-Policy");
+    expect(worker).toContain("Account / Workers Scripts / Edit");
+    expect(worker).toContain("Zone / Workers Routes / Edit");
     expect(docs).toContain("Rollback plan");
     expect(docs).toContain("Least-privilege");
     expect(evidence).toContain("Cloudflare enterprise response headers");

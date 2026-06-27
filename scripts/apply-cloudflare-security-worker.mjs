@@ -55,6 +55,7 @@ async function cloudflareRequest(path, options = {}, env = readCloudflareEnviron
     const error = new Error(`Cloudflare API ${response.status} ${response.statusText}: ${reason}`);
     error.status = response.status;
     error.payload = payload;
+    error.path = path;
     throw error;
   }
 
@@ -148,6 +149,18 @@ export async function applyEnterpriseSecurityWorker(env = readCloudflareEnvironm
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   applyEnterpriseSecurityWorker().catch((error) => {
     console.error(error.message);
+    if (error.status === 403 || JSON.stringify(error.payload ?? {}).includes('"code":10000')) {
+      console.error(
+        [
+          "Cloudflare Worker fallback requires these API token permissions:",
+          "- Zone / Zone / Read",
+          "- Zone / DNS / Read",
+          "- Zone / Workers Routes / Edit",
+          "- Account / Workers Scripts / Edit",
+          "Scope the account permission to the Cloudflare account that owns quantivis.io, then rerun the workflow from main.",
+        ].join("\n"),
+      );
+    }
     process.exitCode = 1;
   });
 }
