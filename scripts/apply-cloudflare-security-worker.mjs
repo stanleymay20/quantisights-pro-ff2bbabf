@@ -4,7 +4,7 @@ import { contentSecurityPolicy, permissionsPolicy } from "./apply-cloudflare-sec
 const API_BASE = "https://api.cloudflare.com/client/v4";
 const HOSTNAME = "www.quantivis.io";
 const WORKER_NAME = "quantivis-enterprise-security-headers";
-const WORKER_ROUTE_PATTERN = `${HOSTNAME}/*`;
+const WORKER_ROUTE_PATTERNS = [`https://${HOSTNAME}/*`, `${HOSTNAME}/*`];
 
 export const workerSecurityHeaders = {
   "Content-Security-Policy": contentSecurityPolicy,
@@ -15,6 +15,7 @@ export const workerSecurityHeaders = {
   "Permissions-Policy": permissionsPolicy,
   "Cross-Origin-Opener-Policy": "same-origin",
   "Cross-Origin-Resource-Policy": "same-origin",
+  "X-Quantivis-Edge-Security": "cloudflare-worker",
 };
 
 function readCloudflareEnvironment(env = process.env) {
@@ -108,25 +109,31 @@ async function listWorkerRoutes(env) {
 
 async function upsertWorkerRoute(env) {
   const routes = await listWorkerRoutes(env);
-  const existingRoute = routes.find((route) => route.pattern === WORKER_ROUTE_PATTERN) ?? null;
-  const body = JSON.stringify({
-    pattern: WORKER_ROUTE_PATTERN,
-    script: WORKER_NAME,
-  });
+  const appliedRoutes = [];
 
-  if (existingRoute) {
-    return await cloudflareRequest(
-      `/zones/${env.CLOUDFLARE_ZONE_ID}/workers/routes/${existingRoute.id}`,
-      { method: "PUT", body },
-      env,
-    );
+  for (const pattern of WORKER_ROUTE_PATTERNS) {
+    const existingRoute = routes.find((route) => route.pattern === pattern) ?? null;
+    const body = JSON.stringify({
+      pattern,
+      script: WORKER_NAME,
+    });
+
+    const route = existingRoute
+      ? await cloudflareRequest(
+          `/zones/${env.CLOUDFLARE_ZONE_ID}/workers/routes/${existingRoute.id}`,
+          { method: "PUT", body },
+          env,
+        )
+      : await cloudflareRequest(
+          `/zones/${env.CLOUDFLARE_ZONE_ID}/workers/routes`,
+          { method: "POST", body },
+          env,
+        );
+
+    appliedRoutes.push(route);
   }
 
-  return await cloudflareRequest(
-    `/zones/${env.CLOUDFLARE_ZONE_ID}/workers/routes`,
-    { method: "POST", body },
-    env,
-  );
+  return appliedRoutes;
 }
 
 export async function applyEnterpriseSecurityWorker(env = readCloudflareEnvironment()) {
@@ -138,11 +145,13 @@ export async function applyEnterpriseSecurityWorker(env = readCloudflareEnvironm
   }
 
   await putWorkerScript(env, accountId);
-  const route = await upsertWorkerRoute(env);
+  const routes = await upsertWorkerRoute(env);
 
   console.log(`Applied Cloudflare Worker fallback "${WORKER_NAME}".`);
-  console.log(`Worker route: ${route.pattern ?? WORKER_ROUTE_PATTERN}`);
-  console.log(`Worker script: ${route.script ?? WORKER_NAME}`);
+  for (const route of routes) {
+    console.log(`Worker route: ${route.pattern ?? "<unknown>"}`);
+    console.log(`Worker script: ${route.script ?? WORKER_NAME}`);
+  }
   console.log(`Managed headers: ${Object.keys(workerSecurityHeaders).join(", ")}`);
 }
 

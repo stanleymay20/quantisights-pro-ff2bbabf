@@ -41,6 +41,12 @@ const requiredHeaders = [
     expected: "present",
     validate: (value) => Boolean(value),
   },
+  {
+    name: "x-quantivis-edge-security",
+    expected: "cloudflare-worker when Worker fallback is active",
+    validate: () => true,
+    optional: true,
+  },
 ];
 
 async function fetchHeaders() {
@@ -67,9 +73,9 @@ for (const requiredHeader of requiredHeaders) {
   const passed = requiredHeader.validate(value);
   const displayedValue = value ?? "<missing>";
 
-  console.log(`${passed ? "PASS" : "FAIL"} ${requiredHeader.name}: ${displayedValue}`);
+  console.log(`${passed || requiredHeader.optional ? "PASS" : "FAIL"} ${requiredHeader.name}: ${displayedValue}`);
 
-  if (!passed) {
+  if (!passed && !requiredHeader.optional) {
     failures.push(`${requiredHeader.name} expected ${requiredHeader.expected}, got ${displayedValue}`);
   }
 }

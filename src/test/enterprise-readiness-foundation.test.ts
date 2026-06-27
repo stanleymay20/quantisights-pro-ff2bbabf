@@ -295,9 +295,11 @@ describe("enterprise readiness foundation", () => {
     expect(diagnose).toContain("proxied");
     expect(diagnose).toContain("http_response_headers_transform");
     expect(worker).toContain("quantivis-enterprise-security-headers");
+    expect(worker).toContain("https://${HOSTNAME}/*");
     expect(worker).toContain("workers/scripts");
     expect(worker).toContain("workers/routes");
     expect(worker).toContain("Content-Security-Policy");
+    expect(worker).toContain("X-Quantivis-Edge-Security");
     expect(worker).toContain("Account / Workers Scripts / Edit");
     expect(worker).toContain("Zone / Workers Routes / Edit");
     expect(docs).toContain("Rollback plan");
