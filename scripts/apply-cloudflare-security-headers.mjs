@@ -100,6 +100,17 @@ function findResponseHeadersRuleset(rulesets = []) {
   return rulesets.find((ruleset) => ruleset.kind === "zone" && ruleset.phase === PHASE) ?? null;
 }
 
+function findManagedRule(ruleset) {
+  return (
+    ruleset?.rules?.find(
+      (existingRule) =>
+        existingRule.ref === RULE_REF ||
+        existingRule.description === RULE_DESCRIPTION ||
+        existingRule.expression === rule.expression,
+    ) ?? null
+  );
+}
+
 function upsertManagedRule(existingRules = []) {
   let replaced = false;
   const rules = existingRules.map((existingRule) => {
@@ -137,6 +148,42 @@ function stripUnsupportedRulesetPutFields(value) {
   );
 }
 
+function validateAppliedRuleset(ruleset) {
+  const managedRule = findManagedRule(ruleset);
+  const failures = [];
+
+  if (!ruleset) {
+    failures.push("Cloudflare response header transform ruleset was not found after apply.");
+  }
+
+  if (!managedRule) {
+    failures.push(`Managed rule "${RULE_DESCRIPTION}" was not found after apply.`);
+  } else {
+    const headers = managedRule.action_parameters?.headers ?? {};
+    const missingHeaders = Object.keys(managedHeaders).filter((headerName) => !headers[headerName]);
+
+    if (managedRule.enabled !== true) {
+      failures.push(`Managed rule exists but is not enabled; enabled=${String(managedRule.enabled)}.`);
+    }
+
+    if (managedRule.expression !== rule.expression) {
+      failures.push(`Managed rule expression is "${managedRule.expression}", expected "${rule.expression}".`);
+    }
+
+    if (missingHeaders.length > 0) {
+      failures.push(`Managed rule is missing headers: ${missingHeaders.join(", ")}.`);
+    }
+  }
+
+  if (failures.length > 0) {
+    const error = new Error(`Cloudflare API-side verification failed: ${failures.join(" ")}`);
+    error.failures = failures;
+    throw error;
+  }
+
+  return managedRule;
+}
+
 async function applySecurityHeaders() {
   const rulesets = await listZoneRulesets();
   const listedRuleset = findResponseHeadersRuleset(rulesets);
@@ -167,6 +214,13 @@ async function applySecurityHeaders() {
   console.log(`Ruleset ID: ${result.id}`);
   console.log(`Target expression: ${rule.expression}`);
   console.log(`Managed headers: ${Object.keys(managedHeaders).join(", ")}`);
+
+  const appliedRuleset = await readZoneRuleset(result.id);
+  const appliedRule = validateAppliedRuleset(appliedRuleset);
+  console.log(`API verified managed rule ID: ${appliedRule.id ?? "<pending>"}`);
+  console.log(`API verified managed rule enabled: ${String(appliedRule.enabled)}`);
+  console.log(`API verified managed rule expression: ${appliedRule.expression}`);
+  console.log(`API verified managed rule headers: ${Object.keys(appliedRule.action_parameters?.headers ?? {}).join(", ")}`);
 }
 
 applySecurityHeaders().catch((error) => {

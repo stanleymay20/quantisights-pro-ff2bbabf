@@ -295,7 +295,13 @@ describe("enterprise readiness foundation", () => {
     const moduleUrl = pathToFileURL(
       resolve(root, "scripts/apply-cloudflare-security.mjs"),
     ).href;
-    const { buildCloudflareHeaderRule, buildCreateRulesetPayload, buildEntrypointRulesetPayload, managedHeaders } = await import(
+    const {
+      buildCloudflareHeaderRule,
+      buildCreateRulesetPayload,
+      buildEntrypointRulesetPayload,
+      managedHeaders,
+      validateAppliedRuleset,
+    } = await import(
       /* @vite-ignore */ moduleUrl
     );
     const rule = buildCloudflareHeaderRule();
@@ -337,6 +343,21 @@ describe("enterprise readiness foundation", () => {
     expect(JSON.stringify(sanitizedPayload)).not.toContain('"id"');
     expect(JSON.stringify(sanitizedPayload)).not.toContain('"version"');
     expect(JSON.stringify(sanitizedPayload)).not.toContain('"last_updated"');
+    expect(() =>
+      validateAppliedRuleset({
+        id: "ruleset-id",
+        rules: [
+          {
+            ...rule,
+            id: "managed-rule-id",
+            action_parameters: { headers: managedHeaders },
+          },
+        ],
+      }),
+    ).not.toThrow();
+    expect(() => validateAppliedRuleset({ id: "ruleset-id", rules: [] })).toThrow(
+      "Managed rule",
+    );
   });
 
 });
