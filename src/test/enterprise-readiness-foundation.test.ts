@@ -295,11 +295,12 @@ describe("enterprise readiness foundation", () => {
     const moduleUrl = pathToFileURL(
       resolve(root, "scripts/apply-cloudflare-security.mjs"),
     ).href;
-    const { buildCloudflareHeaderRule, buildEntrypointRulesetPayload, managedHeaders } = await import(
+    const { buildCloudflareHeaderRule, buildCreateRulesetPayload, buildEntrypointRulesetPayload, managedHeaders } = await import(
       /* @vite-ignore */ moduleUrl
     );
     const rule = buildCloudflareHeaderRule();
     const payload = buildEntrypointRulesetPayload(null, [rule]);
+    const createPayload = buildCreateRulesetPayload([rule]);
 
     expect(Array.isArray(managedHeaders)).toBe(false);
     expect(Array.isArray(rule.action_parameters.headers)).toBe(false);
@@ -313,12 +314,16 @@ describe("enterprise readiness foundation", () => {
     expect(payload).not.toHaveProperty("kind");
     expect(payload).not.toHaveProperty("phase");
     expect(payload.rules).toEqual([rule]);
+    expect(createPayload).toHaveProperty("kind", "zone");
+    expect(createPayload).toHaveProperty("phase", "http_response_headers_transform");
+    expect(createPayload.rules).toEqual([rule]);
 
     const sanitizedPayload = buildEntrypointRulesetPayload(
       { name: "default", description: "Existing ruleset", kind: "zone", phase: "http_response_headers_transform" },
       [
         {
           ...rule,
+          id: "cloudflare-generated-rule-id",
           kind: "zone",
           phase: "http_response_headers_transform",
           version: "1",
@@ -329,6 +334,7 @@ describe("enterprise readiness foundation", () => {
 
     expect(JSON.stringify(sanitizedPayload)).not.toContain('"kind"');
     expect(JSON.stringify(sanitizedPayload)).not.toContain('"phase"');
+    expect(JSON.stringify(sanitizedPayload)).not.toContain('"id"');
     expect(JSON.stringify(sanitizedPayload)).not.toContain('"version"');
     expect(JSON.stringify(sanitizedPayload)).not.toContain('"last_updated"');
   });

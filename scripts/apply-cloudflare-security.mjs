@@ -5,7 +5,9 @@ const HOSTNAME = "www.quantivis.io";
 const RULE_REF = "quantivis_enterprise_security_headers";
 const RULE_DESCRIPTION = "Quantivis enterprise security headers for www.quantivis.io";
 const PHASE = "http_response_headers_transform";
-const UNSUPPORTED_RULESET_PUT_FIELDS = new Set(["kind", "phase", "version", "last_updated"]);
+const RULESET_NAME = "Zone-level Response Headers Transform Ruleset";
+const RULESET_DESCRIPTION = "Zone-level ruleset that executes response header transform rules.";
+const UNSUPPORTED_RULESET_PUT_FIELDS = new Set(["id", "kind", "phase", "version", "last_updated"]);
 
 export const contentSecurityPolicy = [
   "default-src 'self'",
@@ -102,13 +104,16 @@ async function cloudflareRequest(path, options = {}, env = readCloudflareEnviron
   return payload.result;
 }
 
-async function readEntrypointRuleset(env) {
-  try {
-    return await cloudflareRequest(`/zones/${env.CLOUDFLARE_ZONE_ID}/rulesets/phases/${PHASE}/entrypoint`, {}, env);
-  } catch (error) {
-    if (error.status === 404) return null;
-    throw error;
-  }
+async function listZoneRulesets(env) {
+  return await cloudflareRequest(`/zones/${env.CLOUDFLARE_ZONE_ID}/rulesets`, {}, env);
+}
+
+async function readZoneRuleset(env, rulesetId) {
+  return await cloudflareRequest(`/zones/${env.CLOUDFLARE_ZONE_ID}/rulesets/${rulesetId}`, {}, env);
+}
+
+function findResponseHeadersRuleset(rulesets = []) {
+  return rulesets.find((ruleset) => ruleset.kind === "zone" && ruleset.phase === PHASE) ?? null;
 }
 
 function upsertManagedRule(existingRules = []) {
@@ -146,29 +151,46 @@ export function stripUnsupportedRulesetPutFields(value) {
 
 export function buildEntrypointRulesetPayload(existingRuleset, rules) {
   return {
-    name: existingRuleset?.name ?? "default",
-    description:
-      existingRuleset?.description ??
-      "Zone-level HTTP response header transform rules managed by automation.",
+    rules: stripUnsupportedRulesetPutFields(rules),
+  };
+}
+
+export function buildCreateRulesetPayload(rules) {
+  return {
+    name: RULESET_NAME,
+    description: RULESET_DESCRIPTION,
+    kind: "zone",
+    phase: PHASE,
     rules: stripUnsupportedRulesetPutFields(rules),
   };
 }
 
 export async function applyEnterpriseSecurityHeaders(env = readCloudflareEnvironment()) {
-  const existingRuleset = await readEntrypointRuleset(env);
+  const rulesets = await listZoneRulesets(env);
+  const listedRuleset = findResponseHeadersRuleset(rulesets);
+  const existingRuleset = listedRuleset ? await readZoneRuleset(env, listedRuleset.id) : null;
   const { rules, replaced } = upsertManagedRule(existingRuleset?.rules ?? []);
 
-  const result = await cloudflareRequest(
-    `/zones/${env.CLOUDFLARE_ZONE_ID}/rulesets/phases/${PHASE}/entrypoint`,
-    {
-      method: "PUT",
-      body: JSON.stringify(buildEntrypointRulesetPayload(existingRuleset, rules)),
-    },
-    env,
-  );
+  const result = existingRuleset
+    ? await cloudflareRequest(
+        `/zones/${env.CLOUDFLARE_ZONE_ID}/rulesets/${existingRuleset.id}`,
+        {
+          method: "PUT",
+          body: JSON.stringify(buildEntrypointRulesetPayload(existingRuleset, rules)),
+        },
+        env,
+      )
+    : await cloudflareRequest(
+        `/zones/${env.CLOUDFLARE_ZONE_ID}/rulesets`,
+        {
+          method: "POST",
+          body: JSON.stringify(buildCreateRulesetPayload(rules)),
+        },
+        env,
+      );
 
   console.log(
-    `${replaced ? "Updated" : "Created"} Cloudflare response header transform rule "${RULE_DESCRIPTION}".`,
+    `${existingRuleset ? (replaced ? "Updated" : "Added") : "Created"} Cloudflare response header transform rule "${RULE_DESCRIPTION}".`,
   );
   console.log(`Ruleset ID: ${result.id}`);
   console.log(`Target expression: ${rule.expression}`);

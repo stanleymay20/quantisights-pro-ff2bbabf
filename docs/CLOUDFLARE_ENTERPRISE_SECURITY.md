@@ -62,7 +62,10 @@ The automation creates or updates a Cloudflare Rulesets API response header tran
 http.host eq "www.quantivis.io"
 ```
 
-Implementation note: Cloudflare expects `action_parameters.headers` to be an object keyed by header name, where each value contains `operation` and `value`. Do not send `headers` as an array; Cloudflare rejects that payload with `invalid JSON: 'headers' cannot be an array`.
+Implementation notes:
+
+- Cloudflare expects `action_parameters.headers` to be an object keyed by header name, where each value contains `operation` and `value`. Do not send `headers` as an array; Cloudflare rejects that payload with `invalid JSON: 'headers' cannot be an array`.
+- The apply script lists zone rulesets, creates the `http_response_headers_transform` zone ruleset if missing, or updates the existing ruleset by ID. It does not update the phase `entrypoint` URL directly because Cloudflare rejects read-only fields such as `kind` and `phase` on that update payload.
 
 Required headers:
 
