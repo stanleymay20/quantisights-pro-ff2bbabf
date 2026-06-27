@@ -62,6 +62,8 @@ The automation creates or updates a Cloudflare Rulesets API response header tran
 http.host eq "www.quantivis.io"
 ```
 
+Implementation note: Cloudflare expects `action_parameters.headers` to be an object keyed by header name, where each value contains `operation` and `value`. Do not send `headers` as an array; Cloudflare rejects that payload with `invalid JSON: 'headers' cannot be an array`.
+
 Required headers:
 
 ```text

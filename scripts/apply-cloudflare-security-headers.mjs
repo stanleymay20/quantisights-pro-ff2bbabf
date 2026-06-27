@@ -23,33 +23,28 @@ if (process.exitCode) {
 const contentSecurityPolicy =
   "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.posthog.com https://*.sentry.io https://browser.sentry-cdn.com; connect-src 'self' https://*.supabase.co https://*.sentry.io https://*.posthog.com https://*.ingest.sentry.io wss://*.supabase.co; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline'; font-src 'self' data: https:; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests";
 
-const managedHeaders = [
-  {
-    name: "Content-Security-Policy",
+const managedHeaders = {
+  "Content-Security-Policy": {
     operation: "set",
     value: contentSecurityPolicy,
   },
-  {
-    name: "X-Frame-Options",
+  "X-Frame-Options": {
     operation: "set",
     value: "DENY",
   },
-  {
-    name: "X-Content-Type-Options",
+  "X-Content-Type-Options": {
     operation: "set",
     value: "nosniff",
   },
-  {
-    name: "Referrer-Policy",
+  "Referrer-Policy": {
     operation: "set",
     value: "strict-origin-when-cross-origin",
   },
-  {
-    name: "Strict-Transport-Security",
+  "Strict-Transport-Security": {
     operation: "set",
     value: "max-age=31536000; includeSubDomains; preload",
   },
-];
+};
 
 const rule = {
   ref: RULE_REF,
@@ -142,7 +137,7 @@ async function applySecurityHeaders() {
   );
   console.log(`Ruleset ID: ${result.id}`);
   console.log(`Target expression: ${rule.expression}`);
-  console.log(`Managed headers: ${managedHeaders.map((header) => header.name).join(", ")}`);
+  console.log(`Managed headers: ${Object.keys(managedHeaders).join(", ")}`);
 }
 
 applySecurityHeaders().catch((error) => {

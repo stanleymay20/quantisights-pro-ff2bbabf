@@ -1,24 +1,12 @@
+import { fileURLToPath } from "node:url";
+
 const API_BASE = "https://api.cloudflare.com/client/v4";
 const HOSTNAME = "www.quantivis.io";
 const RULE_REF = "quantivis_enterprise_security_headers";
 const RULE_DESCRIPTION = "Quantivis enterprise security headers for www.quantivis.io";
 const PHASE = "http_response_headers_transform";
 
-const { CLOUDFLARE_API_TOKEN, CLOUDFLARE_ZONE_ID } = process.env;
-
-if (!CLOUDFLARE_API_TOKEN) {
-  console.error("CLOUDFLARE_API_TOKEN is required.");
-  process.exitCode = 1;
-}
-
-if (!CLOUDFLARE_ZONE_ID) {
-  console.error("CLOUDFLARE_ZONE_ID is required.");
-  process.exitCode = 1;
-}
-
-if (process.exitCode) process.exit();
-
-const contentSecurityPolicy = [
+export const contentSecurityPolicy = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.posthog.com https://*.sentry.io https://browser.sentry-cdn.com",
   "connect-src 'self' https://*.supabase.co https://*.sentry.io https://*.posthog.com https://*.ingest.sentry.io wss://*.supabase.co",
@@ -33,7 +21,7 @@ const contentSecurityPolicy = [
   "upgrade-insecure-requests",
 ].join("; ");
 
-const permissionsPolicy = [
+export const permissionsPolicy = [
   "camera=()",
   "microphone=()",
   "geolocation=()",
@@ -44,31 +32,52 @@ const permissionsPolicy = [
   "interest-cohort=()",
 ].join(", ");
 
-const managedHeaders = [
-  ["Content-Security-Policy", contentSecurityPolicy],
-  ["X-Frame-Options", "DENY"],
-  ["Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload"],
-  ["X-Content-Type-Options", "nosniff"],
-  ["Referrer-Policy", "strict-origin-when-cross-origin"],
-  ["Permissions-Policy", permissionsPolicy],
-  ["Cross-Origin-Opener-Policy", "same-origin"],
-  ["Cross-Origin-Resource-Policy", "same-origin"],
-].map(([name, value]) => ({ name, operation: "set", value }));
-
-const rule = {
-  ref: RULE_REF,
-  description: RULE_DESCRIPTION,
-  expression: `http.host eq "${HOSTNAME}"`,
-  action: "rewrite",
-  action_parameters: { headers: managedHeaders },
-  enabled: true,
+export const managedHeaders = {
+  "Content-Security-Policy": { operation: "set", value: contentSecurityPolicy },
+  "X-Frame-Options": { operation: "set", value: "DENY" },
+  "Strict-Transport-Security": {
+    operation: "set",
+    value: "max-age=31536000; includeSubDomains; preload",
+  },
+  "X-Content-Type-Options": { operation: "set", value: "nosniff" },
+  "Referrer-Policy": { operation: "set", value: "strict-origin-when-cross-origin" },
+  "Permissions-Policy": { operation: "set", value: permissionsPolicy },
+  "Cross-Origin-Opener-Policy": { operation: "set", value: "same-origin" },
+  "Cross-Origin-Resource-Policy": { operation: "set", value: "same-origin" },
 };
 
-async function cloudflareRequest(path, options = {}) {
+export function buildCloudflareHeaderRule() {
+  return {
+    ref: RULE_REF,
+    description: RULE_DESCRIPTION,
+    expression: `http.host eq "${HOSTNAME}"`,
+    action: "rewrite",
+    action_parameters: { headers: managedHeaders },
+    enabled: true,
+  };
+}
+
+const rule = buildCloudflareHeaderRule();
+
+function readCloudflareEnvironment(env = process.env) {
+  const { CLOUDFLARE_API_TOKEN, CLOUDFLARE_ZONE_ID } = env;
+
+  if (!CLOUDFLARE_API_TOKEN) {
+    throw new Error("CLOUDFLARE_API_TOKEN is required.");
+  }
+
+  if (!CLOUDFLARE_ZONE_ID) {
+    throw new Error("CLOUDFLARE_ZONE_ID is required.");
+  }
+
+  return { CLOUDFLARE_API_TOKEN, CLOUDFLARE_ZONE_ID };
+}
+
+async function cloudflareRequest(path, options = {}, env = readCloudflareEnvironment()) {
   const response = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers: {
-      Authorization: `Bearer ${CLOUDFLARE_API_TOKEN}`,
+      Authorization: `Bearer ${env.CLOUDFLARE_API_TOKEN}`,
       "Content-Type": "application/json",
       ...(options.headers ?? {}),
     },
@@ -92,9 +101,9 @@ async function cloudflareRequest(path, options = {}) {
   return payload.result;
 }
 
-async function readEntrypointRuleset() {
+async function readEntrypointRuleset(env) {
   try {
-    return await cloudflareRequest(`/zones/${CLOUDFLARE_ZONE_ID}/rulesets/phases/${PHASE}/entrypoint`);
+    return await cloudflareRequest(`/zones/${env.CLOUDFLARE_ZONE_ID}/rulesets/phases/${PHASE}/entrypoint`, {}, env);
   } catch (error) {
     if (error.status === 404) return null;
     throw error;
@@ -118,32 +127,38 @@ function upsertManagedRule(existingRules = []) {
   return { rules, replaced };
 }
 
-async function applyEnterpriseSecurityHeaders() {
-  const existingRuleset = await readEntrypointRuleset();
+export async function applyEnterpriseSecurityHeaders(env = readCloudflareEnvironment()) {
+  const existingRuleset = await readEntrypointRuleset(env);
   const { rules, replaced } = upsertManagedRule(existingRuleset?.rules ?? []);
 
-  const result = await cloudflareRequest(`/zones/${CLOUDFLARE_ZONE_ID}/rulesets/phases/${PHASE}/entrypoint`, {
-    method: "PUT",
-    body: JSON.stringify({
-      name: existingRuleset?.name ?? "default",
-      description:
-        existingRuleset?.description ??
-        "Zone-level HTTP response header transform rules managed by automation.",
-      kind: "zone",
-      phase: PHASE,
-      rules,
-    }),
-  });
+  const result = await cloudflareRequest(
+    `/zones/${env.CLOUDFLARE_ZONE_ID}/rulesets/phases/${PHASE}/entrypoint`,
+    {
+      method: "PUT",
+      body: JSON.stringify({
+        name: existingRuleset?.name ?? "default",
+        description:
+          existingRuleset?.description ??
+          "Zone-level HTTP response header transform rules managed by automation.",
+        kind: "zone",
+        phase: PHASE,
+        rules,
+      }),
+    },
+    env,
+  );
 
   console.log(
     `${replaced ? "Updated" : "Created"} Cloudflare response header transform rule "${RULE_DESCRIPTION}".`,
   );
   console.log(`Ruleset ID: ${result.id}`);
   console.log(`Target expression: ${rule.expression}`);
-  console.log(`Managed headers: ${managedHeaders.map((header) => header.name).join(", ")}`);
+  console.log(`Managed headers: ${Object.keys(managedHeaders).join(", ")}`);
 }
 
-applyEnterpriseSecurityHeaders().catch((error) => {
-  console.error(error.message);
-  process.exitCode = 1;
-});
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+  applyEnterpriseSecurityHeaders().catch((error) => {
+    console.error(error.message);
+    process.exitCode = 1;
+  });
+}

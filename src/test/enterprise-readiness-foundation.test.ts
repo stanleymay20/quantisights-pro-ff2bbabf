@@ -291,4 +291,24 @@ describe("enterprise readiness foundation", () => {
     expect(evidence).toContain("npm run cloudflare:verify");
   });
 
+  it("uses the current Cloudflare Rulesets header object schema", async () => {
+    const moduleUrl = pathToFileURL(
+      resolve(root, "scripts/apply-cloudflare-security.mjs"),
+    ).href;
+    const { buildCloudflareHeaderRule, managedHeaders } = await import(
+      /* @vite-ignore */ moduleUrl
+    );
+    const rule = buildCloudflareHeaderRule();
+
+    expect(Array.isArray(managedHeaders)).toBe(false);
+    expect(Array.isArray(rule.action_parameters.headers)).toBe(false);
+    expect(rule.action_parameters.headers["Content-Security-Policy"]).toMatchObject({
+      operation: "set",
+    });
+    expect(rule.action_parameters.headers["X-Frame-Options"]).toEqual({
+      operation: "set",
+      value: "DENY",
+    });
+  });
+
 });
