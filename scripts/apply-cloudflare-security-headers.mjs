@@ -126,7 +126,6 @@ async function applySecurityHeaders() {
       description:
         existingRuleset?.description ??
         "Zone-level HTTP response header transform rules managed by automation.",
-      kind: "zone",
       phase: PHASE,
       rules,
     }),

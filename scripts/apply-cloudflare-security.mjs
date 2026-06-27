@@ -127,6 +127,17 @@ function upsertManagedRule(existingRules = []) {
   return { rules, replaced };
 }
 
+export function buildEntrypointRulesetPayload(existingRuleset, rules) {
+  return {
+    name: existingRuleset?.name ?? "default",
+    description:
+      existingRuleset?.description ??
+      "Zone-level HTTP response header transform rules managed by automation.",
+    phase: PHASE,
+    rules,
+  };
+}
+
 export async function applyEnterpriseSecurityHeaders(env = readCloudflareEnvironment()) {
   const existingRuleset = await readEntrypointRuleset(env);
   const { rules, replaced } = upsertManagedRule(existingRuleset?.rules ?? []);
@@ -135,15 +146,7 @@ export async function applyEnterpriseSecurityHeaders(env = readCloudflareEnviron
     `/zones/${env.CLOUDFLARE_ZONE_ID}/rulesets/phases/${PHASE}/entrypoint`,
     {
       method: "PUT",
-      body: JSON.stringify({
-        name: existingRuleset?.name ?? "default",
-        description:
-          existingRuleset?.description ??
-          "Zone-level HTTP response header transform rules managed by automation.",
-        kind: "zone",
-        phase: PHASE,
-        rules,
-      }),
+      body: JSON.stringify(buildEntrypointRulesetPayload(existingRuleset, rules)),
     },
     env,
   );

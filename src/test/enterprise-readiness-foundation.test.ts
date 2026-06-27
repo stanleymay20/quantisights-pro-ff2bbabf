@@ -295,10 +295,11 @@ describe("enterprise readiness foundation", () => {
     const moduleUrl = pathToFileURL(
       resolve(root, "scripts/apply-cloudflare-security.mjs"),
     ).href;
-    const { buildCloudflareHeaderRule, managedHeaders } = await import(
+    const { buildCloudflareHeaderRule, buildEntrypointRulesetPayload, managedHeaders } = await import(
       /* @vite-ignore */ moduleUrl
     );
     const rule = buildCloudflareHeaderRule();
+    const payload = buildEntrypointRulesetPayload(null, [rule]);
 
     expect(Array.isArray(managedHeaders)).toBe(false);
     expect(Array.isArray(rule.action_parameters.headers)).toBe(false);
@@ -309,6 +310,9 @@ describe("enterprise readiness foundation", () => {
       operation: "set",
       value: "DENY",
     });
+    expect(payload).not.toHaveProperty("kind");
+    expect(payload).toHaveProperty("phase");
+    expect(payload.rules).toEqual([rule]);
   });
 
 });
