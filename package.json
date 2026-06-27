@@ -15,6 +15,7 @@
     "headers:apply": "node scripts/apply-cloudflare-security-headers.mjs",
     "headers:verify": "node scripts/verify-security-headers.mjs",
     "cloudflare:apply": "node scripts/apply-cloudflare-security.mjs",
+    "cloudflare:dns": "node scripts/apply-cloudflare-dns.mjs",
     "cloudflare:diagnose": "node scripts/diagnose-cloudflare-security-routing.mjs",
     "cloudflare:apply-worker": "node scripts/apply-cloudflare-security-worker.mjs",
     "cloudflare:verify": "node scripts/verify-cloudflare-security.mjs",

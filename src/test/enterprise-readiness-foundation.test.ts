@@ -247,6 +247,7 @@ describe("enterprise readiness foundation", () => {
 
   it("automates Cloudflare enterprise security headers", () => {
     const apply = read("scripts/apply-cloudflare-security.mjs");
+    const dns = read("scripts/apply-cloudflare-dns.mjs");
     const diagnose = read("scripts/diagnose-cloudflare-security-routing.mjs");
     const worker = read("scripts/apply-cloudflare-security-worker.mjs");
     const verify = read("scripts/verify-cloudflare-security.mjs");
@@ -282,18 +283,25 @@ describe("enterprise readiness foundation", () => {
 
     expect(workflow).toContain("workflow_dispatch");
     expect(workflow).toContain("npm ci");
+    expect(workflow).toContain("LOVABLE_PROXY_ORIGIN");
+    expect(workflow).toContain("npm run cloudflare:dns");
     expect(workflow).toContain("npm run cloudflare:apply");
     expect(workflow).toContain("npm run cloudflare:diagnose");
     expect(workflow).toContain("npm run cloudflare:apply-worker");
     expect(workflow).toContain("sleep 30");
     expect(workflow).toContain("npm run cloudflare:verify");
     expect(pkg).toContain('"cloudflare:apply"');
+    expect(pkg).toContain('"cloudflare:dns"');
     expect(pkg).toContain('"cloudflare:diagnose"');
     expect(pkg).toContain('"cloudflare:apply-worker"');
     expect(pkg).toContain('"cloudflare:verify"');
     expect(diagnose).toContain("dns_records?name=");
     expect(diagnose).toContain("proxied");
     expect(diagnose).toContain("http_response_headers_transform");
+    expect(dns).toContain("LOVABLE_PROXY_ORIGIN");
+    expect(dns).toContain("185.158.133.1");
+    expect(dns).toContain("proxied: true");
+    expect(dns).toContain("evaluateWwwDnsState");
     expect(worker).toContain("quantivis-enterprise-security-headers");
     expect(worker).toContain("https://${HOSTNAME}/*");
     expect(worker).toContain("workers/scripts");
@@ -308,6 +316,8 @@ describe("enterprise readiness foundation", () => {
     expect(worker).toContain("Zone / Workers Routes / Edit");
     expect(docs).toContain("Rollback plan");
     expect(docs).toContain("Least-privilege");
+    expect(docs).toContain("LOVABLE_PROXY_ORIGIN");
+    expect(docs).toContain("cloudflare:dns");
     expect(evidence).toContain("Cloudflare enterprise response headers");
     expect(evidence).toContain("npm run cloudflare:verify");
   });
@@ -379,6 +389,66 @@ describe("enterprise readiness foundation", () => {
     expect(() => validateAppliedRuleset({ id: "ruleset-id", rules: [] })).toThrow(
       "Managed rule",
     );
+  });
+
+  it("guards Cloudflare DNS against Lovable direct A-record bypass", async () => {
+    const moduleUrl = pathToFileURL(
+      resolve(root, "scripts/apply-cloudflare-dns.mjs"),
+    ).href;
+    const { evaluateWwwDnsState } = await import(
+      /* @vite-ignore */ moduleUrl
+    );
+
+    expect(
+      evaluateWwwDnsState(
+        [
+          {
+            type: "A",
+            name: "www.quantivis.io",
+            content: "185.158.133.1",
+            proxied: false,
+          },
+        ],
+        "",
+      ),
+    ).toMatchObject({
+      ok: false,
+      action: "missing-origin",
+    });
+
+    expect(
+      evaluateWwwDnsState(
+        [
+          {
+            type: "A",
+            name: "www.quantivis.io",
+            content: "185.158.133.1",
+            proxied: false,
+          },
+        ],
+        "quantivis-project.custom.lovable.app",
+      ),
+    ).toMatchObject({
+      ok: false,
+      action: "upsert-cname",
+    });
+
+    expect(
+      evaluateWwwDnsState(
+        [
+          {
+            type: "CNAME",
+            name: "www.quantivis.io",
+            content: "quantivis-project.custom.lovable.app",
+            proxied: true,
+          },
+        ],
+        "https://quantivis-project.custom.lovable.app/",
+      ),
+    ).toMatchObject({
+      ok: true,
+      action: "noop",
+    });
   });
 
 });

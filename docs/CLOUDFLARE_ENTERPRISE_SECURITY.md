@@ -14,6 +14,7 @@ Add these in GitHub:
 | --- | --- |
 | `CLOUDFLARE_API_TOKEN` | Cloudflare API token allowed to edit zone rulesets and the security-header Worker fallback. |
 | `CLOUDFLARE_ZONE_ID` | Cloudflare Zone ID for `quantivis.io`. |
+| `LOVABLE_PROXY_ORIGIN` | Lovable-provided proxy-mode CNAME target for `www.quantivis.io`. Required when the current DNS record is the direct Lovable A record `185.158.133.1` or any DNS-only bypass path. |
 
 ## Least-privilege Cloudflare API token
 
@@ -26,7 +27,7 @@ Create a dedicated token in Cloudflare:
 5. Grant:
    - `Zone` → `Rulesets` → `Edit`
    - `Zone` → `Zone` → `Read`
-   - `Zone` / `DNS` / `Read`
+   - `Zone` / `DNS` / `Edit`
    - `Zone` / `Workers Routes` / `Edit`
    - `Account` / `Workers Scripts` / `Edit`
 6. Scope account-level permissions only to the Cloudflare account that owns `quantivis.io`.
@@ -54,11 +55,35 @@ Manual workflow:
 The workflow:
 
 1. Runs `npm ci`.
-2. Runs `npm run cloudflare:apply`.
-3. Runs `npm run cloudflare:diagnose` to print safe zone, DNS proxy, and response-header ruleset evidence.
-4. Runs `npm run cloudflare:apply-worker` to apply the Worker fallback for the same headers.
-5. Waits 30 seconds for edge propagation.
-6. Runs `npm run cloudflare:verify` against `https://www.quantivis.io/`.
+2. Runs `npm run cloudflare:dns` to ensure `www.quantivis.io` is actually proxied through the Quantivis Cloudflare zone before any header checks run.
+3. Runs `npm run cloudflare:apply`.
+4. Runs `npm run cloudflare:diagnose` to print safe zone, DNS proxy, and response-header ruleset evidence.
+5. Runs `npm run cloudflare:apply-worker` to apply the Worker fallback for the same headers.
+6. Waits 30 seconds for edge propagation.
+7. Runs `npm run cloudflare:verify` against `https://www.quantivis.io/`.
+
+## Lovable proxy-mode DNS requirement
+
+Cloudflare Transform Rules and Worker routes only execute when `www.quantivis.io` is proxied through this Cloudflare zone. A direct DNS record such as:
+
+```text
+www.quantivis.io A 185.158.133.1
+```
+
+is not acceptable for enterprise verification:
+
+- if DNS-only, traffic bypasses the Quantivis Cloudflare zone and security headers will not be added;
+- if orange-clouded directly, Cloudflare can return `Error 1000: DNS points to prohibited IP`.
+
+Use Lovable's domain dialog to reconnect `www.quantivis.io` with `Domain uses Cloudflare or a similar proxy` enabled. Lovable will show a project-specific CNAME target. Save that hostname as the GitHub Actions secret `LOVABLE_PROXY_ORIGIN`.
+
+When `LOVABLE_PROXY_ORIGIN` is set, `npm run cloudflare:dns` deletes conflicting `www` DNS records, creates or updates:
+
+```text
+www CNAME <LOVABLE_PROXY_ORIGIN> Proxied
+```
+
+and verifies that the resulting Cloudflare API-side DNS state is compatible with Worker/Transform execution. When `LOVABLE_PROXY_ORIGIN` is not set, the command acts as a guard: it passes only if `www.quantivis.io` already has a proxied Cloudflare DNS record and fails on the known direct Lovable A-record bypass path.
 
 ## Managed headers
 
@@ -115,6 +140,12 @@ Only run apply locally when the environment variables are present:
 
 ```bash
 CLOUDFLARE_API_TOKEN=... CLOUDFLARE_ZONE_ID=... npm run cloudflare:apply
+```
+
+Apply or verify the Cloudflare DNS proxy path locally:
+
+```bash
+CLOUDFLARE_API_TOKEN=... CLOUDFLARE_ZONE_ID=... LOVABLE_PROXY_ORIGIN=... npm run cloudflare:dns
 ```
 
 Apply the Worker fallback locally:
