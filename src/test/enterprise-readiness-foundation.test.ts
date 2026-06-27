@@ -300,6 +300,10 @@ describe("enterprise readiness foundation", () => {
     expect(worker).toContain("workers/routes");
     expect(worker).toContain("Content-Security-Policy");
     expect(worker).toContain("X-Quantivis-Edge-Security");
+    expect(worker).toContain("withSecurityHeaders");
+    expect(worker).toContain("shouldStripBody");
+    expect(worker).toContain("X-Quantivis-Edge-Security-Error");
+    expect(worker).toContain("X-Quantivis-Edge-Path");
     expect(worker).toContain("Account / Workers Scripts / Edit");
     expect(worker).toContain("Zone / Workers Routes / Edit");
     expect(docs).toContain("Rollback plan");

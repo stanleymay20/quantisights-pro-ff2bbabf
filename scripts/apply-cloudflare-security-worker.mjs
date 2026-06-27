@@ -67,22 +67,41 @@ export function buildSecurityWorkerScript(headers = workerSecurityHeaders) {
   return `const SECURITY_HEADERS = ${JSON.stringify(headers, null, 2)};
 
 addEventListener("fetch", (event) => {
-  event.respondWith(addSecurityHeaders(event.request));
+  event.respondWith(handleRequest(event.request));
 });
 
-async function addSecurityHeaders(request) {
-  const response = await fetch(request);
-  const headers = new Headers(response.headers);
+async function handleRequest(request) {
+  try {
+    const originResponse = await fetch(request);
+    return withSecurityHeaders(originResponse, request);
+  } catch (error) {
+    const fallback = new Response("Quantivis edge security worker failed before origin response.", {
+      status: 502,
+      statusText: "Bad Gateway",
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "X-Quantivis-Edge-Security-Error": error instanceof Error ? error.name : "unknown",
+      },
+    });
+
+    return withSecurityHeaders(fallback, request);
+  }
+}
+
+function withSecurityHeaders(response, request) {
+  const securedResponse = new Response(shouldStripBody(response, request) ? null : response.body, response);
 
   for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
-    headers.set(name, value);
+    securedResponse.headers.set(name, value);
   }
 
-  return new Response(response.body, {
-    status: response.status,
-    statusText: response.statusText,
-    headers,
-  });
+  securedResponse.headers.set("X-Quantivis-Edge-Path", new URL(request.url).pathname || "/");
+
+  return securedResponse;
+}
+
+function shouldStripBody(response, request) {
+  return request.method === "HEAD" || response.status === 204 || response.status === 304;
 }
 `;
 }
