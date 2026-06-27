@@ -44,6 +44,9 @@ jobs:
       - name: Apply Cloudflare enterprise security headers
         run: npm run cloudflare:apply
 
+      - name: Diagnose Cloudflare security routing
+        run: npm run cloudflare:diagnose
+
       - name: Wait for edge propagation
         run: sleep 30
 

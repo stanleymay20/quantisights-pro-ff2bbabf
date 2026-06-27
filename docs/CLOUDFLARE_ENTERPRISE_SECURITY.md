@@ -51,8 +51,9 @@ The workflow:
 
 1. Runs `npm ci`.
 2. Runs `npm run cloudflare:apply`.
-3. Waits 30 seconds for edge propagation.
-4. Runs `npm run cloudflare:verify` against `https://www.quantivis.io/`.
+3. Runs `npm run cloudflare:diagnose` to print safe zone, DNS proxy, and response-header ruleset evidence.
+4. Waits 30 seconds for edge propagation.
+5. Runs `npm run cloudflare:verify` against `https://www.quantivis.io/`.
 
 ## Managed headers
 
@@ -115,6 +116,14 @@ Verify live headers:
 ```bash
 npm run cloudflare:verify
 ```
+
+If apply succeeds but live verification still fails, run:
+
+```bash
+npm run cloudflare:diagnose
+```
+
+The diagnostic output shows the zone name/status, DNS records for `www.quantivis.io` and `quantivis.io`, whether the `www` record is proxied, and the response-header transform ruleset/rule/header names read back from Cloudflare. It does not print API tokens.
 
 Override the verification URL if needed:
 
