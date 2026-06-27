@@ -1,6 +1,6 @@
 # Cloudflare enterprise security automation
 
-This repository includes a manual GitHub Actions workflow that creates or updates the Cloudflare response header transform rule for `www.quantivis.io`.
+This repository includes a manual GitHub Actions workflow that creates or updates the Cloudflare response header transform rule for `www.quantivis.io`. It also applies a Cloudflare Worker fallback that sets the same headers at the edge when the Transform Rule API confirms the rule but live traffic does not receive the headers.
 
 The automation does not hardcode secrets. It reads Cloudflare credentials only from environment variables or GitHub Actions secrets.
 
@@ -12,7 +12,7 @@ Add these in GitHub:
 
 | Secret | Purpose |
 | --- | --- |
-| `CLOUDFLARE_API_TOKEN` | Cloudflare API token allowed to edit zone rulesets. |
+| `CLOUDFLARE_API_TOKEN` | Cloudflare API token allowed to edit zone rulesets and the security-header Worker fallback. |
 | `CLOUDFLARE_ZONE_ID` | Cloudflare Zone ID for `quantivis.io`. |
 
 ## Least-privilege Cloudflare API token
@@ -26,8 +26,12 @@ Create a dedicated token in Cloudflare:
 5. Grant:
    - `Zone` → `Rulesets` → `Edit`
    - `Zone` → `Zone` → `Read`
-6. Do not grant account-wide access.
-7. Save the generated token as `CLOUDFLARE_API_TOKEN` in GitHub Actions secrets.
+   - `Zone` / `DNS` / `Read`
+   - `Zone` / `Workers Routes` / `Edit`
+   - `Account` / `Workers Scripts` / `Edit`
+6. Scope account-level permissions only to the Cloudflare account that owns `quantivis.io`.
+7. Do not grant broader account-wide access than the Worker script permission requires.
+8. Save the generated token as `CLOUDFLARE_API_TOKEN` in GitHub Actions secrets.
 
 Do not commit the token to the repository or paste it into workflow logs.
 
@@ -52,8 +56,9 @@ The workflow:
 1. Runs `npm ci`.
 2. Runs `npm run cloudflare:apply`.
 3. Runs `npm run cloudflare:diagnose` to print safe zone, DNS proxy, and response-header ruleset evidence.
-4. Waits 30 seconds for edge propagation.
-5. Runs `npm run cloudflare:verify` against `https://www.quantivis.io/`.
+4. Runs `npm run cloudflare:apply-worker` to apply the Worker fallback for the same headers.
+5. Waits 30 seconds for edge propagation.
+6. Runs `npm run cloudflare:verify` against `https://www.quantivis.io/`.
 
 ## Managed headers
 
@@ -67,6 +72,7 @@ Implementation notes:
 
 - Cloudflare expects `action_parameters.headers` to be an object keyed by header name, where each value contains `operation` and `value`. Do not send `headers` as an array; Cloudflare rejects that payload with `invalid JSON: 'headers' cannot be an array`.
 - The apply script lists zone rulesets, creates the `http_response_headers_transform` zone ruleset if missing, or updates the existing ruleset by ID. It does not update the phase `entrypoint` URL directly because Cloudflare rejects read-only fields such as `kind` and `phase` on that update payload.
+- The Worker fallback is named `quantivis-enterprise-security-headers` and is routed to `www.quantivis.io/*`. It forwards the origin response and sets the same headers before returning it to the browser.
 
 Required headers:
 
@@ -111,6 +117,12 @@ Only run apply locally when the environment variables are present:
 CLOUDFLARE_API_TOKEN=... CLOUDFLARE_ZONE_ID=... npm run cloudflare:apply
 ```
 
+Apply the Worker fallback locally:
+
+```bash
+CLOUDFLARE_API_TOKEN=... CLOUDFLARE_ZONE_ID=... npm run cloudflare:apply-worker
+```
+
 Verify live headers:
 
 ```bash
@@ -136,12 +148,14 @@ CLOUDFLARE_VERIFY_URL=https://www.quantivis.io/security npm run cloudflare:verif
 1. Open Cloudflare dashboard → `Rules` → `Transform Rules` → `Modify Response Header`.
 2. Find the rule named `Quantivis enterprise security headers for www.quantivis.io`.
 3. Disable the rule.
-4. Verify rollback:
+4. Open Cloudflare dashboard, then `Workers & Pages`, then `Workers`, then `quantivis-enterprise-security-headers`.
+5. Remove or disable the route `www.quantivis.io/*` if the Worker fallback must be rolled back.
+6. Verify rollback:
 
 ```bash
 curl -I https://www.quantivis.io/
 ```
 
-5. If rollback is caused by a bad CSP, adjust `scripts/apply-cloudflare-security.mjs`, commit, push, rerun `Apply Cloudflare Enterprise Security`, and verify with `npm run cloudflare:verify`.
+7. If rollback is caused by a bad CSP, adjust `scripts/apply-cloudflare-security.mjs` and `scripts/apply-cloudflare-security-worker.mjs`, commit, push, rerun `Apply Cloudflare Enterprise Security`, and verify with `npm run cloudflare:verify`.
 
-Rollback should prefer disabling the transform rule over deleting it, so audit history and recovery context remain visible.
+Rollback should prefer disabling the transform rule and Worker route over deleting them, so audit history and recovery context remain visible.

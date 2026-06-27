@@ -16,6 +16,7 @@
     "headers:verify": "node scripts/verify-security-headers.mjs",
     "cloudflare:apply": "node scripts/apply-cloudflare-security.mjs",
     "cloudflare:diagnose": "node scripts/diagnose-cloudflare-security-routing.mjs",
+    "cloudflare:apply-worker": "node scripts/apply-cloudflare-security-worker.mjs",
     "cloudflare:verify": "node scripts/verify-cloudflare-security.mjs",
     "certify": "vitest run src/lib/certification/certification.test.ts",
     "certify:full": "QV_CERTIFY_FULL=1 vitest run src/lib/certification/certification.test.ts",
