@@ -8,6 +8,12 @@ const safeNext = (value: string | null) => {
   return value;
 };
 
+const consumeStoredNext = () => {
+  const value = sessionStorage.getItem("quantivis_oauth_next");
+  sessionStorage.removeItem("quantivis_oauth_next");
+  return safeNext(value);
+};
+
 const AuthCallback = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -18,7 +24,7 @@ const AuthCallback = () => {
     let cancelled = false;
     let settled = false;
 
-    const next = safeNext(searchParams.get("next"));
+    const next = searchParams.get("next") ? safeNext(searchParams.get("next")) : consumeStoredNext();
 
     const finish = (ok: boolean) => {
       if (settled || cancelled) return;

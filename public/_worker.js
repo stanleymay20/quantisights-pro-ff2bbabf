@@ -72,6 +72,10 @@ export default {
     // Forward request to the Cloudflare Pages asset server
     const response = await env.ASSETS.fetch(request);
     const { pathname } = new URL(request.url);
+    if (pathname.startsWith("/~oauth/")) {
+      return response;
+    }
+
     const isEmbed = pathname === "/embed" || pathname.startsWith("/embed/");
 
     // Clone to make headers mutable

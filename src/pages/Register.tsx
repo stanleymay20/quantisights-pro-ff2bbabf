@@ -83,8 +83,9 @@ const Register = () => {
       // against the /~oauth/callback broker URLs, not Supabase's /auth/callback,
       // so we must go through the lovable broker, not supabase.auth.signInWithOAuth.
       const { lovable } = await import("@/integrations/lovable");
+      sessionStorage.setItem("quantivis_oauth_next", "/onboarding");
       const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin + "/auth/callback?next=/onboarding",
+        redirect_uri: window.location.origin + "/auth/callback",
         extraParams: { prompt: "select_account" },
       });
       if (result.error) {

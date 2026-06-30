@@ -13,10 +13,12 @@ export const workerSecurityHeaders = {
   "X-Content-Type-Options": "nosniff",
   "Referrer-Policy": "strict-origin-when-cross-origin",
   "Permissions-Policy": permissionsPolicy,
-  "Cross-Origin-Opener-Policy": "same-origin",
+  "Cross-Origin-Opener-Policy": "same-origin-allow-popups",
   "Cross-Origin-Resource-Policy": "same-origin",
   "X-Quantivis-Edge-Security": "cloudflare-worker",
 };
+
+const OAUTH_BROKER_PATH_PREFIX = "/~oauth/";
 
 function readCloudflareEnvironment(env = process.env) {
   const { CLOUDFLARE_API_TOKEN, CLOUDFLARE_ZONE_ID } = env;
@@ -89,6 +91,11 @@ async function handleRequest(request) {
 }
 
 function withSecurityHeaders(response, request) {
+  const pathname = new URL(request.url).pathname;
+  if (pathname.startsWith(OAUTH_BROKER_PATH_PREFIX)) {
+    return response;
+  }
+
   const securedResponse = new Response(shouldStripBody(response, request) ? null : response.body, response);
 
   for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
