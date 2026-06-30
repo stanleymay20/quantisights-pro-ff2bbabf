@@ -1,8 +1,16 @@
 import { Link } from "react-router-dom";
 import logo from "@/assets/quantivis-logo.png";
 import { CONTACT } from "@/lib/contact-config";
+import { useSeoHead } from "@/lib/useSeoHead";
 
-const Privacy = () => (
+const Privacy = () => {
+  useSeoHead({
+    title: "Privacy Policy | Quantivis",
+    description: "Review how Quantivis collects, protects, processes, retains, and shares customer data, including GDPR and CCPA rights.",
+    canonicalPath: "/privacy",
+  });
+
+  return (
   <div className="min-h-dvh bg-background flex flex-col">
     <header className="border-b border-border/30 bg-background/80 backdrop-blur-sm sticky top-0 z-30">
       <div className="container mx-auto px-6 h-14 flex items-center">
@@ -51,6 +59,7 @@ const Privacy = () => (
       </div>
     </main>
   </div>
-);
+  );
+};
 
 export default Privacy;

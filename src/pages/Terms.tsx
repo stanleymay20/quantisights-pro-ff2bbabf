@@ -1,8 +1,16 @@
 import { Link } from "react-router-dom";
 import logo from "@/assets/quantivis-logo.png";
 import { CONTACT } from "@/lib/contact-config";
+import { useSeoHead } from "@/lib/useSeoHead";
 
-const Terms = () => (
+const Terms = () => {
+  useSeoHead({
+    title: "Terms of Service | Quantivis",
+    description: "Read the Quantivis Terms of Service covering platform access, data ownership, acceptable use, billing, decision responsibility, and liability.",
+    canonicalPath: "/terms",
+  });
+
+  return (
   <div className="min-h-dvh bg-background flex flex-col">
     <header className="border-b border-border/30 bg-background/80 backdrop-blur-sm sticky top-0 z-30">
       <div className="container mx-auto px-6 h-14 flex items-center">
@@ -90,6 +98,7 @@ const Terms = () => (
       </div>
     </main>
   </div>
-);
+  );
+};
 
 export default Terms;

@@ -34,6 +34,7 @@ Why it is vendored:
 Ongoing controls:
 
 - Treat all workbook uploads as untrusted input.
+- The affected import path is `src/lib/workbook-parser.ts`.
 - Keep upload size, row, sheet, and processing-time limits enforced.
 - Parse outside latency-sensitive UI work where possible.
 - Reject unsupported extensions and malformed workbooks.

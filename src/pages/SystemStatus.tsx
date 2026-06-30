@@ -157,7 +157,7 @@ const SystemStatus = () => {
     unknown: {
       color: "text-muted-foreground",
       bg: "bg-muted/30 border-border",
-      label: telemetryAvailable ? "Awaiting Telemetry" : "Telemetry unavailable",
+      label: telemetryAvailable ? "Telemetry Partially Available" : "Telemetry Unavailable",
       icon: Clock,
     },
     operational: { color: "text-success", bg: "bg-success/10 border-success/20", label: "All Systems Operational", icon: CheckCircle2 },
@@ -207,6 +207,11 @@ const SystemStatus = () => {
               <p className="text-sm text-muted-foreground">
                 Last checked {formatDistanceToNow(lastRefresh, { addSuffix: true })} · Auto-refreshes every 60s
               </p>
+              {metrics?.overallStatus === "unknown" && (
+                <p className="text-xs text-muted-foreground mt-1 max-w-2xl">
+                  Health is not marked operational until all required public checks and scheduled-job evidence are available.
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>
