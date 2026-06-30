@@ -3,11 +3,15 @@ import { Link } from "react-router-dom";
 import { ArrowRight, CheckCircle, Shield, TrendingUp, AlertCircle, Globe } from "lucide-react";
 import heroVideoAsset from "@/assets/hero-video.mp4.asset.json";
 
-const NAVY = "#1E2761";
-const DEEP = "#0E1628";
-const ACCENT = "#3D5AFE";
-const MUTED = "#F4F6F9";
-const SLATE = "#64748B";
+// DS-1: page-local color constants now resolve from the design-system
+// CSS variables defined in src/index.css. Values are unchanged — this
+// migration changes WHERE the color comes from, not WHAT it is. See
+// src/design-system/README.md for the token catalogue.
+const NAVY = "hsl(var(--brand-executive-navy))";
+const DEEP = "hsl(var(--brand-marketing-deep))";
+const ACCENT = "hsl(var(--brand-marketing-accent))";
+const MUTED = "hsl(var(--brand-marketing-muted))";
+const SLATE = "hsl(var(--brand-marketing-slate))";
 
 const DECISIONS = [
   { id: "DL-2847", category: "Risk Mitigation", confidence: 90, impact: "+€20K", tag: "Pending", time: "2m ago", governance: "Active" },
@@ -264,14 +268,14 @@ const SocialProof = () => (
     <div style={{ maxWidth: 1280, margin: "0 auto", padding: "48px 24px" }}>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 48, alignItems: "center" }}>
         <div>
-          <blockquote style={{ fontFamily: "Georgia, serif", fontSize: "clamp(17px, 2vw, 22px)", color: "#1E2761", lineHeight: 1.5, fontStyle: "italic", margin: "0 0 16px", fontWeight: 400 }}>
+          <blockquote style={{ fontFamily: "Georgia, serif", fontSize: "clamp(17px, 2vw, 22px)", color: NAVY, lineHeight: 1.5, fontStyle: "italic", margin: "0 0 16px", fontWeight: 400 }}>
             "Quantivis is the first system that gave our board a defensible trail from signal to decision to outcome — without slowing the operators down."
           </blockquote>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(30,39,97,0.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#1E2761" }}>K</div>
+            <div style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(30,39,97,0.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: NAVY }}>K</div>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "#1E2761" }}>Chief Risk Officer</div>
-              <div style={{ fontSize: 12, color: "#64748B" }}>DAX-listed industrial group · 2,400 employees · Pilot Q1 2026</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: NAVY }}>Chief Risk Officer</div>
+              <div style={{ fontSize: 12, color: SLATE }}>DAX-listed industrial group · 2,400 employees · Pilot Q1 2026</div>
             </div>
           </div>
         </div>
@@ -283,8 +287,8 @@ const SocialProof = () => (
             ["< 1 week", "From first call to live governance record in production"],
           ] as [string, string][]).map(([stat, desc]) => (
             <div key={stat} className="qv-card-interactive" style={{ background: "#fff", padding: "18px", border: "1px solid rgba(30,39,97,0.12)", borderRadius: 8 }}>
-              <div style={{ fontFamily: "Georgia, serif", fontSize: 22, color: "#1E2761", fontWeight: 400, marginBottom: 4 }}>{stat}</div>
-              <div style={{ fontSize: 12, color: "#64748B", lineHeight: 1.5 }}>{desc}</div>
+              <div style={{ fontFamily: "Georgia, serif", fontSize: 22, color: NAVY, fontWeight: 400, marginBottom: 4 }}>{stat}</div>
+              <div style={{ fontSize: 12, color: SLATE, lineHeight: 1.5 }}>{desc}</div>
             </div>
           ))}
         </div>
@@ -310,7 +314,7 @@ const HowItWorks = () => (
           ["04", "Outcome tracked automatically", "90 days later, Quantivis compares predicted vs actual impact. The model recalibrates. The board gets a one-click governance report showing the decision was correct."],
         ] as [string, string, string][]).map(([number, title, description], i) => (
           <div key={number} style={{ display: "grid", gridTemplateColumns: "64px 1fr", gap: 24, padding: "28px 0", borderBottom: i < 3 ? `1px solid rgba(30,39,97,0.1)` : "none", alignItems: "flex-start" }}>
-            <div style={{ fontFamily: "Georgia, serif", fontSize: 36, color: i === 0 ? ACCENT : `${NAVY}25`, lineHeight: 1, fontWeight: 400 }}>{number}</div>
+            <div style={{ fontFamily: "Georgia, serif", fontSize: 36, color: i === 0 ? ACCENT : "hsl(var(--brand-executive-navy) / 0.145)", lineHeight: 1, fontWeight: 400 }}>{number}</div>
             <div>
               <h3 style={{ fontFamily: "Georgia, serif", fontSize: 20, color: NAVY, marginBottom: 8, fontWeight: 400 }}>{title}</h3>
               <p style={{ fontSize: 14, color: SLATE, lineHeight: 1.75, margin: 0 }}>{description}</p>
@@ -391,7 +395,7 @@ const SecurityTrust = () => (
             ].map(([comp, compDesc, qv, qvDesc]) => (
               <div key={comp} style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 8, alignItems: "center", padding: "12px 0", borderBottom: `1px solid rgba(30,39,97,0.08)` }}>
                 <div><div style={{ fontSize: 12, fontWeight: 600, color: NAVY }}>{comp}</div><div style={{ fontSize: 12, color: SLATE, lineHeight: 1.45 }}>{compDesc}</div></div>
-                <div style={{ fontSize: 11, color: `${NAVY}55`, fontStyle: "italic" }}>vs</div>
+                <div style={{ fontSize: 11, color: "hsl(var(--brand-executive-navy) / 0.333)", fontStyle: "italic" }}>vs</div>
                 <div><div style={{ fontSize: 12, color: NAVY, fontWeight: 700 }}>{qv}</div><div style={{ fontSize: 12, color: SLATE, lineHeight: 1.45 }}>{qvDesc}</div></div>
               </div>
             ))}
@@ -432,7 +436,7 @@ const Pricing = () => {
                 {plan.features.map(feature => (
                   <div key={feature} style={{ display: "flex", gap: 10, marginBottom: 12 }}>
                     <span style={{ color: "#16a34a", fontWeight: 700 }} aria-hidden="true">✓</span>
-                    <span style={{ fontSize: 13, color: `${NAVY}CC`, lineHeight: 1.5 }}>{feature}</span>
+                    <span style={{ fontSize: 13, color: "hsl(var(--brand-executive-navy) / 0.8)", lineHeight: 1.5 }}>{feature}</span>
                   </div>
                 ))}
               </div>
