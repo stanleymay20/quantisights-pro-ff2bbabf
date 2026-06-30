@@ -423,7 +423,7 @@ Available primitives:
 | `MarketingCard` | Wrapper for the existing `qv-card` / optional interactive card classes. | Low-risk homepage platform feature cards only. |
 | `MarketingSection` | Section wrapper that maps surface intent to DS-1 surface tokens. | Low-risk homepage platform section only. |
 | `TagBadge` | Semantic badge for homepage decision states using status/decision tokens instead of local HEX maps. | Replaces the homepage `TAG_STYLES` map. |
-| `MarketingCTA` | Thin anchor wrapper for the existing `qv-primary-cta` / `qv-secondary-cta` classes. | One low-risk homepage CTA replacement. |
+| `MarketingCTA` | Thin polymorphic wrapper for the existing `qv-primary-cta` / `qv-secondary-cta` classes. | Low-risk homepage CTA replacements only. |
 
 DS-2 does not migrate full pages, does not replace the homepage layout,
 does not change routes, and does not remove the remaining page-local
@@ -461,10 +461,46 @@ Deferred intentionally:
 
 ---
 
-## 17. Out of scope for DS-1 / DS-2 / DS-3A
+## 17. DS-3B CTA primitive hardening
+
+DS-3B hardens `MarketingCTA` so homepage CTAs can share one
+design-system entry point without changing the visual output.
+
+Supported cases after DS-3B:
+
+`MarketingCTA` supports normal anchors, React Router links, external anchors, and submit buttons.
+
+- normal anchors (`href="#demo"` and other same-page links);
+- React Router links via `as={Link}` and `to="/..."`;
+- external anchors via `external`, which adds safe new-tab attributes;
+- submit buttons via `as="button"` and `type="submit"`.
+
+Homepage adoption in this phase:
+
+- The EU AI Act guide CTA moved from a direct React Router `Link` with
+  `qv-primary-cta` to `MarketingCTA as={Link}`.
+- The demo form submit button moved from a direct `button` with
+  `qv-primary-cta` to `MarketingCTA as="button"`.
+
+DS-3B does not change homepage layout, typography, routing, SEO,
+security, backend logic, or the underlying `qv-primary-cta` /
+`qv-secondary-cta` CSS. Those CSS classes remain intentionally because
+`MarketingCTA` still uses them as its visual skin.
+
+Deferred intentionally:
+
+- Nav CTA sizing and footer/text links, because their visual affordance is
+  not equivalent to the marketing CTA skin.
+- Ledger approve/reject buttons, because they are product-action buttons,
+  not marketing CTAs.
+- Replacing the `qv-*` CTA CSS with tokenized Tailwind utilities.
+
+---
+
+## 18. Out of scope for DS-1 / DS-2 / DS-3A / DS-3B
 
 These are deliberate deferrals. They are **not** failures of DS-1, DS-2,
-or DS-3A.
+DS-3A, or DS-3B.
 
 - Homepage layout migration (Georgia → Space Grotesk; 1280 → 1400; the
   `qv-*` class set; the inline `<Nav>` and `<SiteFooter>`).
@@ -477,4 +513,4 @@ or DS-3A.
 - Reconciling the homepage's `--brand-marketing-accent` (`#3D5AFE`) with
   `--brand-primary` (`#2563EB`).
 
-Each should be its own focused sprint after DS-3A lands.
+Each should be its own focused sprint after DS-3B lands.

@@ -60,6 +60,26 @@ describe("DS-2 shared design primitives", () => {
     expect(homepage).toContain("qv-primary-cta");
   });
 
+  it("hardens DS-3B MarketingCTA for anchors, router links, and buttons", () => {
+    const homepage = read("src/pages/Index.tsx");
+    const primitives = read("src/components/design-system/marketing-primitives.tsx");
+    const readme = read("src/design-system/README.md");
+
+    expect(primitives).toContain('ElementType');
+    expect(primitives).toContain('as?: T');
+    expect(primitives).toContain('external?: boolean');
+    expect(primitives).toContain('Component = as ?? "a"');
+    expect(primitives).toContain('rel: external ? "noreferrer"');
+
+    expect(homepage).toContain('<MarketingCTA as={Link} to="/ai-governance"');
+    expect(homepage).toContain('<MarketingCTA as="button" type="submit"');
+    expect(homepage).not.toContain('className="qv-primary-cta"');
+    expect(homepage).toContain('<MarketingCTA href="#demo"');
+
+    expect(readme).toContain("DS-3B CTA primitive hardening");
+    expect(readme).toContain("normal anchors, React Router links, external anchors, and submit buttons");
+  });
+
   it("documents DS-2 as a primitive layer without claiming full page migration", () => {
     const readme = read("src/design-system/README.md");
 
@@ -72,5 +92,6 @@ describe("DS-2 shared design primitives", () => {
     expect(readme).toContain("DS-2 does not migrate full pages");
     expect(readme).toContain("DS-3A homepage primitive adoption");
     expect(readme).toContain("DS-3A keeps the homepage layout, Georgia typography, and 1280 px containers unchanged");
+    expect(readme).toContain("DS-3B CTA primitive hardening");
   });
 });

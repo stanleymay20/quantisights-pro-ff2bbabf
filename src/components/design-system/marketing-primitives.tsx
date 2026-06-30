@@ -1,4 +1,4 @@
-import type { AnchorHTMLAttributes, HTMLAttributes, ReactNode } from "react";
+import type { ComponentPropsWithoutRef, ElementType, HTMLAttributes, ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -111,13 +111,31 @@ export const TagBadge = ({ children, className, style, tone = "Info", ...props }
   );
 };
 
-type MarketingCTAProps = AnchorHTMLAttributes<HTMLAnchorElement> & {
+type MarketingCTAProps<T extends ElementType = "a"> = {
+  as?: T;
   variant?: "primary" | "secondary";
-};
+  external?: boolean;
+  className?: string;
+} & Omit<ComponentPropsWithoutRef<T>, "as" | "className">;
 
-export const MarketingCTA = ({ className, variant = "primary", ...props }: MarketingCTAProps) => (
-  <a
-    className={cn(variant === "primary" ? "qv-primary-cta" : "qv-secondary-cta", className)}
-    {...props}
-  />
-);
+export const MarketingCTA = <T extends ElementType = "a",>({
+  as,
+  className,
+  variant = "primary",
+  external = false,
+  ...props
+}: MarketingCTAProps<T>) => {
+  const Component = as ?? "a";
+  const externalLinkProps = {
+    target: external ? "_blank" : undefined,
+    rel: external ? "noreferrer" : undefined,
+  };
+
+  return (
+    <Component
+      className={cn(variant === "primary" ? "qv-primary-cta" : "qv-secondary-cta", className)}
+      {...props}
+      {...externalLinkProps}
+    />
+  );
+};
