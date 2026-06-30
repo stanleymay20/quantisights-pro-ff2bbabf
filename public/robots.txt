@@ -8,7 +8,6 @@ Allow: /about
 Allow: /blog
 Disallow: /dashboard
 Disallow: /decisions
-Disallow: /copilot
 Disallow: /settings
 Disallow: /admin
 Disallow: /data-connectors
@@ -27,7 +26,6 @@ Allow: /about
 Allow: /blog
 Disallow: /dashboard
 Disallow: /decisions
-Disallow: /copilot
 Disallow: /settings
 Disallow: /admin
 Disallow: /data-connectors

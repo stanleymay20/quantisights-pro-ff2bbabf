@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Bot, FileSearch, History, ShieldCheck } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useSeoHead } from "@/lib/useSeoHead";
 
 const capabilities = [
   { icon: FileSearch, title: "Evidence-grounded answers", text: "Queries are resolved against permitted organizational evidence and decision context." },
@@ -10,6 +11,12 @@ const capabilities = [
 ];
 
 export default function CopilotOverview() {
+  useSeoHead({
+    title: "Governed Executive Copilot | Quantivis",
+    description: "Use the Quantivis executive copilot to query governed evidence, decision history, and operational intelligence.",
+    canonicalPath: "/copilot",
+  });
+
   return (
     <main className="max-w-5xl mx-auto px-6 py-16 space-y-10">
       <div className="max-w-3xl space-y-4">

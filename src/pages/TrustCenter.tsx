@@ -10,6 +10,7 @@ import LiveTrustMetrics from "@/components/security/LiveTrustMetrics";
 import ProcurementReadinessChecklist from "@/components/security/ProcurementReadinessChecklist";
 import DownloadProcurementPack from "@/components/security/DownloadProcurementPack";
 import SecurityHeaderStatus from "@/components/security/SecurityHeaderStatus";
+import { useSeoHead } from "@/lib/useSeoHead";
 
 const reasoningPrinciples: { label: string; value: string }[] = [
   { label: "Deterministic reasoning", value: "All scoring, propagation, and classification run through pure-function engines. LLMs never compute numbers." },
@@ -92,6 +93,12 @@ const sections = [
 ];
 
 const TrustCenter = () => {
+  useSeoHead({
+    title: "Trust Center | Quantivis",
+    description: "Review Quantivis security controls, certification roadmap, compliance evidence, data residency, and procurement resources.",
+    canonicalPath: "/trust",
+  });
+
   const navigate = useNavigate();
 
   return (

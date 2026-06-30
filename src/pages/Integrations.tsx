@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Database, FileSpreadsheet, Plug, ShieldCheck } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useSeoHead } from "@/lib/useSeoHead";
 
 const categories = [
   { icon: Database, title: "Warehouses and databases", text: "Snowflake, BigQuery, PostgreSQL, SQL Server, SAP OData, and governed custom database connections." },
@@ -11,6 +12,12 @@ const categories = [
 ];
 
 export default function Integrations() {
+  useSeoHead({
+    title: "Enterprise Data Integrations | Quantivis",
+    description: "Review supported Quantivis data-source categories, connector activation, security boundaries, and enterprise integration options.",
+    canonicalPath: "/integrations",
+  });
+
   return (
     <main className="max-w-5xl mx-auto px-6 py-16 space-y-10">
       <div className="max-w-3xl space-y-4">

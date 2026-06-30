@@ -7,6 +7,7 @@ import {
 import logo from "@/assets/quantivis-logo.png";
 import { CONTACT } from "@/lib/contact-config";
 import SectionErrorBoundary from "@/components/SectionErrorBoundary";
+import { useSeoHead } from "@/lib/useSeoHead";
 
 interface QAItem {
   id: string;
@@ -96,7 +97,14 @@ const SECTIONS: { title: string; icon: React.ElementType; items: QAItem[] }[] = 
   },
 ];
 
-const SecurityQuestionnaire = () => (
+const SecurityQuestionnaire = () => {
+  useSeoHead({
+    title: "Security Questionnaire | Quantivis",
+    description: "Pre-answered Quantivis security questionnaire covering governance, data protection, access controls, infrastructure, audit logging, incident response, and AI governance.",
+    canonicalPath: "/security-questionnaire",
+  });
+
+  return (
   <div className="min-h-dvh bg-background flex flex-col">
     <header className="border-b border-border/30 bg-background/80 backdrop-blur-sm sticky top-0 z-30 print:hidden">
       <div className="container mx-auto px-6 h-14 flex items-center justify-between">
@@ -298,6 +306,7 @@ const SecurityQuestionnaire = () => (
       </div>
     </footer>
   </div>
-);
+  );
+};
 
 export default SecurityQuestionnaire;

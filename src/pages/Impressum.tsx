@@ -12,7 +12,6 @@ const Impressum = () => {
     title: "Impressum — Quantivis Global",
     description: "Angaben gemäß § 5 DDG (ehemals TMG). Anbieter, Kontakt und vertretungsberechtigte Person der Quantivis Global.",
     canonicalPath: "/impressum",
-    noindex: true,
   });
   return (
   <div className="min-h-dvh bg-background flex flex-col">

@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
 import logo from "@/assets/quantivis-logo.png";
 import { deriveSystemStatus, type SystemStatus as StatusValue } from "@/lib/system-status";
+import { useSeoHead } from "@/lib/useSeoHead";
 
 interface CronJob {
   job_name: string;
@@ -54,6 +55,12 @@ const MONITORED_JOBS = [
 ];
 
 const SystemStatus = () => {
+  useSeoHead({
+    title: "System Status | Quantivis",
+    description: "Live Quantivis system status, scheduled-job telemetry, and operational evidence for public trust and procurement review.",
+    canonicalPath: "/status",
+  });
+
   const [metrics, setMetrics] = useState<SystemMetrics | null>(null);
   const [telemetryAvailable, setTelemetryAvailable] = useState(false);
   const [loading, setLoading] = useState(true);
