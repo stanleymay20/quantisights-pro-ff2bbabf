@@ -45,19 +45,39 @@ export function IQScoreBadge({ organizationId, datasetId, className = '' }: Prop
 
   useEffect(() => {
     let cancelled = false;
+    const controller = new AbortController();
     (async () => {
       setLoading(true);
-      const { data: result, error } = await supabase.rpc('get_iq_composite_score', {
-        _org_id: organizationId,
-        _dataset_id: datasetId ?? null,
-      });
-      if (!cancelled) {
-        if (error) console.error('IQScoreBadge:', error);
-        setData((result as unknown as Composite) ?? null);
-        setLoading(false);
+      try {
+        const { data: result, error } = await supabase
+          .rpc('get_iq_composite_score', {
+            _org_id: organizationId,
+            _dataset_id: datasetId ?? null,
+          })
+          .abortSignal(controller.signal);
+        if (cancelled) return;
+        if (error) {
+          // Swallow expected aborts during navigation; log other failures quietly.
+          const msg = (error.message || '').toLowerCase();
+          if (!msg.includes('abort') && error.code !== '20') {
+            console.warn('[IQScoreBadge] composite score fetch failed:', error.message);
+          }
+          setData(null);
+        } else {
+          setData((result as unknown as Composite) ?? null);
+        }
+      } catch (err: unknown) {
+        if (cancelled) return;
+        const name = (err as { name?: string })?.name;
+        if (name !== 'AbortError') {
+          console.warn('[IQScoreBadge] unexpected fetch error:', err);
+        }
+        setData(null);
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => { cancelled = true; controller.abort(); };
   }, [organizationId, datasetId]);
 
   if (loading) return <Skeleton className={`h-6 w-24 ${className}`} />;
