@@ -18,7 +18,7 @@ export const workerSecurityHeaders = {
   "X-Quantivis-Edge-Security": "cloudflare-worker",
 };
 
-const OAUTH_BROKER_PATH_PREFIX = "/~oauth/";
+const OAUTH_EXEMPT_PATHS = ["/~oauth/", "/auth/callback"];
 
 function readCloudflareEnvironment(env = process.env) {
   const { CLOUDFLARE_API_TOKEN, CLOUDFLARE_ZONE_ID } = env;
@@ -67,6 +67,7 @@ async function cloudflareRequest(path, options = {}, env = readCloudflareEnviron
 
 export function buildSecurityWorkerScript(headers = workerSecurityHeaders) {
   return `const SECURITY_HEADERS = ${JSON.stringify(headers, null, 2)};
+const OAUTH_EXEMPT_PATHS = ${JSON.stringify(OAUTH_EXEMPT_PATHS)};
 
 addEventListener("fetch", (event) => {
   event.respondWith(handleRequest(event.request));
@@ -92,7 +93,7 @@ async function handleRequest(request) {
 
 function withSecurityHeaders(response, request) {
   const pathname = new URL(request.url).pathname;
-  if (pathname.startsWith(OAUTH_BROKER_PATH_PREFIX)) {
+  if (OAUTH_EXEMPT_PATHS.some((path) => pathname.startsWith(path))) {
     return response;
   }
 

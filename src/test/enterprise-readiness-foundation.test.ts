@@ -68,6 +68,26 @@ describe("enterprise readiness foundation", () => {
     expect(worker).toMatch(/pathname.*\/embed/s);
   });
 
+  it("does not frame-block OAuth broker and callback routes", async () => {
+    const worker = read("public/_worker.js");
+    const cloudflareSecurity = await import(
+      /* @vite-ignore */ pathToFileURL(resolve(root, "scripts/apply-cloudflare-security.mjs")).href
+    );
+    const cloudflareWorker = await import(
+      /* @vite-ignore */ pathToFileURL(resolve(root, "scripts/apply-cloudflare-security-worker.mjs")).href
+    );
+    const rule = cloudflareSecurity.buildCloudflareHeaderRule();
+    const generatedWorker = cloudflareWorker.buildSecurityWorkerScript();
+
+    for (const path of ["/~oauth/", "/auth/callback"]) {
+      expect(worker).toContain(path);
+      expect(rule.expression).toContain(path);
+      expect(generatedWorker).toContain(path);
+    }
+
+    expect(generatedWorker).not.toContain("OAUTH_BROKER_PATH_PREFIX");
+  });
+
   it("uses evidence-safe authentication claims", () => {
     const authLayout = read("src/components/auth/AuthLayout.tsx");
 
