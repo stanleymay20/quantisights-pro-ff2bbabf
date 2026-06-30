@@ -604,6 +604,7 @@ const DashboardSidebar = () => {
         <button
           onClick={handleSignOut}
           title="Sign Out"
+          data-testid="sign-out"
           className={cn(
             "flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[12px] font-medium text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors w-full",
             collapsed && "justify-center px-0"
