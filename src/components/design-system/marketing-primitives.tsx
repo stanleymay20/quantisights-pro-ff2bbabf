@@ -10,8 +10,12 @@ type EyebrowProps = HTMLAttributes<HTMLParagraphElement> & {
 
 export const Eyebrow = ({ className, style, tone = "dark", ...props }: EyebrowProps) => (
   <p
-    className={cn("qv-eyebrow", tone === "light" ? "qv-eyebrow-light" : "qv-eyebrow-dark", className)}
+    className={className}
     style={{
+      fontSize: 11,
+      fontWeight: 700,
+      letterSpacing: "0.18em",
+      textTransform: "uppercase",
       color:
         tone === "light"
           ? "hsl(var(--brand-marketing-muted) / 0.62)"

@@ -40,6 +40,26 @@ describe("DS-2 shared design primitives", () => {
     expect(homepage).not.toContain("Review: { bg:");
   });
 
+  it("extends DS-3A primitive adoption without removing deferred qv layout classes", () => {
+    const homepage = read("src/pages/Index.tsx");
+    const primitives = read("src/components/design-system/marketing-primitives.tsx");
+
+    expect(homepage).toContain('<MarketingCTA href="#platform" variant="secondary"');
+    expect(homepage).toContain('<MarketingCTA href="#demo"');
+    expect(homepage).toContain('<Eyebrow style={{ marginBottom: 24 }}>The Problem</Eyebrow>');
+    expect(homepage).toContain('<Eyebrow tone="light" style={{ marginBottom: 24 }}>Compliance</Eyebrow>');
+    expect(homepage).toContain('<TagBadge tone="Warning"');
+    expect(homepage).toContain('<TagBadge tone="Success"');
+    expect(homepage).not.toContain("qv-eyebrow");
+    expect(primitives).not.toContain("qv-eyebrow");
+
+    // DS-3A is not a full homepage migration. These page-local layout classes
+    // intentionally remain until a later layout-focused sprint.
+    expect(homepage).toContain("qv-wrap");
+    expect(homepage).toContain("qv-grid-2");
+    expect(homepage).toContain("qv-primary-cta");
+  });
+
   it("documents DS-2 as a primitive layer without claiming full page migration", () => {
     const readme = read("src/design-system/README.md");
 
@@ -50,5 +70,7 @@ describe("DS-2 shared design primitives", () => {
     expect(readme).toContain("TagBadge");
     expect(readme).toContain("MarketingCTA");
     expect(readme).toContain("DS-2 does not migrate full pages");
+    expect(readme).toContain("DS-3A homepage primitive adoption");
+    expect(readme).toContain("DS-3A keeps the homepage layout, Georgia typography, and 1280 px containers unchanged");
   });
 });

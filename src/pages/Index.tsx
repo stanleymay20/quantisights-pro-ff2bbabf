@@ -57,9 +57,6 @@ const ResponsiveStyles = () => (
     .qv-card { background: #fff; padding: 40px 36px; }
     .qv-card-interactive { transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s; }
     .qv-card-interactive:hover { box-shadow: 0 8px 24px -8px rgba(30,39,97,0.18); transform: translateY(-1px); border-color: rgba(30,39,97,0.22); }
-    .qv-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; }
-    .qv-eyebrow-dark { color: rgba(30,39,97,0.62); }
-    .qv-eyebrow-light { color: rgba(255,255,255,0.62); }
     .qv-footer-grid { display: grid; grid-template-columns: 1.4fr repeat(4, 1fr); gap: 48px; margin-bottom: 48px; }
     .qv-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; background: rgba(255,255,255,0.06); }
 
@@ -216,7 +213,7 @@ const Hero = () => (
       <p className="qv-hero-copy">The EU AI Act (Articles 9, 13, 14) requires documented evidence for every AI-assisted decision. Quantivis creates that record automatically — approval trail, evidence chain, outcome log — ready for your compliance officer and your board.</p>
       <div className="qv-cta-row">
         <MarketingCTA href="#demo">Request a Demo <ArrowRight size={16} /></MarketingCTA>
-        <a href="#platform" className="qv-secondary-cta">See the platform <ArrowRight size={14} /></a>
+        <MarketingCTA href="#platform" variant="secondary">See the platform <ArrowRight size={14} /></MarketingCTA>
       </div>
       <div className="qv-illustrative-banner" role="note" aria-label="Illustrative data disclosure">
         <span className="qv-illustrative-banner-dot" aria-hidden="true" />
@@ -240,7 +237,7 @@ const DecisionBrief = () => (
           ))}
         </div>
         <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 8, overflow: "hidden" }}>
-          <div style={{ padding: "20px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}><div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap" }}><span style={{ fontSize: 10, padding: "3px 8px", borderRadius: 2, background: "#FEF9C3", color: "#854D0E", fontWeight: 700 }}>Risk Mitigation</span><span style={{ fontSize: 10, padding: "3px 8px", borderRadius: 2, background: "#DCFCE7", color: "#15803D", fontWeight: 700 }}>Governance Active</span></div><div style={{ fontSize: 13, color: "#fff", fontWeight: 500, lineHeight: 1.4 }}>Address Inventory Turnover and Working Capital Inefficiencies</div><div style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", marginTop: 6 }}>Logged 2 minutes ago · Source: SAP connector</div></div>
+          <div style={{ padding: "20px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}><div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap" }}><TagBadge tone="Warning" style={{ borderRadius: 2 }}>Risk Mitigation</TagBadge><TagBadge tone="Success" style={{ borderRadius: 2 }}>Governance Active</TagBadge></div><div style={{ fontSize: 13, color: "#fff", fontWeight: 500, lineHeight: 1.4 }}>Address Inventory Turnover and Working Capital Inefficiencies</div><div style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", marginTop: 6 }}>Logged 2 minutes ago · Source: SAP connector</div></div>
           <div className="qv-form-grid">{[["90%", "Confidence", "#22C55E"], ["+€20K", "Est. Impact", "#fff"], ["Strong", "Evidence", "#F59E0B"]].map(([value, label, color]) => <div key={label} style={{ background: "rgba(255,255,255,0.03)", padding: "14px 16px" }}><div style={{ fontSize: 20, fontWeight: 700, color }}>{value}</div><div style={{ fontSize: 10, color: "rgba(255,255,255,0.6)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em" }}>{label}</div></div>)}</div>
           <div style={{ padding: "14px 20px" }}>{["SAP ERP export verified", "Causal inference engine passed", "Anti-hallucination layer passed"].map(item => <div key={item} style={{ display: "flex", gap: 10, marginBottom: 8, alignItems: "center" }}><div style={{ width: 6, height: 6, borderRadius: "50%", background: "#22C55E" }} /><span style={{ fontSize: 11, color: "rgba(255,255,255,0.78)" }}>{item}</span></div>)}</div>
         </div>
@@ -290,13 +287,13 @@ const SocialProof = () => (
 );
 
 const Problem = () => (
-  <section style={{ background: "#fff" }}><div className="qv-wrap"><p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(30,39,97,0.62)", marginBottom: 24 }}>The Problem</p><h2 className="qv-heading" style={{ maxWidth: 760, marginBottom: 48 }}>Your organisation runs on decisions. But when one fails, can you answer these?</h2>{[["Who approved this decision, and what evidence did they have?", "Without a logged approval chain, accountability is anecdotal."], ["What outcome did we predict, and what actually happened?", "Quantivis shows whether your prediction was accurate — and adjusts future recommendations accordingly."], ["Did our AI recommendation perform better than human judgment?", "Quantivis tracks the full loop so decision-making improves over time."]].map(([question, answer]) => <div key={question} className="qv-grid-2" style={{ gap: 32, padding: "30px 0", borderTop: `1px solid rgba(30,39,97,0.12)` }}><div style={{ fontFamily: "Georgia, serif", fontSize: 24, color: NAVY, lineHeight: 1.35 }}>{question}</div><div style={{ fontSize: 15, color: SLATE, lineHeight: 1.7 }}>{answer}</div></div>)}</div></section>
+  <section style={{ background: "#fff" }}><div className="qv-wrap"><Eyebrow style={{ marginBottom: 24 }}>The Problem</Eyebrow><h2 className="qv-heading" style={{ maxWidth: 760, marginBottom: 48 }}>Your organisation runs on decisions. But when one fails, can you answer these?</h2>{[["Who approved this decision, and what evidence did they have?", "Without a logged approval chain, accountability is anecdotal."], ["What outcome did we predict, and what actually happened?", "Quantivis shows whether your prediction was accurate — and adjusts future recommendations accordingly."], ["Did our AI recommendation perform better than human judgment?", "Quantivis tracks the full loop so decision-making improves over time."]].map(([question, answer]) => <div key={question} className="qv-grid-2" style={{ gap: 32, padding: "30px 0", borderTop: `1px solid rgba(30,39,97,0.12)` }}><div style={{ fontFamily: "Georgia, serif", fontSize: 24, color: NAVY, lineHeight: 1.35 }}>{question}</div><div style={{ fontSize: 15, color: SLATE, lineHeight: 1.7 }}>{answer}</div></div>)}</div></section>
 );
 
 const HowItWorks = () => (
   <section style={{ background: MUTED }}>
     <div className="qv-wrap">
-      <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(30,39,97,0.62)", marginBottom: 24 }}>A real decision — step by step</p>
+      <Eyebrow style={{ marginBottom: 24 }}>A real decision — step by step</Eyebrow>
       <h2 className="qv-heading" style={{ maxWidth: 640, marginBottom: 48 }}>From SAP alert to board-defensible outcome.</h2>
       <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
         {([
@@ -335,7 +332,7 @@ const SecurityTrust = () => (
     <div style={{ maxWidth: 1280, margin: "0 auto", padding: "64px 24px" }}>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 80, alignItems: "start" }}>
         <div>
-          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(30,39,97,0.62)", marginBottom: 16 }}>Security & compliance</p>
+          <Eyebrow style={{ marginBottom: 16 }}>Security & compliance</Eyebrow>
           <h2 style={{ fontFamily: "Georgia, serif", fontSize: "clamp(22px, 2.5vw, 34px)", color: NAVY, fontWeight: 400, margin: "0 0 24px", lineHeight: 1.2 }}>Built for procurement teams, not just developers.</h2>
           <div style={{ display: "flex", gap: 8, marginBottom: 24, flexWrap: "wrap" }}>
             {[
@@ -374,7 +371,7 @@ const SecurityTrust = () => (
           </div>
         </div>
         <div>
-          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(30,39,97,0.62)", marginBottom: 16 }}>Why not just use Microsoft?</p>
+          <Eyebrow style={{ marginBottom: 16 }}>Why not just use Microsoft?</Eyebrow>
           <h2 style={{ fontFamily: "Georgia, serif", fontSize: "clamp(22px, 2.5vw, 34px)", color: NAVY, fontWeight: 400, margin: "0 0 24px", lineHeight: 1.2 }}>Copilot audits prompts. Quantivis audits decisions.</h2>
           <p style={{ fontSize: 15, color: SLATE, lineHeight: 1.75, margin: "0 0 24px" }}>
             Microsoft Copilot logs what AI said. Quantivis logs what your organisation <em>decided</em> — who approved it, on what evidence, with what predicted outcome, and whether it worked. Those are different products solving different problems.
@@ -399,7 +396,7 @@ const SecurityTrust = () => (
 );
 
 const EUAIAct = () => (
-  <section style={{ background: DEEP, color: "#fff" }}><div className="qv-wrap"><p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(255,255,255,0.62)", marginBottom: 24 }}>Compliance</p><div className="qv-grid-2" style={{ gap: 64 }}><div><h2 style={{ fontFamily: "Georgia, serif", fontSize: "clamp(28px, 4vw, 52px)", lineHeight: 1.15, fontWeight: 400, letterSpacing: "-0.02em", margin: "0 0 32px" }}>The EU AI Act requires documented decision trails. Quantivis provides them.</h2><Link to="/ai-governance" className="qv-primary-cta" style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.25)" }}>Read our EU AI Act guide <ArrowRight size={14} /></Link></div><div className="qv-grid-2" style={{ gap: 32, alignItems: "start" }}>{[["Requirements", ["Article 9 — Risk management", "Article 13 — Transparency", "Article 14 — Human oversight"]], ["What Quantivis provides", ["Automated audit trail", "Evidence chain", "Board-ready reports"]]].map(([title, items]) => <div key={title as string}><div style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", marginBottom: 14 }}>{title as string}</div>{(items as string[]).map(item => <div key={item} style={{ fontSize: 14, color: "rgba(255,255,255,0.75)", padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.08)", lineHeight: 1.4 }}>{item}</div>)}</div>)}</div></div></div></section>
+  <section style={{ background: DEEP, color: "#fff" }}><div className="qv-wrap"><Eyebrow tone="light" style={{ marginBottom: 24 }}>Compliance</Eyebrow><div className="qv-grid-2" style={{ gap: 64 }}><div><h2 style={{ fontFamily: "Georgia, serif", fontSize: "clamp(28px, 4vw, 52px)", lineHeight: 1.15, fontWeight: 400, letterSpacing: "-0.02em", margin: "0 0 32px" }}>The EU AI Act requires documented decision trails. Quantivis provides them.</h2><Link to="/ai-governance" className="qv-primary-cta" style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.25)" }}>Read our EU AI Act guide <ArrowRight size={14} /></Link></div><div className="qv-grid-2" style={{ gap: 32, alignItems: "start" }}>{[["Requirements", ["Article 9 — Risk management", "Article 13 — Transparency", "Article 14 — Human oversight"]], ["What Quantivis provides", ["Automated audit trail", "Evidence chain", "Board-ready reports"]]].map(([title, items]) => <div key={title as string}><div style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", marginBottom: 14 }}>{title as string}</div>{(items as string[]).map(item => <div key={item} style={{ fontSize: 14, color: "rgba(255,255,255,0.75)", padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.08)", lineHeight: 1.4 }}>{item}</div>)}</div>)}</div></div></div></section>
 );
 
 const Pricing = () => {
@@ -411,7 +408,7 @@ const Pricing = () => {
   return (
     <section id="pricing" style={{ background: "#fff" }}>
       <div className="qv-wrap">
-        <p className="qv-eyebrow qv-eyebrow-dark" style={{ marginBottom: 24 }}>Pricing</p>
+        <Eyebrow style={{ marginBottom: 24 }}>Pricing</Eyebrow>
         <div className="qv-grid-2" style={{ gap: 48, marginBottom: 16 }}>
           <h2 className="qv-heading">Straightforward pricing. No hidden costs.</h2>
           <p style={{ fontSize: 15, color: SLATE, lineHeight: 1.75, margin: 0 }}>All plans include a 30-day pilot period. You get a working governance record, not a sandbox.</p>
@@ -432,9 +429,9 @@ const Pricing = () => {
                   </div>
                 ))}
               </div>
-              <a href="#demo" className="qv-primary-cta" style={{ marginTop: "auto", background: plan.featured ? ACCENT : "transparent", color: plan.featured ? "#fff" : NAVY, border: plan.featured ? "none" : `1.5px solid ${NAVY}` }} aria-label={`${plan.cta} for the ${plan.name} plan`}>
+              <MarketingCTA href="#demo" style={{ marginTop: "auto", background: plan.featured ? ACCENT : "transparent", color: plan.featured ? "#fff" : NAVY, border: plan.featured ? "none" : `1.5px solid ${NAVY}` }} aria-label={`${plan.cta} for the ${plan.name} plan`}>
                 {plan.cta}
-              </a>
+              </MarketingCTA>
             </div>
           ))}
         </div>

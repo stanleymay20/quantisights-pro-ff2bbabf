@@ -432,9 +432,39 @@ and verified incrementally.
 
 ---
 
-## 16. Out of scope for DS-1 / DS-2
+## 16. DS-3A homepage primitive adoption
 
-These are deliberate deferrals. They are **not** failures of DS-1 or DS-2.
+DS-3A expands homepage use of the DS-2 primitive layer in small, safe
+slices. It does not redesign or rewrite the page.
+
+DS-3A keeps the homepage layout, Georgia typography, and 1280 px containers unchanged.
+
+Adopted in this phase:
+
+- `MarketingCTA` now covers the hero secondary CTA and pricing plan CTAs
+  where anchor semantics already matched the primitive.
+- `Eyebrow` now owns the repeated homepage section-eyebrow styling,
+  including light and dark tones.
+- `TagBadge` now covers the obvious decision-brief status chips that
+  previously used one-off HEX styles.
+- The local `qv-eyebrow*` classes were removed because the primitive now
+  owns that styling directly.
+
+Deferred intentionally:
+
+- Button and React Router `Link` CTAs that do not match the current anchor
+  primitive.
+- Remaining `qv-*` layout, grid, card, nav, footer, and mock-frame classes.
+- Georgia display typography migration.
+- Container-width migration from 1280 px to the DS-1 1400 px contract.
+- Full homepage or public-page migration.
+
+---
+
+## 17. Out of scope for DS-1 / DS-2 / DS-3A
+
+These are deliberate deferrals. They are **not** failures of DS-1, DS-2,
+or DS-3A.
 
 - Homepage layout migration (Georgia → Space Grotesk; 1280 → 1400; the
   `qv-*` class set; the inline `<Nav>` and `<SiteFooter>`).
@@ -447,4 +477,4 @@ These are deliberate deferrals. They are **not** failures of DS-1 or DS-2.
 - Reconciling the homepage's `--brand-marketing-accent` (`#3D5AFE`) with
   `--brand-primary` (`#2563EB`).
 
-Each should be its own focused sprint after DS-2 lands.
+Each should be its own focused sprint after DS-3A lands.
