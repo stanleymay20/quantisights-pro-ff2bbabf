@@ -38,66 +38,39 @@ const AuthCallback = () => {
       }
     };
 
-    // Listen for the session being set (PKCE auto-exchange via detectSessionInUrl)
+    // Check for provider error first — never proceed to exchange on error response.
+    const url = new URL(window.location.href);
+    const errParam = url.searchParams.get("error_description") || url.searchParams.get("error");
+    if (errParam) {
+      console.error("[AuthCallback] OAuth provider error:", errParam);
+      finish(false);
+      return;
+    }
+
+    // The Supabase client is configured with `detectSessionInUrl: true` + PKCE flow,
+    // so it auto-exchanges the `?code=` exactly once on page load. We MUST NOT call
+    // `exchangeCodeForSession` again — that races with the auto-exchange and the
+    // second call fails because the code (and PKCE verifier) have already been
+    // consumed. We only listen for SIGNED_IN and poll getSession as a fallback.
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        subscription.unsubscribe();
-        finish(true);
-      }
+      if (session?.user) finish(true);
     });
 
-    const finalize = async () => {
-      try {
-        // Explicit fallback: if a code is present and auto-exchange didn't fire, force it.
-        const url = new URL(window.location.href);
-        const code = url.searchParams.get("code");
-        const errParam = url.searchParams.get("error_description") || url.searchParams.get("error");
+    // Fallback: session may have been set before this component mounted.
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) finish(true);
+    });
 
-        if (errParam) {
-          console.error("[AuthCallback] OAuth provider error:", errParam);
-          finish(false);
-          return;
-        }
-
-        if (code) {
-          // Some flows / re-renders need an explicit exchange.
-          const { data, error: exchangeErr } = await supabase.auth.exchangeCodeForSession(window.location.href);
-          if (!exchangeErr && data.session) {
-            subscription.unsubscribe();
-            finish(true);
-            return;
-          }
-          if (exchangeErr) {
-            console.warn("[AuthCallback] exchangeCodeForSession:", exchangeErr.message);
-          }
-        }
-
-        // Hash-based (implicit) flow or already-set session.
-        const { data } = await supabase.auth.getSession();
-        if (data.session) {
-          subscription.unsubscribe();
-          finish(true);
-          return;
-        }
-
-        // Last-resort timeout: give Supabase up to 4s, then bail.
-        setTimeout(async () => {
-          if (settled || cancelled) return;
-          const { data: late } = await supabase.auth.getSession();
-          subscription.unsubscribe();
-          finish(Boolean(late.session));
-        }, 4000);
-      } catch (e) {
-        console.error("[AuthCallback] finalize failed:", e);
-        subscription.unsubscribe();
-        finish(false);
-      }
-    };
-
-    finalize();
+    // Hard timeout — if no session appears in 6s, bail to /login.
+    const timeoutId = window.setTimeout(async () => {
+      if (settled || cancelled) return;
+      const { data } = await supabase.auth.getSession();
+      finish(Boolean(data.session));
+    }, 6000);
 
     return () => {
       cancelled = true;
+      window.clearTimeout(timeoutId);
       subscription.unsubscribe();
     };
   }, [navigate, searchParams]);
