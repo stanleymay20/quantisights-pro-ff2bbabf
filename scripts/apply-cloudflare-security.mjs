@@ -8,15 +8,17 @@ const PHASE = "http_response_headers_transform";
 const RULESET_NAME = "Zone-level Response Headers Transform Ruleset";
 const RULESET_DESCRIPTION = "Zone-level ruleset that executes response header transform rules.";
 const UNSUPPORTED_RULESET_PUT_FIELDS = new Set(["id", "kind", "phase", "version", "last_updated"]);
+const OAUTH_BROKER_PATH_PREFIX = "/~oauth/";
 
 export const contentSecurityPolicy = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.posthog.com https://*.sentry.io https://browser.sentry-cdn.com",
-  "connect-src 'self' https://*.supabase.co https://*.sentry.io https://*.posthog.com https://*.ingest.sentry.io wss://*.supabase.co",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://oauth.lovable.app https://*.posthog.com https://*.sentry.io https://browser.sentry-cdn.com",
+  "connect-src 'self' https://oauth.lovable.app https://*.supabase.co https://*.sentry.io https://*.posthog.com https://*.ingest.sentry.io wss://*.supabase.co",
   "img-src 'self' data: blob: https:",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com data:",
   "worker-src 'self' blob:",
+  "frame-src https://accounts.google.com https://oauth.lovable.app",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",
@@ -45,7 +47,7 @@ export const managedHeaders = {
   "X-Content-Type-Options": { operation: "set", value: "nosniff" },
   "Referrer-Policy": { operation: "set", value: "strict-origin-when-cross-origin" },
   "Permissions-Policy": { operation: "set", value: permissionsPolicy },
-  "Cross-Origin-Opener-Policy": { operation: "set", value: "same-origin" },
+  "Cross-Origin-Opener-Policy": { operation: "set", value: "same-origin-allow-popups" },
   "Cross-Origin-Resource-Policy": { operation: "set", value: "same-origin" },
 };
 
@@ -53,7 +55,7 @@ export function buildCloudflareHeaderRule() {
   return {
     ref: RULE_REF,
     description: RULE_DESCRIPTION,
-    expression: `http.host eq "${HOSTNAME}"`,
+    expression: `http.host eq "${HOSTNAME}" and not starts_with(http.request.uri.path, "${OAUTH_BROKER_PATH_PREFIX}")`,
     action: "rewrite",
     action_parameters: { headers: managedHeaders },
     enabled: true,

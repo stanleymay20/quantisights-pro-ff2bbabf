@@ -182,8 +182,9 @@ const Login = () => {
       // Using the legacy supabase.auth.signInWithOAuth flow here would fail because
       // Google would refuse the redirect URI.
       const { lovable } = await import("@/integrations/lovable");
+      sessionStorage.setItem("quantivis_oauth_next", redirectTo);
       const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin + "/auth/callback?next=/dashboard",
+        redirect_uri: window.location.origin + "/auth/callback",
         extraParams: { prompt: "select_account" },
       });
       if (result.error) {
