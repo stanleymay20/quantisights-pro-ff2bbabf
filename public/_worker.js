@@ -59,6 +59,8 @@ const BASE_CSP = [
   "upgrade-insecure-requests",
 ];
 const STANDARD_CSP = [...BASE_CSP, "frame-ancestors 'none'"].join('; ');
+const OAUTH_BROKER_PATH_PREFIX = "/~oauth/";
+const OAUTH_CALLBACK_PATH = "/auth/callback";
 
 const embedFrameAncestors = (env) => {
   const origins = String(env.EMBED_ALLOWED_ORIGINS ?? "")
@@ -72,7 +74,7 @@ export default {
     // Forward request to the Cloudflare Pages asset server
     const response = await env.ASSETS.fetch(request);
     const { pathname } = new URL(request.url);
-    if (pathname.startsWith("/~oauth/")) {
+    if (pathname.startsWith(OAUTH_BROKER_PATH_PREFIX) || pathname === OAUTH_CALLBACK_PATH) {
       return response;
     }
 

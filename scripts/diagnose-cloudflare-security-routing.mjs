@@ -114,7 +114,8 @@ async function diagnoseCloudflareSecurityRouting(env = readCloudflareEnvironment
         summary.expression === `http.host eq "${HOSTNAME}"` ||
         summary.expression === `(http.host eq "${HOSTNAME}")` ||
         (summary.expression?.includes(`http.host eq "${HOSTNAME}"`) &&
-          summary.expression?.includes("/~oauth/"));
+          summary.expression?.includes("/~oauth/") &&
+          summary.expression?.includes("/auth/callback"));
       const prefix = isQuantivisRule ? "Managed Quantivis rule" : "Other rule";
 
       console.log(`${prefix}: ${summary.description ?? summary.ref}`);
