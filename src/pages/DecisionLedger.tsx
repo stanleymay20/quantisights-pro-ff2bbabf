@@ -535,7 +535,7 @@ const DecisionLedgerPage = () => {
                         <SelectItem value="risk_mitigation">Risk Mitigation</SelectItem>
                       </SelectContent>
                     </Select>
-                    <Button onClick={createDecision} className="w-full" disabled={!newAction.trim()}>
+                    <Button onClick={createDecision} className="w-full" disabled={!newAction.trim()} data-testid="create-decision-submit">
                       Log Decision
                     </Button>
                     <Button
