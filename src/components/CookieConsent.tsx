@@ -19,6 +19,18 @@ const CookieConsent = forwardRef<HTMLDivElement>((_, _ref) => {
   useEffect(() => {
     // Never show cookie consent on the demo provisioning page
     if (location.pathname === "/demo") return;
+    // E2E test bypass: Playwright/automation sets navigator.webdriver or test flag.
+    // Avoid showing the banner so it cannot intercept sign-out / interactive clicks.
+    const isAutomated =
+      (typeof navigator !== "undefined" && (navigator as Navigator & { webdriver?: boolean }).webdriver) ||
+      localStorage.getItem("quantivis_e2e_test") === "1";
+    if (isAutomated) {
+      if (!localStorage.getItem(CONSENT_KEY)) {
+        localStorage.setItem(CONSENT_KEY, JSON.stringify({ choice: "essential_only", timestamp: new Date().toISOString(), automated: true }));
+      }
+      setVisible(false);
+      return;
+    }
     const stored = localStorage.getItem(CONSENT_KEY);
     const isDemo = sessionStorage.getItem("quantivis_demo_mode") === "true";
     if (isDemo) {
