@@ -417,7 +417,7 @@ const DecisionLedgerPage = () => {
               </p>
             </div>
           </div>
-          <Button onClick={() => setShowCreate(!showCreate)} size="sm" className="gap-2 shrink-0">
+          <Button onClick={() => setShowCreate(!showCreate)} size="sm" className="gap-2 shrink-0" data-testid="create-decision">
             <Plus className="w-4 h-4" /> Log Decision
           </Button>
         </header>
@@ -535,7 +535,7 @@ const DecisionLedgerPage = () => {
                         <SelectItem value="risk_mitigation">Risk Mitigation</SelectItem>
                       </SelectContent>
                     </Select>
-                    <Button onClick={createDecision} className="w-full" disabled={!newAction.trim()}>
+                    <Button onClick={createDecision} className="w-full" disabled={!newAction.trim()} data-testid="create-decision-submit">
                       Log Decision
                     </Button>
                     <Button

@@ -1,5 +1,5 @@
 // @ts-nocheck — suppresses TS2589/TS2769 from large generated schema; remove when schema stabilises
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, forwardRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
@@ -86,17 +86,17 @@ function MetricChip({ metric }: { metric: MetricTypeSummary }) {
   );
 }
 
-function DecisionRow({
-  decision,
-  onApprove,
-  onReject,
-  acting,
-}: {
+interface DecisionRowProps {
   decision: PendingDecision;
   onApprove: (id: string) => void;
   onReject: (id: string) => void;
   acting: string | null;
-}) {
+}
+
+const DecisionRow = forwardRef<HTMLDivElement, DecisionRowProps>(function DecisionRow(
+  { decision, onApprove, onReject, acting },
+  ref,
+) {
   const navigate = useNavigate();
   const isActing = acting === decision.id;
   const conf = decision.capped_confidence;
@@ -105,6 +105,7 @@ function DecisionRow({
 
   return (
     <motion.div
+      ref={ref}
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       className="border-b border-border/30 py-3 px-1 last:border-0"
@@ -147,7 +148,7 @@ function DecisionRow({
       </div>
     </motion.div>
   );
-}
+});
 
 const ExecutiveDailyDriver = ({ displayName, orgId, insights, topMetrics, pendingDecisions }: Props) => {
   const navigate = useNavigate();
