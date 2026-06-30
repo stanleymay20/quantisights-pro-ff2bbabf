@@ -6,7 +6,8 @@ const PHASE = "http_response_headers_transform";
 const RULESET_NAME = "Zone-level Response Headers Transform Ruleset";
 const RULESET_DESCRIPTION = "Zone-level ruleset that executes response header transform rules.";
 const UNSUPPORTED_RULESET_PUT_FIELDS = new Set(["id", "kind", "phase", "version", "last_updated"]);
-const OAUTH_EXEMPT_PATHS = ["/~oauth/", "/auth/callback"];
+const OAUTH_BROKER_PATH_PREFIX = "/~oauth/";
+const OAUTH_CALLBACK_PATH = "/auth/callback";
 
 const { CLOUDFLARE_API_TOKEN, CLOUDFLARE_ZONE_ID } = process.env;
 
@@ -50,9 +51,10 @@ const managedHeaders = {
   },
 };
 
-const oauthExemptExpression = OAUTH_EXEMPT_PATHS
-  .map((path) => `not starts_with(http.request.uri.path, "${path}")`)
-  .join(" and ");
+const oauthExemptExpression = [
+  `not starts_with(http.request.uri.path, "${OAUTH_BROKER_PATH_PREFIX}")`,
+  `http.request.uri.path ne "${OAUTH_CALLBACK_PATH}"`,
+].join(" and ");
 
 const rule = {
   ref: RULE_REF,
