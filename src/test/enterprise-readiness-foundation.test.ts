@@ -166,7 +166,13 @@ describe("enterprise readiness foundation", () => {
     const routes = read("src/routes/index.tsx");
     expect(routes).toContain('path: "/integrations"');
     expect(routes).toContain('{ path: "/copilot", element: <CopilotOverview />, layout: "public" }');
-    expect(routes).toContain('{ path: "/compare", element: <Compare />, layout: "public" }');
+
+    const compareRoute = routes.match(/\{ path: "\/compare", element: <Compare \/>\, layout: "(?<layout>[^"]+)" \}/);
+    expect(compareRoute).not.toBeNull();
+    expect(compareRoute?.groups?.layout).toBe("none");
+    expect(compareRoute?.groups?.layout).not.toBe("full");
+    expect(compareRoute?.groups?.layout).not.toBe("minimal");
+    expect(routes).toContain('const Compare = lazy(() => import("@/pages/Compare"))');
   });
 
   it("initializes both observability clients from the application entrypoint", () => {

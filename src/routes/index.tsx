@@ -211,11 +211,7 @@ export const routes: RouteEntry[] = [
   { path: "/sla", element: <SLA />, layout: "public" },
 
   // ══════ Marketing / Trust / Comparison ══════
-  // NOTE: pinned to layout: "public" by enterprise-readiness-foundation test —
-  // do not change without updating that contract. /compare therefore still
-  // renders PublicPageNav alongside its own <Navbar>; revisit during the next
-  // public-surface sprint.
-  { path: "/compare", element: <Compare />, layout: "public" },
+  { path: "/compare", element: <Compare />, layout: "none" },
   { path: "/copilot", element: <CopilotOverview />, layout: "public" },
   { path: "/integrations", element: <Integrations />, layout: "public" },
   { path: "/business-model", element: <BusinessModel />, layout: "full" },
