@@ -122,7 +122,7 @@ const Nav = () => {
           .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
         if (visible) setActiveSection(visible.target.id);
       },
-      { rootMargin: "-40% 0px -50% 0px", threshold: [0, 0.25, 0.5, 1] }
+      { rootMargin: "-30% 0px -30% 0px", threshold: [0, 0.25, 0.5, 1] }
     );
     elements.forEach(el => observer.observe(el));
     return () => observer.disconnect();
