@@ -195,7 +195,7 @@ export const DashboardHeader = ({
               <Users className="w-4 h-4 mr-2" /> Team
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={onSignOut} className="text-destructive focus:text-destructive">
+            <DropdownMenuItem onClick={onSignOut} className="text-destructive focus:text-destructive" data-testid="sign-out">
               <LogOut className="w-4 h-4 mr-2" /> Sign out
             </DropdownMenuItem>
           </DropdownMenuContent>
