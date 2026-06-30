@@ -201,14 +201,20 @@ export const routes: RouteEntry[] = [
   { path: "/demo", element: <Demo />, layout: "public" },
   { path: "/conversations/episode-1", element: <ConversationsEp1 />, layout: "none" },
   { path: "/embed", element: <EmbedDashboard />, layout: "public" },
-  { path: "/pricing", element: <Pricing />, layout: "public" },
+  // layout: "none" — these pages render <Navbar>/<Footer> themselves;
+  // PublicPageNav would duplicate the marketing nav. See DS-0 audit.
+  { path: "/pricing", element: <Pricing />, layout: "none" },
   { path: "/calibration", element: <CalibrationAssessment />, layout: "full" },
-  { path: "/free-analysis", element: <FreeAnalysis />, layout: "public" },
+  { path: "/free-analysis", element: <FreeAnalysis />, layout: "none" },
   { path: "/status", element: <SystemStatus />, layout: "public" },
   { path: "/system-status", element: <SystemStatus />, layout: "public" },
   { path: "/sla", element: <SLA />, layout: "public" },
 
   // ══════ Marketing / Trust / Comparison ══════
+  // NOTE: pinned to layout: "public" by enterprise-readiness-foundation test —
+  // do not change without updating that contract. /compare therefore still
+  // renders PublicPageNav alongside its own <Navbar>; revisit during the next
+  // public-surface sprint.
   { path: "/compare", element: <Compare />, layout: "public" },
   { path: "/copilot", element: <CopilotOverview />, layout: "public" },
   { path: "/integrations", element: <Integrations />, layout: "public" },
@@ -217,13 +223,15 @@ export const routes: RouteEntry[] = [
   { path: "/security-questionnaire", element: <SecurityQuestionnaire />, layout: "public" },
   { path: "/handbook", element: <FounderHandbook />, layout: "full" },
   { path: "/vs/microsoft", element: <WhyVsMicrosoft />, layout: "public" },
-  { path: "/decision-intelligence-platforms", element: <DecisionIntelligencePlatforms />, layout: "public" },
+  // layout: "none" — renders own Navbar/Footer (DS-0).
+  { path: "/decision-intelligence-platforms", element: <DecisionIntelligencePlatforms />, layout: "none" },
   { path: "/pitch", element: <Pitch />, layout: "full" },
   { path: "/competitions", element: <Competitions />, layout: "full" },
   { path: "/pitch-deck", element: <PitchDeck />, layout: "full" },
   { path: "/ebook", element: <Ebook />, layout: "full" },
   { path: "/enterprise", element: <Navigate to="/enterprise/contact" replace />, layout: "none" },
-  { path: "/enterprise/contact", element: <EnterpriseContact />, layout: "public" },
+  // layout: "none" — renders own Navbar/Footer (DS-0).
+  { path: "/enterprise/contact", element: <EnterpriseContact />, layout: "none" },
   { path: "/competitive-analysis", element: <CompetitiveAnalysis />, layout: "full" },
   { path: "/trust", element: <TrustCenter />, layout: "public" },
   { path: "/trust-center", element: <Navigate to="/trust" replace />, layout: "none" },

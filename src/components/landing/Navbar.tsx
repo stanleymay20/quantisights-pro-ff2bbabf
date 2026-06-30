@@ -1,3 +1,17 @@
+/**
+ * Canonical public marketing navigation (DS-0).
+ *
+ * Use this on public marketing pages (Pricing, Enterprise Contact, Compare,
+ * etc.). For utility/legal pages (/trust, /privacy, /terms, /security, ...)
+ * the route uses layout: "public" which mounts `PublicPageNav` instead.
+ *
+ * Pages that import this Navbar must be registered with layout: "none"
+ * in src/routes/index.tsx so PublicPageNav is not also injected — see
+ * the DS-0 audit for the double-nav case.
+ *
+ * The homepage (Index.tsx) still uses its own inline nav; migration of
+ * that surface is intentionally deferred past DS-0.
+ */
 import { useState, forwardRef } from "react";
 import { Link } from "react-router-dom";
 import { Menu, X } from "lucide-react";

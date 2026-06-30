@@ -1,3 +1,16 @@
+/**
+ * Canonical public marketing footer (DS-0).
+ *
+ * Use this on public marketing pages that need the full Quantivis brand
+ * footer (brand block, contact, social, three link columns, bottom bar
+ * with auto-updating copyright). Do not mount on dashboard/internal pages.
+ *
+ * Utility/legal pages mounted via layout: "public" intentionally render
+ * no footer at present; revisit during the broader design-system migration.
+ *
+ * The homepage (Index.tsx) still renders its own inline footer; migration
+ * of that surface is deferred past DS-0.
+ */
 import { forwardRef } from "react";
 import { Link } from "react-router-dom";
 import { Mail, MapPin, Linkedin } from "lucide-react";
