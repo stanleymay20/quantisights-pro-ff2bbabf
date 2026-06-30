@@ -85,7 +85,7 @@ describe("enterprise readiness foundation", () => {
       expect(generatedWorker).toContain(path);
     }
 
-    expect(generatedWorker).not.toContain("OAUTH_BROKER_PATH_PREFIX");
+    expect(generatedWorker).toContain("pathname === OAUTH_CALLBACK_PATH");
   });
 
   it("uses evidence-safe authentication claims", () => {
