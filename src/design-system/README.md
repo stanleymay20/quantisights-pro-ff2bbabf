@@ -408,9 +408,33 @@ required.
 
 ---
 
-## 15. Out of scope for DS-1
+## 15. DS-2 shared primitives
 
-These are deliberate deferrals. They are **not** failures of DS-1.
+DS-2 adds a small shared primitive layer in
+`src/components/design-system/marketing-primitives.tsx`. It is deliberately
+narrow: the goal is to give future migrations stable building blocks
+without redesigning the homepage or migrating full pages.
+
+Available primitives:
+
+| Primitive | Purpose | Current adoption |
+|---|---|---|
+| `Eyebrow` | Canonical marketing eyebrow text using DS-1 marketing slate/muted tokens. | Low-risk homepage eyebrow replacements only. |
+| `MarketingCard` | Wrapper for the existing `qv-card` / optional interactive card classes. | Low-risk homepage platform feature cards only. |
+| `MarketingSection` | Section wrapper that maps surface intent to DS-1 surface tokens. | Low-risk homepage platform section only. |
+| `TagBadge` | Semantic badge for homepage decision states using status/decision tokens instead of local HEX maps. | Replaces the homepage `TAG_STYLES` map. |
+| `MarketingCTA` | Thin anchor wrapper for the existing `qv-primary-cta` / `qv-secondary-cta` classes. | One low-risk homepage CTA replacement. |
+
+DS-2 does not migrate full pages, does not replace the homepage layout,
+does not change routes, and does not remove the remaining page-local
+`qv-*` CSS. Those are deferred until the primitive layer has been used
+and verified incrementally.
+
+---
+
+## 16. Out of scope for DS-1 / DS-2
+
+These are deliberate deferrals. They are **not** failures of DS-1 or DS-2.
 
 - Homepage layout migration (Georgia → Space Grotesk; 1280 → 1400; the
   `qv-*` class set; the inline `<Nav>` and `<SiteFooter>`).
@@ -423,4 +447,4 @@ These are deliberate deferrals. They are **not** failures of DS-1.
 - Reconciling the homepage's `--brand-marketing-accent` (`#3D5AFE`) with
   `--brand-primary` (`#2563EB`).
 
-Each will be its own focused sprint after DS-1 lands.
+Each should be its own focused sprint after DS-2 lands.

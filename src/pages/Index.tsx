@@ -2,6 +2,7 @@ import { forwardRef, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, CheckCircle, Shield, TrendingUp, AlertCircle, Globe } from "lucide-react";
 import heroVideoAsset from "@/assets/hero-video.mp4.asset.json";
+import { Eyebrow, MarketingCard, MarketingCTA, MarketingSection, TagBadge } from "@/components/design-system/marketing-primitives";
 
 // DS-1: page-local color constants now resolve from the design-system
 // CSS variables defined in src/index.css. Values are unchanged — this
@@ -20,12 +21,6 @@ const DECISIONS = [
   { id: "DL-2844", category: "Supply Chain", confidence: 92, impact: "+€42K", tag: "Approved", time: "1h ago", governance: "Logged" },
   { id: "DL-2843", category: "Risk Mitigation", confidence: 79, impact: "+€11K", tag: "Pending", time: "2h ago", governance: "Active" },
 ];
-
-const TAG_STYLES: Record<string, { bg: string; color: string }> = {
-  Approved: { bg: "#DCFCE7", color: "#15803D" },
-  Pending: { bg: "#FEF9C3", color: "#854D0E" },
-  Review: { bg: "#EFF6FF", color: "#1D4ED8" },
-};
 
 const ResponsiveStyles = () => (
   <style>{`
@@ -166,8 +161,6 @@ const LedgerTicker = () => {
   }, []);
 
   const primaryDecision = DECISIONS[visible[0]];
-  const primaryTag = TAG_STYLES[primaryDecision.tag] ?? TAG_STYLES.Pending;
-
   return (
     <div className="qv-mock-frame qv-ledger">
       <div className="qv-mock-titlebar">
@@ -181,7 +174,7 @@ const LedgerTicker = () => {
       <div className="qv-mobile-card">
         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center" }}>
           <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", fontFamily: "monospace" }}>{primaryDecision.id}</span>
-          <span style={{ fontSize: 10, padding: "3px 8px", borderRadius: 3, background: primaryTag.bg, color: primaryTag.color, fontWeight: 700 }}>{primaryDecision.tag}</span>
+          <TagBadge tone={primaryDecision.tag}>{primaryDecision.tag}</TagBadge>
         </div>
         <div className="qv-mobile-card-title">{primaryDecision.category} — Governance record logged</div>
         <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>{primaryDecision.time} · Governance {primaryDecision.governance}</div>
@@ -197,14 +190,13 @@ const LedgerTicker = () => {
       </div>
       {visible.map((idx, row) => {
         const decision = DECISIONS[idx];
-        const tag = TAG_STYLES[decision.tag] ?? TAG_STYLES.Pending;
         return (
           <div key={`${row}-${idx}`} className="qv-ledger-row" style={{ borderBottom: row < 2 ? "1px solid rgba(255,255,255,0.05)" : "none", opacity: fade ? 0.3 : 1, transition: "opacity 0.35s ease" }}>
             <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", fontFamily: "monospace" }}>{decision.id}</div>
             <div><div style={{ fontSize: 12, color: "#fff", fontWeight: 500 }}>{decision.category} — Governance record logged</div><div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>{decision.time}</div></div>
             <div style={{ textAlign: "center", fontSize: 14, fontWeight: 700, color: decision.confidence >= 90 ? "#22C55E" : "#F59E0B" }}>{decision.confidence}%</div>
             <div style={{ textAlign: "center", fontSize: 12, color: "#22C55E", fontWeight: 600 }}>{decision.impact}</div>
-            <div style={{ textAlign: "center" }}><span style={{ fontSize: 10, padding: "3px 8px", borderRadius: 3, background: tag.bg, color: tag.color, fontWeight: 600 }}>{decision.tag}</span></div>
+            <div style={{ textAlign: "center" }}><TagBadge tone={decision.tag} style={{ fontWeight: 600 }}>{decision.tag}</TagBadge></div>
             <div style={{ textAlign: "center" }}><span style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", background: "rgba(255,255,255,0.07)", padding: "3px 8px", borderRadius: 3 }}>{decision.governance}</span></div>
             <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}><button style={{ fontSize: 10, padding: "4px 10px", borderRadius: 3, background: "#22C55E", color: "#fff", border: "none", fontWeight: 600 }}>Approve</button><button style={{ fontSize: 10, padding: "4px 10px", borderRadius: 3, background: "transparent", color: "#EF4444", border: "1px solid #EF4444", fontWeight: 600 }}>Reject</button></div>
           </div>
@@ -223,7 +215,7 @@ const Hero = () => (
       <h1>Every AI decision your organisation makes needs an audit trail. <span style={{ color: "rgba(255,255,255,0.72)" }}>Quantivis creates it automatically.</span></h1>
       <p className="qv-hero-copy">The EU AI Act (Articles 9, 13, 14) requires documented evidence for every AI-assisted decision. Quantivis creates that record automatically — approval trail, evidence chain, outcome log — ready for your compliance officer and your board.</p>
       <div className="qv-cta-row">
-        <a href="#demo" className="qv-primary-cta">Request a Demo <ArrowRight size={16} /></a>
+        <MarketingCTA href="#demo">Request a Demo <ArrowRight size={16} /></MarketingCTA>
         <a href="#platform" className="qv-secondary-cta">See the platform <ArrowRight size={14} /></a>
       </div>
       <div className="qv-illustrative-banner" role="note" aria-label="Illustrative data disclosure">
@@ -240,7 +232,7 @@ const DecisionBrief = () => (
     <div style={{ maxWidth: 1280, margin: "0 auto", padding: "0 24px" }}>
       <div className="qv-grid-2">
         <div>
-          <span className="qv-eyebrow qv-eyebrow-light" style={{ display: "block", marginBottom: 20 }}>The governance record</span>
+          <Eyebrow tone="light" style={{ display: "block", marginBottom: 20 }}>The governance record</Eyebrow>
           <h2 style={{ fontFamily: "Georgia, serif", fontSize: "clamp(26px, 3vw, 42px)", lineHeight: 1.15, letterSpacing: "-0.02em", color: "#fff", fontWeight: 400, margin: "0 0 24px" }}>Every decision. Full evidence chain. One auditable record.</h2>
           <p style={{ fontSize: 15, color: "rgba(255,255,255,0.78)", lineHeight: 1.75, margin: "0 0 32px" }}>The Decision Ledger captures every AI recommendation — who approved it, what evidence supported it, what outcome was predicted, and what actually happened. Board-defensible by design.</p>
           {[["Recommendation → Decision → Outcome → Learning", "The full loop, automatically recorded"], ["Source-verified outputs on every recommendation", "Every AI output is cross-checked against your uploaded data before it reaches a decision-maker"], ["Brier-scored calibration after every outcome", "Predictions get more accurate over time"]].map(([title, sub]) => (
@@ -335,7 +327,7 @@ const Platform = () => {
     { icon: <Shield size={20} color={ACCENT} />, title: "Source Verification Layer", description: "AI claims are checked against actual source data before approval." },
     { icon: <Shield size={20} color={ACCENT} />, title: "Enterprise Connectors", description: "SAP, Salesforce, Dynamics, HubSpot, NetSuite, BigQuery, Snowflake, S3, Sheets, and REST APIs." },
   ];
-  return <section id="platform" style={{ background: "#fff" }}><div className="qv-wrap"><p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(30,39,97,0.62)", marginBottom: 24 }}>The Platform</p><div className="qv-grid-2" style={{ gap: 48, marginBottom: 48 }}><h2 className="qv-heading">Built for the decisions that matter.</h2><p style={{ fontSize: 16, color: SLATE, lineHeight: 1.75, margin: 0 }}>Quantivis is not a dashboard. It is a governed decision record — the layer between AI recommendations and the humans who act on them.</p></div><div className="qv-grid-3" style={{ background: `rgba(30,39,97,0.08)` }}>{features.map(feature => <div key={feature.title} className="qv-card"><div style={{ marginBottom: 16 }}>{feature.icon}</div><h3 style={{ fontFamily: "Georgia, serif", fontSize: 20, color: NAVY, marginBottom: 12, fontWeight: 400 }}>{feature.title}</h3><p style={{ fontSize: 13, color: SLATE, lineHeight: 1.75, margin: 0 }}>{feature.description}</p></div>)}</div></div></section>;
+  return <MarketingSection id="platform"><div className="qv-wrap"><Eyebrow style={{ marginBottom: 24 }}>The Platform</Eyebrow><div className="qv-grid-2" style={{ gap: 48, marginBottom: 48 }}><h2 className="qv-heading">Built for the decisions that matter.</h2><p style={{ fontSize: 16, color: SLATE, lineHeight: 1.75, margin: 0 }}>Quantivis is not a dashboard. It is a governed decision record — the layer between AI recommendations and the humans who act on them.</p></div><div className="qv-grid-3" style={{ background: `rgba(30,39,97,0.08)` }}>{features.map(feature => <MarketingCard key={feature.title}><div style={{ marginBottom: 16 }}>{feature.icon}</div><h3 style={{ fontFamily: "Georgia, serif", fontSize: 20, color: NAVY, marginBottom: 12, fontWeight: 400 }}>{feature.title}</h3><p style={{ fontSize: 13, color: SLATE, lineHeight: 1.75, margin: 0 }}>{feature.description}</p></MarketingCard>)}</div></div></MarketingSection>;
 };
 
 const SecurityTrust = () => (
