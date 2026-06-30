@@ -6,6 +6,7 @@ const PHASE = "http_response_headers_transform";
 const RULESET_NAME = "Zone-level Response Headers Transform Ruleset";
 const RULESET_DESCRIPTION = "Zone-level ruleset that executes response header transform rules.";
 const UNSUPPORTED_RULESET_PUT_FIELDS = new Set(["id", "kind", "phase", "version", "last_updated"]);
+const OAUTH_BROKER_PATH_PREFIX = "/~oauth/";
 
 const { CLOUDFLARE_API_TOKEN, CLOUDFLARE_ZONE_ID } = process.env;
 
@@ -24,7 +25,7 @@ if (process.exitCode) {
 }
 
 const contentSecurityPolicy =
-  "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.posthog.com https://*.sentry.io https://browser.sentry-cdn.com; connect-src 'self' https://*.supabase.co https://*.sentry.io https://*.posthog.com https://*.ingest.sentry.io wss://*.supabase.co; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests";
+  "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://oauth.lovable.app https://*.posthog.com https://*.sentry.io https://browser.sentry-cdn.com; connect-src 'self' https://oauth.lovable.app https://*.supabase.co https://*.sentry.io https://*.posthog.com https://*.ingest.sentry.io wss://*.supabase.co; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; worker-src 'self' blob:; frame-src https://accounts.google.com https://oauth.lovable.app; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests";
 
 const managedHeaders = {
   "Content-Security-Policy": {
@@ -52,7 +53,7 @@ const managedHeaders = {
 const rule = {
   ref: RULE_REF,
   description: RULE_DESCRIPTION,
-  expression: `http.host eq "${HOSTNAME}"`,
+  expression: `http.host eq "${HOSTNAME}" and not starts_with(http.request.uri.path, "${OAUTH_BROKER_PATH_PREFIX}")`,
   action: "rewrite",
   action_parameters: {
     headers: managedHeaders,

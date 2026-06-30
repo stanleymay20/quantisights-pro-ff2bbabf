@@ -266,6 +266,8 @@ describe("enterprise readiness foundation", () => {
       "CLOUDFLARE_API_TOKEN",
       "CLOUDFLARE_ZONE_ID",
       'http.host eq "${HOSTNAME}"',
+      "not starts_with(http.request.uri.path",
+      "/~oauth/",
       "Permissions-Policy",
       "Cross-Origin-Opener-Policy",
       "Cross-Origin-Resource-Policy",
@@ -354,6 +356,7 @@ describe("enterprise readiness foundation", () => {
       operation: "set",
       value: "DENY",
     });
+    expect(rule.expression).toContain("/~oauth/");
     expect(payload).not.toHaveProperty("kind");
     expect(payload).not.toHaveProperty("phase");
     expect(payload.rules).toEqual([rule]);
