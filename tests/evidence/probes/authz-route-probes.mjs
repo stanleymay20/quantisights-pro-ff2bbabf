@@ -190,7 +190,7 @@ export function planProbes(env, { testRunId }) {
       organization_id: null,
       user_id: null,
       role: "anonymous",
-      body: { probe: "AUTHZ-019", test_run_id: testRunId },
+      body: { probe: "AUTHZ-019", metadata: { test_run_id: testRunId, probe: "AUTHZ-019" } },
     },
   ];
 }
