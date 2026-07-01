@@ -103,47 +103,56 @@ Legend
 
 ## 7. Decision creation
 
+Status: **IMPLEMENTED (EE-3)** — Decision Lifecycle pipeline. See `tests/evidence/pipelines/decision-lifecycle.mjs`, `tests/evidence/pipelines/lib/decision-controls.mjs` (25 controls DEC-001…DEC-025), and adapter `tests/evidence/adapters/decision-adapter.mjs`.
+
 | Field | Value |
 |---|---|
 | Purpose | Prove a decision row is committed with governance metadata |
 | Entry | Authenticated `POST /rest/v1/decision_ledger` |
 | Exit | Row present with `status='pending'`, `organization_id`, `created_by` |
-| Positive controls | Insert returns 201, RLS accepts owner org |
-| Negative controls | Missing `organization_id` → 400; wrong org → 403 |
-| Evidence artifacts | `create.json`, `ledger-diff.json` |
+| Positive controls | DEC-001…DEC-005 (create, validate, org, owner, initial status) |
+| Negative controls | DEC-002 (validation), DEC-012 (invalid transition), DEC-025 (delete denied) |
+| Evidence artifacts | `evidence.json` (folded from decision-adapter workflow/audit/report/browser inputs) |
 | Release gate | Decision pipeline |
 
 ## 8. Decision editing
+
+Status: **IMPLEMENTED (EE-3)** — covered by DEC-012 (status transition valid) and DEC-013 (audit trail generated) under the Decision Lifecycle pipeline.
 
 | Field | Value |
 |---|---|
 | Purpose | Prove edits preserve audit lineage |
 | Entry | `PATCH /rest/v1/decision_ledger?id=eq.<id>` |
 | Exit | Row updated, `audit_log` row appended |
-| Negative controls | Non-author without role → 403 |
-| Evidence artifacts | `edit.json`, `audit-appended.json` |
+| Negative controls | DEC-012 rejects illegal transitions; DEC-011 blocks approval-history tamper |
+| Evidence artifacts | Folded into Decision Lifecycle `evidence.json` |
 | Release gate | Decision pipeline |
 
 ## 9. Decision approval
+
+Status: **IMPLEMENTED (EE-3)** — DEC-008 (human review), DEC-009 (approval recorded), DEC-011 (approval history immutable), DEC-012 (transition valid).
 
 | Field | Value |
 |---|---|
 | Purpose | Approvals move status `pending → approved` atomically |
 | Entry | Approver invokes approval RPC |
-| Exit | `status='approved'`, approval stage recorded |
-| Negative controls | Non-approver → 403; skipped stage → trigger raises |
-| Evidence artifacts | `approval.json` |
-| Release gate | Governance pipeline |
+| Exit | `status='approved'`, approval stage recorded, approver_id persisted |
+| Negative controls | Duplicate approval denied (DEC-012); approval history tamper denied (DEC-011) |
+| Evidence artifacts | Folded into Decision Lifecycle `evidence.json` |
+| Release gate | Decision pipeline |
 
 ## 10. Decision rejection
+
+Status: **IMPLEMENTED (EE-3)** — DEC-010 (rejection recorded with reason + rejecter_id).
 
 | Field | Value |
 |---|---|
 | Purpose | Rejections halt lifecycle and require rationale |
 | Entry | Approver rejects with reason |
 | Exit | `status='rejected'`, reason persisted, notification emitted |
-| Evidence artifacts | `rejection.json` |
-| Release gate | Governance pipeline |
+| Evidence artifacts | Folded into Decision Lifecycle `evidence.json` |
+| Release gate | Decision pipeline |
+
 
 ## 11. Evidence attachment
 
