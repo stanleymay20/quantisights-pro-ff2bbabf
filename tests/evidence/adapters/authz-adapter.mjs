@@ -351,12 +351,6 @@ function projectRouteProbes(payload, controls) {
 export function translate({ tenantIsolation = null, browser = null, routeProbes = null, environment = "preview", strict = false } = {}) {
   const controls = {};
 
-  // Fill in defaults so the pipeline receives a complete map even when a
-  // source is missing. Individual sources will overwrite these below.
-  for (const id of AUTHZ_REQUIRED_CONTROL_IDS) {
-    controls[id] = skipRecord("No adapter input covered this control");
-  }
-
   const sources = {
     tenant_isolation: tenantIsolation?.run_tag ?? tenantIsolation?.source ?? null,
     browser: browser?.base_url ?? browser?.source ?? null,
@@ -366,6 +360,12 @@ export function translate({ tenantIsolation = null, browser = null, routeProbes 
   if (tenantIsolation) projectTenantIsolation(tenantIsolation, controls);
   if (browser) projectBrowser(browser, controls);
   if (routeProbes) projectRouteProbes(routeProbes, controls);
+
+  // Fill uncovered controls with SKIP — never fake PASS. Real assignments
+  // above already set severity via mergeRecords among real records.
+  for (const id of AUTHZ_REQUIRED_CONTROL_IDS) {
+    if (!controls[id]) controls[id] = skipRecord("No adapter input covered this control");
+  }
 
   const missing = AUTHZ_REQUIRED_CONTROL_IDS.filter((id) => controls[id].status === "SKIP");
   const warnings = missing.map((id) => ({ code: "CONTROL_SKIPPED", control_id: id, message: `No adapter input covered ${id}` }));
