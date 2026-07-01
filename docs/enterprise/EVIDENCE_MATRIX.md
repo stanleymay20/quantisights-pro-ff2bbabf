@@ -71,17 +71,23 @@ Legend
 | Evidence artifacts | `mfa-challenge.json`, `mfa-enroll.json` |
 | Release gate | Authentication |
 
-## 5. Protected routes
+## 5. Authorization & Tenant Isolation (EE-2)
 
 | Field | Value |
 |---|---|
-| Purpose | Every private route rejects anonymous access |
-| Entry | Anonymous `GET` on each route registered in `src/routes/index.tsx` |
-| Exit | 302 to `/login` (SPA) or 401 (API) |
-| Positive controls | Authenticated user reaches route |
-| Negative controls | Anonymous user redirected; role-gated route rejects wrong role |
-| Evidence artifacts | `route-audit.json` (one row per route) |
-| Release gate | Authorization |
+| Implementation status | **IMPLEMENTED (EE-2)** — see `tests/evidence/pipelines/authorization.mjs` |
+| Controls | 20 (AUTHZ-001 … AUTHZ-020) declared in `tests/evidence/pipelines/lib/authz-controls.mjs` |
+| Adapter | `tests/evidence/adapters/authz-adapter.mjs` (README: `tests/evidence/adapters/README-authz-adapter.md`) — consumes `tests/tenant-isolation/run.mjs`, `tests/e2e/concurrent-browser-sessions.py`, and a route-probe JSON |
+| Purpose | Prove protected routes, RLS, role gates, tenant isolation, edge-function and realtime authorization |
+| Entry | Anonymous or seeded-tenant request against protected routes, PostgREST tables, edge functions, and realtime channels |
+| Exit | Every own-tenant probe returns 2xx with expected rows; every cross-tenant probe returns empty array or documented denial class (401/403/`42501`) |
+| Dependencies | Two seeded orgs (`tests/tenant-isolation/seed.mjs`), pre-minted browser session for `concurrent-browser-sessions.py`, edge-function `verify_jwt`, realtime publication + RLS |
+| Positive controls | Tenant A own reads/writes; Tenant B own reads/writes; owner/admin allowed on privileged surfaces; member allowed where expected; every protected route reachable under valid session |
+| Negative controls | Cross-tenant reads/writes denied; role escalation denied; anonymous denied and redirected to `/login`; expired/tampered JWT denied; edge function rejects missing/cross-tenant JWT; realtime subscriber receives no cross-tenant rows |
+| Expected outputs | `audit-artifacts/YYYY-MM-DD/authorization/evidence.json` (standard artifact schema) with per-control `route`, `role`, `organization_id`, `user_id`, `table`, `policy`, `request`, `response`, `status_code`, `redirect_chain`, `console_errors`, `network_failures`, `screenshots`, `recommendation` |
+| Failure codes | `PROTECTED_ROUTE_FAILURE`, `SESSION_STABILITY_FAILURE`, `AUTHZ_BYPASS`, `ADMIN_ROUTE_FAILURE`, `OWN_TENANT_READ_FAILURE`, `OWN_TENANT_WRITE_FAILURE`, `CROSS_TENANT_READ_LEAK`, `CROSS_TENANT_WRITE_LEAK`, `RLS_ENFORCEMENT_FAILURE`, `PERMISSION_HIERARCHY_FAILURE`, `ROLE_ESCALATION`, `EDGE_FUNCTION_AUTHZ_FAILURE`, `REALTIME_AUTHZ_LEAK` |
+| Blocking semantics | Cross-tenant leak / role escalation / realtime leak → `CRITICAL_LEAK` (blocking). Own-tenant regressions and protected-route/edge-function failures → `SECURITY_FAILURE` (blocking). Missing adapter input → `SKIP` (degrades pipeline to `WARNING`, never `PASS`). Missing control / bad schema → `FRAMEWORK_INVALID` (blocking). |
+| Release gate | Authorization (hard-blocking on `CRITICAL_LEAK`, `SECURITY_FAILURE`, `FRAMEWORK_INVALID`) |
 
 ## 6. Tenant isolation
 
