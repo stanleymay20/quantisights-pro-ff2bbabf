@@ -1,22 +1,30 @@
 #!/usr/bin/env python3
 """
-Checked-in 10-user concurrent browser harness.
+Concurrent Browser Session Harness.
 
-Spawns N Playwright contexts against the local Vite preview
-(http://localhost:8080) and walks the read paths a real user would hit:
-Dashboard → Decisions → Auditability → Reports → Logout.
+NOT a tenant-isolation test. This harness proves route/session stability
+under N concurrent browser contexts sharing a SINGLE pre-minted Supabase
+session. Every context is the same user in the same organization, so it
+cannot — and does not — prove RLS or cross-tenant isolation.
 
-Requires a pre-minted Supabase session in the environment (see
-`browser-use` docs / `LOVABLE_BROWSER_AUTH_STATUS=injected`). If the session
-is not available the harness prints exactly what is missing and exits 1
-instead of pretending to pass.
+For real tenant-isolation evidence use tests/tenant-isolation/ which seeds
+two distinct users in two distinct orgs and probes cross-tenant reads and
+writes over PostgREST with each user's own JWT.
 
-Selectors are stable (`data-testid` + role + heading), never `networkidle`,
-because /decisions keeps SSE + realtime subscriptions open.
+What this harness DOES prove:
+  - Concurrent session stability across N browser contexts
+  - No stale-chunk / preload errors under concurrent nav
+  - No auth-race regressions in the SPA shell
+  - Route selectors remain stable (data-testid + role + heading)
+
+What this harness DOES NOT prove:
+  - Tenant isolation
+  - Row-level security enforcement
+  - Cross-org read/write denial
 
 Run:
-    python3 tests/e2e/multi-user-harness.py           # default 10 users
-    LOVABLE_E2E_USERS=5 python3 tests/e2e/multi-user-harness.py
+    python3 tests/e2e/concurrent-browser-sessions.py           # default 10
+    LOVABLE_E2E_USERS=5 python3 tests/e2e/concurrent-browser-sessions.py
 """
 from __future__ import annotations
 
