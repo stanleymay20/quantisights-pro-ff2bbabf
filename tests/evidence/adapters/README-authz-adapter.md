@@ -99,12 +99,132 @@ schema, see `tests/evidence/lib/artifact.mjs`).
 * `FRAMEWORK_INVALID` is **hard-blocking** — the harness did not produce
   usable evidence and the release cannot be certified.
 
+## Route-probe adapter (EE-2B)
+
+`authz-route-probes.mjs` is a companion **pure translator** that produces the
+`{ probes: [...] }` payload consumed by `authz-adapter.mjs --route-probes`.
+Without it, the following controls stay `SKIP` and the pipeline degrades to
+`WARNING`:
+
+| Control | Coverage |
+|---|---|
+| `AUTHZ-004` | Protected governance access (`GET /auditability`) |
+| `AUTHZ-007` | Authenticated route access under a valid session |
+| `AUTHZ-012` | Own-tenant write allowed (2xx insert into `decision_ledger`) |
+| `AUTHZ-015` | Cross-tenant write denied (401 / 403 / Postgres 42501) |
+| `AUTHZ-019` | Edge Function authorization (401 for missing / invalid JWT) |
+
+### Inputs (choose one; both may be combined)
+
+* `--input <route-probes.json>` — a hand-authored or scripted probe file:
+
+  ```json
+  {
+    "source": "route-probes",
+    "probes": [
+      {
+        "control_id": "AUTHZ-015",
+        "route": "/rest/v1/decision_ledger",
+        "role": "member",
+        "organization_id": "org_a",
+        "user_id": "user_a",
+        "table": "decision_ledger",
+        "method": "POST",
+        "expected": "leak_check",
+        "status_code": 403,
+        "redirect_chain": [],
+        "console_errors": [],
+        "network_failures": [],
+        "screenshots": []
+      }
+    ]
+  }
+  ```
+
+* `--playwright <reporter.json>` — Playwright JSON reporter output. Tests
+  opt in with:
+
+  ```ts
+  test.info().annotations.push({ type: "authz-control", description: "AUTHZ-004" });
+  test.info().attachments.push({
+    name: "authz-probe",
+    contentType: "application/json",
+    body: Buffer.from(JSON.stringify({
+      route: "/auditability",
+      role: "member",
+      expected: "allow",
+      status_code: 200,
+    })),
+  });
+  ```
+
+  Playwright pass/fail is used as the ground truth when no explicit
+  `status_code` / `expected` sidecar is attached.
+
+### `expected` semantics
+
+| Value | PASS condition |
+|---|---|
+| `allow` | `status_code ∈ [200, 299]` |
+| `deny` | `status_code ∈ {401, 403}` **or** `redirect_chain` ends at `/login` |
+| `leak_check` | `status_code ∈ {401, 403, 42501}` (cross-tenant write must be rejected) |
+| `api` | `status_code ∈ {401, 403}` (Edge Function without / with wrong JWT) |
+| `explicit` | trust `probe.pass` verbatim |
+
+### Output → authz-adapter
+
+The output file is a valid `--route-probes` payload:
+
+```json
+{
+  "source": "authz-route-probes",
+  "collected_at": "2026-07-01T00:00:00.000Z",
+  "probes": [ { "control_id": "AUTHZ-004", "route": "/auditability", "pass": true, ... } ]
+}
+```
+
+Feed it directly into `authz-adapter.mjs`:
+
+```bash
+node tests/evidence/adapters/authz-route-probes.mjs \
+  --input /tmp/route-probes-raw.json \
+  --output /tmp/route-probes.json \
+  --strict
+
+node tests/evidence/adapters/authz-adapter.mjs \
+  --tenant-isolation /tmp/ti.json \
+  --browser          /tmp/br.json \
+  --route-probes     /tmp/route-probes.json \
+  --output           /tmp/authz-evidence.json
+```
+
+### Failure modes
+
+`authz-route-probes.mjs` exits **non-zero** on:
+
+* Malformed input JSON (unparseable file, missing `probes` array).
+* A probe missing `control_id` or `route`.
+* A probe referencing an unknown AUTHZ control id.
+* A probe with an unknown `expected` keyword.
+* `--strict` **and** any of `AUTHZ-004`, `AUTHZ-007`, `AUTHZ-012`,
+  `AUTHZ-015`, `AUTHZ-019` is unmapped in the final output.
+
+Structural errors (malformed JSON, unknown control id, missing required
+fields) always fail — even without `--strict` — because they indicate the
+adapter cannot trust the input at all.
+
 ## Remaining blockers before first staging execution
 
 * Provision Org A + Org B seed users (`tests/tenant-isolation/seed.mjs`) in
   staging (`LOAD_SUPABASE_URL`, `LOAD_SUPABASE_ANON_KEY`, seed passwords).
-* Provide a route-probe script that emits `{ probes: [...] }` for
-  `AUTHZ-005`, `AUTHZ-017`, `AUTHZ-018`, `AUTHZ-019`, `AUTHZ-020`. Until
-  that lands, those five controls remain `SKIP` and the pipeline is `WARNING`.
+* Author a staging-safe probe script or Playwright suite that produces the
+  route-probe input covering `AUTHZ-004`, `AUTHZ-007`, `AUTHZ-012`,
+  `AUTHZ-015`, `AUTHZ-019`. The translator is ready; the observation source
+  is not.
+* Route-probe coverage for `AUTHZ-005`, `AUTHZ-017`, `AUTHZ-018`, `AUTHZ-020`
+  is still outstanding (admin role gate, role hierarchy, role mutation,
+  Realtime authz leak). Add these to the same route-probe file once the
+  fixtures exist.
 * Realtime authz probe (`AUTHZ-020`) requires a Realtime subscriber wired
-  as a cross-tenant JWT.
+  with a cross-tenant JWT.
+
