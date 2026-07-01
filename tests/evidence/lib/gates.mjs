@@ -24,12 +24,13 @@ export const GATES = Object.freeze([
     key: "authorization",
     label: "Authorization",
     weight: 10,
-    pipelines: [
-      "protected-routes",
-      "user-management",
-      "organization-management",
-      "settings",
-    ],
+    // EE-2: single evidence-consuming pipeline (authorization) supersedes the
+    // legacy stubs (protected-routes, user-management, organization-management,
+    // settings). The authorization pipeline consumes the tenant-isolation
+    // harness, the concurrent browser harness, and route probes via the
+    // authz-adapter. The legacy stub pipelines are retired to avoid
+    // double-counting the same authz controls across multiple pipelines.
+    pipelines: ["authorization"],
   },
   {
     key: "tenant_isolation",
