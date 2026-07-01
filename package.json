@@ -25,7 +25,8 @@
     "tenant-isolation:seed": "node tests/tenant-isolation/seed.mjs",
     "tenant-isolation:run": "node tests/tenant-isolation/run.mjs",
     "tenant-isolation:teardown": "node tests/tenant-isolation/teardown.mjs",
-    "e2e:concurrent-sessions": "python3 tests/e2e/concurrent-browser-sessions.py"
+    "e2e:concurrent-sessions": "python3 tests/e2e/concurrent-browser-sessions.py",
+    "evidence:run": "node tests/evidence/run-all.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
