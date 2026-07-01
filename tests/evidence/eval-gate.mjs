@@ -17,7 +17,11 @@ import {
   mkdirSync,
   writeFileSync,
   renameSync,
+  openSync,
+  closeSync,
+  fsyncSync,
 } from "node:fs";
+import { randomBytes } from "node:crypto";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
