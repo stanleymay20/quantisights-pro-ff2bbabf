@@ -228,3 +228,79 @@ adapter cannot trust the input at all.
 * Realtime authz probe (`AUTHZ-020`) requires a Realtime subscriber wired
   with a cross-tenant JWT.
 
+---
+
+## EE-2C — Route-probe emitter
+
+`tests/evidence/probes/authz-route-probes.mjs` is the **staging-safe emitter**
+that produces the raw JSON consumed by the EE-2B translator. It performs the
+actual HTTP observations for the five contract controls:
+
+- `AUTHZ-004` protected governance access (anonymous → `/auditability`)
+- `AUTHZ-007` authenticated route access (User A → `/dashboard`)
+- `AUTHZ-012` own-tenant write allowed (User A → own Org insert)
+- `AUTHZ-015` cross-tenant write denied (User A → Org B insert)
+- `AUTHZ-019` edge function authorization (unauthenticated → edge fn)
+
+### Safety guards (fail-closed)
+
+- `LOAD_TARGET` allow-list (`staging` | `preview`) — reuses
+  `tests/tenant-isolation/lib/guard.mjs`.
+- Refuses any production token (`production`, `prod`, `live`, `main`, `release`)
+  and refuses `LOAD_BASE_URL` pointing at `quantivis.io`.
+- Requires explicit `--yes`.
+- Refuses to run unless **both** `LOAD_ORG_A_ID` and `LOAD_ORG_B_ID` start with
+  `org_loadtest_` — no real customer org can be touched.
+- Every insert stamps `metadata.test_run_id`. Never deletes rows. Never sends
+  email. Never calls live AI.
+
+### Required environment
+
+```
+LOAD_TARGET=staging|preview
+LOAD_BASE_URL=https://staging.quantivis.example
+LOAD_SUPABASE_URL=https://<ref>.supabase.co
+LOAD_SUPABASE_ANON_KEY=<anon>
+LOAD_ORG_A_ID=org_loadtest_a
+LOAD_ORG_B_ID=org_loadtest_b
+LOAD_USER_A_EMAIL=... / LOAD_USER_A_PASSWORD=...
+LOAD_USER_B_EMAIL=... / LOAD_USER_B_PASSWORD=...
+AUTHZ_ROUTE_PROBE_OUTPUT=/tmp/authz-route-probes.raw.json   # optional
+```
+
+### End-to-end flow
+
+```bash
+# 1. Emit raw observations (destructive writes; requires --yes).
+node tests/evidence/probes/authz-route-probes.mjs --yes
+
+# Dry-run (no network) to inspect the plan:
+node tests/evidence/probes/authz-route-probes.mjs --yes --dry-run
+
+# 2. Translate raw observations into --route-probes payload.
+node tests/evidence/adapters/authz-route-probes.mjs \
+  --input /tmp/authz-route-probes.raw.json \
+  --output /tmp/route-probes.json \
+  --strict
+
+# 3. Merge into AUTHZ evidence via authz-adapter.
+node tests/evidence/adapters/authz-adapter.mjs \
+  --tenant-isolation /tmp/ti.json \
+  --browser          /tmp/br.json \
+  --route-probes     /tmp/route-probes.json \
+  --output           /tmp/authz-evidence.json
+
+# 4. Feed into the certification run.
+EVIDENCE_AUTHZ_RESULTS=/tmp/authz-evidence.json npm run evidence:run
+```
+
+### Remaining blockers before first staging execution
+
+- `AUTHZ-005`, `AUTHZ-017`, `AUTHZ-018`, `AUTHZ-020` still lack emitter
+  coverage (admin route, role hierarchy, role mutation, Realtime authz);
+  they flow through the same output file once fixtures land.
+- Staging seed users + org fixtures must already exist (run
+  `tests/tenant-isolation/seed.mjs` first).
+- Realtime authz probe (`AUTHZ-020`) still needs a cross-tenant Realtime
+  subscriber.
+
