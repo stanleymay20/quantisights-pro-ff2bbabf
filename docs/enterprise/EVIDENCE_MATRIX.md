@@ -403,13 +403,13 @@ Legend
 | Evidence artifacts | `recovery.json` |
 | Release gate | Recovery |
 
-<!-- AUTO-GENERATED:GATES:START (do not edit — run npm run evidence:docs) -->
+<!-- AUTO-GENERATED:GATES:START (do not edit — run npm run evidence:docs:write) -->
 
 ## Gate mapping (generated from `tests/evidence/lib/gates.mjs`)
 
 This section is auto-generated. Do not hand-edit.
 
-| Gate | Label | Weight | Pipelines |
+| Gate key | Label | Weight | Pipelines |
 |---|---|---:|---|
 | `authentication` | Authentication | 10 | `authentication`, `mfa`, `oauth`, `session-recovery` |
 | `authorization` | Authorization | 10 | `protected-routes`, `user-management`, `organization-management`, `settings` |
