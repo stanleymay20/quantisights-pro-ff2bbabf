@@ -178,6 +178,9 @@ export function buildEvidence(adapterResults) {
     status = STATUS.WARNING;
   } else if (positive.length === 0) {
     status = STATUS.FRAMEWORK_INVALID;
+  } else if (warnings.some((w) => w.code === "CONTROL_SKIPPED")) {
+    // EE-1C: any skipped control must degrade to WARNING — never a fake PASS.
+    status = STATUS.WARNING;
   } else {
     status = STATUS.PASS;
   }

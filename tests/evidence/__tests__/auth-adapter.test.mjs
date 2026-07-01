@@ -202,3 +202,74 @@ test("CLI: strict mode exits non-zero when a required control is missing", () =>
   assert.notEqual(res.status, 0);
   assert.match(res.stderr, /Missing required AUTH controls/);
 });
+
+// ---------------------------------------------------------------- EE-1C
+
+test("EE-1C: auth-evidence sidecar (base64 body) is merged into evidence fields", () => {
+  const sidecar = {
+    route: "/dashboard",
+    response_status: 200,
+    redirect_chain: ["/login", "/dashboard"],
+    session_state: { user_id: "u1", aal: "aal1" },
+    auth_state: "signed_in",
+    console_errors: [{ message: "noop" }],
+    network_failures: [],
+    notes: ["sidecar ok"],
+  };
+  const body = Buffer.from(JSON.stringify(sidecar)).toString("base64");
+  const json = playwrightJson([
+    ...REQUIRED_CONTROL_IDS.filter((id) => id !== "AUTH-005").map((id) => specWithAnnotations(`covers ${id}`, [id])),
+    {
+      title: "session persists",
+      annotations: [{ type: "auth-control", description: "AUTH-005" }],
+      tests: [{
+        results: [{
+          status: "passed",
+          duration: 20,
+          attachments: [{ name: "auth-evidence", contentType: "application/json", body }],
+        }],
+      }],
+    },
+  ]);
+  const { result } = translate(json);
+  const rec = result.controls["AUTH-005"];
+  assert.equal(rec.evidence.route, "/dashboard");
+  assert.equal(rec.evidence.response_status, 200);
+  assert.deepEqual(rec.evidence.redirect_chain, ["/login", "/dashboard"]);
+  assert.equal(rec.evidence.session_state.user_id, "u1");
+  assert.equal(rec.evidence.auth_state, "signed_in");
+  assert.equal(rec.evidence.console_errors.length, 1);
+  assert.deepEqual(rec.evidence.notes, ["sidecar ok"]);
+});
+
+test("EE-1C: SKIP staging-only control produces WARNING, never fake PASS", () => {
+  const json = playwrightJson(
+    REQUIRED_CONTROL_IDS.map((id) =>
+      id === "AUTH-010"
+        ? specWithAnnotations(`covers ${id}`, [id], { status: "skipped" })
+        : specWithAnnotations(`covers ${id}`, [id]),
+    ),
+  );
+  const { result } = translate(json);
+  assert.equal(result.controls["AUTH-010"].status, "SKIP");
+  const pipeline = buildEvidence(result);
+  // Warning-tier: non-blocking; certainly not PASS-with-fake-evidence.
+  assert.equal(pipeline.status, STATUS.WARNING);
+  assert.ok(pipeline.warnings.some((w) => w.control_id === "AUTH-010" && w.code === "CONTROL_SKIPPED"));
+});
+
+test("EE-1C: e2e/auth.spec.ts annotates every AUTH-### control", async () => {
+  const src = readFileSync(new URL("../../../e2e/auth.spec.ts", import.meta.url).pathname, "utf8");
+  for (const id of REQUIRED_CONTROL_IDS) {
+    assert.match(src, new RegExp(id), `e2e/auth.spec.ts missing coverage for ${id}`);
+    assert.match(src, new RegExp(`attachAuthEvidence\\([^)]*"${id}"`), `${id} not passed to attachAuthEvidence`);
+  }
+});
+
+test("EE-1C: strict mode succeeds when Playwright JSON covers all 15 controls", () => {
+  const { result, missing, warnings } = translate(fullCoverage(), { strict: true });
+  assert.equal(missing.length, 0);
+  assert.equal(warnings.length, 0);
+  assert.equal(Object.keys(result.controls).length, 15);
+});
+
