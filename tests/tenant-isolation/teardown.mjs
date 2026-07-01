@@ -22,7 +22,7 @@ const sb = createClient(URL, KEY, { auth: { persistSession: false } });
 const failures = [];
 
 for (const org of [state.orgs.a.id, state.orgs.b.id]) {
-  for (const table of ["evidence_sources", "audit_log", "decision_ledger", "organization_members"]) {
+  for (const table of ["audit_log", "decision_ledger", "organization_members"]) {
     const { error } = await sb.from(table).delete().eq("organization_id", org);
     if (error) failures.push({ op: `delete ${table}`, org, error: error.message });
   }
