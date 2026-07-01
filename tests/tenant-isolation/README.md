@@ -6,29 +6,37 @@ surface: `decision_ledger`, `audit_log`, `evidence_sources`.
 
 Any cross-tenant read or write that succeeds is a **CRITICAL** failure.
 
-## Guarantees enforced by the scripts
+## Safety guarantees (enforced by `lib/guard.mjs`)
 
-- Refuses to run against production (`LOAD_TARGET=production` blocked; requires
-  `staging` or `preview`).
+- **Allow-list environment check**: `LOAD_TARGET` must be exactly `staging` or
+  `preview`. Anything else — `production`, `prod`, `live`, `main`, `release`,
+  empty, or a typo — is rejected before any network call.
+- **Shared guard**: `seed.mjs`, `run.mjs`, and `teardown.mjs` all import the
+  same `guardOrExit()` helper. No script-local drift.
+- **Hard-fail teardown**: any cleanup error causes exit code 1 and the state
+  file is preserved so operators can retry. Nothing is silently left behind.
 - Does not call live AI, does not send email, does not depend on k6.
 - Only two users are created (one per org). No 50/100/1000-VU load.
-- Seed / test / teardown are separate scripts. Teardown wipes only rows tagged
-  with `is_loadtest` in user metadata and the two dedicated orgs.
 
 ## Files
 
 | File | Purpose |
 | --- | --- |
-| `seed.mjs`     | Creates `org_loadtest_a` + `org_loadtest_b`, one seeded user per org, one decision + audit + evidence row per org. Writes `.users.json`. |
-| `run.mjs`      | Signs in each user via password grant, probes cross-tenant reads and writes on `decision_ledger`, `audit_log`, `evidence_sources`. Exits non-zero on any leak. |
-| `teardown.mjs` | Deletes seeded rows, users, and the two orgs. |
+| `lib/guard.mjs` | Shared allow-list guard used by all three scripts. |
+| `seed.mjs`      | Creates two orgs + one user each + canary rows on `decision_ledger`, `audit_log`, `evidence_sources`. Writes `.state.json`. |
+| `run.mjs`       | Signs in each user, probes cross-tenant reads and writes. Exits non-zero on any leak. |
+| `teardown.mjs`  | Deletes seeded rows, users, and orgs. Exits 1 on any failure. |
+
+`.state.json` (created by `seed.mjs`, consumed by `run.mjs` and `teardown.mjs`)
+contains the run tag, org IDs, and seeded user credentials for the run. It is
+git-ignored and cleared on successful teardown.
 
 ## Required credentials
 
 All three scripts require these environment variables:
 
 ```
-LOAD_TARGET=staging                 # or "preview" — never "production"
+LOAD_TARGET=staging                 # or "preview" — anything else is refused
 LOAD_SUPABASE_URL=https://<ref>.supabase.co
 LOAD_SUPABASE_ANON_KEY=<anon key>
 SUPABASE_SERVICE_ROLE_KEY=<service-role key, staging only>
@@ -41,21 +49,21 @@ Supabase project that you own directly.
 ## Usage
 
 ```bash
-# 1. Seed
 node tests/tenant-isolation/seed.mjs
-
-# 2. Run
 node tests/tenant-isolation/run.mjs
-
-# 3. Teardown (always run, even on failure)
-node tests/tenant-isolation/teardown.mjs
+node tests/tenant-isolation/teardown.mjs   # always run, even on failure
 ```
 
 Exit codes from `run.mjs`:
 
 - `0` — all cross-tenant probes correctly returned empty / were rejected.
-- `1` — configuration error (missing env vars, missing seed file).
+- `1` — configuration error (missing env vars, missing seed file, blocked target).
 - `2` — **CRITICAL**: at least one cross-tenant read or write succeeded.
+
+Exit codes from `teardown.mjs`:
+
+- `0` — every seeded row, user, and org deleted; `.state.json` removed.
+- `1` — at least one delete failed; `.state.json` preserved for retry.
 
 ## What the run script checks
 

@@ -56,16 +56,24 @@ def preflight() -> None:
         sys.exit(1)
 
 
-NOISE_SUBSTRINGS = (
-    "Failed to fetch",
-    "AbortError",
-    "ResizeObserver loop",
-    "Non-Error promise rejection captured",
+# Explicit allow-list of console messages that are known to be caused by the
+# sandbox/environment rather than the application (e.g. analytics blocked by
+# CSP or by ad-blockers in CI). Everything else counts as a real error and
+# fails the harness — enforces the project's "Zero Console Noise" rule.
+ALLOWED_CONSOLE_SUBSTRINGS = (
+    "posthog",                              # PostHog blocked / no network
+    "PostHog",
+    "sentry.io",                            # Sentry ingest blocked
+    "Sentry",
+    "AbortError",                           # expected fetch abort on unmount
+    "The user aborted a request",
+    "ResizeObserver loop",                  # benign browser quirk
+    "Non-Error promise rejection captured", # Sentry SDK message when blocked
 )
 
 
-def is_noise(text: str) -> bool:
-    return any(s in text for s in NOISE_SUBSTRINGS)
+def is_allowed_console_noise(text: str) -> bool:
+    return any(s in text for s in ALLOWED_CONSOLE_SUBSTRINGS)
 
 
 async def restore_session(context: BrowserContext, page: Page) -> None:
@@ -100,7 +108,7 @@ async def run_user(idx: int, playwright) -> dict[str, Any]:
     logout_done = {"v": False}
 
     def on_console(msg):
-        if msg.type in ("error",) and not is_noise(msg.text):
+        if msg.type == "error" and not is_allowed_console_noise(msg.text):
             if not logout_done["v"]:
                 result["errors"].append(msg.text[:400])
 
@@ -162,7 +170,14 @@ async def main() -> None:
     print(json.dumps(summary, indent=2))
     all_routes_pass = summary["passed_all_routes"] == USER_COUNT
     logout_all_pass = summary["logout_ok"] == USER_COUNT
-    if not (all_routes_pass and logout_all_pass and summary["total_http_errors"] == 0):
+    no_console_errors = summary["total_console_errors"] == 0
+    no_http_errors = summary["total_http_errors"] == 0
+    if not (all_routes_pass and logout_all_pass and no_console_errors and no_http_errors):
+        print(
+            f"FAIL: routes={all_routes_pass} logout={logout_all_pass} "
+            f"console_clean={no_console_errors} http_clean={no_http_errors}",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
 
