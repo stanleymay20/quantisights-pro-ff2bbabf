@@ -108,7 +108,7 @@ async def run_user(idx: int, playwright) -> dict[str, Any]:
     logout_done = {"v": False}
 
     def on_console(msg):
-        if msg.type in ("error",) and not is_noise(msg.text):
+        if msg.type == "error" and not is_allowed_console_noise(msg.text):
             if not logout_done["v"]:
                 result["errors"].append(msg.text[:400])
 
