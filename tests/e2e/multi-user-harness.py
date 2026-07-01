@@ -170,7 +170,14 @@ async def main() -> None:
     print(json.dumps(summary, indent=2))
     all_routes_pass = summary["passed_all_routes"] == USER_COUNT
     logout_all_pass = summary["logout_ok"] == USER_COUNT
-    if not (all_routes_pass and logout_all_pass and summary["total_http_errors"] == 0):
+    no_console_errors = summary["total_console_errors"] == 0
+    no_http_errors = summary["total_http_errors"] == 0
+    if not (all_routes_pass and logout_all_pass and no_console_errors and no_http_errors):
+        print(
+            f"FAIL: routes={all_routes_pass} logout={logout_all_pass} "
+            f"console_clean={no_console_errors} http_clean={no_http_errors}",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
 
