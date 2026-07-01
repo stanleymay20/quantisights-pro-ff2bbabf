@@ -161,6 +161,46 @@ function extractScreenshots(result) {
   return out;
 }
 
+/**
+ * Read the auth-evidence sidecar JSON emitted by e2e/lib/auth-evidence.ts
+ * (`testInfo.attach("auth-evidence", { contentType: "application/json" })`).
+ * Supports both `body` (inline base64/utf8) and `path` (file) forms.
+ */
+function extractSidecar(result) {
+  if (!result || !Array.isArray(result.attachments)) return null;
+  for (const a of result.attachments) {
+    if (!a) continue;
+    const name = String(a.name || "").toLowerCase();
+    const contentType = String(a.contentType || "").toLowerCase();
+    if (name !== "auth-evidence" && !contentType.includes("application/json")) continue;
+    try {
+      let raw = null;
+      if (typeof a.body === "string" && a.body) {
+        // Playwright's JSON reporter base64-encodes attachment bodies.
+        try {
+          raw = Buffer.from(a.body, "base64").toString("utf8");
+          // Detect a false-positive base64 decode (result would not be JSON).
+          if (!raw.trim().startsWith("{") && !raw.trim().startsWith("[")) raw = a.body;
+        } catch {
+          raw = a.body;
+        }
+      } else if (a.path) {
+        try {
+          raw = readFileSync(a.path, "utf8");
+        } catch {
+          continue;
+        }
+      }
+      if (!raw) continue;
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === "object") return parsed;
+    } catch {
+      // ignore malformed sidecar; adapter still reports the test outcome
+    }
+  }
+  return null;
+}
+
 function extractError(result) {
   if (!result || !result.error) return null;
   const e = result.error;
@@ -174,15 +214,17 @@ function buildEvidenceFor(spec) {
   const r = spec.result;
   const status = mapStatus(r?.status);
   const screenshots = extractScreenshots(r);
+  const sidecar = extractSidecar(r) || {};
   const evidence = {
-    route: null,
-    response_status: null,
-    redirect_chain: [],
-    session_state: null,
-    auth_state: null,
-    console_errors: [],
-    network_failures: [],
+    route: sidecar.route ?? null,
+    response_status: sidecar.response_status ?? null,
+    redirect_chain: Array.isArray(sidecar.redirect_chain) ? sidecar.redirect_chain : [],
+    session_state: sidecar.session_state ?? null,
+    auth_state: sidecar.auth_state ?? null,
+    console_errors: Array.isArray(sidecar.console_errors) ? sidecar.console_errors : [],
+    network_failures: Array.isArray(sidecar.network_failures) ? sidecar.network_failures : [],
     screenshots,
+    notes: Array.isArray(sidecar.notes) ? sidecar.notes : [],
     playwright: {
       test_title: spec.fullTitle,
       project: spec.projectName,
