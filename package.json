@@ -21,7 +21,11 @@
     "cloudflare:verify": "node scripts/verify-cloudflare-security.mjs",
     "certify": "vitest run src/lib/certification/certification.test.ts",
     "certify:full": "QV_CERTIFY_FULL=1 vitest run src/lib/certification/certification.test.ts",
-    "release-gate": "npm run test && npm run certify:full && npm run build"
+    "release-gate": "npm run test && npm run certify:full && npm run build",
+    "tenant-isolation:seed": "node tests/tenant-isolation/seed.mjs",
+    "tenant-isolation:run": "node tests/tenant-isolation/run.mjs",
+    "tenant-isolation:teardown": "node tests/tenant-isolation/teardown.mjs",
+    "e2e:multi-user": "python3 tests/e2e/multi-user-harness.py"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
