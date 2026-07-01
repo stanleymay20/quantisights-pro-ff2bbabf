@@ -156,26 +156,33 @@ Status: **IMPLEMENTED (EE-3)** — DEC-010 (rejection recorded with reason + rej
 
 ## 11. Evidence attachment
 
+Status: **IMPLEMENTED (EE-4)** — EVD-001 (attachment link) and EVD-003 (chain integrity). Consumed by `tests/evidence/pipelines/evidence-attachment.mjs` from adapter output at `$EVIDENCE_AUDIT_RESULTS`.
+
 | Field | Value |
 |---|---|
 | Purpose | Attachments bind to a decision + org |
 | Entry | Insert into `evidence_sources` linked to decision |
-| Exit | `blend_evidence()` returns the new row |
-| Negative controls | Cross-tenant attach → 403 |
-| Evidence artifacts | `attach.json` |
+| Exit | Attachment evidence record present with chain hash and decision/org linkage |
+| Negative controls | Evidence chain tamper must be denied or surfaced as failure |
+| Evidence artifacts | Folded into Evidence/Audit `evidence.json` |
 | Release gate | Evidence pipeline |
 
 ## 12. Evidence retrieval
+
+Status: **IMPLEMENTED (EE-4)** — EVD-002 (retrieval), EVD-004 (citation preservation), EVD-010 (missing evidence detection).
 
 | Field | Value |
 |---|---|
 | Purpose | Retrieval honors org scope and dataset scope |
 | Entry | Read via `useDecisionEvidencePanel` hook |
-| Negative controls | Cross-tenant read → empty |
-| Evidence artifacts | `retrieve.json` |
+| Exit | Expected evidence and citations return without mutation |
+| Negative controls | Missing referenced evidence is detected and fails closed |
+| Evidence artifacts | Folded into Evidence/Audit `evidence.json` |
 | Release gate | Evidence pipeline |
 
 ## 13. Evidence export
+
+Status: **IMPLEMENTED (EE-4)** — EVD-008 (export availability).
 
 | Field | Value |
 |---|---|
@@ -183,7 +190,7 @@ Status: **IMPLEMENTED (EE-3)** — DEC-010 (rejection recorded with reason + rej
 | Entry | `POST /functions/v1/data-export` |
 | Exit | JSON bundle, `audit_log` action_type=`data_export` |
 | Negative controls | Non-admin → 403; rate limit >5/h → 429 |
-| Evidence artifacts | `export.json`, `audit-export.json` |
+| Evidence artifacts | Folded into Evidence/Audit `evidence.json` |
 | Release gate | Evidence pipeline |
 
 ## 14. AI recommendation
@@ -229,13 +236,15 @@ Status: **IMPLEMENTED (EE-3)** — DEC-010 (rejection recorded with reason + rej
 
 ## 18. Audit trail
 
+Status: **IMPLEMENTED (EE-4)** — EVD-005 (audit record creation), EVD-006 (audit immutability), EVD-007 (timeline ordering), EVD-009 (tamper attempts denied).
+
 | Field | Value |
 |---|---|
 | Purpose | Every mutating action produces an `audit_log` row |
 | Entry | Any CUD via UI or edge fn |
-| Exit | Row present with actor_id, action_type, payload |
-| Negative controls | UPDATE/DELETE on `audit_log` → 403 |
-| Evidence artifacts | `audit-append.json`, `audit-immutability.json` |
+| Exit | Row present with actor_id, action_type, payload, monotonic timeline ordering |
+| Negative controls | UPDATE/DELETE/tamper attempts on audit or evidence records are denied |
+| Evidence artifacts | Folded into Evidence/Audit `evidence.json` |
 | Release gate | Audit pipeline |
 
 ## 19. Governance workflow
