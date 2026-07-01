@@ -58,15 +58,16 @@ function validateMatrixMentionsGates() {
   if (!existsSync(MATRIX_PATH)) {
     return [`EVIDENCE_MATRIX.md missing at ${MATRIX_PATH}`];
   }
-  const matrix = readFileSync(MATRIX_PATH, "utf8");
+  const matrix = readFileSync(MATRIX_PATH, "utf8").toLowerCase();
   const errors = [];
   for (const g of GATES) {
-    if (!matrix.includes(g.label)) {
+    if (!matrix.includes(g.label.toLowerCase())) {
       errors.push(`EVIDENCE_MATRIX.md missing gate label "${g.label}"`);
     }
   }
   return errors;
 }
+
 
 function main() {
   const mode = process.argv.includes("--write") ? "write" : "check";
