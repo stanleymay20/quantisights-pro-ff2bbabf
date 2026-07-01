@@ -33,12 +33,13 @@ function makeAdapterResult(overrides = {}) {
       error: null,
     };
   }
+  const { controls: overrideControls, ...rest } = overrides;
   return {
     adapter: "test",
     collected_at: "2026-07-01T00:00:00.000Z",
     environment: "preview",
-    controls: { ...controls, ...(overrides.controls ?? {}) },
-    ...overrides,
+    ...rest,
+    controls: { ...controls, ...(overrideControls ?? {}) },
   };
 }
 
