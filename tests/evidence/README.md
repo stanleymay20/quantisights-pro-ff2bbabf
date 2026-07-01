@@ -93,9 +93,10 @@ release ticket.
 
 - **Framework:** in place. `run-all.mjs` orchestrates 34 pipelines.
 - **Pipeline implementations:** authentication, authorization, decision
-  lifecycle, evidence/audit trail are evidence-consuming pipelines. Remaining
-  unwired pipelines return `FRAMEWORK_INVALID` with a `STUB` warning until
-  connected to staging evidence.
+  lifecycle, evidence/audit trail, and mocked AI recommendation/explanation/
+  confidence are evidence-consuming pipelines. Remaining unwired pipelines
+  return `FRAMEWORK_INVALID` with a `STUB` warning until connected to staging
+  evidence.
 - **CI:** not wired. `run-all.mjs` is ready for GitHub Actions but no
   workflow has been added in this sprint.
 

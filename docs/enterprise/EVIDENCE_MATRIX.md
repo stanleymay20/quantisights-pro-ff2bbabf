@@ -195,33 +195,39 @@ Status: **IMPLEMENTED (EE-4)** — EVD-008 (export availability).
 
 ## 14. AI recommendation
 
+Status: **IMPLEMENTED (EE-5)** — AI-001 (recommendation), AI-005 (citation preservation), AI-006 (malformed response), AI-007 (timeout), AI-008 (429), AI-009 (fallback), AI-010 (hallucination guard), AI-011 (mocked AI mode). Consumed by `tests/evidence/pipelines/ai-recommendation.mjs` from mocked adapter output at `$EVIDENCE_AI_RESULTS`.
+
 | Field | Value |
 |---|---|
 | Purpose | Recommendations are deterministic & carry evidence contract |
-| Entry | `prescriptive-advisory` edge fn (mock mode) |
-| Exit | Advisory row with `evidence_sources` populated |
-| Negative controls | No dataset → returns "insufficient_data" (not fabrication) |
-| Evidence artifacts | `advisory.json` |
+| Entry | Mocked AI evidence JSON produced by `tests/evidence/adapters/ai-adapter.mjs` |
+| Exit | Mocked recommendation evidence present with citations and deterministic fallback paths |
+| Negative controls | Malformed response, timeout, 429, fallback failure, and missing citations fail closed |
+| Evidence artifacts | Folded into mocked AI `evidence.json` |
 | Release gate | AI pipeline |
 
 ## 15. AI explanation
 
+Status: **IMPLEMENTED (EE-5)** — AI-002 (explanation), AI-005 (citation preservation), AI-010 (hallucination guard), AI-011 (mocked AI mode).
+
 | Field | Value |
 |---|---|
 | Purpose | Every recommendation has 7-layer explanation |
-| Entry | Read `intelligence_audit_trail` for the advisory |
-| Exit | All 7 layers present, no free-form prose |
-| Evidence artifacts | `explanation.json` |
+| Entry | Mocked AI evidence JSON produced by `tests/evidence/adapters/ai-adapter.mjs` |
+| Exit | Structured mocked explanation evidence present and citation-backed |
+| Evidence artifacts | Folded into mocked AI `evidence.json` |
 | Release gate | AI pipeline |
 
 ## 16. Confidence scoring
 
+Status: **IMPLEMENTED (EE-5)** — AI-003 (score stored), AI-004 (bounded 0–100), AI-011 (mocked AI mode).
+
 | Field | Value |
 |---|---|
-| Purpose | Capped ≤0.85, calibrated on volume |
-| Entry | `scoreDecisionQuality()` on advisory |
-| Exit | Score persisted, dimension breakdown recorded |
-| Evidence artifacts | `iq-score.json` |
+| Purpose | Confidence score stored and bounded to the 0–100 evidence contract |
+| Entry | Mocked AI evidence JSON produced by `tests/evidence/adapters/ai-adapter.mjs` |
+| Exit | Confidence score evidence persisted and validated within 0–100 |
+| Evidence artifacts | Folded into mocked AI `evidence.json` |
 | Release gate | AI pipeline |
 
 ## 17. Decision ledger

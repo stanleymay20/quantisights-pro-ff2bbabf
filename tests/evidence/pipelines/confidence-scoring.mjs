@@ -1,13 +1,16 @@
 // tests/evidence/pipelines/confidence-scoring.mjs
-// Enterprise Evidence pipeline stub — framework only. No live execution.
-// Fill `verify()` with the actual assertions when this pipeline is wired.
-import { stubResult } from "../lib/pipeline.mjs";
+// EE-5 Confidence Scoring — mocked-evidence-consuming pipeline.
+import { buildPipelineEvidence, verifyPipeline } from "./lib/ai-pipeline.mjs";
 
 export const meta = {
   name: "confidence-scoring",
   gate: "AI pipeline",
 };
 
+export function buildEvidence(adapterResults) {
+  return buildPipelineEvidence(meta.name, adapterResults);
+}
+
 export async function verify(_ctx) {
-  return stubResult(meta.name, "awaiting_implementation");
+  return verifyPipeline(meta.name);
 }
