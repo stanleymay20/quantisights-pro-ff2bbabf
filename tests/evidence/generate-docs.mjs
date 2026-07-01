@@ -111,19 +111,3 @@ function main() {
 
 const isCli = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (isCli) main();
-
-
-  const drift = existing !== next;
-  const errors = [];
-  if (drift) errors.push("RELEASE_GATE.md drifts from gates.mjs (run: npm run evidence:docs:write)");
-  errors.push(...matrixErrors);
-
-  if (errors.length) {
-    for (const e of errors) console.error(`[docs] ${e}`);
-    process.exit(1);
-  }
-  console.log("[docs] gates.mjs and enterprise docs are in sync");
-}
-
-const isCli = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
-if (isCli) main();
