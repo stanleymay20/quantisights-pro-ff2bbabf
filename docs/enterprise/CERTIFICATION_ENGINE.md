@@ -120,7 +120,7 @@ score = round( Σ (weight_i × factor_i) / TOTAL_WEIGHT × 100 )
 | Gate key | Label | Weight | Pipelines |
 |---|---|---:|---|
 | `authentication` | Authentication | 10 | `authentication`, `mfa`, `oauth`, `session-recovery` |
-| `authorization` | Authorization | 10 | `protected-routes`, `user-management`, `organization-management`, `settings` |
+| `authorization` | Authorization | 10 | `authorization` |
 | `tenant_isolation` | Tenant Isolation | 15 | `tenant-isolation`, `edge-functions`, `realtime` |
 | `decision_pipeline` | Decision Pipeline | 10 | `decision-creation`, `decision-editing`, `decision-approval`, `decision-rejection`, `decision-ledger` |
 | `evidence_pipeline` | Evidence Pipeline | 10 | `evidence-attachment`, `evidence-retrieval`, `evidence-export` |
