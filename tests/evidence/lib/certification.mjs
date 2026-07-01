@@ -1,19 +1,32 @@
 // tests/evidence/lib/certification.mjs
 // Pure evaluator: reads evidence artifacts from a day directory, applies the
 // gate rules from gates.mjs and the taxonomy from taxonomy.mjs, and returns
-// the certification decision. No I/O side effects other than reading files.
+// the certification decision.
+//
+// Determinism contract:
+//   Deterministic fields (stable for identical evidence + provenance):
+//     overall_status, recommendation, score, score_breakdown,
+//     pipelines_passed, pipelines_failed, warnings_total, critical_issues,
+//     pipeline_results, blocking_items, warnings
+//   Non-deterministic fields (injectable for tests):
+//     timestamp, duration_ms, run_id
+//
+// The evaluator itself does no I/O other than reading evidence files.
 
 import { readdirSync, readFileSync, existsSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { STATUS, isBlocking } from "./taxonomy.mjs";
 import { GATES, TOTAL_WEIGHT } from "./gates.mjs";
+import { CERTIFICATION_ENGINE_VERSION } from "./provenance.mjs";
 
 // ---------- helpers ----------
 
 function readEvidenceForDay(dayRoot) {
   const results = new Map(); // pipeline -> evidence record
   if (!existsSync(dayRoot)) return results;
+  const RESERVED = new Set(["certifications"]);
   for (const entry of readdirSync(dayRoot)) {
+    if (RESERVED.has(entry)) continue;
     const dir = join(dayRoot, entry);
     if (!statSync(dir).isDirectory()) continue;
     const file = join(dir, "evidence.json");
@@ -51,7 +64,6 @@ function classifyPipeline(rec) {
       reason: rec.failures?.[0]?.reason ?? `${rec.status}`,
     };
   }
-  // A vacuous PASS with zero controls counts as invalid.
   const hasControls =
     (rec.positive_controls?.length ?? 0) +
       (rec.negative_controls?.length ?? 0) >
@@ -120,8 +132,6 @@ function classifyGate(gate, evidenceByPipeline) {
 }
 
 function computeScore(gateResults) {
-  // Weighted average: each gate contributes 0 or its full weight (PASS or
-  // PASS_WITH_WARNINGS with half weight for warnings), and BLOCKED = 0.
   let earned = 0;
   const breakdown = [];
   for (const g of gateResults) {
@@ -164,7 +174,7 @@ function overallDecision(gateResults) {
 // ---------- public API ----------
 
 export function evaluateDay(dayRoot, meta = {}) {
-  const start = Date.now();
+  const start = meta.now ? meta.now() : Date.now();
   const evidence = readEvidenceForDay(dayRoot);
   const gateResults = GATES.map((g) => classifyGate(g, evidence));
   const scoring = computeScore(gateResults);
@@ -201,12 +211,21 @@ export function evaluateDay(dayRoot, meta = {}) {
     }
   }
 
+  const end = meta.now ? meta.now() : Date.now();
+  const timestamp = meta.timestamp ?? new Date().toISOString();
+  const duration_ms = typeof meta.duration_ms === "number" ? meta.duration_ms : end - start;
+
   return {
+    certification_engine_version: CERTIFICATION_ENGINE_VERSION,
+    run_id: meta.run_id ?? null,
     release: meta.release ?? null,
-    commit: meta.commit ?? process.env.EVIDENCE_COMMIT ?? null,
-    environment: meta.environment ?? process.env.EVIDENCE_ENV ?? null,
-    timestamp: new Date().toISOString(),
-    duration_ms: Date.now() - start,
+    commit: meta.commit ?? null,
+    branch: meta.branch ?? null,
+    repository: meta.repository ?? null,
+    environment: meta.environment ?? null,
+    generated_by: meta.generated_by ?? null,
+    timestamp,
+    duration_ms,
     overall_status: overall,
     recommendation: overall,
     score: scoring.score,
@@ -223,5 +242,23 @@ export function evaluateDay(dayRoot, meta = {}) {
     pipeline_results: gateResults,
     blocking_items: blockingItems,
     warnings: warningItems,
+  };
+}
+
+// Extract only the deterministic subset — useful for reproducibility tests.
+export function deterministicView(cert) {
+  return {
+    certification_engine_version: cert.certification_engine_version,
+    overall_status: cert.overall_status,
+    recommendation: cert.recommendation,
+    score: cert.score,
+    score_breakdown: cert.score_breakdown,
+    pipelines_passed: cert.pipelines_passed,
+    pipelines_failed: cert.pipelines_failed,
+    warnings_total: cert.warnings_total,
+    critical_issues: cert.critical_issues,
+    pipeline_results: cert.pipeline_results,
+    blocking_items: cert.blocking_items,
+    warnings: cert.warnings,
   };
 }
