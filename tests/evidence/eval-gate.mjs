@@ -17,7 +17,11 @@ import {
   mkdirSync,
   writeFileSync,
   renameSync,
+  openSync,
+  closeSync,
+  fsyncSync,
 } from "node:fs";
+import { randomBytes } from "node:crypto";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -175,8 +179,11 @@ export function writeCertification({
     }
     // --force is an administrative recovery operation. Preserve the previous
     // certification folder before we overwrite it. Evidence is never destroyed.
+    // Backup name pattern: <run_id>.backup.<timestamp>.<randomHex> — the random
+    // suffix removes any theoretical collision on rapid successive --force runs.
     const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-    backupPath = `${certRoot}.backup.${stamp}`;
+    const rand = randomBytes(4).toString("hex");
+    backupPath = `${certRoot}.backup.${stamp}.${rand}`;
     renameSync(certRoot, backupPath);
     console.warn(
       `[cert] WARNING: --force in use. Previous certification preserved at ${backupPath}`,
@@ -199,10 +206,26 @@ export function writeCertification({
   const jsonPath = join(certRoot, "CERTIFICATION.json");
   const mdPath = join(certRoot, "CERTIFICATION.md");
   const execPath = join(certRoot, "EXECUTIVE_SUMMARY.md");
-  writeFileSync(jsonPath, JSON.stringify(cert, null, 2));
-  writeFileSync(mdPath, renderCertificationReport(cert));
-  writeFileSync(execPath, renderExecutiveSummary(cert));
+  atomicWriteFile(jsonPath, JSON.stringify(cert, null, 2));
+  atomicWriteFile(mdPath, renderCertificationReport(cert));
+  atomicWriteFile(execPath, renderExecutiveSummary(cert));
   return { certRoot, jsonPath, mdPath, execPath, backupPath };
+}
+
+// Atomic write: temp file + fsync + rename. Prevents partially-written
+// certification artifacts if the process crashes mid-write. Rename is
+// atomic on POSIX within the same directory.
+function atomicWriteFile(finalPath, contents) {
+  const rand = randomBytes(4).toString("hex");
+  const tmpPath = `${finalPath}.tmp.${process.pid}.${Date.now()}.${rand}`;
+  const fd = openSync(tmpPath, "w");
+  try {
+    writeFileSync(fd, contents);
+    try { fsyncSync(fd); } catch { /* fsync unsupported on some FS — best effort */ }
+  } finally {
+    closeSync(fd);
+  }
+  renameSync(tmpPath, finalPath);
 }
 
 
