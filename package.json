@@ -31,7 +31,7 @@
     "evidence:release": "node tests/evidence/run-all.mjs && node tests/evidence/eval-gate.mjs",
     "evidence:docs": "node tests/evidence/generate-docs.mjs --check",
     "evidence:docs:write": "node tests/evidence/generate-docs.mjs --write",
-    "evidence:test": "node --test tests/evidence/__tests__/"
+    "evidence:test": "node --test tests/evidence/__tests__/*.test.mjs"
 
   },
   "dependencies": {
