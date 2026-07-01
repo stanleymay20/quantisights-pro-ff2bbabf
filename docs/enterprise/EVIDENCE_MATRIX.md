@@ -19,16 +19,20 @@ Legend
 
 | Field | Value |
 |---|---|
+| Implementation status | **IMPLEMENTED (EE-1)** — see `tests/evidence/pipelines/authentication.mjs` |
+| Controls | 15 (AUTH-001 … AUTH-015) declared in `tests/evidence/pipelines/lib/auth-controls.mjs` |
+| Adapter | `tests/evidence/adapters/README-auth-adapter.md` — reads `$EVIDENCE_AUTH_RESULTS` JSON produced by the existing Playwright suite (`e2e/auth.spec.ts`) |
 | Purpose | Prove human + machine identity before any tenant data is touched |
 | Entry | `POST /auth/v1/token` (email+password) or `signInWithOAuth` |
 | Exit | Supabase session with `aal1`, `access_token`, and profile row present |
 | Dependencies | Supabase Auth, `profiles` table, `handle_new_user` trigger |
-| Positive controls | Valid email/password issues session; new user auto-provisions profile |
-| Negative controls | Bad password → 400; unknown email → 400; disabled user → 401 |
-| Expected outputs | JWT, refresh token, `profiles.user_id = auth.uid()` |
-| Failure conditions | Missing profile row, session without `aud=authenticated`, HIBP bypass |
-| Evidence artifacts | `session.json`, `profile.json`, `denial-cases.json` |
-| Release gate | Authentication |
+| Positive controls | Valid email/password issues session; new user auto-provisions profile; PKCE callback hydrates session; MFA challenge enforced when org requires it |
+| Negative controls | Bad password → 400; unknown email → 400; disabled user → 401; bad_jwt purge recovers session; unauth `/dashboard` → `/login` |
+| Expected outputs | JWT, refresh token, `profiles.user_id = auth.uid()`; adapter evidence per control (route, response_status, redirect_chain, session_state, auth_state, console_errors, network_failures, screenshots) |
+| Failure conditions | Missing profile row, session without `aud=authenticated`, HIBP bypass, MFA bypass, logout leaves `sb-*` keys |
+| Failure codes | `AUTH_FAILURE`, `SESSION_LEAK`, `OAUTH_FAILURE`, `PKCE_FAILURE`, `SESSION_LOSS`, `REFRESH_FAILURE`, `EXPIRED_SESSION_UNHANDLED`, `BAD_JWT_LOOP`, `AUTHZ_BYPASS`, `MFA_BYPASS`, `RESET_REQUEST_FAILURE`, `RESET_COMPLETE_FAILURE`, `RECOVERY_FLOW_FAILURE`, `HYDRATION_RACE`, `LOGOUT_CLEANUP_FAILURE` |
+| Evidence artifacts | `audit-artifacts/YYYY-MM-DD/authentication/evidence.json` (standard schema) + adapter-referenced screenshots |
+| Release gate | Authentication (hard-blocking on `SECURITY_FAILURE` or `FRAMEWORK_INVALID`) |
 
 ## 2. OAuth (Google)
 
