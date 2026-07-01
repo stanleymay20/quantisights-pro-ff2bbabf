@@ -1,0 +1,152 @@
+// tests/evidence/lib/report.mjs
+// Renders the certification result as human-readable Markdown documents.
+
+import { RECOMMENDATION } from "./gates.mjs";
+
+function statusEmoji(status) {
+  return (
+    {
+      PASS: "✓",
+      PASS_WITH_WARNINGS: "!",
+      CONDITIONAL_RELEASE: "?",
+      BLOCKED: "✗",
+      CRITICAL_BLOCK: "✗✗",
+    }[status] ?? "?"
+  );
+}
+
+export function renderExecutiveSummary(cert) {
+  const rec = RECOMMENDATION[cert.overall_status] ?? {
+    label: cert.overall_status,
+    ship: "hold",
+  };
+  const lines = [
+    "# Quantivis Release Certification — Executive Summary",
+    "",
+    `- Release candidate: ${cert.release ?? "(unset)"}`,
+    `- Commit:            ${cert.commit ?? "(unset)"}`,
+    `- Environment:       ${cert.environment ?? "(unset)"}`,
+    `- Timestamp:         ${cert.timestamp}`,
+    `- Overall status:    **${cert.overall_status}** ${statusEmoji(cert.overall_status)}`,
+    `- Readiness score:   **${cert.score} / 100**`,
+    `- Recommendation:    **${rec.label}** (${rec.ship})`,
+    "",
+    "## Roll-up",
+    "",
+    `- Pipelines passed:  ${cert.pipelines_passed}`,
+    `- Pipelines failed:  ${cert.pipelines_failed}`,
+    `- Warnings:          ${cert.warnings_total}`,
+    `- Critical issues:   ${cert.critical_issues}`,
+    "",
+  ];
+
+  if (cert.blocking_items.length) {
+    lines.push("## Blocking items", "");
+    for (const b of cert.blocking_items) {
+      lines.push(`- [${b.gate}] ${b.pipeline} — ${b.status} — ${b.reason}`);
+    }
+    lines.push("");
+  }
+
+  if (cert.warnings.length) {
+    lines.push("## Warnings", "");
+    for (const w of cert.warnings) {
+      lines.push(`- [${w.gate}] ${w.pipeline} — ${w.warnings} warning(s)`);
+    }
+    lines.push("");
+  }
+  return lines.join("\n");
+}
+
+export function renderCertificationReport(cert) {
+  const rec = RECOMMENDATION[cert.overall_status] ?? {
+    label: cert.overall_status,
+    ship: "hold",
+  };
+  const lines = [
+    "# Quantivis Enterprise Release Certification",
+    "",
+    "Audience: CTO / CISO / Compliance / Enterprise Procurement",
+    "",
+    "## 1. Release decision",
+    "",
+    `- **Decision**: ${cert.overall_status}`,
+    `- **Recommendation**: ${rec.label} (${rec.ship})`,
+    `- **Readiness score**: ${cert.score} / 100`,
+    `- **Commit**: ${cert.commit ?? "(unset)"}`,
+    `- **Environment**: ${cert.environment ?? "(unset)"}`,
+    `- **Evaluated at**: ${cert.timestamp}`,
+    "",
+    "## 2. Risk summary",
+    "",
+    `- Critical issues: ${cert.critical_issues}`,
+    `- Total blocking items: ${cert.blocking_items.length}`,
+    `- Warnings: ${cert.warnings_total}`,
+    "",
+    "## 3. Outstanding blockers",
+    "",
+  ];
+  if (!cert.blocking_items.length) {
+    lines.push("_None._", "");
+  } else {
+    lines.push("| Gate | Pipeline | Status | Reason |", "|---|---|---|---|");
+    for (const b of cert.blocking_items) {
+      lines.push(
+        `| ${b.gate} | ${b.pipeline} | ${b.status} | ${b.reason ?? ""} |`,
+      );
+    }
+    lines.push("");
+  }
+
+  lines.push("## 4. Gate results", "");
+  lines.push(
+    "| Gate | Weight | Status | Pipelines | Blocking |",
+    "|---|---:|---|---|---:|",
+  );
+  for (const g of cert.pipeline_results) {
+    lines.push(
+      `| ${g.label} | ${g.weight} | ${g.status} ${statusEmoji(g.status)} | ${g.evidence
+        .map((p) => `${p.pipeline}:${p.status}`)
+        .join("<br/>")} | ${g.blocking ? "yes" : "no"} |`,
+    );
+  }
+  lines.push("");
+
+  lines.push("## 5. Evidence coverage", "");
+  const totalPipelines = cert.pipeline_results.reduce(
+    (n, g) => n + g.evidence.length,
+    0,
+  );
+  const withArtifact = cert.pipeline_results.reduce(
+    (n, g) => n + g.evidence.filter((p) => p.evidence).length,
+    0,
+  );
+  lines.push(
+    `- Pipelines evaluated: ${totalPipelines}`,
+    `- Pipelines with evidence artifact on disk: ${withArtifact}`,
+    `- Coverage: ${totalPipelines ? Math.round((withArtifact / totalPipelines) * 100) : 0}%`,
+    "",
+  );
+
+  lines.push("## 6. Readiness score breakdown", "");
+  lines.push("| Gate | Weight | Factor | Contribution |", "|---|---:|---:|---:|");
+  for (const b of cert.score_breakdown) {
+    lines.push(
+      `| ${b.gate} | ${b.weight} | ${b.factor.toFixed(2)} | ${b.contribution.toFixed(2)} |`,
+    );
+  }
+  lines.push(
+    "",
+    `**Total**: ${cert.score} / 100`,
+    "",
+    "## 7. Governance",
+    "",
+    "- Certification produced by `tests/evidence/eval-gate.mjs`.",
+    "- Inputs: `audit-artifacts/<YYYY-MM-DD>/<pipeline>/evidence.json`.",
+    "- Rules: `docs/enterprise/RELEASE_GATE.md` + `tests/evidence/lib/gates.mjs`.",
+    "- Taxonomy: `tests/evidence/lib/taxonomy.mjs`.",
+    "- Historical trend appended to `audit-artifacts/history.json`.",
+    "",
+  );
+  return lines.join("\n");
+}
