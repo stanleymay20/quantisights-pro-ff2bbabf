@@ -102,14 +102,18 @@ score = round( Σ (weight_i × factor_i) / TOTAL_WEIGHT × 100 )
 ```
 
 - Factor per gate: `PASS` → 1.0, `PASS_WITH_WARNINGS` → 0.5, `BLOCKED` → 0.
-- Weights are **not** required to sum to 100; the current TOTAL_WEIGHT is
-  120 (documented in `RELEASE_GATE.md`). The score is always normalized
-  against `TOTAL_WEIGHT`, so changing weights preserves the 0–100 scale.
+- Weights are **not** required to sum to 100. The current TOTAL_WEIGHT and
+  the full weight table are auto-generated from `tests/evidence/lib/gates.mjs`
+  in the block below and validated by `npm run evidence:docs`.
 - Non-scoring gates (weight 0) can still hard-block a release
   (`audit`, `notifications`, `billing`) — they must PASS but do not move
   the score.
 - Any change to weights or scoring math **requires bumping
   `CERTIFICATION_ENGINE_VERSION`** in `tests/evidence/lib/provenance.mjs`.
+
+<!-- AUTO-GENERATED:GATES:START (do not edit — run npm run evidence:docs:write) -->
+<!-- AUTO-GENERATED:GATES:END -->
+
 
 ## 8. Blocking logic
 
