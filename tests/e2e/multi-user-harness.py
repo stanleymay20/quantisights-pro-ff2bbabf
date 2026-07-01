@@ -56,16 +56,24 @@ def preflight() -> None:
         sys.exit(1)
 
 
-NOISE_SUBSTRINGS = (
-    "Failed to fetch",
-    "AbortError",
-    "ResizeObserver loop",
-    "Non-Error promise rejection captured",
+# Explicit allow-list of console messages that are known to be caused by the
+# sandbox/environment rather than the application (e.g. analytics blocked by
+# CSP or by ad-blockers in CI). Everything else counts as a real error and
+# fails the harness — enforces the project's "Zero Console Noise" rule.
+ALLOWED_CONSOLE_SUBSTRINGS = (
+    "posthog",                              # PostHog blocked / no network
+    "PostHog",
+    "sentry.io",                            # Sentry ingest blocked
+    "Sentry",
+    "AbortError",                           # expected fetch abort on unmount
+    "The user aborted a request",
+    "ResizeObserver loop",                  # benign browser quirk
+    "Non-Error promise rejection captured", # Sentry SDK message when blocked
 )
 
 
-def is_noise(text: str) -> bool:
-    return any(s in text for s in NOISE_SUBSTRINGS)
+def is_allowed_console_noise(text: str) -> bool:
+    return any(s in text for s in ALLOWED_CONSOLE_SUBSTRINGS)
 
 
 async def restore_session(context: BrowserContext, page: Page) -> None:
