@@ -40,7 +40,12 @@ async function seedUser(orgTag, orgId) {
   return { email, password, user_id: userId };
 }
 
+// Canary rows are MANDATORY for every table run.mjs probes. If any insert
+// fails, seed exits non-zero — otherwise run.mjs would report vacuous PASSes
+// against empty tables.
 async function seedRows(orgId, userId, orgTag) {
+  const rows = {};
+
   const { data: dec, error: decErr } = await sb.from("decision_ledger").insert({
     organization_id: orgId,
     title: `${runTag} canary ${orgTag}`,
@@ -48,26 +53,38 @@ async function seedRows(orgId, userId, orgTag) {
     status: "pending",
     created_by: userId,
   }).select("id").single();
-  if (decErr) console.error(`decision ${orgTag}:`, decErr.message);
+  if (decErr || !dec?.id) {
+    console.error(`FATAL canary decision_ledger ${orgTag}: ${decErr?.message || "no id returned"}`);
+    process.exit(1);
+  }
+  rows.decision_ledger = dec.id;
 
-  const { error: auditErr } = await sb.from("audit_log").insert({
+  const { data: audit, error: auditErr } = await sb.from("audit_log").insert({
     organization_id: orgId,
     actor_id: userId,
     actor_type: "user",
     action_type: "tenant_isolation_seed",
     resource_type: "test",
     payload: { run_tag: runTag, org_tag: orgTag },
-  });
-  if (auditErr) console.error(`audit ${orgTag}:`, auditErr.message);
+  }).select("id").single();
+  if (auditErr || !audit?.id) {
+    console.error(`FATAL canary audit_log ${orgTag}: ${auditErr?.message || "no id returned"}`);
+    process.exit(1);
+  }
+  rows.audit_log = audit.id;
 
-  const { error: evErr } = await sb.from("evidence_sources").insert({
+  const { data: ev, error: evErr } = await sb.from("evidence_sources").insert({
     organization_id: orgId,
     source_type: "internal",
     source_name: `${runTag}-${orgTag}`,
-  });
-  if (evErr) console.warn(`evidence ${orgTag} (non-fatal): ${evErr.message}`);
+  }).select("id").single();
+  if (evErr || !ev?.id) {
+    console.error(`FATAL canary evidence_sources ${orgTag}: ${evErr?.message || "no id returned"}`);
+    process.exit(1);
+  }
+  rows.evidence_sources = ev.id;
 
-  return { decision_id: dec?.id ?? null };
+  return rows;
 }
 
 console.log(`Seeding tenant-isolation test (run=${runTag}, target=${TARGET})…`);
@@ -94,3 +111,4 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 mkdirSync(__dirname, { recursive: true });
 writeFileSync(`${__dirname}/.state.json`, JSON.stringify(artifact, null, 2));
 console.log(`Seeded orgs A=${orgA.id} B=${orgB.id}. State → tests/tenant-isolation/.state.json`);
+
