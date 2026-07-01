@@ -402,3 +402,28 @@ Legend
 | Exit | Row counts match; audit intact |
 | Evidence artifacts | `recovery.json` |
 | Release gate | Recovery |
+
+<!-- AUTO-GENERATED:GATES:START (do not edit — run npm run evidence:docs) -->
+
+## Gate mapping (generated from `tests/evidence/lib/gates.mjs`)
+
+This section is auto-generated. Do not hand-edit.
+
+| Gate | Label | Weight | Pipelines |
+|---|---|---:|---|
+| `authentication` | Authentication | 10 | `authentication`, `mfa`, `oauth`, `session-recovery` |
+| `authorization` | Authorization | 10 | `protected-routes`, `user-management`, `organization-management`, `settings` |
+| `tenant_isolation` | Tenant Isolation | 15 | `tenant-isolation`, `edge-functions`, `realtime` |
+| `decision_pipeline` | Decision Pipeline | 10 | `decision-creation`, `decision-editing`, `decision-approval`, `decision-rejection`, `decision-ledger` |
+| `evidence_pipeline` | Evidence Pipeline | 10 | `evidence-attachment`, `evidence-retrieval`, `evidence-export` |
+| `governance` | Governance | 10 | `governance-workflow`, `confidence-scoring` |
+| `ai` | AI Pipeline | 10 | `ai-recommendation`, `ai-explanation` |
+| `audit` | Audit | 0 | `audit-trail` |
+| `reports` | Reports | 5 | `reports`, `executive-exports` |
+| `notifications` | Notifications | 0 | `notifications` |
+| `billing` | Billing | 0 | `billing`, `credits` |
+| `scalability` | Scalability | 10 | `dashboard-loading`, `background-jobs` |
+| `recovery` | Recovery | 10 | `recovery`, `rollback` |
+| `system_health` | System Health | 10 | `system-health`, `search`, `data-import`, `dataset-versioning` |
+
+<!-- AUTO-GENERATED:GATES:END -->

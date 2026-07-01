@@ -1,0 +1,113 @@
+#!/usr/bin/env node
+// tests/evidence/generate-docs.mjs
+// Validate (or generate) docs/enterprise/RELEASE_GATE.md against
+// tests/evidence/lib/gates.mjs. gates.mjs is the single source of truth.
+//
+// Modes:
+//   --check   (default) validate: exit 1 on drift, print diff
+//   --write   regenerate RELEASE_GATE.md between the AUTO-GENERATED markers
+//
+// EVIDENCE_MATRIX.md is validated (not regenerated): every gate label in
+// gates.mjs must appear in the matrix.
+
+import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { resolve, dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { GATES, TOTAL_WEIGHT } from "./lib/gates.mjs";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const REPO_ROOT = resolve(__dirname, "..", "..");
+const RELEASE_GATE_PATH = join(REPO_ROOT, "docs/enterprise/RELEASE_GATE.md");
+const MATRIX_PATH = join(REPO_ROOT, "docs/enterprise/EVIDENCE_MATRIX.md");
+
+const START = "<!-- AUTO-GENERATED:GATES:START (do not edit — run npm run evidence:docs) -->";
+const END = "<!-- AUTO-GENERATED:GATES:END -->";
+
+function renderGatesBlock() {
+  const lines = [
+    START,
+    "",
+    "## Gate definition (generated from `tests/evidence/lib/gates.mjs`)",
+    "",
+    "Scoring model: weights do not need to sum to 100. The Enterprise",
+    `Readiness Score is normalized to 0-100 against TOTAL_WEIGHT = ${TOTAL_WEIGHT}.`,
+    "Gates with weight 0 are hard-blocking but do not contribute to the score.",
+    "",
+    "| Gate key | Label | Weight | Pipelines |",
+    "|---|---|---:|---|",
+  ];
+  for (const g of GATES) {
+    lines.push(
+      `| \`${g.key}\` | ${g.label} | ${g.weight} | ${g.pipelines.map((p) => `\`${p}\``).join(", ")} |`,
+    );
+  }
+  lines.push("", `**Total weight (score denominator):** ${TOTAL_WEIGHT}`, "", END);
+  return lines.join("\n");
+}
+
+function upsertBlock(existing, block) {
+  const s = existing.indexOf(START);
+  const e = existing.indexOf(END);
+  if (s !== -1 && e !== -1 && e > s) {
+    return existing.slice(0, s) + block + existing.slice(e + END.length);
+  }
+  return existing.trimEnd() + "\n\n" + block + "\n";
+}
+
+function renderMatrixBlock() {
+  const lines = [
+    START,
+    "",
+    "## Gate mapping (generated from `tests/evidence/lib/gates.mjs`)",
+    "",
+    "This section is auto-generated. Do not hand-edit.",
+    "",
+    "| Gate | Label | Weight | Pipelines |",
+    "|---|---|---:|---|",
+  ];
+  for (const g of GATES) {
+    lines.push(
+      `| \`${g.key}\` | ${g.label} | ${g.weight} | ${g.pipelines.map((p) => `\`${p}\``).join(", ")} |`,
+    );
+  }
+  lines.push("", END);
+  return lines.join("\n");
+}
+
+function main() {
+  const mode = process.argv.includes("--write") ? "write" : "check";
+  const releaseBlock = renderGatesBlock();
+  const matrixBlock = renderMatrixBlock();
+  const errors = [];
+
+  const files = [
+    { path: RELEASE_GATE_PATH, block: releaseBlock, name: "RELEASE_GATE.md" },
+    { path: MATRIX_PATH, block: matrixBlock, name: "EVIDENCE_MATRIX.md" },
+  ];
+
+  for (const f of files) {
+    if (!existsSync(f.path)) {
+      errors.push(`${f.name} missing at ${f.path}`);
+      continue;
+    }
+    const existing = readFileSync(f.path, "utf8");
+    const next = upsertBlock(existing, f.block);
+    if (mode === "write") {
+      writeFileSync(f.path, next);
+      console.log(`[docs] wrote ${f.path}`);
+    } else if (existing !== next) {
+      errors.push(
+        `${f.name} drifts from gates.mjs (run: npm run evidence:docs:write)`,
+      );
+    }
+  }
+
+  if (errors.length) {
+    for (const e of errors) console.error(`[docs] ${e}`);
+    process.exit(1);
+  }
+  if (mode === "check") console.log("[docs] gates.mjs and enterprise docs are in sync");
+}
+
+const isCli = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (isCli) main();

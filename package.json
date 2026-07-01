@@ -27,7 +27,12 @@
     "tenant-isolation:teardown": "node tests/tenant-isolation/teardown.mjs",
     "e2e:concurrent-sessions": "python3 tests/e2e/concurrent-browser-sessions.py",
     "evidence:run": "node tests/evidence/run-all.mjs",
-    "evidence:certify": "node tests/evidence/eval-gate.mjs"
+    "evidence:certify": "node tests/evidence/eval-gate.mjs",
+    "evidence:release": "node tests/evidence/run-all.mjs && node tests/evidence/eval-gate.mjs",
+    "evidence:docs": "node tests/evidence/generate-docs.mjs --check",
+    "evidence:docs:write": "node tests/evidence/generate-docs.mjs --write",
+    "evidence:test": "node --test tests/evidence/__tests__/*.test.mjs"
+
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

@@ -1,6 +1,17 @@
 // tests/evidence/lib/gates.mjs
 // Single source of truth for gate composition and scoring weights.
-// Mirrors docs/enterprise/RELEASE_GATE.md. If you change one, change both.
+// docs/enterprise/RELEASE_GATE.md and docs/enterprise/EVIDENCE_MATRIX.md
+// are validated against this file by tests/evidence/generate-docs.mjs.
+// If you change this file, run: npm run evidence:docs:check
+//
+// Scoring model:
+//   - Each gate has an integer weight.
+//   - Weights are NOT required to sum to 100.
+//   - The Enterprise Readiness Score is normalized to 0-100 as
+//     round( earned / TOTAL_WEIGHT * 100 ), where earned is the sum of
+//     (weight * factor) over all scoring gates and factor ∈ {0, 0.5, 1}.
+//   - Non-scoring gates carry weight 0 (they can still hard-block a release
+//     but do not move the score).
 
 export const GATES = Object.freeze([
   {
@@ -109,8 +120,9 @@ export const GATES = Object.freeze([
   },
 ]);
 
-// Sanity: scoring weights normalized to 100
-export const TOTAL_WEIGHT = GATES.reduce((s, g) => s + g.weight, 0); // 120
+// Sum of gate weights. NOT required to be 100. The score is normalized
+// against this denominator, so changing weights preserves the 0-100 scale.
+export const TOTAL_WEIGHT = GATES.reduce((s, g) => s + g.weight, 0);
 
 // Release-recommendation matrix
 export const RECOMMENDATION = Object.freeze({
