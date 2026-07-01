@@ -16,9 +16,11 @@ import {
   existsSync,
   mkdirSync,
   writeFileSync,
+  renameSync,
 } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+
 import { evaluateDay, deterministicView } from "./lib/certification.mjs";
 import {
   renderCertificationReport,
