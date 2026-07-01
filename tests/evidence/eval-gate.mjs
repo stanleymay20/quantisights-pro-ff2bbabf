@@ -16,9 +16,11 @@ import {
   existsSync,
   mkdirSync,
   writeFileSync,
+  renameSync,
 } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+
 import { evaluateDay, deterministicView } from "./lib/certification.mjs";
 import {
   renderCertificationReport,
@@ -160,21 +162,49 @@ export function writeCertification({
   force = false,
 } = {}) {
   const dayRoot = resolve(root, day);
-  const certRoot = join(dayRoot, "certifications", cert.run_id);
-  if (existsSync(certRoot) && !force) {
-    throw new Error(
-      `refusing to overwrite existing certification folder: ${certRoot} (pass --force to override)`,
+  const parent = join(dayRoot, "certifications");
+  const certRoot = join(parent, cert.run_id);
+  mkdirSync(parent, { recursive: true });
+
+  let backupPath = null;
+  if (existsSync(certRoot)) {
+    if (!force) {
+      throw new Error(
+        `refusing to overwrite existing certification folder: ${certRoot} (pass --force to override — administrative recovery only)`,
+      );
+    }
+    // --force is an administrative recovery operation. Preserve the previous
+    // certification folder before we overwrite it. Evidence is never destroyed.
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+    backupPath = `${certRoot}.backup.${stamp}`;
+    renameSync(certRoot, backupPath);
+    console.warn(
+      `[cert] WARNING: --force in use. Previous certification preserved at ${backupPath}`,
     );
   }
-  mkdirSync(certRoot, { recursive: true });
+
+  // Exclusive create: fails with EEXIST if a concurrent writer beat us here.
+  // recursive:false is the default; we spell it out for intent.
+  try {
+    mkdirSync(certRoot, { recursive: false });
+  } catch (err) {
+    if (err.code === "EEXIST") {
+      throw new Error(
+        `concurrent certification writer detected at ${certRoot}; refusing to corrupt evidence`,
+      );
+    }
+    throw err;
+  }
+
   const jsonPath = join(certRoot, "CERTIFICATION.json");
   const mdPath = join(certRoot, "CERTIFICATION.md");
   const execPath = join(certRoot, "EXECUTIVE_SUMMARY.md");
   writeFileSync(jsonPath, JSON.stringify(cert, null, 2));
   writeFileSync(mdPath, renderCertificationReport(cert));
   writeFileSync(execPath, renderExecutiveSummary(cert));
-  return { certRoot, jsonPath, mdPath, execPath };
+  return { certRoot, jsonPath, mdPath, execPath, backupPath };
 }
+
 
 export function historyEntry(cert) {
   return {

@@ -52,7 +52,7 @@ attached to the release ticket. Sign-off requires:
 - The release gate does not exercise live AI providers.
 - The release gate does not send real emails or charge real cards.
 
-<!-- AUTO-GENERATED:GATES:START (do not edit — run npm run evidence:docs) -->
+<!-- AUTO-GENERATED:GATES:START (do not edit — run npm run evidence:docs:write) -->
 
 ## Gate definition (generated from `tests/evidence/lib/gates.mjs`)
 

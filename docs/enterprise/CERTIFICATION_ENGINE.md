@@ -102,14 +102,40 @@ score = round( Σ (weight_i × factor_i) / TOTAL_WEIGHT × 100 )
 ```
 
 - Factor per gate: `PASS` → 1.0, `PASS_WITH_WARNINGS` → 0.5, `BLOCKED` → 0.
-- Weights are **not** required to sum to 100; the current TOTAL_WEIGHT is
-  120 (documented in `RELEASE_GATE.md`). The score is always normalized
-  against `TOTAL_WEIGHT`, so changing weights preserves the 0–100 scale.
+- Weights are **not** required to sum to 100. The current TOTAL_WEIGHT and
+  the full weight table are auto-generated from `tests/evidence/lib/gates.mjs`
+  in the block below and validated by `npm run evidence:docs`.
 - Non-scoring gates (weight 0) can still hard-block a release
   (`audit`, `notifications`, `billing`) — they must PASS but do not move
   the score.
 - Any change to weights or scoring math **requires bumping
   `CERTIFICATION_ENGINE_VERSION`** in `tests/evidence/lib/provenance.mjs`.
+
+<!-- AUTO-GENERATED:GATES:START (do not edit — run npm run evidence:docs:write) -->
+
+### Canonical weights (generated from `tests/evidence/lib/gates.mjs`)
+
+**TOTAL_WEIGHT = 110** (score denominator).
+
+| Gate key | Label | Weight | Pipelines |
+|---|---|---:|---|
+| `authentication` | Authentication | 10 | `authentication`, `mfa`, `oauth`, `session-recovery` |
+| `authorization` | Authorization | 10 | `protected-routes`, `user-management`, `organization-management`, `settings` |
+| `tenant_isolation` | Tenant Isolation | 15 | `tenant-isolation`, `edge-functions`, `realtime` |
+| `decision_pipeline` | Decision Pipeline | 10 | `decision-creation`, `decision-editing`, `decision-approval`, `decision-rejection`, `decision-ledger` |
+| `evidence_pipeline` | Evidence Pipeline | 10 | `evidence-attachment`, `evidence-retrieval`, `evidence-export` |
+| `governance` | Governance | 10 | `governance-workflow`, `confidence-scoring` |
+| `ai` | AI Pipeline | 10 | `ai-recommendation`, `ai-explanation` |
+| `audit` | Audit | 0 | `audit-trail` |
+| `reports` | Reports | 5 | `reports`, `executive-exports` |
+| `notifications` | Notifications | 0 | `notifications` |
+| `billing` | Billing | 0 | `billing`, `credits` |
+| `scalability` | Scalability | 10 | `dashboard-loading`, `background-jobs` |
+| `recovery` | Recovery | 10 | `recovery`, `rollback` |
+| `system_health` | System Health | 10 | `system-health`, `search`, `data-import`, `dataset-versioning` |
+
+<!-- AUTO-GENERATED:GATES:END -->
+
 
 ## 8. Blocking logic
 
