@@ -104,10 +104,14 @@ async function main() {
   console.log("");
   console.log(`Runner complete. ${summary.length} pipelines, ${hardFailures} blocking.`);
   console.log("Note: pipelines are stubs until each is wired. FRAMEWORK_INVALID is expected on first run.");
+  console.log("");
+  console.log("⚠ Evidence has been generated but the release is NOT certified.");
+  console.log("  Run `npm run evidence:certify` or `npm run evidence:release` to produce a certification.");
 
   // Exit 0 for stub runs so `npm run build` style checks succeed. Real gate
-  // evaluation happens in tests/evidence/eval-gate.mjs (future work).
+  // evaluation happens in tests/evidence/eval-gate.mjs.
   process.exit(0);
+
 }
 
 main().catch((err) => {
