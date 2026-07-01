@@ -153,19 +153,61 @@ code, and remediation recommendation. The pipeline refuses to certify if any
 required control is missing (STATUS = `FRAMEWORK_INVALID`) or any critical
 control fails (STATUS = `SECURITY_FAILURE`, hard-blocking).
 
-## Remaining blockers before staging execution
+## Control coverage (EE-1C)
 
-1. **Test coverage gaps** — `e2e/auth.spec.ts` today exercises only
-   AUTH-001, AUTH-003, AUTH-009, AUTH-011, and AUTH-014 (via title
-   fallback). AUTH-002, 004-008, 010, 012-013, 015 need new annotated
-   Playwright specs before the pipeline can emit `PASS` in strict mode.
-2. **Rich evidence fields** — `redirect_chain`, `response_status`,
-   `session_state`, `console_errors`, and `network_failures` require either
-   Playwright fixtures that write JSON side-cars or a small in-test
-   collector that emits annotations for the adapter to fold in.
-3. **Staging credentials** — MFA (AUTH-010) and recovery (AUTH-013) need
-   seeded users with MFA enrolled and a mail-catcher endpoint for recovery
-   links.
-4. **CI wiring** — the adapter is invoked manually today; wire it into the
-   release workflow so `evidence:release` can consume its output without a
-   human step.
+Every test in `e2e/auth.spec.ts` calls `attachAuthEvidence(page, testInfo, "AUTH-###")`
+(see `e2e/lib/auth-evidence.ts`), which:
+
+- Adds the `auth-control` annotation the adapter maps on.
+- Captures console errors, network failures (status ≥ 400), redirect chain,
+  and last response status.
+- Reads the Supabase session from `localStorage` on request.
+- Attaches an `auth-evidence` JSON sidecar the adapter merges into the
+  control's `evidence` object.
+
+| Control  | Coverage in `e2e/auth.spec.ts`                          | Fixture required                                                 |
+| -------- | -------------------------------------------------------- | ---------------------------------------------------------------- |
+| AUTH-001 | Invalid credentials show error                           | none                                                             |
+| AUTH-002 | signOut clears session and redirects to /login           | `EVIDENCE_STAGING_EMAIL`, `EVIDENCE_STAGING_PASSWORD`            |
+| AUTH-003 | Google OAuth button visible on /login                    | none                                                             |
+| AUTH-004 | /auth/callback with no code degrades gracefully          | none (full PKCE round-trip requires staging OAuth)               |
+| AUTH-005 | Session persists across reload                           | staging creds                                                    |
+| AUTH-006 | `refreshSession()` returns fresh token                   | staging creds                                                    |
+| AUTH-007 | Manually expired token routes to /login without crash    | staging creds                                                    |
+| AUTH-008 | Corrupt `sb-*` token is purged; user recovers            | none                                                             |
+| AUTH-009 | Unauthenticated `/dashboard` redirects to /login         | none                                                             |
+| AUTH-010 | MFA challenge enforced on login                          | staging creds + `EVIDENCE_MFA_EMAIL`, `EVIDENCE_MFA_TOTP_SECRET` |
+| AUTH-011 | Forgot-password page submits reset request               | none                                                             |
+| AUTH-012 | Password reset completion via recovery link              | mail-catcher (`EVIDENCE_MAIL_CATCHER_URL`)                       |
+| AUTH-013 | Recovery round-trip: new password succeeds               | staging creds + mail-catcher                                     |
+| AUTH-014 | Login page hydrates without noisy console errors         | none                                                             |
+| AUTH-015 | signOut removes every `sb-*` localStorage key            | staging creds                                                    |
+
+Tests without their required fixture are `test.skip()` at runtime, which
+Playwright reports as `skipped`. The adapter maps `skipped` → `SKIP`, which
+the pipeline records as a warning-tier `CONTROL_SKIPPED` — never a fake
+PASS. If a required control has no matching Playwright result at all, the
+pipeline emits `FRAMEWORK_INVALID`.
+
+### Fixture bundles
+
+- **Staging creds** — a seeded, non-MFA user in the target environment.
+- **MFA fixture** — a seeded user with TOTP enrolled; `EVIDENCE_MFA_TOTP_SECRET`
+  is the base32 seed the harness can turn into codes.
+- **Mail-catcher** — an inbox reachable at `EVIDENCE_MAIL_CATCHER_URL` (e.g.
+  Mailpit) that the harness can poll for the recovery link.
+
+## Remaining blockers before real staging run
+
+1. **Staging user + MFA fixture** — provision `EVIDENCE_STAGING_EMAIL/PASSWORD`
+   and `EVIDENCE_MFA_EMAIL/TOTP_SECRET`; today AUTH-002, 005, 006, 007, 010,
+   and 015 skip without them.
+2. **Mail-catcher endpoint** — required for AUTH-012 and the AUTH-013
+   round-trip; the current tests short-circuit with a note.
+3. **PKCE end-to-end** — AUTH-004 today asserts only that the callback
+   surface degrades gracefully without a code. Full PKCE requires staging
+   Google OAuth credentials and a scripted consent flow.
+4. **CI wiring** — chain `playwright test --reporter=json → auth-adapter →
+   evidence:release` in the release workflow so the adapter output feeds the
+   certification engine automatically.
+
