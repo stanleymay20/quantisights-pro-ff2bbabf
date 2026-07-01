@@ -1,0 +1,27 @@
+[
+  {
+    "date": "2026-07-01T06:45:02.210Z",
+    "commit": "ec1-smoke",
+    "environment": "preview",
+    "overall_status": "BLOCKED",
+    "score": 0,
+    "blocked_gates": [
+      "authentication",
+      "authorization",
+      "tenant_isolation",
+      "decision_pipeline",
+      "evidence_pipeline",
+      "governance",
+      "ai",
+      "audit",
+      "reports",
+      "notifications",
+      "billing",
+      "scalability",
+      "recovery",
+      "system_health"
+    ],
+    "warnings": 1,
+    "duration_ms": 1
+  }
+]
