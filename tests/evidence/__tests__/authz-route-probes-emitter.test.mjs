@@ -125,9 +125,9 @@ test("formatProbeRow: yields translator-compatible shape", () => {
     statusCode: d.expected === "allow" ? 200 : d.expected === "leak_check" ? 403 : 401,
     responseSnippet: "ok",
   }));
-  const translated = translateRouteProbes({ probes: rows });
-  assert.equal(translated.probes.length, plan.length);
-  for (const p of translated.probes) assert.equal(typeof p.pass, "boolean");
+  const translated = translateRouteProbes({ input: { probes: rows } });
+  assert.equal(translated.result.probes.length, plan.length);
+  for (const p of translated.result.probes) assert.equal(typeof p.pass, "boolean");
 });
 
 test("formatProbeRow: truncates response snippet to 300 chars", () => {
