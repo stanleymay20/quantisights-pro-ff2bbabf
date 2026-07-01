@@ -54,39 +54,64 @@ function upsertBlock(existing, block) {
   return existing.trimEnd() + "\n\n" + block + "\n";
 }
 
-function validateMatrixMentionsGates() {
-  if (!existsSync(MATRIX_PATH)) {
-    return [`EVIDENCE_MATRIX.md missing at ${MATRIX_PATH}`];
-  }
-  const matrix = readFileSync(MATRIX_PATH, "utf8").toLowerCase();
-  const errors = [];
+function renderMatrixBlock() {
+  const lines = [
+    START,
+    "",
+    "## Gate mapping (generated from `tests/evidence/lib/gates.mjs`)",
+    "",
+    "This section is auto-generated. Do not hand-edit.",
+    "",
+    "| Gate | Label | Weight | Pipelines |",
+    "|---|---|---:|---|",
+  ];
   for (const g of GATES) {
-    if (!matrix.includes(g.label.toLowerCase())) {
-      errors.push(`EVIDENCE_MATRIX.md missing gate label "${g.label}"`);
-    }
+    lines.push(
+      `| \`${g.key}\` | ${g.label} | ${g.weight} | ${g.pipelines.map((p) => `\`${p}\``).join(", ")} |`,
+    );
   }
-  return errors;
+  lines.push("", END);
+  return lines.join("\n");
 }
-
 
 function main() {
   const mode = process.argv.includes("--write") ? "write" : "check";
-  const block = renderGatesBlock();
-  const existing = existsSync(RELEASE_GATE_PATH)
-    ? readFileSync(RELEASE_GATE_PATH, "utf8")
-    : "";
-  const next = upsertBlock(existing, block);
-  const matrixErrors = validateMatrixMentionsGates();
+  const releaseBlock = renderGatesBlock();
+  const matrixBlock = renderMatrixBlock();
+  const errors = [];
 
-  if (mode === "write") {
-    writeFileSync(RELEASE_GATE_PATH, next);
-    console.log(`[docs] wrote ${RELEASE_GATE_PATH}`);
-    if (matrixErrors.length) {
-      for (const e of matrixErrors) console.warn(`[docs] WARN ${e}`);
-      process.exit(1);
+  const files = [
+    { path: RELEASE_GATE_PATH, block: releaseBlock, name: "RELEASE_GATE.md" },
+    { path: MATRIX_PATH, block: matrixBlock, name: "EVIDENCE_MATRIX.md" },
+  ];
+
+  for (const f of files) {
+    if (!existsSync(f.path)) {
+      errors.push(`${f.name} missing at ${f.path}`);
+      continue;
     }
-    process.exit(0);
+    const existing = readFileSync(f.path, "utf8");
+    const next = upsertBlock(existing, f.block);
+    if (mode === "write") {
+      writeFileSync(f.path, next);
+      console.log(`[docs] wrote ${f.path}`);
+    } else if (existing !== next) {
+      errors.push(
+        `${f.name} drifts from gates.mjs (run: npm run evidence:docs:write)`,
+      );
+    }
   }
+
+  if (errors.length) {
+    for (const e of errors) console.error(`[docs] ${e}`);
+    process.exit(1);
+  }
+  if (mode === "check") console.log("[docs] gates.mjs and enterprise docs are in sync");
+}
+
+const isCli = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (isCli) main();
+
 
   const drift = existing !== next;
   const errors = [];
