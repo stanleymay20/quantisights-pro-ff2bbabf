@@ -1,28 +1,14 @@
 // tests/tenant-isolation/seed.mjs
 // Creates two isolated orgs, one user each, and one row per surface.
-// Staging/preview only.
+// Staging/preview ONLY (allow-list enforced).
 import { createClient } from "@supabase/supabase-js";
 import { writeFileSync, mkdirSync } from "node:fs";
 import { randomBytes } from "node:crypto";
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { guardOrExit, must } from "./lib/guard.mjs";
 
-const must = (k) => {
-  const v = process.env[k];
-  if (!v) { console.error(`Missing env: ${k}`); process.exit(1); }
-  return v;
-};
-
-const TARGET = must("LOAD_TARGET");
-if (TARGET === "production") {
-  console.error("Refusing to seed against production.");
-  process.exit(1);
-}
-if (!["staging", "preview"].includes(TARGET)) {
-  console.error(`LOAD_TARGET must be 'staging' or 'preview' (got '${TARGET}').`);
-  process.exit(1);
-}
-
+const TARGET = guardOrExit();
 const URL = must("LOAD_SUPABASE_URL");
 const KEY = must("SUPABASE_SERVICE_ROLE_KEY");
 
@@ -55,7 +41,6 @@ async function seedUser(orgTag, orgId) {
 }
 
 async function seedRows(orgId, userId, orgTag) {
-  // decision_ledger (canary row)
   const { data: dec, error: decErr } = await sb.from("decision_ledger").insert({
     organization_id: orgId,
     title: `${runTag} canary ${orgTag}`,
@@ -65,7 +50,6 @@ async function seedRows(orgId, userId, orgTag) {
   }).select("id").single();
   if (decErr) console.error(`decision ${orgTag}:`, decErr.message);
 
-  // audit_log
   const { error: auditErr } = await sb.from("audit_log").insert({
     organization_id: orgId,
     actor_id: userId,
@@ -76,7 +60,6 @@ async function seedRows(orgId, userId, orgTag) {
   });
   if (auditErr) console.error(`audit ${orgTag}:`, auditErr.message);
 
-  // evidence_sources — schema varies; best-effort insert
   const { error: evErr } = await sb.from("evidence_sources").insert({
     organization_id: orgId,
     source_type: "internal",

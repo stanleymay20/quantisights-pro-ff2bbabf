@@ -4,18 +4,9 @@
 import { readFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { guardOrExit, must } from "./lib/guard.mjs";
 
-const must = (k) => {
-  const v = process.env[k];
-  if (!v) { console.error(`Missing env: ${k}`); process.exit(1); }
-  return v;
-};
-
-const TARGET = must("LOAD_TARGET");
-if (TARGET === "production") {
-  console.error("Refusing to run against production.");
-  process.exit(1);
-}
+guardOrExit();
 const URL = must("LOAD_SUPABASE_URL");
 const ANON = must("LOAD_SUPABASE_ANON_KEY");
 
