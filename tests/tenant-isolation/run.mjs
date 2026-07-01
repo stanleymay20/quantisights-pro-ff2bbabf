@@ -1,16 +1,41 @@
 // tests/tenant-isolation/run.mjs
-// Verifies user A cannot read/write org B rows and vice versa.
+// Enterprise tenant-isolation harness.
 //
-// Verdict taxonomy (per probe):
-//   - isolation_pass    RLS correctly blocked cross-tenant access
-//   - isolation_leak    CRITICAL: cross-tenant read returned rows or write succeeded
-//   - framework_failure Something in this harness/env is wrong (missing canary, malformed JSON, network)
-//   - app_error         Unexpected API status (5xx, 400/404/409/422, schema error) — not a leak, but not a valid pass
+// ORDER OF OPERATIONS (fail-fast):
+//   1. Guard environment (staging/preview only).
+//   2. Load .state.json; refuse to start if any mandatory canary is missing.
+//   3. Sign in user A and user B with password grant.
+//   4. POSITIVE CONTROLS (must all pass, else FRAMEWORK_INVALID exit 1):
+//        - A reads own decision_ledger canary (row present)
+//        - B reads own decision_ledger canary (row present)
+//        - A reads own audit_log canary (row present)
+//        - B reads own audit_log canary (row present)
+//        - A performs one allowed own-org write (insert decision_ledger)
+//        - B performs one allowed own-org write (insert decision_ledger)
+//   5. NEGATIVE CROSS-TENANT PROBES:
+//        - A→B read decision_ledger (must return [] with HTTP 200)
+//        - B→A read decision_ledger (must return [] with HTTP 200)
+//        - A→B read audit_log       (must return [] with HTTP 200)
+//        - B→A read audit_log       (must return [] with HTTP 200)
+//        - A→B insert decision_ledger (must be EXPECTED_DENIAL)
+//        - B→A insert decision_ledger (must be EXPECTED_DENIAL)
+//
+// Evidence surface: decision_ledger.evidence_sources JSONB (public.evidence_sources
+// does not exist in this schema; the JSONB column is the real evidence store and
+// is governed by decision_ledger RLS, so cross-tenant leaks of evidence are
+// covered by the decision_ledger probes).
+//
+// Verdicts:
+//   PASS              — probe returned exactly what a correct policy allows
+//   CRITICAL_LEAK     — cross-tenant read returned rows OR cross-tenant write succeeded
+//   EXPECTED_DENIAL   — cross-tenant write rejected by documented RLS/auth class
+//   FRAMEWORK_INVALID — positive control failed, canary missing, or malformed response
+//   API_FAILURE       — unexpected HTTP status (4xx/5xx not in the denial class)
 //
 // Exit codes:
-//   0  every probe = isolation_pass
-//   1  configuration or framework_failure or app_error present (no leaks)
-//   2  at least one isolation_leak (CRITICAL)
+//   0  every positive control passed AND every negative probe was PASS or EXPECTED_DENIAL
+//   1  FRAMEWORK_INVALID or API_FAILURE present (no leaks) — run is not valid
+//   2  at least one CRITICAL_LEAK
 import { readFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -29,30 +54,26 @@ try {
   process.exit(1);
 }
 
-// Canaries are MANDATORY: a read probe against a table with no seeded row is
-// vacuously "empty" and cannot distinguish RLS-blocked from just-nothing-there.
-const canaries = state.seeded_rows || {};
-const REQUIRED_TABLES = ["decision_ledger", "audit_log", "evidence_sources"];
-const missingCanaries = [];
+const REQUIRED_CANARIES = ["decision_ledger", "audit_log"];
+const missing = [];
 for (const side of ["a", "b"]) {
-  const c = canaries[side] || {};
-  for (const t of REQUIRED_TABLES) {
-    if (!c[t]) missingCanaries.push(`${side}.${t}`);
-  }
+  const c = (state.seeded_rows || {})[side] || {};
+  for (const t of REQUIRED_CANARIES) if (!c[t]) missing.push(`${side}.${t}`);
 }
-if (missingCanaries.length > 0) {
-  console.error(
-    "Refusing to run: seed did not create canary rows for: " + missingCanaries.join(", ") +
-    "\nRun seed.mjs again — vacuous isolation tests are not allowed.",
-  );
+if (missing.length > 0) {
+  console.error("FRAMEWORK_INVALID: missing canaries: " + missing.join(", "));
   process.exit(1);
 }
 
-const READ_TABLES = REQUIRED_TABLES;
 const results = [];
-let leaks = 0;
-let frameworkFailures = 0;
-let appErrors = 0;
+let leaks = 0, frameworkInvalid = 0, apiFailures = 0;
+
+function push(e) {
+  results.push(e);
+  if (e.verdict === "CRITICAL_LEAK") leaks++;
+  else if (e.verdict === "FRAMEWORK_INVALID") frameworkInvalid++;
+  else if (e.verdict === "API_FAILURE") apiFailures++;
+}
 
 async function signIn(email, password) {
   const res = await fetch(`${URL}/auth/v1/token?grant_type=password`, {
@@ -61,90 +82,118 @@ async function signIn(email, password) {
     body: JSON.stringify({ email, password }),
   });
   if (!res.ok) {
-    console.error(`Sign-in failed for ${email}: ${res.status} ${await res.text()}`);
+    console.error(`FRAMEWORK_INVALID: sign-in failed for ${email}: ${res.status} ${await res.text()}`);
     process.exit(1);
   }
   const j = await res.json();
   return j.access_token;
 }
-
 function headers(token) {
   return { apikey: ANON, Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
 }
-
 async function readBody(res) {
   const text = await res.text();
   let parsed = null;
   try { parsed = text.length > 0 ? JSON.parse(text) : null; } catch { /* leave null */ }
   return { text, parsed };
 }
+function bodySnippet(text) { return (text || "").slice(0, 300); }
 
-function push(entry) {
-  results.push(entry);
-  if (entry.verdict === "isolation_leak") leaks++;
-  else if (entry.verdict === "framework_failure") frameworkFailures++;
-  else if (entry.verdict === "app_error") appErrors++;
+// ---------------------------------------------------------------------------
+// Positive controls
+// ---------------------------------------------------------------------------
+async function positiveRead(token, actorEmail, actorOrgId, table, canaryId) {
+  const url = `${URL}/rest/v1/${table}?organization_id=eq.${actorOrgId}&id=eq.${canaryId}&limit=1`;
+  const base = {
+    kind: "positive_read", actor: actorEmail, actor_org: actorOrgId, target_org: actorOrgId,
+    table, op: "GET", canary_id: canaryId,
+  };
+  let res;
+  try { res = await fetch(url, { headers: headers(token) }); }
+  catch (e) { push({ ...base, status: 0, body: `network_error: ${e.message}`, verdict: "FRAMEWORK_INVALID" }); return false; }
+  const { text, parsed } = await readBody(res);
+  if (res.status !== 200) {
+    push({ ...base, status: res.status, body: bodySnippet(text), verdict: "FRAMEWORK_INVALID",
+      note: `own-org read expected 200; got ${res.status}` });
+    return false;
+  }
+  if (!Array.isArray(parsed)) {
+    push({ ...base, status: 200, body: bodySnippet(text), verdict: "FRAMEWORK_INVALID",
+      note: "own-org read: body not a JSON array" });
+    return false;
+  }
+  const found = parsed.some((r) => r && r.id === canaryId);
+  if (!found) {
+    push({ ...base, status: 200, row_count: parsed.length, body: bodySnippet(text),
+      verdict: "FRAMEWORK_INVALID", note: "own-org read: canary row not visible to seeded user" });
+    return false;
+  }
+  push({ ...base, status: 200, row_count: parsed.length, verdict: "PASS" });
+  return true;
 }
 
-async function probeRead(token, callerTag, actorOrgId, targetOrgId, table) {
-  const url = `${URL}/rest/v1/${table}?organization_id=eq.${targetOrgId}&limit=5`;
-  const base = { kind: "read", caller: callerTag, actor_org: actorOrgId, target_org: targetOrgId, table };
+async function positiveWrite(token, actorEmail, actorOrgId) {
+  const url = `${URL}/rest/v1/decision_ledger`;
+  const base = {
+    kind: "positive_write", actor: actorEmail, actor_org: actorOrgId, target_org: actorOrgId,
+    table: "decision_ledger", op: "POST",
+  };
   let res;
   try {
-    res = await fetch(url, { headers: headers(token) });
+    res = await fetch(url, {
+      method: "POST",
+      headers: { ...headers(token), Prefer: "return=representation" },
+      body: JSON.stringify({
+        organization_id: actorOrgId,
+        title: `own-org-write-canary-${Date.now()}`,
+        decision_type: "operational",
+        status: "pending",
+      }),
+    });
   } catch (e) {
-    push({ ...base, status: 0, body: `network_error: ${e.message}`, verdict: "framework_failure", severity: "framework" });
-    return;
+    push({ ...base, status: 0, body: `network_error: ${e.message}`, verdict: "FRAMEWORK_INVALID" });
+    return false;
   }
   const { text, parsed } = await readBody(res);
+  if (res.status >= 200 && res.status < 300 && Array.isArray(parsed) && parsed[0]?.id) {
+    push({ ...base, status: res.status, inserted_id: parsed[0].id, verdict: "PASS" });
+    return true;
+  }
+  push({ ...base, status: res.status, body: bodySnippet(text), verdict: "FRAMEWORK_INVALID",
+    note: `own-org insert expected 2xx with row; got ${res.status}` });
+  return false;
+}
 
-  // Strict contract: 200 + JSON array + length 0 = pass. Anything else is not a valid pass.
+// ---------------------------------------------------------------------------
+// Negative cross-tenant probes
+// ---------------------------------------------------------------------------
+async function negativeRead(token, actorEmail, actorOrgId, targetOrgId, table) {
+  const url = `${URL}/rest/v1/${table}?organization_id=eq.${targetOrgId}&limit=5`;
+  const base = { kind: "negative_read", actor: actorEmail, actor_org: actorOrgId, target_org: targetOrgId, table, op: "GET" };
+  let res;
+  try { res = await fetch(url, { headers: headers(token) }); }
+  catch (e) { push({ ...base, status: 0, body: `network_error: ${e.message}`, verdict: "FRAMEWORK_INVALID" }); return; }
+  const { text, parsed } = await readBody(res);
   if (res.status !== 200) {
-    push({
-      ...base,
-      status: res.status,
-      body: text.slice(0, 300),
-      verdict: "app_error",
-      severity: "app",
-      note: `expected 200; got ${res.status}`,
-    });
+    push({ ...base, status: res.status, body: bodySnippet(text), verdict: "API_FAILURE",
+      note: `expected 200 with empty array; got ${res.status}` });
     return;
   }
   if (!Array.isArray(parsed)) {
-    push({
-      ...base,
-      status: 200,
-      body: text.slice(0, 300),
-      verdict: "framework_failure",
-      severity: "framework",
-      note: "response is 200 but body is not a JSON array",
-    });
+    push({ ...base, status: 200, body: bodySnippet(text), verdict: "FRAMEWORK_INVALID",
+      note: "200 but body is not a JSON array" });
     return;
   }
   if (parsed.length === 0) {
-    push({ ...base, status: 200, row_count: 0, verdict: "isolation_pass", severity: "ok" });
+    push({ ...base, status: 200, row_count: 0, verdict: "PASS" });
     return;
   }
-  // Non-empty result across tenants = CRITICAL
-  push({
-    ...base,
-    status: 200,
-    row_count: parsed.length,
-    body: JSON.stringify(parsed).slice(0, 300),
-    verdict: "isolation_leak",
-    severity: "CRITICAL",
-  });
+  push({ ...base, status: 200, row_count: parsed.length, body: bodySnippet(text), verdict: "CRITICAL_LEAK" });
 }
 
-// Write-probe expected rejection classes.
-// - 401 unauthenticated (should not happen; we sign in), 403 RLS/forbidden
-// - PostgREST returns 403 with code "42501" (insufficient_privilege) OR
-//   a "new row violates row-level security policy" error object on RLS deny.
-// Anything else (400 schema, 404 missing table, 409 conflict, 422 unprocessable,
-// 5xx, malformed) is a framework/app error — NOT a valid isolation pass.
-function classifyWrite(status, parsed, text) {
+function classifyWriteDenial(status, parsed, text) {
   if (status >= 200 && status < 300) {
-    return { verdict: "isolation_leak", severity: "CRITICAL", note: "cross-tenant insert accepted" };
+    return { verdict: "CRITICAL_LEAK", note: "cross-tenant insert accepted" };
   }
   const code = parsed && typeof parsed === "object" ? String(parsed.code || "") : "";
   const msg = parsed && typeof parsed === "object" ? String(parsed.message || "") : text || "";
@@ -152,20 +201,16 @@ function classifyWrite(status, parsed, text) {
     code === "42501" ||
     /row-level security|row level security|insufficient.privilege|permission denied/i.test(msg);
   if (status === 401 || status === 403 || looksLikeRls) {
-    return { verdict: "isolation_pass", severity: "ok", note: `rls_reject status=${status} code=${code || "-"}` };
+    return { verdict: "EXPECTED_DENIAL", note: `rls_reject status=${status} code=${code || "-"}` };
   }
-  // Everything else is not proof of isolation.
-  return {
-    verdict: "app_error",
-    severity: "app",
-    note: `unexpected rejection class: status=${status} code=${code || "-"}`,
-  };
+  return { verdict: "API_FAILURE", note: `unexpected denial class: status=${status} code=${code || "-"}` };
 }
 
-async function probeWrite(token, callerTag, actorOrgId, targetOrgId) {
+async function negativeWrite(token, actorEmail, actorOrgId, targetOrgId) {
   const url = `${URL}/rest/v1/decision_ledger`;
   const base = {
-    kind: "write", caller: callerTag, actor_org: actorOrgId, target_org: targetOrgId, table: "decision_ledger",
+    kind: "negative_write", actor: actorEmail, actor_org: actorOrgId, target_org: targetOrgId,
+    table: "decision_ledger", op: "POST",
   };
   let res;
   try {
@@ -174,52 +219,80 @@ async function probeWrite(token, callerTag, actorOrgId, targetOrgId) {
       headers: { ...headers(token), Prefer: "return=representation" },
       body: JSON.stringify({
         organization_id: targetOrgId,
-        title: `cross-tenant-write-probe-${callerTag}-${Date.now()}`,
+        title: `cross-tenant-write-probe-${Date.now()}`,
         decision_type: "operational",
         status: "pending",
       }),
     });
   } catch (e) {
-    push({ ...base, status: 0, body: `network_error: ${e.message}`, verdict: "framework_failure", severity: "framework" });
+    push({ ...base, status: 0, body: `network_error: ${e.message}`, verdict: "FRAMEWORK_INVALID" });
     return;
   }
   const { text, parsed } = await readBody(res);
-  const cls = classifyWrite(res.status, parsed, text);
-  push({ ...base, status: res.status, body: text.slice(0, 300), ...cls });
+  const cls = classifyWriteDenial(res.status, parsed, text);
+  push({ ...base, status: res.status, body: bodySnippet(text), ...cls });
 }
 
+// ---------------------------------------------------------------------------
+// Execute
+// ---------------------------------------------------------------------------
 const tokenA = await signIn(state.users.a.email, state.users.a.password);
 const tokenB = await signIn(state.users.b.email, state.users.b.password);
 
-for (const t of READ_TABLES) {
-  await probeRead(tokenA, "a", state.orgs.a.id, state.orgs.b.id, t);
-  await probeRead(tokenB, "b", state.orgs.b.id, state.orgs.a.id, t);
+// 1) Positive controls FIRST — abort on any failure.
+const pos = [];
+pos.push(await positiveRead(tokenA, state.users.a.email, state.orgs.a.id, "decision_ledger", state.seeded_rows.a.decision_ledger));
+pos.push(await positiveRead(tokenB, state.users.b.email, state.orgs.b.id, "decision_ledger", state.seeded_rows.b.decision_ledger));
+pos.push(await positiveRead(tokenA, state.users.a.email, state.orgs.a.id, "audit_log",       state.seeded_rows.a.audit_log));
+pos.push(await positiveRead(tokenB, state.users.b.email, state.orgs.b.id, "audit_log",       state.seeded_rows.b.audit_log));
+pos.push(await positiveWrite(tokenA, state.users.a.email, state.orgs.a.id));
+pos.push(await positiveWrite(tokenB, state.users.b.email, state.orgs.b.id));
+
+if (pos.some((ok) => !ok)) {
+  const summary = {
+    run_tag: state.run_tag,
+    seeded_role: state.seeded_role,
+    evidence_surface: state.evidence_surface,
+    aborted: "positive_controls_failed",
+    totals: countTotals(results),
+    results,
+  };
+  console.log(JSON.stringify(summary, null, 2));
+  console.error("\nFRAMEWORK_INVALID: one or more positive controls failed; negative probes not run. Exit 1.");
+  process.exit(1);
 }
-await probeWrite(tokenA, "a", state.orgs.a.id, state.orgs.b.id);
-await probeWrite(tokenB, "b", state.orgs.b.id, state.orgs.a.id);
+
+// 2) Negative cross-tenant probes.
+for (const t of REQUIRED_CANARIES) {
+  await negativeRead(tokenA, state.users.a.email, state.orgs.a.id, state.orgs.b.id, t);
+  await negativeRead(tokenB, state.users.b.email, state.orgs.b.id, state.orgs.a.id, t);
+}
+await negativeWrite(tokenA, state.users.a.email, state.orgs.a.id, state.orgs.b.id);
+await negativeWrite(tokenB, state.users.b.email, state.orgs.b.id, state.orgs.a.id);
+
+function countTotals(rs) {
+  const t = { probes: rs.length, PASS: 0, EXPECTED_DENIAL: 0, CRITICAL_LEAK: 0, FRAMEWORK_INVALID: 0, API_FAILURE: 0 };
+  for (const r of rs) if (t[r.verdict] != null) t[r.verdict]++;
+  return t;
+}
 
 const summary = {
   run_tag: state.run_tag,
-  totals: {
-    probes: results.length,
-    isolation_pass: results.filter((r) => r.verdict === "isolation_pass").length,
-    isolation_leak: leaks,
-    framework_failure: frameworkFailures,
-    app_error: appErrors,
-  },
+  seeded_role: state.seeded_role,
+  evidence_surface: state.evidence_surface,
+  totals: countTotals(results),
   results,
 };
 console.log(JSON.stringify(summary, null, 2));
 
 if (leaks > 0) {
-  console.error(`\nCRITICAL: ${leaks} cross-tenant probe(s) leaked. Exit 2.`);
+  console.error(`\nCRITICAL: ${leaks} cross-tenant leak(s). Exit 2.`);
   process.exit(2);
 }
-if (frameworkFailures > 0 || appErrors > 0) {
+if (frameworkInvalid > 0 || apiFailures > 0) {
   console.error(
-    `\nINVALID: ${frameworkFailures} framework_failure(s), ${appErrors} app_error(s). ` +
-      `No leaks detected, but the run is not a valid PASS. Exit 1.`,
+    `\nINVALID: ${frameworkInvalid} FRAMEWORK_INVALID, ${apiFailures} API_FAILURE. Not a valid PASS. Exit 1.`,
   );
   process.exit(1);
 }
-console.log(`\nPASS: ${results.length} probes, 0 leaks, 0 framework/app errors.`);
+console.log(`\nPASS: ${results.length} probes — all positive controls PASS and all cross-tenant probes correctly denied.`);

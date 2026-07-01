@@ -1,39 +1,69 @@
 # Tenant Isolation Test
 
-Self-contained, checked-in test that verifies a user in **org A** cannot read or
-write data belonging to **org B** (and vice versa) for every tenant-scoped
-surface: `decision_ledger`, `audit_log`, `evidence_sources`.
+Self-contained, checked-in test that produces **enterprise-grade evidence**
+of tenant isolation: a user in org A cannot read or write data belonging to
+org B (and vice versa) on every tenant-scoped surface the app exposes to a
+seeded admin.
 
-Any cross-tenant read or write that succeeds is a **CRITICAL** failure.
+**Read this before running:** the harness is only valid if every positive
+control passes. A run that skips positive controls or that treats non-2xx as
+proof of denial is *not* evidence — it is theater. This suite refuses to
+report PASS in either of those situations.
 
 ## Safety guarantees (enforced by `lib/guard.mjs`)
 
-- **Allow-list environment check**: `LOAD_TARGET` must be exactly `staging` or
-  `preview`. Anything else — `production`, `prod`, `live`, `main`, `release`,
-  empty, or a typo — is rejected before any network call.
+- **Allow-list environment check**: `LOAD_TARGET` must be exactly `staging`
+  or `preview`. Anything else — `production`, `prod`, `live`, `main`,
+  `release`, empty, or a typo — is rejected before any network call.
 - **Shared guard**: `seed.mjs`, `run.mjs`, and `teardown.mjs` all import the
   same `guardOrExit()` helper. No script-local drift.
-- **Hard-fail teardown**: any cleanup error causes exit code 1 and the state
-  file is preserved so operators can retry. Nothing is silently left behind.
+- **Hard-fail teardown**: any cleanup error causes exit code 1 and the
+  state file is preserved so operators can retry. Nothing is silently left
+  behind.
 - Does not call live AI, does not send email, does not depend on k6.
-- Only two users are created (one per org). No 50/100/1000-VU load.
+- Exactly two users are created (one admin per org). No 50/100/1000-VU load.
+
+## Seeded role and why
+
+Users are seeded as **`admin`** on their org (`organization_members.role = 'admin'`).
+
+Rationale — this is the minimum role that can exercise every policy the
+suite probes:
+
+| Surface | Policy | Roles that satisfy it |
+| --- | --- | --- |
+| `decision_ledger` SELECT | `Leadership can view decisions` | owner, admin, executive |
+| `decision_ledger` INSERT | `Admins/owners can insert decisions` | owner, admin |
+| `audit_log` SELECT       | `Org admins can view audit log` | owner, admin |
+
+Using `member` would collapse every positive control on the read side and
+render the negative cross-tenant probes vacuous.
+
+## Evidence surface actually tested
+
+`public.evidence_sources` does **not** exist in this schema. Evidence is
+stored as **`decision_ledger.evidence_sources` (JSONB)** on each decision.
+`seed.mjs` writes a non-empty `evidence_sources` array into each org's
+canary decision row and verifies the JSONB persisted. Because the JSONB
+column is governed by `decision_ledger` RLS, cross-tenant evidence access
+is fully covered by the `decision_ledger` read/write probes. There is no
+separate evidence table to probe.
 
 ## Files
 
 | File | Purpose |
 | --- | --- |
 | `lib/guard.mjs` | Shared allow-list guard used by all three scripts. |
-| `seed.mjs`      | Creates two orgs + one user each + canary rows on `decision_ledger`, `audit_log`, `evidence_sources`. Writes `.state.json`. |
-| `run.mjs`       | Signs in each user, probes cross-tenant reads and writes. Exits non-zero on any leak. |
+| `seed.mjs`      | Two orgs + one admin user each + mandatory canaries on `decision_ledger` (with evidence JSONB) and `audit_log`. Writes `.state.json`. |
+| `run.mjs`       | Signs in each user, runs **6 positive controls first**, then cross-tenant read/write probes. Exits non-zero on any leak, framework error, or unexpected API failure. |
 | `teardown.mjs`  | Deletes seeded rows, users, and orgs. Exits 1 on any failure. |
 
 `.state.json` (created by `seed.mjs`, consumed by `run.mjs` and `teardown.mjs`)
-contains the run tag, org IDs, and seeded user credentials for the run. It is
-git-ignored and cleared on successful teardown.
+contains the run tag, seeded role, evidence surface, org IDs, seeded user
+credentials, and canary row ids. It is git-ignored and cleared on
+successful teardown.
 
 ## Required credentials
-
-All three scripts require these environment variables:
 
 ```
 LOAD_TARGET=staging                 # or "preview" — anything else is refused
@@ -54,65 +84,106 @@ node tests/tenant-isolation/run.mjs
 node tests/tenant-isolation/teardown.mjs   # always run, even on failure
 ```
 
-Exit codes from `run.mjs`:
+## What `run.mjs` checks
 
-- `0` — every probe was `isolation_pass` (0 leaks, 0 framework or app errors).
-- `1` — configuration error, missing seed file, missing canary, blocked target,
-        **or** the run completed without leaks but at least one probe returned
-        `framework_failure` / `app_error`. The run is not a valid PASS.
-- `2` — **CRITICAL**: at least one `isolation_leak` (cross-tenant read
-        returned rows or cross-tenant write was accepted).
+### 1. Positive controls (must all pass, else FRAMEWORK_INVALID → exit 1)
 
-Exit codes from `teardown.mjs`:
+Run **before** any cross-tenant probe. If any of these fail the suite
+aborts — a negative result is meaningless when we can't first prove the
+user can access their own data.
+
+- A reads own `decision_ledger` canary row → HTTP 200 + JSON array + row present
+- B reads own `decision_ledger` canary row → HTTP 200 + JSON array + row present
+- A reads own `audit_log` canary row       → HTTP 200 + JSON array + row present
+- B reads own `audit_log` canary row       → HTTP 200 + JSON array + row present
+- A inserts a new decision in org A        → HTTP 2xx with row returned
+- B inserts a new decision in org B        → HTTP 2xx with row returned
+
+### 2. Negative cross-tenant read probes
+
+For each direction (A→B, B→A) and each table (`decision_ledger`,
+`audit_log`), `GET /rest/v1/<table>?organization_id=eq.<other_org>&limit=5`
+using the caller's JWT. **Valid `PASS` only when all three hold:**
+
+- HTTP status is exactly `200`
+- response parses as a JSON array
+- array length is exactly `0`
+
+- Non-200 → `API_FAILURE`
+- 200 with non-array body → `FRAMEWORK_INVALID`
+- 200 with non-empty array → `CRITICAL_LEAK`
+
+### 3. Negative cross-tenant write probes
+
+`POST /rest/v1/decision_ledger` with `organization_id = <other_org>` using
+the caller's JWT.
+
+- `2xx` → `CRITICAL_LEAK`
+- `401` / `403`, or PostgREST error code `42501`, or message matching
+  `row-level security` / `permission denied` → `EXPECTED_DENIAL`
+- Anything else (400, 404, 409, 422, 5xx, malformed) → `API_FAILURE`
+  (the write may still be blocked, but the response is not proof of isolation)
+
+## Verdicts
+
+| Verdict | Meaning |
+| --- | --- |
+| `PASS` | Positive control succeeded, or cross-tenant read returned an empty array with HTTP 200. |
+| `EXPECTED_DENIAL` | Cross-tenant write rejected by documented RLS/auth class. |
+| `CRITICAL_LEAK` | Cross-tenant read returned rows OR cross-tenant write was accepted. |
+| `FRAMEWORK_INVALID` | Positive control failed, canary missing, malformed response, or network error. |
+| `API_FAILURE` | Unexpected HTTP status that is neither `PASS` nor a documented denial class. |
+
+Every probe prints: `kind`, `actor`, `actor_org`, `target_org`, `table`,
+`op`, `status`, truncated `body`, `verdict`, and optional `note`. The final
+summary counts by verdict.
+
+## Exit codes
+
+### `run.mjs`
+
+- `0` — all 6 positive controls PASS **and** every cross-tenant probe is
+        `PASS` or `EXPECTED_DENIAL`.
+- `1` — configuration error, missing seed file, missing canary, positive
+        control failure, `FRAMEWORK_INVALID`, or `API_FAILURE`. Not a
+        valid PASS.
+- `2` — **CRITICAL**: at least one `CRITICAL_LEAK`.
+
+### `teardown.mjs`
 
 - `0` — every seeded row, user, and org deleted; `.state.json` removed.
 - `1` — at least one delete failed; `.state.json` preserved for retry.
 
 ## Canary requirement (tests are invalid without it)
 
-`seed.mjs` inserts one canary row per org for **every** table `run.mjs` probes
-(`decision_ledger`, `audit_log`, `evidence_sources`). If any canary insert
-fails, seed exits non-zero and no `.state.json` is written.
+`seed.mjs` inserts one canary row per org for `decision_ledger` (with a
+non-empty `evidence_sources` JSONB payload) and `audit_log`. Any failure
+exits non-zero and no `.state.json` is written.
 
 `run.mjs` refuses to start if `.state.json` is missing a canary for any
-required table. This prevents vacuous "pass" results caused by probing an empty
-table (0 rows returned looks identical to RLS blocking 0 rows).
+required table. This prevents vacuous "0 rows" pass results caused by
+probing an empty table.
 
-## What the run script checks
+## The browser harness is *not* tenant-isolation evidence
 
-For each direction (A→B and B→A) and each table
-(`decision_ledger`, `audit_log`, `evidence_sources`):
+`tests/e2e/concurrent-browser-sessions.py` (formerly
+`multi-user-harness.py`) spawns N Playwright contexts sharing a **single**
+pre-minted Supabase session. Every context is the same user in the same
+organization.
 
-1. **Read probe** — `GET /rest/v1/<table>?organization_id=eq.<other_org>&limit=5`
-   using the caller's JWT. The probe is only a valid `isolation_pass` when
-   **all three** hold:
-   - HTTP status is exactly `200`
-   - the response body parses as a JSON array
-   - the array length is exactly `0`
+It proves:
 
-   Any non-200 status is reported as `app_error`. A 200 with a non-array body
-   is reported as `framework_failure`. A 200 with a non-empty array is
-   `isolation_leak` (CRITICAL).
+- route/session stability under concurrent browser contexts
+- no stale-chunk / preload errors under concurrent nav
+- no auth-race regressions in the SPA shell
+- route selectors remain stable
 
-2. **Write probe** (`decision_ledger`) — `POST` a row with
-   `organization_id = <other_org>` using the caller's JWT. The probe is only a
-   valid `isolation_pass` when the response is one of the expected rejection
-   classes:
-   - HTTP `401` (unauthenticated) or `403` (forbidden)
-   - PostgREST RLS rejection: PostgreSQL code `42501`
-     (`insufficient_privilege`) or an error message matching
-     `row-level security` / `permission denied`
+It does **not** prove:
 
-   `2xx` is `isolation_leak` (CRITICAL). Any other status — `400`, `404`,
-   `409`, `422`, `5xx`, schema errors, malformed JSON, network errors — is
-   reported as `app_error` or `framework_failure` and fails the run with
-   exit 1 (the write may still be blocked, but the response is not proof of
-   isolation).
+- tenant isolation
+- row-level security enforcement
+- cross-org read/write denial
 
-## Reporting
-
-Every probe prints: `kind`, `caller`, `actor_org`, `target_org`, `table`,
-`status`, truncated `body`, `verdict`, and `severity`. The final summary
-counts by verdict: `isolation_pass`, `isolation_leak`, `framework_failure`,
-`app_error`.
-
+True tenant-isolation evidence requires distinct seeded users in distinct
+orgs probing PostgREST with their own JWTs — that is exactly what this
+directory (`tests/tenant-isolation/`) does.
