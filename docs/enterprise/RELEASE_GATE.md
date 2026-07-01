@@ -51,3 +51,32 @@ attached to the release ticket. Sign-off requires:
 - The release gate does not test production.
 - The release gate does not exercise live AI providers.
 - The release gate does not send real emails or charge real cards.
+
+<!-- AUTO-GENERATED:GATES:START (do not edit — run npm run evidence:docs) -->
+
+## Gate definition (generated from `tests/evidence/lib/gates.mjs`)
+
+Scoring model: weights do not need to sum to 100. The Enterprise
+Readiness Score is normalized to 0-100 against TOTAL_WEIGHT = 110.
+Gates with weight 0 are hard-blocking but do not contribute to the score.
+
+| Gate key | Label | Weight | Pipelines |
+|---|---|---:|---|
+| `authentication` | Authentication | 10 | `authentication`, `mfa`, `oauth`, `session-recovery` |
+| `authorization` | Authorization | 10 | `protected-routes`, `user-management`, `organization-management`, `settings` |
+| `tenant_isolation` | Tenant Isolation | 15 | `tenant-isolation`, `edge-functions`, `realtime` |
+| `decision_pipeline` | Decision Pipeline | 10 | `decision-creation`, `decision-editing`, `decision-approval`, `decision-rejection`, `decision-ledger` |
+| `evidence_pipeline` | Evidence Pipeline | 10 | `evidence-attachment`, `evidence-retrieval`, `evidence-export` |
+| `governance` | Governance | 10 | `governance-workflow`, `confidence-scoring` |
+| `ai` | AI Pipeline | 10 | `ai-recommendation`, `ai-explanation` |
+| `audit` | Audit | 0 | `audit-trail` |
+| `reports` | Reports | 5 | `reports`, `executive-exports` |
+| `notifications` | Notifications | 0 | `notifications` |
+| `billing` | Billing | 0 | `billing`, `credits` |
+| `scalability` | Scalability | 10 | `dashboard-loading`, `background-jobs` |
+| `recovery` | Recovery | 10 | `recovery`, `rollback` |
+| `system_health` | System Health | 10 | `system-health`, `search`, `data-import`, `dataset-versioning` |
+
+**Total weight (score denominator):** 110
+
+<!-- AUTO-GENERATED:GATES:END -->
