@@ -8,6 +8,7 @@ import { mkdtempSync, writeFileSync, readFileSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 
 import {
   translate,
@@ -20,7 +21,7 @@ import { REQUIRED_CONTROL_IDS } from "../pipelines/lib/auth-controls.mjs";
 import { buildEvidence } from "../pipelines/authentication.mjs";
 import { STATUS } from "../lib/taxonomy.mjs";
 
-const ADAPTER = new URL("../adapters/auth-adapter.mjs", import.meta.url).pathname;
+const ADAPTER = fileURLToPath(new URL("../adapters/auth-adapter.mjs", import.meta.url));
 
 function specWithAnnotations(title, controls, { status = "passed", duration = 12, error = null, attachments = [] } = {}) {
   return {
@@ -259,7 +260,7 @@ test("EE-1C: SKIP staging-only control produces WARNING, never fake PASS", () =>
 });
 
 test("EE-1C: e2e/auth.spec.ts annotates every AUTH-### control", async () => {
-  const src = readFileSync(new URL("../../../e2e/auth.spec.ts", import.meta.url).pathname, "utf8");
+  const src = readFileSync(fileURLToPath(new URL("../../../e2e/auth.spec.ts", import.meta.url)), "utf8");
   for (const id of REQUIRED_CONTROL_IDS) {
     assert.match(src, new RegExp(id), `e2e/auth.spec.ts missing coverage for ${id}`);
     assert.match(src, new RegExp(`attachAuthEvidence\\([^)]*"${id}"`), `${id} not passed to attachAuthEvidence`);

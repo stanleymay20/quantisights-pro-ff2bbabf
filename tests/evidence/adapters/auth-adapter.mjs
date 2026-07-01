@@ -29,6 +29,7 @@
 
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { REQUIRED_CONTROL_IDS } from "../pipelines/lib/auth-controls.mjs";
 
 // ---------- CLI ------------------------------------------------------------
@@ -384,7 +385,7 @@ async function main(argv) {
 const invokedDirect = (() => {
   try {
     const argv1 = process.argv[1] ? resolve(process.argv[1]) : "";
-    return argv1 === resolve(new URL(import.meta.url).pathname);
+    return argv1 === resolve(fileURLToPath(import.meta.url));
   } catch {
     return false;
   }

@@ -42,13 +42,11 @@ export const GATES = Object.freeze([
     key: "decision_pipeline",
     label: "Decision Pipeline",
     weight: 10,
-    pipelines: [
-      "decision-creation",
-      "decision-editing",
-      "decision-approval",
-      "decision-rejection",
-      "decision-ledger",
-    ],
+    // EE-3 / EC-5: the real decision-lifecycle evidence pipeline supersedes
+    // the legacy decision stubs (decision-creation, decision-editing,
+    // decision-approval, decision-rejection, decision-ledger). Keeping a
+    // single gate input avoids double-counting the same lifecycle controls.
+    pipelines: ["decision-lifecycle"],
   },
   {
     key: "evidence_pipeline",

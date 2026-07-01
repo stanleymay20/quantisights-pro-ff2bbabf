@@ -91,7 +91,7 @@ release ticket.
 
 ## Current status
 
-- **Framework:** in place. `run-all.mjs` orchestrates 37 pipelines.
+- **Framework:** in place. `run-all.mjs` orchestrates 34 pipelines.
 - **Pipeline implementations:** all stubs. Each returns `FRAMEWORK_INVALID`
   with a `STUB` warning until wired against staging.
 - **CI:** not wired. `run-all.mjs` is ready for GitHub Actions but no

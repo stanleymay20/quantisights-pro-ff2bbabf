@@ -65,7 +65,7 @@ Gates with weight 0 are hard-blocking but do not contribute to the score.
 | `authentication` | Authentication | 10 | `authentication`, `mfa`, `oauth`, `session-recovery` |
 | `authorization` | Authorization | 10 | `authorization` |
 | `tenant_isolation` | Tenant Isolation | 15 | `tenant-isolation`, `edge-functions`, `realtime` |
-| `decision_pipeline` | Decision Pipeline | 10 | `decision-creation`, `decision-editing`, `decision-approval`, `decision-rejection`, `decision-ledger` |
+| `decision_pipeline` | Decision Pipeline | 10 | `decision-lifecycle` |
 | `evidence_pipeline` | Evidence Pipeline | 10 | `evidence-attachment`, `evidence-retrieval`, `evidence-export` |
 | `governance` | Governance | 10 | `governance-workflow`, `confidence-scoring` |
 | `ai` | AI Pipeline | 10 | `ai-recommendation`, `ai-explanation` |
