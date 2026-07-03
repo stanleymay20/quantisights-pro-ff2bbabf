@@ -122,7 +122,12 @@ const Reports = () => {
         <header className="h-14 border-b border-border/30 flex items-center justify-between px-8 shrink-0 bg-background/60 backdrop-blur-sm">
           <div className="flex items-center gap-3">
             <SidebarMobileToggle />
-            <h1 className="text-[18px] font-semibold tracking-tight">Reports</h1>
+            <div>
+              <h1 className="text-[18px] font-semibold tracking-tight">Board-ready reports</h1>
+              <p className="text-xs text-muted-foreground">
+                Generate board-ready executive reports, KPI summaries, and governance packs.
+              </p>
+            </div>
           </div>
           <button
             onClick={handleGenerate}

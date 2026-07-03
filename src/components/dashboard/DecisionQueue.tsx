@@ -100,6 +100,21 @@ interface Confirmation {
   action: "approved" | "dismissed" | "modified";
 }
 
+function approvalBlockedReason(decision: EnrichedDecision): string | null {
+  if (!decision.recommendation.isDecisionGrade) {
+    return decision.recommendation.decisionGateMessage
+      || "Evidence review required: this recommendation is not decision-grade yet.";
+  }
+  if (decision.recommendation.executionReadiness.level === "low") {
+    return "Evidence review required: execution readiness is low.";
+  }
+  return null;
+}
+
+function isEvidenceReadyForApproval(decision: EnrichedDecision): boolean {
+  return approvalBlockedReason(decision) === null;
+}
+
 const DecisionQueue = memo(({
   organizationId,
   insights,
@@ -138,8 +153,9 @@ const DecisionQueue = memo(({
 
   // Stage 1: Open responsibility dialog before approve
   const initiateApprove = useCallback((decision: EnrichedDecision) => {
-    if (!decision.recommendation.isDecisionGrade) {
-      toast({ title: "Cannot approve", description: "This recommendation is not decision-grade. Gather more evidence first.", variant: "destructive" });
+    const blockedReason = approvalBlockedReason(decision);
+    if (blockedReason) {
+      toast({ title: "Cannot approve", description: blockedReason, variant: "destructive" });
       return;
     }
     setApproveTarget(decision);
@@ -568,8 +584,8 @@ const DecisionQueue = memo(({
                     <div className="flex flex-col sm:flex-col gap-1.5 shrink-0 w-full sm:w-auto">
                       <button
                         onClick={() => initiateApprove(decision)}
-                        disabled={isActing || !rec.isDecisionGrade}
-                        title={!rec.isDecisionGrade ? "Cannot approve: not decision-grade" : "Approve"}
+                        disabled={isActing || !isEvidenceReadyForApproval(decision)}
+                        title={approvalBlockedReason(decision) ?? "Approve"}
                         className="flex items-center justify-center gap-1.5 px-3 py-2.5 sm:py-2 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed touch-target"
                       >
                         {isActing ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}

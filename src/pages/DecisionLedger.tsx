@@ -111,6 +111,21 @@ const EXEC_STATUS: Record<string, { bg: string; text: string; label: string }> =
   blocked: { bg: "bg-destructive/10", text: "text-destructive", label: "Blocked" },
 };
 
+function getLedgerApprovalBlockReason(decision: Decision): string | null {
+  const trust = trustFromDecision(decision);
+  if (trust.evidenceStatus !== "verified") {
+    return "Evidence review required: verified evidence must be linked before approval.";
+  }
+  if (["blocked", "missing", "not_available"].includes(trust.governanceStatus)) {
+    return "Evidence review required: governance status must be available before approval.";
+  }
+  return null;
+}
+
+function isLedgerDecisionReadyForApproval(decision: Decision): boolean {
+  return getLedgerApprovalBlockReason(decision) === null;
+}
+
 const DecisionLedgerPage = () => {
   const { currentOrgId } = useOrganization();
   const { activeDatasetId } = useProject();
@@ -304,6 +319,15 @@ const DecisionLedgerPage = () => {
   const updateDecision = async (id: string, updates: Record<string, unknown>) => {
     const decision = decisions.find(d => d.id === id);
     if (!decision) return;
+
+    if (updates.decision_status === "approved" && !isLedgerDecisionReadyForApproval(decision)) {
+      toast({
+        title: "Cannot approve yet",
+        description: getLedgerApprovalBlockReason(decision) ?? "Evidence review required before approval.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     // Compute derived fields upfront
     if (updates.execution_status === "completed") {
@@ -732,7 +756,8 @@ const DecisionLedgerPage = () => {
                           {d.notes && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{d.notes}</p>}
                         </div>
                         <div className="flex flex-col gap-1 shrink-0">
-                          <Button size="sm" className="h-7 text-xs" disabled={updatingId === d.id}
+                          <Button size="sm" className="h-7 text-xs" disabled={updatingId === d.id || !isLedgerDecisionReadyForApproval(d)}
+                            title={getLedgerApprovalBlockReason(d) ?? "Approve"}
                             onClick={() => updateDecision(d.id, { decision_status: "approved", decided_at: new Date().toISOString() })}>
                             Approve
                           </Button>
@@ -840,7 +865,9 @@ const DecisionLedgerPage = () => {
                                     setEvaluabilityCheck(result);
                                     setEvaluabilityLoading(false);
                                   }
-                                }} disabled={updatingId === d.id}>
+                                }} disabled={updatingId === d.id || !isLedgerDecisionReadyForApproval(d)}
+                                  title={getLedgerApprovalBlockReason(d) ?? "Approve"}
+                                >
                                   Approve
                                 </Button>
                                 <Button size="sm" variant="ghost" onClick={() => updateDecision(d.id, { decision_status: "rejected" })} disabled={updatingId === d.id}>
