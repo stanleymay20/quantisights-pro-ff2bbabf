@@ -14,6 +14,15 @@ const consumeStoredNext = () => {
   return safeNext(value);
 };
 
+const readOAuthParam = (url: URL, key: string) => {
+  const queryValue = url.searchParams.get(key);
+  if (queryValue) return queryValue;
+
+  const hash = url.hash.startsWith("#") ? url.hash.slice(1) : url.hash;
+  if (!hash) return null;
+  return new URLSearchParams(hash).get(key);
+};
+
 const AuthCallback = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -40,11 +49,30 @@ const AuthCallback = () => {
 
     // Check for provider error first — never proceed to exchange on error response.
     const url = new URL(window.location.href);
-    const errParam = url.searchParams.get("error_description") || url.searchParams.get("error");
+    const errParam = readOAuthParam(url, "error_description") || readOAuthParam(url, "error");
     if (errParam) {
       console.error("[AuthCallback] OAuth provider error:", errParam);
       finish(false);
       return;
+    }
+
+    // Lovable managed OAuth can return directly to this public callback with
+    // session tokens in either query or hash form. Hydrate them explicitly so
+    // live full-page redirects do not depend solely on Supabase PKCE auto-detect.
+    const accessToken = readOAuthParam(url, "access_token");
+    const refreshToken = readOAuthParam(url, "refresh_token");
+    if (accessToken && refreshToken) {
+      supabase.auth
+        .setSession({ access_token: accessToken, refresh_token: refreshToken })
+        .then(({ error }) => {
+          if (error) {
+            console.error("[AuthCallback] Failed to set OAuth session:", error.message);
+            finish(false);
+            return;
+          }
+          window.history.replaceState({}, document.title, window.location.pathname);
+          finish(true);
+        });
     }
 
     // The Supabase client is configured with `detectSessionInUrl: true` + PKCE flow,
