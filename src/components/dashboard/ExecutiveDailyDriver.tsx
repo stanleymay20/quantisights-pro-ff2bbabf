@@ -225,7 +225,7 @@ const ExecutiveDailyDriver = ({ displayName, orgId, insights, topMetrics, pendin
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button className="h-10 px-5 font-semibold" onClick={() => navigate(topDecision ? "/decisions" : "/reports")}>
+            <Button className="h-10 px-5 font-semibold" onClick={() => navigate(topDecision ? "/decisions?review=top" : "/reports")}>
               {topDecision ? "Review Decision" : "Open Reports"}
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
@@ -288,7 +288,7 @@ const ExecutiveDailyDriver = ({ displayName, orgId, insights, topMetrics, pendin
                   </div>
                 </div>
 
-                <Button className="h-10 px-5 font-semibold" onClick={() => navigate("/decisions")}>
+                <Button className="h-10 px-5 font-semibold" onClick={() => navigate("/decisions?review=top")}>
                   Review evidence <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>

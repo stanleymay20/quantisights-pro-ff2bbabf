@@ -28,6 +28,11 @@ import { trustFromDecision } from "@/components/trust/trust-adapter";
 import TrustCard, { trustCardFromDecision } from "@/components/trust/TrustCard";
 import DecisionResponsibilityDialog from "@/components/DecisionResponsibilityDialog";
 import DecisionComments from "@/components/decisions/DecisionComments";
+import ExecutiveDecisionReview from "@/components/decisions/ExecutiveDecisionReview";
+import {
+  getExecutiveApprovalBlockReason,
+  isExecutiveApprovalAllowed,
+} from "@/components/decisions/executive-decision-review-utils";
 import OutcomeFeedbackWidget from "@/components/decisions/OutcomeFeedbackWidget";
 import LazyInputWarning from "@/components/dashboard/LazyInputWarning";
 
@@ -112,18 +117,11 @@ const EXEC_STATUS: Record<string, { bg: string; text: string; label: string }> =
 };
 
 function getLedgerApprovalBlockReason(decision: Decision): string | null {
-  const trust = trustFromDecision(decision);
-  if (trust.evidenceStatus !== "verified") {
-    return "Evidence review required: verified evidence must be linked before approval.";
-  }
-  if (["blocked", "missing", "not_available"].includes(trust.governanceStatus)) {
-    return "Evidence review required: governance status must be available before approval.";
-  }
-  return null;
+  return getExecutiveApprovalBlockReason(decision);
 }
 
 function isLedgerDecisionReadyForApproval(decision: Decision): boolean {
-  return getLedgerApprovalBlockReason(decision) === null;
+  return isExecutiveApprovalAllowed(decision);
 }
 
 const DecisionLedgerPage = () => {
@@ -424,6 +422,14 @@ const DecisionLedgerPage = () => {
   const decisionSuccessRate = completedDecisions.length >= MIN_DECISIONS_FOR_RATE
     ? (completedDecisions.filter(d => (d.outcome_delta || 0) > 0).length / completedDecisions.length * 100)
     : null;
+
+  useEffect(() => {
+    if (expandedDecision || loading || activeDecisions.length === 0) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("review") === "top") {
+      setExpandedDecision(activeDecisions[0].id);
+    }
+  }, [activeDecisions, expandedDecision, loading]);
 
   return (
     <>
@@ -731,6 +737,7 @@ const DecisionLedgerPage = () => {
                 </CardContent></Card>
               ) : aicisQueue.map(d => {
                 const isPrediction = !!d.linked_aicis_prediction_id;
+                const approvalBlockReason = getLedgerApprovalBlockReason(d);
                 return (
                   <Card key={d.id} className="border-primary/20">
                     <CardContent className="p-4">
@@ -757,7 +764,7 @@ const DecisionLedgerPage = () => {
                         </div>
                         <div className="flex flex-col gap-1 shrink-0">
                           <Button size="sm" className="h-7 text-xs" disabled={updatingId === d.id || !isLedgerDecisionReadyForApproval(d)}
-                            title={getLedgerApprovalBlockReason(d) ?? "Approve"}
+                            title={approvalBlockReason ?? "Approve"}
                             onClick={() => updateDecision(d.id, { decision_status: "approved", decided_at: new Date().toISOString() })}>
                             Approve
                           </Button>
@@ -765,6 +772,11 @@ const DecisionLedgerPage = () => {
                             onClick={() => updateDecision(d.id, { decision_status: "rejected" })}>
                             Dismiss
                           </Button>
+                          {approvalBlockReason && (
+                            <p className="max-w-44 text-[10px] leading-snug text-destructive">
+                              {approvalBlockReason}
+                            </p>
+                          )}
                         </div>
                       </div>
                       <TrustCard
@@ -809,6 +821,7 @@ const DecisionLedgerPage = () => {
               ) : activeDecisions.map(d => {
                 const sCfg = STATUS_COLORS[d.decision_status] || STATUS_COLORS.pending;
                 const eCfg = EXEC_STATUS[d.execution_status] || EXEC_STATUS.not_started;
+                const approvalBlockReason = getLedgerApprovalBlockReason(d);
                 return (
                   <motion.div key={d.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}>
                     <div className="border-b border-border/30 py-4 px-1 last:border-0">
@@ -866,13 +879,18 @@ const DecisionLedgerPage = () => {
                                     setEvaluabilityLoading(false);
                                   }
                                 }} disabled={updatingId === d.id || !isLedgerDecisionReadyForApproval(d)}
-                                  title={getLedgerApprovalBlockReason(d) ?? "Approve"}
+                                  title={approvalBlockReason ?? "Approve"}
                                 >
                                   Approve
                                 </Button>
                                 <Button size="sm" variant="ghost" onClick={() => updateDecision(d.id, { decision_status: "rejected" })} disabled={updatingId === d.id}>
                                   Reject
                                 </Button>
+                                {approvalBlockReason && (
+                                  <p className="max-w-44 text-[10px] leading-snug text-destructive">
+                                    {approvalBlockReason}
+                                  </p>
+                                )}
                               </>
                             )}
                             {d.decision_status === "approved" && d.execution_status === "not_started" && (
@@ -918,6 +936,10 @@ const DecisionLedgerPage = () => {
                         </div>
                         {expandedDecision === d.id && currentOrgId && (
                           <div className="mt-4 space-y-4">
+                            <ExecutiveDecisionReview
+                              decision={d}
+                              organizationId={currentOrgId}
+                            />
                             <ExplainDecisionPanel
                               explanation={d.explanation_metadata}
                               sourceInsightSummary={d.source_insight_summary}
