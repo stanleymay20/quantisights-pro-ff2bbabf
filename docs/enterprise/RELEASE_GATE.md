@@ -75,7 +75,7 @@ Gates with weight 0 are hard-blocking but do not contribute to the score.
 | `billing` | Billing | 0 | `billing`, `credits` |
 | `scalability` | Scalability | 10 | `dashboard-loading`, `background-jobs` |
 | `recovery` | Recovery | 10 | `recovery`, `rollback` |
-| `system_health` | System Health | 10 | `system-health`, `search`, `data-import`, `dataset-versioning` |
+| `system_health` | System Health | 10 | `deployment-verification`, `system-health`, `search`, `data-import`, `dataset-versioning` |
 
 **Total weight (score denominator):** 110
 

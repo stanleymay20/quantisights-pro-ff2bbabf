@@ -29,3 +29,4 @@ tests/load/.users.json
 tests/load/reports/
 .env.loadtest
 tests/tenant-isolation/.state.json
+audit-artifacts/deployment-verification/

@@ -111,6 +111,7 @@ export const GATES = Object.freeze([
     label: "System Health",
     weight: 10,
     pipelines: [
+      "deployment-verification",
       "system-health",
       "search",
       "data-import",

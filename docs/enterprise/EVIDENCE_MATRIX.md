@@ -458,6 +458,6 @@ This section is auto-generated. Do not hand-edit.
 | `billing` | Billing | 0 | `billing`, `credits` |
 | `scalability` | Scalability | 10 | `dashboard-loading`, `background-jobs` |
 | `recovery` | Recovery | 10 | `recovery`, `rollback` |
-| `system_health` | System Health | 10 | `system-health`, `search`, `data-import`, `dataset-versioning` |
+| `system_health` | System Health | 10 | `deployment-verification`, `system-health`, `search`, `data-import`, `dataset-versioning` |
 
 <!-- AUTO-GENERATED:GATES:END -->
