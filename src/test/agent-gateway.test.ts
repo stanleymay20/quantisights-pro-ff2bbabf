@@ -2,7 +2,9 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   AGENT_GATEWAY_SCHEMA_VERSION,
+  AGENT_GATEWAY_VERSION,
   classifyAgentDecision,
+  isDecisionTokenExpired,
   processAgentGatewayRequest,
   validateAgentGatewayRequest,
   type AgentGatewayDependencies,
@@ -13,6 +15,7 @@ const baseRequest: AgentGatewayRequest = {
   agent_id: "agent-aicis-prod",
   tenant_id: "tenant-acme",
   organization_id: "org-acme",
+  idempotency_key: "idem-agent-aicis-prod-20260703-001",
   decision_type: "pricing_action",
   requested_action: "Reduce discount leakage on strategic accounts",
   evidence_references: ["ev-price-001", "ev-policy-001"],
@@ -53,6 +56,7 @@ function deps(overrides: Partial<AgentGatewayDependencies> = {}): AgentGatewayDe
     evaluatePolicy: vi.fn(async ({ decision_class }) => ({
       allowed: true,
       policy_id: "policy-enterprise-default",
+      policy_version: "2026-07-03",
       reasons: [],
       required_approvers:
         decision_class === "Class A"
@@ -64,6 +68,7 @@ function deps(overrides: Partial<AgentGatewayDependencies> = {}): AgentGatewayDe
     persistDecisionRecord: vi.fn(async (record) => ({ decision_id: record.decision_id })),
     writeAuditEvent: vi.fn(async () => ({ audit_id: "audit-agent-gateway-1" })),
     signDecisionToken: vi.fn(async (payload) => `signed.${payload.decision_id}.${payload.approval_state}`),
+    signing_key_id: "agw-test-key-2026-07",
     now: () => "2026-07-03T12:00:00.000Z",
     generateId: (prefix) => `${prefix}_test_001`,
     ...overrides,
@@ -81,6 +86,13 @@ describe("Agent Gateway", () => {
     });
     expect(invalid.success).toBe(false);
     expect(invalid.errors.join(" ")).toContain("confidence");
+
+    const missingIdempotency = validateAgentGatewayRequest({
+      ...baseRequest,
+      idempotency_key: "",
+    });
+    expect(missingIdempotency.success).toBe(false);
+    expect(missingIdempotency.errors.join(" ")).toContain("idempotency_key");
   });
 
   it("classifies decisions as Class C, B, or A from risk and business impact", () => {
@@ -102,7 +114,11 @@ describe("Agent Gateway", () => {
     expect(result.decision_record.decision_version).toBe(AGENT_GATEWAY_SCHEMA_VERSION);
     expect(result.decision_record.decision_class).toBe("Class C");
     expect(result.decision_record.status).toBe("APPROVED");
+    expect(result.decision_record.gateway.version).toBe(AGENT_GATEWAY_VERSION);
+    expect(result.decision_record.record_hash).toMatch(/^fnv1a-/);
+    expect(result.decision_record.approvals.policy_version).toBe("2026-07-03");
     expect(result.decision_token.approval_state).toBe("APPROVED");
+    expect(result.decision_token.signing_key_id).toBe("agw-test-key-2026-07");
     expect(result.decision_token.token).toContain("signed.");
     expect(result.decision_record.evidence.every((e) => e.integrity === "verified")).toBe(true);
   });
@@ -114,6 +130,72 @@ describe("Agent Gateway", () => {
     expect(result.decision_record.decision_class).toBe("Class B");
     expect(result.decision_record.approvals.required_approvers).toEqual(["business_owner"]);
     expect(result.decision_token.required_approvers).toEqual(["business_owner"]);
+  });
+
+  it("rejects duplicate idempotency keys through the replay protection contract before storing a decision", async () => {
+    const persistDecisionRecord = vi.fn();
+    const result = await processAgentGatewayRequest(
+      baseRequest,
+      deps({
+        persistDecisionRecord,
+        verifyReplayProtection: vi.fn(async () => ({
+          accepted: false,
+          reason: "duplicate_idempotency_key",
+        })),
+      }),
+    );
+
+    expect(result.status).toBe("REJECTED");
+    expect(result.failures).toContain("duplicate_idempotency_key");
+    expect(persistDecisionRecord).not.toHaveBeenCalled();
+  });
+
+  it("rejects replayed requests through the replay protection contract before storing a decision", async () => {
+    const persistDecisionRecord = vi.fn();
+    const result = await processAgentGatewayRequest(
+      { ...baseRequest, idempotency_key: "idem-replay-attempt" },
+      deps({
+        persistDecisionRecord,
+        verifyReplayProtection: vi.fn(async () => ({
+          accepted: false,
+          reason: "replayed_request",
+        })),
+      }),
+    );
+
+    expect(result.status).toBe("REJECTED");
+    expect(result.failures).toContain("replayed_request");
+    expect(persistDecisionRecord).not.toHaveBeenCalled();
+  });
+
+  it("enforces decision token expiry from the token payload", () => {
+    expect(
+      isDecisionTokenExpired(
+        {
+          decision_id: "decision_test_001",
+          hash: "fnv1a-test",
+          approval_state: "APPROVED",
+          expiry: "2026-07-03T12:00:00.000Z",
+          required_approvers: [],
+          signing_key_id: "agw-test-key-2026-07",
+        },
+        "2026-07-03T12:00:00.001Z",
+      ),
+    ).toBe(true);
+
+    expect(
+      isDecisionTokenExpired(
+        {
+          decision_id: "decision_test_001",
+          hash: "fnv1a-test",
+          approval_state: "APPROVED",
+          expiry: "2026-07-03T12:00:00.000Z",
+          required_approvers: [],
+          signing_key_id: "agw-test-key-2026-07",
+        },
+        "2026-07-03T11:59:59.999Z",
+      ),
+    ).toBe(false);
   });
 
   it("persists the decision record with the immutable audit event reference attached", async () => {

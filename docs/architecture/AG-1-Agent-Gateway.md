@@ -1,10 +1,10 @@
-# AG-1 Agent Gateway Architecture Specification
+# AG-1/AG-2 Agent Gateway Architecture Specification
 
 ## 1. Purpose
 
 The Agent Gateway exists to provide a vendor-neutral governance boundary for AI-influenced enterprise decisions. It is the API-layer contract that an AI agent must pass through before a consequential enterprise action can be approved, routed for approval, or rejected.
 
-In the current AG-1 implementation, the gateway is implemented as a pure TypeScript core module, not as a deployed HTTP endpoint. It accepts a model-agnostic request object and injected adapters for tenant validation, organization validation, evidence assembly, policy evaluation, audit creation, Decision Record persistence, token signing, time, ID generation, and certification reference resolution.
+In the current AG-2 implementation, the gateway is implemented as a pure TypeScript core module, not as a deployed HTTP endpoint. It accepts a model-agnostic request object and injected adapters for tenant validation, organization validation, replay protection, evidence assembly, policy evaluation, audit creation, Decision Record persistence, token signing, time, ID generation, and certification reference resolution.
 
 The gateway fits into the Quantivis architecture as follows:
 
@@ -12,27 +12,30 @@ The gateway fits into the Quantivis architecture as follows:
 - **Quantivis**: Quantivis remains the governance, approval, evidence, audit, and certification system. The gateway creates a Decision Record that Quantivis can persist, review, certify, and later connect to approval workflows.
 - **Enterprise Decision Governance**: The gateway separates agent recommendation from enterprise authorization. It validates context, checks evidence, classifies decision criticality, evaluates policy, and determines whether approval is required.
 - **Evidence Engine**: The gateway delegates evidence assembly to an injected `assembleEvidence` adapter and rejects requests unless every assembled evidence item has `integrity: "verified"`.
-- **Certification Engine**: The gateway links each successful Decision Record to a certification reference. By default AG-1 links to the Quantivis enterprise certification framework, the Decision Pipeline gate, the `decision-lifecycle` pipeline, and deployment verification.
+- **Certification Engine**: The gateway links each successful Decision Record to a certification reference. By default AG-2 links to the Quantivis enterprise certification framework, the Decision Pipeline gate, the `decision-lifecycle` pipeline, and deployment verification.
 
-AG-1 is explicitly vendor-neutral and model-agnostic. It has no OpenAI, Anthropic, Microsoft, SAP, ServiceNow, or AICIS dependency in its gateway logic. Model metadata is accepted as optional request metadata and copied into the Decision Record when present.
+AG-2 is explicitly vendor-neutral and model-agnostic. It has no OpenAI, Anthropic, Microsoft, SAP, ServiceNow, or AICIS dependency in its gateway logic. Model metadata is accepted as optional request metadata and copied into the Decision Record when present.
 
 ## 2. Responsibilities
 
-The AG-1 gateway is responsible for:
+The AG-2 gateway is responsible for:
 
 - **Schema validation**: Validates the incoming agent request with a Zod schema.
 - **Tenant validation**: Calls an injected `validateTenant` adapter using `tenant_id`.
 - **Organization validation**: Calls an injected `validateOrganization` adapter using `tenant_id` and `organization_id`.
+- **Idempotency contract**: Requires `idempotency_key` in every request.
+- **Replay protection contract**: Calls optional injected `verifyReplayProtection` when provided and rejects duplicate or replayed submissions.
 - **Evidence assembly**: Calls an injected `assembleEvidence` adapter with request evidence references.
 - **Evidence integrity verification**: Requires all assembled evidence items to have `integrity: "verified"`.
 - **Decision classification**: Classifies the request as Class C, Class B, or Class A using risk level and business impact amount.
 - **Policy evaluation**: Calls an injected `evaluatePolicy` adapter with the request, decision class, and assembled evidence.
 - **Approval routing**: Determines whether the request can be approved immediately or requires approval based on class and policy-required approvers.
 - **Challenge generation**: Creates a Challenge Record for Class A decisions.
-- **Decision Record creation**: Builds a versioned `quantivis.decision-record.v1` Decision Record.
+- **Decision Record creation**: Builds a versioned `quantivis.decision-record.v1` Decision Record with gateway version and record hash.
 - **Audit creation**: Writes an audit event when a request is received, when a request is rejected, and when a Decision Record is created.
 - **Certification linkage**: Attaches an injected or default certification reference to successful Decision Records.
-- **Signed decision token generation**: Builds a token payload and delegates signing to an injected `signDecisionToken` adapter.
+- **Signed decision token generation**: Builds a token payload with expiry and signing key ID, then delegates signing to an injected `signDecisionToken` adapter.
+- **Token expiry evaluation**: Exposes `isDecisionTokenExpired` to enforce token expiry from the signed token payload.
 
 The gateway deliberately does **not**:
 
@@ -47,9 +50,9 @@ The gateway deliberately does **not**:
 - Call Supabase directly.
 - Implement RLS policies.
 - Implement product UI.
-- Deploy a public HTTP endpoint in AG-1.
+- Deploy a public HTTP endpoint in AG-2.
 - Perform cryptographic signing internally. Signing is adapter-provided.
-- Provide replay protection or idempotency guarantees in AG-1.
+- Persist replay/idempotency state internally. Replay/idempotency storage is adapter-provided.
 - Mint decision tokens for rejected requests in AG-1.
 
 ## 3. Architecture Diagram
@@ -57,7 +60,7 @@ The gateway deliberately does **not**:
 ```mermaid
 flowchart TD
   A["AI Agent<br/>(AICIS, OpenAI, Anthropic, Copilot, Joule, custom agent)"]
-  B["Agent Gateway<br/>(AG-1 model-agnostic core)"]
+  B["Agent Gateway<br/>(AG-2 model-agnostic core)"]
   C["Evidence Engine<br/>(assemble evidence adapter)"]
   D["Policy Engine<br/>(evaluate policy adapter)"]
   E["Decision Record<br/>(quantivis.decision-record.v1)"]
@@ -80,13 +83,14 @@ flowchart TD
 
 ## 4. Request Contract
 
-AG-1 accepts an `AgentGatewayRequest`.
+AG-2 accepts an `AgentGatewayRequest`.
 
 | Field | Purpose | Validation | Required | Example |
 | --- | --- | --- | --- | --- |
 | `agent_id` | Identifies the submitting agent. Used as the audit actor when available. | Non-empty string. | Required | `"agent-aicis-prod"` |
 | `tenant_id` | Identifies the tenant boundary. Used for tenant validation and cross-tenant rejection. | Non-empty string. | Required | `"tenant-acme"` |
 | `organization_id` | Identifies the organization under the tenant. Used for organization validation and audit context. | Non-empty string. | Required | `"org-acme"` |
+| `idempotency_key` | Unique request key used by replay/idempotency adapters to detect duplicate or replayed submissions. | Non-empty string. | Required | `"idem-agent-aicis-prod-20260703-001"` |
 | `decision_type` | Categorizes the decision being requested. | Non-empty string. | Required | `"pricing_action"` |
 | `requested_action` | The action the agent wants to take or recommend. | Non-empty string. | Required | `"Reduce discount leakage on strategic accounts"` |
 | `evidence_references` | References to evidence the gateway adapter should assemble. | Array of non-empty strings. Defaults to empty array when omitted. | Optional | `["ev-price-001", "ev-policy-001"]` |
@@ -107,11 +111,11 @@ Validation behavior:
 
 ## 5. Decision Classification
 
-AG-1 classifies decisions with `classifyAgentDecision({ risk_level, amount })`.
+AG-2 classifies decisions with `classifyAgentDecision({ risk_level, amount })`.
 
 ### Class C
 
-Class C is the lowest risk class in AG-1.
+Class C is the lowest risk class in AG-2.
 
 Current rule:
 
@@ -120,7 +124,7 @@ Current rule:
 
 Approval effect:
 
-- If policy allows the request and returns no required approvers, AG-1 returns `APPROVED`.
+- If policy allows the request and returns no required approvers, AG-2 returns `APPROVED`.
 
 ### Class B
 
@@ -133,12 +137,12 @@ Current rule:
 
 Approval effect:
 
-- AG-1 returns `REQUIRES_APPROVAL` when the policy adapter requires approvers.
+- AG-2 returns `REQUIRES_APPROVAL` when the policy adapter requires approvers.
 - In tests, Class B maps to `["business_owner"]` through the mocked policy adapter.
 
 ### Class A
 
-Class A is the highest class in AG-1.
+Class A is the highest class in AG-2.
 
 Current rule:
 
@@ -148,8 +152,8 @@ Current rule:
 
 Approval effect:
 
-- AG-1 returns `REQUIRES_APPROVAL`.
-- AG-1 generates a Challenge Record.
+- AG-2 returns `REQUIRES_APPROVAL`.
+- AG-2 generates a Challenge Record.
 - In tests, Class A maps to `["executive_sponsor", "risk_owner", "compliance_owner"]` through the mocked policy adapter.
 
 The classification thresholds are implemented in code, not yet in an external policy-as-code registry.
@@ -158,7 +162,7 @@ The classification thresholds are implemented in code, not yet in an external po
 
 Evidence assembly occurs inside the injected `assembleEvidence(references, request)` adapter.
 
-AG-1 passes:
+AG-2 passes:
 
 - the request's `evidence_references`, and
 - the parsed `AgentGatewayRequest`.
@@ -173,10 +177,10 @@ The adapter returns an array of `GatewayEvidence` objects:
 - optional `source`
 - optional `metadata`
 
-AG-1 integrity behavior:
+AG-2 integrity behavior:
 
 - Every evidence item must have `integrity: "verified"`.
-- If any evidence item has `integrity: "unverified"` or `integrity: "failed"`, AG-1 returns `REJECTED`.
+- If any evidence item has `integrity: "unverified"` or `integrity: "failed"`, AG-2 returns `REJECTED`.
 - Evidence-integrity rejection writes an `agent_gateway.rejected` audit event with failure code `evidence_integrity_failed`.
 - Evidence-integrity rejection does not persist a Decision Record.
 - Evidence-integrity rejection does not generate a decision token.
@@ -186,11 +190,11 @@ Evidence references are stored in two places after successful processing:
 - the full assembled evidence array is stored in `DecisionRecord.evidence`;
 - evidence hashes are included in audit event payloads and in the request hash basis.
 
-AG-1 does not itself fetch files, inspect documents, validate cryptographic evidence hashes, or query the Decision Ledger. Those behaviors belong to the Evidence Engine adapter.
+AG-2 does not itself fetch files, inspect documents, validate cryptographic evidence hashes, or query the Decision Ledger. Those behaviors belong to the Evidence Engine adapter.
 
 ## 7. Challenge Generation
 
-AG-1 creates a Challenge Record only for Class A decisions because Class A represents high or critical risk, or high business impact. These decisions require explicit counterargument and governance visibility before downstream approval or execution.
+AG-2 creates a Challenge Record only for Class A decisions because Class A represents high or critical risk, or high business impact. These decisions require explicit counterargument and governance visibility before downstream approval or execution.
 
 The Challenge Record contains:
 
@@ -199,18 +203,18 @@ The Challenge Record contains:
 - `contradictory_evidence`
 - `regulatory_concerns`
 
-Current AG-1 behavior:
+Current AG-2 behavior:
 
 - `strongest_argument_against` is generated as a plain-English warning not to execute the requested action until business impact, risk owner, and evidence chain are independently reviewed.
 - `missing_evidence` contains `"No evidence references submitted."` only when the request has zero evidence references.
 - `contradictory_evidence` is populated by scanning evidence summaries and metadata for the words `contradict` or `conflict`, case-insensitive, and returning matching evidence IDs.
 - `regulatory_concerns` contains `"Critical-risk action requires human governance review before execution."` only when `risk_level` is `"critical"`.
 
-AG-1 does not yet perform semantic contradiction analysis, legal/regulatory mapping, or LLM-generated challenge synthesis. Those are AG-2+ extension points.
+AG-2 does not yet perform semantic contradiction analysis, legal/regulatory mapping, or LLM-generated challenge synthesis. Those are AG-3+ extension points.
 
 ## 8. Decision Record v1
 
-AG-1 creates a versioned Decision Record with `decision_version: "quantivis.decision-record.v1"`.
+AG-2 creates a versioned Decision Record with `decision_version: "quantivis.decision-record.v1"`.
 
 Fields:
 
@@ -218,6 +222,8 @@ Fields:
 | --- | --- |
 | `decision_id` | Stable identifier for the generated decision record. Provided by injected `generateId("decision")` or fallback timestamp ID. |
 | `decision_version` | Schema version. Current value is `quantivis.decision-record.v1`. |
+| `gateway.version` | Gateway core version. Current value is `ag-2.0.0`. |
+| `record_hash` | Stable hash of the Decision Record after audit event ID is attached. Used by the signed token payload. |
 | `tenant.tenant_id` | Tenant boundary for the record. |
 | `organization.organization_id` | Organization boundary for the record. |
 | `agent.agent_id` | Submitting agent identity. |
@@ -233,12 +239,13 @@ Fields:
 | `risk.level` | Request risk level. |
 | `approvals.required_approvers` | Required approver roles returned by policy evaluation. |
 | `approvals.policy_id` | Policy identifier returned by policy evaluation. |
+| `approvals.policy_version` | Policy version returned by policy evaluation. |
 | `approvals.approval_state` | `APPROVED` or `REQUIRES_APPROVAL` for persisted records. |
 | `challenge` | Challenge Record for Class A; otherwise `null`. |
 | `audit.audit_event_id` | Audit event ID returned by `writeAuditEvent` for `agent_gateway.decision_recorded`. |
 | `audit.request_hash` | Stable request hash over agent, tenant, organization, requested action, and evidence hashes. |
 | `timestamps.requested_at` | Current gateway time from injected `now()` or system clock. |
-| `timestamps.decided_at` | Same as `requested_at` in AG-1 because gateway routing is synchronous. |
+| `timestamps.decided_at` | Same as `requested_at` in AG-2 because gateway routing is synchronous. |
 | `timestamps.expires_at` | `requested_at` plus 24 hours. |
 | `status` | `APPROVED` or `REQUIRES_APPROVAL` for successful records. |
 | `outcome_reference` | Currently `null`; reserved for later outcome tracking. |
@@ -254,7 +261,7 @@ Versioning strategy:
 
 ## 9. Signed Decision Token
 
-AG-1 returns a `SignedDecisionToken` only for successful gateway outcomes:
+AG-2 returns a `SignedDecisionToken` only for successful gateway outcomes:
 
 - `APPROVED`
 - `REQUIRES_APPROVAL`
@@ -268,16 +275,19 @@ Token payload fields:
 | `approval_state` | `APPROVED` or `REQUIRES_APPROVAL`. |
 | `expiry` | 24-hour expiry timestamp. |
 | `required_approvers` | Required approvers from policy evaluation. |
+| `signing_key_id` | Signing key identifier supplied by gateway dependencies and included in the signed payload. |
 | `token` | Signed token string returned by injected `signDecisionToken`. |
 
 Security assumptions:
 
-- AG-1 does not implement cryptographic signing internally.
-- AG-1 delegates signing to an injected `signDecisionToken` adapter.
+- AG-2 does not implement cryptographic signing internally.
+- AG-2 delegates signing to an injected `signDecisionToken` adapter.
+- AG-2 requires `signing_key_id` in gateway dependencies and includes it in the token payload.
+- AG-2 exposes `isDecisionTokenExpired(tokenPayload, now)` so callers can enforce token expiry before trusting a token.
 - The current stable hash uses deterministic in-process hashing for payload identity. It should not be treated as a cryptographic primitive.
 - Production signing must use a real signing provider, key management, key rotation, and verification rules.
 
-Rejected requests currently do not receive tokens because AG-1 avoids issuing an authorization-like artifact for invalid, unauthorized, policy-denied, or evidence-failed requests.
+Rejected requests currently do not receive tokens because AG-2 avoids issuing an authorization-like artifact for invalid, unauthorized, policy-denied, duplicate, replayed, or evidence-failed requests.
 
 AG-2 options:
 
@@ -290,7 +300,7 @@ AG-2 options:
 
 ## 10. Multi-Tenant Model
 
-AG-1 enforces tenant and organization boundaries through injected validators:
+AG-2 enforces tenant and organization boundaries through injected validators:
 
 - `validateTenant({ tenant_id })`
 - `validateOrganization({ tenant_id, organization_id })`
@@ -313,7 +323,7 @@ Trust boundaries:
 
 ### Authentication assumptions
 
-AG-1 does not authenticate the caller itself. It assumes authentication happens before or inside the adapter/API layer that invokes `processAgentGatewayRequest`.
+AG-2 does not authenticate the caller itself. It assumes authentication happens before or inside the adapter/API layer that invokes `processAgentGatewayRequest`.
 
 Production deployment should authenticate:
 
@@ -330,48 +340,51 @@ Authorization is split:
 - tenant and organization validators reject invalid boundaries;
 - policy evaluation determines whether the request is allowed and who must approve.
 
-AG-1 does not execute final approvals.
+AG-2 does not execute final approvals.
 
 ### Audit guarantees
 
-AG-1 writes audit events for:
+AG-2 writes audit events for:
 
 - request received,
 - rejected request,
 - decision recorded.
 
-For successful requests, AG-1 writes `agent_gateway.decision_recorded`, attaches the returned audit ID to the Decision Record, and then persists the Decision Record. This ensures the persisted record contains the immutable audit event reference.
+For successful requests, AG-2 writes `agent_gateway.decision_recorded`, attaches the returned audit ID to the Decision Record, computes the Decision Record hash, and then persists the Decision Record. This ensures the persisted record contains the immutable audit event reference and record hash.
 
-If `writeAuditEvent` throws, AG-1 currently propagates the failure and does not return a successful gateway result. This is intentional fail-closed behavior for AG-1.
+If `writeAuditEvent` throws, AG-2 currently propagates the failure and does not return a successful gateway result. This is intentional fail-closed behavior for AG-2.
 
 ### Tamper resistance
 
-AG-1 records:
+AG-2 records:
 
 - evidence hashes,
 - a request hash,
 - a Decision Record hash in the token payload,
+- a Decision Record hash in the persisted Decision Record,
 - an audit event ID.
 
 These are integrity anchors, not full tamper-proof storage guarantees. Tamper resistance depends on the injected audit store, Decision Ledger persistence layer, and signing adapter.
 
 ### Replay protection
 
-AG-1 currently does not implement replay protection. It generates a 24-hour expiry timestamp but does not bind requests to nonces, idempotency keys, or replay stores.
+AG-2 implements a replay protection contract, not an internal replay store. It requires `idempotency_key` and calls optional injected `verifyReplayProtection` with idempotency key, request hash, tenant, organization, agent, and gateway time. If the adapter rejects the request as `duplicate_idempotency_key` or `replayed_request`, AG-2 returns `REJECTED`.
 
-Replay protection is deferred to AG-2.
+Replay persistence remains adapter-owned until a deployed endpoint is added.
 
 ### Idempotency
 
-AG-1 currently does not implement idempotency. If the same valid request is submitted twice, the injected `generateId` behavior determines whether IDs collide or differ. Production adapters should add idempotency keys before exposing a public endpoint.
+AG-2 requires `idempotency_key` and exposes it to the replay/idempotency adapter. It does not store idempotency state internally. Production adapters must persist idempotency keys before exposing a public endpoint.
 
-Idempotency is deferred to AG-2.
+Internal idempotency storage is deferred to the deployed endpoint/adapters.
 
 ## 12. Failure Modes
 
 | Failure mode | Current behavior |
 | --- | --- |
 | Invalid schema | Returns `REJECTED`, audits `agent_gateway.rejected` with `schema_validation_failed`, no Decision Record, no token. |
+| Duplicate idempotency key | Returns `REJECTED`, audits `agent_gateway.rejected` with `duplicate_idempotency_key`, no Decision Record, no token. |
+| Replayed request | Returns `REJECTED`, audits `agent_gateway.rejected` with `replayed_request`, no Decision Record, no token. |
 | Tenant mismatch or invalid tenant | Returns `REJECTED`, audits `agent_gateway.rejected` with `tenant_validation_failed`, no Decision Record, no token. |
 | Invalid organization or cross-tenant organization | Returns `REJECTED`, audits `agent_gateway.rejected` with `organization_validation_failed`, no Decision Record, no token. |
 | Policy denial | Returns `REJECTED`, audits `agent_gateway.rejected` with `policy_denied`, no Decision Record, no token. |
@@ -400,6 +413,7 @@ sequenceDiagram
   Gateway->>Audit: Write agent_gateway.received
   Gateway->>Gateway: Validate tenant
   Gateway->>Gateway: Validate organization
+  Gateway->>Gateway: Verify idempotency/replay contract
   Gateway->>Evidence: assembleEvidence(references, request)
   Evidence-->>Gateway: GatewayEvidence[]
   Gateway->>Gateway: Require integrity === verified
@@ -437,7 +451,7 @@ sequenceDiagram
 
 ## 14. Scalability
 
-AG-1 is designed as a stateless gateway core.
+AG-2 is designed as a stateless gateway core.
 
 Scaling characteristics:
 
@@ -449,7 +463,7 @@ Scaling characteristics:
 Expected future scaling approach:
 
 - expose the gateway through a dedicated API endpoint;
-- add idempotency keys for repeated agent submissions;
+- persist idempotency keys for repeated agent submissions;
 - move high-volume evidence assembly to asynchronous workers;
 - write events to an event bus;
 - use event sourcing for Decision Record lifecycle changes;
@@ -457,7 +471,7 @@ Expected future scaling approach:
 
 ## 15. Extension Points
 
-AG-1 supports future providers by requiring all providers to submit the same model-agnostic request contract and by pushing vendor-specific behavior into adapters.
+AG-2 supports future providers by requiring all providers to submit the same model-agnostic request contract and by pushing vendor-specific behavior into adapters.
 
 Provider integration examples:
 
@@ -478,15 +492,17 @@ Adapter extension points:
 - `persistDecisionRecord`
 - `writeAuditEvent`
 - `signDecisionToken`
+- `signing_key_id`
+- `verifyReplayProtection`
 - `getCertificationReference`
 - `now`
 - `generateId`
 
 These extension points allow provider-specific authentication, policy, evidence lookup, signing, and persistence without modifying core gateway logic.
 
-## 16. AG-2 Roadmap
+## 16. AG-3 Roadmap
 
-Architectural improvements intentionally deferred from AG-1:
+Architectural improvements intentionally deferred from AG-2:
 
 - Deployed HTTP/Supabase Edge Function endpoint.
 - Real authentication and agent credential validation.
@@ -496,8 +512,8 @@ Architectural improvements intentionally deferred from AG-1:
 - Pluggable cryptographic signing providers.
 - Key management and key rotation.
 - Distributed immutable audit store integration.
-- Replay protection with nonces or token binding.
-- Idempotency keys and duplicate request detection.
+- Durable replay protection with nonces or token binding.
+- Durable idempotency store and duplicate request replay of prior response.
 - Rejection tokens for traceability, if required.
 - Decision Record v2.
 - Open Decision Record Format publication.
@@ -518,6 +534,10 @@ Files added:
 - `src/lib/agent-gateway.ts`
 - `src/test/agent-gateway.test.ts`
 
+Files modified for AG-2:
+
+- `docs/architecture/AG-1-Agent-Gateway.md`
+
 Implementation verified in code:
 
 - request schema validation;
@@ -536,14 +556,21 @@ Implementation verified in code:
 - decision token payload generation;
 - injected token signing;
 - invalid/cross-tenant/policy/evidence rejection behavior.
+- required idempotency key validation;
+- replay protection contract rejection;
+- policy version recording;
+- gateway version recording;
+- Decision Record hash recording;
+- signing key ID in decision token;
+- token expiry helper.
 
 Tests added:
 
 - `src/test/agent-gateway.test.ts`
 
-AG-1 focused test status:
+AG-2 focused test status:
 
-- 10 tests passed.
+- 13 tests passed.
 
 Full repository verification performed after AG-1 implementation:
 
@@ -554,7 +581,7 @@ Full repository verification performed after AG-1 implementation:
 
 ### Not implemented in AG-1
 
-The following items are roadmap or adapter concerns and are not implemented in AG-1:
+The following items are roadmap or adapter concerns and are not implemented in AG-2:
 
 - deployed public API route;
 - live staging or production execution;
@@ -562,9 +589,8 @@ The following items are roadmap or adapter concerns and are not implemented in A
 - direct RLS changes;
 - direct evidence document retrieval;
 - direct cryptographic signing;
-- replay protection;
-- idempotency;
+- durable replay store;
+- durable idempotency store;
 - policy-as-code;
 - final human approval execution;
 - enterprise system action execution.
-

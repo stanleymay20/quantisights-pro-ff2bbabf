@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 export const AGENT_GATEWAY_SCHEMA_VERSION = "quantivis.decision-record.v1";
+export const AGENT_GATEWAY_VERSION = "ag-2.0.0";
 
 export type DecisionClass = "Class C" | "Class B" | "Class A";
 export type GatewayDecisionStatus = "APPROVED" | "REQUIRES_APPROVAL" | "REJECTED";
@@ -17,6 +18,7 @@ const AgentGatewayRequestSchema = z.object({
   agent_id: z.string().min(1),
   tenant_id: z.string().min(1),
   organization_id: z.string().min(1),
+  idempotency_key: z.string().min(1),
   decision_type: z.string().min(1),
   requested_action: z.string().min(1),
   evidence_references: z.array(z.string().min(1)).default([]),
@@ -48,6 +50,7 @@ export interface GatewayEvidence {
 export interface PolicyDecision {
   allowed: boolean;
   policy_id: string;
+  policy_version: string;
   reasons: string[];
   required_approvers: string[];
 }
@@ -70,6 +73,10 @@ export interface ChallengeRecord {
 export interface DecisionRecord {
   decision_id: string;
   decision_version: typeof AGENT_GATEWAY_SCHEMA_VERSION;
+  gateway: {
+    version: typeof AGENT_GATEWAY_VERSION;
+  };
+  record_hash: string;
   tenant: { tenant_id: string };
   organization: { organization_id: string };
   agent: { agent_id: string };
@@ -92,6 +99,7 @@ export interface DecisionRecord {
   approvals: {
     required_approvers: string[];
     policy_id: string;
+    policy_version: string;
     approval_state: GatewayDecisionStatus;
   };
   challenge: ChallengeRecord | null;
@@ -116,6 +124,7 @@ export interface DecisionTokenPayload {
   approval_state: GatewayDecisionStatus;
   expiry: string;
   required_approvers: string[];
+  signing_key_id: string;
 }
 
 export interface SignedDecisionToken extends DecisionTokenPayload {
@@ -143,6 +152,15 @@ export interface AgentGatewayDependencies {
   persistDecisionRecord(record: DecisionRecord): Promise<{ decision_id: string }>;
   writeAuditEvent(event: AgentGatewayAuditEvent): Promise<{ audit_id: string }>;
   signDecisionToken(payload: DecisionTokenPayload): Promise<string>;
+  signing_key_id: string;
+  verifyReplayProtection?(input: {
+    idempotency_key: string;
+    request_hash: string;
+    tenant_id: string;
+    organization_id: string;
+    agent_id: string;
+    now: string;
+  }): Promise<{ accepted: boolean; reason?: "duplicate_idempotency_key" | "replayed_request" | string }>;
   getCertificationReference?(input: {
     request: AgentGatewayRequest;
     decision_class: DecisionClass;
@@ -169,6 +187,13 @@ export function validateAgentGatewayRequest(input: unknown): {
     success: false,
     errors: parsed.error.issues.map((issue) => `${issue.path.join(".") || "request"}: ${issue.message}`),
   };
+}
+
+export function isDecisionTokenExpired(
+  token: Pick<DecisionTokenPayload, "expiry">,
+  now: string = new Date().toISOString(),
+): boolean {
+  return new Date(token.expiry).getTime() <= new Date(now).getTime();
 }
 
 export function classifyAgentDecision(input: { risk_level: RiskLevel; amount?: number | null }): DecisionClass {
@@ -216,6 +241,27 @@ export async function processAgentGatewayRequest(
   });
   if (!organization.valid) return reject(request, deps, "organization_validation_failed", organization.reason);
 
+  const requestHash = stableHash({
+    agent_id: request.agent_id,
+    tenant_id: request.tenant_id,
+    organization_id: request.organization_id,
+    idempotency_key: request.idempotency_key,
+    requested_action: request.requested_action,
+    evidence_references: request.evidence_references,
+  });
+  const now = deps.now?.() ?? new Date().toISOString();
+  const replay = await deps.verifyReplayProtection?.({
+    idempotency_key: request.idempotency_key,
+    request_hash: requestHash,
+    tenant_id: request.tenant_id,
+    organization_id: request.organization_id,
+    agent_id: request.agent_id,
+    now,
+  });
+  if (replay && !replay.accepted) {
+    return reject(request, deps, replay.reason ?? "replayed_request");
+  }
+
   const evidence = await deps.assembleEvidence(request.evidence_references, request);
   if (!evidence.every((item) => item.integrity === "verified")) {
     return reject(request, deps, "evidence_integrity_failed");
@@ -235,12 +281,12 @@ export async function processAgentGatewayRequest(
       ? "APPROVED"
       : "REQUIRES_APPROVAL";
 
-  const now = deps.now?.() ?? new Date().toISOString();
   const decisionId = deps.generateId?.("decision") ?? `decision_${Date.now()}`;
-  const requestHash = stableHash({
+  const evidenceBoundRequestHash = stableHash({
     agent_id: request.agent_id,
     tenant_id: request.tenant_id,
     organization_id: request.organization_id,
+    idempotency_key: request.idempotency_key,
     requested_action: request.requested_action,
     evidence_hashes: evidence.map((item) => item.hash),
   });
@@ -255,6 +301,10 @@ export async function processAgentGatewayRequest(
   const record: DecisionRecord = {
     decision_id: decisionId,
     decision_version: AGENT_GATEWAY_SCHEMA_VERSION,
+    gateway: {
+      version: AGENT_GATEWAY_VERSION,
+    },
+    record_hash: "",
     tenant: { tenant_id: request.tenant_id },
     organization: { organization_id: request.organization_id },
     agent: { agent_id: request.agent_id },
@@ -272,12 +322,13 @@ export async function processAgentGatewayRequest(
     approvals: {
       required_approvers: policy.required_approvers,
       policy_id: policy.policy_id,
+      policy_version: policy.policy_version,
       approval_state: status,
     },
     challenge: decisionClass === "Class A" ? buildChallengeRecord(request, evidence) : null,
     audit: {
       audit_event_id: null,
-      request_hash: requestHash,
+      request_hash: evidenceBoundRequestHash,
     },
     timestamps: {
       requested_at: now,
@@ -302,17 +353,21 @@ export async function processAgentGatewayRequest(
       approval_state: status,
       evidence_hashes: evidence.map((item) => item.hash),
       policy_id: policy.policy_id,
+      policy_version: policy.policy_version,
     },
   });
   record.audit.audit_event_id = audit.audit_id;
+  record.record_hash = buildDecisionRecordHash(record);
   await deps.persistDecisionRecord(record);
 
+  const signingKeyId = resolveSigningKeyId(deps.signing_key_id);
   const tokenPayload: DecisionTokenPayload = {
     decision_id: decisionId,
-    hash: stableHash(record),
+    hash: record.record_hash,
     approval_state: status,
     expiry: expiresAt,
     required_approvers: policy.required_approvers,
+    signing_key_id: signingKeyId,
   };
   const token = await deps.signDecisionToken(tokenPayload);
 
@@ -379,6 +434,17 @@ function addHours(iso: string, hours: number): string {
   const date = new Date(iso);
   date.setHours(date.getHours() + hours);
   return date.toISOString();
+}
+
+function buildDecisionRecordHash(record: DecisionRecord): string {
+  return stableHash({
+    ...record,
+    record_hash: "",
+  });
+}
+
+function resolveSigningKeyId(signingKeyId: string): string {
+  return signingKeyId;
 }
 
 function stableHash(value: unknown): string {
