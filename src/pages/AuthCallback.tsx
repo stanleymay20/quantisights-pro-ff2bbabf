@@ -72,6 +72,13 @@ const AuthCallback = () => {
           }
           window.history.replaceState({}, document.title, window.location.pathname);
           finish(true);
+        })
+        .catch((setSessionError: unknown) => {
+          console.error(
+            "[AuthCallback] OAuth session handoff failed:",
+            setSessionError instanceof Error ? setSessionError.message : setSessionError
+          );
+          finish(false);
         });
     }
 
