@@ -180,6 +180,7 @@ const ExecutiveDailyDriver = ({ displayName, orgId, insights, topMetrics, pendin
     .filter(i => i.escalation_tier === "critical" || i.escalation_tier === "high")
     .slice(0, 3);
   const topDecision = decisions[0];
+  const topExecutiveDecisions = decisions.slice(0, 3);
   const exposure = decisions.reduce((sum, d) => sum + Math.abs(d.predicted_net_impact ?? 0), 0);
   const highestConfidence = Math.max(0, ...decisions.map((d) => d.capped_confidence ?? 0));
   const criticalCount = criticalInterventions.length || (pendingDecisions > 0 ? 1 : 0);
@@ -243,6 +244,80 @@ const ExecutiveDailyDriver = ({ displayName, orgId, insights, topMetrics, pendin
               Refresh
             </Button>
           </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="executive-mode-title" className="rounded-2xl border border-border/40 bg-background p-5 sm:p-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <Badge variant="outline" className="w-fit text-[10px] uppercase tracking-wide">Executive Mode</Badge>
+            <h2 id="executive-mode-title" className="mt-2 text-xl font-semibold tracking-tight">
+              Today I recommend {topExecutiveDecisions.length || 0} decision{topExecutiveDecisions.length === 1 ? "" : "s"}.
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              AICIS keeps the first screen focused on the decisions that need executive judgment now.
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-9 shrink-0"
+            onClick={() => navigate(topExecutiveDecisions.length ? "/decisions?review=top" : "/reports")}
+          >
+            {topExecutiveDecisions.length ? "Review top decision" : "Open reports"}
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        </div>
+
+        <div className="mt-5 grid gap-3 lg:grid-cols-3">
+          {topExecutiveDecisions.length > 0 ? topExecutiveDecisions.map((decision, index) => (
+            <Card key={decision.id} className={index === 0 ? "border-primary/25 bg-primary/[0.02]" : ""}>
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <Badge variant={index === 0 ? "default" : "outline"} className="text-[10px]">
+                    Decision {index + 1}
+                  </Badge>
+                  {decision.capped_confidence !== null && (
+                    <span className="text-xs font-semibold text-primary">{decision.capped_confidence}%</span>
+                  )}
+                </div>
+                <p className="mt-3 line-clamp-2 text-sm font-semibold">{decision.recommended_action}</p>
+                <div className="mt-4 space-y-2 text-xs text-muted-foreground">
+                  <div className="flex items-center justify-between gap-3">
+                    <span>Expected impact</span>
+                    <span className="font-medium text-foreground">
+                      {decision.predicted_net_impact != null ? EURO(Math.abs(decision.predicted_net_impact)) : "Pending"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span>Evidence</span>
+                    <span className="font-medium text-foreground">Review required</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span>Risk</span>
+                    <span className={index === 0 ? "font-medium text-destructive" : "font-medium text-warning"}>
+                      {index === 0 ? "High" : "Medium"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span>Estimated execution</span>
+                    <span className="font-medium text-foreground">3 days</span>
+                  </div>
+                </div>
+                <Button
+                  className="mt-4 h-8 w-full text-xs"
+                  variant={index === 0 ? "default" : "outline"}
+                  onClick={() => navigate(index === 0 ? "/decisions?review=top" : "/decisions")}
+                >
+                  Review
+                </Button>
+              </CardContent>
+            </Card>
+          )) : (
+            <div className="rounded-xl border border-dashed border-border/60 p-5 text-sm text-muted-foreground lg:col-span-3">
+              No active executive decisions. We&apos;ll surface the next decision here when AICIS has enough evidence.
+            </div>
+          )}
         </div>
       </section>
 

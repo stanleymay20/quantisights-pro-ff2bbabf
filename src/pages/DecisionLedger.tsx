@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { SidebarMobileToggle } from "@/components/layout/ProtectedShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -125,6 +126,9 @@ function isLedgerDecisionReadyForApproval(decision: Decision): boolean {
 }
 
 const DecisionLedgerPage = () => {
+  const isExecutiveReviewMode =
+    typeof window !== "undefined" && new URLSearchParams(window.location.search).get("review") === "top";
+  const executiveReviewRef = useRef<HTMLElement | null>(null);
   const { currentOrgId } = useOrganization();
   const { activeDatasetId } = useProject();
   const { user } = useAuth();
@@ -138,6 +142,7 @@ const DecisionLedgerPage = () => {
 
   // Execution & Replay state
   const [expandedDecision, setExpandedDecision] = useState<string | null>(null);
+  const [showAnalystDetails, setShowAnalystDetails] = useState(!isExecutiveReviewMode);
 
   // Impact simulation state
   const [simTarget, setSimTarget] = useState<string | null>(null);
@@ -431,6 +436,15 @@ const DecisionLedgerPage = () => {
     }
   }, [activeDecisions, expandedDecision, loading]);
 
+  useEffect(() => {
+    if (!isExecutiveReviewMode || loading || !expandedDecision || !executiveReviewRef.current) return;
+    window.setTimeout(() => {
+      executiveReviewRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 0);
+  }, [expandedDecision, isExecutiveReviewMode, loading]);
+
+  const executiveReviewDecision = activeDecisions[0] ?? null;
+
   return (
     <>
         <header className="border-b border-border/30 flex items-center justify-between px-6 md:px-8 py-3 shrink-0 bg-background/60 backdrop-blur-sm">
@@ -456,6 +470,59 @@ const DecisionLedgerPage = () => {
           <LazyInputWarning decisions={decisions} />
         <main className="flex-1 p-8 overflow-auto space-y-6">
           <SectionErrorBoundary sectionName="Decision Ledger">
+          {isExecutiveReviewMode && executiveReviewDecision && currentOrgId && (
+            <section
+              ref={executiveReviewRef}
+              id="executive-review-top-section"
+              data-testid="executive-review-focus-anchor"
+              className="scroll-mt-6 space-y-4 rounded-2xl border border-primary/25 bg-primary/[0.03] p-4 sm:p-6"
+            >
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <Badge variant="outline" className="w-fit text-[10px] uppercase tracking-wide">
+                    Today's Decision
+                  </Badge>
+                  <h2 className="mt-2 text-xl font-semibold tracking-tight sm:text-2xl">
+                    Executive review first
+                  </h2>
+                  <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+                    Start with the decision, evidence, approval gate, alternatives, and outcome plan. Analyst detail stays available below.
+                  </p>
+                </div>
+                <Button variant="outline" size="sm" onClick={() => setShowAnalystDetails(true)}>
+                  Need more detail? Expand analyst details
+                </Button>
+              </div>
+              <ExecutiveDecisionReview
+                decision={executiveReviewDecision}
+                organizationId={currentOrgId}
+              />
+            </section>
+          )}
+
+          <Collapsible
+            defaultOpen={!isExecutiveReviewMode}
+            onOpenChange={setShowAnalystDetails}
+            className="space-y-4"
+          >
+            {isExecutiveReviewMode && (
+              <div className="flex justify-center">
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" size="sm" className="text-muted-foreground">
+                    Need more detail? {showAnalystDetails ? "Hide analyst details" : "Expand analyst details"}
+                  </Button>
+                </CollapsibleTrigger>
+              </div>
+            )}
+            <CollapsibleContent className="space-y-6">
+              {isExecutiveReviewMode && (
+                <div className="rounded-xl border border-border/40 bg-muted/20 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Analyst detail</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Metrics, queues, simulations, and full execution panels are collapsed by default in executive review mode.
+                  </p>
+                </div>
+              )}
           {/* Summary cards */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3">
             <Card>
@@ -1055,6 +1122,8 @@ const DecisionLedgerPage = () => {
               ))}
             </TabsContent>
           </Tabs>
+            </CollapsibleContent>
+          </Collapsible>
           </SectionErrorBoundary>
         </main>
 
