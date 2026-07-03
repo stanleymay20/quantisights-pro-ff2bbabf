@@ -4,8 +4,8 @@
  * Returns the set of top-level sidebar paths visible to the current user
  * based on their org role.
  *
- * Sprint A — Sidebar IA collapse: 5 primary items
- *   Home · Copilot · Decisions · Outcomes · Workspace
+ * UX-1 — Executive IA collapse:
+ *   Dashboard · Decisions · Operations · Reports · Governance · Settings
  *
  * Power-user routes live in the "Advanced" drawer (gated separately in
  * DashboardSidebar by role).
@@ -21,13 +21,14 @@ export type OrgRole =
   | null
   | undefined;
 
-/** 5 primary sidebar paths (post-IA-collapse) */
+/** Executive sidebar paths (UX-1) */
 const ALL_PATHS = new Set([
   "/dashboard",
-  "/copilot",
   "/decisions",
   "/outcomes",
-  "/settings", // Workspace section anchors on /settings
+  "/reports",
+  "/governance",
+  "/settings",
 ]);
 
 const ROLE_PATHS: Record<NonNullable<Exclude<OrgRole, null | undefined>>, Set<string>> = {
@@ -38,9 +39,10 @@ const ROLE_PATHS: Record<NonNullable<Exclude<OrgRole, null | undefined>>, Set<st
   steward: ALL_PATHS,
   viewer: new Set([
     "/dashboard",
-    "/copilot",
     "/decisions",
     "/outcomes",
+    "/reports",
+    "/governance",
     "/settings",
   ]),
 };

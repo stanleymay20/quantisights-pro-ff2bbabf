@@ -340,6 +340,7 @@ export const routes: RouteEntry[] = [
   { path: "/decision-maturity", element: <DecisionMaturity />, layout: "full" },
 
   // ══════ Organization & Admin ══════
+  { path: "/workspace", element: <Navigate to="/settings" replace />, layout: "none" },
   { path: "/team", element: <Team />, layout: "full" },
   { path: "/clients", element: <Clients />, layout: "full" },
   { path: "/billing", element: <Billing />, layout: "full" },

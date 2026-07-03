@@ -43,7 +43,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useOrganization } from "@/hooks/useOrganization";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useRoleNav } from "@/hooks/useRoleNav";
-import { useIndustryLabels } from "@/hooks/useIndustryLanguage";
 import { useIsMobile } from "@/hooks/use-mobile";
 import logo from "@/assets/quantivis-logo.png";
 import WorkspaceSwitcher from "@/components/dashboard/WorkspaceSwitcher";
@@ -70,31 +69,23 @@ interface AdvancedGroup {
   items: NavItem[];
 }
 
-// ─── PRIMARY NAV — 5 outcome-oriented items ──────────────────────────────────
-// Sprint A IA collapse: per audit recommendation
-//   Home · Copilot · Decisions · Outcomes · Workspace
+// ─── PRIMARY NAV — executive outcome-oriented items ──────────────────────────
+// UX-1 IA collapse:
+//   Dashboard · Decisions · Operations · Reports · Governance · Settings
 // Power-user pages live under "Advanced" at the bottom of the sidebar.
 const navSections: NavSection[] = [
   {
     icon: LayoutDashboard,
-    label: "Home",
+    label: "Dashboard",
     path: "/dashboard",
-  },
-  {
-    icon: MessageSquareText,
-    label: "Copilot",
-    path: "/copilot",
-    subItems: [
-      { icon: MessageSquareText, label: "Ask Quantivis",      path: "/copilot" },
-      { icon: BarChart3,         label: "Copilot Analytics",  path: "/copilot/analytics" },
-    ],
   },
   {
     icon: ClipboardList,
     label: "Decisions",
     path: "/decisions",
     subItems: [
-      { icon: ClipboardList,  label: "Decision Ledger",  path: "/decisions" },
+      { icon: ClipboardList,  label: "Decision History", path: "/decisions" },
+      { icon: MessageSquareText, label: "Ask Quantivis", path: "/app/copilot" },
       { icon: Scale,          label: "Deliberation",     path: "/deliberation" },
       { icon: Users,          label: "AI Boardroom",     path: "/ai-boardroom" },
       { icon: PlayCircle,     label: "Execution",        path: "/execution" },
@@ -103,10 +94,10 @@ const navSections: NavSection[] = [
   },
   {
     icon: Target,
-    label: "Outcomes",
+    label: "Operations",
     path: "/outcomes",
     subItems: [
-      { icon: Target,         label: "Outcomes",          path: "/outcomes" },
+      { icon: Target,         label: "Outcome Tracking",  path: "/outcomes" },
       { icon: BarChart3,      label: "Decision Accuracy", path: "/decision-accuracy" },
       { icon: Clock,          label: "History",           path: "/history" },
       { icon: ShieldAlert,    label: "Executive Intel",   path: "/executive-intelligence" },
@@ -115,16 +106,36 @@ const navSections: NavSection[] = [
     ],
   },
   {
-    icon: Briefcase,
-    label: "Workspace",
+    icon: FileText,
+    label: "Reports",
+    path: "/reports",
+    subItems: [
+      { icon: FileText,    label: "Reports",       path: "/reports" },
+      { icon: FileText,    label: "Board Report",  path: "/board-report" },
+      { icon: TrendingUp,  label: "Forecasting",   path: "/forecasting" },
+      { icon: Brain,       label: "Simulations",   path: "/simulations" },
+    ],
+  },
+  {
+    icon: Shield,
+    label: "Governance",
+    path: "/governance",
+    subItems: [
+      { icon: Shield,       label: "Command View",       path: "/governance" },
+      { icon: CheckSquare,  label: "Compliance",         path: "/compliance" },
+      { icon: Shield,       label: "Trust Center",       path: "/trust" },
+      { icon: Activity,     label: "System Health",      path: "/system-health" },
+    ],
+  },
+  {
+    icon: SettingsIcon,
+    label: "Settings",
     path: "/settings",
     subItems: [
       { icon: SettingsIcon,   label: "Settings",       path: "/settings" },
       { icon: Users,          label: "Team",           path: "/team" },
       { icon: CreditCard,     label: "Billing",        path: "/billing" },
       { icon: Upload,         label: "Data",           path: "/data-upload" },
-      { icon: Shield,         label: "Governance",     path: "/governance" },
-      { icon: Activity,       label: "System Health",  path: "/system-health" },
     ],
   },
 ];
@@ -448,7 +459,6 @@ const DashboardSidebar = () => {
   const { currentOrg } = useOrganization();
   const { orgRole } = usePermissions();
   const allowedPaths = useRoleNav(orgRole as any);
-  const lang = useIndustryLabels(currentOrg?.industry);
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = useIsMobile();
@@ -535,20 +545,14 @@ const DashboardSidebar = () => {
           })
         ) : (
           <>
-            {navSections.filter(s => allowedPaths.has(s.path)).map((section) => {
-              const labelOverrides: Partial<Record<string, string>> = {
-                "/decisions": lang.decisions,
-              };
-              return (
-                <SectionBlock
-                  key={section.label}
-                  section={section}
-                  location={location}
-                  onNavClick={handleNavClick}
-                  labelOverride={labelOverrides[section.path]}
-                />
-              );
-            })}
+            {navSections.filter(s => allowedPaths.has(s.path)).map((section) => (
+              <SectionBlock
+                key={section.label}
+                section={section}
+                location={location}
+                onNavClick={handleNavClick}
+              />
+            ))}
 
             {showAdvanced && (
               <AdvancedDrawer location={location} onNavClick={handleNavClick} />

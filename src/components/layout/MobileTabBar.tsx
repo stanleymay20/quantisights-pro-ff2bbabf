@@ -6,8 +6,8 @@
  *
  * Phase 5 — IA v1.1 Section 7: Mobile Navigation Strategy.
  *
- * Tab layout (5 items):
- *   Home · Copilot · Decisions · Data · More
+ * Tab layout:
+ *   Dashboard · Decisions · Operations · Reports · More
  *
  * "More" opens a slide-up drawer containing:
  *   Reports · Monitor · Governance · Team · Settings
@@ -22,7 +22,7 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, MessageSquareText, ClipboardList,
-  Target, Briefcase, MoreHorizontal, X,
+  Target, MoreHorizontal, X,
   FileText, BarChart2, Shield, Users, Settings, Upload, Plug, Activity,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -36,24 +36,23 @@ interface TabItem {
   path: string;
 }
 
-// Sprint A IA collapse: 5 primary tabs aligned with desktop sidebar
+// UX-1 primary tabs aligned with desktop executive sidebar
 const PRIMARY_TABS: TabItem[] = [
-  { icon: LayoutDashboard,   label: "Home",      path: "/dashboard" },
-  { icon: MessageSquareText, label: "Copilot",   path: "/copilot" },
+  { icon: LayoutDashboard,   label: "Dashboard", path: "/dashboard" },
   { icon: ClipboardList,     label: "Decisions", path: "/decisions" },
-  { icon: Target,            label: "Outcomes",  path: "/outcomes" },
+  { icon: Target,            label: "Operations",path: "/outcomes" },
+  { icon: FileText,          label: "Reports",   path: "/reports" },
 ];
 
-// "More" reveals Workspace items + power-user pages
+// "More" reveals settings, governed AI help, and power-user pages
 const MORE_ITEMS: TabItem[] = [
-  { icon: Briefcase, label: "Workspace",   path: "/settings" },
+  { icon: Settings,  label: "Settings",    path: "/settings" },
+  { icon: MessageSquareText, label: "Ask Quantivis", path: "/app/copilot" },
   { icon: Users,     label: "Team",        path: "/team" },
   { icon: Upload,    label: "Data",        path: "/data-upload" },
   { icon: Shield,    label: "Governance",  path: "/governance" },
-  { icon: FileText,  label: "Reports",     path: "/reports" },
   { icon: BarChart2, label: "Monitor",     path: "/executive-intelligence" },
   { icon: Activity,  label: "System Health",path: "/system-health" },
-  { icon: Settings,  label: "Settings",    path: "/settings" },
 ];
 
 const MobileTabBar = () => {
