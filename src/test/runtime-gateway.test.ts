@@ -147,7 +147,9 @@ describe("AG-3A runtime gateway foundation", () => {
     const status = gateway.healthCheck();
     const standalone = healthCheck(gateway);
 
-    expect(status).toEqual(standalone);
+    const { uptime_ms: _statusUptime, ...stableStatus } = status;
+    const { uptime_ms: _standaloneUptime, ...stableStandalone } = standalone;
+    expect(stableStatus).toEqual(stableStandalone);
     expect(status).toMatchObject({
       runtime_version: RUNTIME_GATEWAY_VERSION,
       gateway_version: AGENT_GATEWAY_VERSION,
