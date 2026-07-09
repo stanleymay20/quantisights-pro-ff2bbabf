@@ -33,7 +33,7 @@ describe("enterprise readiness foundation", () => {
   it("serves the trust center at /trust and redirects the legacy route", () => {
     const routes = read("src/routes/index.tsx");
 
-    expect(routes).toContain('{ path: "/trust", element: <TrustCenter />, layout: "public" }');
+    expect(routes).toContain('{ path: "/trust", element: <SecurityTrustCenter />, layout: "public" }');
     expect(routes).toContain(
       '{ path: "/trust-center", element: <Navigate to="/trust" replace />, layout: "none" }',
     );
@@ -143,7 +143,7 @@ describe("enterprise readiness foundation", () => {
       read("src/pages/Pricing.tsx"),
       read("src/pages/SLA.tsx"),
       read("src/pages/SecurityQuestionnaire.tsx"),
-      read("src/pages/TrustCenter.tsx"),
+      read("src/pages/SecurityTrustCenter.tsx"),
       read("src/lib/copilot-answer-engine.ts"),
     ].join("\n");
 
@@ -210,7 +210,7 @@ describe("enterprise readiness foundation", () => {
   });
 
   it("removes unsupported absolutes from the public trust surface", () => {
-    const trust = read("src/pages/TrustCenter.tsx");
+    const trust = read("src/pages/SecurityTrustCenter.tsx");
     const evidence = read("src/components/security/AttestedEvidence.tsx");
     for (const unsupported of [
       "Your data never leaves the EU",
@@ -250,7 +250,7 @@ describe("enterprise readiness foundation", () => {
     expect(existsSync(resolve(root, "src/components/security/SecurityHeaderStatus.tsx"))).toBe(true);
     const diagnostic = read("src/components/security/SecurityHeaderStatus.tsx");
     expect(diagnostic).toContain("Security headers not verified on current deployment.");
-    expect(read("src/pages/TrustCenter.tsx")).toContain("<SecurityHeaderStatus />");
+    expect(read("src/pages/SecurityTrustCenter.tsx")).toContain("<SecurityHeaderStatus />");
     expect(read("src/pages/Security.tsx")).toContain("<SecurityHeaderStatus />");
   });
 
