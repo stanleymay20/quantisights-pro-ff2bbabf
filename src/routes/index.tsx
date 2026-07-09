@@ -41,6 +41,7 @@ const DecisionLedger = lazy(() => import("@/pages/DecisionLedger"));
 const ExecutiveBrief = lazy(() => import("@/pages/ExecutiveBrief"));
 const DecisionReview = lazy(() => import("@/pages/DecisionReview"));
 const DecisionOutcome = lazy(() => import("@/pages/DecisionOutcome"));
+const EvidencePack = lazy(() => import("@/pages/EvidencePack"));
 const Deliberation = lazy(() => import("@/pages/Deliberation"));
 const AIBoardroom = lazy(() => import("@/pages/AIBoardroom"));
 const DecisionIntelligence = lazy(() => import("@/pages/DecisionIntelligence"));
@@ -296,6 +297,7 @@ export const routes: RouteEntry[] = [
   { path: "/decisions", element: <DecisionLedger />, layout: "full" },
   { path: "/decisions/:id/review", element: <DecisionReview />, layout: "full" },
   { path: "/decisions/:id/outcome", element: <DecisionOutcome />, layout: "full" },
+  { path: "/evidence-pack/:decisionId", element: <EvidencePack />, layout: "full" },
   { path: "/deliberation", element: <Deliberation />, layout: "full" },
   { path: "/ai-boardroom", element: <AIBoardroom />, layout: "full" },
   { path: "/decision-intelligence", element: <DecisionIntelligence />, layout: "full" },
