@@ -53,11 +53,19 @@ describe("TC-1 Enterprise Trust Center — data model", () => {
     expect(byKey.rts_1.status).not.toBe("Implemented");
     expect(byKey.agent_gateway.status).not.toBe("Implemented");
     expect(byKey.runtime_gateway.status).not.toBe("Implemented");
+    expect(byKey.runtime_service.status).not.toBe("Implemented");
     expect(byKey.queue.status).not.toBe("Implemented");
     expect(byKey.persistence.status).not.toBe("Implemented");
     expect(byKey.signing.status).toBe("Not Implemented");
     expect(byKey.scenario_templates.status).toBe("Not Implemented");
     expect(byKey.http_runtime.status).toBe("Not Implemented");
+  });
+
+  it("includes Runtime Service as a capability distinct from Runtime Gateway", () => {
+    const byKey = Object.fromEntries(getCapabilityMatrix().map((c) => [c.key, c]));
+    expect(byKey.runtime_service).toBeDefined();
+    expect(byKey.runtime_service.key).not.toBe(byKey.runtime_gateway.key);
+    expect(byKey.runtime_service.evidence).toContain("src/lib/runtime-service.ts");
   });
 
   it("marks live, wired systems as Implemented with cited evidence", () => {
