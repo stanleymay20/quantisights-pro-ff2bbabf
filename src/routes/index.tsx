@@ -87,6 +87,7 @@ const GovernanceMaturity = lazy(() => import("@/pages/GovernanceMaturity"));
 const Compliance = lazy(() => import("@/pages/Compliance"));
 const AlertPlaybooks = lazy(() => import("@/pages/AlertPlaybooks"));
 const SystemHealth = lazy(() => import("@/pages/SystemHealth"));
+const SecurityTrustCenter = lazy(() => import("@/pages/SecurityTrustCenter"));
 const TrustCenter = lazy(() => import("@/pages/TrustCenter"));
 const SecurityPolicy = lazy(() => import("@/pages/SecurityPolicy"));
 const SecurityOverview = lazy(() => import("@/pages/SecurityOverview"));
@@ -233,7 +234,8 @@ export const routes: RouteEntry[] = [
   // layout: "none" — renders own Navbar/Footer (DS-0).
   { path: "/enterprise/contact", element: <EnterpriseContact />, layout: "none" },
   { path: "/competitive-analysis", element: <CompetitiveAnalysis />, layout: "full" },
-  { path: "/trust", element: <TrustCenter />, layout: "public" },
+  { path: "/trust", element: <SecurityTrustCenter />, layout: "public" },
+  { path: "/enterprise/trust", element: <TrustCenter />, layout: "public" },
   { path: "/trust-center", element: <Navigate to="/trust" replace />, layout: "none" },
   { path: "/docs", element: <Documentation />, layout: "public" },
   { path: "/api-docs", element: <APIDocs />, layout: "public" },
