@@ -106,6 +106,18 @@ export function getCapabilityMatrix(): CapabilityEntry[] {
       evidence: ["docs/architecture/AG-3-Runtime-Gateway.md", "src/lib/runtime-gateway.ts", "src/test/runtime-gateway.test.ts"],
     },
     {
+      key: "runtime_service",
+      label: "Runtime Service",
+      status: "Partially Implemented",
+      detail:
+        "Health/readiness reporting and gateway request (de)serialization are coded and tested as a framework-agnostic boundary (AG-3B). No live caller imports it outside its own test suite.",
+      evidence: [
+        "docs/architecture/AG-3B-Runtime-Service.md",
+        "src/lib/runtime-service.ts",
+        "src/test/runtime-service.test.ts",
+      ],
+    },
+    {
       key: "queue",
       label: "Queue",
       status: "Partially Implemented",
