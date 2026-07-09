@@ -93,6 +93,13 @@ const DecisionOutcome = () => {
             <Link to="/outcomes" className="font-medium text-primary underline-offset-2 hover:underline">
               Outcome Tracking
             </Link>
+            . For the full auditor-facing record, open the{" "}
+            <Link
+              to={`/evidence-pack/${decision.id}`}
+              className="font-medium text-primary underline-offset-2 hover:underline"
+            >
+              Evidence Pack
+            </Link>
             .
           </p>
         </div>
