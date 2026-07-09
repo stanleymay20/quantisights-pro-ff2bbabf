@@ -231,6 +231,13 @@ const ExecutiveDailyDriver = ({ displayName, orgId, insights, topMetrics, pendin
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
             <Button
+              variant="outline"
+              className="h-10 w-fit shrink-0"
+              onClick={() => navigate("/executive-brief")}
+            >
+              Open Executive Brief
+            </Button>
+            <Button
               size="sm"
               variant="outline"
               className="h-10 w-fit shrink-0 gap-1.5"
