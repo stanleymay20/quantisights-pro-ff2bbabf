@@ -1,5 +1,8 @@
 import { z } from "zod";
 
+import { createCryptoSigningAdapter } from "@/lib/crypto-signing";
+import type { KeyProvider } from "@/lib/key-management-types";
+
 export const AGENT_GATEWAY_SCHEMA_VERSION = "quantivis.decision-record.v1";
 export const AGENT_GATEWAY_VERSION = "ag-2.0.0";
 
@@ -118,10 +121,24 @@ export interface DecisionRecord {
   metadata: Record<string, unknown>;
 }
 
+/** GA-3: decision tokens are now real signed artifacts (see crypto-signing.ts /
+ *  key-management.ts). This schema version identifies the payload shape
+ *  that gets canonicalized and signed — separate from AGENT_GATEWAY_SCHEMA_VERSION,
+ *  which identifies the DecisionRecord shape. */
+export const DECISION_TOKEN_SCHEMA_VERSION = "quantivis.decision-token.v1";
+
 export interface DecisionTokenPayload {
+  token_schema_version: typeof DECISION_TOKEN_SCHEMA_VERSION;
   decision_id: string;
+  /** @deprecated kept for backward compatibility; identical to decision_record_hash. */
   hash: string;
+  decision_record_hash: string;
+  tenant_id: string;
+  organization_id: string;
+  policy_id: string;
+  policy_version: string;
   approval_state: GatewayDecisionStatus;
+  issued_at: string;
   expiry: string;
   required_approvers: string[];
   signing_key_id: string;
@@ -362,9 +379,16 @@ export async function processAgentGatewayRequest(
 
   const signingKeyId = resolveSigningKeyId(deps.signing_key_id);
   const tokenPayload: DecisionTokenPayload = {
+    token_schema_version: DECISION_TOKEN_SCHEMA_VERSION,
     decision_id: decisionId,
     hash: record.record_hash,
+    decision_record_hash: record.record_hash,
+    tenant_id: request.tenant_id,
+    organization_id: request.organization_id,
+    policy_id: policy.policy_id,
+    policy_version: policy.policy_version,
     approval_state: status,
+    issued_at: now,
     expiry: expiresAt,
     required_approvers: policy.required_approvers,
     signing_key_id: signingKeyId,
@@ -445,6 +469,29 @@ function buildDecisionRecordHash(record: DecisionRecord): string {
 
 function resolveSigningKeyId(signingKeyId: string): string {
   return signingKeyId;
+}
+
+/**
+ * GA-3: builds a real Ed25519-backed `AgentGatewayDependencies.signDecisionToken`
+ * implementation from an injected KeyProvider. The returned function
+ * canonicalizes the token payload, signs it with the provider's active
+ * "decision_token" key, and returns the signed envelope as a JSON string —
+ * `deps.signDecisionToken`'s contract (`Promise<string>`) is unchanged;
+ * only its content is now a real signature instead of a mock string.
+ * Replaces the mock signing previously used on the production Supplier
+ * Risk path (see src/lib/supplier-risk-runtime-pipeline.ts).
+ */
+export function createEd25519DecisionTokenSigner(
+  keyProvider: KeyProvider,
+): (payload: DecisionTokenPayload) => Promise<string> {
+  const adapter = createCryptoSigningAdapter(keyProvider);
+  return async (payload) => {
+    const envelope = await adapter.signCanonicalPayload(payload as unknown as Record<string, any>, {
+      purpose: "decision_token",
+      now: payload.issued_at,
+    });
+    return JSON.stringify(envelope);
+  };
 }
 
 function stableHash(value: unknown): string {

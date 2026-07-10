@@ -16,12 +16,16 @@ import {
   type EvidencePackAuditEntry,
   type EvidencePackDecisionInput,
   type EvidencePackGovernanceItem,
+  type EvidencePackManifestPayload,
   type EvidencePackPdfBlock,
   type EvidencePackPdfReadyModel,
   type EvidencePackSection,
   type EvidencePackSections,
   type EvidencePackTimelineStep,
 } from "@/lib/evidence-pack-types";
+import { createCryptoSigningAdapter } from "@/lib/crypto-signing";
+import type { SignedEnvelope } from "@/lib/crypto-signing-types";
+import type { KeyProvider } from "@/lib/key-management-types";
 
 /**
  * EP-1 — Enterprise Decision Evidence Pack builder.
@@ -566,15 +570,39 @@ function buildOutcomePrediction(decision: EvidencePackDecisionInput): EvidencePa
   });
 }
 
-function buildDigitalSignaturePlaceholder(): EvidencePackSection {
+/**
+ * GA-3: honest default when no signing provider was supplied. Never a mock
+ * signature — an unsigned pack is always reported as unsigned.
+ */
+function buildDigitalSignatureUnavailable(): EvidencePackSection {
   return section({
-    status: "not_applicable",
+    status: "unavailable",
     title: "Digital Signature",
     summary:
-      "Digital signing is not yet implemented. This section is a placeholder for a future cryptographic signature over evidence_pack_hash.",
+      "SIGNING NOT AVAILABLE — no signing provider was supplied when this Evidence Pack was generated. evidence_pack_hash is present but this pack is not cryptographically signed.",
     source: "not_applicable",
     generated_from: [],
     data: { algorithm: null, signature: null, signed_by: null, signed_at: null },
+  });
+}
+
+/** GA-3: real signed-manifest state — populated only from an actual Ed25519 signature. */
+function buildDigitalSignatureSigned(envelope: SignedEnvelope<Record<string, any>>): EvidencePackSection {
+  return section({
+    status: "complete",
+    title: "Digital Signature",
+    summary: `Signed manifest — algorithm ${envelope.signature.algorithm}, key ${envelope.signature.key_id}, issued ${envelope.signature.issued_at}.`,
+    source: "computed from the signed Evidence Pack manifest (GA-3 crypto-signing)",
+    generated_from: ["evidence_pack_hash"],
+    data: {
+      algorithm: envelope.signature.algorithm,
+      key_id: envelope.signature.key_id,
+      purpose: envelope.signature.purpose,
+      schema_version: envelope.signature.schema_version,
+      issued_at: envelope.signature.issued_at,
+      signature: envelope.signature.signature,
+      manifest: envelope.payload as unknown as Record<string, unknown>,
+    },
   });
 }
 
@@ -663,7 +691,7 @@ export function buildEvidencePack(
   const sections: EvidencePackSections = {
     ...sectionsWithoutHash,
     hashes,
-    digital_signature: buildDigitalSignaturePlaceholder(),
+    digital_signature: buildDigitalSignatureUnavailable(),
   };
 
   return {
@@ -677,7 +705,69 @@ export function buildEvidencePack(
   };
 }
 
-/** Deterministic JSON export. */
+/**
+ * GA-3: the manifest is *about* the pack (its hash and provenance
+ * references) — this is what gets signed, never the rendered HTML/JSON
+ * export itself. References are derived only from data already present on
+ * `pack`'s own sections; nothing is invented.
+ */
+export function buildEvidencePackManifestPayload(pack: EvidencePack): EvidencePackManifestPayload {
+  const auditEntries =
+    (pack.sections.audit_trail.data.entries as unknown as EvidencePackAuditEntry[] | undefined) ?? [];
+  return {
+    evidence_pack_schema_version: pack.schema_version,
+    evidence_pack_hash: pack.evidence_pack_hash,
+    decision_id: pack.decision_id,
+    organization_id: pack.organization_id,
+    generated_at: pack.generated_at,
+    source_data_references: pack.sections.evidence_summary.generated_from,
+    audit_references: auditEntries.map((entry) => `${entry.action_type}@${entry.occurred_at}`),
+  };
+}
+
+/**
+ * GA-3: signs the Evidence Pack's manifest with the injected KeyProvider's
+ * active "evidence_pack" key. Additive and async — `buildEvidencePack`
+ * itself stays synchronous and unsigned; callers with a real signing
+ * provider call this afterward and pass the result to
+ * `attachEvidencePackSignature`. Throws if no active "evidence_pack" key is
+ * available — callers should catch this and fall back to the honest
+ * "SIGNING NOT AVAILABLE" state rather than ever producing a mock signature.
+ */
+export async function signEvidencePackManifest(
+  pack: EvidencePack,
+  keyProvider: KeyProvider,
+  now: string,
+): Promise<SignedEnvelope<Record<string, any>>> {
+  const adapter = createCryptoSigningAdapter(keyProvider);
+  const payload = buildEvidencePackManifestPayload(pack);
+  return adapter.signCanonicalPayload(payload as unknown as Record<string, any>, {
+    purpose: "evidence_pack",
+    now,
+  });
+}
+
+/**
+ * Returns a new EvidencePack with the "digital_signature" section replaced
+ * by the signed manifest's public verification metadata (never the private
+ * key). Never mutates the input pack. Pass `envelope: null` to explicitly
+ * (re)apply the honest "SIGNING NOT AVAILABLE" state — e.g. when signing
+ * was attempted but no signing provider/active key was available.
+ */
+export function attachEvidencePackSignature(
+  pack: EvidencePack,
+  envelope: SignedEnvelope<Record<string, any>> | null,
+): EvidencePack {
+  return {
+    ...pack,
+    sections: {
+      ...pack.sections,
+      digital_signature: envelope ? buildDigitalSignatureSigned(envelope) : buildDigitalSignatureUnavailable(),
+    },
+  };
+}
+
+/** Deterministic JSON export. Includes the signed manifest (if attached) since it's just another section. */
 export function evidencePackToJSON(pack: EvidencePack): string {
   return JSON.stringify(pack, null, 2);
 }
