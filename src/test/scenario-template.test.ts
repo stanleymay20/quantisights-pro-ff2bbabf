@@ -181,6 +181,16 @@ describe("ST-1 scenario template data model", () => {
       }
     }
   });
+
+  it("never requires its own Trust Center capability, so readiness can never be circular", () => {
+    // Scenario Templates is itself a Trust Center capability (TC-1.1). If any
+    // template listed "scenario_templates" in required_capabilities, that
+    // template's readiness would depend on the status of the very framework
+    // computing it — this asserts that never happens.
+    for (const template of getScenarioTemplates()) {
+      expect(template.required_capabilities).not.toContain("scenario_templates");
+    }
+  });
 });
 
 describe("ST-1 decision flow", () => {

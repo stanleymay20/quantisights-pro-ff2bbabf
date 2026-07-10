@@ -57,7 +57,6 @@ describe("TC-1 Enterprise Trust Center — data model", () => {
     expect(byKey.queue.status).not.toBe("Implemented");
     expect(byKey.persistence.status).not.toBe("Implemented");
     expect(byKey.signing.status).toBe("Not Implemented");
-    expect(byKey.scenario_templates.status).toBe("Not Implemented");
     expect(byKey.http_runtime.status).toBe("Not Implemented");
   });
 
@@ -70,10 +69,37 @@ describe("TC-1 Enterprise Trust Center — data model", () => {
 
   it("marks live, wired systems as Implemented with cited evidence", () => {
     const byKey = Object.fromEntries(getCapabilityMatrix().map((c) => [c.key, c]));
-    for (const key of ["executive_review", "authentication", "authorization", "audit", "trust_center"]) {
+    for (const key of [
+      "executive_review",
+      "authentication",
+      "authorization",
+      "audit",
+      "trust_center",
+      "scenario_templates",
+    ]) {
       expect(byKey[key].status).toBe("Implemented");
       expect(byKey[key].evidence.length).toBeGreaterThan(0);
     }
+  });
+
+  it("reflects ST-1: Scenario Templates is Implemented, citing actual ST-1 files and tests, and is no longer a known limitation", () => {
+    const byKey = Object.fromEntries(getCapabilityMatrix().map((c) => [c.key, c]));
+    const scenarioTemplates = byKey.scenario_templates;
+
+    expect(scenarioTemplates.status).toBe("Implemented");
+    expect(scenarioTemplates.evidence).toContain("src/lib/scenario-template.ts");
+    expect(scenarioTemplates.evidence).toContain("src/pages/ScenarioTemplates.tsx");
+    expect(scenarioTemplates.evidence).toContain("src/pages/ScenarioTemplateDetail.tsx");
+    expect(scenarioTemplates.evidence).toContain("src/test/scenario-template.test.ts");
+
+    // Honest boundaries: covers the template gallery/detail only, not adjacent capabilities.
+    expect(scenarioTemplates.detail).toMatch(/no custom template/i);
+    expect(scenarioTemplates.detail).toMatch(/no AI-generated template/i);
+    expect(scenarioTemplates.detail).toMatch(/no runtime execution/i);
+    expect(scenarioTemplates.detail).toMatch(/no direct connector onboarding/i);
+
+    const limitations = getKnownLimitations();
+    expect(limitations.some((l) => l.key === "scenario_templates")).toBe(false);
   });
 
   it("never reports a green/healthy runtime status — only NOT AVAILABLE or NOT IMPLEMENTED", () => {
@@ -99,11 +125,10 @@ describe("TC-1 Enterprise Trust Center — data model", () => {
     }
   });
 
-  it("lists signing, PDF export, real connectors substitutes, and observability gaps as known limitations", () => {
+  it("lists signing, PDF export, and observability gaps as known limitations", () => {
     const limitations = getKnownLimitations();
     const keys = limitations.map((l) => l.key);
     expect(keys).toContain("signing");
-    expect(keys).toContain("scenario_templates");
     expect(limitations.find((l) => l.key === "evidence_pack")?.detail).toMatch(/PDF/);
     expect(limitations.find((l) => l.key === "observability")?.detail).toMatch(/metrics|tracing/i);
   });
@@ -180,7 +205,7 @@ describe("TC-1 Enterprise Trust Center — components", () => {
     expect(matrix).toBeInTheDocument();
     expect(within(matrix).getByTestId("capability-row-executive_review")).toHaveTextContent("Executive Review");
     expect(within(matrix).getByTestId("capability-row-executive_review")).toHaveTextContent("Implemented");
-    expect(within(matrix).getByTestId("capability-row-scenario_templates")).toHaveTextContent("Not Implemented");
+    expect(within(matrix).getByTestId("capability-row-scenario_templates")).toHaveTextContent("Implemented");
     expect(within(matrix).getByTestId("capability-row-rts_1")).toHaveTextContent("Partially Implemented");
   });
 
