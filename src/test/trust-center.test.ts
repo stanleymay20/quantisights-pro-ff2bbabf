@@ -151,7 +151,8 @@ describe("TC-1 Enterprise Trust Center — data model", () => {
       "Evidence",
       "Operations",
       "Security",
-      "Pilot Readiness",
+      "Pilot Readiness (Implementation only)",
+      "Deployment Readiness",
       "Production Readiness",
     ]) {
       expect(dimensions).toContain(expected);

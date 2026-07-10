@@ -3,7 +3,7 @@ import { AlertTriangle } from "lucide-react";
 import { SidebarMobileToggle } from "@/components/layout/ProtectedShell";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import CapabilityMatrix, { StatusBadge } from "@/components/trust/CapabilityMatrix";
+import CapabilityMatrix, { DeploymentBadge, StatusBadge } from "@/components/trust/CapabilityMatrix";
 import SystemHealthCard from "@/components/trust/SystemHealthCard";
 import TrustCenterOverview from "@/components/trust/TrustCenterOverview";
 import VersionMatrix from "@/components/trust/VersionMatrix";
@@ -30,8 +30,11 @@ const TrustCenterPage = () => {
           <h1 className="text-2xl font-semibold tracking-tight">Enterprise Trust Center</h1>
         </div>
         <p className="text-sm text-muted-foreground">
-          The operational transparency layer for Quantivis. This page never simulates uptime or invents
-          a health metric — where a live signal doesn't exist, it says so.
+          The operational transparency layer for Quantivis. This page reports on two independent
+          axes — <strong>Implementation Maturity</strong> (is the code written and wired inside this
+          repository?) and <strong>Deployment Maturity</strong> (is it reachable at runtime?) — and
+          never conflates either with production readiness, which depends on hosting, SLOs, and
+          customer configuration outside this codebase and is reported as UNKNOWN.
         </p>
       </div>
 
@@ -48,11 +51,14 @@ const TrustCenterPage = () => {
             Capability Matrix
           </Badge>
           <h2 id="tc-capabilities-title" className="mt-2 text-lg font-semibold">
-            Implemented capabilities
+            Capabilities — Implementation and Deployment
           </h2>
           <p className="text-sm text-muted-foreground">
-            Exactly one status per subsystem. A capability is only marked Implemented if it is coded and
-            reachable from a live page, hook, or edge function — not merely present as a library.
+            Two independent columns per subsystem. <strong>Implementation</strong> is a source-tree
+            statement: "Implemented" means coded, tested, and imported by a live route/hook/edge
+            function in this repository — nothing more. <strong>Deployment</strong> is a runtime
+            statement: "Live In App" means reachable inside this app's surface only, and does NOT
+            assert deployment to any specific customer environment or production readiness.
           </p>
         </div>
         <CapabilityMatrix capabilities={data.capabilities} />
@@ -217,7 +223,10 @@ const TrustCenterPage = () => {
                 >
                   <div className="flex items-start justify-between gap-3">
                     <span className="text-sm font-medium">{limitation.label}</span>
-                    <StatusBadge status={limitation.status} />
+                    <div className="flex items-center gap-1">
+                      <StatusBadge status={limitation.status} />
+                      <DeploymentBadge deployment={limitation.deployment} />
+                    </div>
                   </div>
                   <p className="text-xs text-muted-foreground">{limitation.detail}</p>
                 </li>
