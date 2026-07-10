@@ -643,18 +643,26 @@ export function getEnterpriseReadinessMatrix(): EnterpriseReadinessRow[] {
     },
     {
       key: "pilot_readiness",
-      dimension: "Pilot Readiness",
+      dimension: "Pilot Readiness (Implementation only)",
       assessment:
-        "The live production path (decision_ledger, executive review, outcome tracking, evidence export) is usable end-to-end for a pilot today. The RTS-1/Agent Gateway/Runtime Gateway rewrite is not part of that live path.",
+        "Implementation-only assessment: the executive-review path (decision_ledger, executive review, outcome tracking, evidence export) is coded, tested, and wired live inside this codebase. This is a source-tree statement — it does NOT assert deployment to any specific customer environment, and does NOT constitute a pilot go/no-go decision, which additionally depends on hosting, data loading, and customer configuration outside this repository.",
       citedSources: ["src/pages/DecisionLedger.tsx", "src/pages/ExecutiveBrief.tsx"],
+    },
+    {
+      key: "deployment_readiness",
+      dimension: "Deployment Readiness",
+      assessment:
+        "UNKNOWN — deployment status of any specific customer environment cannot be verified from client-side source alone. The Capability Matrix's Deployment column reports only whether each capability is reachable inside THIS codebase's app surface, not whether it is running for a customer.",
+      citedSources: [],
     },
     {
       key: "production_readiness",
       dimension: "Production Readiness",
       assessment:
-        "Not independently verifiable from the client-side implementation alone. Production readiness also depends on infrastructure, deployment, and operational factors outside this codebase — reported as UNKNOWN rather than assumed.",
+        "UNKNOWN — production readiness depends on infrastructure, SLOs, incident response, data governance controls, and operational maturity that a client-side codebase cannot verify. Nothing on this page should be interpreted as a production-readiness attestation.",
       citedSources: [],
     },
+
   ];
 }
 
