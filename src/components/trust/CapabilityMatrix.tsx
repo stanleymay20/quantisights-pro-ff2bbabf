@@ -8,13 +8,23 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
-import type { CapabilityEntry, CapabilityStatus } from "@/lib/trust-center-types";
+import type {
+  CapabilityEntry,
+  CapabilityStatus,
+  DeploymentMaturity,
+} from "@/lib/trust-center-types";
 
 const STATUS_STYLES: Record<CapabilityStatus, string> = {
   Implemented: "border-success/30 bg-success/10 text-success",
   "Partially Implemented": "border-warning/30 bg-warning/10 text-warning",
   Planned: "border-primary/30 bg-primary/10 text-primary",
   "Not Implemented": "border-destructive/30 bg-destructive/10 text-destructive",
+  Unknown: "border-border bg-muted text-muted-foreground",
+};
+
+const DEPLOYMENT_STYLES: Record<DeploymentMaturity, string> = {
+  "Not Deployed": "border-destructive/30 bg-destructive/10 text-destructive",
+  "Live In App": "border-primary/30 bg-primary/10 text-primary",
   Unknown: "border-border bg-muted text-muted-foreground",
 };
 
@@ -30,14 +40,29 @@ export function StatusBadge({ status }: { status: CapabilityStatus }) {
   );
 }
 
+export function DeploymentBadge({ deployment }: { deployment: DeploymentMaturity }) {
+  return (
+    <Badge
+      variant="outline"
+      className={cn("w-fit shrink-0 text-[10px] uppercase tracking-wide", DEPLOYMENT_STYLES[deployment])}
+      data-testid={`deployment-badge-${deployment.toLowerCase().replace(/\s+/g, "-")}`}
+    >
+      {deployment}
+    </Badge>
+  );
+}
+
 export interface CapabilityMatrixProps {
   capabilities: CapabilityEntry[];
   className?: string;
 }
 
 /**
- * TC-1 Capability Matrix: exactly one status per subsystem, never inferred —
- * each row's status and detail come directly from trust-center.ts.
+ * TC-1 Capability Matrix: exactly one implementation status AND one
+ * deployment maturity per subsystem. Implementation and deployment are
+ * reported on separate columns so an "Implemented" label can never be
+ * misread as "in production" — deployment is a strictly separate axis, and
+ * neither axis alone constitutes a production-readiness claim.
  */
 export default function CapabilityMatrix({ capabilities, className }: CapabilityMatrixProps) {
   return (
@@ -45,8 +70,9 @@ export default function CapabilityMatrix({ capabilities, className }: Capability
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[220px]">Capability</TableHead>
-            <TableHead className="w-[160px]">Status</TableHead>
+            <TableHead className="w-[200px]">Capability</TableHead>
+            <TableHead className="w-[150px]">Implementation</TableHead>
+            <TableHead className="w-[140px]">Deployment</TableHead>
             <TableHead>Detail</TableHead>
           </TableRow>
         </TableHeader>
@@ -56,6 +82,9 @@ export default function CapabilityMatrix({ capabilities, className }: Capability
               <TableCell className="font-medium">{capability.label}</TableCell>
               <TableCell>
                 <StatusBadge status={capability.status} />
+              </TableCell>
+              <TableCell>
+                <DeploymentBadge deployment={capability.deployment} />
               </TableCell>
               <TableCell className="text-sm text-muted-foreground">
                 <p>{capability.detail}</p>
@@ -72,3 +101,4 @@ export default function CapabilityMatrix({ capabilities, className }: Capability
     </div>
   );
 }
+
