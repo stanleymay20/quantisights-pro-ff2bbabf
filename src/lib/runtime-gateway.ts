@@ -4,6 +4,9 @@ import {
   type AgentGatewayRequest,
   validateAgentGatewayRequest,
 } from "@/lib/agent-gateway";
+import { createCryptoSigningAdapter, type CryptoSigningAdapter } from "@/lib/crypto-signing";
+import { CRYPTO_SIGNING_SCHEMA_VERSION, SIGNING_ALGORITHM, type SignedEnvelope } from "@/lib/crypto-signing-types";
+import type { KeyProvider } from "@/lib/key-management-types";
 import {
   GATEWAY_ACKNOWLEDGEMENT_SCHEMA_VERSION,
   RUNTIME_GATEWAY_VERSION,
@@ -219,6 +222,8 @@ async function submitWithConfig(
     runtime_version: RUNTIME_GATEWAY_VERSION,
     signature_key_id: config.signing.key_id,
     estimated_processing: "queued_for_downstream_processing",
+    algorithm: config.signing.algorithm,
+    signing_purpose: config.signing.algorithm ? "runtime_acknowledgement" : undefined,
   };
   const acknowledgement: GatewayAcknowledgement = {
     ...acknowledgementWithoutSignature,
@@ -401,6 +406,53 @@ export class MockSigningAdapter implements SigningAdapter {
   verifyAcknowledgement(acknowledgement: GatewayAcknowledgement): boolean {
     const { signature: _signature, ...withoutSignature } = acknowledgement;
     return acknowledgement.signature === this.signAcknowledgement(withoutSignature);
+  }
+
+  available(): boolean {
+    return true;
+  }
+}
+
+/**
+ * GA-3: real Ed25519 signing adapter for Runtime Gateway acknowledgements,
+ * backed by an injected KeyProvider (private key material never leaves the
+ * provider). Replaces MockSigningAdapter on the production Supplier Risk
+ * path; MockSigningAdapter itself is unchanged and remains valid for tests
+ * of gateway plumbing that don't need real cryptography.
+ */
+export class Ed25519RuntimeSigningAdapter implements SigningAdapter {
+  public readonly algorithm = SIGNING_ALGORITHM;
+  private readonly cryptoAdapter: CryptoSigningAdapter;
+
+  constructor(
+    private readonly keyProvider: KeyProvider,
+    public readonly key_id: string,
+  ) {
+    this.cryptoAdapter = createCryptoSigningAdapter(keyProvider);
+  }
+
+  async signAcknowledgement(acknowledgement: Omit<GatewayAcknowledgement, "signature">): Promise<string> {
+    const envelope = await this.cryptoAdapter.signCanonicalPayload(acknowledgement as unknown as Record<string, any>, {
+      purpose: "runtime_acknowledgement",
+      now: acknowledgement.received_at,
+    });
+    return envelope.signature.signature;
+  }
+
+  async verifyAcknowledgement(acknowledgement: GatewayAcknowledgement): Promise<boolean> {
+    const { signature, ...withoutSignature } = acknowledgement;
+    const envelope: SignedEnvelope<Record<string, any>> = {
+      payload: withoutSignature as unknown as Record<string, any>,
+      signature: {
+        schema_version: CRYPTO_SIGNING_SCHEMA_VERSION,
+        key_id: acknowledgement.signature_key_id,
+        algorithm: SIGNING_ALGORITHM,
+        purpose: "runtime_acknowledgement",
+        issued_at: acknowledgement.received_at,
+        signature,
+      },
+    };
+    return this.cryptoAdapter.verifyCanonicalPayload(envelope);
   }
 
   available(): boolean {

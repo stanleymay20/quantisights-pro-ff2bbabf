@@ -164,12 +164,17 @@ describe("ST-1 scenario template data model", () => {
     }
   });
 
-  it("explicitly requires Signing for Compliance Investigation, which is Not Implemented today", () => {
+  it("explicitly requires Signing for Compliance Investigation, which is Partially Implemented since GA-3", () => {
     const template = getScenarioTemplate("compliance-investigation");
     expect(template?.required_capabilities).toContain("signing");
     const signing = template?.implementation_status.find((u) => u.capability_key === "signing");
-    expect(signing?.status).toBe("Not Implemented");
-    expect(getScenarioReadiness(template!).readiness).toBe("Requires Additional Capability");
+    // GA-3: real Ed25519 signing is live on the Supplier Risk path, so this
+    // capability is no longer Not Implemented — but production key
+    // management (KMS) is unvalidated, so it is Partially, not fully,
+    // Implemented, and readiness downgrades from "Requires Additional
+    // Capability" to "Ready for Demonstration" rather than "Ready for Pilot".
+    expect(signing?.status).toBe("Partially Implemented");
+    expect(getScenarioReadiness(template!).readiness).toBe("Ready for Demonstration");
   });
 
   it("never marks readiness as Ready for Pilot when a required capability is only Partially Implemented", () => {

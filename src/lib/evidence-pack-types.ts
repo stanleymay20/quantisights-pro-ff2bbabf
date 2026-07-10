@@ -121,6 +121,22 @@ export interface BuildEvidencePackOptions {
   isSimulation?: boolean;
 }
 
+/**
+ * GA-3 — the payload actually signed for an Evidence Pack: a manifest
+ * *about* the pack (its hash and provenance references), never the
+ * rendered HTML/JSON export itself. Field names intentionally match
+ * signature-verification.ts's EvidencePackManifestPayloadSchema.
+ */
+export interface EvidencePackManifestPayload {
+  evidence_pack_schema_version: typeof EVIDENCE_PACK_SCHEMA_VERSION;
+  evidence_pack_hash: string;
+  decision_id: string;
+  organization_id: string | null;
+  generated_at: string;
+  source_data_references: string[];
+  audit_references: string[];
+}
+
 /** A single block in the PDF-ready data model. No PDF is generated in EP-1. */
 export type EvidencePackPdfBlock =
   | { type: "heading"; level: 1 | 2; text: string }

@@ -20,6 +20,7 @@
  * never talks to a database directly.
  */
 import {
+  createEd25519DecisionTokenSigner,
   processAgentGatewayRequest,
   type AgentGatewayDependencies,
   type AgentGatewayRequest,
@@ -40,6 +41,9 @@ import {
   generateDecisionCandidates,
   type EnterpriseDecisionCandidate,
 } from "@/lib/decision-candidate-generation";
+import { InMemoryKeyProvider } from "@/lib/key-management";
+import type { KeyProvider, SigningKeyMetadata } from "@/lib/key-management-types";
+import type { SigningPurpose } from "@/lib/crypto-signing-types";
 import {
   createPayloadHash,
   deriveIdempotencyKey,
@@ -50,10 +54,10 @@ import {
 } from "@/lib/real-time-signals";
 import {
   createRuntimeGateway,
+  Ed25519RuntimeSigningAdapter,
   InMemoryRuntimePersistenceAdapter,
   InMemoryRuntimeQueueAdapter,
   MockRuntimeEventEmitterAdapter,
-  MockSigningAdapter,
 } from "@/lib/runtime-gateway";
 import {
   createRuntimePersistence,
@@ -69,6 +73,7 @@ import {
 } from "@/lib/runtime-queue";
 import type { RuntimeQueueAdapter as ExecutionQueueAdapterType } from "@/lib/runtime-queue-types";
 import { createRuntimeService, type RuntimeServiceResponse } from "@/lib/runtime-service";
+import type { SigningAdapter } from "@/lib/runtime-types";
 import {
   calculateSignalQuality,
   type SignalQualityResult,
@@ -148,6 +153,15 @@ export interface SupplierRiskRuntimeDeps {
    */
   runtimeQueueAdapter?: ExecutionQueueAdapterType;
   runtimePersistenceAdapter?: ExecutionPersistenceAdapter;
+  /**
+   * GA-3: optional injected key provider for real Ed25519 decision-token and
+   * runtime-acknowledgement signing. Defaults to a fresh `InMemoryKeyProvider`
+   * (ephemeral, per-call) when omitted — this pipeline never falls back to
+   * mock/non-cryptographic signing. Pass an `EnvironmentKeyProvider` or a
+   * production KMS-backed provider to make signing keys durable/shared
+   * across calls.
+   */
+  keyProvider?: KeyProvider;
 }
 
 export interface SupplierRiskRuntimePipelineResult {
@@ -200,6 +214,9 @@ export async function runSupplierRiskRuntimePipeline(
 ): Promise<SupplierRiskRuntimePipelineResult> {
   const explanation: string[] = [];
   const agentId = input.agent_id ?? "supplier-risk-runtime-agent";
+  const keyProvider = deps.keyProvider ?? new InMemoryKeyProvider(`supplier-risk-runtime-${input.now}`);
+  await ensureActiveSigningKey(keyProvider, "decision_token", input.now);
+  await ensureActiveSigningKey(keyProvider, "runtime_acknowledgement", input.now);
   const allSignalInputs = [input.signal, ...(input.additional_signals ?? [])];
   const rawEvents = allSignalInputs.map((signal) => buildSupplierRiskRawEvent(signal));
 
@@ -308,7 +325,7 @@ export async function runSupplierRiskRuntimePipeline(
     return handoffRejectedResult(rawEvents, scoredSignals, qualityScores, contradictions, promotion.fact, candidate, handoff, explanation);
   }
 
-  const agentGatewayDeps = buildAgentGatewayDependencies(deps);
+  const agentGatewayDeps = await buildAgentGatewayDependencies(deps, keyProvider, input.now);
   const agentGatewayResult = await processAgentGatewayRequest(handoff.gateway_request, agentGatewayDeps);
   explanation.push(`Agent Gateway status: ${agentGatewayResult.status}${agentGatewayResult.failures.length > 0 ? ` (${agentGatewayResult.failures.join(", ")})` : ""}.`);
 
@@ -318,7 +335,7 @@ export async function runSupplierRiskRuntimePipeline(
     );
   }
 
-  const runtime = buildRuntimeAdapters(input.now, {
+  const runtime = await buildRuntimeAdapters(input.now, keyProvider, {
     queue: deps.runtimeQueueAdapter,
     persistence: deps.runtimePersistenceAdapter,
   });
@@ -479,7 +496,12 @@ function normalizeSupplierRiskSignal(event: RawEvent, now: string): NormalizedSi
   };
 }
 
-function buildAgentGatewayDependencies(deps: SupplierRiskRuntimeDeps): AgentGatewayDependencies {
+async function buildAgentGatewayDependencies(
+  deps: SupplierRiskRuntimeDeps,
+  keyProvider: KeyProvider,
+  now: string,
+): Promise<AgentGatewayDependencies> {
+  const activeKey = await keyProvider.getActiveSigningKey("decision_token");
   return {
     validateTenant: deps.validateTenant ?? defaultValidateTenant,
     validateOrganization: deps.validateOrganization ?? defaultValidateOrganization,
@@ -487,10 +509,28 @@ function buildAgentGatewayDependencies(deps: SupplierRiskRuntimeDeps): AgentGate
     evaluatePolicy: deps.evaluatePolicy ?? defaultEvaluatePolicy,
     persistDecisionRecord: deps.persistDecisionRecord,
     writeAuditEvent: deps.writeAuditEvent,
-    signDecisionToken: deps.signDecisionToken ?? defaultSignDecisionToken,
-    signing_key_id: deps.signing_key_id ?? "supplier-risk-runtime-key",
+    // GA-3: real Ed25519 signing via the injected/bootstrapped KeyProvider.
+    // No mock signature values remain on this production path. `now` must
+    // match the pipeline's own clock (`input.now`) — not wall-clock time —
+    // since the signing key's validity window was activated relative to it.
+    signDecisionToken: deps.signDecisionToken ?? createEd25519DecisionTokenSigner(keyProvider),
+    signing_key_id: deps.signing_key_id ?? activeKey?.key_id ?? "supplier-risk-runtime-key",
     generateId: deps.generateId,
+    now: () => now,
   };
+}
+
+/** Ensures an ACTIVE signing key exists for `purpose` in `keyProvider`,
+ *  bootstrapping one via rotateSigningKey (which degrades to create+activate
+ *  when there is no current active key) if none exists yet. */
+async function ensureActiveSigningKey(
+  keyProvider: KeyProvider,
+  purpose: SigningPurpose,
+  now: string,
+): Promise<SigningKeyMetadata> {
+  const existing = await keyProvider.getActiveSigningKey(purpose);
+  if (existing) return existing;
+  return keyProvider.rotateSigningKey(purpose, now);
 }
 
 async function defaultValidateTenant(): Promise<{ valid: boolean }> {
@@ -526,27 +566,30 @@ async function defaultEvaluatePolicy(input: {
   };
 }
 
-async function defaultSignDecisionToken(payload: { decision_id: string; hash: string }): Promise<string> {
-  return `mock-decision-token-${payload.decision_id}-${payload.hash}`;
-}
-
 interface RuntimeAdapters {
   queue: InMemoryRuntimeQueueAdapter;
   gatewayPersistence: InMemoryRuntimePersistenceAdapter;
-  signing: MockSigningAdapter;
+  signing: SigningAdapter;
   events: MockRuntimeEventEmitterAdapter;
   executionQueue: RuntimeQueue;
   executionPersistence: RuntimePersistence;
 }
 
-function buildRuntimeAdapters(
+async function buildRuntimeAdapters(
   now: string,
+  keyProvider: KeyProvider,
   overrides: { queue?: ExecutionQueueAdapterType; persistence?: ExecutionPersistenceAdapter } = {},
-): RuntimeAdapters {
+): Promise<RuntimeAdapters> {
+  const activeKey = await keyProvider.getActiveSigningKey("runtime_acknowledgement");
+  if (!activeKey) {
+    throw new Error(`no active "runtime_acknowledgement" signing key available in environment "${keyProvider.environment}"`);
+  }
   return {
     queue: new InMemoryRuntimeQueueAdapter(),
     gatewayPersistence: new InMemoryRuntimePersistenceAdapter(),
-    signing: new MockSigningAdapter("supplier-risk-runtime-signing-key"),
+    // GA-3: real Ed25519 signing — replaces the pre-GA-3 MockSigningAdapter
+    // on this production path.
+    signing: new Ed25519RuntimeSigningAdapter(keyProvider, activeKey.key_id),
     events: new MockRuntimeEventEmitterAdapter(),
     executionQueue: createRuntimeQueue({ adapter: overrides.queue ?? new ExecutionQueueAdapter(), now: () => now }),
     executionPersistence: createRuntimePersistence({
