@@ -76,6 +76,7 @@ export function getCapabilityMatrix(): CapabilityEntry[] {
       key: "rts_1",
       label: "RTS-1 (Real-Time Signal Pipeline)",
       status: "Partially Implemented",
+      deployment: "Not Deployed",
       detail:
         "Signal normalization, quality scoring, contradiction detection, fact promotion, and decision-candidate generation are coded and unit-tested as pure, deterministic libraries. None of these modules are currently imported by any live page, hook, or edge function — the live product's decision creation path does not run through RTS-1.",
       evidence: [
@@ -93,6 +94,7 @@ export function getCapabilityMatrix(): CapabilityEntry[] {
       key: "agent_gateway",
       label: "Agent Gateway",
       status: "Partially Implemented",
+      deployment: "Not Deployed",
       detail:
         "processAgentGatewayRequest() and its dependency-injected validation/policy/signing contract are coded and tested with mock adapters. No edge function or live request path currently calls it.",
       evidence: ["docs/architecture/AG-1-Agent-Gateway.md", "src/lib/agent-gateway.ts", "src/test/agent-gateway.test.ts"],
@@ -101,6 +103,7 @@ export function getCapabilityMatrix(): CapabilityEntry[] {
       key: "runtime_gateway",
       label: "Runtime Gateway",
       status: "Partially Implemented",
+      deployment: "Not Deployed",
       detail:
         "Request validation, acknowledgement signing, and rejection handling are coded and tested against an in-memory reference persistence/queue/signing stack. Not deployed to any live traffic path.",
       evidence: ["docs/architecture/AG-3-Runtime-Gateway.md", "src/lib/runtime-gateway.ts", "src/test/runtime-gateway.test.ts"],
@@ -109,6 +112,7 @@ export function getCapabilityMatrix(): CapabilityEntry[] {
       key: "runtime_service",
       label: "Runtime Service",
       status: "Partially Implemented",
+      deployment: "Not Deployed",
       detail:
         "Health/readiness reporting and gateway request (de)serialization are coded and tested as a framework-agnostic boundary (AG-3B). No live caller imports it outside its own test suite.",
       evidence: [
@@ -121,6 +125,7 @@ export function getCapabilityMatrix(): CapabilityEntry[] {
       key: "queue",
       label: "Queue",
       status: "Partially Implemented",
+      deployment: "Not Deployed",
       detail:
         "The queue contract and an in-memory reference adapter (enqueue/dequeue/retry/dead-letter/expiry) are coded and tested. No real backend adapter (Kafka, SQS, Supabase Queues, etc.) exists — not even a scaffold.",
       evidence: ["docs/architecture/AG-3D-Runtime-Queue.md", "src/lib/runtime-queue.ts", "src/test/runtime-queue.test.ts"],
@@ -129,6 +134,7 @@ export function getCapabilityMatrix(): CapabilityEntry[] {
       key: "persistence",
       label: "Persistence",
       status: "Partially Implemented",
+      deployment: "Not Deployed",
       detail:
         "The persistence contract and an in-memory reference adapter (executions, append-only events, hash-chained audit records, queue snapshots) are coded and tested. The Supabase and Postgres adapter classes exist only as scaffolds whose methods throw NotImplementedError.",
       evidence: [
@@ -141,6 +147,7 @@ export function getCapabilityMatrix(): CapabilityEntry[] {
       key: "executive_review",
       label: "Executive Review",
       status: "Implemented",
+      deployment: "Live In App",
       detail:
         "The Executive Brief → Decision Review → Outcome Prediction flow is live: it reads and writes real decision_ledger rows, gates approval on a five-item checklist, and is covered by passing tests.",
       evidence: [
@@ -155,6 +162,7 @@ export function getCapabilityMatrix(): CapabilityEntry[] {
       key: "evidence_pack",
       label: "Evidence Pack",
       status: "Partially Implemented",
+      deployment: "Live In App",
       detail:
         "Deterministic pack building (20 sections, canonical content hash, JSON/HTML export, PDF-ready block model) is live at /evidence-pack/:decisionId and reads real decision_ledger + audit_log rows. Actual PDF rendering and cryptographic signing are not implemented — the Digital Signature section is an explicit placeholder.",
       evidence: [
@@ -168,6 +176,7 @@ export function getCapabilityMatrix(): CapabilityEntry[] {
       key: "trust_center",
       label: "Trust Center",
       status: "Implemented",
+      deployment: "Live In App",
       detail:
         "This page: a capability matrix, runtime health, evidence integrity, governance status, version matrix, known limitations, and enterprise readiness matrix, all sourced from the current implementation.",
       evidence: ["docs/architecture/TC-1-Enterprise-Trust-Center.md", "src/lib/trust-center.ts", "src/pages/TrustCenter.tsx"],
@@ -176,6 +185,7 @@ export function getCapabilityMatrix(): CapabilityEntry[] {
       key: "scenario_templates",
       label: "Scenario Templates",
       status: "Implemented",
+      deployment: "Live In App",
       detail:
         "ST-1 ships six structured scenario templates (Supplier Risk, Inventory Shortage, Pricing Decision, Revenue Decline, Compliance Investigation, Cybersecurity Incident), live at /enterprise/scenarios and /enterprise/scenarios/:templateId, each with a readiness tier computed from this same capability matrix. This covers the defined scope of a template gallery and detail view only: there is no custom template authoring, no AI-generated templates, no runtime execution triggered from a template, and no direct connector onboarding from a template — none of that is wired, and none is implied.",
       evidence: [
@@ -190,6 +200,7 @@ export function getCapabilityMatrix(): CapabilityEntry[] {
       key: "outcome_learning",
       label: "Outcome Learning",
       status: "Implemented",
+      deployment: "Live In App",
       detail:
         "Decision outcomes are tracked in decision_outcomes, scored via the aicis-evaluate-outcomes edge function, and fed into an adaptive calibration loop. The Outcome Prediction page's feedback widget is live.",
       evidence: [
@@ -203,6 +214,7 @@ export function getCapabilityMatrix(): CapabilityEntry[] {
       key: "signing",
       label: "Signing",
       status: "Not Implemented",
+      deployment: "Not Deployed",
       detail:
         "No real cryptographic signing exists. The only \"signature\" values in the codebase are non-cryptographic mock hashes (mock-signature-<fnv1a hash>) used by test/reference adapters, and the Evidence Pack's Digital Signature section is an explicit null placeholder.",
       evidence: ["src/lib/runtime-gateway.ts (MockSigningAdapter)", "src/lib/evidence-pack.ts (digital signature placeholder)"],
@@ -211,6 +223,7 @@ export function getCapabilityMatrix(): CapabilityEntry[] {
       key: "observability",
       label: "Observability",
       status: "Partially Implemented",
+      deployment: "Live In App",
       detail:
         "Sentry error/exception tracking is configured and live (DSN-based init). There is no metrics or distributed-tracing integration, and no live telemetry endpoint for queue depth, runtime throughput, or persistence latency.",
       evidence: ["src/lib/sentry.ts", "src/main.tsx"],
@@ -219,6 +232,7 @@ export function getCapabilityMatrix(): CapabilityEntry[] {
       key: "connector_framework",
       label: "Connector Framework",
       status: "Implemented",
+      deployment: "Live In App",
       detail:
         "A real connectors table, health tracking, and 14+ dedicated pull edge functions (SAP, Salesforce, HubSpot, BigQuery, Snowflake, S3, REST, etc.) exist, alongside admin UI for configuration and health monitoring.",
       evidence: [
@@ -233,6 +247,7 @@ export function getCapabilityMatrix(): CapabilityEntry[] {
       key: "http_runtime",
       label: "HTTP Runtime",
       status: "Not Implemented",
+      deployment: "Not Deployed",
       detail:
         "No edge function or HTTP endpoint exists for the Agent Gateway or Runtime Gateway request path — every AG-3 phase's documentation explicitly scoped out HTTP endpoints, and no such endpoint was added since.",
       evidence: [],
@@ -241,6 +256,7 @@ export function getCapabilityMatrix(): CapabilityEntry[] {
       key: "authentication",
       label: "Authentication",
       status: "Implemented",
+      deployment: "Live In App",
       detail:
         "Supabase Auth is live: session-based login, MFA (TOTP + WebAuthn/passkey), and SAML SSO configuration are wired and reachable from the app.",
       evidence: [
@@ -255,6 +271,7 @@ export function getCapabilityMatrix(): CapabilityEntry[] {
       key: "authorization",
       label: "Authorization",
       status: "Implemented",
+      deployment: "Live In App",
       detail:
         "Row-Level Security policies scoped by organization role (get_user_org_role) are defined across the schema, and a client-side usePermissions hook mirrors them for UI gating.",
       evidence: ["supabase/migrations (RLS policies referencing get_user_org_role / auth.uid())", "src/hooks/usePermissions.ts"],
@@ -263,6 +280,7 @@ export function getCapabilityMatrix(): CapabilityEntry[] {
       key: "audit",
       label: "Audit",
       status: "Implemented",
+      deployment: "Live In App",
       detail:
         "audit_log is a real, append-only table (no UPDATE/DELETE policy for authenticated users); writeAuditLog() is called live from the decision approval/rejection lifecycle.",
       evidence: ["src/lib/lifecycle/audit.ts", "src/lib/lifecycle/execution.ts"],
@@ -271,6 +289,7 @@ export function getCapabilityMatrix(): CapabilityEntry[] {
       key: "decision_engine",
       label: "Decision Engine",
       status: "Implemented",
+      deployment: "Live In App",
       detail:
         "The live decision engine runs through decision_ledger plus edge functions (aicis-auto-decisions, intelligence-advisory-engine, prescriptive-advisory) and the deterministic decision-lifecycle library — a separate code path from the not-yet-integrated RTS-1 → Agent Gateway → Runtime Gateway pipeline described above.",
       evidence: [
@@ -561,6 +580,7 @@ export function getKnownLimitations(): LimitationEntry[] {
       key: capability.key,
       label: capability.label,
       status: capability.status,
+      deployment: capability.deployment,
       detail: capability.detail,
     }));
 }
