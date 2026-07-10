@@ -3,7 +3,7 @@ import { AlertTriangle } from "lucide-react";
 import { SidebarMobileToggle } from "@/components/layout/ProtectedShell";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import CapabilityMatrix, { StatusBadge } from "@/components/trust/CapabilityMatrix";
+import CapabilityMatrix, { DeploymentBadge, StatusBadge } from "@/components/trust/CapabilityMatrix";
 import SystemHealthCard from "@/components/trust/SystemHealthCard";
 import TrustCenterOverview from "@/components/trust/TrustCenterOverview";
 import VersionMatrix from "@/components/trust/VersionMatrix";
