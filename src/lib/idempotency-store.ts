@@ -299,3 +299,149 @@ function matches(record: IdempotencyRecord, criteria: IdempotencyStoreFindCriter
 function cloneRecord(record: IdempotencyRecord): IdempotencyRecord {
   return { ...record };
 }
+
+/**
+ * Minimal shape of an injected @supabase/supabase-js client needed by
+ * `SupabaseIdempotencyStoreAdapter`. Deliberately duplicated (rather than
+ * imported) from the equivalent types in `runtime-persistence.ts` /
+ * `runtime-queue.ts` so AG-3C stays independent of AG-3D/AG-3E, matching
+ * the existing module boundaries.
+ */
+export interface SupabaseRuntimeQueryError {
+  message: string;
+  code?: string;
+}
+
+export interface SupabaseRuntimeQueryResult<T> {
+  data: T | null;
+  error: SupabaseRuntimeQueryError | null;
+}
+
+export interface SupabaseRuntimeFilterBuilder extends PromiseLike<SupabaseRuntimeQueryResult<any>> {
+  eq(column: string, value: unknown): SupabaseRuntimeFilterBuilder;
+  or(filters: string): SupabaseRuntimeFilterBuilder;
+  order(column: string, options?: { ascending?: boolean }): SupabaseRuntimeFilterBuilder;
+  limit(count: number): SupabaseRuntimeFilterBuilder;
+  select(columns?: string): SupabaseRuntimeFilterBuilder;
+  single(): PromiseLike<SupabaseRuntimeQueryResult<any>>;
+  maybeSingle(): PromiseLike<SupabaseRuntimeQueryResult<any>>;
+}
+
+export interface SupabaseRuntimeQueryBuilder {
+  select(columns?: string): SupabaseRuntimeFilterBuilder;
+  insert(values: unknown): SupabaseRuntimeFilterBuilder;
+  update(values: unknown): SupabaseRuntimeFilterBuilder;
+  delete(): SupabaseRuntimeFilterBuilder;
+}
+
+export interface SupabaseRuntimeClient {
+  from(table: string): SupabaseRuntimeQueryBuilder;
+}
+
+const IDEMPOTENCY_UNIQUE_VIOLATION = "23505";
+
+/**
+ * GA-2: durable Postgres-backed implementation of the AG-3C idempotency
+ * contract, backed by the `runtime_idempotency_keys` table
+ * (`idempotency_key` primary key). `reserveKey()`'s in-app `detectReplay()`
+ * check (in `createIdempotencyStore`) remains the primary duplicate/replay
+ * detector; the table's primary key on `idempotency_key` is a durability
+ * backstop that turns a concurrent double-reservation race into a clean
+ * unique-violation instead of two consumers believing they each reserved
+ * the key.
+ */
+export class SupabaseIdempotencyStoreAdapter implements IdempotencyStoreAdapter {
+  constructor(private readonly client: SupabaseRuntimeClient) {}
+
+  async save(record: IdempotencyStoreSaveInput): Promise<IdempotencyRecord> {
+    const { data, error } = await this.client
+      .from("runtime_idempotency_keys")
+      .insert(recordToRow(record))
+      .select("*")
+      .single();
+    if (error) {
+      if (error.code === IDEMPOTENCY_UNIQUE_VIOLATION) {
+        throw new Error(`idempotency key ${record.idempotency_key} is already reserved`);
+      }
+      throw new Error(`SupabaseIdempotencyStoreAdapter.save failed: ${error.message}`);
+    }
+    return rowToRecord(data);
+  }
+
+  async find(criteria: IdempotencyStoreFindCriteria): Promise<IdempotencyRecord | null> {
+    let builder = this.client.from("runtime_idempotency_keys").select("*");
+    for (const [key, value] of Object.entries(criteria)) {
+      if (value !== undefined) builder = builder.eq(key, value);
+    }
+    const { data, error } = await builder.order("created_at", { ascending: true }).limit(1).maybeSingle();
+    if (error) throw new Error(`SupabaseIdempotencyStoreAdapter.find failed: ${error.message}`);
+    return data ? rowToRecord(data) : null;
+  }
+
+  async update(idempotency_key: string, changes: IdempotencyStoreUpdateInput): Promise<IdempotencyRecord | null> {
+    const { data, error } = await this.client
+      .from("runtime_idempotency_keys")
+      .update(changesToRow(changes))
+      .eq("idempotency_key", idempotency_key)
+      .select("*")
+      .maybeSingle();
+    if (error) throw new Error(`SupabaseIdempotencyStoreAdapter.update failed: ${error.message}`);
+    return data ? rowToRecord(data) : null;
+  }
+
+  async deleteExpired(now: string): Promise<number> {
+    const { data, error } = await this.client
+      .from("runtime_idempotency_keys")
+      .delete()
+      .or(`status.eq.EXPIRED,expires_at.lte.${now}`)
+      .select("idempotency_key");
+    if (error) throw new Error(`SupabaseIdempotencyStoreAdapter.deleteExpired failed: ${error.message}`);
+    return (data ?? []).length;
+  }
+
+  async exists(criteria: IdempotencyStoreFindCriteria): Promise<boolean> {
+    return (await this.find(criteria)) !== null;
+  }
+}
+
+function recordToRow(record: IdempotencyStoreSaveInput): Record<string, unknown> {
+  return {
+    idempotency_key: record.idempotency_key,
+    request_hash: record.request_hash,
+    correlation_id: record.correlation_id,
+    tenant_id: record.tenant_id,
+    organization_id: record.organization_id,
+    created_at: record.created_at,
+    completed_at: record.completed_at,
+    expires_at: record.expires_at,
+    status: record.status,
+    gateway_version: record.gateway_version,
+    schema_version: record.schema_version,
+    runtime_version: record.runtime_version,
+  };
+}
+
+function changesToRow(changes: IdempotencyStoreUpdateInput): Record<string, unknown> {
+  const row: Record<string, unknown> = {};
+  if (changes.status !== undefined) row.status = changes.status;
+  if (changes.completed_at !== undefined) row.completed_at = changes.completed_at;
+  if (changes.expires_at !== undefined) row.expires_at = changes.expires_at;
+  return row;
+}
+
+function rowToRecord(row: any): IdempotencyRecord {
+  return {
+    idempotency_key: row.idempotency_key,
+    request_hash: row.request_hash,
+    correlation_id: row.correlation_id,
+    tenant_id: row.tenant_id,
+    organization_id: row.organization_id,
+    created_at: row.created_at,
+    completed_at: row.completed_at,
+    expires_at: row.expires_at,
+    status: row.status,
+    gateway_version: row.gateway_version,
+    schema_version: row.schema_version,
+    runtime_version: row.runtime_version,
+  };
+}

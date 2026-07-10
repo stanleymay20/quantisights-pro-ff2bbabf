@@ -13,9 +13,18 @@
 // Verified Fact Promotion -> Decision Candidate Generation -> Decision
 // Candidate Handoff -> Agent Gateway -> Runtime Gateway -> Runtime Service ->
 // Runtime Queue -> Runtime Persistence -> decision_ledger.
+//
+// GA-2: the Runtime Queue (AG-3D) and Runtime Persistence (AG-3E) stages
+// now run against durable Postgres-backed adapters (SupabaseRuntimeQueueAdapter
+// / SupabaseRuntimePersistence) instead of GA-1's in-memory ones, using this
+// function's own service-role client. The pipeline's contract is unchanged —
+// these are optional overrides with in-memory defaults — so this is the only
+// change to the Supplier Risk runtime flow GA-2 makes.
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders, corsPreflightResponse } from "../_shared/cors.ts";
+import { SupabaseRuntimePersistence } from "@/lib/runtime-persistence.ts";
+import { SupabaseRuntimeQueueAdapter } from "@/lib/runtime-queue.ts";
 import {
   runSupplierRiskRuntimePipeline,
   type SupplierRiskDecisionLedgerRow,
@@ -224,6 +233,11 @@ async function runSupplierRiskPipelineForSource(
         persistedDecisionId = data.id;
         return { decision_id: data.id };
       },
+      // GA-2: durable Runtime Queue / Runtime Persistence instead of GA-1's
+      // in-memory adapters. Everything upstream of this (RTS-1, Agent
+      // Gateway) is unchanged.
+      runtimeQueueAdapter: new SupabaseRuntimeQueueAdapter(serviceSupabase),
+      runtimePersistenceAdapter: new SupabaseRuntimePersistence({ client: serviceSupabase }),
     },
   );
 
