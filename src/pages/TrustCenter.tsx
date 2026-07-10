@@ -223,7 +223,10 @@ const TrustCenterPage = () => {
                 >
                   <div className="flex items-start justify-between gap-3">
                     <span className="text-sm font-medium">{limitation.label}</span>
-                    <StatusBadge status={limitation.status} />
+                    <div className="flex items-center gap-1">
+                      <StatusBadge status={limitation.status} />
+                      <DeploymentBadge deployment={limitation.deployment} />
+                    </div>
                   </div>
                   <p className="text-xs text-muted-foreground">{limitation.detail}</p>
                 </li>
