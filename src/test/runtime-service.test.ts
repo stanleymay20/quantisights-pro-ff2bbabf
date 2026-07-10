@@ -53,7 +53,7 @@ describe("AG-3B runtime service contract", () => {
 
     expect(result.ok).toBe(false);
     expect(result.status_code).toBe(422);
-    if (result.ok) throw new Error("expected runtime error");
+    if (result.ok === true) throw new Error("expected runtime error");
     expect(result.error).toMatchObject({
       error_code: "INVALID_SCHEMA",
       status_code: 422,
@@ -74,7 +74,7 @@ describe("AG-3B runtime service contract", () => {
 
     expect(result.ok).toBe(false);
     expect(result.status_code).toBe(400);
-    if (result.ok) throw new Error("expected runtime error");
+    if (result.ok === true) throw new Error("expected runtime error");
     expect(result.error.error_code).toBe("UNSUPPORTED_VERSION");
     expect(queue.depth()).toBe(0);
   });
@@ -112,7 +112,7 @@ describe("AG-3B runtime service contract", () => {
     expect(justification.ok).toBe(false);
     expect(metadata.ok).toBe(false);
     expect(payload.ok).toBe(false);
-    if (evidence.ok || justification.ok || metadata.ok || payload.ok) {
+    if (evidence.ok === true || justification.ok === true || metadata.ok === true || payload.ok === true) {
       throw new Error("expected limit failures");
     }
     expect(evidence.error.error_code).toBe("BAD_REQUEST");
@@ -137,7 +137,7 @@ describe("AG-3B runtime service contract", () => {
     const result = await service.handleRuntimeRequest(validRequest());
 
     expect(result.ok).toBe(true);
-    if (!result.ok) throw new Error("expected acknowledgement");
+    if (result.ok === false) throw new Error("expected acknowledgement");
     expect(serializeAcknowledgement(result.acknowledgement)).toBe(serializeAcknowledgement(result.acknowledgement));
   });
 
@@ -180,7 +180,7 @@ describe("AG-3B runtime service contract", () => {
     expect(replay.ok).toBe(false);
     expect(tenant.ok).toBe(false);
     expect(queueFailure.ok).toBe(false);
-    if (duplicate.ok || replay.ok || tenant.ok || queueFailure.ok) throw new Error("expected errors");
+    if (duplicate.ok === true || replay.ok === true || tenant.ok === true || queueFailure.ok === true) throw new Error("expected errors");
     expect(duplicate.error.error_code).toBe("DUPLICATE_REQUEST");
     expect(duplicate.status_code).toBe(409);
     expect(replay.error.error_code).toBe("REPLAY_DETECTED");

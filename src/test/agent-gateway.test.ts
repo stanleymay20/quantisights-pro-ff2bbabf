@@ -171,28 +171,14 @@ describe("Agent Gateway", () => {
   it("enforces decision token expiry from the token payload", () => {
     expect(
       isDecisionTokenExpired(
-        {
-          decision_id: "decision_test_001",
-          hash: "fnv1a-test",
-          approval_state: "APPROVED",
-          expiry: "2026-07-03T12:00:00.000Z",
-          required_approvers: [],
-          signing_key_id: "agw-test-key-2026-07",
-        },
+        { expiry: "2026-07-03T12:00:00.000Z" },
         "2026-07-03T12:00:00.001Z",
       ),
     ).toBe(true);
 
     expect(
       isDecisionTokenExpired(
-        {
-          decision_id: "decision_test_001",
-          hash: "fnv1a-test",
-          approval_state: "APPROVED",
-          expiry: "2026-07-03T12:00:00.000Z",
-          required_approvers: [],
-          signing_key_id: "agw-test-key-2026-07",
-        },
+        { expiry: "2026-07-03T12:00:00.000Z" },
         "2026-07-03T11:59:59.999Z",
       ),
     ).toBe(false);
@@ -269,7 +255,7 @@ describe("Agent Gateway", () => {
             id: "ev-bad",
             uri: "quantivis://evidence/ev-bad",
             hash: "hash-ev-bad",
-            integrity: "failed",
+            integrity: "failed" as const,
             summary: "Tampered evidence",
             source: "decision_ledger.evidence_sources",
           },
@@ -295,6 +281,7 @@ describe("Agent Gateway", () => {
         evaluatePolicy: vi.fn(async () => ({
           allowed: false,
           policy_id: "policy-deny-high-risk",
+          policy_version: "policy-deny-high-risk.v1",
           reasons: ["policy_denied"],
           required_approvers: [],
         })),

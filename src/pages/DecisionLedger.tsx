@@ -41,6 +41,7 @@ import ExecutionTimeline from "@/components/execution/ExecutionTimeline";
 import DecisionReplayPanel from "@/components/execution/DecisionReplayPanel";
 import DecisionEvidencePanel from "@/components/decision-intelligence/DecisionEvidencePanel";
 import ExplainDecisionPanel from "@/components/dashboard/ExplainDecisionPanel";
+import type { Database } from "@/integrations/supabase/types";
 import type { ExplanationMetadata } from "@/components/dashboard/ExplainDecisionPanel";
 import { onDecisionApproved, onExecutionStatusChanged, checkEvaluability, evaluabilityColor, evaluabilityBadgeVariant } from "@/lib/decision-lifecycle";
 import { formatCompact } from "@/lib/format-locale";
@@ -319,7 +320,10 @@ const DecisionLedgerPage = () => {
     }
   };
 
-  const updateDecision = async (id: string, updates: Record<string, unknown>) => {
+  const updateDecision = async (
+    id: string,
+    updates: Database["public"]["Tables"]["decision_ledger"]["Update"],
+  ) => {
     const decision = decisions.find(d => d.id === id);
     if (!decision) return;
 

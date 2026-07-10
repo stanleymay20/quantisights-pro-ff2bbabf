@@ -155,6 +155,7 @@ function runScenario(definition: ScenarioDefinition, now: string): ScenarioPipel
     signal_id: signal.signal_id,
     ...calculateSignalQuality({
       ...signal,
+      schema_version: signal.schema_version,
       provenance: {
         connector_verified: true,
         payload_hash: createPayloadHash(signal.payload),
@@ -186,6 +187,7 @@ function runScenario(definition: ScenarioDefinition, now: string): ScenarioPipel
   });
   const contradictionSignals: ContradictionDetectionSignal[] = scoredSignals.map((signal) => ({
     ...signal,
+    schema_version: signal.schema_version,
     provenance: {
       source_record_id: signal.raw_event_id,
       payload_hash: createPayloadHash(signal.payload),

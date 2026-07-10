@@ -10,6 +10,7 @@ import { useOrganization } from "@/hooks/useOrganization";
 import { useProject } from "@/contexts/ProjectContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database, Json } from "@/integrations/supabase/types";
 import { invokeWithRetry } from "@/lib/edge-function-retry";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -135,8 +136,12 @@ const ScenarioBranching = () => {
       const rawData = data as unknown as Record<string, unknown> | null;
       if (rawData?.error) throw new Error(String(rawData.error));
 
+      const branchUpdate: Database["public"]["Tables"]["scenario_branches"]["Update"] = {
+        results: data as unknown as Json,
+        status: "simulated",
+      };
       await supabase.from("scenario_branches")
-        .update({ results: data, status: "simulated" } as Record<string, unknown>)
+        .update(branchUpdate)
         .eq("id", branch.id);
 
       toast({ title: "Simulation complete" });
