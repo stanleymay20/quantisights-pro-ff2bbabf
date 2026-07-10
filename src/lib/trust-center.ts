@@ -175,10 +175,16 @@ export function getCapabilityMatrix(): CapabilityEntry[] {
     {
       key: "scenario_templates",
       label: "Scenario Templates",
-      status: "Not Implemented",
+      status: "Implemented",
       detail:
-        "No scenario-template code exists anywhere in the codebase (searched src/pages/Scenarios.tsx, ScenarioBranching.tsx, Simulations.tsx). Referenced only as future roadmap work in prior sprint instructions.",
-      evidence: [],
+        "ST-1 ships six structured scenario templates (Supplier Risk, Inventory Shortage, Pricing Decision, Revenue Decline, Compliance Investigation, Cybersecurity Incident), live at /enterprise/scenarios and /enterprise/scenarios/:templateId, each with a readiness tier computed from this same capability matrix. This covers the defined scope of a template gallery and detail view only: there is no custom template authoring, no AI-generated templates, no runtime execution triggered from a template, and no direct connector onboarding from a template — none of that is wired, and none is implied.",
+      evidence: [
+        "docs/architecture/ST-1-Scenario-Template-Framework.md",
+        "src/lib/scenario-template.ts",
+        "src/pages/ScenarioTemplates.tsx",
+        "src/pages/ScenarioTemplateDetail.tsx",
+        "src/test/scenario-template.test.ts",
+      ],
     },
     {
       key: "outcome_learning",
