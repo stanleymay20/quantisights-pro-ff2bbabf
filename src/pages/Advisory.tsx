@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useActiveDataContext } from "@/hooks/useActiveDataContext";
 import DatasetRequired from "@/components/layout/DatasetRequired";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 import { invokeWithRetry } from "@/lib/edge-function-retry";
 import { embedAdvisoriesBatch } from "@/lib/decision-lifecycle";
 import { useToast } from "@/hooks/use-toast";
@@ -175,10 +176,14 @@ const AdvisoryPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentOrgId, activeDatasetId]);
 
-  const updateInstanceStatus = async (id: string, status: string, extras?: Record<string, unknown>) => {
+  const updateInstanceStatus = async (
+    id: string,
+    status: string,
+    extras?: Partial<Database["public"]["Tables"]["advisory_instances"]["Update"]>,
+  ) => {
     setUpdatingId(id);
     try {
-      const update: Record<string, unknown> = { status, ...extras };
+      const update: Database["public"]["Tables"]["advisory_instances"]["Update"] = { status, ...extras };
       if (status === "resolved") update.resolved_at = new Date().toISOString();
       const { error } = await supabase
         .from("advisory_instances")

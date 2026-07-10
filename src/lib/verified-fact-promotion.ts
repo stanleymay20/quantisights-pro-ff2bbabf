@@ -216,7 +216,7 @@ export function promoteVerifiedFact(input: PromotionInput): PromotionResult {
   const tenantId = signals[0].tenant_id;
   const organizationId = signals[0].organization_id;
   const factVersion = (input.previous_fact?.fact_version ?? 0) + 1;
-  const lineage = {
+  const lineage: EnterpriseVerifiedFact["lineage"] = {
     raw_events: sortedUnique(signals.map((signal) => signal.raw_event_id)),
     signals: sortedUnique(signals.map((signal) => signal.signal_id)),
     quality_assessments: sortedUnique(qualityScores.map((score) => score.signal_id)),
