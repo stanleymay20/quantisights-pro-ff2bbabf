@@ -5,6 +5,7 @@ import { IDEMPOTENCY_STORE_VERSION } from "@/lib/idempotency-store-types";
 import { RUNTIME_QUEUE_VERSION } from "@/lib/runtime-queue-types";
 import { EXECUTION_RECORD_SCHEMA_VERSION, RUNTIME_PERSISTENCE_VERSION } from "@/lib/runtime-persistence-types";
 import { EVIDENCE_PACK_SCHEMA_VERSION } from "@/lib/evidence-pack-types";
+import { CRYPTO_SIGNING_SCHEMA_VERSION } from "@/lib/crypto-signing-types";
 import { REAL_TIME_SIGNAL_SCHEMA_VERSION } from "@/lib/real-time-signals";
 import {
   ENTERPRISE_VERIFIED_FACT_SCHEMA_VERSION,
@@ -164,12 +165,14 @@ export function getCapabilityMatrix(): CapabilityEntry[] {
       status: "Partially Implemented",
       deployment: "Live In App",
       detail:
-        "Deterministic pack building (20 sections, canonical content hash, JSON/HTML export, PDF-ready block model) is live at /evidence-pack/:decisionId and reads real decision_ledger + audit_log rows. Actual PDF rendering and cryptographic signing are not implemented — the Digital Signature section is an explicit placeholder.",
+        "Deterministic pack building (20 sections, canonical content hash, JSON/HTML export, PDF-ready block model) is live at /evidence-pack/:decisionId and reads real decision_ledger + audit_log rows. PDF rendering is not implemented. GA-3 adds a real Ed25519-signed manifest capability (signEvidencePackManifest/attachEvidencePackSignature, tested end-to-end) that is not yet wired into the live page — packs generated through the UI today still show the honest \"SIGNING NOT AVAILABLE\" Digital Signature state rather than a mock signature.",
       evidence: [
         "docs/architecture/EP-1-Enterprise-Evidence-Pack.md",
+        "docs/architecture/GA-3-Cryptographic-Signing.md",
         "src/lib/evidence-pack.ts",
         "src/pages/EvidencePack.tsx",
         "src/test/evidence-pack.test.ts",
+        "src/test/ga3-evidence-pack-signing-integration.test.ts",
       ],
     },
     {
@@ -213,11 +216,22 @@ export function getCapabilityMatrix(): CapabilityEntry[] {
     {
       key: "signing",
       label: "Signing",
-      status: "Not Implemented",
-      deployment: "Not Deployed",
+      status: "Partially Implemented",
+      deployment: "Live In App",
       detail:
-        "No real cryptographic signing exists. The only \"signature\" values in the codebase are non-cryptographic mock hashes (mock-signature-<fnv1a hash>) used by test/reference adapters, and the Evidence Pack's Digital Signature section is an explicit null placeholder.",
-      evidence: ["src/lib/runtime-gateway.ts (MockSigningAdapter)", "src/lib/evidence-pack.ts (digital signature placeholder)"],
+        "GA-3 replaces mock signing with real Ed25519 (WebCrypto) asymmetric signing, deterministic canonical-payload serialization, and a key-lifecycle provider (PENDING/ACTIVE/RETIRED/REVOKED/EXPIRED). Decision-token signing (Agent Gateway) and runtime-acknowledgement signing (Runtime Gateway) are live on the GA-1 Supplier Risk production path — no mock signature values remain there. Evidence Pack manifest signing is a real, tested library capability (signEvidencePackManifest/attachEvidencePackSignature) but is not yet called from the live Evidence Pack page, so packs generated through the UI today still show \"SIGNING NOT AVAILABLE.\" The signing_keys migration (public-key/metadata only) and the verify-signed-artifact HTTP endpoint are implemented but NOT validated against a live Supabase project — no real KMS/Vault-backed private-key provider exists; only the in-memory/environment-injected providers used for tests and the current live path are validated. Production key durability and live endpoint validation remain BLOCKED pending a real deployment/KMS environment.",
+      evidence: [
+        "docs/architecture/GA-3-Cryptographic-Signing.md",
+        "src/lib/crypto-signing.ts",
+        "src/lib/key-management.ts",
+        "src/lib/signature-verification.ts",
+        "src/lib/agent-gateway.ts (createEd25519DecisionTokenSigner)",
+        "src/lib/runtime-gateway.ts (Ed25519RuntimeSigningAdapter)",
+        "src/lib/supplier-risk-runtime-pipeline.ts",
+        "src/test/ga3-supplier-risk-signing-integration.test.ts",
+        "supabase/functions/verify-signed-artifact (implemented, deployment unvalidated)",
+        "supabase/migrations/20260710180000_ga3_signing_keys.sql (unapplied to any live project)",
+      ],
     },
     {
       key: "observability",
@@ -461,7 +475,8 @@ export function getGovernanceStatus(): GovernanceStatusEntry[] {
       key: "evidence_export",
       label: "Evidence export",
       status: "Partially Implemented",
-      detail: "JSON and printable HTML export are live. PDF export and cryptographic signing are not implemented.",
+      detail:
+        "JSON and printable HTML export are live and can carry a real Ed25519-signed manifest when one is attached, but the live Evidence Pack page does not yet call the GA-3 signing step, so exports generated through the UI today remain unsigned. PDF export is not implemented.",
       evidence: ["src/lib/evidence-pack.ts", "src/components/decisions/EvidencePackPreview.tsx"],
     },
     {
@@ -562,6 +577,13 @@ export function getVersionMatrix(): VersionEntry[] {
       schemaVersion: TRUST_CENTER_SCHEMA_VERSION,
       source: "src/lib/trust-center-types.ts",
     },
+    {
+      key: "crypto_signing",
+      component: "Cryptographic Signing (GA-3)",
+      version: CRYPTO_SIGNING_SCHEMA_VERSION,
+      schemaVersion: CRYPTO_SIGNING_SCHEMA_VERSION,
+      source: "src/lib/crypto-signing-types.ts",
+    },
   ];
 }
 
@@ -638,8 +660,8 @@ export function getEnterpriseReadinessMatrix(): EnterpriseReadinessRow[] {
       key: "security",
       dimension: "Security",
       assessment:
-        "Authentication (with MFA/SSO), Row-Level Security authorization, and append-only audit logging are live. Cryptographic signing of decisions or evidence packs is not implemented anywhere in the codebase.",
-      citedSources: ["src/contexts/AuthContext.tsx", "supabase/migrations (RLS policies)"],
+        "Authentication (with MFA/SSO), Row-Level Security authorization, and append-only audit logging are live. GA-3 adds real Ed25519 cryptographic signing, live on the GA-1 Supplier Risk path for decision tokens and runtime acknowledgements; Evidence Pack manifest signing exists as a tested library capability not yet wired into the live page. No production KMS/Vault-backed private-key store or live-deployed verification endpoint exists — private key management beyond in-memory/environment-injected test providers remains BLOCKED pending a real deployment environment.",
+      citedSources: ["src/contexts/AuthContext.tsx", "supabase/migrations (RLS policies)", "docs/architecture/GA-3-Cryptographic-Signing.md"],
     },
     {
       key: "pilot_readiness",
