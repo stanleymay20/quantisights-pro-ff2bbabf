@@ -32,6 +32,11 @@
     "@/lib/runtime-queue": "../../src/lib/runtime-queue.ts",
     "@/lib/runtime-persistence-types": "../../src/lib/runtime-persistence-types.ts",
     "@/lib/runtime-persistence": "../../src/lib/runtime-persistence.ts",
-    "@/lib/supplier-risk-runtime-pipeline": "../../src/lib/supplier-risk-runtime-pipeline.ts"
+    "@/lib/supplier-risk-runtime-pipeline": "../../src/lib/supplier-risk-runtime-pipeline.ts",
+    "@/lib/crypto-signing-types": "../../src/lib/crypto-signing-types.ts",
+    "@/lib/crypto-signing": "../../src/lib/crypto-signing.ts",
+    "@/lib/key-management-types": "../../src/lib/key-management-types.ts",
+    "@/lib/key-management": "../../src/lib/key-management.ts",
+    "@/lib/signature-verification": "../../src/lib/signature-verification.ts"
   }
 }

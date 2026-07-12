@@ -56,7 +56,11 @@ describe("TC-1 Enterprise Trust Center — data model", () => {
     expect(byKey.runtime_service.status).not.toBe("Implemented");
     expect(byKey.queue.status).not.toBe("Implemented");
     expect(byKey.persistence.status).not.toBe("Implemented");
-    expect(byKey.signing.status).toBe("Not Implemented");
+    // GA-3: signing is now real (Ed25519) and live on the GA-1 Supplier Risk
+    // path for decision tokens/runtime acknowledgements, but production key
+    // management (KMS) and the verification endpoint remain unvalidated —
+    // Partially Implemented, not Not Implemented.
+    expect(byKey.signing.status).toBe("Partially Implemented");
     expect(byKey.http_runtime.status).toBe("Not Implemented");
   });
 

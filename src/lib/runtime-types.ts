@@ -51,6 +51,12 @@ export interface GatewayAcknowledgement {
   runtime_version: typeof RUNTIME_GATEWAY_VERSION;
   signature_key_id: string;
   estimated_processing: string;
+  /** GA-3: which algorithm produced `signature`. Optional so pre-GA-3
+   *  in-memory/mock signing adapters (which never claimed a real
+   *  algorithm) remain valid without every caller supplying one. */
+  algorithm?: string;
+  /** GA-3: always "runtime_acknowledgement" when set by a real signing adapter. */
+  signing_purpose?: "runtime_acknowledgement";
   signature: string;
 }
 
@@ -157,6 +163,8 @@ export interface RuntimePersistenceAdapter {
 
 export interface SigningAdapter {
   readonly key_id: string;
+  /** GA-3: real adapters report their algorithm ("Ed25519"); MockSigningAdapter omits it. */
+  readonly algorithm?: string;
   signAcknowledgement(acknowledgement: Omit<GatewayAcknowledgement, "signature">): Promise<string> | string;
   verifyAcknowledgement(acknowledgement: GatewayAcknowledgement): Promise<boolean> | boolean;
   available(): boolean;
@@ -182,6 +190,8 @@ export const GatewayAcknowledgementSchema = z.object({
   runtime_version: z.literal(RUNTIME_GATEWAY_VERSION),
   signature_key_id: NonEmptyStringSchema,
   estimated_processing: NonEmptyStringSchema,
+  algorithm: z.string().min(1).optional(),
+  signing_purpose: z.literal("runtime_acknowledgement").optional(),
   signature: NonEmptyStringSchema,
 });
 
