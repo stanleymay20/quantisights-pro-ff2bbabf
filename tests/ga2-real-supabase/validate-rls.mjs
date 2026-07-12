@@ -93,17 +93,23 @@ export async function run() {
     // Ordinary authenticated (non-service) client: create a real test user
     // via the admin API (service-role only) and sign in as them.
     const email = `${genId("ga2r-user")}@example.invalid`;
-    const password = `Ga2r-${genId("pw")}`;
+    // Ephemeral runtime-generated credential for an isolated validation user; no secret is stored in source.
+    // Drawn from the platform CSPRNG (32 random bytes / 256 bits, well over
+    // the 20-byte minimum), base64url-encoded so every character is accepted
+    // by Supabase Auth's password field. Exists only in this process's
+    // memory for the lifetime of this check, is never logged or included in
+    // any report, and the user it authenticates is deleted below.
+    const generatedTestCredential = Buffer.from(globalThis.crypto.getRandomValues(new Uint8Array(32))).toString("base64url");
     const { data: createdUser, error: createUserError } = await service.auth.admin.createUser({
       email,
-      password,
+      password: generatedTestCredential,
       email_confirm: true,
     });
     if (createUserError || !createdUser?.user) {
       report.check("ordinary authenticated client cannot access infrastructure tables", false, `SKIPPED — could not create test user: ${createUserError?.message}`);
     } else {
       const authedClient = createAnonClient(env);
-      const { error: signInError } = await authedClient.auth.signInWithPassword({ email, password });
+      const { error: signInError } = await authedClient.auth.signInWithPassword({ email, password: generatedTestCredential });
       if (signInError) {
         report.check("ordinary authenticated client cannot access infrastructure tables", false, `SKIPPED — could not sign in test user: ${signInError.message}`);
       } else {
