@@ -37,6 +37,8 @@
     "@/lib/crypto-signing": "../../src/lib/crypto-signing.ts",
     "@/lib/key-management-types": "../../src/lib/key-management-types.ts",
     "@/lib/key-management": "../../src/lib/key-management.ts",
-    "@/lib/signature-verification": "../../src/lib/signature-verification.ts"
+    "@/lib/signature-verification": "../../src/lib/signature-verification.ts",
+    "@/lib/idempotency-store-types": "../../src/lib/idempotency-store-types.ts",
+    "@/lib/idempotency-store": "../../src/lib/idempotency-store.ts"
   }
 }
