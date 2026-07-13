@@ -89,7 +89,8 @@ const Dashboard = () => {
       supabase.from("decision_ledger")
         .select("id", { count: "exact", head: true })
         .eq("organization_id", currentOrgId)
-        .eq("execution_status", "not_started"),
+        .eq("execution_status", "not_started")
+        .eq("is_suppressed", false),
       supabase.from("calibration_models")
         .select("overall_calibration_score")
         .eq("organization_id", currentOrgId)
