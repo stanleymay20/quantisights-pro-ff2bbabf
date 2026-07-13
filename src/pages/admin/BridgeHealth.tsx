@@ -173,9 +173,14 @@ export default function BridgeHealth() {
                   </TableRow>
                 )}
                 {rows.map((r) => {
-                  const breakerOpen =
+                  const timerActive =
                     !!r.circuit_breaker_until &&
                     Date.parse(r.circuit_breaker_until) > now;
+                  // Show "open" if cooldown timer is still active OR the surface has
+                  // burned through the failure threshold — a stale timer with 200+
+                  // consecutive failures still means the breaker is tripped.
+                  const failureThreshold = 3;
+                  const breakerOpen = timerActive || (r.consecutive_failures ?? 0) >= failureThreshold;
                   const cursor = r.metadata?.resume_offset ?? 0;
                   const pageSize = r.metadata?.last_page_size ?? "—";
                   return (
