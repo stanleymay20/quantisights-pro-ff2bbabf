@@ -72,7 +72,7 @@ function ExecutiveBriefCard({ brief, onRegenerate, generating, orgId }: {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
           <div><span className="font-medium">Why it matters:</span> <span className="text-muted-foreground">{s.why_it_matters}</span></div>
           <div><span className="font-medium">Likely impact:</span> <span className="text-muted-foreground">{s.likely_business_impact}</span></div>
-          <div><span className="font-medium">Affected areas:</span> <span className="text-muted-foreground">{s.affected_areas.join(", ") || "—"}</span></div>
+          <div><span className="font-medium">Affected areas:</span> <span className="text-muted-foreground">{(s.affected_areas ?? []).join(", ") || "—"}</span></div>
           <div><span className="font-medium">Time horizon:</span> <span className="text-muted-foreground">{s.projected_time_horizon_days} days</span></div>
         </div>
         <div>
