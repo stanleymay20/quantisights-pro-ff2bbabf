@@ -72,7 +72,7 @@ const DecisionReview = () => {
     // gated) outcome-tracking initialization all happen inside one
     // privileged server-side transaction — either all four commit or none
     // do. The browser never writes audit_log directly.
-    const { error } = await supabase.rpc("approve_decision", {
+    const { error } = await (supabase.rpc as any)("approve_decision", {
       _decision_id: decision.id,
       _dataset_id: activeDatasetId ?? null,
       _expected_metric: METRIC_BY_TYPE[decision.decision_type ?? ""] ?? decision.decision_type ?? null,
