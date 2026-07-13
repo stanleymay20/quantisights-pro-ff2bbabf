@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import IntelligenceDisclaimer from "@/components/IntelligenceDisclaimer";
 import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 import TrustStrip from "@/components/trust/TrustStrip";
@@ -136,7 +137,7 @@ export default function ExecutiveIntelligence() {
   const { orgId } = useActiveDataContext();
   const {
     brief, interventions, topByPressure, narratives, exposure, observability, snapshot,
-    loading, generating, regenerate, updateIntervention,
+    degradedSurfaces, loading, generating, regenerate, updateIntervention,
   } = useExecutiveIntelligence();
 
 
@@ -212,6 +213,22 @@ export default function ExecutiveIntelligence() {
       </header>
 
       <IntelligenceDisclaimer />
+
+      {degradedSurfaces.length > 0 && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Signal ingestion degraded</AlertTitle>
+          <AlertDescription>
+            {degradedSurfaces.map((s) => s.surface).join(", ")} {degradedSurfaces.length === 1 ? "has" : "have"}{" "}
+            failed {Math.max(...degradedSurfaces.map((s) => s.consecutive_failures))} consecutive sync attempts
+            {degradedSurfaces.some((s) => s.last_success_at) && (
+              <> (last success: {new Date(degradedSurfaces.find((s) => s.last_success_at)!.last_success_at!).toLocaleString()})</>
+            )}
+            . Briefing metrics below may be incomplete or stale, not a genuine all-clear — see{" "}
+            <a href="/admin/bridge-health" className="underline font-medium">AICIS Bridge Health</a> for details.
+          </AlertDescription>
+        </Alert>
+      )}
 
       <SectionErrorBoundary sectionName="Executive Brief">
         <ExecutiveBriefCard brief={brief} onRegenerate={regenerate} generating={generating} orgId={orgId} />
