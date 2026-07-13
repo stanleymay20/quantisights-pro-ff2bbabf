@@ -79,6 +79,13 @@ export interface ExecObservability {
   memory_effectiveness_score: number;
 }
 
+export interface SignalHealthSurface {
+  surface: string;
+  consecutive_failures: number;
+  last_success_at: string | null;
+  last_error_message: string | null;
+}
+
 export interface ExecIntelSnapshot {
   id: string;
   snapshot_date: string;
@@ -118,6 +125,7 @@ export const useExecutiveIntelligence = () => {
   const [exposure, setExposure] = useState<Exposure | null>(null);
   const [observability, setObservability] = useState<ExecObservability | null>(null);
   const [snapshot, setSnapshot] = useState<ExecIntelSnapshot | null>(null);
+  const [degradedSurfaces, setDegradedSurfaces] = useState<SignalHealthSurface[]>([]);
 
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -126,7 +134,7 @@ export const useExecutiveIntelligence = () => {
     if (!orgId) return;
     setLoading(true);
     try {
-      const [b, iv, nar, exp, obs, snap] = await Promise.all([
+      const [b, iv, nar, exp, obs, snap, health] = await Promise.all([
         supabase
           .from("executive_briefs")
           .select("id,summary_json,risk_score,generated_at")
@@ -168,6 +176,10 @@ export const useExecutiveIntelligence = () => {
           .order("snapshot_date", { ascending: false })
           .limit(1)
           .maybeSingle(),
+        supabase
+          .from("aicis_sync_surface_status")
+          .select("surface,consecutive_failures,last_success_at,last_error_message")
+          .eq("organization_id", orgId),
       ]);
       setBrief((b.data as unknown as ExecBrief) || null);
       setInterventions((iv.data as unknown as Intervention[]) || []);
@@ -175,6 +187,12 @@ export const useExecutiveIntelligence = () => {
       setExposure((exp.data as unknown as Exposure) || null);
       setObservability((obs.data as unknown as ExecObservability) || null);
       setSnapshot((snap.data as unknown as ExecIntelSnapshot) || null);
+      // A signal source stuck at 3+ consecutive failures means the metrics
+      // above may be computed from incomplete/stale data, not genuine "all
+      // clear" — the UI must say so instead of presenting zeros as fact.
+      setDegradedSurfaces(
+        ((health.data as unknown as SignalHealthSurface[]) || []).filter((s) => (s.consecutive_failures ?? 0) >= 3)
+      );
 
     } finally {
       setLoading(false);
@@ -254,7 +272,7 @@ export const useExecutiveIntelligence = () => {
 
   return {
     brief, interventions, topByPressure, narratives, exposure, observability, snapshot,
-    loading, generating, refresh, regenerate, updateIntervention,
+    degradedSurfaces, loading, generating, refresh, regenerate, updateIntervention,
   };
 
 };

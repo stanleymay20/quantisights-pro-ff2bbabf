@@ -151,9 +151,13 @@ const Simulations = () => {
           {/* Latest result summary */}
           {latest && (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {/* median_value, not expected_value (the arithmetic mean): GBM output is
+                  log-normal/right-skewed, so the mean can legitimately fall outside the
+                  P10-P90 band for volatile metrics. The median is the P50 percentile of
+                  the same sorted path array, so it is always bounded by P10 and P90. */}
               <StatCard
                 label="Expected Value"
-                value={fmt(latest.expected_value)}
+                value={fmt(latest.median_value)}
                 icon={<TrendingUp className="w-4 h-4 text-primary" />}
               />
               <StatCard
@@ -236,7 +240,7 @@ const Simulations = () => {
                         <tr key={s.id} className="border-b border-border/50 hover:bg-muted/30">
                           <td className="py-2.5 pr-4 font-medium">{s.metric_type.replace(/_/g, " ")}</td>
                           <td className="text-right px-2">{s.forecast_horizon}mo</td>
-                          <td className="text-right px-2 font-mono">{fmt(s.expected_value)}</td>
+                          <td className="text-right px-2 font-mono">{fmt(s.median_value)}</td>
                           <td className="text-right px-2 font-mono text-destructive">{fmt(s.p10_value)}</td>
                           <td className="text-right px-2 font-mono text-primary">{fmt(s.p90_value)}</td>
                           <td className="text-right px-2">{s.probability_negative}%</td>
@@ -288,7 +292,6 @@ function DistributionBand({ sim }: { sim: any }) {
   const p25 = Math.max(0, Math.min(100, pos(Number(sim.p25_value))));
   const median = Math.max(0, Math.min(100, pos(Number(sim.median_value))));
   const p75 = Math.max(0, Math.min(100, pos(Number(sim.p75_value))));
-  const expected = Math.max(0, Math.min(100, pos(Number(sim.expected_value))));
 
   return (
     <div className="space-y-2">
@@ -302,8 +305,6 @@ function DistributionBand({ sim }: { sim: any }) {
         />
         {/* Median line */}
         <div className="absolute top-0 bottom-0 w-0.5 bg-foreground/70" style={{ left: `${median}%` }} />
-        {/* Expected marker */}
-        <div className="absolute top-0 bottom-0 w-0.5 bg-primary border-dashed" style={{ left: `${expected}%` }} />
       </div>
       <div className="flex justify-between text-xs text-muted-foreground font-mono">
         <span>P10: {fmt(sim.p10_value)}</span>
