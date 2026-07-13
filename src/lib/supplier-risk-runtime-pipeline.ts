@@ -61,11 +61,13 @@ import {
   type ExecutionRecord,
   type RuntimePersistence,
 } from "@/lib/runtime-persistence";
+import type { RuntimePersistenceAdapter as ExecutionPersistenceAdapter } from "@/lib/runtime-persistence-types";
 import {
   createRuntimeQueue,
   InMemoryRuntimeQueueAdapter as ExecutionQueueAdapter,
   type RuntimeQueue,
 } from "@/lib/runtime-queue";
+import type { RuntimeQueueAdapter as ExecutionQueueAdapterType } from "@/lib/runtime-queue-types";
 import { createRuntimeService, type RuntimeServiceResponse } from "@/lib/runtime-service";
 import {
   calculateSignalQuality,
@@ -137,6 +139,15 @@ export interface SupplierRiskRuntimeDeps {
   signDecisionToken?: AgentGatewayDependencies["signDecisionToken"];
   signing_key_id?: string;
   generateId?: AgentGatewayDependencies["generateId"];
+  /**
+   * GA-2: optional durable infrastructure overrides for the Runtime Queue
+   * (AG-3D) and Runtime Persistence (AG-3E) stages. Defaults to fresh
+   * in-memory adapters (unchanged GA-1 behavior) when omitted, so existing
+   * callers/tests are unaffected. Pass `SupabaseRuntimeQueueAdapter` /
+   * `SupabaseRuntimePersistence` instances to make the pipeline durable.
+   */
+  runtimeQueueAdapter?: ExecutionQueueAdapterType;
+  runtimePersistenceAdapter?: ExecutionPersistenceAdapter;
 }
 
 export interface SupplierRiskRuntimePipelineResult {
@@ -307,7 +318,10 @@ export async function runSupplierRiskRuntimePipeline(
     );
   }
 
-  const runtime = buildRuntimeAdapters(input.now);
+  const runtime = buildRuntimeAdapters(input.now, {
+    queue: deps.runtimeQueueAdapter,
+    persistence: deps.runtimePersistenceAdapter,
+  });
   const runtimeService = createRuntimeService({
     gateway: createRuntimeGateway({
       queue: runtime.queue,
@@ -525,14 +539,20 @@ interface RuntimeAdapters {
   executionPersistence: RuntimePersistence;
 }
 
-function buildRuntimeAdapters(now: string): RuntimeAdapters {
+function buildRuntimeAdapters(
+  now: string,
+  overrides: { queue?: ExecutionQueueAdapterType; persistence?: ExecutionPersistenceAdapter } = {},
+): RuntimeAdapters {
   return {
     queue: new InMemoryRuntimeQueueAdapter(),
     gatewayPersistence: new InMemoryRuntimePersistenceAdapter(),
     signing: new MockSigningAdapter("supplier-risk-runtime-signing-key"),
     events: new MockRuntimeEventEmitterAdapter(),
-    executionQueue: createRuntimeQueue({ adapter: new ExecutionQueueAdapter(), now: () => now }),
-    executionPersistence: createRuntimePersistence({ adapter: new MemoryRuntimePersistence(), now: () => now }),
+    executionQueue: createRuntimeQueue({ adapter: overrides.queue ?? new ExecutionQueueAdapter(), now: () => now }),
+    executionPersistence: createRuntimePersistence({
+      adapter: overrides.persistence ?? new MemoryRuntimePersistence(),
+      now: () => now,
+    }),
   };
 }
 

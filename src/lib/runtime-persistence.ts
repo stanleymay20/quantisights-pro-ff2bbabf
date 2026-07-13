@@ -489,15 +489,66 @@ export class MemoryRuntimePersistence implements RuntimePersistenceAdapter {
 }
 
 /**
- * Compile-only scaffold for the Supabase-backed adapter. AG-3E deliberately
- * ships no database SDK integration; a later phase replaces every method body
- * with real Supabase table access using the injected configuration.
+ * Minimal shape of an injected @supabase/supabase-js client (or any
+ * PostgREST-compatible client) needed by the durable adapters in this
+ * module. Kept intentionally narrow — a real `SupabaseClient` instance
+ * structurally satisfies it — so these adapters stay portable across both
+ * the Vite/browser client and the Deno edge-function client without
+ * depending on the full generated Database types.
  */
+export interface SupabaseRuntimeQueryError {
+  message: string;
+  code?: string;
+}
+
+export interface SupabaseRuntimeQueryResult<T> {
+  data: T | null;
+  error: SupabaseRuntimeQueryError | null;
+}
+
+export interface SupabaseRuntimeFilterBuilder extends PromiseLike<SupabaseRuntimeQueryResult<any>> {
+  eq(column: string, value: unknown): SupabaseRuntimeFilterBuilder;
+  in(column: string, values: unknown[]): SupabaseRuntimeFilterBuilder;
+  is(column: string, value: unknown): SupabaseRuntimeFilterBuilder;
+  order(column: string, options?: { ascending?: boolean }): SupabaseRuntimeFilterBuilder;
+  limit(count: number): SupabaseRuntimeFilterBuilder;
+  select(columns?: string): SupabaseRuntimeFilterBuilder;
+  single(): PromiseLike<SupabaseRuntimeQueryResult<any>>;
+  maybeSingle(): PromiseLike<SupabaseRuntimeQueryResult<any>>;
+}
+
+export interface SupabaseRuntimeQueryBuilder {
+  select(columns?: string): SupabaseRuntimeFilterBuilder;
+  insert(values: unknown): SupabaseRuntimeFilterBuilder;
+  update(values: unknown): SupabaseRuntimeFilterBuilder;
+  delete(): SupabaseRuntimeFilterBuilder;
+}
+
+export interface SupabaseRuntimeClient {
+  from(table: string): SupabaseRuntimeQueryBuilder;
+  rpc(fn: string, params?: Record<string, unknown>): PromiseLike<SupabaseRuntimeQueryResult<any>>;
+}
+
+/** Postgres unique_violation error code. */
+const UNIQUE_VIOLATION = "23505";
+
 export interface SupabaseRuntimePersistenceConfig {
-  project_url: string;
+  client: SupabaseRuntimeClient;
+  /** Retained for observability/back-compat; the adapter itself only needs `client`. */
+  project_url?: string;
   schema?: string;
 }
 
+/**
+ * GA-2: durable Postgres-backed implementation of the AG-3E persistence
+ * contract, backed by the `runtime_executions` / `runtime_events` /
+ * `runtime_audit_records` / `runtime_queue_snapshots` tables. Every method
+ * is scoped by `tenant_id` (and `organization_id` where present) so no
+ * query can leak across tenants, and the append-only tables rely on DB
+ * unique constraints (see migration `..._ga2_durable_runtime_infrastructure`)
+ * as a durability backstop beneath the in-app sequencing/chaining checks
+ * already performed by `createRuntimePersistence()`.
+ */
 export class SupabaseRuntimePersistence implements RuntimePersistenceAdapter {
   protected readonly config: SupabaseRuntimePersistenceConfig;
 
@@ -505,53 +556,293 @@ export class SupabaseRuntimePersistence implements RuntimePersistenceAdapter {
     this.config = config;
   }
 
-  createExecution(_record: ExecutionRecord): never {
-    throw new NotImplementedError("SupabaseRuntimePersistence.createExecution");
+  private get client(): SupabaseRuntimeClient {
+    return this.config.client;
   }
 
-  updateExecution(_record: ExecutionRecord): never {
-    throw new NotImplementedError("SupabaseRuntimePersistence.updateExecution");
+  async createExecution(record: ExecutionRecord): Promise<ExecutionRecord> {
+    const { data, error } = await this.client
+      .from("runtime_executions")
+      .insert(executionToRow(record))
+      .select("*")
+      .single();
+    if (error) {
+      if (error.code === UNIQUE_VIOLATION) {
+        throw new Error(`execution ${record.execution_id} already exists for tenant ${record.tenant_id}`);
+      }
+      throw new Error(`SupabaseRuntimePersistence.createExecution failed: ${error.message}`);
+    }
+    return rowToExecution(data);
   }
 
-  getExecution(_tenant_id: string, _execution_id: string): never {
-    throw new NotImplementedError("SupabaseRuntimePersistence.getExecution");
+  async updateExecution(record: ExecutionRecord): Promise<ExecutionRecord | null> {
+    const { data, error } = await this.client
+      .from("runtime_executions")
+      .update(executionToRow(record))
+      .eq("tenant_id", record.tenant_id)
+      .eq("execution_id", record.execution_id)
+      .select("*")
+      .maybeSingle();
+    if (error) throw new Error(`SupabaseRuntimePersistence.updateExecution failed: ${error.message}`);
+    return data ? rowToExecution(data) : null;
   }
 
-  listExecutions(_query: ExecutionListQuery): never {
-    throw new NotImplementedError("SupabaseRuntimePersistence.listExecutions");
+  async getExecution(tenant_id: string, execution_id: string): Promise<ExecutionRecord | null> {
+    const { data, error } = await this.client
+      .from("runtime_executions")
+      .select("*")
+      .eq("tenant_id", tenant_id)
+      .eq("execution_id", execution_id)
+      .maybeSingle();
+    if (error) throw new Error(`SupabaseRuntimePersistence.getExecution failed: ${error.message}`);
+    return data ? rowToExecution(data) : null;
   }
 
-  appendRuntimeEvent(_record: RuntimeEventRecord): never {
-    throw new NotImplementedError("SupabaseRuntimePersistence.appendRuntimeEvent");
+  async listExecutions(query: ExecutionListQuery): Promise<ExecutionRecord[]> {
+    let builder = this.client
+      .from("runtime_executions")
+      .select("*")
+      .eq("tenant_id", query.tenant_id);
+    if (query.organization_id !== undefined) builder = builder.eq("organization_id", query.organization_id);
+    if (query.status !== undefined) builder = builder.eq("status", query.status);
+    if (query.correlation_id !== undefined) builder = builder.eq("correlation_id", query.correlation_id);
+    const { data, error } = await builder.order("created_at", { ascending: true }).order("execution_id", { ascending: true });
+    if (error) throw new Error(`SupabaseRuntimePersistence.listExecutions failed: ${error.message}`);
+    return (data ?? []).map(rowToExecution);
   }
 
-  listRuntimeEvents(_tenant_id: string, _execution_id: string): never {
-    throw new NotImplementedError("SupabaseRuntimePersistence.listRuntimeEvents");
+  async appendRuntimeEvent(record: RuntimeEventRecord): Promise<RuntimeEventRecord> {
+    const { data, error } = await this.client
+      .from("runtime_events")
+      .insert(eventToRow(record))
+      .select("*")
+      .single();
+    if (error) {
+      if (error.code === UNIQUE_VIOLATION) {
+        throw new Error(
+          `append-only violation for execution ${record.execution_id}: sequence ${record.sequence_number} already recorded`,
+        );
+      }
+      throw new Error(`SupabaseRuntimePersistence.appendRuntimeEvent failed: ${error.message}`);
+    }
+    return rowToEvent(data);
   }
 
-  createAuditRecord(_record: RuntimeAuditRecord): never {
-    throw new NotImplementedError("SupabaseRuntimePersistence.createAuditRecord");
+  async listRuntimeEvents(tenant_id: string, execution_id: string): Promise<RuntimeEventRecord[]> {
+    const { data, error } = await this.client
+      .from("runtime_events")
+      .select("*")
+      .eq("tenant_id", tenant_id)
+      .eq("execution_id", execution_id)
+      .order("sequence_number", { ascending: true });
+    if (error) throw new Error(`SupabaseRuntimePersistence.listRuntimeEvents failed: ${error.message}`);
+    return (data ?? []).map(rowToEvent);
   }
 
-  listAuditRecords(_tenant_id: string, _execution_id?: string): never {
-    throw new NotImplementedError("SupabaseRuntimePersistence.listAuditRecords");
+  async createAuditRecord(record: RuntimeAuditRecord): Promise<RuntimeAuditRecord> {
+    const { data, error } = await this.client
+      .from("runtime_audit_records")
+      .insert(auditToRow(record))
+      .select("*")
+      .single();
+    if (error) {
+      if (error.code === UNIQUE_VIOLATION) {
+        throw new Error(
+          `audit chain violation for tenant ${record.tenant_id}: previous hash ${String(record.previous_audit_hash)} already has a successor`,
+        );
+      }
+      throw new Error(`SupabaseRuntimePersistence.createAuditRecord failed: ${error.message}`);
+    }
+    return rowToAudit(data);
   }
 
-  saveQueueSnapshot(_snapshot: RuntimeQueueSnapshot): never {
-    throw new NotImplementedError("SupabaseRuntimePersistence.saveQueueSnapshot");
+  async listAuditRecords(tenant_id: string, execution_id?: string): Promise<RuntimeAuditRecord[]> {
+    let builder = this.client.from("runtime_audit_records").select("*").eq("tenant_id", tenant_id);
+    if (execution_id !== undefined) builder = builder.eq("execution_id", execution_id);
+    const { data, error } = await builder.order("seq", { ascending: true });
+    if (error) throw new Error(`SupabaseRuntimePersistence.listAuditRecords failed: ${error.message}`);
+    return (data ?? []).map(rowToAudit);
   }
 
-  loadQueueSnapshot(_tenant_id: string): never {
-    throw new NotImplementedError("SupabaseRuntimePersistence.loadQueueSnapshot");
+  async saveQueueSnapshot(snapshot: RuntimeQueueSnapshot): Promise<RuntimeQueueSnapshot> {
+    const { data, error } = await this.client
+      .from("runtime_queue_snapshots")
+      .insert(snapshotToRow(snapshot))
+      .select("*")
+      .single();
+    if (error) throw new Error(`SupabaseRuntimePersistence.saveQueueSnapshot failed: ${error.message}`);
+    return rowToSnapshot(data);
   }
 
-  deleteExpiredExecutions(_now: string, _retention_ms: number): never {
-    throw new NotImplementedError("SupabaseRuntimePersistence.deleteExpiredExecutions");
+  async loadQueueSnapshot(tenant_id: string): Promise<RuntimeQueueSnapshot | null> {
+    const { data, error } = await this.client
+      .from("runtime_queue_snapshots")
+      .select("*")
+      .eq("tenant_id", tenant_id)
+      .order("captured_at", { ascending: false })
+      .order("snapshot_id", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) throw new Error(`SupabaseRuntimePersistence.loadQueueSnapshot failed: ${error.message}`);
+    return data ? rowToSnapshot(data) : null;
+  }
+
+  async deleteExpiredExecutions(now: string, retention_ms: number): Promise<number> {
+    const { data, error } = await this.client
+      .from("runtime_executions")
+      .select("id, execution_id, tenant_id, completed_at, updated_at")
+      .in("status", [...TERMINAL_EXECUTION_STATUSES]);
+    if (error) throw new Error(`SupabaseRuntimePersistence.deleteExpiredExecutions failed: ${error.message}`);
+
+    const cutoff = Date.parse(now) - retention_ms;
+    const expired = (data ?? []).filter((row: any) => Date.parse(row.completed_at ?? row.updated_at) <= cutoff);
+    if (expired.length === 0) return 0;
+
+    const ids = expired.map((row: any) => row.id);
+    const { error: deleteError } = await this.client.from("runtime_executions").delete().in("id", ids);
+    if (deleteError) throw new Error(`SupabaseRuntimePersistence.deleteExpiredExecutions failed: ${deleteError.message}`);
+
+    for (const row of expired) {
+      await this.client.from("runtime_events").delete().eq("tenant_id", row.tenant_id).eq("execution_id", row.execution_id);
+    }
+    return expired.length;
   }
 
   available(): boolean {
-    return false;
+    return true;
   }
+}
+
+function executionToRow(record: ExecutionRecord): Record<string, unknown> {
+  return {
+    execution_id: record.execution_id,
+    correlation_id: record.correlation_id,
+    request_hash: record.request_hash,
+    idempotency_key: record.idempotency_key,
+    tenant_id: record.tenant_id,
+    organization_id: record.organization_id,
+    status: record.status,
+    runtime_version: record.runtime_version,
+    gateway_version: record.gateway_version,
+    schema_version: record.schema_version,
+    created_at: record.created_at,
+    updated_at: record.updated_at,
+    completed_at: record.completed_at,
+    metadata: record.metadata,
+    result: record.result,
+    error: record.error,
+    execution_hash: record.execution_hash,
+  };
+}
+
+function rowToExecution(row: any): ExecutionRecord {
+  return {
+    execution_id: row.execution_id,
+    correlation_id: row.correlation_id,
+    request_hash: row.request_hash,
+    idempotency_key: row.idempotency_key,
+    tenant_id: row.tenant_id,
+    organization_id: row.organization_id,
+    status: row.status,
+    runtime_version: row.runtime_version,
+    gateway_version: row.gateway_version,
+    schema_version: row.schema_version,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+    completed_at: row.completed_at,
+    metadata: row.metadata ?? {},
+    result: row.result,
+    error: row.error,
+    execution_hash: row.execution_hash,
+  };
+}
+
+function eventToRow(record: RuntimeEventRecord): Record<string, unknown> {
+  return {
+    event_id: record.event_id,
+    execution_id: record.execution_id,
+    correlation_id: record.correlation_id,
+    tenant_id: record.tenant_id,
+    organization_id: record.organization_id,
+    event_type: record.event_type,
+    sequence_number: record.sequence_number,
+    occurred_at: record.timestamp,
+    payload_hash: record.payload_hash,
+    payload: record.payload,
+    runtime_version: record.runtime_version,
+  };
+}
+
+function rowToEvent(row: any): RuntimeEventRecord {
+  return {
+    event_id: row.event_id,
+    execution_id: row.execution_id,
+    correlation_id: row.correlation_id,
+    tenant_id: row.tenant_id,
+    organization_id: row.organization_id,
+    event_type: row.event_type,
+    sequence_number: row.sequence_number,
+    timestamp: row.occurred_at,
+    payload_hash: row.payload_hash,
+    payload: row.payload ?? {},
+    runtime_version: row.runtime_version,
+  };
+}
+
+function auditToRow(record: RuntimeAuditRecord): Record<string, unknown> {
+  return {
+    audit_id: record.audit_id,
+    execution_id: record.execution_id,
+    tenant_id: record.tenant_id,
+    organization_id: record.organization_id,
+    actor: record.actor,
+    action: record.action,
+    resource_type: record.resource_type,
+    resource_id: record.resource_id,
+    occurred_at: record.timestamp,
+    audit_hash: record.audit_hash,
+    previous_audit_hash: record.previous_audit_hash,
+    metadata: record.metadata,
+  };
+}
+
+function rowToAudit(row: any): RuntimeAuditRecord {
+  return {
+    audit_id: row.audit_id,
+    execution_id: row.execution_id,
+    tenant_id: row.tenant_id,
+    organization_id: row.organization_id,
+    actor: row.actor,
+    action: row.action,
+    resource_type: row.resource_type,
+    resource_id: row.resource_id,
+    timestamp: row.occurred_at,
+    audit_hash: row.audit_hash,
+    previous_audit_hash: row.previous_audit_hash,
+    metadata: row.metadata ?? {},
+  };
+}
+
+function snapshotToRow(snapshot: RuntimeQueueSnapshot): Record<string, unknown> {
+  return {
+    snapshot_id: snapshot.snapshot_id,
+    tenant_id: snapshot.tenant_id,
+    captured_at: snapshot.captured_at,
+    runtime_version: snapshot.runtime_version,
+    messages: snapshot.messages,
+    snapshot_hash: snapshot.snapshot_hash,
+  };
+}
+
+function rowToSnapshot(row: any): RuntimeQueueSnapshot {
+  return {
+    snapshot_id: row.snapshot_id,
+    tenant_id: row.tenant_id,
+    captured_at: row.captured_at,
+    runtime_version: row.runtime_version,
+    messages: row.messages ?? [],
+    snapshot_hash: row.snapshot_hash,
+  };
 }
 
 /**

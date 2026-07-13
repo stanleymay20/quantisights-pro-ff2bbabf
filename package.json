@@ -32,7 +32,8 @@
     "evidence:deployment": "node tests/evidence/deployment-verification.mjs",
     "evidence:docs": "node tests/evidence/generate-docs.mjs --check",
     "evidence:docs:write": "node tests/evidence/generate-docs.mjs --write",
-    "evidence:test": "node --test tests/evidence/__tests__/*.test.mjs"
+    "evidence:test": "node --test tests/evidence/__tests__/*.test.mjs",
+    "ga2:validate:staging": "node --import ./tests/ga2-real-supabase/register.mjs tests/ga2-real-supabase/run-all.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

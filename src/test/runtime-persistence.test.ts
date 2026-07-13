@@ -7,7 +7,6 @@ import {
   NotImplementedError,
   PostgresRuntimePersistence,
   stableRuntimeHash,
-  SupabaseRuntimePersistence,
 } from "@/lib/runtime-persistence";
 import type {
   ExecutionCreateInput,
@@ -361,13 +360,10 @@ describe("AG-3E enterprise runtime persistence", () => {
     expect(snapshot.status).toBe("FAILED");
   });
 
-  it("scaffolded backends compile but throw NotImplementedError", () => {
-    const supabase = new SupabaseRuntimePersistence({ project_url: "https://example.supabase.co" });
+  it("the Postgres scaffold still compiles but throws NotImplementedError (GA-2 only implements the Supabase adapter)", () => {
     const postgres = new PostgresRuntimePersistence({ connection_reference: "env:QV_RUNTIME_DB" });
 
-    expect(() => supabase.getExecution("tenant-a", "exec-001")).toThrowError(NotImplementedError);
     expect(() => postgres.deleteExpiredExecutions(NOW, 1000)).toThrowError(NotImplementedError);
-    expect(supabase.available()).toBe(false);
     expect(postgres.available()).toBe(false);
   });
 
