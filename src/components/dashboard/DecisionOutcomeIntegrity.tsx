@@ -39,8 +39,14 @@ const OUTCOME_STATUS_CONFIG: Record<string, { icon: typeof CheckCircle2; color: 
   partial_success: { icon: TrendingUp, color: "text-primary", label: "Partial" },
   no_effect: { icon: Minus, color: "text-muted-foreground", label: "No Effect" },
   negative: { icon: XCircle, color: "text-destructive", label: "Negative" },
+  negative_outcome: { icon: XCircle, color: "text-destructive", label: "Negative" },
+  not_evaluable: { icon: Minus, color: "text-muted-foreground", label: "Not Evaluable" },
   pending: { icon: Target, color: "text-warning", label: "Pending" },
+  pending_evaluation: { icon: Target, color: "text-warning", label: "Pending" },
 };
+
+const isPendingStatus = (s: string) => s === "pending" || s === "pending_evaluation";
+const isEvaluatedStatus = (s: string) => !isPendingStatus(s) && s !== "not_evaluable";
 
 /**
  * Decision Outcome Integrity panel — shows expected vs actual
