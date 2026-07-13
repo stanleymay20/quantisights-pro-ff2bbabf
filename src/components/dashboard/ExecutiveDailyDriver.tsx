@@ -1,5 +1,5 @@
 // @ts-nocheck — suppresses TS2589/TS2769 from large generated schema; remove when schema stabilises
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef, forwardRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
@@ -80,7 +80,7 @@ function MetricChip({ metric }: { metric: MetricTypeSummary }) {
   );
 }
 
-function DecisionQueueItem({ decision }: { decision: PendingDecision }) {
+const DecisionQueueItem = forwardRef<HTMLDivElement, { decision: PendingDecision }>(function DecisionQueueItem({ decision }, ref) {
   const navigate = useNavigate();
   const conf = decision.capped_confidence;
   const impact = decision.predicted_net_impact;
@@ -88,6 +88,7 @@ function DecisionQueueItem({ decision }: { decision: PendingDecision }) {
 
   return (
     <motion.div
+      ref={ref}
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       className="border-b border-border/30 py-3 px-1 last:border-0"
@@ -119,7 +120,7 @@ function DecisionQueueItem({ decision }: { decision: PendingDecision }) {
       </div>
     </motion.div>
   );
-}
+});
 
 const ExecutiveDailyDriver = ({ displayName, orgId, insights, topMetrics, pendingDecisions }: Props) => {
   const navigate = useNavigate();
