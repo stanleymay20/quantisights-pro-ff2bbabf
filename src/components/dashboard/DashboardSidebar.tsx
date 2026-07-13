@@ -462,7 +462,7 @@ const AdvancedDrawer = ({
         )}
       >
         <Sparkles className="w-3 h-3" />
-        <span className="flex-1 text-left">Advanced</span>
+        <span className="flex-1 text-left">{useSidebarLabel()("Advanced")}</span>
         <ChevronRight className={cn("w-3 h-3 transition-transform duration-200", drawerOpen && "rotate-90")} />
       </button>
 
@@ -491,6 +491,7 @@ const AdvancedGroupBlock = ({
   location: ReturnType<typeof useLocation>;
   onNavClick: () => void;
 }) => {
+  const tr = useSidebarLabel();
   const hasActive = group.items.some(i => location.pathname === i.path);
   const [open, setOpen] = useState(hasActive);
 
@@ -507,7 +508,7 @@ const AdvancedGroupBlock = ({
         )}
       >
         <group.icon className="w-3.5 h-3.5 shrink-0" />
-        <span className="flex-1 text-left">{group.label}</span>
+        <span className="flex-1 text-left">{tr(group.label)}</span>
         <ChevronDown className={cn("w-3 h-3 transition-transform duration-200", open && "rotate-180")} />
       </button>
       {open && (
@@ -527,7 +528,7 @@ const AdvancedGroupBlock = ({
                 )}
               >
                 <item.icon className="w-3 h-3 shrink-0 text-muted-foreground" />
-                <span className="truncate">{item.label}</span>
+                <span className="truncate">{tr(item.label)}</span>
               </Link>
             );
           })}
