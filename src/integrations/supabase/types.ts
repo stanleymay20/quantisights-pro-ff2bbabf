@@ -11979,6 +11979,19 @@ export type Database = {
         }
       }
       get_connector_secret: { Args: { _secret_name: string }; Returns: string }
+      get_cron_health: {
+        Args: { _job_names: string[] }
+        Returns: {
+          failures_last_24h: number
+          job_name: string
+          last_completed_at: string
+          last_duration_ms: number
+          last_error: string
+          last_started_at: string
+          last_status: string
+          runs_last_24h: number
+        }[]
+      }
       get_ingest_cron_secret: { Args: never; Returns: string }
       get_ingest_service_token: { Args: never; Returns: string }
       get_iq_composite_score: {
