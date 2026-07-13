@@ -1,5 +1,5 @@
 // @ts-nocheck — suppresses TS2589/TS2769 from large generated schema; remove when schema stabilises
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef, forwardRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
