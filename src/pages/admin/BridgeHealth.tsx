@@ -71,8 +71,11 @@ export default function BridgeHealth() {
   }, [organization?.id]);
 
   const summary = useMemo(() => {
+    const failureThreshold = 3;
     const open = rows.filter(
-      (r) => r.circuit_breaker_until && Date.parse(r.circuit_breaker_until) > now,
+      (r) =>
+        (r.circuit_breaker_until && Date.parse(r.circuit_breaker_until) > now) ||
+        (r.consecutive_failures ?? 0) >= failureThreshold,
     ).length;
     const failing = rows.filter((r) => (r.consecutive_failures ?? 0) > 0).length;
     return { total: rows.length, open, failing };
