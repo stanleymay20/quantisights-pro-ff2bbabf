@@ -177,6 +177,7 @@ const DecisionLedgerPage = () => {
       .from("decision_ledger")
       .select("*")
       .eq("organization_id", currentOrgId)
+      .eq("is_suppressed", false)
       .order("created_at", { ascending: false })
       .limit(100);
     // Note: decision_ledger is org-scoped by design (decisions span datasets)

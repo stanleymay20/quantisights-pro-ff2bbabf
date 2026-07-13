@@ -114,6 +114,7 @@ const Copilot = () => {
       .from("decision_ledger")
       .select("id,recommended_action,decision_type,capped_confidence,predicted_net_impact")
       .eq("organization_id", currentOrgId)
+      .eq("is_suppressed", false)
       .in("decision_status", ["pending", "active"])
       .order("created_at", { ascending: false })
       .limit(5)

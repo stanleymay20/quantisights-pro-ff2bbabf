@@ -150,6 +150,7 @@ const ExecutiveDailyDriver = ({ displayName, orgId, insights, topMetrics, pendin
       .from("decision_ledger")
       .select("id,recommended_action,decision_type,capped_confidence,predicted_net_impact,created_at")
       .eq("organization_id", orgId)
+      .eq("is_suppressed", false)
       .in("decision_status", ["pending", "active"])
       .order("created_at", { ascending: false })
       .limit(4)
