@@ -4,6 +4,8 @@ import { capConfidence, dataSufficiencyRating, fetchCalibrationModel } from "../
 import { getCorsHeaders, corsPreflightResponse } from "../_shared/cors.ts";
 import { enrichWithContext, getOrgContext } from "../_shared/enrichment.ts";
 import { requireFeatureAccess } from "../_shared/feature-access.ts";
+import { getGovernanceProfile } from "../_shared/governance-profile.ts";
+import { recordGovernanceUse } from "../_shared/governance-audit.ts";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return corsPreflightResponse(req);const auth = await authenticateRequest(req);
