@@ -76,6 +76,19 @@ function escapeRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+// Relative-time formats emitted by hooks like formatRelativeTime.
+const RELATIVE_TIME_PATTERNS: Array<[RegExp, (m: RegExpMatchArray) => string]> = [
+  [/^just now$/i, () => "gerade eben"],
+  [/^(\d+)\s*m\s*ago$/i, (m) => `vor ${m[1]} Min.`],
+  [/^(\d+)\s*min(?:ute)?s?\s*ago$/i, (m) => `vor ${m[1]} Min.`],
+  [/^(\d+)\s*h\s*ago$/i, (m) => `vor ${m[1]} Std.`],
+  [/^(\d+)\s*hours?\s*ago$/i, (m) => `vor ${m[1]} Std.`],
+  [/^(\d+)\s*d\s*ago$/i, (m) => `vor ${m[1]} T.`],
+  [/^(\d+)\s*days?\s*ago$/i, (m) => `vor ${m[1]} Tagen`],
+  [/^(\d+)\s*w\s*ago$/i, (m) => `vor ${m[1]} Wo.`],
+  [/^(\d+)\s*weeks?\s*ago$/i, (m) => `vor ${m[1]} Wochen`],
+];
+
 function translateText(raw: string, dict: Dict): string | null {
   const trimmed = raw.trim();
   if (!trimmed) return null;
@@ -84,6 +97,15 @@ function translateText(raw: string, dict: Dict): string | null {
     const leading = raw.match(/^\s*/)?.[0] ?? "";
     const trailing = raw.match(/\s*$/)?.[0] ?? "";
     return leading + hit + trailing;
+  }
+  // Relative time patterns
+  for (const [re, fn] of RELATIVE_TIME_PATTERNS) {
+    const m = trimmed.match(re);
+    if (m) {
+      const leading = raw.match(/^\s*/)?.[0] ?? "";
+      const trailing = raw.match(/\s*$/)?.[0] ?? "";
+      return leading + fn(m) + trailing;
+    }
   }
   // Substring fragment replacement (case-sensitive) for concatenated text.
   let mutated = raw;
