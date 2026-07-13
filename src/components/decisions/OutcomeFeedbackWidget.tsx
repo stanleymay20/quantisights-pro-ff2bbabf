@@ -59,12 +59,13 @@ const OutcomeFeedbackWidget = ({ decisionId, organizationId, alreadyEvaluated, o
         })
         .eq("id", decisionId);
 
+      const parsedImpactBody = impact.trim() ? Number(impact) : NaN;
       const { error } = await invokeWithRetry("aicis-evaluate-outcomes", {
         body: {
           organization_id: organizationId,
           decision_id: decisionId,
           actual_outcome: verdict,
-          actual_value: impact.trim() ? Number(impact) : undefined,
+          actual_value: Number.isFinite(parsedImpactBody) ? parsedImpactBody : undefined,
         },
       });
       if (error) throw error;
