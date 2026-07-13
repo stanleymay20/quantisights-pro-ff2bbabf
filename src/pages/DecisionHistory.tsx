@@ -54,6 +54,7 @@ const DecisionHistory = () => {
         .from("decision_ledger")
         .select("id, recommended_action, decision_status, confidence_at_decision, outcome_delta, prediction_accuracy_score, outcome_measured_at, created_at, advisory_instance_id, raw_confidence, capped_confidence, confidence_cap_reason, explanation_metadata, source_insight_summary, recommendation_logic_type, decision_origin")
         .eq("organization_id", currentOrgId)
+        .eq("is_suppressed", false)
         .order("created_at", { ascending: false })
         .limit(200);
       setRecords((data as HistoryRecord[] | null) ?? []);

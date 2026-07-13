@@ -65,6 +65,7 @@ export function usePendingDeliberations() {
         .from("decision_ledger")
         .select("id,recommended_action,decision_type,decision_status,capped_confidence,raw_confidence,expected_value_at_decision,probability_of_success,predicted_net_impact,predicted_roi_probability,counterfactual_delta,causal_attribution_score,confidence_cap_reason,evidence_sources,governance_context,required_approvals,created_at")
         .eq("organization_id", orgId)
+        .eq("is_suppressed", false)
         .in("decision_status", ["pending", "in_review"])
         .order("created_at", { ascending: false })
         .limit(50);
