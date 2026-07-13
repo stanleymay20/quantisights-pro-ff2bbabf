@@ -109,7 +109,7 @@ const DecisionReview = () => {
     setBusy(true);
     // Rejection and its audit-log entry commit together in one server-side
     // transaction, same as approval.
-    const { error } = await supabase.rpc("reject_decision", {
+    const { error } = await (supabase.rpc as any)("reject_decision", {
       _decision_id: decision.id,
       _reason: reason,
     });
