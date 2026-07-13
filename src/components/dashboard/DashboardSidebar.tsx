@@ -229,15 +229,11 @@ const advancedGroups: AdvancedGroup[] = [
     icon: FileText,
     label: "Reports & Forecasting",
     items: [
-      { icon: FileText,    label: "Reports",       path: "/reports" },
-      { icon: TrendingUp,  label: "Forecasting",   path: "/forecasting" },
-      { icon: Brain,       label: "Simulations",   path: "/simulations" },
       { icon: BarChart3,   label: "Advisory",      path: "/advisory" },
       { icon: BarChart2,   label: "Benchmarking",  path: "/benchmarking" },
       { icon: Target,      label: "OKRs",          path: "/okrs" },
       { icon: Briefcase,   label: "Portfolio",     path: "/portfolio" },
       { icon: FileText,    label: "Strategy Pack", path: "/strategy-pack" },
-      { icon: FileText,    label: "Board Report",  path: "/board-report" },
     ],
   },
   {
@@ -256,8 +252,6 @@ const advancedGroups: AdvancedGroup[] = [
     icon: Shield,
     label: "Governance & Compliance",
     items: [
-      { icon: Shield,       label: "Command View",       path: "/governance" },
-      { icon: CheckSquare,  label: "Compliance",         path: "/compliance" },
       { icon: Scale,        label: "Maturity",           path: "/governance-maturity" },
       { icon: Scale,        label: "Fairness Observ.",   path: "/fairness" },
       { icon: Shield,       label: "Security Overview",  path: "/security-overview" },
