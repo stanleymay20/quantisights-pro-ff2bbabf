@@ -101,7 +101,7 @@ function appendToLog(orgId: string | null, event: CopilotQueryEvent) {
     const existing = getCopilotQueryLog(orgId);
     const updated = [event, ...existing].slice(0, MAX_STORED);
     localStorage.setItem(storageKey(orgId), JSON.stringify(updated));
-  } catch {}
+  } catch { /* telemetry persistence is best-effort */ }
 }
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────

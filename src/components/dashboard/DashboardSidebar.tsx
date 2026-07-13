@@ -230,7 +230,7 @@ export const SidebarProvider = ({ children }: { children: React.ReactNode }) => 
   });
   const toggleCollapsed = () => setCollapsed(p => {
     const next = !p;
-    try { localStorage.setItem("sidebar_collapsed", String(next)); } catch {}
+    try { localStorage.setItem("sidebar_collapsed", String(next)); } catch { /* storage unavailable */ }
     return next;
   });
   return (
@@ -354,14 +354,14 @@ const AdvancedDrawer = ({
     try {
       const stored = localStorage.getItem("sidebar_advanced_open");
       if (stored !== null) return stored === "true";
-    } catch {}
+    } catch { /* storage unavailable */ }
     return hasActiveAdvanced;
   });
 
   const toggle = () => {
     setDrawerOpen(p => {
       const next = !p;
-      try { localStorage.setItem("sidebar_advanced_open", String(next)); } catch {}
+      try { localStorage.setItem("sidebar_advanced_open", String(next)); } catch { /* storage unavailable */ }
       return next;
     });
   };

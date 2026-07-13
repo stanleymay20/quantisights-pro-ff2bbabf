@@ -38,8 +38,7 @@ function acquireLock(historyPath) {
       try {
         // Write pid for diagnostics.
         // Best-effort — ignore errors.
-        // eslint-disable-next-line no-empty
-        try { writeFileSync(lockPath, String(process.pid)); } catch {}
+        try { writeFileSync(lockPath, String(process.pid)); } catch { /* best effort */ }
       } finally {
         closeSync(fd);
       }

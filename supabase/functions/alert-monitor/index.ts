@@ -31,11 +31,10 @@ Deno.serve(async (req) => {
   const log = createLogger("alert-monitor", req);
 
   if (req.method === "OPTIONS") return corsPreflightResponse(req);
-  if (req.method === "OPTIONS") return corsPreflightResponse(req);
 
   if (!verifyCronSecret(req)) return cronSecretUnauthorized(corsHeaders);
 
-
+  try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 

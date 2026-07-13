@@ -13,6 +13,14 @@ describe("useSystemHealth - Data Logic", () => {
     );
   });
 
+  it("keeps the alert monitor wrapped in its error boundary", async () => {
+    const mod = await import("fs");
+    const content = mod.readFileSync("supabase/functions/alert-monitor/index.ts", "utf-8");
+    expect(content.match(/req\.method === "OPTIONS"/g)).toHaveLength(1);
+    expect(content).toMatch(/verifyCronSecret\(req\)[\s\S]*?try \{[\s\S]*?const supabaseUrl/);
+    expect(content).toMatch(/\} catch \(e\) \{/);
+  });
+
   it("CRITICAL_JOBS constant covers all required autonomous jobs", async () => {
     const mod = await import("fs");
     const content = mod.readFileSync("src/hooks/useSystemHealth.ts", "utf-8");

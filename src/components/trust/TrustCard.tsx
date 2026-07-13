@@ -342,7 +342,9 @@ export function trustCardFromDecision(d: Record<string, unknown>, dataQualitySco
     if (Array.isArray(raw)) sources = raw;
     else if (typeof raw === "string") sources = JSON.parse(raw);
     else if (raw && typeof raw === "object") sources = [raw as Record<string, unknown>];
-  } catch {}
+  } catch {
+    sources = null;
+  }
 
   const rec = d as Record<string, any>;
   return {

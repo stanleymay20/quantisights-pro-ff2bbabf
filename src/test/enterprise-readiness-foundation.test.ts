@@ -187,7 +187,7 @@ describe("enterprise readiness foundation", () => {
     expect(routes).toContain('path: "/integrations"');
     expect(routes).toContain('{ path: "/copilot", element: <CopilotOverview />, layout: "public" }');
 
-    const compareRoute = routes.match(/\{ path: "\/compare", element: <Compare \/>\, layout: "(?<layout>[^"]+)" \}/);
+    const compareRoute = routes.match(/\{ path: "\/compare", element: <Compare \/>, layout: "(?<layout>[^"]+)" \}/);
     expect(compareRoute).not.toBeNull();
     expect(compareRoute?.groups?.layout).toBe("none");
     expect(compareRoute?.groups?.layout).not.toBe("full");

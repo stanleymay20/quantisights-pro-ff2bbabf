@@ -60,7 +60,7 @@ const GovernanceAudit = () => {
     setLoading(false);
   };
 
-  useEffect(() => { void load(); /* eslint-disable-next-line */ }, []);
+  useEffect(() => { void load(); }, []);
 
   const packs = useMemo(() => Array.from(new Set(rows.map((r) => r.context_pack).filter(Boolean))) as string[], [rows]);
 

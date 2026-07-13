@@ -166,7 +166,7 @@ export default function ConnectorHealth() {
     }
   }
 
-  useEffect(() => { void loadAll(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [currentOrg?.id]);
+  useEffect(() => { void loadAll(); }, [currentOrg?.id]);
 
   const connectorById = useMemo(() => new Map(connectors.map(c => [c.id, c])), [connectors]);
   const dqLatestByConnector = useMemo(() => {

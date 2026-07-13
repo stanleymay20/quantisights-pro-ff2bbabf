@@ -41,7 +41,7 @@ export interface IdempotencyRecord {
   runtime_version: typeof RUNTIME_GATEWAY_VERSION;
 }
 
-export interface IdempotencyStoreSaveInput extends IdempotencyRecord {}
+export type IdempotencyStoreSaveInput = IdempotencyRecord;
 
 export interface IdempotencyStoreFindCriteria {
   idempotency_key?: string;
