@@ -75,6 +75,25 @@ export const PAGE_METADATA: Record<string, PageMetadataDefinition> = {
     canonicalPath: "/decision-intelligence-platforms",
     type: "article",
   },
+  "/procurement-pack": {
+    title: "Enterprise Procurement Pack | Quantivis",
+    description:
+      "Download the Quantivis procurement pack: DPA, subprocessor registry, security questionnaire responses, and SOC 2 controls evidence.",
+    canonicalPath: "/procurement-pack",
+  },
+  "/enterprise/trust": {
+    title: "Enterprise Trust Center | Quantivis",
+    description:
+      "Detailed Quantivis enterprise trust evidence: runtime health, capability status, compliance mapping, and control-level attestations.",
+    canonicalPath: "/enterprise/trust",
+  },
+  "/login": {
+    title: "Sign In | Quantivis",
+    description:
+      "Sign in to the Quantivis Decision Intelligence platform. SSO, MFA, and audit-logged access for enterprise users.",
+    canonicalPath: "/login",
+    robots: "noindex, nofollow",
+  },
 };
 
 export const metadataForPath = (
