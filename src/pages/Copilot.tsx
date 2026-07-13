@@ -12,6 +12,8 @@ import {
   TrendingUp, FileText, ShieldAlert, Sparkles, Loader2,
   Paperclip, X as XIcon,
 } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOrganization } from "@/hooks/useOrganization";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -371,7 +373,13 @@ const Copilot = () => {
                   </div>
                   <div>
                     <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Summary</p>
-                    <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{brief.summary || (answering ? "Analyzing your data…" : "")}</p>
+                    {brief.summary ? (
+                      <div className="prose prose-sm dark:prose-invert max-w-none text-sm text-foreground leading-relaxed [&>p]:mb-2 [&>ul]:mb-2 [&>ul]:ml-4 [&>ol]:mb-2 [&>ol]:ml-4 [&>h1]:text-base [&>h1]:font-semibold [&>h2]:text-sm [&>h2]:font-semibold [&>h3]:text-sm [&>h3]:font-semibold [&_code]:text-xs [&_code]:bg-muted [&_code]:px-1 [&_code]:rounded">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{brief.summary}</ReactMarkdown>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground italic">{answering ? "Analyzing your data…" : ""}</p>
+                    )}
                   </div>
                   <div>
                     <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Recommended action</p>
