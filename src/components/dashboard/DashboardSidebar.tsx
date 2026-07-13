@@ -44,9 +44,90 @@ import { useOrganization } from "@/hooks/useOrganization";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useRoleNav } from "@/hooks/useRoleNav";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useTranslation } from "react-i18next";
 import logo from "@/assets/quantivis-logo.png";
 import WorkspaceSwitcher from "@/components/dashboard/WorkspaceSwitcher";
 import { cn } from "@/lib/utils";
+
+// Map English sidebar labels → i18n keys under `sidebar.*`.
+// Keeps the existing nav arrays untouched while enabling translations.
+const SIDEBAR_LABEL_KEYS: Record<string, string> = {
+  "Dashboard": "sidebar.dashboard",
+  "Decisions": "sidebar.decisions",
+  "Operations": "sidebar.operations",
+  "Reports": "sidebar.reports",
+  "Governance": "sidebar.governance",
+  "Settings": "sidebar.settings",
+  "Advanced": "sidebar.advanced",
+  "Executive Brief": "sidebar.executive_brief",
+  "Decision History": "sidebar.decision_history",
+  "Ask Quantivis": "sidebar.ask_quantivis",
+  "Deliberation": "sidebar.deliberation",
+  "AI Boardroom": "sidebar.ai_boardroom",
+  "Execution": "sidebar.execution",
+  "Decision Rules": "sidebar.decision_rules",
+  "Outcome Tracking": "sidebar.outcome_tracking",
+  "Decision Accuracy": "sidebar.decision_accuracy",
+  "History": "sidebar.history",
+  "Executive Intel": "sidebar.executive_intel",
+  "Interventions": "sidebar.interventions",
+  "Intel Inbox": "sidebar.intel_inbox",
+  "Board Report": "sidebar.board_report",
+  "Forecasting": "sidebar.forecasting",
+  "Simulations": "sidebar.simulations",
+  "Command View": "sidebar.command_view",
+  "Compliance": "sidebar.compliance",
+  "Trust Center": "sidebar.trust_center",
+  "System Health": "sidebar.system_health",
+  "Team": "sidebar.team",
+  "Billing": "sidebar.billing",
+  "Data": "sidebar.data",
+  "Reports & Forecasting": "sidebar.reports_forecasting",
+  "Data & Pipeline": "sidebar.data_pipeline",
+  "Governance & Compliance": "sidebar.governance_compliance",
+  "Labs": "sidebar.labs",
+  "Admin": "sidebar.admin",
+  "Advisory": "sidebar.advisory",
+  "Benchmarking": "sidebar.benchmarking",
+  "OKRs": "sidebar.okrs",
+  "Portfolio": "sidebar.portfolio",
+  "Strategy Pack": "sidebar.strategy_pack",
+  "Upload": "sidebar.upload",
+  "Connectors": "sidebar.connectors",
+  "Dataset Explorer": "sidebar.dataset_explorer",
+  "Data Catalog": "sidebar.data_catalog",
+  "Lineage": "sidebar.lineage",
+  "Pipeline": "sidebar.pipeline",
+  "Maturity": "sidebar.maturity",
+  "Fairness Observ.": "sidebar.fairness",
+  "Security Overview": "sidebar.security_overview",
+  "Procurement Pack": "sidebar.procurement_pack",
+  "Causal Inference": "sidebar.causal_inference",
+  "Counterfactual": "sidebar.counterfactual",
+  "Bias Detection": "sidebar.bias_detection",
+  "Operational Graph": "sidebar.operational_graph",
+  "Diagnostics": "sidebar.diagnostics",
+  "AICIS Sync": "sidebar.aicis_sync",
+  "Bridge Health": "sidebar.bridge_health",
+  "SAP Connector": "sidebar.sap_connector",
+  "Internal Data": "sidebar.internal_data",
+  "Data Vendors": "sidebar.data_vendors",
+  "Context Packs": "sidebar.context_packs",
+  "Governance Audit": "sidebar.governance_audit",
+  "Governance Simulation": "sidebar.governance_simulation",
+  "Localization Audit": "sidebar.localization_audit",
+  "SSO Config": "sidebar.sso_config",
+  "Help & Docs": "sidebar.help_docs",
+  "Sign Out": "auth.logout",
+};
+
+const useSidebarLabel = () => {
+  const { t } = useTranslation();
+  return (label: string) => {
+    const key = SIDEBAR_LABEL_KEYS[label];
+    return key ? (t(key, { defaultValue: label }) as string) : label;
+  };
+};
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface NavItem {
