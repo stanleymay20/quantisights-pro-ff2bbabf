@@ -49,26 +49,34 @@ const BoardReport = () => {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
     const fetchReport = async () => {
       if (!currentOrgId || !activeDatasetId) {
-        setError("No active dataset selected. Please select a project and dataset first.");
-        setLoading(false);
+        // Context still loading — stay in the loading state instead of flashing an error.
         return;
       }
+      setLoading(true);
+      setError(null);
       try {
         const { data, error: fnError } = await invokeWithRetry<ReportData & { error?: string }>("generate-board-report", {
           body: { organization_id: currentOrgId, dataset_id: activeDatasetId },
         }, { maxAttempts: 1, timeoutMs: 20_000 });
+        if (cancelled) return;
         if (fnError) throw fnError;
         if (data?.error) throw new Error(data.error);
-        if (data) setReport(data);
+        if (data) {
+          setReport(data);
+          setError(null);
+        }
       } catch (err: unknown) {
+        if (cancelled) return;
         setError(err instanceof Error ? err.message : "Failed to generate report");
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
     fetchReport();
+    return () => { cancelled = true; };
   }, [currentOrgId, activeDatasetId]);
 
   const handlePrint = () => window.print();
