@@ -38,20 +38,34 @@ const OutcomeFeedbackWidget = ({ decisionId, organizationId, alreadyEvaluated, o
   const submit = async (verdict: "positive" | "negative") => {
     setSubmitting(verdict);
     try {
-      // Persist actual_value on decision_ledger so subsequent re-runs find a signal
+      // Persist outcome fields on decision_ledger so /outcomes KPIs and
+      // similarity retrieval see this signal (previously only actual_value
+      // was written, leaving outcome_delta / prediction_accuracy_score null
+      // and hiding user feedback from Outcome Tracking).
       const numeric = verdict === "positive" ? 1 : 0;
-      const actual_value = impact.trim() ? Number(impact) : numeric;
+      const parsedImpact = impact.trim() ? Number(impact) : NaN;
+      const actual_value = Number.isFinite(parsedImpact) ? parsedImpact : numeric;
+      const outcome_delta = Number.isFinite(parsedImpact)
+        ? parsedImpact
+        : verdict === "positive" ? 1 : -1;
+      const prediction_accuracy_score = verdict === "positive" ? 100 : 0;
       await supabase
         .from("decision_ledger")
-        .update({ actual_value, outcome_measured_at: new Date().toISOString() })
+        .update({
+          actual_value,
+          outcome_delta,
+          prediction_accuracy_score,
+          outcome_measured_at: new Date().toISOString(),
+        })
         .eq("id", decisionId);
 
+      const parsedImpactBody = impact.trim() ? Number(impact) : NaN;
       const { error } = await invokeWithRetry("aicis-evaluate-outcomes", {
         body: {
           organization_id: organizationId,
           decision_id: decisionId,
           actual_outcome: verdict,
-          actual_value: impact.trim() ? Number(impact) : undefined,
+          actual_value: Number.isFinite(parsedImpactBody) ? parsedImpactBody : undefined,
         },
       });
       if (error) throw error;
