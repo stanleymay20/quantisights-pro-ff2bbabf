@@ -4101,6 +4101,7 @@ export type Database = {
           governance_context: Json
           governance_profile_id: string | null
           id: string
+          is_suppressed: boolean
           kpi_id: string | null
           linked_aicis_prediction_id: string | null
           linked_aicis_recommendation_id: string | null
@@ -4119,6 +4120,7 @@ export type Database = {
           required_approvals: number
           simulation_id: string | null
           source_insight_summary: string | null
+          suppression_reason: string | null
           updated_at: string
         }
         Insert: {
@@ -4152,6 +4154,7 @@ export type Database = {
           governance_context?: Json
           governance_profile_id?: string | null
           id?: string
+          is_suppressed?: boolean
           kpi_id?: string | null
           linked_aicis_prediction_id?: string | null
           linked_aicis_recommendation_id?: string | null
@@ -4170,6 +4173,7 @@ export type Database = {
           required_approvals?: number
           simulation_id?: string | null
           source_insight_summary?: string | null
+          suppression_reason?: string | null
           updated_at?: string
         }
         Update: {
@@ -4203,6 +4207,7 @@ export type Database = {
           governance_context?: Json
           governance_profile_id?: string | null
           id?: string
+          is_suppressed?: boolean
           kpi_id?: string | null
           linked_aicis_prediction_id?: string | null
           linked_aicis_recommendation_id?: string | null
@@ -4221,6 +4226,7 @@ export type Database = {
           required_approvals?: number
           simulation_id?: string | null
           source_insight_summary?: string | null
+          suppression_reason?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -11817,6 +11823,7 @@ export type Database = {
         Returns: undefined
       }
       connector_try_lock: { Args: { _connector_id: string }; Returns: boolean }
+      count_measured_outcomes: { Args: { _org_id: string }; Returns: number }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
