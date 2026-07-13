@@ -53,7 +53,7 @@
   "Add Another Source": "Weitere Quelle hinzufügen",
   "Add Portfolio Company": "Portfoliounternehmen hinzufügen",
   "Add your first portfolio company to start monitoring risk across your fund.": "Fügen Sie Ihr erstes Portfoliounternehmen hinzu, um das Risiko in Ihrem Fonds zu überwachen.",
-  "Address Inventory Turnover and Working Capital Inefficiencies": "Umschlagshäufigkeit des Lagerbestands und Ineffizienzen des Betriebskapitals beheben",
+  "Address Inventory Turnover and Working Capital Inefficiencies": "Beheben Sie Bestandsumschlag und Working-Capital-Ineffizienzen",
   "Adjust Column Mapping": "Spaltenzuordnung anpassen",
   "Admin": "Admin",
   "Advisories:": "Hinweise:",
@@ -2089,7 +2089,7 @@
   "Loading rules…": "Regeln werden geladen…",
   "Loading…": "Wird geladen…",
   "Locale detection was ambiguous — verify currency/date parsing.": "Die Gebietsschemaerkennung war mehrdeutig – überprüfen Sie die Währungs-/Datumsanalyse.",
-  "Logged 2 minutes ago · Source: SAP connector": "Vor 2 Minuten protokolliert · Quelle: SAP-Konnektor",
+  "Logged 2 minutes ago · Source: SAP connector": "Protokolliert vor 2 Minuten · Quelle: SAP-Konnektor",
   "Low–Moderate": "Niedrig–Mittel",
   "Löschung oder Rückgabe sämtlicher Daten nach Vertragsende gemäß § 11.": "Löschung oder Rückgabe sämtlicher Daten nach Vertragsende gemäß § 11.",
   "Market Growth (%/yr)": "Marktwachstum (%/Jahr)",
@@ -2722,5 +2722,9 @@
   "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
   "xy12345.us-east-1": "xy12345.us-east-1",
   "you@company.com": "Sie@firma.com",
-  "you@example.com": "Sie@beispiel.com"
+  "you@example.com": "Sie@beispiel.com",
+  "GOVERNANCE ACTIVE": "GOVERNANCE AKTIV",
+  "Illustrative data — not a live customer record": "Illustrative Daten — keine echten Kundendaten",
+  "Governance record logged": "Governance-Eintrag protokolliert",
+  "Source: SAP connector": "Quelle: SAP-Konnektor"
 }
