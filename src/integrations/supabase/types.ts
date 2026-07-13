@@ -11774,16 +11774,6 @@ export type Database = {
     }
     Functions: {
       accept_invitation: { Args: { _token: string }; Returns: Json }
-      approve_decision: {
-        Args: {
-          _decision_id: string
-          _dataset_id?: string
-          _expected_metric?: string
-          _evaluation_window_days?: number
-          _suggested_owner?: string
-        }
-        Returns: Json
-      }
       blend_evidence: { Args: { _inputs: Json }; Returns: Json }
       check_decision_evaluability: {
         Args: {
@@ -12147,10 +12137,6 @@ export type Database = {
       refresh_metric_summaries: {
         Args: { _dataset_id: string; _org_id: string }
         Returns: number
-      }
-      reject_decision: {
-        Args: { _decision_id: string; _reason?: string }
-        Returns: Json
       }
       release_cron_advisory_lock: {
         Args: { _lock_id: number }
