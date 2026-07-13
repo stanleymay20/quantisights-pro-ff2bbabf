@@ -349,6 +349,8 @@ const SectionBlock = ({
   onNavClick: () => void;
   labelOverride?: string;
 }) => {
+  const tr = useSidebarLabel();
+  const displayLabel = labelOverride ?? tr(section.label);
   const hasActiveChild =
     location.pathname === section.path ||
     (section.subItems?.some(item => location.pathname === item.path) ?? false);
@@ -371,7 +373,7 @@ const SectionBlock = ({
           )}
         >
           <section.icon className={cn("w-4 h-4 shrink-0", hasActiveChild ? "text-primary" : "text-muted-foreground")} />
-          <span className="flex-1 text-left">{labelOverride ?? section.label}</span>
+          <span className="flex-1 text-left">{displayLabel}</span>
           <ChevronDown className={cn("w-3.5 h-3.5 transition-transform duration-200 text-muted-foreground", open && "rotate-180")} />
         </button>
       ) : (
@@ -386,7 +388,7 @@ const SectionBlock = ({
           )}
         >
           <section.icon className={cn("w-4 h-4 shrink-0", isTopActive ? "text-primary" : "text-muted-foreground")} />
-          <span className="flex-1">{labelOverride ?? section.label}</span>
+          <span className="flex-1">{displayLabel}</span>
           {isTopActive && <span className="w-1.5 h-1.5 rounded-full bg-foreground/60" />}
         </Link>
       )}
@@ -408,7 +410,7 @@ const SectionBlock = ({
                 )}
               >
                 <item.icon className={cn("w-3.5 h-3.5 shrink-0", isActive ? "text-primary" : "text-muted-foreground group-hover:text-sidebar-accent-foreground")} />
-                {item.label}
+                {tr(item.label)}
                 {isActive && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-foreground/60" />}
               </Link>
             );
