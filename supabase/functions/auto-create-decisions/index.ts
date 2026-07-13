@@ -2,6 +2,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders, corsPreflightResponse } from "../_shared/cors.ts";
+import { getGovernanceProfile } from "../_shared/governance-profile.ts";
+import { recordGovernanceUse } from "../_shared/governance-audit.ts";
 
 type SourceKind = "advisory" | "insight";
 
@@ -104,12 +106,48 @@ serve(async (req) => {
     const { data: createdDecisions, error: insertError } = await serviceSupabase
       .from("decision_ledger")
       .insert(decisionRows)
-      .select("id, advisory_instance_id, decision_origin, source_insight_summary");
+      .select("id, advisory_instance_id, decision_origin, source_insight_summary, capped_confidence, predicted_net_impact");
 
     if (insertError) throw new Error(`Failed to create decisions: ${insertError.message}`);
 
     await markConvertedAdvisories(serviceSupabase, newSources);
     await createDecisionNotifications(serviceSupabase, organization_id, createdDecisions ?? [], newSources);
+
+    // Phase 9: record governance audit trail for each auto-created decision
+    try {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const profile = await getGovernanceProfile(supabaseUrl, serviceKey, organization_id);
+      const thresholds = {
+        advisory_threshold: profile.advisory_threshold,
+        escalation_threshold: profile.escalation_threshold,
+        intervention_threshold: profile.intervention_threshold,
+        low_impact_floor_eur: LOW_IMPACT_FLOOR_EUR,
+      };
+      const approvalRules = { governance_model: profile.governance_model };
+      await Promise.all((createdDecisions ?? []).map((d: any, idx: number) => {
+        const src = newSources[idx];
+        return recordGovernanceUse(supabaseUrl, serviceKey, {
+          organization_id,
+          subject_type: "decision",
+          subject_id: d.id,
+          profile,
+          thresholds_applied: thresholds,
+          approval_rules_applied: approvalRules,
+          decision_path: {
+            source_kind: src?.kind,
+            source_id: src?.id,
+            priority: src?.priority,
+            capped_confidence: d.capped_confidence,
+            predicted_net_impact: d.predicted_net_impact,
+            gate: "auto_create_decisions",
+          },
+          engine_version: "auto-create-decisions-v3",
+        });
+      }));
+    } catch (auditErr) {
+      console.warn("governance audit write failed:", (auditErr as Error).message);
+    }
 
     const advisoryCreated = newSources.filter((s) => s.kind === "advisory").length;
     const insightCreated = newSources.filter((s) => s.kind === "insight").length;

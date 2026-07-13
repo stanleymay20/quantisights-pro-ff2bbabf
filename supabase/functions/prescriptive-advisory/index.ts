@@ -4,6 +4,8 @@ import { capConfidence, dataSufficiencyRating, fetchCalibrationModel } from "../
 import { getCorsHeaders, corsPreflightResponse } from "../_shared/cors.ts";
 import { enrichWithContext, getOrgContext } from "../_shared/enrichment.ts";
 import { requireFeatureAccess } from "../_shared/feature-access.ts";
+import { getGovernanceProfile } from "../_shared/governance-profile.ts";
+import { recordGovernanceUse } from "../_shared/governance-audit.ts";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return corsPreflightResponse(req);const auth = await authenticateRequest(req);
@@ -448,12 +450,45 @@ Rules:
 
       const insertResp = await fetch(`${supabaseUrl}/rest/v1/advisory_instances`, {
         method: "POST",
-        headers: serviceHeaders,
+        headers: { ...serviceHeaders, Prefer: "return=representation" },
         body: JSON.stringify(enrichedRows),
       });
       if (!insertResp.ok) {
         const errBody = await insertResp.text();
         console.error("advisory_instances INSERT failed:", insertResp.status, errBody);
+      } else {
+        // Phase 9: record governance audit trail per advisory
+        try {
+          const inserted = await insertResp.json();
+          const profile = await getGovernanceProfile(supabaseUrl, serviceKey, organization_id);
+          const thresholds = {
+            advisory_threshold: profile.advisory_threshold,
+            escalation_threshold: profile.escalation_threshold,
+            intervention_threshold: profile.intervention_threshold,
+          };
+          const approvalRules = { governance_model: profile.governance_model };
+          await Promise.all((inserted ?? []).map((row: any) =>
+            recordGovernanceUse(supabaseUrl, serviceKey, {
+              organization_id,
+              subject_type: "advisory",
+              subject_id: row.id,
+              profile,
+              thresholds_applied: thresholds,
+              approval_rules_applied: approvalRules,
+              decision_path: {
+                dataset_id,
+                priority: row.priority,
+                category: row.category,
+                capped_confidence: row.capped_confidence,
+                blending_rule: row.blending_rule,
+                engine: "prescriptive-advisory",
+              },
+              engine_version: "prescriptive-advisory-v1",
+            })
+          ));
+        } catch (auditErr) {
+          console.warn("governance audit (advisory) write failed:", (auditErr as Error).message);
+        }
       }
     }
 
