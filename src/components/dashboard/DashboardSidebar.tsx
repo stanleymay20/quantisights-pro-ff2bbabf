@@ -260,7 +260,6 @@ const advancedGroups: AdvancedGroup[] = [
       { icon: CheckSquare,  label: "Compliance",         path: "/compliance" },
       { icon: Scale,        label: "Maturity",           path: "/governance-maturity" },
       { icon: Scale,        label: "Fairness Observ.",   path: "/fairness" },
-      { icon: Shield,       label: "Trust Center",       path: "/trust" },
       { icon: Shield,       label: "Security Overview",  path: "/security-overview" },
       { icon: FileText,     label: "Procurement Pack",   path: "/procurement-pack" },
     ],
@@ -282,7 +281,7 @@ const advancedGroups: AdvancedGroup[] = [
     items: [
       { icon: Activity,  label: "AICIS Sync",            path: "/aicis-sync" },
       { icon: Activity,  label: "Bridge Health",         path: "/admin/bridge-health" },
-      { icon: Plug,      label: "SAP Connector",         path: "/admin/sap-connector" },
+      { icon: Plug,      label: "SAP Connector",         path: "/admin/connectors/sap" },
       { icon: Database,  label: "Internal Data",         path: "/admin/internal-data" },
       { icon: Database,  label: "Data Vendors",          path: "/admin/data-vendors" },
       { icon: Layers,    label: "Context Packs",         path: "/admin/context-packs" },

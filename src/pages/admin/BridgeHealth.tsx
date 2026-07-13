@@ -222,7 +222,9 @@ export default function BridgeHealth() {
                         {breakerOpen && r.circuit_breaker_until ? (
                           <span className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
-                            {formatDistanceToNow(new Date(r.circuit_breaker_until), { addSuffix: true })}
+                            {timerActive
+                              ? `in ${formatDistanceToNow(new Date(r.circuit_breaker_until))}`
+                              : "manual reset required"}
                           </span>
                         ) : (
                           "—"
