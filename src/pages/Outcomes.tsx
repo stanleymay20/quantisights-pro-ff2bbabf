@@ -151,7 +151,19 @@ const Outcomes = () => {
               const isPositive = delta >= 0;
               const accuracy = r.prediction_accuracy_score;
               return (
-                <Card key={r.id}>
+                <Card
+                  key={r.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => navigate(`/decisions/${r.id}/outcome`)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      navigate(`/decisions/${r.id}/outcome`);
+                    }
+                  }}
+                  className="cursor-pointer hover:border-primary/40 transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                >
                   <CardContent className="p-4">
                     <div className="flex items-start gap-3">
                       <div className={`mt-0.5 ${isPositive ? "text-success" : "text-destructive"}`}>
