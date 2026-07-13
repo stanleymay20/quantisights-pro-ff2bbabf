@@ -353,8 +353,8 @@ const ExecutiveDailyDriver = ({ displayName, orgId, insights, topMetrics, pendin
                 <div className="rounded-xl border border-border/50 bg-muted/20 p-4">
                   <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Why?</p>
                   <ul className="mt-3 space-y-2 text-sm text-foreground">
-                    <li className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success" /> Live signals indicate a decision threshold has been crossed.</li>
-                    <li className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success" /> Supporting evidence is available for review.</li>
+                    <li className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success" /> This item is active in the decision ledger.</li>
+                    <li className="flex gap-2"><AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-warning" /> Supporting evidence must be reviewed before action.</li>
                     <li className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success" /> The approval record will preserve the rationale and actor trail.</li>
                   </ul>
                 </div>
@@ -391,16 +391,19 @@ const ExecutiveDailyDriver = ({ displayName, orgId, insights, topMetrics, pendin
 
         <Card className="border-success/20">
           <CardContent className="p-5 sm:p-6">
-            <Badge variant="outline" className="w-fit text-[10px] uppercase tracking-wide">Verified by AICIS</Badge>
+            <Badge variant="outline" className="w-fit text-[10px] uppercase tracking-wide">AICIS verification status</Badge>
             <div className="mt-4 space-y-3 text-sm">
-              {[
-                "Evidence complete",
-                "Sources verified",
-                "Policy compliant",
-                "Similar decision history checked",
-              ].map((item) => (
-                <div key={item} className="flex items-center gap-2">
+              <div className="flex items-center gap-2">
+                {highestConfidence ? (
                   <CheckCircle2 className="h-4 w-4 text-success" />
+                ) : (
+                  <AlertCircle className="h-4 w-4 text-warning" />
+                )}
+                <span>{highestConfidence ? "Prediction confidence available" : "Prediction confidence pending"}</span>
+              </div>
+              {["Evidence review required", "Source verification required", "Policy review required"].map((item) => (
+                <div key={item} className="flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 text-warning" />
                   <span>{item}</span>
                 </div>
               ))}

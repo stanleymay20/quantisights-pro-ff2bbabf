@@ -11,7 +11,7 @@ describe("UX-1 executive dashboard contract", () => {
 
     expect(dashboard).toContain("Executive Brief");
     expect(dashboard).toContain("Next Best Decision");
-    expect(dashboard).toContain("Verified by AICIS");
+    expect(dashboard).toContain("AICIS verification status");
     expect(dashboard).toContain("Business Health");
     expect(dashboard).toContain("Recent Outcomes");
 
@@ -30,6 +30,17 @@ describe("UX-1 executive dashboard contract", () => {
     expect(dashboard).toContain("What happens if you approve");
     expect(dashboard).not.toContain(">Approve<");
     expect(dashboard).not.toContain(">Reject<");
+  });
+
+  it("does not present unverified evidence or policy states as complete", () => {
+    const dashboard = read("src/components/dashboard/ExecutiveDailyDriver.tsx");
+
+    expect(dashboard).toContain("Evidence review required");
+    expect(dashboard).toContain("Source verification required");
+    expect(dashboard).toContain("Policy review required");
+    expect(dashboard).not.toContain('"Evidence complete"');
+    expect(dashboard).not.toContain('"Sources verified"');
+    expect(dashboard).not.toContain('"Policy compliant"');
   });
 
   it("uses executive-facing navigation labels and avoids broken workspace links", () => {

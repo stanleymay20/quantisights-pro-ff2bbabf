@@ -6,6 +6,21 @@ const root = resolve(__dirname, "../..");
 const read = (path: string) => readFileSync(resolve(root, path), "utf8");
 
 describe("ERP-100 production readiness gates", () => {
+  it("keeps every literal dashboard sidebar destination registered", () => {
+    const routes = read("src/routes/index.tsx");
+    const sidebar = read("src/components/dashboard/DashboardSidebar.tsx");
+    const registeredPaths = new Set(
+      Array.from(routes.matchAll(/\{\s*path:\s*"([^"]+)"/g), (match) => match[1]),
+    );
+    const sidebarPaths = Array.from(
+      sidebar.matchAll(/path:\s*"(\/[^"]+)"/g),
+      (match) => match[1],
+    );
+
+    expect(sidebarPaths.length).toBeGreaterThan(0);
+    expect(sidebarPaths.filter((path) => !registeredPaths.has(path))).toEqual([]);
+  });
+
   it("blocks approval when a recommendation is not evidence-ready", () => {
     const queue = read("src/components/dashboard/DecisionQueue.tsx");
 

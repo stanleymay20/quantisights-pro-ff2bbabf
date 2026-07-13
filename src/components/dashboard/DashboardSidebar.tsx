@@ -201,7 +201,7 @@ const advancedGroups: AdvancedGroup[] = [
     items: [
       { icon: Activity,  label: "AICIS Sync",            path: "/aicis-sync" },
       { icon: Activity,  label: "Bridge Health",         path: "/admin/bridge-health" },
-      { icon: Plug,      label: "SAP Connector",         path: "/admin/sap-connector" },
+      { icon: Plug,      label: "SAP Connector",         path: "/admin/connectors/sap" },
       { icon: Database,  label: "Internal Data",         path: "/admin/internal-data" },
       { icon: Database,  label: "Data Vendors",          path: "/admin/data-vendors" },
       { icon: Layers,    label: "Context Packs",         path: "/admin/context-packs" },

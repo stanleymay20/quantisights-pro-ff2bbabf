@@ -42,7 +42,6 @@ Deno.serve(async (req) => {
   const log = createLogger("health-check", req);
 
   if (req.method === "OPTIONS") {
-  if (req.method === "OPTIONS") {
     return corsPreflightResponse(req);
   }
 

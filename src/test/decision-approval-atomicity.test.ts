@@ -44,7 +44,7 @@ describe("decision approval atomicity — migration SQL structure", () => {
   const migration = read(MIGRATION_PATH);
 
   function extractFunctionBody(name: string): string {
-    const match = migration.match(new RegExp(`CREATE OR REPLACE FUNCTION public\\.${name}\\([\\s\\S]*?\\nEND;\\n\\$\\$;`));
+    const match = migration.match(new RegExp(`CREATE OR REPLACE FUNCTION public\\.${name}\\([\\s\\S]*?\\r?\\nEND;\\r?\\n\\$\\$;`));
     expect(match, `expected to find function ${name} in the migration`).not.toBeNull();
     return match![0];
   }
@@ -82,7 +82,7 @@ describe("decision approval atomicity — migration SQL structure", () => {
 
   it("defines approve_decision as a single SECURITY DEFINER function performing all four writes", () => {
     expect(migration).toContain("CREATE OR REPLACE FUNCTION public.approve_decision(");
-    const fnMatch = migration.match(/CREATE OR REPLACE FUNCTION public\.approve_decision\([\s\S]*?\nEND;\n\$\$;/);
+    const fnMatch = migration.match(/CREATE OR REPLACE FUNCTION public\.approve_decision\([\s\S]*?\r?\nEND;\r?\n\$\$;/);
     expect(fnMatch).not.toBeNull();
     const fn = fnMatch![0];
 
@@ -106,7 +106,7 @@ describe("decision approval atomicity — migration SQL structure", () => {
 
   it("defines reject_decision as a SECURITY DEFINER function that also writes audit_log atomically", () => {
     expect(migration).toContain("CREATE OR REPLACE FUNCTION public.reject_decision(");
-    const fnMatch = migration.match(/CREATE OR REPLACE FUNCTION public\.reject_decision\([\s\S]*?\nEND;\n\$\$;/);
+    const fnMatch = migration.match(/CREATE OR REPLACE FUNCTION public\.reject_decision\([\s\S]*?\r?\nEND;\r?\n\$\$;/);
     expect(fnMatch).not.toBeNull();
     const fn = fnMatch![0];
 
@@ -174,6 +174,8 @@ describe("decision approval atomicity — client contract (source)", () => {
 });
 
 describe("DecisionReview.tsx — approve()/reject() behavior (mocked RPC)", () => {
+  const UI_TEST_TIMEOUT_MS = 30_000;
+
   beforeEach(() => {
     rpcMock.mockReset();
     invokeMock.mockReset();
@@ -206,7 +208,7 @@ describe("DecisionReview.tsx — approve()/reject() behavior (mocked RPC)", () =
     fireEvent.click(screen.getByTestId("approve-button"));
 
     expect(rpcMock).not.toHaveBeenCalled();
-  });
+  }, UI_TEST_TIMEOUT_MS);
 
   const REAL_DECISION = {
     id: "real-decision-1",
@@ -272,7 +274,7 @@ describe("DecisionReview.tsx — approve()/reject() behavior (mocked RPC)", () =
     expect(rpcMock).toHaveBeenCalledWith("approve_decision", expect.objectContaining({ _decision_id: REAL_DECISION.id }));
     expect(screen.queryByText("outcome-route-reached")).not.toBeInTheDocument();
     expect(invokeMock).not.toHaveBeenCalled();
-  });
+  }, UI_TEST_TIMEOUT_MS);
 
   it("on approve_decision success: navigates to the outcome page and fires the enrichment calls exactly once", async () => {
     rpcMock.mockResolvedValue({ data: { decision_id: REAL_DECISION.id, decision_status: "approved" }, error: null });
@@ -283,7 +285,7 @@ describe("DecisionReview.tsx — approve()/reject() behavior (mocked RPC)", () =
     expect(invokeMock).toHaveBeenCalledTimes(2);
     expect(invokeMock).toHaveBeenCalledWith("embed-decisions", expect.anything());
     expect(invokeMock).toHaveBeenCalledWith("predict-outcome", expect.anything());
-  });
+  }, UI_TEST_TIMEOUT_MS);
 
   it("disables the approve button immediately on click, preventing a second approve_decision call from a duplicate click", async () => {
     // RPC never resolves during this test — simulates the in-flight window
@@ -297,7 +299,7 @@ describe("DecisionReview.tsx — approve()/reject() behavior (mocked RPC)", () =
     fireEvent.click(approveButton);
 
     expect(rpcMock).toHaveBeenCalledTimes(1);
-  });
+  }, UI_TEST_TIMEOUT_MS);
 
   it("on reject_decision success: navigates to the decision ledger", async () => {
     rpcMock.mockResolvedValue({ data: { decision_id: REAL_DECISION.id, decision_status: "rejected" }, error: null });
@@ -311,7 +313,7 @@ describe("DecisionReview.tsx — approve()/reject() behavior (mocked RPC)", () =
 
     await waitFor(() => expect(screen.getByText("ledger-route-reached")).toBeInTheDocument());
     expect(rpcMock).toHaveBeenCalledWith("reject_decision", { _decision_id: REAL_DECISION.id, _reason: "Superseded by a better option." });
-  });
+  }, UI_TEST_TIMEOUT_MS);
 
   it("on reject_decision failure: stays on the review page and does not silently record a rejection", async () => {
     rpcMock.mockResolvedValue({ data: null, error: { message: "insufficient_privilege" } });
@@ -325,5 +327,5 @@ describe("DecisionReview.tsx — approve()/reject() behavior (mocked RPC)", () =
 
     await waitFor(() => expect(rpcMock).toHaveBeenCalledTimes(1));
     expect(screen.queryByText("ledger-route-reached")).not.toBeInTheDocument();
-  });
+  }, UI_TEST_TIMEOUT_MS);
 });

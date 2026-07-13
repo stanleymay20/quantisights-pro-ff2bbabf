@@ -5,6 +5,14 @@ import { describe, it, expect } from "vitest";
  */
 
 describe("useSystemHealth - Data Logic", () => {
+  it("keeps the health-check Edge Function syntactically balanced at preflight", async () => {
+    const mod = await import("fs");
+    const content = mod.readFileSync("supabase/functions/health-check/index.ts", "utf-8");
+    expect(content).not.toContain(
+      'if (req.method === "OPTIONS") {\n  if (req.method === "OPTIONS") {',
+    );
+  });
+
   it("CRITICAL_JOBS constant covers all required autonomous jobs", async () => {
     const mod = await import("fs");
     const content = mod.readFileSync("src/hooks/useSystemHealth.ts", "utf-8");

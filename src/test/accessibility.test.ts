@@ -21,6 +21,12 @@ describe("Accessibility Standards", () => {
     expect(content).toContain('role="main"');
   });
 
+  it("Dashboard relies on the protected shell for its single main landmark", async () => {
+    const mod = await import("fs");
+    const content = mod.readFileSync("src/pages/Dashboard.tsx", "utf-8");
+    expect(content).not.toContain('<main id="main-content"');
+  });
+
   it("DashboardSidebar has navigation landmark", async () => {
     const mod = await import("fs");
     const content = mod.readFileSync("src/components/dashboard/DashboardSidebar.tsx", "utf-8");
