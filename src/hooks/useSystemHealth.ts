@@ -83,12 +83,7 @@ export const useSystemHealth = (orgId: string | null) => {
           .select("id")
           .eq("organization_id", orgId)
           .gte("created_at", twentyFourHoursAgo),
-        supabase
-          .from("cron_run_log")
-          .select("job_name, status, completed_at, duration_ms, error_message, started_at")
-          .gte("started_at", twentyFourHoursAgo)
-          .order("started_at", { ascending: false })
-          .limit(500),
+        supabase.rpc("get_cron_health", { _job_names: CRITICAL_JOBS }),
       ]);
 
       const decisions = decisionsRes.data || [];
