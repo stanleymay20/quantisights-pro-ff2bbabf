@@ -186,11 +186,22 @@ export default function BridgeHealth() {
                   const breakerOpen = timerActive || (r.consecutive_failures ?? 0) >= failureThreshold;
                   const cursor = r.metadata?.resume_offset ?? 0;
                   const pageSize = r.metadata?.last_page_size ?? "—";
+                  const paused = r.metadata?.paused === true;
+                  const pausedReason = r.metadata?.paused_reason as string | undefined;
                   return (
                     <TableRow key={r.surface}>
-                      <TableCell className="font-mono text-xs">{r.surface}</TableCell>
+                      <TableCell className="font-mono text-xs">
+                        {r.surface}
+                        {paused && pausedReason && (
+                          <div className="text-[10px] font-sans text-amber-600 mt-0.5 max-w-xs whitespace-normal">
+                            Paused: {pausedReason}
+                          </div>
+                        )}
+                      </TableCell>
                       <TableCell>
-                        {r.last_status === "success" ? (
+                        {paused ? (
+                          <Badge variant="outline" className="border-amber-500 text-amber-600">paused</Badge>
+                        ) : r.last_status === "success" ? (
                           <Badge variant="secondary" className="gap-1">
                             <CheckCircle2 className="h-3 w-3" /> success
                           </Badge>
@@ -222,7 +233,9 @@ export default function BridgeHealth() {
                         {breakerOpen && r.circuit_breaker_until ? (
                           <span className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
-                            {formatDistanceToNow(new Date(r.circuit_breaker_until), { addSuffix: true })}
+                            {timerActive
+                              ? `in ${formatDistanceToNow(new Date(r.circuit_breaker_until))}`
+                              : "manual reset required"}
                           </span>
                         ) : (
                           "—"

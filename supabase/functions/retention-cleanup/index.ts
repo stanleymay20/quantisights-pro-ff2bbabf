@@ -96,6 +96,22 @@ Deno.serve(async (req: Request) => {
       .eq("auto_cleanup", true)
       .is("last_cleanup_at", null);
 
+    // Sweep stuck datasets — anything in `processing` for >24h is treated as an abandoned worker
+    // and marked failed so it stops showing as "still ingesting" in the UI.
+    const stuckCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const { data: stuckDatasets, error: stuckErr } = await supabase
+      .from("datasets")
+      .update({
+        status: "failed",
+        provenance: { auto_failed_reason: "Ingestion worker abandoned; auto-failed after >24h in processing" },
+      } as any)
+      .eq("status", "processing")
+      .lt("created_at", stuckCutoff)
+      .select("id");
+    if (!stuckErr) {
+      results["stuck_datasets"] = { deleted: stuckDatasets?.length ?? 0 };
+    }
+
     await guard.succeed({ results });
     return new Response(
       JSON.stringify({ success: true, results }),
