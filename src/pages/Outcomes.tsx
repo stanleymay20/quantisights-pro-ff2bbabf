@@ -191,7 +191,19 @@ const Outcomes = () => {
               <span className="text-xs text-muted-foreground">Record outcomes to calibrate future predictions</span>
             </div>
             {pending.slice(0, 10).map((r) => (
-              <Card key={r.id} className="opacity-80 hover:opacity-100 transition-opacity">
+              <Card
+                key={r.id}
+                role="button"
+                tabIndex={0}
+                onClick={() => navigate(`/decisions/${r.id}/outcome`)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    navigate(`/decisions/${r.id}/outcome`);
+                  }
+                }}
+                className="opacity-80 hover:opacity-100 transition-opacity cursor-pointer focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+              >
                 <CardContent className="p-4 flex items-center gap-3">
                   <Minus className="w-4 h-4 text-muted-foreground shrink-0" />
                   <div className="flex-1 min-w-0">
@@ -200,7 +212,7 @@ const Outcomes = () => {
                       Logged with {r.confidence_at_decision != null ? Number(r.confidence_at_decision).toFixed(1) : "—"}% confidence · Outcome not yet recorded
                     </p>
                   </div>
-                  <span className="text-xs text-primary font-medium shrink-0 cursor-pointer hover:underline">
+                  <span className="text-xs text-primary font-medium shrink-0 hover:underline">
                     Record outcome →
                   </span>
                 </CardContent>
