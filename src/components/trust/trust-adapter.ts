@@ -44,10 +44,16 @@ function evidenceStatus(source: Record<string, unknown>): TrustStatus {
   if (explicit) return explicit;
 
   const evidenceSources = source.evidence_sources;
-  if (Array.isArray(evidenceSources)) return evidenceSources.length > 0 ? "verified" : "missing";
+  if (Array.isArray(evidenceSources) && evidenceSources.length > 0) return "verified";
 
+  // A record can carry real evidence in explanation_metadata.source_data
+  // (dataset/rows analyzed) even when evidence_sources is empty — an empty
+  // array must not short-circuit past that. Records with neither fall
+  // through to "missing" below.
   const explanationSources = getPath(source, "explanation_metadata.source_data");
   if (explanationSources && typeof explanationSources === "object") return "verified";
+
+  if (Array.isArray(evidenceSources)) return "missing";
 
   const sourceInsight = source.source_insight_summary;
   return sourceInsight ? "partial" : "not_available";

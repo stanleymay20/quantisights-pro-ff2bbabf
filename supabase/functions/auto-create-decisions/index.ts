@@ -292,6 +292,9 @@ function normalizeInsight(i: any): DecisionSource {
 function buildDecisionRow(source: DecisionSource, organizationId: string, datasetMap: Record<string, any>) {
   const dsInfo = source.dataset_id ? datasetMap[source.dataset_id] : null;
   const expectedImpact = parseImpactEstimate(source.expected_impact);
+  const recencyDays = source.created_at
+    ? Math.max(0, Math.floor((Date.now() - new Date(source.created_at).getTime()) / 86400000))
+    : 0;
 
   return {
     organization_id: organizationId,
@@ -309,7 +312,22 @@ function buildDecisionRow(source: DecisionSource, organizationId: string, datase
     decision_origin: source.kind === "advisory" ? "ai_generated" : "insight_generated",
     source_insight_summary: source.title,
     recommendation_logic_type: source.kind === "advisory" ? "advisory_conversion" : "insight_severity_bridge",
-    evidence_sources: [],
+    // Every decision this pipeline creates already has real supporting
+    // evidence (the source advisory/insight, backed by dsInfo/source_data
+    // below) — this must never be an empty array. An empty evidence_sources
+    // array makes trust-adapter.ts's evidenceStatus() report "missing"
+    // (it short-circuits before ever looking at explanation_metadata.source_data),
+    // which permanently disables the executive Approve action with no UI
+    // path to recover, since evidence is populated at creation time, not
+    // edited by a human.
+    evidence_sources: [{
+      source_type: source.kind === "advisory" ? "advisory" : "insight",
+      source_name: dsInfo?.name ?? (source.kind === "advisory" ? "Advisory engine" : "Insight engine"),
+      source_id: source.id,
+      contribution_weight: 1.0,
+      confidence: source.capped_confidence ?? source.confidence ?? source.raw_confidence ?? 60,
+      recency_days: recencyDays,
+    }],
     explanation_metadata: {
       source: {
         kind: source.kind,
