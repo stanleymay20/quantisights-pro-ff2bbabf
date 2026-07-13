@@ -55,15 +55,45 @@ function shouldSkip(el: Element | null): boolean {
   return false;
 }
 
+// Fragments used for substring replacement inside concatenated template strings
+// (e.g. `${category} — Governance record logged`). Only phrases of >=2 words
+// and >=10 chars are eligible so we don't damage arbitrary tokens.
+let fragmentPairs: Array<[string, string]> = [];
+function computeFragmentPairs(dict: Dict): Array<[string, string]> {
+  const pairs: Array<[string, string]> = [];
+  for (const [en, de] of Object.entries(dict)) {
+    if (en.length < 10) continue;
+    if (en.split(/\s+/).length < 2) continue;
+    if (/[{}<>]/.test(en)) continue;
+    pairs.push([en, de]);
+  }
+  // Longest-first so we prefer specific matches over shorter substrings.
+  pairs.sort((a, b) => b[0].length - a[0].length);
+  return pairs;
+}
+
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 function translateText(raw: string, dict: Dict): string | null {
   const trimmed = raw.trim();
   if (!trimmed) return null;
   const hit = dict[trimmed];
-  if (!hit) return null;
-  // Preserve surrounding whitespace so layout doesn't shift.
-  const leading = raw.match(/^\s*/)?.[0] ?? "";
-  const trailing = raw.match(/\s*$/)?.[0] ?? "";
-  return leading + hit + trailing;
+  if (hit) {
+    const leading = raw.match(/^\s*/)?.[0] ?? "";
+    const trailing = raw.match(/\s*$/)?.[0] ?? "";
+    return leading + hit + trailing;
+  }
+  // Substring fragment replacement (case-sensitive) for concatenated text.
+  let mutated = raw;
+  let changed = false;
+  for (const [en, de] of fragmentPairs) {
+    if (!mutated.includes(en)) continue;
+    mutated = mutated.replace(new RegExp(escapeRegex(en), "g"), de);
+    changed = true;
+  }
+  return changed ? mutated : null;
 }
 
 function walkAndTranslate(root: Node, dict: Dict) {
