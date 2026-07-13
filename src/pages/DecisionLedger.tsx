@@ -354,13 +354,13 @@ const DecisionLedgerPage = () => {
         strategic: "revenue", operational: "cost", risk: "revenue",
       };
       const { error } = isApproval
-        ? await supabase.rpc("approve_decision", {
+        ? await (supabase.rpc as any)("approve_decision", {
             _decision_id: id,
             _dataset_id: activeDatasetId ?? null,
             _expected_metric: metricByType[decision.decision_type] ?? decision.decision_type,
             _evaluation_window_days: 30,
           })
-        : await supabase.rpc("reject_decision", { _decision_id: id });
+        : await (supabase.rpc as any)("reject_decision", { _decision_id: id });
 
       if (error) {
         setDecisions(previousDecisions);
