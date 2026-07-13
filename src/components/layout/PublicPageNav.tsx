@@ -1,8 +1,11 @@
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import HeaderLanguageSwitcher from "@/components/HeaderLanguageSwitcher";
 
 const PublicPageNav = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   return (
     <div style={{
       position: "sticky",
@@ -25,23 +28,26 @@ const PublicPageNav = () => {
       }}>
         Quantivis
       </Link>
-      <button
-        onClick={() => navigate(-1)}
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 6,
-          fontSize: 13,
-          color: "hsl(var(--muted-foreground))",
-          background: "transparent",
-          border: "none",
-          cursor: "pointer",
-          padding: "4px 0",
-        }}
-      >
-        <ArrowLeft size={14} />
-        Back
-      </button>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <HeaderLanguageSwitcher variant="public" />
+        <button
+          onClick={() => navigate(-1)}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            fontSize: 13,
+            color: "hsl(var(--muted-foreground))",
+            background: "transparent",
+            border: "none",
+            cursor: "pointer",
+            padding: "4px 0",
+          }}
+        >
+          <ArrowLeft size={14} />
+          {t("common.back")}
+        </button>
+      </div>
     </div>
   );
 };

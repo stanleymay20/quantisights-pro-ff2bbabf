@@ -25,6 +25,8 @@ import { invokeWithRetry } from "@/lib/edge-function-retry";
 import { embedInsightsBatch } from "@/lib/decision-lifecycle";
 import { useToast } from "@/hooks/use-toast";
 import { useNotifications, type NotificationItem } from "@/hooks/useNotifications";
+import { useTranslation } from "react-i18next";
+import HeaderLanguageSwitcher from "@/components/HeaderLanguageSwitcher";
 
 interface Insight {
   category?: string;
@@ -84,6 +86,7 @@ export const DashboardHeader = ({
   const { toast } = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
   const {
     notifications,
     unreadCount,
@@ -163,12 +166,16 @@ export const DashboardHeader = ({
             onClick={handleRecalculate}
             disabled={recalculating}
             className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-all disabled:opacity-50"
-            aria-label={recalculating ? "Analyzing data" : "Refresh analysis"}
+            aria-label={recalculating ? t("header.analyzing") : t("header.refresh")}
           >
             <RefreshCw className={`w-3 h-3 ${recalculating ? "animate-spin" : ""}`} />
-            <span className="hidden sm:inline">{recalculating ? "Analyzing…" : "Refresh"}</span>
+            <span className="hidden sm:inline">{recalculating ? t("header.analyzing") : t("header.refresh")}</span>
           </button>
         )}
+
+        <HeaderLanguageSwitcher />
+
+
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -186,17 +193,17 @@ export const DashboardHeader = ({
             </div>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => navigate("/settings")}>
-              <Settings className="w-4 h-4 mr-2" /> Settings
+              <Settings className="w-4 h-4 mr-2" /> {t("nav.settings")}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => navigate("/billing")}>
-              <CreditCard className="w-4 h-4 mr-2" /> Billing
+              <CreditCard className="w-4 h-4 mr-2" /> {t("nav.billing")}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => navigate("/team")}>
-              <Users className="w-4 h-4 mr-2" /> Team
+              <Users className="w-4 h-4 mr-2" /> {t("nav.team")}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={onSignOut} className="text-destructive focus:text-destructive" data-testid="sign-out">
-              <LogOut className="w-4 h-4 mr-2" /> Sign out
+              <LogOut className="w-4 h-4 mr-2" /> {t("auth.logout")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
