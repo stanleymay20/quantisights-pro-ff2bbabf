@@ -377,8 +377,16 @@ serve(async (req) => {
     // Dedupe within each batch on the upsert conflict key — Postgres rejects
     // ON CONFLICT when the same key appears twice in one statement.
     const CONFLICT_KEYS = ["organization_id", "metric_type", "date", "region", "segment", "source_id"] as const;
+    // Normalize like Postgres will after upsert: trim whitespace and lowercase
+    // metric_type so "Revenue" and "revenue " collapse to the same conflict key
+    // and the ON CONFLICT DO UPDATE statement can't hit the same row twice.
+    const normalizeKeyPart = (k: string, v: unknown): string => {
+      if (v === null || v === undefined) return "";
+      const s = String(v).trim();
+      return k === "metric_type" ? s.toLowerCase() : s;
+    };
     const dedupeKey = (r: Record<string, unknown>) =>
-      CONFLICT_KEYS.map((k) => (r[k] ?? "")).join("|");
+      CONFLICT_KEYS.map((k) => normalizeKeyPart(k, r[k])).join("|");
 
     for (let i = 0; i < metrics.length; i += BATCH_SIZE) {
       const rawBatch = metrics.slice(i, i + BATCH_SIZE);

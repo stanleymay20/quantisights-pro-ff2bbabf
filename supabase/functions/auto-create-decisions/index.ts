@@ -71,7 +71,21 @@ serve(async (req) => {
     // `supplier-risk-runtime-ingest` function, which runs them through the
     // RTS-1 / Agent Gateway / Runtime pipeline instead of this generic
     // direct-insert path. Every other category is unaffected.
-    const allSources = [...advisorySources, ...insightSources].filter((source) => !isSupplierRiskSource(source));
+    // Phase 5 stopgap: hide low-signal recommendations. Medium/low-priority
+    // sources with a quantified impact below €1,000 are suppressed to avoid
+    // "€30 critical decision" clutter in the ledger. Critical/high always pass,
+    // and rows with no numeric impact estimate are still shown so we don't
+    // silently drop qualitative insights.
+    const LOW_IMPACT_FLOOR_EUR = 1000;
+    const isMateriallyRelevant = (source: DecisionSource) => {
+      if (source.priority === "critical" || source.priority === "high") return true;
+      const impact = parseImpactEstimate(source.expected_impact);
+      if (impact === null) return true;
+      return Math.abs(impact) >= LOW_IMPACT_FLOOR_EUR;
+    };
+    const allSources = [...advisorySources, ...insightSources]
+      .filter((source) => !isSupplierRiskSource(source))
+      .filter(isMateriallyRelevant);
 
     if (allSources.length === 0) {
       return json({ message: "No advisories or decision-grade insights to convert", created: 0, advisory_created: 0, insight_created: 0 }, 200, corsHeaders);
