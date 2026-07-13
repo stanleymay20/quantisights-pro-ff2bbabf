@@ -548,6 +548,8 @@ const DashboardSidebar = () => {
   const location = useLocation();
   const isMobile = useIsMobile();
   const { open, toggle, collapsed, toggleCollapsed } = useSidebarToggle();
+  const { t } = useTranslation();
+  const tr = useSidebarLabel();
 
   // Power-user roles see the Advanced drawer; viewer/analyst keep a clean shell
   const showAdvanced =
@@ -583,7 +585,7 @@ const DashboardSidebar = () => {
           <button
             onClick={toggle}
             className="p-1.5 rounded-lg hover:bg-sidebar-accent transition-colors"
-            aria-label="Close navigation"
+            aria-label={t("sidebar.close_nav", { defaultValue: "Close navigation" })}
           >
             <X className="w-5 h-5 text-sidebar-foreground" />
           </button>
@@ -591,8 +593,8 @@ const DashboardSidebar = () => {
           <button
             onClick={toggleCollapsed}
             className="p-1.5 rounded-lg hover:bg-sidebar-accent transition-colors ml-auto"
-            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-label={collapsed ? t("sidebar.expand", { defaultValue: "Expand sidebar" }) : t("sidebar.collapse", { defaultValue: "Collapse sidebar" })}
+            title={collapsed ? t("sidebar.expand", { defaultValue: "Expand sidebar" }) : t("sidebar.collapse", { defaultValue: "Collapse sidebar" })}
           >
             <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${collapsed ? "-rotate-90" : "rotate-90"}`} />
           </button>
@@ -617,7 +619,7 @@ const DashboardSidebar = () => {
                 key={section.path}
                 to={section.path}
                 onClick={handleNavClick}
-                title={section.label}
+                title={tr(section.label)}
                 className={`flex items-center justify-center w-10 h-10 mx-auto rounded-lg transition-colors ${
                   isActive
                     ? "bg-foreground/[0.06] text-foreground font-semibold"
@@ -678,7 +680,7 @@ const DashboardSidebar = () => {
         <Link
           to="/docs"
           onClick={handleNavClick}
-          title="Help & Docs"
+          title={tr("Help & Docs")}
           className={cn(
             "flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[12px] font-medium transition-colors w-full",
             collapsed && "justify-center px-0",
@@ -688,11 +690,11 @@ const DashboardSidebar = () => {
           )}
         >
           <BookOpen className="w-[15px] h-[15px] text-muted-foreground" />
-          {!collapsed && "Help & Docs"}
+          {!collapsed && tr("Help & Docs")}
         </Link>
         <button
           onClick={handleSignOut}
-          title="Sign Out"
+          title={tr("Sign Out")}
           data-testid="sign-out"
           className={cn(
             "flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[12px] font-medium text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors w-full",
@@ -700,7 +702,7 @@ const DashboardSidebar = () => {
           )}
         >
           <LogOut className="w-[15px] h-[15px] text-muted-foreground" />
-          {!collapsed && "Sign Out"}
+          {!collapsed && tr("Sign Out")}
         </button>
       </div>
     </aside>
