@@ -229,10 +229,16 @@ describe("UX-2 wiring (routes, navigation, pages)", () => {
     }
   });
 
-  it("routes approval onward to the outcome page and reuses existing approval behavior", () => {
+  it("routes approval onward to the outcome page via the atomic approve_decision RPC", () => {
     const review = read("src/pages/DecisionReview.tsx");
-    expect(review).toContain('decision_status: "approved"');
-    expect(review).toContain("onDecisionApproved");
+    // Approval, audit, execution-plan, and outcome-tracking creation must
+    // commit as one privileged server-side transaction — the browser must
+    // never write decision_status or audit_log directly (see
+    // decision-approval-atomicity.test.ts for the full regression suite).
+    expect(review).toContain('supabase.rpc("approve_decision"');
+    expect(review).toContain('supabase.rpc("reject_decision"');
+    expect(review).not.toContain('decision_status: "approved"');
+    expect(review).not.toContain("onDecisionApproved");
     expect(review).toContain("/outcome");
     expect(review).toContain("DEMO_DECISION");
     expect(review).toContain("isDemoDecisionId");

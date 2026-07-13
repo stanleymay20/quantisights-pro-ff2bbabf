@@ -2,12 +2,10 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Loader2 } from "lucide-react";
 
-import { useAuth } from "@/contexts/AuthContext";
 import { useOrganization } from "@/hooks/useOrganization";
 import { useProject } from "@/contexts/ProjectContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { onDecisionApproved } from "@/lib/decision-lifecycle";
 import { SidebarMobileToggle } from "@/components/layout/ProtectedShell";
 import { Button } from "@/components/ui/button";
 import DecisionEvidencePanel from "@/components/decision-intelligence/DecisionEvidencePanel";
@@ -36,7 +34,6 @@ const DecisionReview = () => {
   const navigate = useNavigate();
   const { currentOrgId } = useOrganization();
   const { activeDatasetId } = useProject();
-  const { user } = useAuth();
   const { toast } = useToast();
 
   const isDemo = isDemoDecisionId(id);
@@ -71,26 +68,29 @@ const DecisionReview = () => {
       return;
     }
     setBusy(true);
-    const decidedAt = new Date().toISOString();
-    const { error } = await supabase
-      .from("decision_ledger")
-      .update({ decision_status: "approved", decided_at: decidedAt, decided_by: user?.id ?? null })
-      .eq("id", decision.id);
+    // Approval, audit-log entry, execution-plan creation, and (evaluability-
+    // gated) outcome-tracking initialization all happen inside one
+    // privileged server-side transaction — either all four commit or none
+    // do. The browser never writes audit_log directly.
+    const { error } = await supabase.rpc("approve_decision", {
+      _decision_id: decision.id,
+      _dataset_id: activeDatasetId ?? null,
+      _expected_metric: METRIC_BY_TYPE[decision.decision_type ?? ""] ?? decision.decision_type ?? null,
+      _evaluation_window_days: 30,
+    });
     setBusy(false);
     if (error) {
       toast({ title: "Approval failed", description: error.message, variant: "destructive" });
       return;
     }
-    // Same post-approval lifecycle the Decision Ledger triggers (audit + outcome tracking).
-    onDecisionApproved({
-      decisionId: decision.id,
-      organizationId: decision.organization_id ?? currentOrgId ?? "",
-      userId: user?.id ?? null,
-      recommendedAction: decision.recommended_action ?? "",
-      confidence: decision.capped_confidence ?? decision.confidence_at_decision ?? 50,
-      datasetId: activeDatasetId ?? null,
-      expectedMetric: METRIC_BY_TYPE[decision.decision_type ?? ""] ?? decision.decision_type ?? null,
-      evaluationWindowDays: 30,
+    // Non-critical enrichment, unrelated to the atomic approval transaction —
+    // best-effort exactly as before.
+    const organizationId = decision.organization_id ?? currentOrgId ?? "";
+    supabase.functions.invoke("embed-decisions", {
+      body: { organization_id: organizationId, mode: "specific", entity_ids: [decision.id] },
+    }).catch(() => {});
+    supabase.functions.invoke("predict-outcome", {
+      body: { organization_id: organizationId, decision_id: decision.id },
     }).catch(() => {});
     toast({ title: "Decision approved", description: "Outcome tracking has started." });
     navigate(`/decisions/${decision.id}/outcome`);
@@ -107,11 +107,12 @@ const DecisionReview = () => {
       return;
     }
     setBusy(true);
-    const notes = `${decision.notes ? `${decision.notes}\n` : ""}Rejected in executive review: ${reason}`;
-    const { error } = await supabase
-      .from("decision_ledger")
-      .update({ decision_status: "rejected", decided_at: new Date().toISOString(), notes })
-      .eq("id", decision.id);
+    // Rejection and its audit-log entry commit together in one server-side
+    // transaction, same as approval.
+    const { error } = await supabase.rpc("reject_decision", {
+      _decision_id: decision.id,
+      _reason: reason,
+    });
     setBusy(false);
     if (error) {
       toast({ title: "Rejection failed", description: error.message, variant: "destructive" });

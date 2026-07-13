@@ -43,7 +43,7 @@ import DecisionEvidencePanel from "@/components/decision-intelligence/DecisionEv
 import ExplainDecisionPanel from "@/components/dashboard/ExplainDecisionPanel";
 import type { Database } from "@/integrations/supabase/types";
 import type { ExplanationMetadata } from "@/components/dashboard/ExplainDecisionPanel";
-import { onDecisionApproved, onExecutionStatusChanged, checkEvaluability, evaluabilityColor, evaluabilityBadgeVariant } from "@/lib/decision-lifecycle";
+import { onExecutionStatusChanged, checkEvaluability, evaluabilityColor, evaluabilityBadgeVariant } from "@/lib/decision-lifecycle";
 import { formatCompact } from "@/lib/format-locale";
 import type { EvaluabilityResult } from "@/lib/decision-lifecycle";
 
@@ -336,6 +336,56 @@ const DecisionLedgerPage = () => {
       return;
     }
 
+    // Approval/rejection commit atomically server-side (decision_ledger
+    // update + audit_log entry + execution-plan + evaluability-gated
+    // outcome tracking, all in one transaction) — the browser never writes
+    // audit_log directly. This is a distinct path from the generic field
+    // update below, which is unaffected.
+    if (updates.decision_status === "approved" || updates.decision_status === "rejected") {
+      const isApproval = updates.decision_status === "approved";
+      const previousDecisions = [...decisions];
+      setDecisions(prev =>
+        prev.map(d => d.id === id ? { ...d, ...updates, updated_at: new Date().toISOString() } as Decision : d)
+      );
+      setUpdatingId(id);
+
+      const metricByType: Record<string, string> = {
+        growth: "revenue", retention: "churn_rate", cost_optimization: "cost",
+        strategic: "revenue", operational: "cost", risk: "revenue",
+      };
+      const { error } = isApproval
+        ? await supabase.rpc("approve_decision", {
+            _decision_id: id,
+            _dataset_id: activeDatasetId ?? null,
+            _expected_metric: metricByType[decision.decision_type] ?? decision.decision_type,
+            _evaluation_window_days: 30,
+          })
+        : await supabase.rpc("reject_decision", { _decision_id: id });
+
+      if (error) {
+        setDecisions(previousDecisions);
+        toast({ title: "Error", description: error.message, variant: "destructive" });
+        setUpdatingId(null);
+        return;
+      }
+
+      setUpdatingId(null);
+
+      import("@/lib/analytics").then(({ trackDecisionActioned }) =>
+        trackDecisionActioned(updates.decision_status as "approved" | "rejected", decision.decision_type)
+      );
+
+      if (isApproval) {
+        supabase.functions.invoke("embed-decisions", {
+          body: { organization_id: decision.organization_id, mode: "specific", entity_ids: [id] },
+        }).catch(() => {});
+        supabase.functions.invoke("predict-outcome", {
+          body: { organization_id: decision.organization_id, decision_id: id },
+        }).catch(() => {});
+      }
+      return;
+    }
+
     // Compute derived fields upfront
     if (updates.execution_status === "completed") {
       const conf = decision.confidence_at_decision || decision.capped_confidence || 50;
@@ -370,37 +420,8 @@ const DecisionLedgerPage = () => {
 
     setUpdatingId(null);
 
-    // Track decision action for analytics
-    if (updates.decision_status === "approved" || updates.decision_status === "rejected") {
-      import("@/lib/analytics").then(({ trackDecisionActioned }) =>
-        trackDecisionActioned(updates.decision_status as "approved" | "rejected", decision.decision_type)
-      );
-    }
-
     // ── HEAVY PATH: lifecycle side effects run async, non-blocking ──
-    if (updates.decision_status === "approved") {
-      // Resolve dataset: use the advisory's dataset, the active project dataset, or null (server fallback)
-      const resolvedDatasetId = activeDatasetId ?? null;
-
-      // Resolve metric: derive from decision_type → canonical metric mapping
-      const metricByType: Record<string, string> = {
-        growth: "revenue", retention: "churn_rate", cost_optimization: "cost",
-        strategic: "revenue", operational: "cost", risk: "revenue",
-      };
-      const resolvedMetric = metricByType[decision.decision_type] ?? decision.decision_type;
-
-      onDecisionApproved({
-        decisionId: id,
-        organizationId: decision.organization_id,
-        userId: user?.id ?? null,
-        recommendedAction: decision.recommended_action,
-        confidence: decision.capped_confidence ?? decision.confidence_at_decision ?? 50,
-        datasetId: resolvedDatasetId,
-        expectedMetric: resolvedMetric,
-        evaluationWindowDays: 30,
-        evaluability: evaluabilityCheck,
-      }).catch(() => {}); // fire-and-forget
-    }
+    // (decision_status approve/reject is handled entirely above, atomically.)
     if (updates.execution_status) {
       onExecutionStatusChanged({
         decisionId: id,

@@ -67,7 +67,11 @@ serve(async (req) => {
 
     const advisorySources = advisories.map(normalizeAdvisory);
     const insightSources = insights.map(normalizeInsight);
-    const allSources = [...advisorySources, ...insightSources];
+    // GA-1: supplier-risk-shaped sources are claimed by the dedicated
+    // `supplier-risk-runtime-ingest` function, which runs them through the
+    // RTS-1 / Agent Gateway / Runtime pipeline instead of this generic
+    // direct-insert path. Every other category is unaffected.
+    const allSources = [...advisorySources, ...insightSources].filter((source) => !isSupplierRiskSource(source));
 
     if (allSources.length === 0) {
       return json({ message: "No advisories or decision-grade insights to convert", created: 0, advisory_created: 0, insight_created: 0 }, 200, corsHeaders);
@@ -385,6 +389,16 @@ function buildWhyItMatters(source: DecisionSource) {
   const impact = parseImpactEstimate(source.expected_impact);
   const impactPhrase = impact ? `Estimated financial exposure is about €${Math.round(impact).toLocaleString("en-GB")}.` : "The issue may affect operating performance if ignored.";
   return `${source.priority.toUpperCase()} ${source.kind} signal. ${impactPhrase} Executive review is required to move from intelligence to action.`;
+}
+
+/**
+ * GA-1: matches the classifier in `supplier-risk-runtime-ingest/index.ts`.
+ * Sources matching this are claimed by the runtime pipeline function and
+ * must not be double-processed here.
+ */
+function isSupplierRiskSource(source: Pick<DecisionSource, "category" | "title" | "rationale">): boolean {
+  const text = `${source.category ?? ""} ${source.title} ${source.rationale ?? ""}`.toLowerCase();
+  return /supplier|vendor|delivery/.test(text);
 }
 
 function normalizePriority(value: unknown) {
