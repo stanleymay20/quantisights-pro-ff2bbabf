@@ -133,6 +133,7 @@ function walkAndTranslate(root: Node, dict: Dict) {
 function start(dict: Dict) {
   stop();
   currentDict = dict;
+  fragmentPairs = computeFragmentPairs(dict);
   // Initial pass
   walkAndTranslate(document.body, dict);
   // Observe further mutations
