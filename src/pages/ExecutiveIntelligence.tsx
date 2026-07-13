@@ -78,18 +78,18 @@ function ExecutiveBriefCard({ brief, onRegenerate, generating, orgId }: {
         <div>
           <h4 className="font-medium mb-2">Recommended executive actions</h4>
           <ul className="space-y-1.5">
-            {s.recommended_executive_actions.map((a, i) => (
+            {(s.recommended_executive_actions ?? []).map((a, i) => (
               <li key={i} className="flex items-start gap-2 text-sm">
-                <Badge variant={TIER_VARIANT[a.label.toLowerCase()] ?? "secondary"} className="shrink-0">{a.label}</Badge>
+                <Badge variant={TIER_VARIANT[a.label?.toLowerCase() ?? ""] ?? "secondary"} className="shrink-0">{a.label}</Badge>
                 <span className="text-muted-foreground">{a.value}</span>
               </li>
             ))}
           </ul>
         </div>
         <div className="flex gap-3 text-xs text-muted-foreground border-t pt-3">
-          <span>Critical: {s.pressure_tiers.critical}</span>
-          <span>High: {s.pressure_tiers.high}</span>
-          <span>Elevated: {s.pressure_tiers.elevated}</span>
+          <span>Critical: {s.pressure_tiers?.critical ?? 0}</span>
+          <span>High: {s.pressure_tiers?.high ?? 0}</span>
+          <span>Elevated: {s.pressure_tiers?.elevated ?? 0}</span>
           <span className="ml-auto">Sources: {(s.provenance?.items_evaluated as number) ?? 0} signals, {(s.provenance?.advisories_considered as number) ?? 0} advisories</span>
         </div>
       </CardContent>
