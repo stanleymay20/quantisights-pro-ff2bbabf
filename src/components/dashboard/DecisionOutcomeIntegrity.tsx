@@ -91,9 +91,10 @@ const DecisionOutcomeIntegrity = ({ organizationId }: Props) => {
   if (loading) return null;
   if (outcomes.length === 0) return null;
 
-  const evaluated = outcomes.filter(o => o.outcome_status !== "pending");
-  const avgAccuracy = evaluated.length > 0
-    ? evaluated.reduce((s, o) => s + (o.accuracy_score ?? 0), 0) / evaluated.length
+  const evaluated = outcomes.filter(o => isEvaluatedStatus(o.outcome_status));
+  const scored = evaluated.filter(o => o.accuracy_score !== null);
+  const avgAccuracy = scored.length > 0
+    ? scored.reduce((s, o) => s + (o.accuracy_score ?? 0), 0) / scored.length
     : null;
 
   return (
