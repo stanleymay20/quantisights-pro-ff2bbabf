@@ -78,13 +78,28 @@ Deno.serve(async (req) => {
     if (error) return json({ error: `Decision insert failed: ${error.message}` }, 500);
     targetTable = "decision_ledger"; targetId = dec.id;
   } else if (body.route_type === "task") {
+    // execution_plans.decision_id is NOT NULL — create a shell decision to anchor the task.
+    const { data: shellDec, error: shellErr } = await svc.from("decision_ledger").insert({
+      organization_id: body.organization_id,
+      decision_type: "aicis_intelligence",
+      decision_status: "approved",
+      recommended_action: title,
+      decision_origin: "aicis_intelligence",
+      notes: `Task anchor decision. Reason: ${body.reason || "n/a"}`,
+      decided_by: body.owner_user_id ?? auth.userId,
+      decided_at: new Date().toISOString(),
+    }).select("id").single();
+    if (shellErr) return json({ error: `Task anchor decision failed: ${shellErr.message}` }, 500);
+
     const { data: plan, error } = await svc.from("execution_plans").insert({
       organization_id: body.organization_id,
+      decision_id: shellDec.id,
       action_title: title,
       action_description: `Auto-created from AICIS intelligence. ${body.reason || ""}`,
       status: "pending",
       priority: severity === "critical" ? "critical" : severity === "high" ? "high" : "medium",
       owner_user_id: body.owner_user_id ?? null,
+      trigger_type: "manual",
     }).select("id").single();
     if (error) return json({ error: `Plan insert failed: ${error.message}` }, 500);
     targetTable = "execution_plans"; targetId = plan.id;
