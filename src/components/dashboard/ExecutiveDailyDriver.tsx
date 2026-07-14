@@ -26,6 +26,7 @@ import type { MetricTypeSummary } from "@/hooks/useMetrics";
 import type { Insight } from "@/hooks/useInsights";
 import { generateAnswer } from "@/lib/copilot-answer-engine";
 import type { DecisionSummary } from "@/lib/copilot-answer-engine";
+import InsightEvidencePanel from "./InsightEvidencePanel";
 
 interface PendingDecision {
   id: string;
@@ -477,6 +478,17 @@ const ExecutiveDailyDriver = ({ displayName, orgId, insights, topMetrics, pendin
               <Button size="sm" variant="ghost" className="h-7 shrink-0 text-xs" onClick={() => navigate("/executive-intelligence")}>Review</Button>
             </div>
           ))}
+        </div>
+      )}
+
+      {insights.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">AI Insights</p>
+          <div className="space-y-2">
+            {insights.slice(0, 5).map(insight => (
+              <InsightEvidencePanel key={insight.id} insight={insight} />
+            ))}
+          </div>
         </div>
       )}
 
