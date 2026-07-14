@@ -21,6 +21,7 @@ interface RoleRisk {
   score: number;
   components: { deviation: number; trend: number; volatility: number; forecast: number };
   escalation_required: boolean;
+  last_updated?: string;
 }
 
 interface Convergence {
@@ -125,7 +126,7 @@ const StrategyPack = () => {
       setLoading(true);
       const [orgRes, riskRes, eciRes, conflictRes, decRes, simRes, advRes] = await Promise.all([
         supabase.from("organizations").select("name").eq("id", currentOrgId).maybeSingle(),
-        supabase.from("executive_risk_index").select("role_type, score, components, escalation_required").eq("organization_id", currentOrgId),
+        supabase.from("executive_risk_index").select("role_type, score, components, escalation_required, last_updated").eq("organization_id", currentOrgId),
         supabase.from("executive_convergence_index").select("score, alignment_status, dispersion, conflict_penalty").eq("organization_id", currentOrgId).order("created_at", { ascending: false }).limit(1).maybeSingle(),
         supabase.from("executive_conflicts").select("*").eq("organization_id", currentOrgId).is("resolved_at", null),
         supabase.from("decision_ledger").select("id, recommended_action, decision_type, decision_status, capped_confidence, predicted_net_impact, predicted_roi_probability, outcome_delta, execution_status, confidence_cap_reason, raw_confidence").eq("organization_id", currentOrgId).order("created_at", { ascending: false }).limit(50),
@@ -148,6 +149,16 @@ const StrategyPack = () => {
   }, [currentOrgId]);
 
   const maxRisk = roleRisks.reduce((m, r) => Math.max(m, r.score), 0);
+  // Risk scores are recomputed periodically (compute-executive-signals),
+  // so this pack and a board report generated moments apart can show
+  // genuinely different current numbers -- both correct, just different
+  // snapshots. Showing "today's date" instead of when the risk data was
+  // actually last computed made that look like an unexplained
+  // contradiction rather than a live-data timing difference.
+  const riskDataAsOf = roleRisks.reduce<string | null>((latest, r) => {
+    if (!r.last_updated) return latest;
+    return !latest || r.last_updated > latest ? r.last_updated : latest;
+  }, null);
   const posture = governancePosture(maxRisk, conflicts.length);
   const completedDecisions = decisions.filter(d => d.execution_status === "completed");
   const successRate = completedDecisions.length > 0
@@ -208,7 +219,10 @@ const StrategyPack = () => {
                 <div>
                   <p className={`text-2xl font-bold ${posture.color}`}>{posture.label}</p>
                   <p className="text-sm text-muted-foreground mt-1">
-                    {orgName} • {new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+                    {orgName} • Compiled {new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+                    {riskDataAsOf && (
+                      <> • Risk data as of {new Date(riskDataAsOf).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</>
+                    )}
                   </p>
                 </div>
                 <div className="text-right">
