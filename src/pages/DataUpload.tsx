@@ -711,9 +711,17 @@ const DataUpload = () => {
       }> = [];
 
       let rowCounter = 0;
+      // Counts raw rows that produced at least one metric, as opposed to
+      // `inserted` below (metric ROWS upserted) -- in multi-metric mode one
+      // raw row fans out into N metric rows, so using `inserted` for
+      // pipeline_runs.transformed_count made the "Clean" pipeline stage
+      // display a larger count than "Raw", which reads as backwards for a
+      // funnel that's supposed to only ever hold steady or shrink.
+      let rawRowsCleaned = 0;
       for (const row of allRows) {
         if (row.every(cell => !cell || !cell.trim())) continue;
         rowCounter++;
+        let rowProducedMetric = false;
 
         let dateVal: string;
         if (dateIdx >= 0) {
@@ -760,6 +768,7 @@ const DataUpload = () => {
               segment: segmentVal,
               source_id: NULL_SOURCE,
             });
+            rowProducedMetric = true;
           }
         } else {
           const valueIdx = valueColIndices[0];
@@ -782,7 +791,9 @@ const DataUpload = () => {
             segment: segmentVal,
             source_id: NULL_SOURCE,
           });
+          rowProducedMetric = true;
         }
+        if (rowProducedMetric) rawRowsCleaned++;
       }
 
       // Deduplicate metrics by conflict key before upserting
@@ -809,7 +820,7 @@ const DataUpload = () => {
 
       // Update pipeline
       if (pipelineRunId) {
-        await supabase.from("pipeline_runs").update({ transformed_count: inserted, stage: "transform_complete" }).eq("id", pipelineRunId);
+        await supabase.from("pipeline_runs").update({ transformed_count: rawRowsCleaned, stage: "transform_complete" }).eq("id", pipelineRunId);
       }
 
       // Quality gate: verify dataset status transition
@@ -861,8 +872,17 @@ const DataUpload = () => {
       // Embed new insights into institutional memory (non-blocking)
       embedInsightsBatch(currentOrgId);
 
-      if (aggResult.status === "rejected") {
-        console.warn("[Pipeline] Aggregate refresh failed:", aggResult.reason);
+      // invokeWithRetry never rejects -- it always resolves { data, error },
+      // even after exhausting retries -- so aggResult.status is "fulfilled"
+      // whether or not the call actually succeeded. Checking only
+      // aggResult.status === "rejected" here meant a real refresh-aggregates
+      // failure (aggregated_count stuck at 0) was never detected, and the
+      // pipeline got finalized as "complete" below regardless, showing an
+      // Analytical stage of 0 next to a "Complete" badge.
+      const aggFailed = aggResult.status === "rejected" ? true : !!aggResult.value.error;
+      if (aggFailed) {
+        const reason = aggResult.status === "rejected" ? aggResult.reason : aggResult.value.error?.message;
+        console.warn("[Pipeline] Aggregate refresh failed:", reason);
       }
 
       // ═══════════════════════════════════════════════════════
@@ -906,14 +926,27 @@ const DataUpload = () => {
       ]);
       if (lineage2Err) console.error("[DataLineage] Post-import lineage failed:", lineage2Err.message, lineage2Err.details);
 
-      // Finalize pipeline run
+      // Finalize pipeline run. Only claim the Analytical stage completed if
+      // refresh-aggregates actually succeeded -- otherwise the run stays
+      // reported at the "aggregating" stage it failed at, with a "failed"
+      // status, instead of a false "complete".
       if (pipelineRunId) {
-        await supabase.from("pipeline_runs").update({
-          status: "completed",
-          stage: "complete",
-          completed_at: new Date().toISOString(),
-          duration_ms: Date.now() - pipelineStartedAt,
-        }).eq("id", pipelineRunId);
+        await supabase.from("pipeline_runs").update(
+          aggFailed
+            ? {
+                status: "failed",
+                stage: "aggregating",
+                error_message: "Analytical aggregation failed after the raw and clean layers completed successfully.",
+                completed_at: new Date().toISOString(),
+                duration_ms: Date.now() - pipelineStartedAt,
+              }
+            : {
+                status: "completed",
+                stage: "complete",
+                completed_at: new Date().toISOString(),
+                duration_ms: Date.now() - pipelineStartedAt,
+              }
+        ).eq("id", pipelineRunId);
       }
 
       setImportCount(verifiedCount ?? inserted);
