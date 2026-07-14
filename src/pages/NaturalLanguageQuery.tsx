@@ -130,7 +130,7 @@ const NaturalLanguageQuery = () => {
                   </p>
                   <div className="flex items-center gap-2">
                     <Badge variant="outline" className={`text-xs ${confidenceColor(item.result.confidence)}`}>
-                      {item.result.confidence}% confidence
+                      {Math.round(item.result.confidence)}% confidence
                     </Badge>
                     <span className="text-[10px] text-muted-foreground">
                       {item.timestamp.toLocaleTimeString()}

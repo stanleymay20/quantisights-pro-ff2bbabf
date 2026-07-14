@@ -59,9 +59,9 @@ function deriveLearning(d: RecentDecision): string | null {
   }
 
   if (accuracy != null) {
-    if (accuracy >= 70) return `Prediction accuracy ${accuracy}% — model confidence reinforced.`;
-    if (accuracy >= 40) return `Prediction accuracy ${accuracy}% — model recalibrating for this signal class.`;
-    return `Prediction accuracy ${accuracy}% — confidence reduced for similar future cases until more outcome data collected.`;
+    if (accuracy >= 70) return `Prediction accuracy ${Math.round(accuracy)}% — model confidence reinforced.`;
+    if (accuracy >= 40) return `Prediction accuracy ${Math.round(accuracy)}% — model recalibrating for this signal class.`;
+    return `Prediction accuracy ${Math.round(accuracy)}% — confidence reduced for similar future cases until more outcome data collected.`;
   }
 
   return `Outcome recorded (${actual > 0 ? "+" : ""}${actual.toFixed(1)}%). Feeding into calibration engine.`;
@@ -238,7 +238,7 @@ const DecisionMemoryWidget = memo(({ organizationId }: DecisionMemoryWidgetProps
                         </span>
                         {d.prediction_accuracy_score != null && (
                           <span className={`${d.prediction_accuracy_score >= 70 ? "text-success" : d.prediction_accuracy_score >= 40 ? "text-warning" : "text-destructive"}`}>
-                            Accuracy: {d.prediction_accuracy_score}%
+                            Accuracy: {Math.round(d.prediction_accuracy_score)}%
                           </span>
                         )}
                       </div>

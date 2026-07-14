@@ -166,7 +166,7 @@ export default function PostUploadSummary({
               brief?.detectedIndustry
                 ? `${Math.round(brief.detectedIndustry.confidence * 100)}% confidence`
                 : classification && classification.confidence > 0
-                  ? `${classification.confidence}% confidence`
+                  ? `${Math.round(classification.confidence)}% confidence`
                   : undefined
             }
           />

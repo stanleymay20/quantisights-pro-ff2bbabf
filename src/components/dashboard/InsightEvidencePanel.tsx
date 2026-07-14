@@ -51,7 +51,7 @@ const InsightEvidencePanel = ({ insight }: InsightEvidencePanelProps) => {
   const confidenceExplanation = (() => {
     if (insight.confidence_cap_reason) return insight.confidence_cap_reason;
     if (insight.raw_confidence && insight.capped_confidence && insight.raw_confidence > insight.capped_confidence) {
-      return `Raw confidence (${insight.raw_confidence}%) was capped to ${insight.capped_confidence}% based on data volume constraints.`;
+      return `Raw confidence (${Math.round(insight.raw_confidence)}%) was capped to ${Math.round(insight.capped_confidence)}% based on data volume constraints.`;
     }
     if (insight.sample_size && insight.sample_size < 12) {
       return "Confidence limited: fewer than 12 data points. Max confidence capped at 60%.";
@@ -121,8 +121,8 @@ const InsightEvidencePanel = ({ insight }: InsightEvidencePanelProps) => {
                   <p className="text-muted-foreground leading-relaxed">{confidenceExplanation}</p>
                   {insight.raw_confidence != null && insight.capped_confidence != null && (
                     <div className="flex gap-4 mt-1.5">
-                      <span>Raw: <strong>{insight.raw_confidence}%</strong></span>
-                      <span>Capped: <strong>{insight.capped_confidence}%</strong></span>
+                      <span>Raw: <strong>{Math.round(insight.raw_confidence)}%</strong></span>
+                      <span>Capped: <strong>{Math.round(insight.capped_confidence)}%</strong></span>
                     </div>
                   )}
                 </div>

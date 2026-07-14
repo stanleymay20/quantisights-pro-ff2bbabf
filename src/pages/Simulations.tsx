@@ -172,7 +172,7 @@ const Simulations = () => {
               />
               <StatCard
                 label="Prob. of Decline"
-                value={`${latest.probability_negative}%`}
+                value={`${Math.round(latest.probability_negative)}%`}
                 icon={<Shield className="w-4 h-4 text-muted-foreground" />}
               />
             </div>
@@ -186,13 +186,13 @@ const Simulations = () => {
                 <Tooltip>
                   <TooltipTrigger>
                     <Badge variant={latest.data_sufficiency === "robust" ? "default" : "secondary"} className="text-xs">
-                      Confidence: {latest.capped_confidence}%
+                      Confidence: {Math.round(latest.capped_confidence)}%
                     </Badge>
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs text-xs">
-                    <p>Raw: {latest.raw_confidence}% → Capped: {latest.capped_confidence}%</p>
+                    <p>Raw: {Math.round(latest.raw_confidence)}% → Capped: {Math.round(latest.capped_confidence)}%</p>
                     <p>{latest.confidence_cap_reason}</p>
-                    <p>Sample size: {latest.sample_size} | Variance: {latest.variance_score}%</p>
+                    <p>Sample size: {latest.sample_size} | Variance: {Math.round(latest.variance_score)}%</p>
                   </TooltipContent>
                 </Tooltip>
               </CardHeader>
@@ -243,9 +243,9 @@ const Simulations = () => {
                           <td className="text-right px-2 font-mono">{fmt(s.median_value)}</td>
                           <td className="text-right px-2 font-mono text-destructive">{fmt(s.p10_value)}</td>
                           <td className="text-right px-2 font-mono text-primary">{fmt(s.p90_value)}</td>
-                          <td className="text-right px-2">{s.probability_negative}%</td>
+                          <td className="text-right px-2">{Math.round(s.probability_negative)}%</td>
                           <td className="text-right px-2">
-                            <Badge variant="outline" className="text-xs">{s.capped_confidence}%</Badge>
+                            <Badge variant="outline" className="text-xs">{Math.round(s.capped_confidence)}%</Badge>
                           </td>
                           <td className="text-right pl-2 text-muted-foreground text-xs">
                             {new Date(s.created_at).toLocaleDateString()}

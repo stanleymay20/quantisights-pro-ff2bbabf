@@ -225,8 +225,8 @@ const DecisionAccuracy = () => {
                         return (
                           <div className="bg-popover border border-border rounded-lg p-2 text-xs shadow-lg">
                             <p className="font-medium truncate max-w-[200px]">{d.action}</p>
-                            <p>Confidence: {d.confidence}%</p>
-                            <p>Accuracy: {d.accuracy}%</p>
+                            <p>Confidence: {Math.round(d.confidence)}%</p>
+                            <p>Accuracy: {Math.round(d.accuracy)}%</p>
                             <p>Outcome Δ: {d.delta?.toFixed(2)}</p>
                           </div>
                         );

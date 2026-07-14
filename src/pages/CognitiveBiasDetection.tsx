@@ -175,7 +175,7 @@ const CognitiveBiasDetection = () => {
                               <div>
                                 <p className="font-semibold text-sm">{bias.bias_name}</p>
                                 <p className="text-xs text-muted-foreground mt-0.5">
-                                  Detection confidence: {bias.confidence}%
+                                  Detection confidence: {Math.round(bias.confidence)}%
                                 </p>
                               </div>
                             </div>

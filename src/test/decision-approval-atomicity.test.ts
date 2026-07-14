@@ -39,14 +39,36 @@ import { afterEach, describe, expect, it, vi, beforeEach } from "vitest";
 const root = resolve(__dirname, "../..");
 const read = (path: string) => readFileSync(resolve(root, path), "utf8");
 const MIGRATION_PATH = "supabase/migrations/20260713010000_fix_decision_approval_atomicity.sql";
+// enforce_decision_approval_gate() has been re-issued (CREATE OR REPLACE)
+// twice since MIGRATION_PATH first defined it: once by
+// 20260713101123_c24694df-...sql (added the executed/executable checks,
+// but silently dropped the "approved/rejected are final" guard in the
+// process — that regression is exactly what slipped through undetected
+// when this suite kept reading the now-superseded original migration), and
+// restored by this migration. Point the trigger-specific tests at whichever
+// file most recently touched the trigger, not at MIGRATION_PATH, so a
+// future re-issuance can't silently go untested the same way again.
+const TRIGGER_MIGRATION_PATH = "supabase/migrations/20260714050200_restore_decision_final_status_guard.sql";
 
 describe("decision approval atomicity — migration SQL structure", () => {
   const migration = read(MIGRATION_PATH);
+  const triggerMigration = read(TRIGGER_MIGRATION_PATH);
+
+  function extractFunctionBodyFrom(source: string, name: string): string {
+    // Function bodies in this codebase are dollar-quoted with either $$ or
+    // a named tag like $fn$ — match either, and require the SAME tag to
+    // close it.
+    const match = source.match(new RegExp(`CREATE OR REPLACE FUNCTION public\\.${name}\\([\\s\\S]*?\\nEND;\\n(\\$\\w*\\$);`));
+    expect(match, `expected to find function ${name}`).not.toBeNull();
+    return match![0];
+  }
 
   function extractFunctionBody(name: string): string {
-    const match = migration.match(new RegExp(`CREATE OR REPLACE FUNCTION public\\.${name}\\([\\s\\S]*?\\nEND;\\n\\$\\$;`));
-    expect(match, `expected to find function ${name} in the migration`).not.toBeNull();
-    return match![0];
+    return extractFunctionBodyFrom(migration, name);
+  }
+
+  function extractTriggerFunctionBody(name: string): string {
+    return extractFunctionBodyFrom(triggerMigration, name);
   }
 
   it("fixes the approval-gate trigger to reference decision_status, not the nonexistent status column", () => {
@@ -56,7 +78,7 @@ describe("decision approval atomicity — migration SQL structure", () => {
     // this trigger straight into a "record has no field" error. Scoped to
     // the function body itself (not this file's explanatory comments,
     // which intentionally mention the old broken pattern for documentation).
-    const fn = extractFunctionBody("enforce_decision_approval_gate");
+    const fn = extractTriggerFunctionBody("enforce_decision_approval_gate");
     expect(fn).not.toMatch(/NEW\.status\b/);
     expect(fn).not.toMatch(/OLD\.status\b/);
     expect(fn).toContain("NEW.decision_status");
@@ -64,7 +86,7 @@ describe("decision approval atomicity — migration SQL structure", () => {
   });
 
   it("makes approved and rejected final decision_status values (no re-approval, no rejected->approved)", () => {
-    const fn = extractFunctionBody("enforce_decision_approval_gate");
+    const fn = extractTriggerFunctionBody("enforce_decision_approval_gate");
     expect(fn).toMatch(/OLD\.decision_status IN \('approved', 'rejected'\)/);
     expect(fn).toMatch(/already has a final decision_status/);
     // The finality guard must be scoped to decision_status TRANSITIONS only.

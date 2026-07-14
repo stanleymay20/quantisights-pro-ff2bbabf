@@ -235,7 +235,7 @@ export default function IntelligenceInbox() {
                   <CardHeader>
                     <CardTitle className="text-base flex items-center gap-2 flex-wrap">
                       <Badge variant={SEVERITY_VARIANT[b.severity]}>{b.severity}</Badge>
-                      <Badge variant="outline">Confidence: {b.confidence}%</Badge>
+                      <Badge variant="outline">Confidence: {Math.round(b.confidence)}%</Badge>
                       <span>{b.title}</span>
                     </CardTitle>
                   </CardHeader>

@@ -83,7 +83,7 @@ const DecisionImpactAttribution = ({ decisions }: Props) => {
         <div className="bg-muted/20 rounded-lg p-2.5 text-center">
           <p className="text-[10px] text-muted-foreground uppercase">Model Accuracy</p>
           <p className={`text-lg font-bold tracking-tight ${data.avgAccuracy >= 70 ? "text-emerald-400" : "text-warning"}`}>
-            {data.avgAccuracy}%
+            {Math.round(data.avgAccuracy)}%
           </p>
         </div>
       </div>

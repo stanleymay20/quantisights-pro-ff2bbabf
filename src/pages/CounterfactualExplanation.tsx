@@ -141,7 +141,7 @@ const CounterfactualExplanation = () => {
                       <SelectItem key={e.id} value={e.id}>
                         <span className="truncate">
                           {e.recommended_action || e.title}
-                          {e.capped_confidence && <span className="text-muted-foreground ml-2">({e.capped_confidence}%)</span>}
+                          {e.capped_confidence && <span className="text-muted-foreground ml-2">({Math.round(e.capped_confidence)}%)</span>}
                         </span>
                       </SelectItem>
                     ))}
@@ -204,7 +204,7 @@ const CounterfactualExplanation = () => {
                             {factor.current_mean} → {factor.threshold_to_flip}
                           </span>
                           <span className={`font-mono font-bold ${sensitivityColor(factor.sensitivity)}`}>
-                            {factor.change_required_pct}%
+                            {Math.round(factor.change_required_pct)}%
                           </span>
                           <Badge variant="outline" className={`text-[10px] ${sensitivityColor(factor.sensitivity)}`}>
                             {factor.sensitivity}

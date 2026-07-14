@@ -1050,7 +1050,7 @@ const DataUpload = () => {
                             </p>
                           </div>
                           <Badge variant="outline" className={`text-[10px] shrink-0 ${confidenceColor(classification.confidence)}`}>
-                            {classification.confidence}% confidence
+                            {Math.round(classification.confidence)}% confidence
                           </Badge>
                         </div>
                         {classification.recommendedWorkflows.length > 0 && (
@@ -1263,7 +1263,7 @@ const DataUpload = () => {
                                 <div className="cursor-help">
                                   <div className="flex items-center justify-between mb-1">
                                     <span className={`text-xs font-semibold ${confidenceColor(det.confidence)}`}>
-                                      {det.confidence}%
+                                      {Math.round(det.confidence)}%
                                     </span>
                                   </div>
                                   <div className="h-1.5 rounded-full bg-muted overflow-hidden">
@@ -1674,7 +1674,7 @@ const DataUpload = () => {
                           </p>
                         </div>
                         <Badge variant="outline" className={`text-xs ${confidenceColor(classification.confidence)}`}>
-                          {classification.confidence}% confidence
+                          {Math.round(classification.confidence)}% confidence
                         </Badge>
                       </div>
                       {classification.recommendedWorkflows.length > 0 && (

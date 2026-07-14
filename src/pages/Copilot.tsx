@@ -366,7 +366,7 @@ const Copilot = () => {
                         <Badge variant={brief.status === "answered" ? "default" : "outline"} className="text-[10px]">
                           {brief.status === "answered" ? "Decision Brief" : "Setup Brief"}
                         </Badge>
-                        {brief.confidence != null && <Badge variant="outline" className="text-[10px]">{brief.confidence}% confidence</Badge>}
+                        {brief.confidence != null && <Badge variant="outline" className="text-[10px]">{Math.round(brief.confidence)}% confidence</Badge>}
                       </div>
                       <h3 className="text-[14px] font-semibold tracking-tight">{brief.title}</h3>
                       <p className="text-xs text-muted-foreground mt-1">Asked: {brief.query}</p>

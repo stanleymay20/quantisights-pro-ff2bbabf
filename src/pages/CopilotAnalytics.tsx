@@ -131,7 +131,7 @@ export default function CopilotAnalytics() {
               <Card>
                 <CardContent className="p-4 text-center">
                   <p className={`text-2xl font-bold ${stats.accuracy >= 80 ? "text-emerald-600" : stats.accuracy >= 50 ? "text-amber-600" : "text-destructive"}`}>
-                    {stats.accuracy}%
+                    {Math.round(stats.accuracy)}%
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">Routing accuracy</p>
                 </CardContent>

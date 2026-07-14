@@ -145,7 +145,7 @@ const CausalInference = () => {
                   <CardContent className="p-4 text-center">
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Confidence</p>
                     <p className={`text-2xl font-bold font-mono mt-1 ${result.confidence >= 70 ? "text-success" : result.confidence >= 50 ? "text-warning" : "text-destructive"}`}>
-                      {result.confidence}%
+                      {Math.round(result.confidence)}%
                     </p>
                   </CardContent>
                 </Card>

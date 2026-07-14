@@ -87,7 +87,7 @@ const ProofBar = ({ organizationId }: ProofBarProps) => {
     {
       icon: TrendingUp,
       label: "Prediction Accuracy",
-      value: metrics.predictionAccuracy !== null ? `${metrics.predictionAccuracy}%` : "Awaiting data",
+      value: metrics.predictionAccuracy !== null ? `${Math.round(metrics.predictionAccuracy)}%` : "Awaiting data",
       tooltip: metrics.predictionAccuracy !== null
         ? `Average accuracy score across ${metrics.outcomesMeasured} measured outcomes. Derived from expected vs actual outcome variance.`
         : "Accuracy will be computed once outcomes are evaluated against predictions.",

@@ -320,7 +320,7 @@ const StrategyPack = () => {
                         </div>
                         <div>
                           <p className="text-xs text-muted-foreground">Decline Risk</p>
-                          <p className="font-mono font-semibold">{sim.probability_negative}%</p>
+                          <p className="font-mono font-semibold">{Math.round(sim.probability_negative)}%</p>
                         </div>
                         <div>
                           <p className="text-xs text-muted-foreground">Data Quality</p>
@@ -390,7 +390,7 @@ const StrategyPack = () => {
                     <tbody>
                       <CompRow label="Type" values={comparedDecisions.map(d => d.decision_type)} />
                       <CompRow label="Status" values={comparedDecisions.map(d => d.decision_status)} />
-                      <CompRow label="Confidence" values={comparedDecisions.map(d => d.capped_confidence != null ? `${d.capped_confidence}%` : "—")} />
+                      <CompRow label="Confidence" values={comparedDecisions.map(d => d.capped_confidence != null ? `${Math.round(d.capped_confidence)}%` : "—")} />
                       <CompRow label="ROI Prob." values={comparedDecisions.map(d => d.predicted_roi_probability != null ? `${Number(d.predicted_roi_probability).toFixed(0)}%` : "—")} />
                       <CompRow label="Net Impact" values={comparedDecisions.map(d => d.predicted_net_impact != null ? fmt(Number(d.predicted_net_impact)) : "—")} />
                       <CompRow label="Outcome Δ" values={comparedDecisions.map(d => d.outcome_delta != null ? `${Number(d.outcome_delta) > 0 ? "+" : ""}${Number(d.outcome_delta).toFixed(1)}%` : "—")} />

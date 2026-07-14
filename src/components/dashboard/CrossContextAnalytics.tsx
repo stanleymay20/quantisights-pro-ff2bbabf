@@ -208,7 +208,7 @@ const CrossContextAnalytics = memo(({ organizationId }: CrossContextAnalyticsPro
                     <p className="text-[9px] uppercase tracking-wider text-muted-foreground">Avg Accuracy</p>
                     <div className="flex items-center gap-1">
                       <Target className="w-3 h-3 text-primary" />
-                      <span className="text-sm font-bold text-foreground">{ctx.avgAccuracy}%</span>
+                      <span className="text-sm font-bold text-foreground">{Math.round(ctx.avgAccuracy)}%</span>
                     </div>
                     <Progress value={ctx.avgAccuracy} className="h-0.5 mt-1" />
                   </div>

@@ -348,7 +348,7 @@ export default function MappingIntelligencePanel({ intelligence, relationships }
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-semibold">{item.confidence}%</p>
+                        <p className="text-sm font-semibold">{Math.round(item.confidence)}%</p>
                         <p className="text-[10px] text-muted-foreground">→ {item.suggestedTarget ?? "review"}</p>
                       </div>
                     </div>

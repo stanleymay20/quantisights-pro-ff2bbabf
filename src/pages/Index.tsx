@@ -176,7 +176,7 @@ const LedgerTicker = () => {
         <div className="qv-mobile-card-title">{primaryDecision.category} — Governance record logged</div>
         <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>{primaryDecision.time} · Governance {primaryDecision.governance}</div>
         <div className="qv-mobile-metrics">
-          <div className="qv-mobile-metric"><div style={{ color: "#22C55E", fontWeight: 800 }}>{primaryDecision.confidence}%</div><div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)" }}>Confidence</div></div>
+          <div className="qv-mobile-metric"><div style={{ color: "#22C55E", fontWeight: 800 }}>{Math.round(primaryDecision.confidence)}%</div><div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)" }}>Confidence</div></div>
           <div className="qv-mobile-metric"><div style={{ color: "#22C55E", fontWeight: 800 }}>{primaryDecision.impact}</div><div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)" }}>Impact</div></div>
           <div className="qv-mobile-metric"><div style={{ color: "#fff", fontWeight: 800 }}>Active</div><div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)" }}>Record</div></div>
         </div>
@@ -191,7 +191,7 @@ const LedgerTicker = () => {
           <div key={`${row}-${idx}`} className="qv-ledger-row" style={{ borderBottom: row < 2 ? "1px solid rgba(255,255,255,0.05)" : "none", opacity: fade ? 0.3 : 1, transition: "opacity 0.35s ease" }}>
             <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", fontFamily: "monospace" }}>{decision.id}</div>
             <div><div style={{ fontSize: 12, color: "#fff", fontWeight: 500 }}>{decision.category} — Governance record logged</div><div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>{decision.time}</div></div>
-            <div style={{ textAlign: "center", fontSize: 14, fontWeight: 700, color: decision.confidence >= 90 ? "#22C55E" : "#F59E0B" }}>{decision.confidence}%</div>
+            <div style={{ textAlign: "center", fontSize: 14, fontWeight: 700, color: decision.confidence >= 90 ? "#22C55E" : "#F59E0B" }}>{Math.round(decision.confidence)}%</div>
             <div style={{ textAlign: "center", fontSize: 12, color: "#22C55E", fontWeight: 600 }}>{decision.impact}</div>
             <div style={{ textAlign: "center" }}><TagBadge tone={decision.tag} style={{ fontWeight: 600 }}>{decision.tag}</TagBadge></div>
             <div style={{ textAlign: "center" }}><span style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", background: "rgba(255,255,255,0.07)", padding: "3px 8px", borderRadius: 3 }}>{decision.governance}</span></div>
