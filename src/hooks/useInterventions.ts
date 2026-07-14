@@ -128,11 +128,11 @@ export const useInterventions = () => {
 
   useEffect(() => {
     if (!orgId) return;
-    const ch = supabase
-      .channel(`interventions-${orgId}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "executive_interventions", filter: `organization_id=eq.${orgId}` }, () => refresh())
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    return createSafeChannel(`interventions-${orgId}`, (ch) =>
+      ch
+        .on("postgres_changes", { event: "*", schema: "public", table: "executive_interventions", filter: `organization_id=eq.${orgId}` }, () => refresh())
+        .subscribe()
+    );
   }, [orgId, refresh]);
 
   const updateStatus = useCallback(async (id: string, status: string, extra: Partial<InterventionRow> = {}) => {
