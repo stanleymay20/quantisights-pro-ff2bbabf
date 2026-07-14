@@ -1,5 +1,6 @@
-import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useCallback, useRef, ReactNode } from "react";
 import { User, Session } from "@supabase/supabase-js";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { setSentryUser, clearSentryUser } from "@/lib/sentry";
 
@@ -70,6 +71,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [profileLoading, setProfileLoading] = useState(false);
+  const deliberateSignOutRef = useRef(false);
 
   const fetchProfile = useCallback(async (userId: string) => {
     setProfileLoading(true);
@@ -113,6 +115,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       // Skip if this is the initial event that duplicates getSession
       if (!initialSessionResolved || cancelled) return;
+      // A SIGNED_OUT event the user didn't trigger via the Sign Out button
+      // (e.g. the refresh token expired without a successful renewal) was
+      // previously silent — no banner, navigation state just vanished. Say
+      // so, so the user knows to log back in rather than assuming the app
+      // broke.
+      if (_event === "SIGNED_OUT" && !deliberateSignOutRef.current) {
+        toast.error("Your session ended", { description: "Please sign in again to continue." });
+      }
+      deliberateSignOutRef.current = false;
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
@@ -195,6 +206,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signOut = async () => {
+    deliberateSignOutRef.current = true;
     clearTenantSession();
     setProfile(null);
     const { error } = await supabase.auth.signOut();
