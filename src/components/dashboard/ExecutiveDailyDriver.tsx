@@ -186,7 +186,13 @@ const ExecutiveDailyDriver = ({ displayName, orgId, insights, topMetrics, pendin
   const topExecutiveDecisions = decisions.slice(0, 3);
   const exposure = decisions.reduce((sum, d) => sum + Math.abs(d.predicted_net_impact ?? 0), 0);
   const highestConfidence = Math.max(0, ...decisions.map((d) => d.capped_confidence ?? 0));
-  const criticalCount = criticalInterventions.length || (pendingDecisions > 0 ? 1 : 0);
+  // Previously fell back to "1" whenever any decision was pending, even
+  // with zero real critical/high interventions -- fabricating a "Critical
+  // Risk" signal from "a decision exists," which directly contradicted
+  // Executive Intelligence's real unresolved-critical count on the same
+  // data. Show the real count; a merely-pending (non-critical) decision
+  // is already surfaced separately via "Executive decisions" above.
+  const criticalCount = criticalInterventions.length;
   const queueBreakdown = useMemo(() => {
     const critical = criticalCount;
     const high = Math.min(Math.max(pendingDecisions - critical, 0), 2);
