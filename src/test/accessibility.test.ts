@@ -35,16 +35,16 @@ describe("Accessibility Standards", () => {
     expect(content).toContain("<section");
   });
 
-  it("CommandCenter uses section landmark", async () => {
+  it("ExecutiveDailyDriver (the live dashboard) uses section landmarks", async () => {
     const mod = await import("fs");
-    const content = mod.readFileSync("src/components/dashboard/CommandCenter.tsx", "utf-8");
-    expect(content).toContain('aria-label="Command Center Dashboard"');
+    const content = mod.readFileSync("src/components/dashboard/ExecutiveDailyDriver.tsx", "utf-8");
     expect(content).toContain("<section");
+    expect(content).toContain("aria-labelledby");
   });
 
-  it("Analytics toggle has aria-expanded", async () => {
+  it("Insight evidence toggle has aria-expanded / aria-controls", async () => {
     const mod = await import("fs");
-    const content = mod.readFileSync("src/components/dashboard/CommandCenter.tsx", "utf-8");
+    const content = mod.readFileSync("src/components/dashboard/InsightEvidencePanel.tsx", "utf-8");
     expect(content).toContain("aria-expanded");
     expect(content).toContain("aria-controls");
   });

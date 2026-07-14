@@ -109,6 +109,8 @@ const InsightEvidencePanel = ({ insight }: InsightEvidencePanelProps) => {
             {/* Expandable evidence detail */}
             <button
               onClick={() => setExpanded(!expanded)}
+              aria-expanded={expanded}
+              aria-controls={`insight-evidence-${insight.id}`}
               className="flex items-center gap-1 mt-2 text-[11px] text-primary/70 hover:text-primary transition-colors"
             >
               {expanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
@@ -116,7 +118,7 @@ const InsightEvidencePanel = ({ insight }: InsightEvidencePanelProps) => {
             </button>
 
             {expanded && (
-              <div className="mt-3 pt-3 border-t border-border/30 space-y-3 text-xs">
+              <div id={`insight-evidence-${insight.id}`} className="mt-3 pt-3 border-t border-border/30 space-y-3 text-xs">
                 {/* Confidence explanation */}
                 <div>
                   <div className="flex items-center gap-1.5 mb-1 font-semibold text-foreground">
