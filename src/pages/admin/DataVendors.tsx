@@ -41,20 +41,42 @@ const DataVendors = () => {
   const [sources, setSources] = useState<DataSource[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState<string | null>(null);
+  // AICIS has two independent, unreconciled integration paths: this page's
+  // "aicis" row is refreshed by ingest-external-signals, while
+  // sync-aicis-bridge (surfaced on Bridge Health / AICIS Sync) is the
+  // resilience-layer pipeline with circuit breakers and per-surface retry
+  // state. A stale external_data_sources.last_error from before the
+  // resilience layer started failing can show "Healthy" here while Bridge
+  // Health correctly reports a broken circuit — so for the aicis row
+  // specifically, also check that authoritative source and let it override
+  // an otherwise-stale "Healthy" reading.
+  const [aicisDegraded, setAicisDegraded] = useState(false);
 
   const load = async () => {
     if (!currentOrgId) return;
     setLoading(true);
-    const { data, error } = await supabase
-      .from("external_data_sources")
-      .select("*")
-      .eq("organization_id", currentOrgId)
-      .order("created_at", { ascending: false });
-    if (error) {
-      toast({ title: "Failed to load", description: error.message, variant: "destructive" });
+    const [sourcesRes, aicisHealthRes] = await Promise.all([
+      supabase
+        .from("external_data_sources")
+        .select("*")
+        .eq("organization_id", currentOrgId)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("aicis_sync_surface_status")
+        .select("consecutive_failures,circuit_breaker_until")
+        .eq("organization_id", currentOrgId),
+    ]);
+    if (sourcesRes.error) {
+      toast({ title: "Failed to load", description: sourcesRes.error.message, variant: "destructive" });
     } else {
-      setSources((data ?? []) as DataSource[]);
+      setSources((sourcesRes.data ?? []) as DataSource[]);
     }
+    const now = Date.now();
+    setAicisDegraded(
+      (aicisHealthRes.data ?? []).some(
+        (r) => (r.consecutive_failures ?? 0) > 0 || (r.circuit_breaker_until && new Date(r.circuit_breaker_until).getTime() > now),
+      ),
+    );
     setLoading(false);
   };
 
@@ -153,7 +175,13 @@ const DataVendors = () => {
                         <AlertTriangle className="w-3 h-3" /> {s.last_error}
                       </div>
                     )}
-                    {!s.last_error && s.last_refreshed_at && (
+                    {s.vendor_key === "aicis" && aicisDegraded && (
+                      <div className="flex items-center gap-1.5 text-warning">
+                        <AlertTriangle className="w-3 h-3" /> Resilience-layer sync is failing — see{" "}
+                        <a href="/admin/bridge-health" className="underline font-medium">Bridge Health</a> for details
+                      </div>
+                    )}
+                    {!s.last_error && s.last_refreshed_at && !(s.vendor_key === "aicis" && aicisDegraded) && (
                       <div className="flex items-center gap-1.5 text-success">
                         <CheckCircle2 className="w-3 h-3" /> Healthy
                       </div>

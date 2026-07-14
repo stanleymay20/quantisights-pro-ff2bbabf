@@ -135,6 +135,11 @@ const RetentionPolicySettings = () => {
         <p className="text-xs text-muted-foreground">
           Configure how long each data type is retained. Audit logs have a regulatory minimum.
         </p>
+        {!isLoading && (!savedPolicies || savedPolicies.length === 0) && (
+          <p className="text-xs text-warning mt-1.5 flex items-center gap-1.5">
+            <Clock className="w-3 h-3" /> These are unsaved defaults — nothing is persisted yet. Click Save to activate them.
+          </p>
+        )}
       </CardHeader>
       <CardContent>
         {isLoading ? (
