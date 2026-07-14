@@ -638,8 +638,18 @@ export function validateData(
         rowValid = false;
         invalidPoints += 1;
       } else {
-        if (dateValid) validPoints += 1;
-        values.push(num);
+        // A numerically-valid value on a row with an invalid date still
+        // gets skipped (the row as a whole is invalid) -- previously this
+        // fell through neither branch when dateValid was false, so the
+        // point vanished from both validPoints and invalidPoints. That
+        // undercounted "N data points will be skipped" below relative to
+        // what the row-level valid/invalid banner already reported.
+        if (dateValid) {
+          validPoints += 1;
+          values.push(num);
+        } else {
+          invalidPoints += 1;
+        }
       }
     }
 
