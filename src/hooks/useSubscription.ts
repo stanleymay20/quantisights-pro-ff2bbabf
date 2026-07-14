@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { createSafeChannel } from "@/lib/realtime-channel";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOrganization } from "@/hooks/useOrganization";
 import { TierKey } from "@/lib/stripe-tiers";
@@ -83,16 +84,14 @@ export const useSubscription = () => {
 
     // Listen for realtime changes
     if (!currentOrgId) return;
-    const channel = supabase
-      .channel(`sub-${currentOrgId}`)
-      .on(
+    return createSafeChannel(`sub-${currentOrgId}`, (channel) =>
+      channel.on(
         "postgres_changes",
         { event: "*", schema: "public", table: "subscriptions", filter: `organization_id=eq.${currentOrgId}` },
         () => checkSubscription()
       )
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
+      .subscribe()
+    );
   }, [checkSubscription, currentOrgId]);
 
   return { ...state, refresh: checkSubscription };

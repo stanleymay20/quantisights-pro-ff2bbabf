@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { createSafeChannel } from "@/lib/realtime-channel";
 import { useActiveDataContext } from "@/hooks/useActiveDataContext";
 import { invokeWithRetry } from "@/lib/edge-function-retry";
 import { getVerifiedAuth, authHeaders } from "@/lib/auth-helpers";

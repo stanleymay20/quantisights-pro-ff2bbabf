@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { createSafeChannel } from "@/lib/realtime-channel";
 import { useActiveDataContext } from "@/hooks/useActiveDataContext";
 import { invokeWithRetry } from "@/lib/edge-function-retry";
 import { getVerifiedAuth, authHeaders } from "@/lib/auth-helpers";
@@ -135,11 +136,10 @@ export const useIntelligenceInbox = (opts: { includeTestMode?: boolean } = {}) =
 
   useEffect(() => {
     if (!orgId) return;
-    const ch = supabase
-      .channel(`intel-inbox-${orgId}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "aicis_intelligence_items", filter: `organization_id=eq.${orgId}` }, () => refresh())
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    return createSafeChannel(`intel-inbox-${orgId}`, (ch) =>
+      ch.on("postgres_changes", { event: "*", schema: "public", table: "aicis_intelligence_items", filter: `organization_id=eq.${orgId}` }, () => refresh())
+        .subscribe()
+    );
   }, [orgId, refresh]);
 
   const routeItem = useCallback(async (params: {

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { createSafeChannel } from "@/lib/realtime-channel";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOrganization } from "@/hooks/useOrganization";
 import { Button } from "@/components/ui/button";
@@ -48,17 +49,15 @@ const DecisionComments = ({ decisionId }: DecisionCommentsProps) => {
     fetchComments();
     fetchTeamMembers();
 
-    const channel = supabase
-      .channel(`comments-${decisionId}`)
-      .on("postgres_changes", {
+    return createSafeChannel(`comments-${decisionId}`, (channel) =>
+      channel.on("postgres_changes", {
         event: "*",
         schema: "public",
         table: "decision_comments",
         filter: `decision_id=eq.${decisionId}`,
       }, () => fetchComments())
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
+      .subscribe()
+    );
   }, [decisionId, currentOrgId]);
 
   const fetchComments = async () => {
