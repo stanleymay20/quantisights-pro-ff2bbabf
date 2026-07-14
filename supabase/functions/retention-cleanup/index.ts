@@ -49,7 +49,13 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const results: Record<string, { deleted: number; error?: string }> = {};
+    // Keyed by data_category only (not per-org): with multiple orgs sharing
+    // the same category (the common case -- most orgs have a "datasets"
+    // policy), a plain last-write-wins assignment here would silently
+    // overwrite every earlier org's numbers with whichever org happened to
+    // be processed last. Accumulate across orgs instead so the summary is
+    // an accurate total, not a random single org's result.
+    const results: Record<string, { deleted: number; errors: number; last_error?: string }> = {};
 
     // Bound the policy loop with a time budget so a large org count can't
     // get killed mid-run by the invocation's wall-clock ceiling, and rotate
@@ -91,7 +97,13 @@ Deno.serve(async (req: Request) => {
         }
       }
 
-      results[policy.data_category] = { deleted: totalDeleted, ...(lastError ? { error: lastError } : {}) };
+      const categoryResult = results[policy.data_category] ?? { deleted: 0, errors: 0 };
+      categoryResult.deleted += totalDeleted;
+      if (lastError) {
+        categoryResult.errors += 1;
+        categoryResult.last_error = lastError;
+      }
+      results[policy.data_category] = categoryResult;
 
       // Update enforcement status
       await supabase
@@ -124,7 +136,7 @@ Deno.serve(async (req: Request) => {
       .lt("created_at", stuckCutoff)
       .select("id");
     if (!stuckErr) {
-      results["stuck_datasets"] = { deleted: stuckDatasets?.length ?? 0 };
+      results["stuck_datasets"] = { deleted: stuckDatasets?.length ?? 0, errors: 0 };
     }
 
     const truncated = policiesProcessed < rotatedPolicies.length;
