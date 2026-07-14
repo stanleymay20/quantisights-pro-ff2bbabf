@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { createSafeChannel } from "@/lib/realtime-channel";
 import { useToast } from "@/hooks/use-toast";
 import { getVerifiedAuth, authHeaders } from "@/lib/auth-helpers";
 import { invokeWithRetry } from "@/lib/edge-function-retry";
@@ -67,9 +68,8 @@ export const useExecutionPlans = (organizationId: string | null, decisionId: str
   // Realtime subscription for plan updates
   useEffect(() => {
     if (!decisionId) return;
-    const channel = supabase
-      .channel(`exec-plans-${decisionId}`)
-      .on("postgres_changes", {
+    return createSafeChannel(`exec-plans-${decisionId}`, (channel) =>
+      channel.on("postgres_changes", {
         event: "*",
         schema: "public",
         table: "execution_plans",
@@ -77,9 +77,8 @@ export const useExecutionPlans = (organizationId: string | null, decisionId: str
       }, () => {
         fetchTimeline();
       })
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
+      .subscribe()
+    );
   }, [decisionId, fetchTimeline]);
 
   const createPlan = useCallback(async (params: {

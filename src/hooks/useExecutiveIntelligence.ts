@@ -201,16 +201,24 @@ export const useExecutiveIntelligence = () => {
 
   useEffect(() => { refresh(); }, [refresh]);
 
-  // Realtime on interventions
+  // Realtime on interventions — per-instance unique channel name prevents
+  // "cannot add postgres_changes callbacks after subscribe()" when StrictMode
+  // remounts or when multiple consumers of this hook mount concurrently.
   useEffect(() => {
     if (!orgId) return;
-    const ch = supabase
-      .channel(`exec-intel-${orgId}`)
-      .on("postgres_changes",
-        { event: "*", schema: "public", table: "executive_interventions", filter: `organization_id=eq.${orgId}` },
-        () => refresh())
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    let ch: ReturnType<typeof supabase.channel> | null = null;
+    try {
+      const uniq = (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`);
+      ch = supabase
+        .channel(`exec-intel-${orgId}-${uniq}`)
+        .on("postgres_changes",
+          { event: "*", schema: "public", table: "executive_interventions", filter: `organization_id=eq.${orgId}` },
+          () => refresh())
+        .subscribe();
+    } catch (err) {
+      console.warn("[useExecutiveIntelligence] realtime subscribe failed:", err);
+    }
+    return () => { if (ch) { try { supabase.removeChannel(ch); } catch { /* noop */ } } };
   }, [orgId, refresh]);
 
   const regenerate = useCallback(async () => {

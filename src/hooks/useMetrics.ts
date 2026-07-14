@@ -98,56 +98,58 @@ export const useMetrics = (orgId: string | null, datasetId: string | null) => {
     fetchMetrics();
   }, [orgId, datasetId, updateLastUpdated]);
 
-  // Realtime subscription (Growth+ only) — cleanup-first to prevent duplicates
+  // Realtime subscription (Growth+ only) — per-instance unique topic name
+  // prevents any possibility of reusing a subscribed channel across
+  // StrictMode remounts or concurrent hook instances.
   useEffect(() => {
     if (!orgId || !datasetId || !canStream) {
       setIsStreaming(false);
       return;
     }
 
-    const channelName = `metrics-live-${orgId}-${datasetId}`;
-    // Remove any stale channel with the same name before creating a new one
-    const existing = supabase.getChannels().find(ch => ch.topic === `realtime:${channelName}`);
-    if (existing) {
-      supabase.removeChannel(existing);
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    try {
+      const uniq = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
+      channel = supabase
+        .channel(`metrics-live-${orgId}-${datasetId}-${uniq}`)
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "metrics", filter: `organization_id=eq.${orgId}` },
+          (payload) => {
+            const newRow = payload.new as MetricRow & { created_at?: string };
+            if (newRow.dataset_id !== datasetId) return;
+            setMetrics((prev) => [...prev, newRow].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()));
+            setLastUpdated(newRow.created_at || new Date().toISOString());
+          }
+        )
+        .on(
+          "postgres_changes",
+          { event: "UPDATE", schema: "public", table: "metrics", filter: `organization_id=eq.${orgId}` },
+          (payload) => {
+            const updated = payload.new as MetricRow;
+            if (updated.dataset_id !== datasetId) return;
+            setMetrics((prev) => prev.map((m) => (m.id === updated.id ? updated : m)));
+          }
+        )
+        .on(
+          "postgres_changes",
+          { event: "DELETE", schema: "public", table: "metrics", filter: `organization_id=eq.${orgId}` },
+          (payload) => {
+            const deleted = payload.old as { id: string };
+            setMetrics((prev) => prev.filter((m) => m.id !== deleted.id));
+          }
+        )
+        .subscribe((status) => {
+          setIsStreaming(status === "SUBSCRIBED");
+        });
+    } catch (err) {
+      console.warn("[useMetrics] realtime subscribe failed:", err);
+      setIsStreaming(false);
     }
 
-    const channel = supabase
-      .channel(channelName)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "metrics", filter: `organization_id=eq.${orgId}` },
-        (payload) => {
-          const newRow = payload.new as MetricRow & { created_at?: string };
-          if (newRow.dataset_id !== datasetId) return;
-          setMetrics((prev) => [...prev, newRow].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()));
-          setLastUpdated(newRow.created_at || new Date().toISOString());
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "metrics", filter: `organization_id=eq.${orgId}` },
-        (payload) => {
-          const updated = payload.new as MetricRow;
-          if (updated.dataset_id !== datasetId) return;
-          setMetrics((prev) => prev.map((m) => (m.id === updated.id ? updated : m)));
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "DELETE", schema: "public", table: "metrics", filter: `organization_id=eq.${orgId}` },
-        (payload) => {
-          const deleted = payload.old as { id: string };
-          setMetrics((prev) => prev.filter((m) => m.id !== deleted.id));
-        }
-      )
-      .subscribe((status) => {
-        setIsStreaming(status === "SUBSCRIBED");
-      });
-
     return () => {
-      supabase.removeChannel(channel);
       setIsStreaming(false);
+      if (channel) { try { supabase.removeChannel(channel); } catch { /* noop */ } }
     };
   }, [orgId, datasetId, canStream]);
 

@@ -65,30 +65,37 @@ export function useNotifications(orgId: string | null, datasetId: string | null)
       return;
     }
 
-    const channel = supabase
-      .channel(`notifications:${orgId}:${datasetId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "insights",
-          filter: `organization_id=eq.${orgId}`,
-        },
-        (payload) => {
-          const row = (payload.new ?? payload.old) as { dataset_id?: string } | null;
-          if (row?.dataset_id && row.dataset_id !== datasetId) return;
-          queryClient.invalidateQueries({ queryKey });
-          queryClient.invalidateQueries({ queryKey: ["insights", orgId, datasetId] });
-        },
-      )
-      .subscribe((status) => {
-        setIsRealtimeConnected(status === "SUBSCRIBED");
-      });
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    try {
+      const uniq = (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`);
+      channel = supabase
+        .channel(`notifications:${orgId}:${datasetId}:${uniq}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "insights",
+            filter: `organization_id=eq.${orgId}`,
+          },
+          (payload) => {
+            const row = (payload.new ?? payload.old) as { dataset_id?: string } | null;
+            if (row?.dataset_id && row.dataset_id !== datasetId) return;
+            queryClient.invalidateQueries({ queryKey });
+            queryClient.invalidateQueries({ queryKey: ["insights", orgId, datasetId] });
+          },
+        )
+        .subscribe((status) => {
+          setIsRealtimeConnected(status === "SUBSCRIBED");
+        });
+    } catch (err) {
+      console.warn("[useNotifications] realtime subscribe failed:", err);
+      setIsRealtimeConnected(false);
+    }
 
     return () => {
       setIsRealtimeConnected(false);
-      supabase.removeChannel(channel);
+      if (channel) { try { supabase.removeChannel(channel); } catch { /* noop */ } }
     };
   }, [datasetId, orgId, queryClient, queryKey]);
 
