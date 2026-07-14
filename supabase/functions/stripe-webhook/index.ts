@@ -114,17 +114,36 @@ serve(async (req) => {
           break;
         }
 
+        // current_period_end was previously only updated by
+        // checkout.session.completed (fires once, at signup) and
+        // customer.subscription.updated -- which Stripe does not
+        // reliably fire on a simple renewal charge with no plan/item
+        // changes. That left current_period_end stuck at its initial
+        // value indefinitely for a subscription that just kept renewing
+        // normally, showing a "next billing" date months in the past for
+        // an active, paying customer. invoice.payment_succeeded fires on
+        // every successful recurring charge, so re-fetch the subscription
+        // here and advance it -- the one signal renewal reliably sends.
+        let periodEndUpdate: { current_period_end?: string } = {};
+        try {
+          const sub = await stripe.subscriptions.retrieve(subId);
+          periodEndUpdate = { current_period_end: new Date(sub.current_period_end * 1000).toISOString() };
+        } catch (fetchErr) {
+          logStep("payment_succeeded: could not refetch subscription for period_end", { subId, err: String(fetchErr) });
+        }
+
         const { error } = await supabase
           .from("subscriptions")
           .update({
             payment_failed_at: null,
             grace_period_end: null,
             status: "active",
+            ...periodEndUpdate,
           })
           .eq("stripe_subscription_id", subId);
 
         if (error) logStep("payment_succeeded update error", error);
-        else logStep("Payment succeeded → grace period cleared", { subId });
+        else logStep("Payment succeeded → grace period cleared", { subId, ...periodEndUpdate });
         break;
       }
 

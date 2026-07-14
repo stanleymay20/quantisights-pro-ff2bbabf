@@ -38,6 +38,7 @@ import {
   GitBranch,
   Layers,
   Wrench,
+  Lock,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOrganization } from "@/hooks/useOrganization";
@@ -179,7 +180,6 @@ const navSections: NavSection[] = [
     subItems: [
       { icon: Target,         label: "Outcome Tracking",  path: "/outcomes" },
       { icon: BarChart3,      label: "Decision Accuracy", path: "/decision-accuracy" },
-      { icon: Clock,          label: "History",           path: "/history" },
       { icon: ShieldAlert,    label: "Executive Intel",   path: "/executive-intelligence" },
       { icon: ShieldAlert,    label: "Interventions",     path: "/interventions" },
       { icon: Inbox,          label: "Intel Inbox",       path: "/intelligence-inbox" },
@@ -215,7 +215,7 @@ const navSections: NavSection[] = [
       { icon: SettingsIcon,   label: "Settings",       path: "/settings" },
       { icon: Users,          label: "Team",           path: "/team" },
       { icon: CreditCard,     label: "Billing",        path: "/billing" },
-      { icon: Upload,         label: "Data",           path: "/data-upload" },
+      { icon: Lock,           label: "Privacy",        path: "/privacy-dashboard" },
     ],
   },
 ];

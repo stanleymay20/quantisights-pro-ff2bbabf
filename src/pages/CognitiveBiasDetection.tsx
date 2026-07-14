@@ -94,7 +94,6 @@ const CognitiveBiasDetection = () => {
                 <p className="text-sm text-muted-foreground max-w-lg mx-auto">
                   Automatically detect <strong>anchoring</strong>, <strong>sunk cost fallacy</strong>, <strong>confirmation bias</strong>,
                   <strong> recency bias</strong>, and <strong>overconfidence</strong> in your organization's decision history.
-                  No competitor offers this level of behavioral analysis.
                 </p>
                 <Button onClick={runScan} disabled={loading} size="lg" className="gap-2">
                   <Search className="w-4 h-4" /> Analyze Decision Patterns
