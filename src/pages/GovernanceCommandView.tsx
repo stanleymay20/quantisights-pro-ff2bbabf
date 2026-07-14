@@ -177,7 +177,9 @@ const GovernanceCommandView = () => {
                 </div>
               )}
               {latestScore === null && (
-                <p className="text-[10px] text-muted-foreground/60 mt-2">No assessment yet</p>
+                <p className="text-[10px] text-muted-foreground/60 mt-2">
+                  No assessment yet — this tracks governance process maturity (stewardship, retention, data quality discipline), separate from the always-on technical Security Posture score under Settings.
+                </p>
               )}
             </CardContent>
           </Card>
