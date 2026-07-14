@@ -143,12 +143,12 @@ export const useNarrativeFusion = () => {
 
   useEffect(() => {
     if (!orgId) return;
-    const ch = supabase.channel(`fusion-${orgId}`)
-      .on("postgres_changes",
+    return createSafeChannel(`fusion-${orgId}`, (ch) =>
+      ch.on("postgres_changes",
         { event: "*", schema: "public", table: "intelligence_fusion_clusters", filter: `organization_id=eq.${orgId}` },
         () => refresh())
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
+      .subscribe()
+    );
   }, [orgId, refresh]);
 
   const regenerate = useCallback(async () => {
