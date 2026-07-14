@@ -40,12 +40,16 @@ const InsightEvidencePanel = ({ insight }: InsightEvidencePanelProps) => {
     ? `${insight.sample_size} data points`
     : "Sample size not recorded";
 
+  // variance_score and data_quality_index are already 0-100 scale (see e.g.
+  // create-demo-session/index.ts's seed values: variance_score 15.2,
+  // data_quality_index 78-92) -- multiplying by 100 here inflated a
+  // near-max data_quality_index of ~100 into "10000%".
   const varianceLabel = insight.variance_score !== null && insight.variance_score !== undefined
-    ? `${(insight.variance_score * 100).toFixed(1)}%`
+    ? `${insight.variance_score.toFixed(1)}%`
     : "—";
 
   const dataQualityLabel = insight.data_quality_index !== null && insight.data_quality_index !== undefined
-    ? `${(insight.data_quality_index * 100).toFixed(0)}%`
+    ? `${insight.data_quality_index.toFixed(0)}%`
     : "—";
 
   const confidenceExplanation = (() => {
