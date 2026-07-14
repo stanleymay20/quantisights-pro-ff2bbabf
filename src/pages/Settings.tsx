@@ -535,12 +535,18 @@ const Settings = () => {
                       </div>
                       <div className="space-y-2">
                         <Label>Alert Threshold (Risk Score)</Label>
-                        <Input type="number" min={0} max={100} value={alertThreshold} onChange={e => setAlertThreshold(Number(e.target.value))} />
+                        {/* HTML min/max on type="number" only affects the spinner
+                            buttons and :invalid styling, not typed/pasted values --
+                            saveNotifications() already clamps before persisting, but
+                            leaving the field itself unclamped let a user type e.g.
+                            99999999, see it sit there, and get a bare "saved"
+                            toast with no indication it was silently capped to 100. */}
+                        <Input type="number" min={0} max={100} value={alertThreshold} onChange={e => setAlertThreshold(Math.max(0, Math.min(100, Number(e.target.value) || 0)))} />
                         <p className="text-xs text-muted-foreground">Trigger alerts when risk score exceeds this value</p>
                       </div>
                       <div className="space-y-2">
                         <Label>Escalation Threshold</Label>
-                        <Input type="number" min={0} max={100} value={escalationThreshold} onChange={e => setEscalationThreshold(Number(e.target.value))} />
+                        <Input type="number" min={0} max={100} value={escalationThreshold} onChange={e => setEscalationThreshold(Math.max(0, Math.min(100, Number(e.target.value) || 0)))} />
                         <p className="text-xs text-muted-foreground">Auto-escalate to board when score exceeds this value</p>
                       </div>
                       <div className="space-y-2">
