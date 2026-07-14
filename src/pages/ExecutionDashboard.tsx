@@ -202,7 +202,12 @@ const ExecutionDashboard = () => {
                   </Card>
                   <Card>
                     <CardContent className="p-4">
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider flex items-center gap-1"><Play className="w-3 h-3" /> Active</p>
+                      {/* "Active Plans", not "Active" — this counts execution_plans with
+                          status='in_progress', a different entity from the "Active Decisions"
+                          list below (decision_ledger rows with decision_status
+                          pending/approved). Reusing the word "Active" for two different
+                          counts made them look like they should match when they don't. */}
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider flex items-center gap-1"><Play className="w-3 h-3" /> Active Plans</p>
                       <p className="text-2xl font-bold mt-1 text-primary">{summary.in_progress}</p>
                     </CardContent>
                   </Card>

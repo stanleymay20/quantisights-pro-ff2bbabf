@@ -19,6 +19,7 @@ import {
   PlayCircle,
   RefreshCw,
   ShieldAlert,
+  ShieldOff,
   XCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -103,7 +104,31 @@ interface IngestedRecord {
   ingested_at: string;
 }
 
-function statusBadge(status: string | null, freshness?: string | null) {
+// A surface stuck on repeated 401/403 responses will never recover on its
+// own — retrying just burns the backoff schedule until someone rotates the
+// credential. Showing "Failed" (implies the next retry might work) or
+// "Idle" (implies nothing is scheduled) both misrepresent that. This
+// requires several consecutive auth-shaped failures, not just one, so a
+// single transient blip doesn't get mislabeled as a credential problem.
+const CREDENTIAL_FAILURE_THRESHOLD = 3;
+function isCredentialFailure(errorMessage: string | null | undefined, consecutiveFailures: number | undefined): boolean {
+  if (!errorMessage || !consecutiveFailures || consecutiveFailures < CREDENTIAL_FAILURE_THRESHOLD) return false;
+  return /HTTP 401|HTTP 403|Unauthorized|Forbidden|invalid.{0,20}(api.?key|credential|token)/i.test(errorMessage);
+}
+
+function statusBadge(
+  status: string | null,
+  freshness?: string | null,
+  errorMessage?: string | null,
+  consecutiveFailures?: number,
+) {
+  if (isCredentialFailure(errorMessage, consecutiveFailures)) {
+    return (
+      <Badge variant="outline" className="gap-1 border-amber-500/50 text-amber-600 dark:text-amber-400">
+        <ShieldOff className="h-3 w-3" />Paused — invalid credential
+      </Badge>
+    );
+  }
   // Red: failed; Amber: stale; Green: success
   if (status === "failed")
     return <Badge variant="destructive" className="gap-1"><XCircle className="h-3 w-3" />Failed</Badge>;
@@ -300,7 +325,7 @@ export default function AicisSync() {
                   return (
                     <tr key={surf} className="border-b last:border-0 hover:bg-muted/20">
                       <td className="px-4 py-2 font-mono text-xs">/{surf}</td>
-                      <td className="px-4 py-2">{statusBadge(s?.last_status ?? null, s?.last_success_at)}</td>
+                      <td className="px-4 py-2">{statusBadge(s?.last_status ?? null, s?.last_success_at, s?.last_error_message, s?.consecutive_failures)}</td>
                       <td className="px-4 py-2 text-right tabular-nums">{(s?.total_records ?? 0).toLocaleString()}</td>
                       <td className="px-4 py-2 text-right tabular-nums text-muted-foreground">
                         {s?.records_available != null ? s.records_available.toLocaleString() : "—"}
