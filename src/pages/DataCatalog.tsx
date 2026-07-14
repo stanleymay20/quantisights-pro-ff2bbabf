@@ -137,7 +137,10 @@ export default function DataCatalog() {
     );
   }, [datasets, search]);
 
-  const activeCount = datasets.filter(d => d.status === "active").length;
+  // Ingestion never sets status to "active" — the pipeline only ever
+  // transitions pending -> processing -> completed/failed (see
+  // DataUpload.tsx). Filtering on "active" always matched zero rows.
+  const activeCount = datasets.filter(d => d.status === "completed").length;
   const totalRows = datasets.reduce((s, d) => s + (d.row_count || 0), 0);
   const staleCount = datasets.filter(d => d.is_stale).length;
   const profiledCount = Object.keys(qualityChecks).length;
@@ -229,7 +232,7 @@ export default function DataCatalog() {
                     <TableRow key={ds.id}>
                       <TableCell className="font-medium">{ds.name}</TableCell>
                       <TableCell>
-                        <Badge variant={ds.status === "active" ? "default" : "outline"}>
+                        <Badge variant={ds.status === "completed" ? "default" : ds.status === "failed" ? "destructive" : "outline"}>
                           {ds.status}
                         </Badge>
                       </TableCell>
@@ -300,7 +303,7 @@ export default function DataCatalog() {
                                       </div>
                                       <div className="p-3 rounded-md bg-muted">
                                         <p className="text-xs text-muted-foreground">Quality Score</p>
-                                        <p className="font-bold">{selectedProfile.quality_score}%</p>
+                                        <p className="font-bold">{Math.round(selectedProfile.quality_score)}%</p>
                                       </div>
                                     </div>
 
@@ -318,7 +321,7 @@ export default function DataCatalog() {
                                           <div><span className="text-muted-foreground">Max:</span> {mp.max}</div>
                                           <div><span className="text-muted-foreground">Skewness:</span> {mp.skewness}</div>
                                           <div><span className="text-muted-foreground">Kurtosis:</span> {mp.kurtosis}</div>
-                                          <div><span className="text-muted-foreground">Outliers:</span> {mp.outlier_count} ({mp.outlier_percentage}%)</div>
+                                          <div><span className="text-muted-foreground">Outliers:</span> {mp.outlier_count} ({Math.round(mp.outlier_percentage)}%)</div>
                                           <div><span className="text-muted-foreground">CV:</span> {mp.coefficient_of_variation}%</div>
                                           <div><span className="text-muted-foreground">Distribution:</span> {mp.distribution_shape}</div>
                                           <div><span className="text-muted-foreground">IQR:</span> {mp.iqr}</div>

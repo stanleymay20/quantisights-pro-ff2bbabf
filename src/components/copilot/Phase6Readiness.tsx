@@ -46,7 +46,7 @@ export default function Phase6Readiness({
       {
         label: "Gate 2 — Copilot Routing",
         icon: MessageSquareText,
-        current: `${routingAccuracy}% (${totalQueries} queries)`,
+        current: `${Math.round(routingAccuracy)}% (${totalQueries} queries)`,
         target: "≥ 80%, n ≥ 50",
         progress: routingAccuracy,
         met: routingAccuracy >= 80 && totalQueries >= 50,

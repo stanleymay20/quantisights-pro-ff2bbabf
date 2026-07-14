@@ -310,7 +310,7 @@ const ExplainDecisionPanel = ({
               )}
               {rawConfidence != null && cappedConfidence != null && rawConfidence !== cappedConfidence && (
                 <span className="text-[11px] font-mono text-muted-foreground">
-                  raw {rawConfidence}% → capped {cappedConfidence}%
+                  raw {Math.round(rawConfidence)}% → capped {Math.round(cappedConfidence)}%
                 </span>
               )}
             </div>

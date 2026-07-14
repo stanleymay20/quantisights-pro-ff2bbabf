@@ -67,8 +67,8 @@ const SimilarDecisionsPanel = memo(({ organizationId, queryText, onConfidenceAdj
     if (confidenceAdjustment !== 0 && onConfidenceAdjustment) {
       const strength = retrievalQuality === "high" ? "strong" : "moderate";
       const rationale = confidenceAdjustment > 0
-        ? `Historical accuracy of similar decisions is ${strength} (avg ${avgAccuracy}%), confidence boosted by ${confidenceAdjustment}pp.`
-        : `Historical accuracy of similar decisions is low (avg ${avgAccuracy}%), confidence reduced by ${Math.abs(confidenceAdjustment)}pp. (${strength} evidence)`;
+        ? `Historical accuracy of similar decisions is ${strength} (avg ${Math.round(avgAccuracy)}%), confidence boosted by ${confidenceAdjustment}pp.`
+        : `Historical accuracy of similar decisions is low (avg ${Math.round(avgAccuracy)}%), confidence reduced by ${Math.abs(confidenceAdjustment)}pp. (${strength} evidence)`;
       onConfidenceAdjustment(confidenceAdjustment, rationale);
     }
   }, [confidenceAdjustment, avgAccuracy, onConfidenceAdjustment, retrievalQuality]);
@@ -192,7 +192,7 @@ const SimilarDecisionsPanel = memo(({ organizationId, queryText, onConfidenceAdj
               <Brain className="w-3 h-3 text-muted-foreground" />
               <span className="text-[10px] text-muted-foreground">Avg accuracy:</span>
               <span className={`text-xs font-bold font-mono ${avgAccuracy >= 70 ? "text-success" : avgAccuracy >= 40 ? "text-warning" : "text-destructive"}`}>
-                {avgAccuracy}%
+                {Math.round(avgAccuracy)}%
               </span>
             </div>
           )}
@@ -281,8 +281,8 @@ const SimilarDecisionsPanel = memo(({ organizationId, queryText, onConfidenceAdj
         <div className="mt-3 pt-2.5 border-t border-border/20">
           <p className="text-[10px] text-muted-foreground italic leading-relaxed">
             ↳ {confidenceAdjustment > 0
-              ? `Historical accuracy of ${outcomes.length} similar outcomes (avg ${avgAccuracy}%) supports higher confidence.`
-              : `Historical accuracy of ${outcomes.length} similar outcomes (avg ${avgAccuracy}%) warrants reduced confidence.`
+              ? `Historical accuracy of ${outcomes.length} similar outcomes (avg ${Math.round(avgAccuracy)}%) supports higher confidence.`
+              : `Historical accuracy of ${outcomes.length} similar outcomes (avg ${Math.round(avgAccuracy)}%) warrants reduced confidence.`
             }
             {neuralFallbackUsed && " (via semantic analysis)"}
             {retrievalQuality !== "high" && !neuralFallbackUsed && " (Adjustment reduced due to moderate match quality.)"}

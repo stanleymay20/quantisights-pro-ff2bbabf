@@ -287,7 +287,7 @@ const ExecutiveDailyDriver = ({ displayName, orgId, insights, topMetrics, pendin
                     Decision {index + 1}
                   </Badge>
                   {decision.capped_confidence !== null && (
-                    <span className="text-xs font-semibold text-primary">{decision.capped_confidence}%</span>
+                    <span className="text-xs font-semibold text-primary">{Math.round(decision.capped_confidence)}%</span>
                   )}
                 </div>
                 <p className="mt-3 line-clamp-2 text-sm font-semibold">{decision.recommended_action}</p>
@@ -336,7 +336,7 @@ const ExecutiveDailyDriver = ({ displayName, orgId, insights, topMetrics, pendin
             <div className="mb-4 flex items-center justify-between gap-3">
               <Badge variant="outline" className="w-fit text-[10px] uppercase tracking-wide">Next Best Decision</Badge>
               {topDecision?.capped_confidence !== null && topDecision && (
-                <span className="text-xs font-medium text-muted-foreground">Prediction confidence {topDecision.capped_confidence}%</span>
+                <span className="text-xs font-medium text-muted-foreground">Prediction confidence {Math.round(topDecision.capped_confidence)}%</span>
               )}
             </div>
             {generating ? (
@@ -452,7 +452,7 @@ const ExecutiveDailyDriver = ({ displayName, orgId, insights, topMetrics, pendin
             ["Operations", criticalCount === 0 ? "Stable" : `${criticalCount} risk`, criticalCount === 0 ? "text-success" : "text-destructive"],
             ["Financial", exposure > 0 ? EURO(exposure) : "No exposure", "text-foreground"],
             ["Compliance", "Approval record active", "text-success"],
-            ["AI Confidence", highestConfidence ? `${highestConfidence}%` : "Pending", highestConfidence ? "text-primary" : "text-muted-foreground"],
+            ["AI Confidence", highestConfidence ? `${Math.round(highestConfidence)}%` : "Pending", highestConfidence ? "text-primary" : "text-muted-foreground"],
           ].map(([label, value, tone]) => (
             <Card key={label}>
               <CardContent className="p-4">
@@ -536,7 +536,7 @@ const ExecutiveDailyDriver = ({ displayName, orgId, insights, topMetrics, pendin
               )}
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex gap-2">
-                  {answer.confidence !== null && <Badge variant="outline" className="h-5 text-[10px]">{answer.confidence}% confidence</Badge>}
+                  {answer.confidence !== null && <Badge variant="outline" className="h-5 text-[10px]">{Math.round(answer.confidence)}% confidence</Badge>}
                   {answer.dataSource === "live" && <Badge variant="outline" className="h-5 text-[10px] text-success border-success/30">Live data</Badge>}
                 </div>
                 <Button size="sm" className="h-7 gap-1.5 text-xs" onClick={() => navigate(answer.destination)}>

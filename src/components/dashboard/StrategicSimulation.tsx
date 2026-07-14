@@ -345,7 +345,7 @@ const StrategicSimulation = ({ organizationId, datasetId, roleType, tier }: Prop
                                 : "bg-muted text-muted-foreground border-none"
                             }
                           >
-                            {kpi.delta_percent > 0 ? "+" : ""}{kpi.delta_percent}%
+                            {kpi.delta_percent > 0 ? "+" : ""}{Math.round(kpi.delta_percent)}%
                           </Badge>
                         </div>
                       ))}

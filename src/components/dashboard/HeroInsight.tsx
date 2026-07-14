@@ -164,7 +164,7 @@ function buildConfidenceExplanation(confidence: number, intel: DerivedIntel, ins
   if (insight.sample_size != null && insight.sample_size < 30) limiters.unshift("limited sample size");
   if (insight.data_quality_index != null && insight.data_quality_index < 0.7) limiters.unshift("data quality below threshold");
   const limiterStr = limiters.length > 0 ? ` · Limited by: ${limiters.join(", ")}` : "";
-  return `${confidence}% — Driven by: ${drivers}${limiterStr}`;
+  return `${Math.round(confidence)}% — Driven by: ${drivers}${limiterStr}`;
 }
 
 /** Derive execution readiness from data quality signals */

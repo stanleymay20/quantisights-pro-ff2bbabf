@@ -756,7 +756,7 @@ const DecisionLedgerPage = () => {
                       />
                       <ResultCard
                         label="P(Positive ROI)"
-                        value={`${simResult.probability_positive_roi}%`}
+                        value={`${Math.round(simResult.probability_positive_roi)}%`}
                         positive={simResult.probability_positive_roi >= 50}
                       />
                       <ResultCard
@@ -766,7 +766,7 @@ const DecisionLedgerPage = () => {
                       />
                       <ResultCard
                         label="P(Cash Stress)"
-                        value={`${simResult.probability_cashflow_stress}%`}
+                        value={`${Math.round(simResult.probability_cashflow_stress)}%`}
                         positive={simResult.probability_cashflow_stress < 20}
                       />
                     </div>
@@ -785,7 +785,7 @@ const DecisionLedgerPage = () => {
                             <TooltipContent className="max-w-xs text-xs">
                               <p>Raw: {Number(simResult.raw_confidence).toFixed(1)}% → Capped: {Number(simResult.capped_confidence).toFixed(1)}%</p>
                               <p>{simResult.confidence_cap_reason}</p>
-                              <p>Sample: {simResult.sample_size} | Variance: {simResult.variance_score}%</p>
+                              <p>Sample: {simResult.sample_size} | Variance: {Math.round(simResult.variance_score)}%</p>
                             </TooltipContent>
                           </Tooltip>
                           <span>Data sufficiency: <span className="capitalize font-medium text-foreground">{simResult.data_sufficiency}</span></span>

@@ -52,7 +52,7 @@ function ExecutiveBriefCard({ brief, onRegenerate, generating, orgId }: {
         <div>
           <CardTitle className="flex items-center gap-2"><Sparkles className="h-5 w-5 text-primary" /> Executive Brief</CardTitle>
           <p className="text-xs text-muted-foreground mt-1">
-            Generated: {new Date(brief.generated_at).toLocaleString()} · Confidence: {s.confidence}% · Risk: {brief.risk_score ?? 0}/100
+            Generated: {new Date(brief.generated_at).toLocaleString()} · Confidence: {Math.round(s.confidence)}% · Risk: {brief.risk_score ?? 0}/100
           </p>
         </div>
         <Button size="sm" variant="outline" onClick={onRegenerate} disabled={generating}>
@@ -533,7 +533,7 @@ export default function ExecutiveIntelligence() {
                 <div className="space-y-2 text-sm">
                   <p><span className="font-medium">Projected horizon:</span> {brief.summary_json.projected_time_horizon_days} days</p>
                   <p><span className="font-medium">Likely impact:</span> {brief.summary_json.likely_business_impact}</p>
-                  <p><span className="font-medium">Confidence:</span> {brief.summary_json.confidence}% <span className="text-muted-foreground">(capped at 85%)</span></p>
+                  <p><span className="font-medium">Confidence:</span> {Math.round(brief.summary_json.confidence)}% <span className="text-muted-foreground">(capped at 85%)</span></p>
                   <Button variant="outline" size="sm" asChild className="mt-2">
                     <a href="/forecasting">Open Forecasting <ArrowUpRight className="h-3 w-3 ml-1" /></a>
                   </Button>

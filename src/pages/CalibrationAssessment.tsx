@@ -427,7 +427,7 @@ const CalibrationAssessment = () => {
                     <div className="space-y-6">
                       <div className="text-center">
                         <span className={`text-5xl font-bold tabular-nums ${getProbabilityColor(userProbability)}`}>
-                          {userProbability}%
+                          {Math.round(userProbability)}%
                         </span>
                         <p className="text-sm text-muted-foreground mt-2">Your probability estimate</p>
                       </div>
@@ -480,13 +480,13 @@ const CalibrationAssessment = () => {
                       <div className="p-5 rounded-xl bg-muted/50 border text-center">
                         <p className="text-xs text-muted-foreground mb-1 font-medium uppercase tracking-wider">Your Estimate</p>
                         <p className={`text-4xl font-bold tabular-nums ${getProbabilityColor(userProbability)}`}>
-                          {userProbability}%
+                          {Math.round(userProbability)}%
                         </p>
                       </div>
                       <div className="p-5 rounded-xl bg-primary/5 border border-primary/20 text-center">
                         <p className="text-xs text-muted-foreground mb-1 font-medium uppercase tracking-wider">Actual</p>
                         <p className="text-4xl font-bold tabular-nums text-primary">
-                          {scenario.actualProbability}%
+                          {Math.round(scenario.actualProbability)}%
                         </p>
                       </div>
                     </div>
@@ -638,9 +638,9 @@ const CalibrationAssessment = () => {
                           <div key={r.scenarioId} className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted/30 border text-sm">
                             <span className="text-muted-foreground truncate flex-1 mr-3">{sc.category}</span>
                             <div className="flex items-center gap-4 shrink-0">
-                              <span className="tabular-nums text-foreground">{r.userProbability}%</span>
+                              <span className="tabular-nums text-foreground">{Math.round(r.userProbability)}%</span>
                               <span className="text-muted-foreground">→</span>
-                              <span className="tabular-nums text-primary">{r.actualProbability}%</span>
+                              <span className="tabular-nums text-primary">{Math.round(r.actualProbability)}%</span>
                               <span className={`text-xs font-medium w-20 text-right ${info.color}`}>{r.delta > 0 ? "+" : ""}{r.delta}pp</span>
                             </div>
                           </div>

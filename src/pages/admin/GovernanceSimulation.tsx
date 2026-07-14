@@ -144,7 +144,7 @@ const GovernanceSimulation = () => {
                     { label: "Escalation tier", get: (r: SimResult) => r.outcome.escalation_tier },
                     { label: "Required approvals", get: (r: SimResult) => r.outcome.required_approvals },
                     { label: "Approval chain", get: (r: SimResult) => r.outcome.approval_chain.map((s) => s.approval_stage).join(" → ") },
-                    { label: "Raw → capped confidence", get: (r: SimResult) => `${r.outcome.raw_confidence}% → ${r.outcome.capped_confidence}%` },
+                    { label: "Raw → capped confidence", get: (r: SimResult) => `${Math.round(r.outcome.raw_confidence)}% → ${Math.round(r.outcome.capped_confidence)}%` },
                     { label: "Recommendation", get: (r: SimResult) => r.outcome.intervention_recommendation },
                   ].map((row) => (
                     <tr key={row.label} className="border-t border-border/30">
@@ -189,7 +189,7 @@ const GovernanceSimulation = () => {
                     <div>
                       <div className="font-semibold text-muted-foreground mb-1">Outcome</div>
                       <div>Triggers: {r.outcome.would_trigger_decision ? "yes" : "no"}</div>
-                      <div>Raw conf: {r.outcome.raw_confidence}% → capped {r.outcome.capped_confidence}%</div>
+                      <div>Raw conf: {Math.round(r.outcome.raw_confidence)}% → capped {Math.round(r.outcome.capped_confidence)}%</div>
                       <div className="mt-1 italic">{r.outcome.intervention_recommendation}</div>
                     </div>
                   </div>

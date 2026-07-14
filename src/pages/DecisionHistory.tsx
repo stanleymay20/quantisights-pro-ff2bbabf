@@ -128,7 +128,7 @@ const DecisionHistory = () => {
                             )}
                             {r.confidence_at_decision != null && (
                               <span className="text-[11px] text-muted-foreground">
-                                {r.confidence_at_decision}% confidence
+                                {Math.round(r.confidence_at_decision)}% confidence
                               </span>
                             )}
                             {hasOutcome && (

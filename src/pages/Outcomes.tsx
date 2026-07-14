@@ -101,7 +101,7 @@ const Outcomes = () => {
                 className="text-[18px] font-semibold tracking-tight"
                 title={avgAccuracy == null ? "No outcomes measured yet. Record an outcome on a decision to activate accuracy tracking." : undefined}
               >
-                {avgAccuracy != null ? `${avgAccuracy}%` : "—"}
+                {avgAccuracy != null ? `${Math.round(avgAccuracy)}%` : "—"}
               </p>
               <p className="text-xs text-muted-foreground">
                 {avgAccuracy == null ? "No data yet" : "Accuracy"}
@@ -130,7 +130,7 @@ const Outcomes = () => {
             <CardContent className="p-5">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-sm font-medium">Overall Decision Accuracy</p>
-                <span className="text-xl font-bold">{avgAccuracy}%</span>
+                <span className="text-xl font-bold">{Math.round(avgAccuracy)}%</span>
               </div>
               <Progress value={avgAccuracy} className="h-2.5" />
               <p className="text-xs text-muted-foreground mt-2">
