@@ -150,7 +150,10 @@ const Connectors = () => {
     setLoading(true);
     const [cRes, dRes] = await Promise.all([
       supabase.from("data_connectors").select("*").eq("organization_id", currentOrgId!).order("created_at", { ascending: false }),
-      supabase.from("datasets").select("id,name").eq("organization_id", currentOrgId!).eq("status", "active").order("name"),
+      // "completed" is the status the standard CSV upload flow (DataUpload.tsx)
+      // actually writes on success; "active" is only ever written by the demo
+      // seed and API-ingest paths. Both mean "usable dataset."
+      supabase.from("datasets").select("id,name").eq("organization_id", currentOrgId!).in("status", ["active", "completed"]).order("name"),
     ]);
     setConnectors((cRes.data as Connector[] | null) ?? []);
     setDatasets((dRes.data as Dataset[] | null) ?? []);
