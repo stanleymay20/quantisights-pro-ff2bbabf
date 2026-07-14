@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveDataContext } from "@/hooks/useActiveDataContext";
+import { createSafeChannel } from "@/lib/realtime-channel";
 
 export interface InterventionRow {
   id: string;
