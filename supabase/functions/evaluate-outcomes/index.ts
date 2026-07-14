@@ -2,6 +2,9 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders, corsPreflightResponse } from "../_shared/cors.ts";
 import { createLogger } from "../_shared/logger.ts";
 import { cronGuard } from "../_shared/cron-guard.ts";
+import { makeDeadline, rotateForFairness } from "../_shared/cron-batch.ts";
+
+const RUN_INTERVAL_MS = 60 * 60 * 1000; // outcome evaluation cadence
 
 Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
@@ -27,7 +30,19 @@ Deno.serve(async (req) => {
       const { data: orgs } = await supabase.from("organizations").select("id");
       let totalEvaluated = 0;
 
-      for (const org of (orgs || [])) {
+      // Bound the org loop to the invocation's wall-clock budget, and
+      // rotate the starting point each tick so a sustained overload
+      // doesn't permanently starve whichever orgs sort last -- safe
+      // since a pending outcome stays pending until it's actually
+      // evaluated, so a skipped org is simply retried next tick.
+      const cronStartedAt = Date.now();
+      const deadline = makeDeadline(cronStartedAt);
+      const rotatedOrgs = rotateForFairness(orgs || [], cronStartedAt, RUN_INTERVAL_MS);
+      let orgsProcessed = 0;
+
+      for (const org of rotatedOrgs) {
+        if (deadline.expired()) break;
+        orgsProcessed++;
         const { data: pending } = await supabase
           .from("decision_outcomes")
           .select("*, decision_ledger!inner(decided_at, organization_id)")
@@ -200,9 +215,10 @@ Deno.serve(async (req) => {
         }
       }
 
-      log.info("Cron batch evaluation complete", { totalEvaluated });
-      await guard.succeed({ evaluated: totalEvaluated });
-      return new Response(JSON.stringify({ success: true, evaluated: totalEvaluated }), {
+      const truncated = orgsProcessed < rotatedOrgs.length;
+      log.info("Cron batch evaluation complete", { totalEvaluated, orgsProcessed, orgsTotal: rotatedOrgs.length, truncated });
+      await guard.succeed({ evaluated: totalEvaluated, orgs_processed: orgsProcessed, orgs_total: rotatedOrgs.length, truncated });
+      return new Response(JSON.stringify({ success: true, evaluated: totalEvaluated, orgs_processed: orgsProcessed, orgs_total: rotatedOrgs.length, truncated }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

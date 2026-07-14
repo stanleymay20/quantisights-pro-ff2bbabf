@@ -10,6 +10,9 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { getCorsHeaders, corsPreflightResponse } from "../_shared/cors.ts";
+import { makeDeadline, rotateForFairness } from "../_shared/cron-batch.ts";
+
+const RUN_INTERVAL_MS = 60 * 60 * 1000; // outcome evaluation cadence
 
 const log = (level: string, msg: string, ctx: Record<string, unknown> = {}) =>
   console.log(JSON.stringify({ level, msg, ts: new Date().toISOString(), ...ctx }));
@@ -82,8 +85,19 @@ Deno.serve(async (req) => {
   let total_errors = 0;
   const per_org: Array<{ org_id: string; evaluated: number; skipped: number; errors: number }> = [];
 
+  // Bound the org loop to the invocation's wall-clock budget, and rotate
+  // the starting point each tick so a sustained overload doesn't
+  // permanently starve whichever orgs sort last -- re-evaluating an org is
+  // a no-op past the first pass since results upsert on (organization_id,
+  // external_id).
+  const deadline = makeDeadline(startedAt);
+  const rotatedOrgs = rotateForFairness(orgsToProcess, startedAt, RUN_INTERVAL_MS);
+  let orgsProcessed = 0;
+
   try {
-    for (const orgId of orgsToProcess) {
+    for (const orgId of rotatedOrgs) {
+      if (deadline.expired()) break;
+      orgsProcessed++;
       const stat = { org_id: orgId, evaluated: 0, skipped: 0, errors: 0 };
       try {
         // Find completed AICIS-linked decisions
@@ -172,8 +186,9 @@ Deno.serve(async (req) => {
     }
 
     const duration_ms = Date.now() - startedAt;
-    log("info", "aicis_evaluate_outcomes_done", { total_evaluated, total_skipped, total_errors, orgs: orgsToProcess.length, duration_ms, correlation_id: correlationId });
-    return json({ total_evaluated, total_skipped, total_errors, per_org, correlation_id: correlationId, duration_ms });
+    const truncated = orgsProcessed < rotatedOrgs.length;
+    log("info", "aicis_evaluate_outcomes_done", { total_evaluated, total_skipped, total_errors, orgs: orgsToProcess.length, orgs_processed: orgsProcessed, truncated, duration_ms, correlation_id: correlationId });
+    return json({ total_evaluated, total_skipped, total_errors, per_org, correlation_id: correlationId, duration_ms, orgs_processed: orgsProcessed, orgs_total: rotatedOrgs.length, truncated });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     return json({ error: msg, total_evaluated, total_errors, correlation_id: correlationId }, 500);
