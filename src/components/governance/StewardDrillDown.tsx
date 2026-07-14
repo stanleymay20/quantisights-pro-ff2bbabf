@@ -38,7 +38,10 @@ const StewardDrillDown = () => {
           .from("datasets")
           .select("id, name, uploaded_by, steward_user_id")
           .eq("organization_id", currentOrgId)
-          .eq("status", "active"),
+          // "completed" is what the standard CSV upload flow writes on
+          // success; "active" is only written by the demo seed and
+          // API-ingest paths. Both mean "usable dataset."
+          .in("status", ["active", "completed"]),
         supabase
           .from("data_quality_checks")
           .select("dataset_id")

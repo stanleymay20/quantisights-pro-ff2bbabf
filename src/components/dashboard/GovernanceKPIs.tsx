@@ -32,7 +32,11 @@ const GovernanceKPIs = () => {
       if (!currentOrgId) return null;
 
       const [datasets, quality, decisions, members, policies, retentionPolicies] = await Promise.all([
-        supabase.from("datasets").select("id, uploaded_by, steward_user_id, workspace_id").eq("organization_id", currentOrgId).eq("status", "active"),
+        // "completed" is what the standard CSV upload flow (DataUpload.tsx)
+        // writes on success; "active" is only written by the demo seed and
+        // API-ingest paths. Filtering on "active" alone made every
+        // CSV-uploaded org's dataset count come back 0 here.
+        supabase.from("datasets").select("id, uploaded_by, steward_user_id, workspace_id").eq("organization_id", currentOrgId).in("status", ["active", "completed"]),
         supabase.from("data_quality_checks").select("score, dataset_id").eq("organization_id", currentOrgId).order("created_at", { ascending: false }).limit(10),
         supabase.from("decision_ledger").select("id, outcome_measured_at", { count: "exact" }).eq("organization_id", currentOrgId),
         supabase.from("organization_members").select("role, user_id").eq("organization_id", currentOrgId),
