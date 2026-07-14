@@ -207,7 +207,9 @@ const GlobalContextBar = () => {
         <><Separator /><span className="text-[11px] text-muted-foreground/50 italic px-1">Decision context</span></>
       )}
       <div className="ml-auto flex items-center gap-2 shrink-0">
-        <GlobalNotificationBell orgId={currentOrg?.id ?? null} datasetId={activeDatasetId ?? null} />
+        {!isDashboard && (
+          <GlobalNotificationBell orgId={currentOrg?.id ?? null} datasetId={activeDatasetId ?? null} />
+        )}
       </div>
     </div>
   );
