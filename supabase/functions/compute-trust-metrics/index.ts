@@ -117,19 +117,27 @@ Deno.serve(async (req) => {
     sample_size: unresolved_critical_incidents, scanned_at: now.toISOString(), confidence: "high",
   };
 
-  // 8. Connector health %
+  // 8. Connector health % — nothing ever writes to connector_health_snapshots
+  // (no cron/edge function inserts rows there), so reading it always found
+  // an empty result and silently fell back to the hardcoded 100 default,
+  // regardless of real connector state -- e.g. an AICIS outage that set
+  // external_data_sources.last_error never moved this number. Use the
+  // table connector sync pipelines (AICIS bridge included) actually write
+  // last_error to on failure instead.
   let connector_health_pct = 100;
+  let connectorSample = 0;
   try {
-    const { data: ch } = await svc.from("connector_health_snapshots").select("status").gte("created_at", since);
-    if (ch && ch.length > 0) {
-      const healthy = ch.filter((r: any) => r.status === "healthy").length;
-      connector_health_pct = Math.round((healthy / ch.length) * 1000) / 10;
+    const { data: eds } = await svc.from("external_data_sources").select("last_error");
+    if (eds && eds.length > 0) {
+      connectorSample = eds.length;
+      const healthy = eds.filter((r: any) => !r.last_error).length;
+      connector_health_pct = Math.round((healthy / eds.length) * 1000) / 10;
     }
   } catch { /* default */ }
   provenance.connector_health_pct = {
-    source_tables: ["connector_health_snapshots"],
-    method: "snapshots WHERE status='healthy' ÷ total snapshots in last 24h",
-    sample_size: 0, scanned_at: now.toISOString(), confidence: "medium",
+    source_tables: ["external_data_sources"],
+    method: "sources WHERE last_error IS NULL ÷ total configured sources",
+    sample_size: connectorSample, scanned_at: now.toISOString(), confidence: connectorSample > 0 ? "high" : "low",
   };
 
   // 9. DQ confidence avg — from iq_dimension_scores
