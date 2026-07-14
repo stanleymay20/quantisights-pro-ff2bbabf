@@ -166,7 +166,7 @@ const navSections: NavSection[] = [
     path: "/decisions",
     subItems: [
       { icon: FileText,       label: "Executive Brief",  path: "/executive-brief" },
-      { icon: ClipboardList,  label: "Decision History", path: "/decisions" },
+      { icon: ClipboardList,  label: "Decision History", path: "/history" },
       { icon: MessageSquareText, label: "Ask Quantivis", path: "/app/copilot" },
       { icon: Scale,          label: "Deliberation",     path: "/deliberation" },
       { icon: Users,          label: "AI Boardroom",     path: "/ai-boardroom" },

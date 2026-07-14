@@ -183,6 +183,24 @@ Deno.serve(async (req) => {
         const linkedPredIds = new Set((existing ?? []).map(r => r.linked_aicis_prediction_id).filter(Boolean));
         const linkedRecIds = new Set((existing ?? []).map(r => r.linked_aicis_recommendation_id).filter(Boolean));
 
+        // linkedPredIds/linkedRecIds only catch a re-run of THIS job against
+        // the same AICIS-side prediction/recommendation row. If AICIS itself
+        // re-emits a fresh id for a condition that's still true on every
+        // sync (this job runs every 15-30 min), recommended_action text is
+        // identical each time but the id-based check never matches, and the
+        // ledger fills with near-duplicate pending decisions for the same
+        // underlying condition. Close that gap: while a pending decision
+        // for this exact recommended_action already exists, don't spawn
+        // another one — once it's approved/rejected the condition can
+        // legitimately generate a new decision again.
+        const { data: pendingSameText } = await service
+          .from("decision_ledger")
+          .select("recommended_action")
+          .eq("organization_id", orgId)
+          .eq("decision_origin", "aicis_auto")
+          .eq("decision_status", "pending");
+        const pendingActionTexts = new Set((pendingSameText ?? []).map(r => r.recommended_action));
+
         // ── 4. Build decision rows (Phase 6A: governance-stamped) ──
         const governanceCtx = buildGovernanceContext(
           profile, thresholdsApplied,
@@ -200,6 +218,9 @@ Deno.serve(async (req) => {
           if (linkedPredIds.has(p.id)) { result.skipped_existing++; orgRes.skipped++; continue; }
           const country = p.country_iso3 ? ` in ${p.country_iso3}` : "";
           const horizon = p.horizon_days ? ` (${p.horizon_days}d horizon)` : "";
+          const predictedAction = `Review elevated ${p.domain ?? "risk"} forecast${country}${horizon}`;
+          if (pendingActionTexts.has(predictedAction)) { result.skipped_existing++; orgRes.skipped++; continue; }
+          pendingActionTexts.add(predictedAction);
           const govCeil = profile.governance_confidence_ceiling * 100;
           toInsert.push({
             ...decisionDefaults,
@@ -208,7 +229,7 @@ Deno.serve(async (req) => {
             decision_status: "pending",
             execution_status: "not_started",
             decision_origin: "aicis_auto",
-            recommended_action: `Review elevated ${p.domain ?? "risk"} forecast${country}${horizon}`,
+            recommended_action: predictedAction,
             notes: `AICIS predicts ${(Number(p.risk_probability) * 100).toFixed(1)}% risk probability` +
                    (p.confidence_lower != null && p.confidence_upper != null
                      ? ` (CI: ${(Number(p.confidence_lower) * 100).toFixed(0)}–${(Number(p.confidence_upper) * 100).toFixed(0)}%)`
@@ -243,6 +264,9 @@ Deno.serve(async (req) => {
 
         for (const r of recs ?? []) {
           if (linkedRecIds.has(r.id)) { result.skipped_existing++; orgRes.skipped++; continue; }
+          const recommendedAction = r.intervention_title ?? `Execute ${r.intervention_type ?? "intervention"}`;
+          if (pendingActionTexts.has(recommendedAction)) { result.skipped_existing++; orgRes.skipped++; continue; }
+          pendingActionTexts.add(recommendedAction);
           const cost = r.estimated_cost_eur ? `€${Number(r.estimated_cost_eur).toLocaleString()}` : "TBD";
           const roi = r.estimated_roi_eur ? `€${Number(r.estimated_roi_eur).toLocaleString()}` : "TBD";
           const govCeil = profile.governance_confidence_ceiling * 100;
@@ -253,7 +277,7 @@ Deno.serve(async (req) => {
             decision_status: "pending",
             execution_status: "not_started",
             decision_origin: "aicis_auto",
-            recommended_action: r.intervention_title ?? `Execute ${r.intervention_type ?? "intervention"}`,
+            recommended_action: recommendedAction,
             notes: `${r.rationale_md ?? ""}\n\n— Estimated cost: ${cost} · Estimated ROI: ${roi} · Window: ${r.urgency_window ?? `${r.urgency_hours}h`}`.trim(),
             raw_confidence: r.confidence != null ? Number(r.confidence) * 100 : null,
             capped_confidence: r.confidence != null ? Math.min(Number(r.confidence) * 100, govCeil) : null,

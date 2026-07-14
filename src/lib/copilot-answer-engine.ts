@@ -365,6 +365,18 @@ function answerBrief(insights: Insight[], metrics: MetricTypeSummary[], pendingD
   };
 }
 
+function answerUnmatched(query: string): CopilotAnswer {
+  return {
+    headline: "I don't have a focused answer for that yet",
+    summary: `This box only recognizes a handful of topics (today's focus, risks, revenue, pending decisions, metrics, governance). "${truncate(query, 60)}" didn't match any of them — for open-ended questions, use the full Ask Quantivis copilot, which reasons over your actual data instead of keyword-matching.`,
+    lines: [],
+    destination: "/app/copilot",
+    destinationLabel: "Open Ask Quantivis",
+    confidence: null,
+    dataSource: "none",
+  };
+}
+
 // ─── Main router ─────────────────────────────────────────────────────────────
 
 export function generateAnswer(
@@ -416,6 +428,11 @@ export function generateAnswer(
   if (/revenue|sales|growth|money|profit/.test(q))
     return answerRevenue(ctx.metrics, ctx.insights);
 
-  // Default: show the focus view (most useful with decisions data)
-  return answerFocus(ctx.pendingDecisions, decisions, ctx.insights, ctx.metrics);
+  // No topic matched: say so honestly and point at the real copilot,
+  // rather than silently substituting the "today's focus" view as if it
+  // were a direct answer to whatever was actually typed. This box is a
+  // keyword router, not an NLU system — presenting an unrelated default as
+  // a confident answer is worse for trust than admitting the limitation.
+  if (!q) return answerFocus(ctx.pendingDecisions, decisions, ctx.insights, ctx.metrics);
+  return answerUnmatched(query);
 }
