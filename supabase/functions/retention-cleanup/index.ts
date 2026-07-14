@@ -2,6 +2,9 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders, corsPreflightResponse } from "../_shared/cors.ts";
 import { cronGuard } from "../_shared/cron-guard.ts";
 import { verifyCronSecret, cronSecretUnauthorized } from "../_shared/cron-secret.ts";
+import { makeDeadline, rotateForFairness } from "../_shared/cron-batch.ts";
+
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 // Mapping from retention data_category to the table(s) that should be cleaned
 const CATEGORY_TABLE_MAP: Record<string, { table: string; dateColumn: string }[]> = {
@@ -48,7 +51,19 @@ Deno.serve(async (req: Request) => {
 
     const results: Record<string, { deleted: number; error?: string }> = {};
 
-    for (const policy of policies) {
+    // Bound the policy loop with a time budget so a large org count can't
+    // get killed mid-run by the invocation's wall-clock ceiling, and rotate
+    // the starting point daily so a sustained overload doesn't permanently
+    // starve whichever policies sort last -- safe to re-run since every
+    // delete here is a plain WHERE-scoped delete, not order-dependent.
+    const startedAt = Date.now();
+    const deadline = makeDeadline(startedAt);
+    const rotatedPolicies = rotateForFairness(policies, startedAt, DAY_MS);
+    let policiesProcessed = 0;
+
+    for (const policy of rotatedPolicies) {
+      if (deadline.expired()) break;
+      policiesProcessed++;
       const targets = CATEGORY_TABLE_MAP[policy.data_category];
       if (!targets || targets.length === 0) continue;
       // Skip audit_logs — immutable by design
@@ -112,9 +127,10 @@ Deno.serve(async (req: Request) => {
       results["stuck_datasets"] = { deleted: stuckDatasets?.length ?? 0 };
     }
 
-    await guard.succeed({ results });
+    const truncated = policiesProcessed < rotatedPolicies.length;
+    await guard.succeed({ results, policies_processed: policiesProcessed, policies_total: rotatedPolicies.length, truncated });
     return new Response(
-      JSON.stringify({ success: true, results }),
+      JSON.stringify({ success: true, results, policies_processed: policiesProcessed, policies_total: rotatedPolicies.length, truncated }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err: unknown) {

@@ -14,6 +14,9 @@ import { getCorsHeaders, corsPreflightResponse } from "../_shared/cors.ts";
 import { getGovernanceProfile, approvalChainForModel } from "../_shared/governance-profile.ts";
 import { getThreshold } from "../_shared/threshold-registry.ts";
 import { recordGovernanceUse, buildGovernanceContext } from "../_shared/governance-audit.ts";
+import { makeDeadline, rotateForFairness } from "../_shared/cron-batch.ts";
+
+const RUN_INTERVAL_MS = 15 * 60 * 1000; // matches the ~15min cron cadence
 
 // Phase 6A: defaults only — per-org values come from governance_profiles + governance_thresholds.
 const DEFAULT_RISK_THRESHOLD = 0.60;
@@ -121,8 +124,21 @@ Deno.serve(async (req) => {
 
   const perOrgResults: Array<{ org_id: string; created: number; skipped: number; errors: number }> = [];
 
+  // A single invocation has a wall-clock ceiling; each org here does several
+  // sequential round trips (governance profile, thresholds, predictions,
+  // recommendations), so an unbounded loop gets killed mid-run once
+  // candidate-org count is large enough. Bound it, and rotate the starting
+  // point each tick so a sustained overload doesn't permanently starve
+  // whichever orgs sort last -- safe because re-scanning an org is a no-op
+  // for anything already decided (see pendingActionTexts dedup below).
+  const deadline = makeDeadline(startedAt);
+  const rotatedOrgs = rotateForFairness(orgsToProcess, startedAt, RUN_INTERVAL_MS);
+  let orgsProcessed = 0;
+
   try {
-    for (const orgId of orgsToProcess) {
+    for (const orgId of rotatedOrgs) {
+      if (deadline.expired()) break;
+      orgsProcessed++;
       const orgRes = { org_id: orgId, created: 0, skipped: 0, errors: 0 };
       try {
         // ── Phase 6A: per-org governance profile + configurable thresholds ──
@@ -397,8 +413,9 @@ Deno.serve(async (req) => {
     }
 
     result.duration_ms = Date.now() - startedAt;
-    log("info", "aicis_auto_decisions_done", { ...result, orgs: perOrgResults.length, cron: isCronMode });
-    return json({ ...result, dry_run: dryRun, per_org: perOrgResults });
+    const truncated = orgsProcessed < rotatedOrgs.length;
+    log("info", "aicis_auto_decisions_done", { ...result, orgs: perOrgResults.length, cron: isCronMode, orgs_processed: orgsProcessed, orgs_total: rotatedOrgs.length, truncated });
+    return json({ ...result, dry_run: dryRun, per_org: perOrgResults, orgs_processed: orgsProcessed, orgs_total: rotatedOrgs.length, truncated });
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e);
     result.duration_ms = Date.now() - startedAt;
