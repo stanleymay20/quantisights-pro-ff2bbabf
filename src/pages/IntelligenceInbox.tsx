@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import IntelligenceDisclaimer from "@/components/IntelligenceDisclaimer";
 import TrustStrip from "@/components/trust/TrustStrip";
-import { trustFromExecutiveBrief, trustFromAdvisory } from "@/components/trust/trust-adapter";
+import { trustFromExecutiveBrief } from "@/components/trust/trust-adapter";
 import { AlertTriangle, Globe, ShieldAlert, Inbox, ArrowRight, ThumbsUp, ThumbsDown, RefreshCw, Loader2, Database } from "lucide-react";
 
 const SEVERITY_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
@@ -215,11 +215,13 @@ export default function IntelligenceInbox() {
                         <Button size="sm" variant="ghost" onClick={() => sendFeedback(it.id, "useful")}><ThumbsUp className="h-3 w-3" /></Button>
                         <Button size="sm" variant="ghost" onClick={() => sendFeedback(it.id, "false_positive")}><ThumbsDown className="h-3 w-3" /></Button>
                       </div>
-                      <TrustStrip
-                        record={trustFromAdvisory(it, orgId)}
-                        variant="compact"
-                        className="mt-2"
-                      />
+                      {/* TrustStrip removed here: it used trustFromAdvisory, an
+                          adapter for advisory/decision records (confidence_score,
+                          evidence_sources, governance_status, source_quality). Raw
+                          aicis_intelligence_items rows have none of those columns --
+                          the strip always rendered five "Not Available" badges under
+                          the real relevance/impact/urgency/pressure scores above,
+                          which read as a broken feature rather than a data gap. */}
                     </CardContent>
                   </Card>
                 );

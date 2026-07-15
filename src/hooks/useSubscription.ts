@@ -73,6 +73,17 @@ export const useSubscription = () => {
         billingInterval: (data?.billing_interval as "month" | "year") ?? null,
         loading: false,
       });
+
+      // Reconcile against Stripe in the background. stripe-webhook keeps
+      // current_period_end current going forward, but a missed or
+      // never-fired webhook leaves this row stuck indefinitely with no
+      // self-heal -- reported live as a "next billing" date months in the
+      // past for an active subscription. check-subscription queries Stripe
+      // directly and corrects drift; the realtime subscription below
+      // picks up any resulting write and refreshes state automatically.
+      if (isActive) {
+        supabase.functions.invoke("check-subscription").catch(() => { /* best-effort */ });
+      }
     } catch (err) {
       console.error("[useSubscription] Failed to check subscription:", err instanceof Error ? err.message : err);
       setState((s) => ({ ...s, loading: false }));

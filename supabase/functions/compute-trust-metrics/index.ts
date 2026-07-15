@@ -120,23 +120,36 @@ Deno.serve(async (req) => {
   // 8. Connector health % — nothing ever writes to connector_health_snapshots
   // (no cron/edge function inserts rows there), so reading it always found
   // an empty result and silently fell back to the hardcoded 100 default,
-  // regardless of real connector state -- e.g. an AICIS outage that set
-  // external_data_sources.last_error never moved this number. Use the
-  // table connector sync pipelines (AICIS bridge included) actually write
-  // last_error to on failure instead.
+  // regardless of real connector state. Switched to external_data_sources
+  // .last_error, but that alone still isn't enough: sync-aicis-bridge
+  // clears last_error on ANY surface landing, even if other surfaces keep
+  // failing ("preserve partial-success semantics") -- so a real, ongoing
+  // single-surface outage (e.g. /signals failing 221 times in a row while
+  // other AICIS surfaces sync fine) never shows up as unhealthy here.
+  // Fold in per-surface circuit-breaker state from aicis_sync_surface_status
+  // too, same signal Bridge Health and Pipeline Observability already use.
   let connector_health_pct = 100;
   let connectorSample = 0;
   try {
-    const { data: eds } = await svc.from("external_data_sources").select("last_error");
-    if (eds && eds.length > 0) {
-      connectorSample = eds.length;
-      const healthy = eds.filter((r: any) => !r.last_error).length;
-      connector_health_pct = Math.round((healthy / eds.length) * 1000) / 10;
+    const nowMs = Date.now();
+    const [edsRes, aicisRes] = await Promise.all([
+      svc.from("external_data_sources").select("last_error"),
+      svc.from("aicis_sync_surface_status").select("consecutive_failures, circuit_breaker_until"),
+    ]);
+    const eds = edsRes.data ?? [];
+    const aicisSurfaces = aicisRes.data ?? [];
+    connectorSample = eds.length + aicisSurfaces.length;
+    if (connectorSample > 0) {
+      const healthyEds = eds.filter((r: any) => !r.last_error).length;
+      const healthyAicis = aicisSurfaces.filter((s: any) =>
+        !((s.circuit_breaker_until && new Date(s.circuit_breaker_until).getTime() > nowMs) || (s.consecutive_failures ?? 0) >= 3)
+      ).length;
+      connector_health_pct = Math.round(((healthyEds + healthyAicis) / connectorSample) * 1000) / 10;
     }
   } catch { /* default */ }
   provenance.connector_health_pct = {
-    source_tables: ["external_data_sources"],
-    method: "sources WHERE last_error IS NULL ÷ total configured sources",
+    source_tables: ["external_data_sources", "aicis_sync_surface_status"],
+    method: "(sources WHERE last_error IS NULL) + (AICIS surfaces with closed circuit breaker) ÷ total",
     sample_size: connectorSample, scanned_at: now.toISOString(), confidence: connectorSample > 0 ? "high" : "low",
   };
 

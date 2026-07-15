@@ -22,6 +22,13 @@ describe("Trust Center connector_health_pct (audit: '100%' not reflecting AICIS 
   it("derives connector_health_pct from external_data_sources.last_error", () => {
     expect(source).toContain('svc.from("external_data_sources").select("last_error")');
     expect(source).toContain("eds.filter((r: any) => !r.last_error)");
-    expect(source).toContain('source_tables: ["external_data_sources"]');
+  });
+
+  // Round 3: last_error alone still wasn't enough -- sync-aicis-bridge
+  // clears it on any surface landing even while another surface keeps
+  // failing, so a real single-surface outage stayed invisible. See
+  // audit-round3-batch.test.ts for the aicis_sync_surface_status fold-in.
+  it("also factors in AICIS per-surface circuit-breaker state, per the round-3 fix", () => {
+    expect(source).toContain('source_tables: ["external_data_sources", "aicis_sync_surface_status"]');
   });
 });
