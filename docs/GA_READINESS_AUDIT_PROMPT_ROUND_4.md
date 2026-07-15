@@ -96,8 +96,8 @@ procurement metadata, and inconsistent SOC 2 wording. Re-run the same
 inspection method (live HTTP responses, rendered metadata, logged-out route
 behavior) against the current deployed build to check whether those fixes
 shipped and whether the same classes of bug exist on routes not covered
-last time — `/pricing`, `/compare`, `/security`, `/enterprise-contact`,
-`/founder-handbook`. Specifically re-check:
+last time — `/pricing`, `/compare`, `/security`, `/enterprise/contact`,
+`/handbook`. Specifically re-check:
 - Does every certification/compliance claim in-app (`SecurityPosture.tsx`,
   `TrustCard.tsx`, `TOMs.tsx`) match the Trust Center's own "in progress vs.
   complete" wording, with no route saying something stronger than the
