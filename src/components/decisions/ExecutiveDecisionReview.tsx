@@ -33,6 +33,12 @@ const pct = (value: number | null | undefined) => {
   return `${Number(value).toFixed(0)}%`;
 };
 
+/** Builds "<value>% <suffix>" without producing "Not available <suffix>" when unset. */
+const pctPhrase = (value: number | null | undefined, suffix: string) => {
+  if (value == null || !Number.isFinite(Number(value))) return `${suffix} not available`;
+  return `${Number(value).toFixed(0)}% ${suffix}`;
+};
+
 function Section({
   title,
   children,
@@ -265,7 +271,7 @@ export default function ExecutiveDecisionReview({
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <div>
               <p className="text-xs font-semibold text-muted-foreground">Expected KPI change</p>
-              <p className="mt-1 font-medium">{pct(decision.predicted_roi_probability)} probability of positive ROI</p>
+              <p className="mt-1 font-medium">{pctPhrase(decision.predicted_roi_probability, "probability of positive ROI")}</p>
             </div>
             <div>
               <p className="text-xs font-semibold text-muted-foreground">Financial impact</p>
