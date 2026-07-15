@@ -46,7 +46,17 @@ const STATUS_COLORS: Record<string, string> = {
   active: "text-foreground bg-muted",
 };
 
-const TIME_PERIODS = ["Q1 2026", "Q2 2026", "Q3 2026", "Q4 2026", "H1 2026", "H2 2026", "FY 2026"];
+// Hardcoding "2026" meant this list (and the default selection below) went
+// stale the moment the calendar rolled past that year, and even within
+// 2026 the default always pointed at Q1 regardless of the actual current
+// quarter. Derive both from the real current date instead.
+const CURRENT_YEAR = new Date().getFullYear();
+const CURRENT_QUARTER = Math.floor(new Date().getMonth() / 3) + 1;
+const TIME_PERIODS = [
+  `Q1 ${CURRENT_YEAR}`, `Q2 ${CURRENT_YEAR}`, `Q3 ${CURRENT_YEAR}`, `Q4 ${CURRENT_YEAR}`,
+  `H1 ${CURRENT_YEAR}`, `H2 ${CURRENT_YEAR}`, `FY ${CURRENT_YEAR}`,
+];
+const DEFAULT_TIME_PERIOD = `Q${CURRENT_QUARTER} ${CURRENT_YEAR}`;
 
 const OKRs = () => {
   const { currentOrgId } = useOrganization();
@@ -58,7 +68,7 @@ const OKRs = () => {
   const [addOpen, setAddOpen] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newDesc, setNewDesc] = useState("");
-  const [newPeriod, setNewPeriod] = useState("Q1 2026");
+  const [newPeriod, setNewPeriod] = useState(DEFAULT_TIME_PERIOD);
   const [saving, setSaving] = useState(false);
 
   // Add KR state
