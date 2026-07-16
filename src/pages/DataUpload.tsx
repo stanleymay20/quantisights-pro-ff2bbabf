@@ -31,6 +31,7 @@ import {
   classifyDataset, confidenceColor, qualityColor, humanizeError, parseCSVText,
   slugifyMetric, deduplicateMetricSlugs,
 } from "@/lib/data-upload-utils";
+import { parseMessyNumber } from "@/lib/messy-data-guards";
 import {
   type ParsedWorkbook,
   type WorkbookSheet,
@@ -689,14 +690,14 @@ const DataUpload = () => {
       // Null sentinel for source_id (matches DB default)
       const NULL_SOURCE = "00000000-0000-0000-0000-000000000000";
 
-      // Clean a numeric string: strip currency symbols, thousand separators, whitespace
-      const cleanNumeric = (raw: string | undefined): number => {
-        if (!raw) return NaN;
-        const cleaned = raw
-          .replace(/[\s$€£¥₹,]/g, "")
-          .replace(/\(([^)]+)\)/, "-$1");
-        return parseFloat(cleaned);
-      };
+      // Clean a numeric string: strip currency symbols, magnitude suffixes,
+      // percentage signs and accounting negatives, and disambiguate
+      // EU vs. US decimal/thousands separators (delegates to the same
+      // locale-aware parser already used for inference/validation/preview
+      // -- this used to be a separate, simpler implementation that
+      // stripped commas unconditionally before parseFloat, which silently
+      // truncated EU-formatted values like "1.234,56" to 1.234 on import).
+      const cleanNumeric = (raw: string | undefined): number => parseMessyNumber(raw);
 
       const metricsToInsert: Array<{
         organization_id: string;
