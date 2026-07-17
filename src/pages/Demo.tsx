@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { invokeWithRetry } from "@/lib/edge-function-retry";
 import { Brain, Loader2, AlertCircle, CheckCircle2, Shield, BarChart3, Zap, Target, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -18,6 +19,7 @@ const MAX_RETRIES = 3;
 
 const Demo = () => {
   const navigate = useNavigate();
+  const { signOut } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
@@ -28,7 +30,13 @@ const Demo = () => {
       setError(null);
       setCurrentStep(0);
 
-      await supabase.auth.signOut();
+      // Use AuthContext's signOut(), not the raw supabase client, so its
+      // deliberateSignOutRef suppresses the "Your session ended" toast --
+      // that toast exists to flag an *unexpected* SIGNED_OUT (e.g. a
+      // refresh-token failure), and was firing here on every demo launch
+      // because this call bypassed the ref that marks a sign-out as
+      // intentional.
+      await signOut();
 
       sessionStorage.setItem("quantivis_demo_mode", "true");
       sessionStorage.removeItem("quantivis_org_id");
@@ -95,7 +103,7 @@ const Demo = () => {
       sessionStorage.removeItem("quantivis_demo_mode");
       setError(getUserFriendlyError(message));
     }
-  }, [navigate, retryCount]);
+  }, [navigate, retryCount, signOut]);
 
   useEffect(() => {
     const abortController = new AbortController();

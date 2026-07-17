@@ -1,4 +1,4 @@
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,6 +6,18 @@ import MFAChallenge from "@/components/auth/MFAChallenge";
 import MFAEnroll from "@/components/auth/MFAEnroll";
 
 type MFAStatus = "loading" | "required_challenge" | "required_enroll" | "passed";
+
+/**
+ * Routes that look like public procurement/trust URLs (sibling to
+ * /security, /trust, /procurement-pack, all public) but are backed by a
+ * page that renders live, org-scoped data and genuinely requires auth.
+ * An anonymous visitor typing one of these is looking for public
+ * compliance content, not trying to log into an org's dashboard -- send
+ * them to the public page that actually answers that, instead of /login.
+ */
+const LOGGED_OUT_REDIRECT_OVERRIDES: Record<string, string> = {
+  "/compliance": "/trust",
+};
 
 /**
  * ProtectedRoute
@@ -20,6 +32,7 @@ type MFAStatus = "loading" | "required_challenge" | "required_enroll" | "passed"
  */
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
+  const location = useLocation();
   const [mfaStatus, setMfaStatus] = useState<MFAStatus>("loading");
 
   useEffect(() => {
@@ -79,7 +92,10 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) {
+    const override = LOGGED_OUT_REDIRECT_OVERRIDES[location.pathname];
+    return <Navigate to={override ?? "/login"} replace />;
+  }
 
   // User needs to complete MFA challenge (already enrolled, session not verified)
   if (mfaStatus === "required_challenge") {
