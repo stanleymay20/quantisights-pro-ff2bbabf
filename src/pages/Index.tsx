@@ -3,6 +3,13 @@ import { Link } from "react-router-dom";
 import { ArrowRight, CheckCircle, Shield, TrendingUp, AlertCircle, Globe } from "lucide-react";
 import heroVideoAsset from "@/assets/hero-video.mp4.asset.json";
 import { Eyebrow, MarketingCard, MarketingCTA, MarketingSection, TagBadge } from "@/components/design-system/marketing-primitives";
+import {
+  HOMEPAGE_STATS,
+  HOMEPAGE_SOCIAL_PROOF,
+  HOMEPAGE_DEMO_STATS,
+  HOMEPAGE_LEDGER_FIXTURES,
+  toDisplayTuples,
+} from "@/lib/marketing";
 
 // DS-1: page-local color constants now resolve from the design-system
 // CSS variables defined in src/index.css. Values are unchanged — this
@@ -14,13 +21,12 @@ const ACCENT = "hsl(var(--brand-marketing-accent))";
 const MUTED = "hsl(var(--brand-marketing-muted))";
 const SLATE = "hsl(var(--brand-marketing-slate))";
 
-const DECISIONS = [
-  { id: "DL-2847", category: "Risk Mitigation", confidence: 90, impact: "+€20K", tag: "Pending", time: "2m ago", governance: "Active" },
-  { id: "DL-2846", category: "Revenue Growth", confidence: 88, impact: "+€15K", tag: "Approved", time: "14m ago", governance: "Logged" },
-  { id: "DL-2845", category: "Cost Optimisation", confidence: 85, impact: "+€8K", tag: "Review", time: "31m ago", governance: "Active" },
-  { id: "DL-2844", category: "Supply Chain", confidence: 92, impact: "+€42K", tag: "Approved", time: "1h ago", governance: "Logged" },
-  { id: "DL-2843", category: "Risk Mitigation", confidence: 79, impact: "+€11K", tag: "Pending", time: "2h ago", governance: "Active" },
-];
+// Illustrative-only Decision Ledger data — see
+// src/lib/marketing/fixtures.ts for the disclosure contract this
+// alias exists to make explicit. The "Illustrative data — not a live
+// customer record" banner rendered next to the ticker is the visible
+// half of that contract; this rename is the code half.
+const DECISIONS = HOMEPAGE_LEDGER_FIXTURES;
 
 const ResponsiveStyles = () => (
   <style>{`
@@ -248,7 +254,7 @@ const DecisionBrief = () => (
 
 const Stats = () => (
   <div style={{ background: MUTED, borderBottom: `1px solid rgba(30,39,97,0.1)` }}>
-    <div className="qv-grid-4 qv-stat-strip" style={{ maxWidth: 1280, margin: "0 auto", padding: "0 24px" }}>{[["100+", "Automated governance workflows"], ["179", "Governance rules enforced"], ["211", "Countries monitored by AICIS"], ["15+", "Enterprise data connectors"]].map(([value, label]) => <div key={label} style={{ padding: "26px 14px", borderRight: `1px solid rgba(30,39,97,0.1)` }}><div style={{ fontFamily: "Georgia, serif", fontSize: 32, fontWeight: 400, color: NAVY, letterSpacing: "-0.03em" }}>{value}</div><div style={{ fontSize: 13, color: SLATE, marginTop: 4, lineHeight: 1.5 }}>{label}</div></div>)}</div>
+    <div className="qv-grid-4 qv-stat-strip" style={{ maxWidth: 1280, margin: "0 auto", padding: "0 24px" }}>{toDisplayTuples(HOMEPAGE_STATS).map(([value, label]) => <div key={label} style={{ padding: "26px 14px", borderRight: `1px solid rgba(30,39,97,0.1)` }}><div style={{ fontFamily: "Georgia, serif", fontSize: 32, fontWeight: 400, color: NAVY, letterSpacing: "-0.03em" }}>{value}</div><div style={{ fontSize: 13, color: SLATE, marginTop: 4, lineHeight: 1.5 }}>{label}</div></div>)}</div>
   </div>
 );
 
@@ -269,12 +275,7 @@ const SocialProof = () => (
           </div>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-          {([
-            ["3 weeks → 2 days", "AI governance review cycle, after implementation"],
-            ["100%", "Of AI recommendations now have a logged approval trail"],
-            ["€0 additional headcount", "Governance overhead added to achieve EU AI Act readiness"],
-            ["< 1 week", "From first call to live governance record in production"],
-          ] as [string, string][]).map(([stat, desc]) => (
+          {toDisplayTuples(HOMEPAGE_SOCIAL_PROOF).map(([stat, desc]) => (
             <div key={stat} className="qv-card-interactive" style={{ background: "#fff", padding: "18px", border: "1px solid rgba(30,39,97,0.12)", borderRadius: 8 }}>
               <div style={{ fontFamily: "Georgia, serif", fontSize: 22, color: NAVY, fontWeight: 400, marginBottom: 4 }}>{stat}</div>
               <div style={{ fontSize: 12, color: SLATE, lineHeight: 1.5 }}>{desc}</div>
@@ -458,7 +459,7 @@ const Demo = () => {
     }
   };
 
-  return <section id="demo" style={{ background: NAVY, color: "#fff" }}><div className="qv-wrap qv-grid-2" style={{ gap: 64, alignItems: "start" }}><div><h2 style={{ fontFamily: "Georgia, serif", fontSize: "clamp(28px, 4vw, 48px)", lineHeight: 1.15, fontWeight: 400, letterSpacing: "-0.02em", margin: "0 0 20px" }}>See Quantivis running on your data.</h2><p style={{ fontSize: 16, color: "rgba(255,255,255,0.6)", lineHeight: 1.75, margin: "0 0 32px", maxWidth: 440 }}>We run a live demo using a dataset from your industry. You leave with a working governance record — not a slide deck.</p><div className="qv-form-grid">{[["< 1 week", "Typical onboarding"], ["100%", "Decisions auditable"], ["15+", "Data connectors"], ["211", "Countries monitored"]].map(([value, label]) => <div key={label} style={{ padding: "22px 18px", background: "rgba(255,255,255,0.03)" }}><div style={{ fontFamily: "Georgia, serif", fontSize: 28, color: "#fff" }}>{value}</div><div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.62)", textTransform: "uppercase", letterSpacing: "0.1em" }}>{label}</div></div>)}</div></div><div>{status === "sent" ? <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 6, padding: "48px 30px", textAlign: "center" }}><div style={{ fontSize: 40, marginBottom: 16 }}>✓</div><h3 style={{ fontFamily: "Georgia, serif", fontSize: 24, fontWeight: 400, color: "#fff", marginBottom: 12 }}>Request received</h3><p style={{ fontSize: 14, color: "rgba(255,255,255,0.55)", lineHeight: 1.7 }}>We will be in touch within one business day to schedule your live demo.</p></div> : <form onSubmit={handleSubmit} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>{[["Full name *", "name", "Jane Smith", "text"], ["Work email *", "email", "jane@company.com", "email"], ["Company *", "company", "Acme GmbH", "text"]].map(([label, key, placeholder, type]) => <label key={key} style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.45)", textTransform: "uppercase", letterSpacing: "0.1em" }}>{label}<input type={type} required value={form[key as keyof typeof form]} placeholder={placeholder} onChange={event => setForm(prev => ({ ...prev, [key]: event.target.value }))} style={{ width: "100%", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 4, padding: "13px 14px", fontSize: 16, color: "#fff", outline: "none", boxSizing: "border-box" }} /></label>)}<label style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.45)", textTransform: "uppercase", letterSpacing: "0.1em" }}>What are you trying to govern? <span style={{ opacity: 0.5 }}>(optional)</span><textarea rows={3} value={form.message} placeholder="e.g. AI procurement decisions, supply chain risk approvals..." onChange={event => setForm(prev => ({ ...prev, message: event.target.value }))} style={{ width: "100%", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 4, padding: "13px 14px", fontSize: 16, color: "#fff", outline: "none", resize: "vertical", boxSizing: "border-box", fontFamily: "inherit" }} /></label>{status === "error" && <p style={{ fontSize: 13, color: "#EF4444", margin: 0 }}>Something went wrong. Please email hello@quantivis.io directly.</p>}<MarketingCTA as="button" type="submit" disabled={status === "sending"} style={{ border: "none", cursor: status === "sending" ? "not-allowed" : "pointer" }}>{status === "sending" ? "Sending…" : <>Request a Demo <ArrowRight size={16} /></>}</MarketingCTA></form>}</div></div></section>;
+  return <section id="demo" style={{ background: NAVY, color: "#fff" }}><div className="qv-wrap qv-grid-2" style={{ gap: 64, alignItems: "start" }}><div><h2 style={{ fontFamily: "Georgia, serif", fontSize: "clamp(28px, 4vw, 48px)", lineHeight: 1.15, fontWeight: 400, letterSpacing: "-0.02em", margin: "0 0 20px" }}>See Quantivis running on your data.</h2><p style={{ fontSize: 16, color: "rgba(255,255,255,0.6)", lineHeight: 1.75, margin: "0 0 32px", maxWidth: 440 }}>We run a live demo using a dataset from your industry. You leave with a working governance record — not a slide deck.</p><div className="qv-form-grid">{toDisplayTuples(HOMEPAGE_DEMO_STATS).map(([value, label]) => <div key={label} style={{ padding: "22px 18px", background: "rgba(255,255,255,0.03)" }}><div style={{ fontFamily: "Georgia, serif", fontSize: 28, color: "#fff" }}>{value}</div><div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.62)", textTransform: "uppercase", letterSpacing: "0.1em" }}>{label}</div></div>)}</div></div><div>{status === "sent" ? <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 6, padding: "48px 30px", textAlign: "center" }}><div style={{ fontSize: 40, marginBottom: 16 }}>✓</div><h3 style={{ fontFamily: "Georgia, serif", fontSize: 24, fontWeight: 400, color: "#fff", marginBottom: 12 }}>Request received</h3><p style={{ fontSize: 14, color: "rgba(255,255,255,0.55)", lineHeight: 1.7 }}>We will be in touch within one business day to schedule your live demo.</p></div> : <form onSubmit={handleSubmit} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>{[["Full name *", "name", "Jane Smith", "text"], ["Work email *", "email", "jane@company.com", "email"], ["Company *", "company", "Acme GmbH", "text"]].map(([label, key, placeholder, type]) => <label key={key} style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.45)", textTransform: "uppercase", letterSpacing: "0.1em" }}>{label}<input type={type} required value={form[key as keyof typeof form]} placeholder={placeholder} onChange={event => setForm(prev => ({ ...prev, [key]: event.target.value }))} style={{ width: "100%", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 4, padding: "13px 14px", fontSize: 16, color: "#fff", outline: "none", boxSizing: "border-box" }} /></label>)}<label style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.45)", textTransform: "uppercase", letterSpacing: "0.1em" }}>What are you trying to govern? <span style={{ opacity: 0.5 }}>(optional)</span><textarea rows={3} value={form.message} placeholder="e.g. AI procurement decisions, supply chain risk approvals..." onChange={event => setForm(prev => ({ ...prev, message: event.target.value }))} style={{ width: "100%", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 4, padding: "13px 14px", fontSize: 16, color: "#fff", outline: "none", resize: "vertical", boxSizing: "border-box", fontFamily: "inherit" }} /></label>{status === "error" && <p style={{ fontSize: 13, color: "#EF4444", margin: 0 }}>Something went wrong. Please email hello@quantivis.io directly.</p>}<MarketingCTA as="button" type="submit" disabled={status === "sending"} style={{ border: "none", cursor: status === "sending" ? "not-allowed" : "pointer" }}>{status === "sending" ? "Sending…" : <>Request a Demo <ArrowRight size={16} /></>}</MarketingCTA></form>}</div></div></section>;
 };
 
 const SiteFooter = () => {
