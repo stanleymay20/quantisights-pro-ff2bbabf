@@ -31,10 +31,16 @@ describe("DS-2 shared design primitives", () => {
   it("uses DS-1 semantic tokens for homepage tag badges instead of TAG_STYLES", () => {
     const homepage = read("src/pages/Index.tsx");
 
+    // TAG_STYLES lookup table is removed — colors flow through
+    // TagBadge tone={} instead. (DS-3B: the LedgerTicker's fake
+    // decision rows were replaced by a real-data LiveTrustTicker,
+    // so the ledger-specific variable names no longer apply — but
+    // the primitive-usage contract still does.)
     expect(homepage).not.toContain("const TAG_STYLES");
-    expect(homepage).toContain('import { Eyebrow, MarketingCard, MarketingCTA, MarketingSection, TagBadge }');
-    expect(homepage).toContain('<TagBadge tone={primaryDecision.tag}');
-    expect(homepage).toContain('<TagBadge tone={decision.tag}');
+    expect(homepage).toContain(
+      'import { Eyebrow, MarketingCard, MarketingCTA, MarketingSection, TagBadge }',
+    );
+    expect(homepage).toMatch(/<TagBadge\s+tone=\{/);
     expect(homepage).not.toContain("Approved: { bg:");
     expect(homepage).not.toContain("Pending: { bg:");
     expect(homepage).not.toContain("Review: { bg:");

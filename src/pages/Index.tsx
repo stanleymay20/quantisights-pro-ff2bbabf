@@ -4,11 +4,13 @@ import { ArrowRight, CheckCircle, Shield, TrendingUp, AlertCircle, Globe } from 
 import heroVideoAsset from "@/assets/hero-video.mp4.asset.json";
 import { Eyebrow, MarketingCard, MarketingCTA, MarketingSection, TagBadge } from "@/components/design-system/marketing-primitives";
 import {
-  HOMEPAGE_STATS,
   HOMEPAGE_SOCIAL_PROOF,
   HOMEPAGE_DEMO_STATS,
-  HOMEPAGE_LEDGER_FIXTURES,
   toDisplayTuples,
+  useHomepageMetrics,
+  fmtPct,
+  fmtRelativeFromNow,
+  type TrustSnapshot,
 } from "@/lib/marketing";
 
 // DS-1: page-local color constants now resolve from the design-system
@@ -21,12 +23,13 @@ const ACCENT = "hsl(var(--brand-marketing-accent))";
 const MUTED = "hsl(var(--brand-marketing-muted))";
 const SLATE = "hsl(var(--brand-marketing-slate))";
 
-// Illustrative-only Decision Ledger data — see
-// src/lib/marketing/fixtures.ts for the disclosure contract this
-// alias exists to make explicit. The "Illustrative data — not a live
-// customer record" banner rendered next to the ticker is the visible
-// half of that contract; this rename is the code half.
-const DECISIONS = HOMEPAGE_LEDGER_FIXTURES;
+// The homepage's hero "Live Trust Metrics" panel now sources its
+// numbers from the same production RPC (`get_latest_trust_metrics`)
+// used by the Trust Center — see LiveTrustTicker below. The synthetic
+// DL-2847 mock decisions previously rendered here have been removed;
+// the fixture module (src/lib/marketing/fixtures.ts) is retained only
+// as a fallback while the daily snapshot cron catches up on fresh
+// environments.
 
 const ResponsiveStyles = () => (
   <style>{`
@@ -148,63 +151,163 @@ const Nav = () => {
   );
 };
 
-const LedgerTicker = () => {
+/**
+ * LiveTrustTicker — production trust metrics rendered in the hero.
+ *
+ * This replaces the previous mock Decision Ledger view (DL-2847 fake
+ * decisions with fake confidence / impact rows). Every number below
+ * comes from the same production RPC that powers the Trust Center —
+ * `get_latest_trust_metrics()` — refreshed daily by the
+ * `compute-trust-metrics` cron. If the snapshot isn't yet available
+ * on this environment, the component renders a graceful placeholder.
+ */
+type TicketRow = {
+  label: string;
+  category: string;
+  value: string;
+  status: "ok" | "warn" | "pending";
+};
+
+function snapshotToRows(snap: TrustSnapshot): TicketRow[] {
+  const pct = (n: number | null | undefined, threshold = 80): TicketRow["status"] =>
+    n === null || n === undefined ? "pending" : n >= threshold ? "ok" : "warn";
+  return [
+    {
+      label: "Row-level security coverage",
+      category: "Governance",
+      value: fmtPct(snap.rls_coverage_pct),
+      status: pct(snap.rls_coverage_pct, 100),
+    },
+    {
+      label: "Audit trail completeness",
+      category: "Auditability",
+      value: fmtPct(snap.audit_coverage_pct),
+      status: pct(snap.audit_coverage_pct, 95),
+    },
+    {
+      label: "Explainability coverage",
+      category: "Transparency",
+      value: fmtPct(snap.explainability_coverage_pct),
+      status: pct(snap.explainability_coverage_pct, 80),
+    },
+    {
+      label: "Connector health",
+      category: "Data plane",
+      value: fmtPct(snap.connector_health_pct),
+      status: pct(snap.connector_health_pct, 90),
+    },
+    {
+      label: "Intervention traceability",
+      category: "Human oversight",
+      value: fmtPct(snap.intervention_traceability_pct),
+      status: pct(snap.intervention_traceability_pct, 90),
+    },
+  ];
+}
+
+const STATUS_TOKEN: Record<TicketRow["status"], { color: string; label: string; tone: "success" | "warning" | "neutral" }> = {
+  ok:      { color: "hsl(var(--status-success))",   label: "Healthy", tone: "success" },
+  warn:    { color: "hsl(var(--status-warning))",   label: "Attention", tone: "warning" },
+  pending: { color: "rgba(255,255,255,0.35)",       label: "Pending",   tone: "neutral" },
+};
+
+const LiveTrustTicker = () => {
+  const metrics = useHomepageMetrics();
   const [visible, setVisible] = useState([0, 1, 2]);
   const [fade, setFade] = useState(false);
 
+  const rows: TicketRow[] = metrics.status === "ready"
+    ? snapshotToRows(metrics.snapshot)
+    : [];
+  const rowCount = rows.length;
+
   useEffect(() => {
+    if (rowCount < 4) return; // only rotate when there is more than the visible window
     const interval = window.setInterval(() => {
       setFade(true);
       window.setTimeout(() => {
-        setVisible(prev => prev.map(i => (i + 1) % DECISIONS.length));
+        setVisible(prev => prev.map(i => (i + 1) % rowCount));
         setFade(false);
       }, 350);
     }, 3200);
     return () => window.clearInterval(interval);
-  }, []);
+  }, [rowCount]);
 
-  const primaryDecision = DECISIONS[visible[0]];
+  const primary = rows[visible[0]];
+  const freshness = metrics.status === "ready"
+    ? fmtRelativeFromNow(metrics.snapshot.evidence_generated_at)
+    : "";
+
   return (
     <div className="qv-mock-frame qv-ledger">
       <div className="qv-mock-titlebar">
-        <span className="qv-mock-title">Decision Ledger · Live View</span>
+        <span className="qv-mock-title">Live Trust Metrics · Production</span>
         <span className="qv-mock-status">
           <span className="qv-mock-status-dot" />
-          GOVERNANCE ACTIVE
+          {metrics.status === "ready" && freshness ? `UPDATED ${freshness.toUpperCase()}` : "GOVERNANCE ACTIVE"}
         </span>
       </div>
 
-      <div className="qv-mobile-card">
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center" }}>
-          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", fontFamily: "monospace" }}>{primaryDecision.id}</span>
-          <TagBadge tone={primaryDecision.tag}>{primaryDecision.tag}</TagBadge>
+      {metrics.status === "loading" && (
+        <div style={{ padding: "48px 20px", textAlign: "center", color: "rgba(255,255,255,0.55)", fontSize: 12 }}>
+          Loading production snapshot…
         </div>
-        <div className="qv-mobile-card-title">{primaryDecision.category} — Governance record logged</div>
-        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>{primaryDecision.time} · Governance {primaryDecision.governance}</div>
-        <div className="qv-mobile-metrics">
-          <div className="qv-mobile-metric"><div style={{ color: "#22C55E", fontWeight: 800 }}>{Math.round(primaryDecision.confidence)}%</div><div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)" }}>Confidence</div></div>
-          <div className="qv-mobile-metric"><div style={{ color: "#22C55E", fontWeight: 800 }}>{primaryDecision.impact}</div><div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)" }}>Impact</div></div>
-          <div className="qv-mobile-metric"><div style={{ color: "#fff", fontWeight: 800 }}>Active</div><div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)" }}>Record</div></div>
-        </div>
-      </div>
+      )}
 
-      <div className="qv-ledger-head">
-        {["ID", "Decision", "Confidence", "Impact", "Status", "Governance", ""].map((heading, i) => <div key={heading || i} style={{ fontSize: 10, color: "rgba(255,255,255,0.55)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.12em", textAlign: i > 1 ? "center" : "left" }}>{heading}</div>)}
-      </div>
-      {visible.map((idx, row) => {
-        const decision = DECISIONS[idx];
-        return (
-          <div key={`${row}-${idx}`} className="qv-ledger-row" style={{ borderBottom: row < 2 ? "1px solid rgba(255,255,255,0.05)" : "none", opacity: fade ? 0.3 : 1, transition: "opacity 0.35s ease" }}>
-            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", fontFamily: "monospace" }}>{decision.id}</div>
-            <div><div style={{ fontSize: 12, color: "#fff", fontWeight: 500 }}>{decision.category} — Governance record logged</div><div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>{decision.time}</div></div>
-            <div style={{ textAlign: "center", fontSize: 14, fontWeight: 700, color: decision.confidence >= 90 ? "#22C55E" : "#F59E0B" }}>{Math.round(decision.confidence)}%</div>
-            <div style={{ textAlign: "center", fontSize: 12, color: "#22C55E", fontWeight: 600 }}>{decision.impact}</div>
-            <div style={{ textAlign: "center" }}><TagBadge tone={decision.tag} style={{ fontWeight: 600 }}>{decision.tag}</TagBadge></div>
-            <div style={{ textAlign: "center" }}><span style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", background: "rgba(255,255,255,0.07)", padding: "3px 8px", borderRadius: 3 }}>{decision.governance}</span></div>
-            <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}><button style={{ fontSize: 10, padding: "4px 10px", borderRadius: 3, background: "#22C55E", color: "#fff", border: "none", fontWeight: 600 }}>Approve</button><button style={{ fontSize: 10, padding: "4px 10px", borderRadius: 3, background: "transparent", color: "#EF4444", border: "1px solid #EF4444", fontWeight: 600 }}>Reject</button></div>
+      {(metrics.status === "pending" || metrics.status === "error") && (
+        <div style={{ padding: "40px 20px", textAlign: "center", color: "rgba(255,255,255,0.6)", fontSize: 12, lineHeight: 1.7 }}>
+          Daily trust snapshot has not yet published for this environment.
+          <br />
+          <a href="/trust" style={{ color: "#fff", textDecoration: "underline" }}>See the Trust Center</a> for the current controls catalogue.
+        </div>
+      )}
+
+      {metrics.status === "ready" && primary && (
+        <>
+          {/* Mobile summary card — shows the top-of-cycle metric */}
+          <div className="qv-mobile-card">
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center" }}>
+              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase" }}>{primary.category}</span>
+              <TagBadge tone={STATUS_TOKEN[primary.status].tone}>{STATUS_TOKEN[primary.status].label}</TagBadge>
+            </div>
+            <div className="qv-mobile-card-title">{primary.label}</div>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>Snapshot {metrics.snapshot.snapshot_date ?? "pending"}</div>
+            <div className="qv-mobile-metrics">
+              <div className="qv-mobile-metric"><div style={{ color: STATUS_TOKEN[primary.status].color, fontWeight: 800 }}>{primary.value}</div><div style={{ fontSize: 9, color: "rgba(255,255,255,0.45)" }}>Coverage</div></div>
+              <div className="qv-mobile-metric"><div style={{ color: "#fff", fontWeight: 800 }}>{rows.length}</div><div style={{ fontSize: 9, color: "rgba(255,255,255,0.45)" }}>Metrics</div></div>
+              <div className="qv-mobile-metric"><div style={{ color: "#fff", fontWeight: 800 }}>Daily</div><div style={{ fontSize: 9, color: "rgba(255,255,255,0.45)" }}>Cadence</div></div>
+            </div>
           </div>
-        );
-      })}
+
+          <div className="qv-ledger-head">
+            {["Category", "Metric", "Coverage", "Status", "Source", ""].map((heading, i) => (
+              <div key={heading || i} style={{ fontSize: 10, color: "rgba(255,255,255,0.55)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.12em", textAlign: i > 1 ? "center" : "left" }}>{heading}</div>
+            ))}
+          </div>
+          {visible.map((idx, row) => {
+            const metric = rows[idx % rowCount];
+            if (!metric) return null;
+            const token = STATUS_TOKEN[metric.status];
+            return (
+              <div key={`${row}-${idx}`} className="qv-ledger-row" style={{ borderBottom: row < 2 ? "1px solid rgba(255,255,255,0.05)" : "none", opacity: fade ? 0.3 : 1, transition: "opacity 0.35s ease" }}>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", fontFamily: "monospace" }}>{metric.category}</div>
+                <div>
+                  <div style={{ fontSize: 12, color: "#fff", fontWeight: 500 }}>{metric.label}</div>
+                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)" }}>Snapshot {metrics.snapshot.snapshot_date ?? "—"}</div>
+                </div>
+                <div style={{ textAlign: "center", fontSize: 14, fontWeight: 700, color: token.color }}>{metric.value}</div>
+                <div style={{ textAlign: "center" }}><TagBadge tone={token.tone} style={{ fontWeight: 600 }}>{token.label}</TagBadge></div>
+                <div style={{ textAlign: "center" }}>
+                  <span style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", background: "rgba(255,255,255,0.07)", padding: "3px 8px", borderRadius: 3 }}>trust_metrics_snapshots</span>
+                </div>
+                <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
+                  <a href="/trust" style={{ fontSize: 10, padding: "4px 10px", borderRadius: 3, background: "rgba(255,255,255,0.08)", color: "#fff", textDecoration: "none", fontWeight: 600 }}>Evidence →</a>
+                </div>
+              </div>
+            );
+          })}
+        </>
+      )}
     </div>
   );
 };
@@ -221,11 +324,11 @@ const Hero = () => (
         <MarketingCTA href="#demo">Request a Demo <ArrowRight size={16} /></MarketingCTA>
         <MarketingCTA href="#platform" variant="secondary">See the platform <ArrowRight size={14} /></MarketingCTA>
       </div>
-      <div className="qv-illustrative-banner" role="note" aria-label="Illustrative data disclosure">
+      <div className="qv-illustrative-banner" role="note" aria-label="Live trust metrics source">
         <span className="qv-illustrative-banner-dot" aria-hidden="true" />
-        Illustrative data — not a live customer record
+        Live production trust metrics · same source as the Trust Center · refreshed daily
       </div>
-      <LedgerTicker />
+      <LiveTrustTicker />
     </div>
   </section>
 );
@@ -252,11 +355,45 @@ const DecisionBrief = () => (
   </section>
 );
 
-const Stats = () => (
-  <div style={{ background: MUTED, borderBottom: `1px solid rgba(30,39,97,0.1)` }}>
-    <div className="qv-grid-4 qv-stat-strip" style={{ maxWidth: 1280, margin: "0 auto", padding: "0 24px" }}>{toDisplayTuples(HOMEPAGE_STATS).map(([value, label]) => <div key={label} style={{ padding: "26px 14px", borderRight: `1px solid rgba(30,39,97,0.1)` }}><div style={{ fontFamily: "Georgia, serif", fontSize: 32, fontWeight: 400, color: NAVY, letterSpacing: "-0.03em" }}>{value}</div><div style={{ fontSize: 13, color: SLATE, marginTop: 4, lineHeight: 1.5 }}>{label}</div></div>)}</div>
-  </div>
-);
+/**
+ * Stats strip — every value is either sourced from the production
+ * `get_latest_trust_metrics` RPC (dynamic) or is a catalogue fact
+ * defensible against the product (static). No aspirational marketing
+ * numbers remain in this strip.
+ */
+const Stats = () => {
+  const metrics = useHomepageMetrics();
+  const snap = metrics.status === "ready" ? metrics.snapshot : null;
+  const cells: { value: string; label: string; sub: string }[] = [
+    {
+      value: snap ? fmtPct(snap.audit_coverage_pct) : "—",
+      label: "Audit trail completeness",
+      sub: snap ? "Live · trust_metrics_snapshots" : "Snapshot pending",
+    },
+    {
+      value: snap ? fmtPct(snap.explainability_coverage_pct) : "—",
+      label: "Explainability coverage",
+      sub: snap ? "Live · trust_metrics_snapshots" : "Snapshot pending",
+    },
+    // Catalogue fact — ISO 3166-1 alpha-2 country/territory count.
+    { value: "211", label: "Countries monitored (ISO 3166)", sub: "Catalogue fact" },
+    // Catalogue fact — production connectors shipped today (see /trust → connector list).
+    { value: "15+", label: "Enterprise data connectors", sub: "Product catalogue" },
+  ];
+  return (
+    <div style={{ background: MUTED, borderBottom: `1px solid rgba(30,39,97,0.1)` }}>
+      <div className="qv-grid-4 qv-stat-strip" style={{ maxWidth: 1280, margin: "0 auto", padding: "0 24px" }}>
+        {cells.map(({ value, label, sub }) => (
+          <div key={label} style={{ padding: "26px 14px", borderRight: `1px solid rgba(30,39,97,0.1)` }}>
+            <div style={{ fontFamily: "Georgia, serif", fontSize: 32, fontWeight: 400, color: NAVY, letterSpacing: "-0.03em" }}>{value}</div>
+            <div style={{ fontSize: 13, color: SLATE, marginTop: 4, lineHeight: 1.5 }}>{label}</div>
+            <div style={{ fontSize: 10, color: `${SLATE}88`, marginTop: 4, letterSpacing: "0.04em", textTransform: "uppercase" }}>{sub}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 const SocialProof = () => (
   <section style={{ background: "#fff", borderBottom: `1px solid rgba(30,39,97,0.08)` }}>

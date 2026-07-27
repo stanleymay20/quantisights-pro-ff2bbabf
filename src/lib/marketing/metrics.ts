@@ -50,31 +50,18 @@ export interface MarketingMetric {
 
 // ─── Top-of-page STAT strip (index.tsx `Stats`) ────────────────────────
 // Rendered as a 4-column strip beneath the DecisionBrief.
+//
+// The two "aspirational" entries that used to live here ("100+ workflows",
+// "179 rules") have been REMOVED. The strip is now assembled inline
+// inside `Stats` from live snapshot metrics (via useHomepageMetrics) plus
+// two catalogue facts kept locally in that component. This constant is
+// retained as a documented anchor for any future static additions —
+// callers that need to render marketing numbers should reach for
+// useHomepageMetrics + local catalogue facts, not this list.
 export const HOMEPAGE_STATS: MarketingMetric[] = [
-  {
-    value: "100+",
-    label: "Automated governance workflows",
-    // Refers to the count of pre-authored governance workflows shipped
-    // in the product catalogue (decision types × approval chains).
-    provenance: {
-      kind: "aspirational",
-      note: "TODO(marketing): verify against src/lib/decision-lifecycle catalogue count before next campaign refresh.",
-    },
-  },
-  {
-    value: "179",
-    label: "Governance rules enforced",
-    // Refers to the count of rules in the governance policy engine.
-    provenance: {
-      kind: "aspirational",
-      note: "TODO(marketing): tie to a specific rule-registry count.",
-    },
-  },
   {
     value: "211",
     label: "Countries monitored by AICIS",
-    // AICIS = Autonomous Intelligence & Country Insight System.
-    // 211 is the ISO 3166-1 alpha-2 country + territory count.
     provenance: {
       kind: "catalogue",
       source: "ISO 3166-1 alpha-2 country and territory count.",
@@ -83,8 +70,6 @@ export const HOMEPAGE_STATS: MarketingMetric[] = [
   {
     value: "15+",
     label: "Enterprise data connectors",
-    // Refers to the count of production connectors (SAP, Salesforce,
-    // Dynamics, HubSpot, NetSuite, BigQuery, Snowflake, S3, Sheets, REST).
     provenance: {
       kind: "catalogue",
       source: "src/pages/DataConnectors.tsx — production connector list.",
