@@ -20,6 +20,7 @@
  */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { parseMessyDate, parseMessyNumber } from "./messy-data-guards.ts";
 
 // deno-lint-ignore no-explicit-any
 type SvcClient = any;
@@ -295,23 +296,27 @@ function pickString(raw: Record<string, unknown>, key: string): string | null {
   return s.length === 0 ? null : s;
 }
 
+// This pipeline is confirmed dormant (no frontend caller invokes
+// ingest-csv-pipeline, its only entry point) so migrating its number/date
+// parsing carries no production risk, but it's migrated anyway for
+// consistency: pickNumber had no currency/EU-decimal/percentage handling
+// and pickDate fell straight to `new Date()` (US MM/DD/YYYY convention,
+// no EU-ambiguity heuristic) -- a third, further-diverged behavior for
+// the same conceptual "parse a messy number/date" operation. Both now
+// delegate to the same canonical parser the client and transform-metrics
+// use.
 function pickNumber(raw: Record<string, unknown>, key: string): number | null {
   const v = raw[key];
   if (v === null || v === undefined || v === "") return null;
-  const n = typeof v === "number" ? v : Number(String(v).replace(/[, ]/g, ""));
+  if (typeof v === "number") return Number.isFinite(v) ? v : null;
+  const n = parseMessyNumber(String(v));
   return Number.isFinite(n) ? n : null;
 }
 
 function pickDate(raw: Record<string, unknown>, key: string): string | null {
   const v = raw[key];
   if (v === null || v === undefined || v === "") return null;
-  const s = String(v).trim();
-  // YYYY only → first day of year
-  if (/^\d{4}$/.test(s)) return `${s}-01-01`;
-  // ISO YYYY-MM-DD or full timestamp
-  const parsed = new Date(s);
-  if (Number.isNaN(parsed.getTime())) return null;
-  return parsed.toISOString().split("T")[0];
+  return parseMessyDate(String(v));
 }
 
 // ----------------------------------------------------------------------------

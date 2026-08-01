@@ -1,5 +1,6 @@
 import type { ExplanationMetadata } from "@/components/dashboard/ExplainDecisionPanel";
 import type { ExecutiveDecisionRecord } from "@/components/decisions/executive-decision-review-utils";
+import { trustFromDecision } from "@/components/trust/trust-adapter";
 
 /**
  * UX-2 — pure helpers for the executive review flow
@@ -108,6 +109,33 @@ export function getEvidenceSignalCount(decision: ReviewableDecision): number {
     metadata.dual_layer_enrichment,
   ];
   return groups.filter((group) => group != null && Object.keys(group as object).length > 0).length;
+}
+
+/**
+ * Picks the single decision that should be presented as "the one decision
+ * that most needs your judgment right now" — shared by the Dashboard's
+ * Recommended First Action and the Executive Brief so the two surfaces
+ * never disagree about which decision is most urgent.
+ *
+ * Round 4 audit finding: Executive Brief picked the pending decision with
+ * the highest predicted_net_impact regardless of evidence, which surfaced
+ * a 55%-confidence decision explicitly blocked on "missing evidence:
+ * verified evidence must be linked before approval" as the single most
+ * urgent judgment call — while the Dashboard, sorting by recency instead,
+ * showed a different decision entirely. A decision an executive can't
+ * actually review evidence for shouldn't be crowned "the one"; prefer
+ * evidence-verified decisions, ranked by impact, and only fall back to an
+ * evidence-missing decision when nothing else is available.
+ */
+export function pickPriorityDecision<T extends ReviewableDecision>(decisions: T[]): T | null {
+  if (decisions.length === 0) return null;
+  const byImpactDesc = (a: T, b: T) =>
+    (b.predicted_net_impact ?? -Infinity) - (a.predicted_net_impact ?? -Infinity);
+  const withVerifiedEvidence = decisions
+    .filter((d) => trustFromDecision(d).evidenceStatus === "verified")
+    .sort(byImpactDesc);
+  if (withVerifiedEvidence.length > 0) return withVerifiedEvidence[0];
+  return [...decisions].sort(byImpactDesc)[0];
 }
 
 const TIMELINE_BY_TYPE: Record<string, string> = {

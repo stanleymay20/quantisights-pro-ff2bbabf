@@ -3,29 +3,28 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { authenticateRequest, verifyOrgMembership } from "../_shared/auth-guard.ts";
 import { enforceDatasetContract } from "../_shared/dataset-contract.ts";
 import { getCorsHeaders, corsPreflightResponse } from "../_shared/cors.ts";
+import { parseMessyDate, parseMessyNumber } from "../_shared/messy-data-guards.ts";
 
 const MAX_VALUE = 1e12;
 
+// Was a locally-duplicated cleanNumeric() that stripped commas
+// unconditionally before parseFloat -- the same bug fixed in
+// DataUpload.tsx (docs/audits/enterprise-data-platform-code-audit.md §2):
+// a European-formatted "1.234,56" silently became 1.234. This function
+// re-transforms already-ingested raw_records, so the same corruption was
+// reachable a second time on every re-transform. Now delegates to the
+// canonical, tested parser shared with the client.
 function cleanNumeric(raw: string | undefined | null): number {
-  if (!raw || typeof raw !== "string") return NaN;
-  const cleaned = raw
-    .replace(/[\s$€£¥₹,]/g, "")
-    .replace(/\(([^)]+)\)/, "-$1");
-  return parseFloat(cleaned);
+  return parseMessyNumber(raw);
 }
 
+// Was a minimal local date normalizer (year-only, quarter, then a bare
+// Date.parse fallback with no EU-ambiguity handling, no Excel-serial
+// support). Delegates to the same canonical parser the client uses so a
+// date string doesn't resolve differently depending on which pipeline
+// re-transformed it.
 function normalizeDate(val: string | undefined | null): string | null {
-  if (!val) return null;
-  const trimmed = String(val).trim();
-  if (/^\d{4}$/.test(trimmed)) return `${trimmed}-01-01`;
-  if (/^\d{4}[/-]Q[1-4]$/i.test(trimmed)) {
-    const y = trimmed.slice(0, 4);
-    const q = parseInt(trimmed.slice(-1));
-    return `${y}-${String((q - 1) * 3 + 1).padStart(2, "0")}-01`;
-  }
-  if (/^\d{4}[/-]\d{2}$/.test(trimmed)) return `${trimmed}-01`;
-  if (!isNaN(Date.parse(trimmed))) return trimmed;
-  return null;
+  return parseMessyDate(val);
 }
 
 // Matches src/lib/data-upload-utils.ts's slugifyMetric() exactly -- this

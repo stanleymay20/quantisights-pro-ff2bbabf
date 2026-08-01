@@ -4,6 +4,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders, corsPreflightResponse } from "../_shared/cors.ts";
 import { getGovernanceProfile } from "../_shared/governance-profile.ts";
 import { recordGovernanceUse } from "../_shared/governance-audit.ts";
+import { parseImpactEstimate } from "../_shared/impact-estimate.ts";
 
 type SourceKind = "advisory" | "insight";
 
@@ -483,18 +484,6 @@ function toNumber(value: unknown): number | null {
   if (value === null || value === undefined || value === "") return null;
   const n = Number(value);
   return Number.isFinite(n) ? n : null;
-}
-
-function parseImpactEstimate(value: unknown): number | null {
-  if (value === null || value === undefined) return null;
-  if (typeof value === "number" && Number.isFinite(value)) return value;
-
-  const text = String(value);
-  const matches = text.match(/-?\d+(?:[,.]\d+)?/g);
-  if (!matches?.length) return null;
-  const nums = matches.map((m) => Number(m.replace(/,/g, ""))).filter(Number.isFinite);
-  if (!nums.length) return null;
-  return nums.reduce((sum, n) => sum + n, 0) / nums.length;
 }
 
 function humanize(value: string) {

@@ -26,6 +26,7 @@ import type { MetricTypeSummary } from "@/hooks/useMetrics";
 import type { Insight } from "@/hooks/useInsights";
 import { generateAnswer } from "@/lib/copilot-answer-engine";
 import type { DecisionSummary } from "@/lib/copilot-answer-engine";
+import { pickPriorityDecision } from "@/components/decisions/executive-review-flow";
 import InsightEvidencePanel from "./InsightEvidencePanel";
 
 interface PendingDecision {
@@ -34,6 +35,8 @@ interface PendingDecision {
   decision_type: string;
   capped_confidence: number | null;
   predicted_net_impact: number | null;
+  evidence_sources: unknown[] | null;
+  explanation_metadata: unknown;
   created_at: string;
 }
 
@@ -149,13 +152,22 @@ const ExecutiveDailyDriver = ({ displayName, orgId, insights, topMetrics, pendin
     if (!orgId) return;
     (supabase as any)
       .from("decision_ledger")
-      .select("id,recommended_action,decision_type,capped_confidence,predicted_net_impact,created_at")
+      .select("id,recommended_action,decision_type,capped_confidence,predicted_net_impact,evidence_sources,explanation_metadata,created_at")
       .eq("organization_id", orgId)
       .eq("is_suppressed", false)
       .in("decision_status", ["pending", "active"])
       .order("created_at", { ascending: false })
-      .limit(4)
-      .then(({ data }: { data: PendingDecision[] | null }) => setDecisions(data ?? []));
+      .limit(20)
+      .then(({ data }: { data: PendingDecision[] | null }) => {
+        const pool = data ?? [];
+        // The Dashboard's top decision card must agree with the standalone
+        // /executive-brief page's pick of "the one decision" -- both derive
+        // it from the same evidence-aware priority order rather than each
+        // surface sorting independently (see pickPriorityDecision).
+        const priority = pickPriorityDecision(pool);
+        const rest = pool.filter((d) => d.id !== priority?.id);
+        setDecisions((priority ? [priority, ...rest] : pool).slice(0, 4));
+      });
   }, [orgId]);
 
   const handleAsk = useCallback(async () => {

@@ -9,7 +9,7 @@ import {
   ExecutiveBriefEmptyState,
   ExecutiveBriefHero,
 } from "@/components/decisions/ExecutiveBriefHero";
-import type { ReviewableDecision } from "@/components/decisions/executive-review-flow";
+import { pickPriorityDecision, type ReviewableDecision } from "@/components/decisions/executive-review-flow";
 
 /**
  * UX-2 Executive Brief (/executive-brief): the single strongest pending
@@ -34,8 +34,9 @@ const ExecutiveBrief = () => {
         .order("created_at", { ascending: false })
         .limit(20);
       if (!error && data) {
-        setDecision((data[0] as unknown as ReviewableDecision) ?? null);
-        setPendingCount(data.length);
+        const decisions = data as unknown as ReviewableDecision[];
+        setDecision(pickPriorityDecision(decisions));
+        setPendingCount(decisions.length);
       }
       setLoading(false);
     };
